@@ -1,6 +1,7 @@
 # Doc Oracle MinerU worker — Railway / container hosts.
-# MinerU pulls PyTorch and models; expect a large image and a long first build.
-FROM python:3.12-bookworm
+# Heavy ML deps (mineru/PyTorch) are installed in a separate layer so they are
+# cached across builds and only reinstalled when their pinned versions change.
+FROM python:3.12-slim
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
@@ -8,7 +9,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DEFAULT_TIMEOUT=600 \
     MINERU_BACKEND=pipeline
 
-# Native libs commonly required by OpenCV / PDF / scientific stack used by MinerU.
+# System libs for OpenCV / PDF / scientific stack.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -19,14 +20,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsm6 \
     libxext6 \
     libxrender1 \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Layer 1: heavy ML dependencies — cached unless these specific versions change.
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir "mineru[all]>=3.0.0" "supabase>=2.10.0,<3"
 
-# Confirm CLI is on PATH (build fails early if MinerU did not install entry points).
+# Confirm CLI is on PATH.
 RUN which mineru
+
+# Layer 2: lightweight app dependencies — rebuilds only when requirements.txt changes.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
 COPY docker-entrypoint.sh /docker-entrypoint.sh
