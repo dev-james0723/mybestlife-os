@@ -16,6 +16,8 @@ Separate service that receives extraction jobs from the Next.js app, downloads t
 | `MINERU_SUBPROCESS_TIMEOUT_SEC` | Max seconds for the `mineru` subprocess (default `600`). |
 | `MINERU_PARSER_VERSION_LABEL` | Optional string stored as `parser_version` on completed jobs (default `mineru-pipeline-worker`). |
 | `NEXT_PUBLIC_APP_URL` | Legacy alias: same as callback base if `WORKER_CALLBACK_APP_URL` unset. |
+| `MINERU_INTERNAL_API_URL` | **Docker/Railway:** set by `docker-entrypoint.sh` (default `http://127.0.0.1:8877`). The `mineru` CLI is invoked with `--api-url` so it uses the long-lived in-container `mineru-api` instead of spawning a per-job temporary API (avoids connection failures). |
+| `MINERU_API_HOST` / `MINERU_API_PORT` | Optional overrides for where the internal `mineru-api` listens (defaults `127.0.0.1` / `8877`). |
 
 ## Local vs production
 
@@ -64,6 +66,8 @@ After the folder appears on GitHub, trigger **Redeploy** on Railway.
    | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**required** for Storage upload). |
 
    Railway injects **`PORT`**; the image listens on `$PORT` automatically (see `docker-entrypoint.sh`).
+
+   **Startup order:** the entrypoint starts **`mineru-api`** on an internal port, waits until `/openapi.json` responds, then starts **uvicorn** on `$PORT`. Extraction jobs log `api_url_configured=True` when `MINERU_INTERNAL_API_URL` is set (the default in the shipped entrypoint).
 
 7. **Networking** → **Generate domain** (or add a custom domain). You get a URL like `https://your-service.up.railway.app`.
 8. In **Vercel** (Next app): set `MINERU_API_URL` to that **HTTPS base URL** with **no** trailing slash, e.g. `https://your-service.up.railway.app`.

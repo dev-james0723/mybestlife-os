@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -27,25 +28,34 @@ def run_mineru_cli(
     timeout_sec: int,
 ) -> None:
     """
-    Run: mineru -p <input> -o <output> -b <backend>
+    Run: mineru [--api-url URL] -p <input> -o <output> -b <backend>
     Raises MinerUCliError on failure.
     """
     assert_mineru_cli_available()
     output_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        "mineru",
-        "-p",
-        str(input_pdf),
-        "-o",
-        str(output_dir),
-        "-b",
-        backend,
-    ]
+    internal_api_url = os.environ.get("MINERU_INTERNAL_API_URL", "").strip()
+
+    cmd = ["mineru"]
+
+    if internal_api_url:
+        cmd.extend(["--api-url", internal_api_url])
+
+    cmd.extend(
+        [
+            "-p",
+            str(input_pdf),
+            "-o",
+            str(output_dir),
+            "-b",
+            backend,
+        ]
+    )
     log.info(
-        "[mineru-worker] mineru_spawn backend=%s timeout_sec=%s input=%s",
+        "[mineru-worker] mineru_spawn backend=%s timeout_sec=%s input=%s api_url_configured=%s",
         backend,
         timeout_sec,
         input_pdf.name,
+        bool(internal_api_url),
     )
     try:
         proc = subprocess.run(
@@ -63,14 +73,20 @@ def run_mineru_cli(
         raise MinerUCliError(f"MinerU failed to start: {type(e).__name__}: {e}") from e
 
     if proc.returncode != 0:
-        err = (proc.stderr or proc.stdout or "").strip()
-        tail = err[-4000:] if err else "(no stderr/stdout)"
+        stdout_tail = (proc.stdout or "").strip()[-4000:]
+        stderr_tail = (proc.stderr or "").strip()[-4000:]
+
         log.error(
-            "[mineru-worker] mineru_nonzero_exit code=%s stderr_tail=%s",
+            "[mineru-worker] mineru_nonzero_exit code=%s stdout_tail=%s stderr_tail=%s",
             proc.returncode,
-            tail[:500],
+            stdout_tail[:1000],
+            stderr_tail[:1000],
         )
-        raise MinerUCliError(f"MinerU exited with code {proc.returncode}: {tail[:2000]}")
+
+        raise MinerUCliError(
+            "MinerU exited with code "
+            f"{proc.returncode}. stdout_tail={stdout_tail[:2000]} stderr_tail={stderr_tail[:2000]}"
+        )
 
     log.info("[mineru-worker] mineru_ok returncode=0")
 
