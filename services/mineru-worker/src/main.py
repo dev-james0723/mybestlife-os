@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from .auth import require_worker_secret
 from .extraction_pipeline import run_extraction_job
+from .mineru_engine import debug_engine_config
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="MyLifeOS MinerU Worker", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="MyLifeOS MinerU Worker", version="0.3.0", lifespan=lifespan)
 
 
 def _origin_with_scheme(raw: str) -> str:
@@ -48,6 +49,12 @@ class ExtractBody(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/debug/mineru-engine")
+def debug_mineru_engine():
+    """Safe diagnostics for MinerU engine configuration (never exposes API token)."""
+    return debug_engine_config()
 
 
 @app.post("/v1/extract")

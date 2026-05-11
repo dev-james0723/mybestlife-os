@@ -1,4 +1,4 @@
-"""End-to-end extraction: download → MinerU → storage upload → optional summary → callback."""
+"""End-to-end extraction: download → MinerU (official API or local CLI) → storage upload → callback."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 import httpx
 
 from .download_input import DownloadError, download_signed_pdf
+from .mineru_engine import MinerUOfficialApiError, get_engine_provider, model_version, run_official_api_extract
 from .mineru_runner import MinerUCliError, assert_mineru_cli_available, pick_primary_markdown, run_mineru_cli
 from .storage_sync import get_supabase_client, upload_tree_under_prefix
 
@@ -65,6 +66,15 @@ async def post_job_callback(
     return True, r.status_code, text
 
 
+def _parser_version_label(provider: str) -> str:
+    custom = os.environ.get("MINERU_PARSER_VERSION_LABEL", "").strip()
+    if custom:
+        return custom
+    if provider == "official_api":
+        return f"mineru-official-api-{model_version()}"
+    return "mineru-pipeline-worker"
+
+
 async def run_extraction_job(body: dict) -> None:
     """
     Background task: full pipeline + always attempts terminal callback.
@@ -101,6 +111,9 @@ async def run_extraction_job(body: dict) -> None:
     input_pdf = work_root / "input" / "source.pdf"
     output_dir = work_root / "output"
     storage_raw_prefix = f"{output_base_path.rstrip('/')}/mineru/raw"
+
+    provider = get_engine_provider()
+    log.info("[mineru-worker] extraction_start job_id=%s engine_provider=%s", job_id, provider)
 
     try:
         await send(
@@ -150,41 +163,98 @@ async def run_extraction_job(body: dict) -> None:
             output_base_path=output_base_path,
         )
 
-        try:
-            assert_mineru_cli_available()
-        except MinerUCliError as e:
-            await send(
-                "failed",
-                progress=0,
-                current_stage=None,
-                output_base_path=output_base_path,
-                error_code="mineru_cli_missing",
-                error_message=str(e)[:2000],
-            )
-            return
+        md_path: Path | None = None
+        total_pages = 0
 
-        backend = os.environ.get("MINERU_BACKEND", "pipeline").strip() or "pipeline"
-        timeout_sec = int(os.environ.get("MINERU_SUBPROCESS_TIMEOUT_SEC", "600") or "600")
+        if provider == "official_api":
+            if not os.environ.get("MINERU_OFFICIAL_API_TOKEN", "").strip():
+                await send(
+                    "failed",
+                    progress=0,
+                    current_stage=None,
+                    output_base_path=output_base_path,
+                    error_code="mineru_official_api_failed",
+                    error_message="MINERU_OFFICIAL_API_TOKEN is not set",
+                )
+                return
 
-        try:
-            run_mineru_cli(
-                input_pdf=input_pdf,
-                output_dir=output_dir,
-                backend=backend,
-                timeout_sec=timeout_sec,
+            log.info(
+                "[mineru-worker] official_api_extract job_id=%s model_version=%s",
+                job_id,
+                model_version(),
             )
-        except MinerUCliError as e:
-            await send(
-                "failed",
-                progress=0,
-                current_stage=None,
-                output_base_path=output_base_path,
-                error_code="mineru_failed",
-                error_message=str(e)[:2000],
-            )
-            return
+            api_timeout = httpx.Timeout(120.0, connect=30.0)
+            try:
+                async with httpx.AsyncClient(timeout=api_timeout, follow_redirects=True) as api_client:
+                    md_path, total_pages = await run_official_api_extract(
+                        client=api_client,
+                        signed_source_url=signed_input_url,
+                        output_dir=output_dir,
+                        job_id=job_id,
+                    )
+            except MinerUOfficialApiError as e:
+                await send(
+                    "failed",
+                    progress=0,
+                    current_stage=None,
+                    output_base_path=output_base_path,
+                    error_code="mineru_official_api_failed",
+                    error_message=str(e)[:2000],
+                )
+                return
+        else:
+            try:
+                assert_mineru_cli_available()
+            except MinerUCliError as e:
+                await send(
+                    "failed",
+                    progress=0,
+                    current_stage=None,
+                    output_base_path=output_base_path,
+                    error_code="mineru_cli_missing",
+                    error_message=str(e)[:2000],
+                )
+                return
 
-        md_path = pick_primary_markdown(output_dir)
+            backend = os.environ.get("MINERU_BACKEND", "pipeline").strip() or "pipeline"
+            timeout_sec = int(os.environ.get("MINERU_SUBPROCESS_TIMEOUT_SEC", "600") or "600")
+            log.info(
+                "[mineru-worker] local_cli_extract job_id=%s backend=%s model_version=n/a_cli",
+                job_id,
+                backend,
+            )
+
+            try:
+                await asyncio.to_thread(
+                    run_mineru_cli,
+                    input_pdf=input_pdf,
+                    output_dir=output_dir,
+                    backend=backend,
+                    timeout_sec=timeout_sec,
+                )
+            except MinerUCliError as e:
+                await send(
+                    "failed",
+                    progress=0,
+                    current_stage=None,
+                    output_base_path=output_base_path,
+                    error_code="mineru_failed",
+                    error_message=str(e)[:2000],
+                )
+                return
+
+            md_path = pick_primary_markdown(output_dir)
+            if md_path is None:
+                await send(
+                    "failed",
+                    progress=0,
+                    current_stage=None,
+                    output_base_path=output_base_path,
+                    error_code="mineru_no_output",
+                    error_message="MinerU produced no markdown output under the output directory",
+                )
+                return
+
         if md_path is None:
             await send(
                 "failed",
@@ -192,7 +262,7 @@ async def run_extraction_job(body: dict) -> None:
                 current_stage=None,
                 output_base_path=output_base_path,
                 error_code="mineru_no_output",
-                error_message="MinerU produced no markdown output under the output directory",
+                error_message="No primary markdown produced after extraction",
             )
             return
 
@@ -205,7 +275,6 @@ async def run_extraction_job(body: dict) -> None:
 
         try:
             sb = get_supabase_client()
-            # MinerU may write a nested folder under output_dir; upload entire tree.
             n = await asyncio.to_thread(
                 upload_tree_under_prefix,
                 client=sb,
@@ -226,8 +295,10 @@ async def run_extraction_job(body: dict) -> None:
             )
             return
 
+        log.info("[mineru-worker] upload_completed job_id=%s files=%s provider=%s", job_id, n, provider)
+
         summary_text = md_path.read_text(encoding="utf-8", errors="replace")[:12000]
-        parser_ver = os.environ.get("MINERU_PARSER_VERSION_LABEL", "mineru-pipeline-worker").strip() or "mineru-pipeline-worker"
+        parser_ver = _parser_version_label(provider)
 
         ok, st, _detail = await send(
             "completed",
@@ -235,10 +306,17 @@ async def run_extraction_job(body: dict) -> None:
             current_stage="MinerU extraction finished",
             output_base_path=output_base_path,
             document_summary=summary_text,
-            total_pages=0,
+            total_pages=total_pages,
             parser_version=parser_ver,
         )
-        if not ok:
+        if ok:
+            log.info(
+                "[mineru-worker] callback_completed job_id=%s http=%s provider=%s",
+                job_id,
+                st,
+                provider,
+            )
+        else:
             log.error(
                 "[mineru-worker] terminal_callback_not_200 job_id=%s status=%s",
                 job_id,
