@@ -8,6 +8,9 @@ import { withLocalePrefix } from "@/lib/i18n/locale-path";
 
 type PageProps = { params: Promise<{ locale: string }> };
 
+/** PDF → MinerU dispatch runs inline on finalize upload; allow cold Railway + callback to finish. */
+export const maxDuration = 120;
+
 export default async function KnowledgeBasePage({ params }: PageProps) {
   const { locale } = await params;
   const slug = normalizeLocaleSlug(locale) ?? DEFAULT_LOCALE_SLUG;

@@ -916,50 +916,35 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
       parserMode: process.env.MINERU_PARSER_MODE?.trim() || null,
     });
 
-    after(async () => {
-      try {
-        const signed = await createSignedUrlForKnowledgePath(storagePath, 3600);
-        const out = docBrainRootPrefix(userId, item.id);
-        const res = await dispatchMinerUExtractionHttp({
-          jobId: job.id,
-          userId,
-          documentId: item.id,
-          signedInputUrl: signed,
-          inputStoragePath: storagePath,
-          outputBasePath: out,
-          parserMode: process.env.MINERU_PARSER_MODE?.trim() || null,
-        });
-        if (!res.ok) {
-          const dispatchErr = [res.status != null ? `HTTP ${res.status}` : "", res.error ?? ""]
-            .filter((s) => String(s).trim())
-            .join(": ")
-            .trim();
-          const recovered = await recoverPdfKnowledgeItemAfterMinerUDispatchFailure({
-            jobId: job.id,
-            userId,
-            documentId: item.id,
-            storagePath,
-            originalFileName,
-            fileMimeType,
-            itemTitle: item.title,
-            thumbnailStyle: effectiveThumbnailStyle,
-            targetLanguage,
-            mineruError: dispatchErr || "MinerU dispatch failed",
-            contentType,
-          });
-          if (!recovered) {
-            await markMinerUDispatchFailureAdmin({
-              jobId: job.id,
-              userId,
-              documentId: item.id,
-              jobErrorMessage: res.error ?? "dispatch_failed",
-              itemErrorMessage: res.error ?? "MinerU dispatch failed",
-            });
-          }
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`[document-brain] dispatch failed for ${item.id}`, msg);
+    let documentBrainJob = {
+      id: job.id,
+      status: "queued" as const,
+      progress: 0,
+      currentStage: "Queued for MinerU worker",
+      parser: "mineru",
+      retryCount: 0,
+      maxRetries: 3,
+      errorMessage: null as string | null,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const signed = await createSignedUrlForKnowledgePath(storagePath, 3600);
+      const out = docBrainRootPrefix(userId, item.id);
+      const res = await dispatchMinerUExtractionHttp({
+        jobId: job.id,
+        userId,
+        documentId: item.id,
+        signedInputUrl: signed,
+        inputStoragePath: storagePath,
+        outputBasePath: out,
+        parserMode: process.env.MINERU_PARSER_MODE?.trim() || null,
+      });
+      if (!res.ok) {
+        const dispatchErr = [res.status != null ? `HTTP ${res.status}` : "", res.error ?? ""]
+          .filter((s) => String(s).trim())
+          .join(": ")
+          .trim();
         const recovered = await recoverPdfKnowledgeItemAfterMinerUDispatchFailure({
           jobId: job.id,
           userId,
@@ -970,7 +955,7 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
           itemTitle: item.title,
           thumbnailStyle: effectiveThumbnailStyle,
           targetLanguage,
-          mineruError: msg,
+          mineruError: dispatchErr || "MinerU dispatch failed",
           contentType,
         });
         if (!recovered) {
@@ -978,26 +963,54 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
             jobId: job.id,
             userId,
             documentId: item.id,
-            jobErrorMessage: msg,
-            itemErrorMessage: msg,
+            jobErrorMessage: res.error ?? "dispatch_failed",
+            itemErrorMessage: res.error ?? "MinerU dispatch failed",
           });
         }
+      } else {
+        const sb = await createServerSupabaseClient();
+        const { data: jr } = await sb
+          .from("document_extraction_jobs")
+          .select(
+            "id,status,progress,current_stage,parser,retry_count,max_retries,error_message,created_at",
+          )
+          .eq("id", job.id)
+          .maybeSingle();
+        if (jr && typeof jr === "object") {
+          const { mapRowToDocumentBrainJob } = await import("@/lib/document-brain/map-extraction-job-row");
+          documentBrainJob = mapRowToDocumentBrainJob(jr as Record<string, unknown>);
+        }
       }
-    });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[document-brain] dispatch failed for ${item.id}`, msg);
+      const recovered = await recoverPdfKnowledgeItemAfterMinerUDispatchFailure({
+        jobId: job.id,
+        userId,
+        documentId: item.id,
+        storagePath,
+        originalFileName,
+        fileMimeType,
+        itemTitle: item.title,
+        thumbnailStyle: effectiveThumbnailStyle,
+        targetLanguage,
+        mineruError: msg,
+        contentType,
+      });
+      if (!recovered) {
+        await markMinerUDispatchFailureAdmin({
+          jobId: job.id,
+          userId,
+          documentId: item.id,
+          jobErrorMessage: msg,
+          itemErrorMessage: msg,
+        });
+      }
+    }
 
     return {
       ...item,
-      documentBrainJob: {
-        id: job.id,
-        status: "queued",
-        progress: 0,
-        currentStage: "Queued for MinerU worker",
-        parser: "mineru",
-        retryCount: 0,
-        maxRetries: 3,
-        errorMessage: null,
-        createdAt: new Date().toISOString(),
-      },
+      documentBrainJob,
     };
   }
 

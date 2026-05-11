@@ -1,3 +1,6 @@
+/** Max wait for Railway worker + callback to Vercel (cold starts). */
+const MINERU_DISPATCH_TIMEOUT_MS = 120_000;
+
 /** Ensures `fetch` receives an absolute URL (env often omits `https://`). */
 function normalizeMineruApiBase(raw: string): string {
   let b = raw.trim().replace(/\/+$/, "");
@@ -38,22 +41,32 @@ export async function dispatchMinerUExtractionHttp(
     return { ok: false, error: "mineru_not_configured" };
   }
   const url = `${base}/v1/extract`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${secret}`,
-    },
-    body: JSON.stringify({
-      job_id: payload.jobId,
-      user_id: payload.userId,
-      document_id: payload.documentId,
-      signed_input_url: payload.signedInputUrl,
-      input_storage_path: payload.inputStoragePath,
-      output_base_path: payload.outputBasePath,
-      parser_mode: payload.parserMode ?? null,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify({
+        job_id: payload.jobId,
+        user_id: payload.userId,
+        document_id: payload.documentId,
+        signed_input_url: payload.signedInputUrl,
+        input_storage_path: payload.inputStoragePath,
+        output_base_path: payload.outputBasePath,
+        parser_mode: payload.parserMode ?? null,
+      }),
+      signal: AbortSignal.timeout(MINERU_DISPATCH_TIMEOUT_MS),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      ok: false,
+      error: `mineru_fetch_failed: ${msg.slice(0, 400)}`,
+    };
+  }
 
   const rawText = await res.text().catch(() => "");
 
