@@ -24,10 +24,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Layer 1: heavy ML dependencies — cached unless these specific versions change.
+# Pipeline extra only (Doc Oracle); avoids vllm/gradio/router/MCP/UI bundles from mineru[all].
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir "mineru[all]>=3.0.0" "supabase>=2.10.0,<3"
+    && pip install --no-cache-dir "mineru[pipeline]>=3.0.0" "supabase>=2.10.0,<3"
 
-# Confirm CLI is on PATH.
+# Confirm CLI is on PATH (build fails early if MinerU did not install entry points).
 RUN which mineru
 
 # Layer 2: lightweight app dependencies — rebuilds only when requirements.txt changes.

@@ -73,7 +73,7 @@ Health check: `GET /health` → `{"status":"ok"}`.
 
 ### Docker build notes (Railway)
 
-Installing `mineru[all]` pulls **PyTorch** and related wheels — expect a **large image** and a **long first build** (often many minutes). If the build OOMs or times out, increase the builder resources / timeout in Railway or use a machine type with more RAM. The worker still **fails honestly at runtime** with `mineru_cli_missing` if the CLI is not present after install.
+Installing `mineru[pipeline]` still pulls **PyTorch** and related wheels for the pipeline backend — expect a **large image** and a **long first build**. If the build OOMs or times out, increase the builder resources / timeout in Railway or use a machine type with more RAM. The worker still **fails honestly at runtime** with `mineru_cli_missing` if the CLI is not present after install.
 
 ## Run locally
 
@@ -81,6 +81,7 @@ Installing `mineru[all]` pulls **PyTorch** and related wheels — expect a **lar
 cd services/mineru-worker
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+pip install --no-cache-dir "mineru[pipeline]>=3.0.0" "supabase>=2.10.0,<3"
 export MINERU_WORKER_SECRET=devsecret
 export SUPABASE_URL=...
 export SUPABASE_SERVICE_ROLE_KEY=...
@@ -92,11 +93,11 @@ uvicorn src.main:app --host 0.0.0.0 --port 8790
 
 Point the app at `MINERU_API_URL=http://127.0.0.1:8790`.
 
-> **Note:** `pip install -r requirements.txt` installs **MinerU** and is heavy (PyTorch, etc.). Prefer Docker for a predictable environment.
+> **Note:** The second `pip install` pulls **MinerU (pipeline)** and **Supabase** and is heavy (PyTorch, etc.). Prefer Docker for a predictable environment.
 
 ## Behavior
 
-The Docker image installs **`mineru[all]`** from PyPI (see MinerU docs). The HTTP handler returns **202 Accepted** immediately and runs download → MinerU → Supabase upload → Vercel callback in a **background task**, so long parses do not block the Vercel dispatch `fetch` timeout.
+The Docker image installs **`mineru[pipeline]`** from PyPI (see MinerU docs). The HTTP handler returns **202 Accepted** immediately and runs download → MinerU → Supabase upload → Vercel callback in a **background task**, so long parses do not block the Vercel dispatch `fetch` timeout.
 
 If the MinerU CLI is missing or extraction fails, the worker POSTs `status: "failed"` with `error_code` / `error_message` so `document_extraction_jobs` does not stay `queued` forever.
 
