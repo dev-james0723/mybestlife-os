@@ -1,0 +1,33 @@
+{
+  "name": "my_life_os",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build --prefix app",
+    "capture-site": "node site-capture.js",
+    "dev": "npm run dev --prefix app",
+    "dev:3100": "npm run dev:3100 --prefix app",
+    "dev:app": "npm run dev --prefix app",
+    "dev:cursor": "npm run dev:cursor --prefix app",
+    "dev:pm2": "pm2 restart life-os-next-dev 2>/dev/null || pm2 start ecosystem.dev.config.cjs",
+    "dev:pm2:stop": "pm2 delete life-os-next-dev",
+    "dev:pm2:logs": "pm2 logs life-os-next-dev --lines 80",
+    "dev:pm2:status": "pm2 status life-os-next-dev",
+    "vercel:prod": "vercel deploy --prod --yes"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "pm2": "^6.0.14"
+  }
+}

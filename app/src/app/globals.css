@@ -1,0 +1,1823 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* Geist from next/font on <html>; avoids self-referential var(--font-sans) which breaks font-sans and falls back to serif. */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  /* Accent pink: Resources "+ New" CTA gradient + category pill accents.
+     Exposed as `bg-accent-pink-*` / `text-accent-pink-*` utilities via Tailwind
+     so consumers don't inline magic hex values. */
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-pink-from: var(--accent-pink-from);
+  --color-accent-pink-to: var(--accent-pink-to);
+  --color-accent-pink-foreground: var(--accent-pink-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  /* Bio Lab tool cards — chromatic accents (chart-* above are neutral ramps). */
+  --color-bio-lab-sprint: var(--bio-lab-sprint);
+  --color-bio-lab-sweep: var(--bio-lab-sweep);
+  --color-bio-lab-scan: var(--bio-lab-scan);
+  --color-bio-lab-reset: var(--bio-lab-reset);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Reference app uses blue primary actions; brand green is reserved for logo accents. */
+  --life-os-brand: #00a85f;
+  --background: oklch(0.985 0.002 264);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.488 0.2 264);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Nested dialog: blur parent (e.g. Create Project when AI task dialog opens) */
+  --nested-parent-dialog-blur: 10px;
+  --nested-parent-dialog-opacity: 0.9;
+  /* AI planner task dialog — distinct actions per theme (cancel / quick / AI) */
+  --ai-planner-cancel-bg: oklch(0.97 0.008 264);
+  --ai-planner-cancel-fg: oklch(0.28 0.02 264);
+  --ai-planner-cancel-border: oklch(0.88 0.02 264);
+  --ai-planner-quick-bg: oklch(0.62 0.14 75);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.52 0.12 75);
+  --ai-planner-submit-bg: oklch(0.52 0.2 310);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.45 0.18 310);
+
+  /* Create Project — “Fill with AI” (distinct from neutral outline) */
+  --project-ai-fill-bg: oklch(0.5 0.19 295);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.42 0.17 295);
+  --project-ai-fill-hover-bg: oklch(0.46 0.2 295);
+
+  /* Bio Lab tool grid — four distinct hues (not chart-* grays). */
+  --bio-lab-sprint: var(--primary);
+  --bio-lab-sweep: oklch(0.48 0.13 158);
+  --bio-lab-scan: oklch(0.48 0.19 302);
+  --bio-lab-reset: oklch(0.54 0.16 72);
+
+  /* Accent Pink — Resources sub-tab "+ New" CTA (gradient) + category accents.
+     `from` (warm-violet) → `to` (hot-pink). Solid `--accent-pink` is used for
+     pill badges + the favorite star. Light-mode sits lower-L for contrast on
+     the page background; dark-mode raises chroma slightly for vibrancy. */
+  --accent-pink: oklch(0.62 0.25 340);
+  --accent-pink-from: oklch(0.58 0.24 315);
+  --accent-pink-to: oklch(0.66 0.26 350);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.62 0.17 264);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  --nested-parent-dialog-blur: 12px;
+  --nested-parent-dialog-opacity: 0.86;
+  --ai-planner-cancel-bg: oklch(0.26 0.02 264);
+  --ai-planner-cancel-fg: oklch(0.94 0.01 264);
+  --ai-planner-cancel-border: oklch(0.38 0.02 264);
+  --ai-planner-quick-bg: oklch(0.58 0.14 72);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.48 0.12 72);
+  --ai-planner-submit-bg: oklch(0.55 0.19 305);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.48 0.16 305);
+
+  --project-ai-fill-bg: oklch(0.58 0.2 302);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.5 0.18 302);
+  --project-ai-fill-hover-bg: oklch(0.54 0.21 302);
+
+  --bio-lab-sprint: var(--primary);
+  --bio-lab-sweep: oklch(0.72 0.11 158);
+  --bio-lab-scan: oklch(0.7 0.14 302);
+  --bio-lab-reset: oklch(0.78 0.12 72);
+
+  /* Accent Pink — dark mode. Slightly higher L for punch against dark bg. */
+  --accent-pink: oklch(0.68 0.24 340);
+  --accent-pink-from: oklch(0.62 0.24 315);
+  --accent-pink-to: oklch(0.72 0.25 350);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+
+/*
+ * Liquid glass — modal / popover surfaces (liquid_glass_ui.md §8.1 GlassPanel).
+ * Dark mode uses a slightly brighter frost (--surface-glass-2-ish) so blur reads
+ * over dark UI; §8.3 glass-panel-dark is for dense in-content cards, not floating modals.
+ * Used by DialogContent, PopoverContent, AlertDialogContent.
+ */
+.glass-modal-surface {
+  /* Day mode: higher fill opacity so frosted glass reads over light UI (was 0.07). */
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark .glass-modal-surface {
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-modal-surface {
+    background: rgba(20, 18, 16, 0.92);
+  }
+  .dark .glass-modal-surface {
+    background: rgba(20, 18, 16, 0.92);
+  }
+}
+
+/* AI task dialog + nested parent blur — theme-specific hues (data-ui-theme from ThemeProvider) */
+html[data-ui-theme="astronaut"][data-color-mode="light"] {
+  --nested-parent-dialog-blur: 11px;
+  --nested-parent-dialog-opacity: 0.88;
+  --ai-planner-cancel-bg: oklch(0.96 0.012 270);
+  --ai-planner-cancel-fg: oklch(0.22 0.03 270);
+  --ai-planner-cancel-border: oklch(0.86 0.02 270);
+  --ai-planner-quick-bg: oklch(0.58 0.12 220);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.48 0.1 220);
+  --ai-planner-submit-bg: oklch(0.52 0.19 290);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.44 0.16 290);
+
+  --project-ai-fill-bg: oklch(0.52 0.14 230);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.44 0.12 230);
+  --project-ai-fill-hover-bg: oklch(0.48 0.15 230);
+
+  /* Astronaut light — nebula magenta→violet. */
+  --accent-pink: oklch(0.6 0.23 330);
+  --accent-pink-from: oklch(0.56 0.22 305);
+  --accent-pink-to: oklch(0.64 0.24 340);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+html[data-ui-theme="astronaut"][data-color-mode="dark"] {
+  --nested-parent-dialog-blur: 14px;
+  --nested-parent-dialog-opacity: 0.84;
+  --ai-planner-cancel-bg: oklch(0.24 0.03 270);
+  --ai-planner-cancel-fg: oklch(0.92 0.02 260);
+  --ai-planner-cancel-border: oklch(0.34 0.04 270);
+  --ai-planner-quick-bg: oklch(0.56 0.14 210);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.45 0.12 210);
+  --ai-planner-submit-bg: oklch(0.54 0.18 300);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.46 0.15 300);
+
+  --project-ai-fill-bg: oklch(0.52 0.15 215);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.44 0.13 215);
+  --project-ai-fill-hover-bg: oklch(0.48 0.16 215);
+
+  /* Astronaut dark — amped nebula. */
+  --accent-pink: oklch(0.66 0.24 325);
+  --accent-pink-from: oklch(0.6 0.23 300);
+  --accent-pink-to: oklch(0.7 0.25 340);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+
+html[data-ui-theme="academia"][data-color-mode="light"] {
+  --nested-parent-dialog-blur: 9px;
+  --nested-parent-dialog-opacity: 0.91;
+  --ai-planner-cancel-bg: oklch(0.96 0.01 55);
+  --ai-planner-cancel-fg: oklch(0.28 0.02 45);
+  --ai-planner-cancel-border: oklch(0.86 0.015 55);
+  --ai-planner-quick-bg: oklch(0.52 0.1 145);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.42 0.09 145);
+  --ai-planner-submit-bg: oklch(0.44 0.12 25);
+  --ai-planner-submit-fg: oklch(0.99 0.005 55);
+  --ai-planner-submit-border: oklch(0.38 0.11 25);
+
+  --project-ai-fill-bg: oklch(0.48 0.11 35);
+  --project-ai-fill-fg: oklch(0.99 0.01 55);
+  --project-ai-fill-border: oklch(0.4 0.1 35);
+  --project-ai-fill-hover-bg: oklch(0.44 0.12 35);
+
+  /* Academia light — muted rose / old-book. */
+  --accent-pink: oklch(0.56 0.17 10);
+  --accent-pink-from: oklch(0.52 0.16 355);
+  --accent-pink-to: oklch(0.6 0.18 20);
+  --accent-pink-foreground: oklch(0.99 0.005 55);
+}
+html[data-ui-theme="academia"][data-color-mode="dark"] {
+  --nested-parent-dialog-blur: 12px;
+  --nested-parent-dialog-opacity: 0.87;
+  --ai-planner-cancel-bg: oklch(0.25 0.018 45);
+  --ai-planner-cancel-fg: oklch(0.92 0.008 55);
+  --ai-planner-cancel-border: oklch(0.35 0.02 45);
+  --ai-planner-quick-bg: oklch(0.54 0.11 140);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.42 0.09 140);
+  --ai-planner-submit-bg: oklch(0.56 0.13 28);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.48 0.11 28);
+
+  --project-ai-fill-bg: oklch(0.54 0.13 28);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.46 0.11 28);
+  --project-ai-fill-hover-bg: oklch(0.5 0.14 28);
+
+  /* Academia dark — deeper rose, still warm. */
+  --accent-pink: oklch(0.6 0.18 10);
+  --accent-pink-from: oklch(0.56 0.17 355);
+  --accent-pink-to: oklch(0.64 0.19 20);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+
+html[data-ui-theme="forest"][data-color-mode="light"] {
+  --nested-parent-dialog-blur: 9px;
+  --nested-parent-dialog-opacity: 0.9;
+  --ai-planner-cancel-bg: oklch(0.97 0.01 130);
+  --ai-planner-cancel-fg: oklch(0.22 0.03 145);
+  --ai-planner-cancel-border: oklch(0.88 0.02 130);
+  --ai-planner-quick-bg: oklch(0.58 0.13 85);
+  --ai-planner-quick-fg: oklch(0.2 0.03 55);
+  --ai-planner-quick-border: oklch(0.48 0.11 85);
+  --ai-planner-submit-bg: oklch(0.46 0.12 155);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.38 0.1 155);
+
+  --project-ai-fill-bg: oklch(0.5 0.13 145);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.42 0.11 145);
+  --project-ai-fill-hover-bg: oklch(0.46 0.14 145);
+
+  /* Forest light — berry / wild-rose. */
+  --accent-pink: oklch(0.58 0.21 355);
+  --accent-pink-from: oklch(0.54 0.2 335);
+  --accent-pink-to: oklch(0.62 0.22 5);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+html[data-ui-theme="forest"][data-color-mode="dark"] {
+  --nested-parent-dialog-blur: 13px;
+  --nested-parent-dialog-opacity: 0.85;
+  --ai-planner-cancel-bg: oklch(0.24 0.025 150);
+  --ai-planner-cancel-fg: oklch(0.91 0.01 130);
+  --ai-planner-cancel-border: oklch(0.34 0.03 150);
+  --ai-planner-quick-bg: oklch(0.56 0.13 90);
+  --ai-planner-quick-fg: oklch(0.99 0 0);
+  --ai-planner-quick-border: oklch(0.45 0.11 90);
+  --ai-planner-submit-bg: oklch(0.52 0.12 160);
+  --ai-planner-submit-fg: oklch(0.99 0 0);
+  --ai-planner-submit-border: oklch(0.42 0.1 160);
+
+  --project-ai-fill-bg: oklch(0.54 0.13 155);
+  --project-ai-fill-fg: oklch(0.99 0 0);
+  --project-ai-fill-border: oklch(0.45 0.11 155);
+  --project-ai-fill-hover-bg: oklch(0.5 0.14 155);
+
+  /* Forest dark — deeper berry. */
+  --accent-pink: oklch(0.62 0.22 355);
+  --accent-pink-from: oklch(0.58 0.21 335);
+  --accent-pink-to: oklch(0.66 0.23 5);
+  --accent-pink-foreground: oklch(0.99 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  }
+  html {
+    @apply font-sans;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* Theme font overrides via CSS custom properties set by ThemeProvider */
+html {
+  --font-display: var(--font-geist-sans);
+  --font-body: var(--font-geist-sans);
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* Font size preferences */
+html.font-size-small { font-size: 14px; }
+html.font-size-medium { font-size: 16px; }
+html.font-size-large { font-size: 18px; }
+
+/* Widget density */
+html.density-compact { --spacing-widget: 0.5rem; }
+html.density-comfortable { --spacing-widget: 1rem; }
+html.density-spacious { --spacing-widget: 1.5rem; }
+
+/* Focus mode: hide non-essential chrome */
+html.focus-mode [data-focus-hideable] {
+  display: none;
+}
+
+/* ============================================================
+   Atmosphere backdrops per theme/mode
+   ============================================================ */
+
+/* Astronaut dark: subtle nebula glow */
+html[data-ui-theme="astronaut"][data-color-mode="dark"] [data-atmosphere] {
+  position: relative;
+}
+html[data-ui-theme="astronaut"][data-color-mode="dark"] [data-atmosphere]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 60% 50% at 85% 15%,
+    oklch(0.35 0.12 270 / 0.25) 0%,
+    transparent 70%
+  );
+}
+
+/* Astronaut light: faint star watermark */
+html[data-ui-theme="astronaut"][data-color-mode="light"] [data-atmosphere] {
+  position: relative;
+}
+html[data-ui-theme="astronaut"][data-color-mode="light"] [data-atmosphere]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+  background-image: radial-gradient(circle 1.5px, oklch(0.4 0.15 270) 0.5px, transparent 0.5px);
+  background-size: 48px 48px;
+}
+
+/* Academia: noise + vignette */
+html[data-ui-theme="academia"] [data-atmosphere] {
+  position: relative;
+}
+html[data-ui-theme="academia"] [data-atmosphere]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    oklch(0.2 0.02 45 / 0.08) 100%
+  );
+}
+html[data-ui-theme="academia"] h1,
+html[data-ui-theme="academia"] h2 {
+  letter-spacing: 0.03em;
+}
+
+/* Forest: organic leaf pattern */
+html[data-ui-theme="forest"] [data-atmosphere] {
+  position: relative;
+}
+html[data-ui-theme="forest"][data-color-mode="light"] [data-atmosphere]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: radial-gradient(circle 2px, oklch(0.5 0.14 150) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Forest card warm white */
+html[data-ui-theme="forest"][data-color-mode="light"] .card {
+  background-color: #FDFCF9;
+}
+
+/* Forest progress: vertical fill for habit/progress bars */
+html[data-ui-theme="forest"] [data-forest-progress] [data-progress-fill] {
+  transform-origin: bottom;
+}
+
+/* Dark mode image filter for uploaded images */
+html[data-color-mode="dark"] [data-user-image] {
+  filter: brightness(0.88) saturate(0.95);
+}
+
+/* ============================================================
+   Default theme — Liquid Glass design language
+   Scoped strictly to html[data-ui-theme="default"]; other themes
+   (astronaut / academia / forest) are NOT touched.
+   ============================================================ */
+
+/* Glass surface tokens — light mode (default theme only). Slightly
+   more opaque than the early draft so that emotional tint overlays do
+   not drag legibility down on a bright backdrop. */
+html[data-ui-theme="default"][data-color-mode="light"] {
+  --glass-blur: 20px;
+  --glass-saturation: 135%;
+  --surface-glass: color-mix(in oklch, white 65%, transparent);
+  --surface-glass-strong: color-mix(in oklch, white 80%, transparent);
+  --border-glass: color-mix(in oklch, black 10%, transparent);
+  --border-glass-strong: color-mix(in oklch, black 16%, transparent);
+  --shadow-glass:
+    0 8px 32px color-mix(in oklch, black 10%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 70%, transparent);
+}
+
+/* Glass surface tokens — dark mode (default theme only).
+   Aim: a clean sheet of glass, like a shop window at night — you see
+   through it to the backdrop, with just a faint surface sheen. Opacity
+   is deliberately low (4%) so the ambient glow and underlying tone
+   dominate; blur is light (10px) so detail is softened, not smeared. */
+html[data-ui-theme="default"][data-color-mode="dark"] {
+  --glass-blur: 6px;
+  --glass-saturation: 110%;
+  --surface-glass: color-mix(in oklch, oklch(0.96 0.005 264) 1.5%, transparent);
+  --surface-glass-strong: color-mix(in oklch, oklch(0.20 0.02 264) 35%, transparent);
+  --border-glass: color-mix(in oklch, white 11%, transparent);
+  --border-glass-strong: color-mix(in oklch, white 22%, transparent);
+  --shadow-glass:
+    0 8px 32px color-mix(in oklch, black 45%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 8%, transparent);
+}
+
+/* Ambient backdrop — primary-tinted radial glows on the scroll region.
+   Uses [data-atmosphere] which already exists on the protected scroll
+   layout; matches the same pattern as other themes (astronaut/forest). */
+html[data-ui-theme="default"] [data-atmosphere] {
+  position: relative;
+}
+html[data-ui-theme="default"] [data-atmosphere]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 18% 28%,
+      color-mix(in oklch, var(--primary) 18%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 82% 18%,
+      color-mix(in oklch, var(--primary) 12%, transparent) 0%,
+      transparent 55%
+    );
+}
+
+/* (Removed) Earlier iterations layered a deep-blue base wash via
+   ::after to give glass panels "something rich to blur". In practice
+   that wash bled through the half-transparent glass and visibly washed
+   out foreground text on dark mode, breaking contrast. The radial-glow
+   ::before alone provides enough ambient depth without dimming text. */
+
+/* Fallback for browsers without backdrop-filter — make the glass tokens
+   opaque so panels remain legible. Scoped to default theme only. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-ui-theme="default"][data-color-mode="light"] {
+    --surface-glass: color-mix(in oklch, white 92%, transparent);
+    --surface-glass-strong: color-mix(in oklch, white 96%, transparent);
+  }
+  html[data-ui-theme="default"][data-color-mode="dark"] {
+    --surface-glass: color-mix(in oklch, oklch(0.16 0.02 264) 88%, transparent);
+    --surface-glass-strong: color-mix(in oklch, oklch(0.12 0.02 264) 92%, transparent);
+  }
+}
+
+/* Stagger entrance for glass panels under [data-stagger] containers.
+   Targets the FIRST glass-panel found inside each direct child of the
+   container, indexed by the child's position with :nth-child. No props
+   changes or JS needed; works for both `<GlassPanel>` and any wrapper
+   whose root is a `<GlassPanel>` (e.g. `<MotivationCard>`).
+   Initial delay 200ms, increment 80ms, capped at 5 to avoid awkward
+   long delays in long lists. */
+@keyframes glass-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+html[data-ui-theme="default"] [data-stagger] > * [data-slot="glass-panel"]:first-of-type,
+html[data-ui-theme="default"] [data-stagger] > [data-slot="glass-panel"] {
+  animation: glass-stagger-in 400ms ease-out both;
+  animation-fill-mode: both;
+  animation-delay: 200ms;
+}
+html[data-ui-theme="default"] [data-stagger] > :nth-child(2) [data-slot="glass-panel"]:first-of-type,
+html[data-ui-theme="default"] [data-stagger] > :nth-child(2)[data-slot="glass-panel"] {
+  animation-delay: 280ms;
+}
+html[data-ui-theme="default"] [data-stagger] > :nth-child(3) [data-slot="glass-panel"]:first-of-type,
+html[data-ui-theme="default"] [data-stagger] > :nth-child(3)[data-slot="glass-panel"] {
+  animation-delay: 360ms;
+}
+html[data-ui-theme="default"] [data-stagger] > :nth-child(4) [data-slot="glass-panel"]:first-of-type,
+html[data-ui-theme="default"] [data-stagger] > :nth-child(4)[data-slot="glass-panel"] {
+  animation-delay: 440ms;
+}
+html[data-ui-theme="default"] [data-stagger] > :nth-child(5) [data-slot="glass-panel"]:first-of-type,
+html[data-ui-theme="default"] [data-stagger] > :nth-child(5)[data-slot="glass-panel"] {
+  animation-delay: 520ms;
+}
+html[data-ui-theme="default"] [data-stagger] > :nth-child(n+6) [data-slot="glass-panel"]:first-of-type,
+html[data-ui-theme="default"] [data-stagger] > :nth-child(n+6)[data-slot="glass-panel"] {
+  animation-delay: 600ms;
+}
+
+/* Focus ring — improves visibility on translucent glass surfaces.
+   Scoped to default theme; other themes keep the existing base ring. */
+html[data-ui-theme="default"] [data-slot="glass-panel"]:focus-visible,
+html[data-ui-theme="default"] [data-slot="glass-panel"]:has(:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Typography contrast guard — under default/dark, the ambient
+   primary-tinted backdrop and translucent glass surfaces can perceptually
+   pull headings toward grey/blue. Force pure white for headings inside
+   glass panels (the most contrast-critical surface). Body text and the
+   muted hierarchy remain unchanged so visual depth is preserved. */
+html[data-ui-theme="default"][data-color-mode="dark"] [data-slot="glass-panel"] :is(h1, h2, h3, h4, h5, h6) {
+  color: oklch(1 0 0);
+}
+
+/* Reduced-motion guard for the new glass-related transitions and the
+   stagger entrance. Other themes are unaffected because all selectors
+   sit under html[data-ui-theme="default"]. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-ui-theme="default"] [data-slot="glass-panel"] {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   Default theme — Liquid Glass Sidebar
+   Strictly scoped to html[data-ui-theme="default"]. Other themes
+   (astronaut / academia / forest) keep the shadcn baseline look.
+   Design reference: CryptoNest-style floating glass island.
+   ============================================================ */
+
+/* Sidebar-specific glass tokens (separate from general `--surface-glass`
+   tokens so sidebar and panels can be tuned independently). */
+html[data-ui-theme="default"][data-color-mode="dark"] {
+  --sidebar-glass-bg: color-mix(in oklch, white 6%, transparent);
+  --sidebar-glass-border: color-mix(in oklch, white 14%, transparent);
+  --sidebar-nav-hover-bg: color-mix(in oklch, white 5%, transparent);
+  --sidebar-nav-active-bg: color-mix(in oklch, white 9%, transparent);
+  --sidebar-icon-well-bg: color-mix(in oklch, white 10%, transparent);
+  --sidebar-icon-well-active-bg: color-mix(in oklch, var(--primary) 28%, transparent);
+  --sidebar-icon-muted: color-mix(in oklch, white 60%, transparent);
+  --sidebar-section-label: color-mix(in oklch, white 40%, transparent);
+  --sidebar-text-active: oklch(1 0 0);
+  --sidebar-text-muted: color-mix(in oklch, white 65%, transparent);
+}
+html[data-ui-theme="default"][data-color-mode="light"] {
+  --sidebar-glass-bg: color-mix(in oklch, white 55%, transparent);
+  --sidebar-glass-border: color-mix(in oklch, black 8%, transparent);
+  --sidebar-nav-hover-bg: color-mix(in oklch, black 4%, transparent);
+  --sidebar-nav-active-bg: color-mix(in oklch, black 7%, transparent);
+  --sidebar-icon-well-bg: color-mix(in oklch, black 6%, transparent);
+  --sidebar-icon-well-active-bg: color-mix(in oklch, var(--primary) 18%, transparent);
+  --sidebar-icon-muted: color-mix(in oklch, black 50%, transparent);
+  --sidebar-section-label: color-mix(in oklch, black 45%, transparent);
+  --sidebar-text-active: oklch(0.15 0 0);
+  --sidebar-text-muted: color-mix(in oklch, black 65%, transparent);
+}
+
+/* Narrower sidebar width (240px vs baseline 16rem / 256px). The shadcn
+   primitive inline-sets --sidebar-width on [data-slot="sidebar-wrapper"];
+   we override with !important so other themes stay at their defaults.
+   Chose 15rem so that:
+     - "My Best Life OS" brand header fits on one line
+     - Long category labels ("Build & Execute", "Command Center") fit
+       without wrapping to two lines
+     - Sub-item labels ("Google Calendar", "Weekly Review") render fully */
+html[data-ui-theme="default"] [data-slot="sidebar-wrapper"] {
+  --sidebar-width: 15rem !important;
+}
+
+/* Floating-island shell — rounded, detached, glassy. Applied to the
+   desktop container + inner panel. Mobile Sheet gets its own treatment
+   below. The base shadcn shell uses fixed-edge positioning; we convert
+   it to an inset floating panel purely via padding + inner rounding. */
+html[data-ui-theme="default"] [data-slot="sidebar-container"] {
+  padding: 12px 0 12px 12px;
+}
+html[data-ui-theme="default"] [data-slot="sidebar-inner"] {
+  background: var(--sidebar-glass-bg) !important;
+  border: 1px solid var(--sidebar-glass-border);
+  border-radius: 22px;
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow:
+    0 8px 32px color-mix(in oklch, black 35%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 10%, transparent);
+  padding: 8px 4px;
+}
+/* Remove the border-right the primitive applies on left-side sidebars,
+   since we're floating now. */
+html[data-ui-theme="default"] [data-slot="sidebar-container"][data-side="left"] {
+  border-right: 0 !important;
+}
+
+/* Section / category label (the "Command Center", "Self", etc. headings
+   inside expanded groups). We tag these via SidebarGroupLabel already,
+   but for the tiny "Trading Bots"/"Assets"-style labels from the design
+   reference, we use the data attribute we inject in AppSidebar. */
+html[data-ui-theme="default"] [data-glass-section-label] {
+  color: var(--sidebar-section-label);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 14px 10px 4px;
+}
+
+/* Pill-shape every sidebar menu button (top-level + sub-items + footer
+   user button). We target [data-sidebar="menu-button"] and
+   [data-sidebar="menu-sub-button"] which the shadcn primitive stamps. */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"],
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] {
+  height: 40px !important;
+  border-radius: 20px !important;
+  padding: 0 10px !important;
+  gap: 10px !important;
+  font-size: 13px !important;
+  color: var(--sidebar-text-muted);
+  background: transparent;
+  transition: background 150ms ease-out, color 150ms ease-out;
+}
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] {
+  /* Sub-buttons are slightly smaller and bare (no pill well). */
+  height: 34px !important;
+  border-radius: 17px !important;
+  padding: 0 10px !important;
+  gap: 10px !important;
+  font-size: 13px !important;
+}
+
+/* Allow labels to render at their intrinsic width — the shadcn primitive
+   applies `[&>span:last-child]:truncate` (specificity 0,2,1). We match
+   with an equally-specific selector and override. Labels are short
+   enough that 15rem sidebar fits them on a single line. */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"] > span:last-child,
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] > span:last-child {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.2;
+}
+
+/* Force the brand header ("My Best Life OS") to render on one line.
+   The shadcn SidebarHeader wraps children in a flex container; the
+   brand span uses text-lg (18px bold) which at 15rem width still fits
+   on one line but was previously wrapping to two lines on narrower
+   setups. */
+html[data-ui-theme="default"] [data-slot="sidebar-header"] span {
+  white-space: nowrap;
+}
+
+/* Tighten the sub-menu indent — shadcn's default mx-3.5 + border-l
+   eats ~28px of horizontal space. On our narrow sidebar we give those
+   pixels back to the label. */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub"] {
+  margin-left: 0.75rem !important;
+  padding-left: 0.5rem !important;
+  /* Extra air between the category row (trigger) and the first sub-item —
+     shadcn's py-0.5 alone sits too tight under the glass pill row. */
+  padding-top: 0.625rem !important;
+}
+
+/* Icon well — a 32px rounded container to the left of each TOP-LEVEL
+   category label. It's a <span data-glass-icon-well> injected in
+   AppSidebar that wraps the Lucide icon. Under other themes the
+   wrapper is a zero-decoration inline span so the original layout is
+   preserved.
+
+   Sub-menu items INTENTIONALLY do not render the pill well — they use
+   a bare icon (see override below) because the extra pill there makes
+   the visual hierarchy too busy. */
+html[data-ui-theme="default"] [data-glass-icon-well] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sidebar-icon-well-bg);
+  color: var(--sidebar-icon-muted);
+  transition:
+    background 150ms ease-out,
+    color 150ms ease-out,
+    box-shadow 200ms ease-out;
+  flex-shrink: 0;
+}
+html[data-ui-theme="default"] [data-glass-icon-well] svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Sub-menu items: suppress the pill well. Keep the icon, lose the
+   circular background. Makes the sub-item list feel lighter and frees
+   horizontal space for the label. */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] [data-glass-icon-well] {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  box-shadow: none;
+}
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] [data-glass-icon-well] svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--sidebar-icon-muted);
+}
+
+/* Hover — row lightly fills, well stays muted */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"]:hover,
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"]:hover {
+  background: var(--sidebar-nav-hover-bg) !important;
+  color: var(--sidebar-text-active);
+}
+
+/* Active (current route) — pill fills, icon well glows primary (top-
+   level only), text white. */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="true"],
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"][data-active="true"] {
+  background: var(--sidebar-nav-active-bg) !important;
+  color: var(--sidebar-text-active) !important;
+  font-weight: 600;
+}
+/* Top-level active: fill the pill well + glow */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="true"] [data-glass-icon-well] {
+  background: var(--sidebar-icon-well-active-bg);
+  color: var(--sidebar-text-active);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--primary) 35%, transparent);
+}
+/* Sub-item active: tint the bare icon with primary color (no pill) */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"][data-active="true"] [data-glass-icon-well] svg {
+  color: var(--primary);
+}
+
+/* Sidebar footer user button — same pill treatment but tighter (it has
+   an avatar, not an icon, so no icon well). */
+html[data-ui-theme="default"] [data-slot="sidebar-footer"] [data-slot="sidebar-menu-button"] {
+  height: 56px !important;
+  border-radius: 20px !important;
+}
+
+/* Space between the last Learning nav row and the Garden CTA — the
+   adjacent SidebarGroups were visually glued; margin separates them. */
+html[data-ui-theme="default"] [data-slot="sidebar-group"]:has([data-glass-garden-cta]) {
+  margin-top: 0.75rem;
+}
+
+/* Garden CTA — emerald-tinted glass. The CTA keeps its emoji + primary
+   emerald color but now reads as a glass pill, not a solid button. */
+html[data-ui-theme="default"] [data-glass-garden-cta] {
+  background: color-mix(in oklch, oklch(0.62 0.15 152) 22%, transparent) !important;
+  border: 1px solid color-mix(in oklch, oklch(0.72 0.14 152) 35%, transparent);
+  color: oklch(0.92 0.02 152);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow:
+    0 4px 18px color-mix(in oklch, oklch(0.5 0.15 152) 30%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 12%, transparent);
+  transition: background 180ms ease-out, box-shadow 180ms ease-out;
+}
+html[data-ui-theme="default"][data-color-mode="light"] [data-glass-garden-cta] {
+  color: oklch(0.28 0.12 152);
+}
+html[data-ui-theme="default"] [data-glass-garden-cta]:hover {
+  background: color-mix(in oklch, oklch(0.62 0.15 152) 32%, transparent) !important;
+  box-shadow:
+    0 6px 22px color-mix(in oklch, oklch(0.5 0.15 152) 40%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 16%, transparent);
+}
+
+/* Section label inside sidebar (SidebarGroupLabel primitive). Keep
+   existing shadcn label styling but color-tune to our glass palette. */
+html[data-ui-theme="default"] [data-slot="sidebar-group-label"] {
+  color: var(--sidebar-section-label);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Focus-visible ring on glass sidebar items — primary-colored, offset
+   so it reads clearly on the translucent surface. */
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"]:focus-visible,
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Mobile Sheet — the same primitive renders on mobile via <Sheet>. Give
+   it the glass skin too, but keep its slide direction (right) intact. */
+html[data-ui-theme="default"] [data-mobile="true"][data-slot="sidebar"] {
+  background: var(--sidebar-glass-bg) !important;
+  border: 1px solid var(--sidebar-glass-border);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+/* Backdrop-filter fallback — fall back to opaque sidebar bg so content
+   remains legible on browsers without backdrop-filter support. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-ui-theme="default"][data-color-mode="dark"] {
+    --sidebar-glass-bg: rgba(20, 18, 16, 0.88);
+  }
+  html[data-ui-theme="default"][data-color-mode="light"] {
+    --sidebar-glass-bg: rgba(255, 255, 255, 0.92);
+  }
+}
+
+/* Reduced-motion guard — disable all sidebar transitions/animations
+   under default theme. Other themes use the shadcn baseline which
+   already respects reduced-motion via Tailwind. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-ui-theme="default"] [data-slot="sidebar-menu-button"],
+  html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"],
+  html[data-ui-theme="default"] [data-glass-icon-well],
+  html[data-ui-theme="default"] [data-glass-garden-cta] {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   MindSweep Release Ritual — ambient particle float
+   Used by SceneTile dots in mind-sweep-release-ritual.tsx.
+   Duration is overridden per-particle via --d.
+   ============================================================ */
+@keyframes ritual-float {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.55; }
+  50% { transform: translate3d(0, -8px, 0); opacity: 0.95; }
+}
+.ritual-float {
+  animation: ritual-float var(--d, 3.6s) ease-in-out infinite;
+}
+
+@keyframes ritual-wave-drift {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.ritual-wave-drift {
+  animation: ritual-wave-drift var(--d, 8s) linear infinite;
+}
+
+@keyframes ritual-leaf-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate3d(-30px, 120vh, 0) rotate(360deg); opacity: 0; }
+}
+.ritual-leaf-fall {
+  animation: ritual-leaf-fall var(--d, 6s) linear infinite;
+}
+
+@keyframes ritual-star-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes ritual-meteor {
+  0% { transform: translate3d(0, 0, 0) rotate(35deg) scaleX(0); opacity: 0; }
+  5% { opacity: 1; transform: translate3d(-20vw, 20vh, 0) rotate(35deg) scaleX(1); }
+  15% { opacity: 0; transform: translate3d(-60vw, 60vh, 0) rotate(35deg) scaleX(0); }
+  100% { opacity: 0; }
+}
+
+@keyframes ritual-dust-rise {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translate3d(20px, -60px, 0) rotate(180deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ritual-float, .ritual-wave-drift, .ritual-leaf-fall {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Liquid Glass Top Bar — default theme only
+   ----------------------------------------------------------------
+   Scoped to html[data-ui-theme="default"]. Other themes render the
+   same layout but rely on their own palette (bg-background etc.)
+   and DO NOT pick up these rules.
+   ============================================================ */
+/* Header shell: no panel behind pills — only SearchPill / badges carry glass. */
+html[data-ui-theme="default"] .topbar-glass,
+html[data-ui-theme="default"] .topbar-glass.topbar-scrolled {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: none;
+}
+
+/* Search pill — glass shell matches `.topbar-clock-trigger` (time pill). */
+html[data-ui-theme="default"] .topbar-search-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  transition:
+    background 160ms ease-out,
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-search-pill {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  color: rgba(15, 23, 42, 0.78);
+  box-shadow:
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+html[data-ui-theme="default"] .topbar-search-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-search-pill:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+html[data-ui-theme="default"] .topbar-search-pill:focus-visible,
+html[data-ui-theme="default"] .topbar-search-pill[data-open="true"] {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent),
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-search-pill:focus-visible,
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-search-pill[data-open="true"] {
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent),
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+html[data-ui-theme="default"] .topbar-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-kbd {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: rgba(15, 23, 42, 0.62);
+}
+
+/* Weather badge — same glass shell as `.topbar-clock-trigger`. */
+html[data-ui-theme="default"] .topbar-weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.10);
+  color: rgba(15, 23, 42, 0.92);
+  box-shadow:
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+/* Utility pill + buttons + divider */
+html[data-ui-theme="default"] .topbar-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 4px 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.10);
+  box-shadow:
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+html[data-ui-theme="default"] .topbar-pill-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.68);
+  background: transparent;
+  transition:
+    background 160ms ease-out,
+    color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+  flex-shrink: 0;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill-btn {
+  color: rgba(15, 23, 42, 0.70);
+}
+html[data-ui-theme="default"] .topbar-pill-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.96);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill-btn:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(15, 23, 42, 0.96);
+}
+html[data-ui-theme="default"] .topbar-pill-btn[data-active="true"] {
+  background: color-mix(in oklch, var(--primary) 22%, transparent);
+  color: var(--primary);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--primary) 28%, transparent);
+}
+html[data-ui-theme="default"] .topbar-pill-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+html[data-ui-theme="default"] .topbar-pill-btn svg {
+  width: 16px;
+  height: 16px;
+}
+html[data-ui-theme="default"] .topbar-pill-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill-divider {
+  background: rgba(15, 23, 42, 0.12);
+}
+
+/* Clock trigger pill */
+html[data-ui-theme="default"] .topbar-clock-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 160ms ease-out,
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-trigger {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.10);
+  color: rgba(15, 23, 42, 0.92);
+  box-shadow:
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+html[data-ui-theme="default"] .topbar-clock-trigger:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-trigger:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+html[data-ui-theme="default"] .topbar-clock-trigger[data-open="true"] {
+  border-color: color-mix(in oklch, var(--primary) 55%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--primary) 20%, transparent),
+    0 2px 12px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Clock panel */
+html[data-ui-theme="default"] .topbar-clock-panel {
+  width: min(320px, calc(100vw - 24px));
+  border-radius: 24px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-panel {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.10);
+  color: rgba(15, 23, 42, 0.92);
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+html[data-ui-theme="default"] .topbar-clock-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-tabs {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+html[data-ui-theme="default"] .topbar-clock-tab {
+  flex: 1 1 0;
+  height: 30px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.68);
+  background: transparent;
+  transition:
+    background 160ms ease-out,
+    color 160ms ease-out;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-tab {
+  color: rgba(15, 23, 42, 0.62);
+}
+html[data-ui-theme="default"] .topbar-clock-tab:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+html[data-ui-theme="default"] .topbar-clock-tab[data-active="true"] {
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.98);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-tab[data-active="true"] {
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+/* Command palette (global) — frosted glass: keep tint light so backdrop blur reads */
+html[data-ui-theme="default"] .topbar-palette {
+  border-radius: 20px;
+  background: rgba(18, 16, 14, 0.38);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.94);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-palette {
+  background: rgba(255, 255, 255, 0.52);
+  border-color: rgba(15, 23, 42, 0.14);
+  color: rgba(15, 23, 42, 0.92);
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+/* Backdrop-filter fallback */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-ui-theme="default"] .topbar-glass {
+    background: transparent;
+  }
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-glass {
+    background: transparent;
+  }
+  html[data-ui-theme="default"] .topbar-pill,
+  html[data-ui-theme="default"] .topbar-weather-badge,
+  html[data-ui-theme="default"] .topbar-search-pill,
+  html[data-ui-theme="default"] .topbar-clock-trigger {
+    background: rgba(30, 28, 26, 0.82);
+  }
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill,
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge,
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-search-pill,
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-trigger {
+    background: rgba(255, 255, 255, 0.88);
+  }
+  html[data-ui-theme="default"] .topbar-clock-panel {
+    background: rgba(20, 18, 16, 0.96);
+  }
+  html[data-ui-theme="default"] .topbar-palette {
+    background: rgba(20, 18, 16, 0.9);
+  }
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-clock-panel {
+    background: rgba(255, 255, 255, 0.96);
+  }
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-palette {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* Reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  html[data-ui-theme="default"] .topbar-glass,
+  html[data-ui-theme="default"] .topbar-search-pill,
+  html[data-ui-theme="default"] .topbar-weather-badge,
+  html[data-ui-theme="default"] .topbar-pill,
+  html[data-ui-theme="default"] .topbar-pill-btn,
+  html[data-ui-theme="default"] .topbar-clock-trigger,
+  html[data-ui-theme="default"] .topbar-clock-tab {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Non-default themes — neutral fallbacks so the NEW layout still
+   reads coherently under academia/astronaut/forest. No glass, just
+   subtle border + background from existing tokens. */
+html:not([data-ui-theme="default"]) .topbar-search-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+html:not([data-ui-theme="default"]) .topbar-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+html:not([data-ui-theme="default"]) .topbar-weather-badge,
+html:not([data-ui-theme="default"]) .topbar-pill,
+html:not([data-ui-theme="default"]) .topbar-clock-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 13px;
+}
+html:not([data-ui-theme="default"]) .topbar-pill {
+  gap: 2px;
+  padding: 4px 6px;
+  height: 40px;
+}
+html:not([data-ui-theme="default"]) .topbar-pill-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+html:not([data-ui-theme="default"]) .topbar-pill-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+html:not([data-ui-theme="default"]) .topbar-pill-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+html:not([data-ui-theme="default"]) .topbar-pill-btn svg {
+  width: 16px;
+  height: 16px;
+}
+html:not([data-ui-theme="default"]) .topbar-pill-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+html:not([data-ui-theme="default"]) .topbar-clock-panel {
+  width: min(320px, calc(100vw - 24px));
+  border-radius: 20px;
+  padding: 14px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+html:not([data-ui-theme="default"]) .topbar-clock-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 3px;
+  border-radius: 9999px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+}
+html:not([data-ui-theme="default"]) .topbar-clock-tab {
+  flex: 1 1 0;
+  height: 30px;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+html:not([data-ui-theme="default"]) .topbar-clock-tab[data-active="true"] {
+  background: var(--background);
+  color: var(--foreground);
+}
+html:not([data-ui-theme="default"]) .topbar-palette {
+  border-radius: 16px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+/* ============================================================
+   Calendar — liquid-glass accent layer
+   ----------------------------------------------------------------
+   Scoped to [data-calendar-surface] (any Calendar / Today / Orbital
+   root) so these tokens never leak to unrelated features. Builds on
+   top of the default theme's existing --surface-glass / --border-glass
+   / --shadow-glass primitives rather than duplicating them.
+
+   Reference: /liquid_glass_ui.md § 3 (color), § 6.1 (GlassPanel),
+              § 8.3 (dark glass variant), § 8.4 (lime CTA).
+   ============================================================ */
+
+[data-calendar-surface] {
+  /* Acid yellow-green accent from the spec (#C8E53A / #D4FF3A).
+     Used ONLY inside Calendar: Today date in Orbital, selected-day
+     bar in Minimal, primary CTA on AI Plan. */
+  --calendar-lime: #d4ff3a;
+  --calendar-lime-soft: rgba(212, 255, 58, 0.15);
+  --calendar-lime-glow: rgba(212, 255, 58, 0.35);
+
+  /* Dark-glass variant (spec § 8.3) — for Orbital canvas, AI Plan
+     inner panels, and the agenda card in Minimal view. Renders on
+     top of the ambient dark backdrop to feel like smoked glass. */
+  --calendar-glass-dark: rgba(10, 10, 12, 0.50);
+  --calendar-glass-dark-border: rgba(255, 255, 255, 0.10);
+
+  /* Orbital radial gradient — deep forest / teal, not pure black. */
+  --orbital-bg:
+    radial-gradient(ellipse 80% 70% at 50% 45%,
+      rgba(9, 54, 46, 0.80) 0%,
+      rgba(3, 16, 14, 0.95) 60%,
+      rgba(0, 0, 0, 0.98) 100%);
+}
+
+html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
+  /* In light mode, soften the lime so it still reads as an accent
+     rather than screaming neon. */
+  --calendar-lime: #8db308;
+  --calendar-lime-soft: rgba(141, 179, 8, 0.15);
+  --calendar-lime-glow: rgba(141, 179, 8, 0.30);
+  --calendar-glass-dark: rgba(245, 248, 240, 0.55);
+  --calendar-glass-dark-border: rgba(0, 0, 0, 0.08);
+  --orbital-bg:
+    radial-gradient(ellipse 80% 70% at 50% 45%,
+      rgba(216, 240, 228, 0.96) 0%,
+      rgba(184, 220, 210, 0.92) 55%,
+      rgba(148, 194, 180, 0.88) 100%);
+}
+
+/* Dark-glass panel helper — spec § 8.3. Use for Orbital canvas
+   container, AI Plan conflict / free-window cards, and the
+   persistent Agenda card in Minimal variant. */
+.calendar-glass-dark {
+  background: var(--calendar-glass-dark);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid var(--calendar-glass-dark-border);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Lime CTA helper — spec § 8.4. Applied via className on Button
+   primitives in the Calendar surfaces. */
+.calendar-lime-cta {
+  background: var(--calendar-lime);
+  color: #0d0d0d;
+  font-weight: 600;
+  border: none;
+  transition: filter 120ms ease-out, transform 120ms ease-out;
+}
+.calendar-lime-cta:hover {
+  filter: brightness(1.10);
+  transform: scale(1.02);
+}
+.calendar-lime-cta:active {
+  transform: scale(0.99);
+}
+
+/* Subtle pulse for the Orbital TODAY center circle. Disabled
+   under prefers-reduced-motion. */
+@keyframes orbital-today-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--calendar-lime-glow))
+            drop-shadow(0 0 16px var(--calendar-lime-soft));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px var(--calendar-lime-glow))
+            drop-shadow(0 0 28px var(--calendar-lime-glow));
+  }
+}
+.orbital-today-pulse {
+  animation: orbital-today-pulse 4s ease-in-out infinite;
+}
+
+/* Daily planner end-time hint when the range crosses midnight (icon + label). */
+@keyframes planner-crosses-day-hint-wobble {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-1.25px);
+  }
+  50% {
+    transform: translateY(1px);
+  }
+  75% {
+    transform: translateY(-0.5px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .planner-crosses-day-hint-wobble {
+    animation: planner-crosses-day-hint-wobble 2.35s ease-in-out infinite;
+  }
+}
+
+/* Orbital canvas container — deep galaxy photograph as backdrop, with
+   the radial-gradient fallback still resolvable for browsers that
+   fail to load the image or under print. Specular top-edge per spec
+   § 3 comes from the `.calendar-specular-highlight` helper. */
+.calendar-orbital-canvas {
+  position: relative;
+  background: var(--orbital-bg);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The <img> sits absolutely, slightly over-sized so parallax
+   translation never exposes the backdrop's edge. */
+.calendar-orbital-canvas [data-orbital-galaxy] {
+  position: absolute;
+  inset: -4% -4%;
+  width: 108%;
+  height: 108%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.92;
+  /* Light desaturation + contrast bump so the galaxy reads as backdrop,
+     not foreground — UI elements stay legible on top. */
+  filter: saturate(0.85) brightness(0.88) contrast(1.08);
+  /* 0.6× of the pan offset — subtle drift of the backdrop. */
+  transform: translate3d(
+    calc(var(--pan-x, 0) * 0.6),
+    calc(var(--pan-y, 0) * 0.6),
+    0
+  );
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+}
+
+/* Subtle darkening vignette so the centre is always the darkest
+   region — keeps the glowing TODAY circle high-contrast regardless
+   of where the galaxy image places its core. */
+.calendar-orbital-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 58% 50% at 50% 50%,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.10) 55%,
+      rgba(0, 0, 0, 0) 100%);
+}
+
+/* Parallax-aware decorative rings — slower pan speed than the
+   galaxy for perceived depth. */
+.calendar-orbital-canvas [data-orbital-rings] {
+  transform: translate3d(
+    calc(var(--pan-x, 0) * 0.2),
+    calc(var(--pan-y, 0) * 0.2),
+    0
+  );
+  transition: transform 0.2s ease-out;
+}
+
+/* Bubbles pan very slightly in the FOREGROUND direction — just a
+   whisper of motion so the parallax reads as depth, not sway. */
+.calendar-orbital-canvas [data-orbital-bubbles] {
+  transform: translate3d(
+    calc(var(--pan-x, 0) * -0.08),
+    calc(var(--pan-y, 0) * -0.08),
+    0
+  );
+  transition: transform 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-orbital-canvas [data-orbital-galaxy],
+  .calendar-orbital-canvas [data-orbital-rings],
+  .calendar-orbital-canvas [data-orbital-bubbles] {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Specular highlight helper — the faint top-edge sheen from spec
+   § 3 "specular highlight". Apply via className on secondary
+   floating surfaces where the default inset shadow is too faint. */
+.calendar-specular-highlight {
+  position: relative;
+}
+.calendar-specular-highlight::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .orbital-today-pulse { animation: none !important; }
+  .calendar-lime-cta { transition: none !important; }
+}
+
+/* Quote Library — cinematic thumbnail shimmer (used by QuoteCardThumbnail
+   while a Gemini-generated background is still being rendered). Soft
+   diagonal sweep over the deterministic fallback gradient so the card
+   never feels static, but does not steal attention from the quote itself. */
+.quote-thumb-shimmer {
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: quote-thumb-shimmer-anim 2.4s linear infinite;
+}
+@keyframes quote-thumb-shimmer-anim {
+  0% { background-position: -120% 0; }
+  100% { background-position: 120% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quote-thumb-shimmer { animation: none !important; }
+}
+
+/* ============================================================
+   Daily Planner — time summary image glass cards
+   ============================================================ */
+.time-summary-card {
+  isolation: isolate;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.time-summary-card__image-layer {
+  position: absolute;
+  inset: -8%;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition:
+    transform 260ms ease,
+    opacity 260ms ease,
+    filter 260ms ease;
+  filter: saturate(1.02) brightness(1) contrast(1.04);
+}
+
+.time-summary-card__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(2, 6, 23, 0) 0%, rgba(2, 6, 23, 0.08) 55%, rgba(2, 6, 23, 0.14) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.09) 0%, rgba(0, 0, 0, 0.06) 42%, rgba(0, 0, 0, 0.18) 100%);
+}
+
+/* Thin tint only — no backdrop blur (keeps photo sharp). */
+.time-summary-card__glass {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 40%, rgba(0, 0, 0, 0.04) 100%);
+}
+
+.time-summary-card--glass-medium .time-summary-card__glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 35%, rgba(0, 0, 0, 0.07) 100%);
+}
+
+.time-summary-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.time-summary-card:hover .time-summary-card__image-layer {
+  filter: saturate(1.02) brightness(1.02) contrast(1.05);
+}
+
+/* Legibility without frosted glass: soft shadow on typography. */
+.time-summary-card__content {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 0 16px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .time-summary-card,
+  .time-summary-card__image-layer {
+    transition: none !important;
+  }
+}

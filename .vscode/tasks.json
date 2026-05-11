@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "My Life OS: Dev",
+        "detail": "next dev on port 3000. In Cursor browser open http://127.0.0.1:3000",
+        "type": "shell",
+        "command": "npm run dev",
+        "options": {
+          "cwd": "${workspaceFolder}/app"
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated",
+          "focus": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "My Life OS: Dev (Cursor — 127.0.0.1:3490)",
+        "detail": "Alternate host/port for Cursor’s browser if localhost:3000 fails. Open http://127.0.0.1:3490",
+        "type": "shell",
+        "command": "npm run dev:cursor",
+        "options": {
+          "cwd": "${workspaceFolder}/app"
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated",
+          "focus": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Deploy to Vercel (Production)",
+        "detail": "From repo root (Vercel Root Directory = app). Do not run CLI inside app/ or path becomes app/app.",
+        "type": "shell",
+        "command": "vercel --prod --yes",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new",
+          "focus": true
+        },
+        "problemMatcher": []
+      }
+    ]
+  }
+  

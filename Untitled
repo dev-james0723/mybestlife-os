@@ -1,0 +1,436 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * =========================================================
+ * CONFIG
+ * =========================================================
+ */
+const CONFIG = {
+  AUTH_FILE: 'auth.json',
+  OUTPUT_DIR: 'site_capture_output',
+  PAGE_TIMEOUT: 60000,
+  WAIT_AFTER_LOAD: 2000,
+
+  DESKTOP_VIEWPORT: { width: 1440, height: 900 },
+  MOBILE_DEVICE: devices['iPhone 13'],
+
+  AUTO_SCROLL_STEP: 500,
+  AUTO_SCROLL_DELAY: 300,
+  SEGMENT_OVERLAP: 120,
+
+  CAPTURE_DESKTOP: true,
+  CAPTURE_MOBILE: true,
+  CAPTURE_SEGMENTS: true,
+  SAVE_HTML: true,
+  SAVE_TEXT: true,
+  HEADLESS: true,
+};
+
+/**
+ * =========================================================
+ * IMPORTANT:
+ * 手動列出你想 capture 嘅已登入頁面
+ * 呢個比 auto crawl 更穩，特別適合 web app
+ * =========================================================
+ */
+const MANUAL_URLS = [
+  'https://6973a91f1b2e3fec91aa1006.blocks-app.diy/Dashboard',
+  'https://6973a91f1b2e3fec91aa1006.blocks-app.diy/Goals',
+  // 你可以繼續加：
+  // 'https://6973a91f1b2e3fec91aa1006.blocks-app.diy/Calendar',
+  // 'https://6973a91f1b2e3fec91aa1006.blocks-app.diy/Tasks',
+  // 'https://6973a91f1b2e3fec91aa1006.blocks-app.diy/Habits',
+  // 'https://6973a91f1b2e3fec91aa1006.blocks-app.diy/Profile',
+];
+
+/**
+ * =========================================================
+ * DIRECTORIES
+ * =========================================================
+ */
+const DIRS = {
+  root: CONFIG.OUTPUT_DIR,
+  desktop: path.join(CONFIG.OUTPUT_DIR, 'screenshots', 'desktop'),
+  mobile: path.join(CONFIG.OUTPUT_DIR, 'screenshots', 'mobile'),
+  segments: path.join(CONFIG.OUTPUT_DIR, 'screenshots', 'segments'),
+  html: path.join(CONFIG.OUTPUT_DIR, 'html'),
+  text: path.join(CONFIG.OUTPUT_DIR, 'text'),
+};
+
+/**
+ * =========================================================
+ * HELPERS
+ * =========================================================
+ */
+function ensureDir(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function ensureAllDirs() {
+  Object.values(DIRS).forEach(ensureDir);
+}
+
+function writeJson(filePath, data) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+function writeText(filePath, text) {
+  fs.writeFileSync(filePath, text, 'utf-8');
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function sanitizeFilename(input) {
+  return input
+    .replace(/^https?:\/\//, '')
+    .replace(/[\/:?&=#%"<>|\\*\s]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 180);
+}
+
+function normalizeUrl(url) {
+  try {
+    const u = new URL(url);
+    u.hash = '';
+    let normalized = u.toString();
+    if (normalized.endsWith('/')) {
+      normalized = normalized.slice(0, -1);
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+async function waitForPageStable(page) {
+  try {
+    await page.waitForLoadState('networkidle', { timeout: CONFIG.PAGE_TIMEOUT });
+  } catch {
+    // 有啲 app 永遠都未必真正 idle，唔需要硬等死
+  }
+  await page.waitForTimeout(CONFIG.WAIT_AFTER_LOAD);
+}
+
+async function autoScrollToBottom(page) {
+  await page.evaluate(
+    async ({ step, delay }) => {
+      await new Promise((resolve) => {
+        let totalHeight = 0;
+        let lastScrollHeight = 0;
+        let stableRounds = 0;
+
+        const timer = setInterval(() => {
+          const scrollHeight = Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight
+          );
+
+          window.scrollBy(0, step);
+          totalHeight += step;
+
+          const currentScrollHeight = Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight
+          );
+
+          if (currentScrollHeight === lastScrollHeight) {
+            stableRounds += 1;
+          } else {
+            stableRounds = 0;
+          }
+
+          lastScrollHeight = currentScrollHeight;
+
+          if (totalHeight >= currentScrollHeight || stableRounds >= 3) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, delay);
+      });
+    },
+    {
+      step: CONFIG.AUTO_SCROLL_STEP,
+      delay: CONFIG.AUTO_SCROLL_DELAY,
+    }
+  );
+
+  await page.waitForTimeout(1000);
+}
+
+async function scrollBackToTop(page) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(1000);
+}
+
+async function extractVisibleText(page) {
+  return await page.evaluate(() => {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const lines = [];
+    let node;
+
+    while ((node = walker.nextNode())) {
+      const text = node.textContent.replace(/\s+/g, ' ').trim();
+      if (text) lines.push(text);
+    }
+
+    return lines.join('\n');
+  });
+}
+
+async function saveHtmlAndText(page, urlKey) {
+  if (CONFIG.SAVE_HTML) {
+    const html = await page.content();
+    writeText(path.join(DIRS.html, `${urlKey}.html`), html);
+  }
+
+  if (CONFIG.SAVE_TEXT) {
+    const text = await extractVisibleText(page);
+    writeText(path.join(DIRS.text, `${urlKey}.txt`), text);
+  }
+}
+
+async function captureSegmentedScreenshots(page, baseName) {
+  if (!CONFIG.CAPTURE_SEGMENTS) return [];
+
+  const segmentPaths = [];
+
+  const metrics = await page.evaluate(() => {
+    const body = document.body;
+    const html = document.documentElement;
+
+    return {
+      totalHeight: Math.max(
+        body.scrollHeight,
+        body.offsetHeight,
+        html.clientHeight,
+        html.scrollHeight,
+        html.offsetHeight
+      ),
+      viewportHeight: window.innerHeight,
+    };
+  });
+
+  const { totalHeight, viewportHeight } = metrics;
+
+  let y = 0;
+  let index = 1;
+
+  while (y < totalHeight) {
+    await page.evaluate(scrollY => window.scrollTo(0, scrollY), y);
+    await page.waitForTimeout(700);
+
+    const filename = `${baseName}__segment_${String(index).padStart(3, '0')}.png`;
+    const outputPath = path.join(DIRS.segments, filename);
+
+    await page.screenshot({ path: outputPath });
+    segmentPaths.push(outputPath);
+
+    const increment = Math.max(200, viewportHeight - CONFIG.SEGMENT_OVERLAP);
+    y += increment;
+    index++;
+
+    if (index > 300) break;
+  }
+
+  await scrollBackToTop(page);
+  return segmentPaths;
+}
+
+async function captureDesktopPage(page, url) {
+  const normalizedUrl = normalizeUrl(url);
+  const key = sanitizeFilename(normalizedUrl);
+
+  const result = {
+    url: normalizedUrl,
+    key,
+    pageTitle: '',
+    capturedAt: nowIso(),
+    desktopScreenshot: null,
+    mobileScreenshot: null,
+    segmentScreenshots: [],
+    success: false,
+    error: null,
+  };
+
+  try {
+    await page.goto(normalizedUrl, {
+      waitUntil: 'domcontentloaded',
+      timeout: CONFIG.PAGE_TIMEOUT,
+    });
+
+    await waitForPageStable(page);
+    await autoScrollToBottom(page);
+    await scrollBackToTop(page);
+    await waitForPageStable(page);
+
+    result.pageTitle = await page.title().catch(() => '');
+
+    await saveHtmlAndText(page, key);
+
+    if (CONFIG.CAPTURE_DESKTOP) {
+      const desktopPath = path.join(DIRS.desktop, `${key}.png`);
+      await page.screenshot({
+        path: desktopPath,
+        fullPage: true,
+      });
+      result.desktopScreenshot = desktopPath;
+    }
+
+    result.segmentScreenshots = await captureSegmentedScreenshots(page, key);
+    result.success = true;
+  } catch (error) {
+    result.error = error.message || String(error);
+  }
+
+  return result;
+}
+
+async function captureMobilePage(browser, url) {
+  if (!CONFIG.CAPTURE_MOBILE) return null;
+
+  const normalizedUrl = normalizeUrl(url);
+  const key = sanitizeFilename(normalizedUrl);
+  const outputPath = path.join(DIRS.mobile, `${key}__mobile.png`);
+
+  const mobileContext = await browser.newContext({
+    ...CONFIG.MOBILE_DEVICE,
+    storageState: CONFIG.AUTH_FILE,
+  });
+
+  const mobilePage = await mobileContext.newPage();
+
+  try {
+    await mobilePage.goto(normalizedUrl, {
+      waitUntil: 'domcontentloaded',
+      timeout: CONFIG.PAGE_TIMEOUT,
+    });
+
+    await waitForPageStable(mobilePage);
+    await autoScrollToBottom(mobilePage);
+    await scrollBackToTop(mobilePage);
+    await waitForPageStable(mobilePage);
+
+    await mobilePage.screenshot({
+      path: outputPath,
+      fullPage: true,
+    });
+
+    await mobileContext.close();
+    return outputPath;
+  } catch (error) {
+    await mobileContext.close();
+    return null;
+  }
+}
+
+/**
+ * =========================================================
+ * OPTIONAL:
+ * 如果你想順便記錄 sidebar / nav links，可開呢個 function
+ * 但唔好指望佢會取代手動 URL 列表
+ * =========================================================
+ */
+async function extractVisibleLinks(page) {
+  try {
+    const links = await page.$$eval('a[href]', anchors =>
+      anchors.map(a => ({
+        text: (a.innerText || '').trim(),
+        href: a.href || '',
+      }))
+    );
+
+    return links.filter(item => item.href);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * =========================================================
+ * MAIN
+ * =========================================================
+ */
+async function main() {
+  ensureAllDirs();
+
+  if (!fs.existsSync(CONFIG.AUTH_FILE)) {
+    console.error(`Missing ${CONFIG.AUTH_FILE}. Please run login-save-session.js first.`);
+    process.exit(1);
+  }
+
+  const browser = await chromium.launch({
+    headless: CONFIG.HEADLESS,
+  });
+
+  const desktopContext = await browser.newContext({
+    viewport: CONFIG.DESKTOP_VIEWPORT,
+    storageState: CONFIG.AUTH_FILE,
+  });
+
+  const page = await desktopContext.newPage();
+
+  const manifest = {
+    startedAt: nowIso(),
+    finishedAt: null,
+    authFile: CONFIG.AUTH_FILE,
+    pages: [],
+    errors: [],
+    stats: {
+      totalRequested: MANUAL_URLS.length,
+      successCount: 0,
+      errorCount: 0,
+    },
+  };
+
+  try {
+    for (const rawUrl of MANUAL_URLS) {
+      const currentUrl = normalizeUrl(rawUrl);
+      if (!currentUrl) continue;
+
+      console.log(`Capturing: ${currentUrl}`);
+
+      const pageResult = await captureDesktopPage(page, currentUrl);
+
+      if (pageResult.success) {
+        pageResult.mobileScreenshot = await captureMobilePage(browser, currentUrl);
+        pageResult.visibleLinks = await extractVisibleLinks(page);
+        manifest.stats.successCount += 1;
+      } else {
+        manifest.stats.errorCount += 1;
+        manifest.errors.push({
+          url: currentUrl,
+          error: pageResult.error,
+        });
+      }
+
+      manifest.pages.push(pageResult);
+      writeJson(path.join(DIRS.root, 'manifest.json'), manifest);
+    }
+  } catch (error) {
+    manifest.errors.push({
+      url: 'GLOBAL',
+      error: error.message || String(error),
+    });
+  } finally {
+    manifest.finishedAt = nowIso();
+    writeJson(path.join(DIRS.root, 'manifest.json'), manifest);
+
+    await desktopContext.close();
+    await browser.close();
+  }
+
+  console.log('Done.');
+  console.log(`Output folder: ${CONFIG.OUTPUT_DIR}`);
+  console.log(`Requested pages: ${manifest.stats.totalRequested}`);
+  console.log(`Success: ${manifest.stats.successCount}`);
+  console.log(`Failed: ${manifest.stats.errorCount}`);
+}
+
+main().catch(error => {
+  console.error('Fatal error:', error);
+});

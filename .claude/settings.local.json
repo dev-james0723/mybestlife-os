@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude update *)",
+      "Skill(update-config)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs kill *)",
+      "Bash(brew reinstall *)",
+      "mcp__Claude_in_Chrome__navigate",
+      "Bash(node -e ' *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npx eslint *)",
+      "Bash(echo \"EXIT-grep=$?\")",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "mcp__Claude_in_Chrome__read_console_messages",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "Bash(grep -n \"^};$\\\\|^const \\\\|^export const\" /Users/ouxianxing/My_life_os/app/src/lib/i18n/daily-planner-ui.ts /Users/ouxianxing/My_life_os/app/src/lib/i18n/daily-planner-locale-ja-ko.ts /Users/ouxianxing/My_life_os/app/src/lib/i18n/daily-planner-locale-fr-es-vi-it.ts)",
+      "Bash(grep *)",
+      "Bash(awk 'NR>=185 && NR<=190 {printf \"%s|\", $0; print \"\"}' /Users/ouxianxing/My_life_os/app/src/lib/i18n/daily-planner-locale-fr-es-vi-it.ts)",
+      "Bash(xxd)",
+      "Bash(supabase --version)",
+      "Bash(supabase status *)",
+      "Bash(supabase projects *)",
+      "Bash(npm install *)",
+      "Bash(npx vitest *)",
+      "Bash(echo \"TSC=$?\")",
+      "Bash(echo \"LINT=$?\")",
+      "Bash(echo \"BUILD=$?\")",
+      "Bash(echo \"TESTS=$?\")"
+    ]
+  }
+}
