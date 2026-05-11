@@ -61,3 +61,19 @@ def upload_tree_under_prefix(
             raise RuntimeError(f"storage_upload_failed:{dest[:120]}:{type(e).__name__}") from e
     log.info("[mineru-worker] storage_upload_done files=%s prefix_tail=%s", count, prefix[-80:])
     return count
+
+
+def upload_storage_object(
+    *,
+    client: Client,
+    storage_path: str,
+    data: bytes,
+    content_type: str,
+) -> None:
+    """Upload a single object (e.g. manifest.json) with upsert."""
+    dest = storage_path.strip().strip("/")
+    client.storage.from_(_BUCKET).upload(
+        dest,
+        data,
+        {"content-type": content_type, "upsert": "true"},
+    )

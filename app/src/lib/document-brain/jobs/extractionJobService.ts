@@ -14,10 +14,16 @@ export type WorkerJobStatusPayload = {
   output_base_path?: string | null;
   error_code?: string | null;
   error_message?: string | null;
-  /** MinerU markdown excerpt or full text for Doc Oracle summary (optional). */
+  /** Short executive overview for `document_analyses.summary` (not the full document). */
   document_summary?: string | null;
+  /** Cleaned markdown for `knowledge_items.raw_content` when the worker materialized Doc Oracle. */
+  kb_raw_content?: string | null;
   total_pages?: number | null;
   parser_version?: string | null;
+  document_type?: string | null;
+  language?: string | null;
+  /** Supabase Storage path to `manifest.json` under the document prefix. */
+  manifest_storage_path?: string | null;
 };
 
 export async function insertQueuedExtractionJob(input: {
@@ -163,8 +169,11 @@ export async function applyWorkerJobStatus(
       userId: payload.user_id,
       documentId: payload.document_id,
       documentSummary: payload.document_summary ?? null,
+      kbRawContent: payload.kb_raw_content ?? null,
       totalPages: payload.total_pages ?? null,
       parserVersion: payload.parser_version ?? null,
+      documentType: payload.document_type ?? null,
+      language: payload.language ?? null,
     });
   }
 
@@ -271,8 +280,11 @@ async function upsertAnalysisAndMarkItemReady(
     userId: string;
     documentId: string;
     documentSummary?: string | null;
+    kbRawContent?: string | null;
     totalPages?: number | null;
     parserVersion?: string | null;
+    documentType?: string | null;
+    language?: string | null;
   },
 ): Promise<void> {
   const now = new Date().toISOString();
@@ -295,6 +307,7 @@ async function upsertAnalysisAndMarkItemReady(
     .maybeSingle();
 
   const trimmedSummary = input.documentSummary?.trim() ?? "";
+  const trimmedKb = input.kbRawContent?.trim() ?? "";
   const hasMineruBody = trimmedSummary.length > 0;
   const summary = hasMineruBody
     ? trimmedSummary.slice(0, 50000)
@@ -306,13 +319,20 @@ async function upsertAnalysisAndMarkItemReady(
       ? input.totalPages
       : 0;
 
+  const fp =
+    ki && typeof ki === "object" && "file_path" in ki && typeof (ki as { file_path?: unknown }).file_path === "string"
+      ? (ki as { file_path: string }).file_path
+      : "";
+  const inferredType = inferDocumentTypeFromPath(fp);
+
   const analysisPayload = {
     user_id: input.userId,
     document_id: input.documentId,
     parser: "mineru",
     parser_version: parserVersion,
     document_title: title,
-    document_type: "pdf",
+    document_type: (input.documentType?.trim() || inferredType).slice(0, 64),
+    language: input.language?.trim() || null,
     total_pages: totalPages,
     summary,
     status: "completed" as const,
@@ -335,11 +355,27 @@ async function upsertAnalysisAndMarkItemReady(
     ask_enabled: true,
     date_modified: now,
   };
-  if (hasMineruBody) {
+  if (trimmedKb.length > 0) {
+    itemUpdate.raw_content = trimmedKb.slice(0, 100000);
+  } else if (hasMineruBody) {
     itemUpdate.raw_content = trimmedSummary.slice(0, 100000);
   }
 
   await admin.from("knowledge_items").update(itemUpdate).eq("id", input.documentId).eq("user_id", input.userId);
+}
+
+function inferDocumentTypeFromPath(filePath: string): string {
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith(".pdf")) return "pdf";
+  if (lower.endsWith(".docx")) return "docx";
+  if (lower.endsWith(".doc")) return "doc";
+  if (lower.endsWith(".pptx")) return "pptx";
+  if (lower.endsWith(".ppt")) return "ppt";
+  if (lower.endsWith(".xlsx")) return "xlsx";
+  if (lower.endsWith(".xls")) return "xls";
+  if (lower.endsWith(".csv")) return "csv";
+  if (/\.(png|jpe?g|webp|gif)$/i.test(lower)) return "image";
+  return "document";
 }
 
 export async function retryExtractionJobForUser(jobId: string, userId: string): Promise<void> {

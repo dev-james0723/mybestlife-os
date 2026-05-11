@@ -55,9 +55,14 @@ export async function POST(req: Request) {
   }
 
   const document_summary = typeof o.document_summary === "string" ? o.document_summary : null;
+  const kb_raw_content = typeof o.kb_raw_content === "string" ? o.kb_raw_content : null;
   const total_pages =
     typeof o.total_pages === "number" && Number.isFinite(o.total_pages) ? Math.trunc(o.total_pages) : null;
   const parser_version = typeof o.parser_version === "string" ? o.parser_version.trim() : null;
+  const document_type = typeof o.document_type === "string" ? o.document_type.trim() : null;
+  const language = typeof o.language === "string" ? o.language.trim() : null;
+  const manifest_storage_path =
+    typeof o.manifest_storage_path === "string" ? o.manifest_storage_path.trim() : null;
 
   const payload: WorkerJobStatusPayload = {
     job_id,
@@ -70,8 +75,12 @@ export async function POST(req: Request) {
     error_code: typeof o.error_code === "string" ? o.error_code : null,
     error_message: typeof o.error_message === "string" ? o.error_message : null,
     document_summary,
+    kb_raw_content,
     total_pages,
     parser_version,
+    document_type,
+    language,
+    manifest_storage_path,
   };
 
   const result = await applyWorkerJobStatus(payload, { workerSecretValid });

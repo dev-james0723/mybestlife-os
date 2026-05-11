@@ -10,10 +10,12 @@ from pathlib import Path
 
 import httpx
 
+from .docoracle_normalizer import DocOracleNormalizationError, normalize_doc_oracle
 from .download_input import DownloadError, download_signed_pdf
+from .mineru_artifact_inspector import inspect_mineru_output
 from .mineru_engine import MinerUOfficialApiError, get_engine_provider, model_version, run_official_api_extract
 from .mineru_runner import MinerUCliError, assert_mineru_cli_available, pick_primary_markdown, run_mineru_cli
-from .storage_sync import get_supabase_client, upload_tree_under_prefix
+from .storage_sync import get_supabase_client, upload_storage_object, upload_tree_under_prefix
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +102,7 @@ async def run_extraction_job(body: dict) -> None:
         if not callback_url or not secret:
             log.error("[mineru-worker] callback_missing_env cannot_notify job_id=%s", job_id)
             return False, 0, "callback_env_missing"
-        async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as c:
+        async with httpx.AsyncClient(timeout=300.0, follow_redirects=True) as c:
             return await post_job_callback(client=c, callback_url=callback_url, secret=secret, payload=pl)
 
     if not base or not secret:
@@ -268,8 +270,24 @@ async def run_extraction_job(body: dict) -> None:
 
         await send(
             "normalizing",
+            progress=55,
+            current_stage="Inspecting MinerU output",
+            output_base_path=output_base_path,
+        )
+
+        manifest = await asyncio.to_thread(inspect_mineru_output, output_dir)
+        log.info(
+            "[mineru-worker] manifest_ready job_id=%s primary_md=%s images=%s est_pages=%s",
+            job_id,
+            manifest.get("primary_markdown_path"),
+            len(manifest.get("image_files") or []),
+            manifest.get("estimated_total_pages"),
+        )
+
+        await send(
+            "normalizing",
             progress=70,
-            current_stage="Uploading MinerU outputs to storage",
+            current_stage="Uploading MinerU artifacts",
             output_base_path=output_base_path,
         )
 
@@ -297,17 +315,118 @@ async def run_extraction_job(body: dict) -> None:
 
         log.info("[mineru-worker] upload_completed job_id=%s files=%s provider=%s", job_id, n, provider)
 
-        summary_text = md_path.read_text(encoding="utf-8", errors="replace")[:12000]
+        manifest_dest = f"{output_base_path.rstrip('/')}/mineru/manifest.json"
+        try:
+            sb2 = get_supabase_client()
+            await asyncio.to_thread(
+                upload_storage_object,
+                client=sb2,
+                storage_path=manifest_dest,
+                data=__import__("json")
+                .dumps(manifest, ensure_ascii=False, indent=2)
+                .encode("utf-8"),
+                content_type="application/json",
+            )
+        except Exception as e:
+            log.exception("[mineru-worker] manifest_upload_failed job_id=%s", job_id)
+            await send(
+                "failed",
+                progress=0,
+                current_stage=None,
+                output_base_path=output_base_path,
+                error_code="manifest_upload_failed",
+                error_message=f"{type(e).__name__}: {str(e)}"[:2000],
+            )
+            return
+
+        await send(
+            "normalizing",
+            progress=80,
+            current_stage="Normalizing Doc Oracle data",
+            output_base_path=output_base_path,
+        )
+
         parser_ver = _parser_version_label(provider)
+        input_storage_path = str(body.get("input_storage_path") or "")
+
+        try:
+            sb3 = get_supabase_client()
+            title_res = (
+                sb3.table("knowledge_items")
+                .select("title")
+                .eq("id", document_id)
+                .eq("user_id", user_id)
+                .limit(1)
+                .execute()
+            )
+            doc_title = "Document"
+            if title_res.data and isinstance(title_res.data[0], dict):
+                t = title_res.data[0].get("title")
+                if isinstance(t, str) and t.strip():
+                    doc_title = t.strip()[:500]
+
+            norm_stats = await asyncio.to_thread(
+                normalize_doc_oracle,
+                client=sb3,
+                user_id=user_id,
+                document_id=document_id,
+                output_base_path=output_base_path,
+                output_dir=output_dir,
+                manifest=manifest,
+                parser_version=parser_ver,
+                document_title=doc_title,
+                input_storage_path=input_storage_path,
+                total_pages_hint=total_pages,
+            )
+        except DocOracleNormalizationError as e:
+            log.exception("[mineru-worker] docoracle_normalization_failed job_id=%s", job_id)
+            await send(
+                "failed",
+                progress=0,
+                current_stage=None,
+                output_base_path=output_base_path,
+                error_code="docoracle_normalization_failed",
+                error_message=str(e)[:2000],
+            )
+            return
+        except Exception as e:
+            log.exception("[mineru-worker] docoracle_normalization_unhandled job_id=%s", job_id)
+            await send(
+                "failed",
+                progress=0,
+                current_stage=None,
+                output_base_path=output_base_path,
+                error_code="docoracle_normalization_failed",
+                error_message=f"{type(e).__name__}: {str(e)}"[:2000],
+            )
+            return
+
+        await send(
+            "normalizing",
+            progress=90,
+            current_stage="Building pages, sections, chunks, visuals, glossary",
+            output_base_path=output_base_path,
+        )
+
+        executive = str(norm_stats.get("executive_summary") or "")[:8000]
+        kb_raw = str(norm_stats.get("kb_raw_content") or "")[:100_000]
+        pages_out = int(norm_stats.get("total_pages") or total_pages or 0)
+        doc_type_out = str(norm_stats.get("document_type") or "document")[:64]
+        lang_out = norm_stats.get("language")
+        lang_s = str(lang_out)[:32] if lang_out else None
 
         ok, st, _detail = await send(
             "completed",
             progress=100,
-            current_stage="MinerU extraction finished",
+            current_stage="Completed",
             output_base_path=output_base_path,
-            document_summary=summary_text,
-            total_pages=total_pages,
+            document_summary=executive,
+            kb_raw_content=kb_raw,
+            total_pages=pages_out,
             parser_version=parser_ver,
+            manifest_storage_path=manifest_dest,
+            document_type=doc_type_out,
+            language=lang_s,
         )
         if ok:
             log.info(
