@@ -21,6 +21,26 @@ export type MinerUDispatchPayload = {
   parserMode?: string | null;
 };
 
+/** JSON body shape from the MinerU worker (legacy versions may return ok:false with HTTP 200). */
+type MineruWorkerResponseJson = {
+  ok?: boolean;
+  warning?: string;
+  callback_status?: number;
+  body?: string;
+  error?: string;
+  hint?: string;
+};
+
+function tryParseMineruWorkerJson(raw: string): MineruWorkerResponseJson | null {
+  try {
+    const v = JSON.parse(raw) as unknown;
+    if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+    return v as MineruWorkerResponseJson;
+  } catch {
+    return null;
+  }
+}
+
 export function isMinerUHttpConfigured(): boolean {
   return Boolean(
     process.env.MINERU_API_URL?.trim() &&
@@ -69,27 +89,14 @@ export async function dispatchMinerUExtractionHttp(
   }
 
   const rawText = await res.text().catch(() => "");
-
-  let parsed: {
-    ok?: boolean;
-    warning?: string;
-    callback_status?: number;
-    body?: string;
-    error?: string;
-    hint?: string;
-  } | null = null;
-  try {
-    parsed = JSON.parse(rawText) as typeof parsed;
-  } catch {
-    /* non-JSON body */
-  }
+  const parsed = tryParseMineruWorkerJson(rawText);
 
   if (!res.ok) {
     return { ok: false, status: res.status, error: rawText.slice(0, 500) };
   }
 
   // Older worker versions returned HTTP 200 with ok:false or callback_skipped warning while the job never completed.
-  if (parsed && typeof parsed === "object") {
+  if (parsed) {
     if (parsed.ok === false) {
       const detail =
         typeof parsed.body === "string" && parsed.body.trim()
