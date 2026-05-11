@@ -25,6 +25,7 @@ import {
   tryFetchYoutubeTranscriptText,
   tryGeminiYoutubeTranscript,
 } from "@/lib/knowledge/youtube-transcript";
+import type { DocumentBrainJobSummary } from "@/lib/document-brain/map-extraction-job-row";
 import { parseGitHubRepoUrl } from "@/lib/knowledge/github-readme";
 import { classifyKnowledgeInput, classifyUrl } from "@/lib/knowledge/classify";
 import {
@@ -916,15 +917,15 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
       parserMode: process.env.MINERU_PARSER_MODE?.trim() || null,
     });
 
-    let documentBrainJob = {
+    let documentBrainJob: DocumentBrainJobSummary = {
       id: job.id,
-      status: "queued" as const,
+      status: "queued",
       progress: 0,
       currentStage: "Queued for MinerU worker",
       parser: "mineru",
       retryCount: 0,
       maxRetries: 3,
-      errorMessage: null as string | null,
+      errorMessage: null,
       createdAt: new Date().toISOString(),
     };
 
