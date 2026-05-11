@@ -1,12 +1,27 @@
+import logging
 import os
-from fastapi import FastAPI, Header
+from contextlib import asynccontextmanager
+
+from fastapi import BackgroundTasks, FastAPI, Header
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .auth import require_worker_secret
-from .mineru_runner import run_mineru_stub
+from .extraction_pipeline import run_extraction_job
 
-app = FastAPI(title="MyLifeOS MinerU Worker", version="0.1.0")
+log = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s %(name)s %(message)s",
+    )
+    yield
+
+
+app = FastAPI(title="MyLifeOS MinerU Worker", version="0.2.0", lifespan=lifespan)
 
 
 def _origin_with_scheme(raw: str) -> str:
@@ -38,16 +53,23 @@ def health():
 @app.post("/v1/extract")
 async def extract(
     body: ExtractBody,
+    background_tasks: BackgroundTasks,
     authorization: str | None = Header(default=None),
 ):
     require_worker_secret(authorization)
-    # Stub: skip download / MinerU; real implementation would stream progress updates.
-    _ = body.signed_input_url
-    run_mineru_stub(output_base_path=body.output_base_path)
 
-    # Where the Next app receives POST /api/document-brain/worker/job-status.
-    # Prefer WORKER_CALLBACK_APP_URL on the worker (e.g. https://www.mybestlife-os.com) so
-    # production workers are not tied to NEXT_PUBLIC_* naming.
+    has_signed = bool(body.signed_input_url and body.signed_input_url.strip())
+    log.info(
+        "[mineru-worker] /v1/extract job_id=%s document_id=%s user_id=%s signed_input_url_present=%s "
+        "output_base_path_tail=%s input_storage_path_tail=%s",
+        body.job_id,
+        body.document_id,
+        body.user_id,
+        has_signed,
+        body.output_base_path[-80:] if body.output_base_path else "",
+        body.input_storage_path[-80:] if body.input_storage_path else "",
+    )
+
     raw_base = (
         os.environ.get("WORKER_CALLBACK_APP_URL", "").strip()
         or os.environ.get("APP_CALLBACK_URL", "").strip()
@@ -56,8 +78,12 @@ async def extract(
     base = _origin_with_scheme(raw_base).rstrip("/")
     secret = os.environ.get("MINERU_WORKER_SECRET", "").strip()
     if not base or not secret:
-        # Non-2xx so the Next.js caller treats dispatch as failed and can run local fallback
-        # instead of leaving document_extraction_jobs stuck at "queued" forever.
+        log.warning(
+            "[mineru-worker] /v1/extract reject_missing_callback_env job_id=%s has_callback_base=%s has_secret=%s",
+            body.job_id,
+            bool(base),
+            bool(secret),
+        )
         return JSONResponse(
             status_code=503,
             content={
@@ -68,32 +94,21 @@ async def extract(
             },
         )
 
-    import httpx
-
     callback_url = f"{base}/api/document-brain/worker/job-status"
-    payload = {
-        "job_id": body.job_id,
-        "user_id": body.user_id,
-        "document_id": body.document_id,
-        "status": "completed",
-        "progress": 100,
-        "current_stage": "Stub worker finished",
-        "output_base_path": body.output_base_path,
-    }
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        r = await client.post(
-            callback_url,
-            json=payload,
-            headers={"Authorization": f"Bearer {secret}"},
-        )
-        if r.status_code >= 400:
-            return JSONResponse(
-                status_code=502,
-                content={
-                    "ok": False,
-                    "callback_status": r.status_code,
-                    "body": r.text[:500],
-                    "callback_url": callback_url,
-                },
-            )
-    return {"ok": True, "callback_status": r.status_code}
+    log.info(
+        "[mineru-worker] /v1/extract enqueue job_id=%s callback_host=%s",
+        body.job_id,
+        callback_url.split("://", 1)[-1].split("/", 1)[0] if "://" in callback_url else "(relative?)",
+    )
+
+    background_tasks.add_task(run_extraction_job, body.model_dump())
+
+    return JSONResponse(
+        status_code=202,
+        content={
+            "ok": True,
+            "accepted": True,
+            "job_id": body.job_id,
+            "detail": "Extraction started; status updates POST to the Vercel callback URL.",
+        },
+    )

@@ -1,8 +1,14 @@
-/** Max wait for Railway worker + callback to Vercel (cold starts). */
-const MINERU_DISPATCH_TIMEOUT_MS = 120_000;
+const TAG = "[doc-oracle/mineru-client]";
+
+function readDispatchTimeoutMs(): number {
+  const raw = process.env.MINERU_DISPATCH_TIMEOUT_MS?.trim();
+  if (!raw) return 120_000;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : 120_000;
+}
 
 /** Ensures `fetch` receives an absolute URL (env often omits `https://`). */
-function normalizeMineruApiBase(raw: string): string {
+export function normalizeMineruApiBase(raw: string): string {
   let b = raw.trim().replace(/\/+$/, "");
   if (!b) return "";
   if (!/^https?:\/\//i.test(b)) {
@@ -55,13 +61,25 @@ export function isMinerUHttpConfigured(): boolean {
 export async function dispatchMinerUExtractionHttp(
   payload: MinerUDispatchPayload,
 ): Promise<{ ok: boolean; status?: number; error?: string }> {
-  const base = normalizeMineruApiBase(process.env.MINERU_API_URL ?? "");
+  const envUrl = process.env.MINERU_API_URL ?? "";
+  const base = normalizeMineruApiBase(envUrl);
   const secret = process.env.MINERU_WORKER_SECRET?.trim();
+  const hasUrl = Boolean(envUrl.trim());
+  const hasSecret = Boolean(secret);
+  console.info(
+    `${TAG} dispatch env MINERU_API_URL_configured=${hasUrl} normalized_worker_base=${base || "(empty)"} MINERU_WORKER_SECRET_configured=${hasSecret}`,
+  );
   if (!base || !secret) {
+    console.warn(`${TAG} dispatch aborted: mineru_not_configured`);
     return { ok: false, error: "mineru_not_configured" };
   }
   const url = `${base}/v1/extract`;
+  const signedPresent = Boolean(payload.signedInputUrl?.trim());
+  console.info(
+    `${TAG} POST /v1/extract job_id=${payload.jobId} document_id=${payload.documentId} signed_input_url_present=${signedPresent}`,
+  );
   let res: Response;
+  const timeoutMs = readDispatchTimeoutMs();
   try {
     res = await fetch(url, {
       method: "POST",
@@ -78,10 +96,11 @@ export async function dispatchMinerUExtractionHttp(
         output_base_path: payload.outputBasePath,
         parser_mode: payload.parserMode ?? null,
       }),
-      signal: AbortSignal.timeout(MINERU_DISPATCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    console.error(`${TAG} fetch failed job_id=${payload.jobId}`, e);
     return {
       ok: false,
       error: `mineru_fetch_failed: ${msg.slice(0, 400)}`,
@@ -91,7 +110,12 @@ export async function dispatchMinerUExtractionHttp(
   const rawText = await res.text().catch(() => "");
   const parsed = tryParseMineruWorkerJson(rawText);
 
+  console.info(`${TAG} /v1/extract response status=${res.status} job_id=${payload.jobId}`);
+
   if (!res.ok) {
+    console.warn(
+      `${TAG} /v1/extract not ok job_id=${payload.jobId} body_tail=${rawText.slice(0, 400)}`,
+    );
     return { ok: false, status: res.status, error: rawText.slice(0, 500) };
   }
 
@@ -120,5 +144,6 @@ export async function dispatchMinerUExtractionHttp(
     }
   }
 
+  console.info(`${TAG} dispatch success job_id=${payload.jobId} http_status=${res.status}`);
   return { ok: true, status: res.status };
 }

@@ -1,4 +1,6 @@
 .venv
+.venv-check
+.venv-smoke
 __pycache__
 *.pyc
 .pytest_cache

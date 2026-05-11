@@ -14,6 +14,10 @@ export type WorkerJobStatusPayload = {
   output_base_path?: string | null;
   error_code?: string | null;
   error_message?: string | null;
+  /** MinerU markdown excerpt or full text for Doc Oracle summary (optional). */
+  document_summary?: string | null;
+  total_pages?: number | null;
+  parser_version?: string | null;
 };
 
 export async function insertQueuedExtractionJob(input: {
@@ -155,9 +159,12 @@ export async function applyWorkerJobStatus(
   }
 
   if (payload.status === "completed") {
-    await upsertStubAnalysisAndMarkItemReady(admin, {
+    await upsertAnalysisAndMarkItemReady(admin, {
       userId: payload.user_id,
       documentId: payload.document_id,
+      documentSummary: payload.document_summary ?? null,
+      totalPages: payload.total_pages ?? null,
+      parserVersion: payload.parser_version ?? null,
     });
   }
 
@@ -258,9 +265,15 @@ export async function completeExtractionJobWithLocalPdfFallback(input: {
     .eq("user_id", input.userId);
 }
 
-async function upsertStubAnalysisAndMarkItemReady(
+async function upsertAnalysisAndMarkItemReady(
   admin: ReturnType<typeof createServiceRoleSupabaseClient>,
-  input: { userId: string; documentId: string },
+  input: {
+    userId: string;
+    documentId: string;
+    documentSummary?: string | null;
+    totalPages?: number | null;
+    parserVersion?: string | null;
+  },
 ): Promise<void> {
   const now = new Date().toISOString();
   const { data: ki } = await admin
@@ -281,25 +294,33 @@ async function upsertStubAnalysisAndMarkItemReady(
     .eq("document_id", input.documentId)
     .maybeSingle();
 
+  const trimmedSummary = input.documentSummary?.trim() ?? "";
+  const hasMineruBody = trimmedSummary.length > 0;
+  const summary = hasMineruBody
+    ? trimmedSummary.slice(0, 50000)
+    : "Doc Oracle analysis shell is ready. Full MinerU normalization and enrichment will populate pages, sections, and glossary once the worker pipeline is configured.";
+  const parserVersion =
+    input.parserVersion?.trim() || (hasMineruBody ? "mineru-pipeline" : "stub-worker");
+  const totalPages =
+    typeof input.totalPages === "number" && Number.isFinite(input.totalPages) && input.totalPages > 0
+      ? input.totalPages
+      : 0;
+
   const analysisPayload = {
     user_id: input.userId,
     document_id: input.documentId,
     parser: "mineru",
-    parser_version: "stub-worker",
+    parser_version: parserVersion,
     document_title: title,
     document_type: "pdf",
-    total_pages: 0,
-    summary:
-      "Doc Oracle analysis shell is ready. Full MinerU normalization and enrichment will populate pages, sections, and glossary once the worker pipeline is configured.",
+    total_pages: totalPages,
+    summary,
     status: "completed" as const,
     updated_at: now,
   };
 
   if (existingAnalysis?.id) {
-    await admin
-      .from("document_analyses")
-      .update(analysisPayload)
-      .eq("id", existingAnalysis.id as string);
+    await admin.from("document_analyses").update(analysisPayload).eq("id", existingAnalysis.id as string);
   } else {
     await admin.from("document_analyses").insert({
       ...analysisPayload,
@@ -307,17 +328,18 @@ async function upsertStubAnalysisAndMarkItemReady(
     });
   }
 
-  await admin
-    .from("knowledge_items")
-    .update({
-      status: "ready",
-      processing_step: null,
-      extraction_status: "success",
-      ask_enabled: true,
-      date_modified: now,
-    })
-    .eq("id", input.documentId)
-    .eq("user_id", input.userId);
+  const itemUpdate: Record<string, unknown> = {
+    status: "ready",
+    processing_step: null,
+    extraction_status: "success",
+    ask_enabled: true,
+    date_modified: now,
+  };
+  if (hasMineruBody) {
+    itemUpdate.raw_content = trimmedSummary.slice(0, 100000);
+  }
+
+  await admin.from("knowledge_items").update(itemUpdate).eq("id", input.documentId).eq("user_id", input.userId);
 }
 
 export async function retryExtractionJobForUser(jobId: string, userId: string): Promise<void> {

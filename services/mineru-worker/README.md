@@ -9,9 +9,12 @@ Separate service that receives extraction jobs from the Next.js app, downloads t
 | Variable | Purpose |
 |----------|---------|
 | `MINERU_WORKER_SECRET` | Must match app `MINERU_WORKER_SECRET` (Bearer token). |
-| `WORKER_CALLBACK_APP_URL` | **Recommended:** public origin of the Next app for callbacks (e.g. `https://www.mybestlife-os.com`). Falls back to `APP_CALLBACK_URL`, then `NEXT_PUBLIC_APP_URL`. |
-| `SUPABASE_URL` | Project URL (optional for stub; needed for real Storage I/O). |
-| `SUPABASE_SERVICE_ROLE_KEY` | Upload parsed assets / optional direct download. |
+| `WORKER_CALLBACK_APP_URL` | **Recommended:** public origin of the Next app for callbacks (e.g. `https://www.mybestlife-os.com`). Falls back to `APP_CALLBACK_URL`, then `NEXT_PUBLIC_APP_URL`. **Use the canonical production URL that does not 301/302/307 to a different host** — the worker treats only HTTP **200** from the callback as success (redirects followed must end on 200). |
+| `SUPABASE_URL` | Project URL (**required** for uploads of MinerU outputs into `knowledge-files`). |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**required** for Storage upload). `NEXT_PUBLIC_*` keys alone are not enough on the worker. |
+| `MINERU_BACKEND` | Parsing backend for the CLI (default `pipeline`, CPU-friendly). |
+| `MINERU_SUBPROCESS_TIMEOUT_SEC` | Max seconds for the `mineru` subprocess (default `600`). |
+| `MINERU_PARSER_VERSION_LABEL` | Optional string stored as `parser_version` on completed jobs (default `mineru-pipeline-worker`). |
 | `NEXT_PUBLIC_APP_URL` | Legacy alias: same as callback base if `WORKER_CALLBACK_APP_URL` unset. |
 
 ## Local vs production
@@ -57,8 +60,8 @@ After the folder appears on GitHub, trigger **Redeploy** on Railway.
    |------|---------|
    | `MINERU_WORKER_SECRET` | Long random string — **must equal** Vercel `MINERU_WORKER_SECRET`. |
    | `WORKER_CALLBACK_APP_URL` | `https://www.mybestlife-os.com` |
-   | `SUPABASE_URL` | Your Supabase project URL (stub optional; real MinerU I/O needs it). |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (stub optional). |
+   | `SUPABASE_URL` | Your Supabase project URL (**required** for uploading MinerU outputs). |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**required** for Storage upload). |
 
    Railway injects **`PORT`**; the image listens on `$PORT` automatically (see `docker-entrypoint.sh`).
 
@@ -67,6 +70,10 @@ After the folder appears on GitHub, trigger **Redeploy** on Railway.
 9. Redeploy the Next app (or wait for the next deploy) so env vars load, then **upload a new PDF** (or retry extraction) so a job hits the Railway worker.
 
 Health check: `GET /health` → `{"status":"ok"}`.
+
+### Docker build notes (Railway)
+
+Installing `mineru[all]` pulls **PyTorch** and related wheels — expect a **large image** and a **long first build** (often many minutes). If the build OOMs or times out, increase the builder resources / timeout in Railway or use a machine type with more RAM. The worker still **fails honestly at runtime** with `mineru_cli_missing` if the CLI is not present after install.
 
 ## Run locally
 
@@ -78,11 +85,27 @@ export MINERU_WORKER_SECRET=devsecret
 export SUPABASE_URL=...
 export SUPABASE_SERVICE_ROLE_KEY=...
 export NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000
-# Or explicitly (same effect for stub):
+# Or explicitly:
 # export WORKER_CALLBACK_APP_URL=http://127.0.0.1:3000
 uvicorn src.main:app --host 0.0.0.0 --port 8790
 ```
 
 Point the app at `MINERU_API_URL=http://127.0.0.1:8790`.
 
-The default image runs a **stub** pipeline (no real MinerU CLI) so you can verify job flow end-to-end. Replace `src/mineru_runner.py` with real MinerU invocation for production.
+> **Note:** `pip install -r requirements.txt` installs **MinerU** and is heavy (PyTorch, etc.). Prefer Docker for a predictable environment.
+
+## Behavior
+
+The Docker image installs **`mineru[all]`** from PyPI (see MinerU docs). The HTTP handler returns **202 Accepted** immediately and runs download → MinerU → Supabase upload → Vercel callback in a **background task**, so long parses do not block the Vercel dispatch `fetch` timeout.
+
+If the MinerU CLI is missing or extraction fails, the worker POSTs `status: "failed"` with `error_code` / `error_message` so `document_extraction_jobs` does not stay `queued` forever.
+
+### Vercel env (optional)
+
+| Name | Purpose |
+|------|---------|
+| `MINERU_DISPATCH_TIMEOUT_MS` | Max ms to wait for the worker to **accept** the job (HTTP 202). Default `120000`. Increase only if your Railway service is extremely slow to cold-start. |
+
+### Debug from the Next app
+
+`GET /api/document-brain/debug/mineru` — returns whether `MINERU_API_URL` / `MINERU_WORKER_SECRET` are set, the normalized worker base, and the result of `GET {MINERU_API_URL}/health` (no secrets in the JSON).
