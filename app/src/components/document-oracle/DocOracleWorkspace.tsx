@@ -90,6 +90,10 @@ function kwList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 12) : [];
 }
 
+function isCompletedAnalysis(a: DocOracleAnalysis | null): a is DocOracleAnalysis {
+  return a?.status === "completed";
+}
+
 function SectionTree(props: {
   sections: DocOracleSectionRow[];
   onPick: (s: DocOracleSectionRow) => void;
@@ -179,7 +183,8 @@ export function DocOracleWorkspace(props: {
   const [glossCat, setGlossCat] = useState<string | "all">("all");
   const [visualPreview, setVisualPreview] = useState<DocOracleVisualRow | null>(null);
 
-  const isReady = Boolean(analysis?.status === "completed");
+  const readyAnalysis = isCompletedAnalysis(analysis) ? analysis : null;
+  const isReady = readyAnalysis !== null;
 
   const topicList = useMemo(() => {
     const fromSections = sections.slice(0, 12).map((s) => s.title);
@@ -265,8 +270,8 @@ export function DocOracleWorkspace(props: {
                 <p className="text-[12px] text-white/50">
                   {isReady ? (
                     <>
-                      Doc Oracle · {analysis?.parser ?? "MinerU"}
-                      {analysis?.parser_version ? ` · ${analysis.parser_version}` : ""}
+                      Doc Oracle · {readyAnalysis.parser ?? "MinerU"}
+                      {readyAnalysis.parser_version ? ` · ${readyAnalysis.parser_version}` : ""}
                     </>
                   ) : (
                     <>
@@ -351,23 +356,29 @@ export function DocOracleWorkspace(props: {
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:col-span-2">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Document</p>
-                      <p className="mt-1 text-base font-semibold text-white">{analysis.document_title ?? item.title}</p>
+                      <p className="mt-1 text-base font-semibold text-white">{readyAnalysis.document_title ?? item.title}</p>
                       <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-white/65">
                         <div>
                           <dt className="text-white/40">Parser</dt>
-                          <dd>{analysis.parser ?? "mineru"}</dd>
+                          <dd>{readyAnalysis.parser ?? "mineru"}</dd>
                         </div>
                         <div>
                           <dt className="text-white/40">Type</dt>
-                          <dd>{analysis.document_type ?? "—"}</dd>
+                          <dd>{readyAnalysis.document_type ?? "—"}</dd>
                         </div>
                         <div>
                           <dt className="text-white/40">Pages</dt>
-                          <dd>{analysis.total_pages ?? pages.length ?? "—"}</dd>
+                          <dd>
+                            {readyAnalysis.total_pages != null && readyAnalysis.total_pages > 0
+                              ? readyAnalysis.total_pages
+                              : pages.length > 0
+                                ? pages.length
+                                : "—"}
+                          </dd>
                         </div>
                         <div>
                           <dt className="text-white/40">Language</dt>
-                          <dd>{analysis.language ?? "—"}</dd>
+                          <dd>{readyAnalysis.language ?? "—"}</dd>
                         </div>
                       </dl>
                       <p className="mt-3 text-[11px] text-white/45">
@@ -396,7 +407,7 @@ export function DocOracleWorkspace(props: {
                       Executive overview
                     </p>
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-4 sm:p-5">
-                      <DocOracleMarkdown source={analysis.summary ?? ""} />
+                      <DocOracleMarkdown source={readyAnalysis.summary ?? ""} />
                     </div>
                   </div>
 
