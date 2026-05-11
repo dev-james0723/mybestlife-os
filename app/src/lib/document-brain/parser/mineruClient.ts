@@ -54,9 +54,51 @@ export async function dispatchMinerUExtractionHttp(
       parser_mode: payload.parserMode ?? null,
     }),
   });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    return { ok: false, status: res.status, error: t.slice(0, 500) };
+
+  const rawText = await res.text().catch(() => "");
+
+  let parsed: {
+    ok?: boolean;
+    warning?: string;
+    callback_status?: number;
+    body?: string;
+    error?: string;
+    hint?: string;
+  } | null = null;
+  try {
+    parsed = JSON.parse(rawText) as typeof parsed;
+  } catch {
+    /* non-JSON body */
   }
+
+  if (!res.ok) {
+    return { ok: false, status: res.status, error: rawText.slice(0, 500) };
+  }
+
+  // Older worker versions returned HTTP 200 with ok:false or callback_skipped warning while the job never completed.
+  if (parsed && typeof parsed === "object") {
+    if (parsed.ok === false) {
+      const detail =
+        typeof parsed.body === "string" && parsed.body.trim()
+          ? parsed.body
+          : typeof parsed.error === "string"
+            ? parsed.error
+            : typeof parsed.hint === "string"
+              ? parsed.hint
+              : `worker_callback_failed status=${String(parsed.callback_status ?? "")}`;
+      return { ok: false, status: res.status, error: detail.slice(0, 500) };
+    }
+    if (
+      typeof parsed.warning === "string" &&
+      parsed.warning.toLowerCase().includes("callback_skipped")
+    ) {
+      return {
+        ok: false,
+        status: res.status,
+        error: `${parsed.warning}. Set WORKER_CALLBACK_APP_URL on the Railway worker (live Next.js URL).`,
+      };
+    }
+  }
+
   return { ok: true, status: res.status };
 }

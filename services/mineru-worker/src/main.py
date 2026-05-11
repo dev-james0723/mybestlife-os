@@ -1,11 +1,23 @@
 import os
 from fastapi import FastAPI, Header
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .auth import require_worker_secret
 from .mineru_runner import run_mineru_stub
 
 app = FastAPI(title="MyLifeOS MinerU Worker", version="0.1.0")
+
+
+def _origin_with_scheme(raw: str) -> str:
+    """Callback URL must be absolute; env values often omit https://."""
+    b = raw.strip().rstrip("/")
+    if not b:
+        return ""
+    lower = b.lower()
+    if not lower.startswith("http://") and not lower.startswith("https://"):
+        return f"https://{b}"
+    return b
 
 
 class ExtractBody(BaseModel):
@@ -36,14 +48,25 @@ async def extract(
     # Where the Next app receives POST /api/document-brain/worker/job-status.
     # Prefer WORKER_CALLBACK_APP_URL on the worker (e.g. https://www.mybestlife-os.com) so
     # production workers are not tied to NEXT_PUBLIC_* naming.
-    base = (
+    raw_base = (
         os.environ.get("WORKER_CALLBACK_APP_URL", "").strip()
         or os.environ.get("APP_CALLBACK_URL", "").strip()
         or os.environ.get("NEXT_PUBLIC_APP_URL", "").strip()
-    ).rstrip("/")
+    )
+    base = _origin_with_scheme(raw_base).rstrip("/")
     secret = os.environ.get("MINERU_WORKER_SECRET", "").strip()
     if not base or not secret:
-        return {"ok": True, "warning": "callback_skipped_missing_env"}
+        # Non-2xx so the Next.js caller treats dispatch as failed and can run local fallback
+        # instead of leaving document_extraction_jobs stuck at "queued" forever.
+        return JSONResponse(
+            status_code=503,
+            content={
+                "ok": False,
+                "error": "callback_skipped_missing_env",
+                "hint": "Set WORKER_CALLBACK_APP_URL (your live Next.js origin, e.g. https://mybestlife-os.com) "
+                "and MINERU_WORKER_SECRET on this Railway service.",
+            },
+        )
 
     import httpx
 
@@ -64,5 +87,13 @@ async def extract(
             headers={"Authorization": f"Bearer {secret}"},
         )
         if r.status_code >= 400:
-            return {"ok": False, "callback_status": r.status_code, "body": r.text[:500]}
+            return JSONResponse(
+                status_code=502,
+                content={
+                    "ok": False,
+                    "callback_status": r.status_code,
+                    "body": r.text[:500],
+                    "callback_url": callback_url,
+                },
+            )
     return {"ok": True, "callback_status": r.status_code}
