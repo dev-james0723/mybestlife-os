@@ -81,7 +81,6 @@ Installing `mineru[pipeline]` still pulls **PyTorch** and related wheels for the
 cd services/mineru-worker
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pip install --no-cache-dir "mineru[pipeline]>=3.0.0" "supabase>=2.10.0,<3"
 export MINERU_WORKER_SECRET=devsecret
 export SUPABASE_URL=...
 export SUPABASE_SERVICE_ROLE_KEY=...
@@ -93,7 +92,7 @@ uvicorn src.main:app --host 0.0.0.0 --port 8790
 
 Point the app at `MINERU_API_URL=http://127.0.0.1:8790`.
 
-> **Note:** The second `pip install` pulls **MinerU (pipeline)** and **Supabase** and is heavy (PyTorch, etc.). Prefer Docker for a predictable environment.
+> **Note:** `pip install -r requirements.txt` pulls **MinerU (pipeline)**, **Supabase**, and the API stack in one resolution step (heavy: PyTorch, etc.). Prefer Docker for a predictable environment.
 
 ## Behavior
 

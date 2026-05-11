@@ -1,6 +1,5 @@
 # Doc Oracle MinerU worker — Railway / container hosts.
-# Heavy ML deps (mineru/PyTorch) are installed in a separate layer so they are
-# cached across builds and only reinstalled when their pinned versions change.
+# All Python deps install in one pip transaction so FastAPI/Pydantic stay consistent with MinerU.
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -23,19 +22,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Layer 1: heavy ML dependencies — cached unless these specific versions change.
-# Pipeline extra only (Doc Oracle); avoids vllm/gradio/router/MCP/UI bundles from mineru[all].
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir "mineru[pipeline]>=3.0.0" "supabase>=2.10.0,<3"
-
-# Confirm CLI is on PATH (build fails early if MinerU did not install entry points).
-RUN which mineru
-
-# Layer 2: lightweight app dependencies — rebuilds only when requirements.txt changes.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt \
+    && python -c "import fastapi, pydantic; from fastapi import FastAPI; print('fastapi', fastapi.__version__, 'pydantic', pydantic.__version__)" \
+    && which mineru
 
 COPY src ./src
+RUN python -c "import src.main; print('worker main import ok')"
+
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
