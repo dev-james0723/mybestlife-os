@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServiceRoleSupabaseClient } from "@/lib/supabase/admin";
 import { isGeminiRegionBlockedErrorMessage } from "@/lib/ai/gemini-text";
 import {
   extractFileTextViaGemini,
@@ -9,22 +10,15 @@ import { extractPdfTextViaGemini } from "@/lib/knowledge/ai/geminiExtractPdf";
 /** Below this length, treat local PDF parse as failed (scanned PDF, odd encoding, etc.). */
 const MIN_PDF_TEXT_CHARS = 48;
 
-export async function extractFileContent(
-  storagePath: string,
+/**
+ * Run format-specific extraction on a blob already loaded from `knowledge-files`.
+ */
+export async function extractFileContentFromBlob(
+  blob: Blob,
   originalName: string,
   mimeType?: string,
 ): Promise<string> {
   const ext = originalName.split(".").pop()?.toLowerCase() ?? "";
-  const supabase = await createServerSupabaseClient();
-
-  const { data: blob, error } = await supabase.storage
-    .from("knowledge-files")
-    .download(storagePath);
-
-  if (error || !blob) {
-    throw new Error(`Failed to download file from storage: ${error?.message ?? "no data"}`);
-  }
-
   const mimeGuess = (mimeType || blob.type || "").toLowerCase();
   const rasterExt =
     ["jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "avif", "heic", "heif"].includes(
@@ -39,7 +33,7 @@ export async function extractFileContent(
 
   switch (ext) {
     case "pdf":
-      return extractPdf(blob, mimeType);
+      return extractPdf(blob);
     case "docx":
       return extractDocx(blob, originalName, mimeType);
     case "doc":
@@ -54,6 +48,45 @@ export async function extractFileContent(
     default:
       return extractGenericFileText(blob, originalName, mimeType);
   }
+}
+
+export async function extractFileContent(
+  storagePath: string,
+  originalName: string,
+  mimeType?: string,
+): Promise<string> {
+  const supabase = await createServerSupabaseClient();
+
+  const { data: blob, error } = await supabase.storage
+    .from("knowledge-files")
+    .download(storagePath);
+
+  if (error || !blob) {
+    throw new Error(`Failed to download file from storage: ${error?.message ?? "no data"}`);
+  }
+
+  return extractFileContentFromBlob(blob, originalName, mimeType);
+}
+
+/**
+ * Download from `knowledge-files` with the service role (bypasses RLS).
+ * Use from deferred work (e.g. Next `after()`) where the user session may no longer be available on Vercel.
+ */
+export async function extractKnowledgeFileWithServiceRole(
+  storagePath: string,
+  originalName: string,
+  mimeType?: string,
+): Promise<string> {
+  const supabase = createServiceRoleSupabaseClient();
+  const { data: blob, error } = await supabase.storage.from("knowledge-files").download(storagePath);
+
+  if (error || !blob) {
+    throw new Error(
+      `Failed to download file from storage (service role): ${error?.message ?? "no data"}`,
+    );
+  }
+
+  return extractFileContentFromBlob(blob, originalName, mimeType);
 }
 
 async function extractRasterImageKnowledgeText(
@@ -88,7 +121,7 @@ function photoKnowledgeFallbackText(title: string): string {
   return `Photo: ${title}. User-uploaded image.`;
 }
 
-async function extractPdf(blob: Blob, mimeType?: string): Promise<string> {
+async function extractPdf(blob: Blob): Promise<string> {
   const arrayBuffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 

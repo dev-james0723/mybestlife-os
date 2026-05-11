@@ -1,3 +1,13 @@
+/** Ensures `fetch` receives an absolute URL (env often omits `https://`). */
+function normalizeMineruApiBase(raw: string): string {
+  let b = raw.trim().replace(/\/+$/, "");
+  if (!b) return "";
+  if (!/^https?:\/\//i.test(b)) {
+    b = `https://${b}`;
+  }
+  return b.replace(/\/+$/, "");
+}
+
 export type MinerUDispatchPayload = {
   jobId: string;
   userId: string;
@@ -22,12 +32,12 @@ export function isMinerUHttpConfigured(): boolean {
 export async function dispatchMinerUExtractionHttp(
   payload: MinerUDispatchPayload,
 ): Promise<{ ok: boolean; status?: number; error?: string }> {
-  const base = process.env.MINERU_API_URL?.trim();
+  const base = normalizeMineruApiBase(process.env.MINERU_API_URL ?? "");
   const secret = process.env.MINERU_WORKER_SECRET?.trim();
   if (!base || !secret) {
     return { ok: false, error: "mineru_not_configured" };
   }
-  const url = `${base.replace(/\/$/, "")}/v1/extract`;
+  const url = `${base}/v1/extract`;
   const res = await fetch(url, {
     method: "POST",
     headers: {

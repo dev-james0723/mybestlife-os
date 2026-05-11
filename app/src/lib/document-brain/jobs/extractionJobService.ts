@@ -65,6 +65,45 @@ export async function markJobFailedByIdForUser(
     .eq("user_id", userId);
 }
 
+/**
+ * Mark job + knowledge item failed when MinerU dispatch/fallback runs in deferred work (`after()`):
+ * the request cookie session may be gone on serverless, so user-scoped Supabase updates can silently fail.
+ */
+export async function markMinerUDispatchFailureAdmin(args: {
+  jobId: string;
+  userId: string;
+  documentId: string;
+  jobErrorMessage: string;
+  itemErrorMessage: string;
+  jobErrorCode?: string;
+}): Promise<void> {
+  const admin = createServiceRoleSupabaseClient();
+  const now = new Date().toISOString();
+  await admin
+    .from("document_extraction_jobs")
+    .update({
+      status: "failed",
+      error_code: args.jobErrorCode ?? "dispatch_failed",
+      error_message: args.jobErrorMessage.slice(0, 2000),
+      completed_at: now,
+      current_stage: null,
+    })
+    .eq("id", args.jobId)
+    .eq("user_id", args.userId);
+
+  await admin
+    .from("knowledge_items")
+    .update({
+      status: "error",
+      processing_step: null,
+      extraction_status: "failed",
+      error_details: { step: "mineru_dispatch", error: args.itemErrorMessage.slice(0, 500) },
+      date_modified: now,
+    })
+    .eq("id", args.documentId)
+    .eq("user_id", args.userId);
+}
+
 export async function applyWorkerJobStatus(
   payload: WorkerJobStatusPayload,
   opts: { workerSecretValid: boolean },
@@ -140,6 +179,83 @@ export async function applyWorkerJobStatus(
   }
 
   return { ok: true };
+}
+
+/**
+ * Used when MinerU HTTP dispatch fails: finish the job using text extracted in the Next.js runtime.
+ * Doc Oracle reads `document_analyses`; this keeps the workspace usable without the worker.
+ */
+export async function completeExtractionJobWithLocalPdfFallback(input: {
+  jobId: string;
+  userId: string;
+  documentId: string;
+  rawText: string;
+  documentTitle: string;
+  mineruErrorSummary: string;
+}): Promise<void> {
+  const admin = createServiceRoleSupabaseClient();
+  const now = new Date().toISOString();
+  const trimmed = input.rawText.trim();
+  const excerpt = trimmed.slice(0, 1800);
+  const reason = input.mineruErrorSummary.trim().slice(0, 240);
+  const summary =
+    excerpt.length > 0
+      ? `MinerU worker was unreachable (${reason || "dispatch failed"}). Local PDF text extraction instead.\n\n${excerpt}${trimmed.length > excerpt.length ? "…" : ""}`
+      : `MinerU worker was unreachable (${reason || "dispatch failed"}). No readable text was extracted locally — this may be a scanned PDF.`;
+
+  const { data: existingAnalysis } = await admin
+    .from("document_analyses")
+    .select("id")
+    .eq("document_id", input.documentId)
+    .maybeSingle();
+
+  const analysisPayload = {
+    user_id: input.userId,
+    document_id: input.documentId,
+    parser: "local-pdf-fallback",
+    parser_version: reason.slice(0, 120) || "mineru-dispatch-failed",
+    document_title: input.documentTitle,
+    document_type: "pdf",
+    total_pages: 0,
+    summary,
+    status: "completed" as const,
+    updated_at: now,
+  };
+
+  if (existingAnalysis?.id) {
+    await admin.from("document_analyses").update(analysisPayload).eq("id", existingAnalysis.id as string);
+  } else {
+    await admin.from("document_analyses").insert({
+      ...analysisPayload,
+      created_at: now,
+    });
+  }
+
+  await admin
+    .from("knowledge_items")
+    .update({
+      status: "ready",
+      processing_step: null,
+      extraction_status: "success",
+      error_details: null,
+      raw_content: trimmed.slice(0, 100000) || null,
+      date_modified: now,
+    })
+    .eq("id", input.documentId)
+    .eq("user_id", input.userId);
+
+  await admin
+    .from("document_extraction_jobs")
+    .update({
+      status: "completed",
+      progress: 100,
+      current_stage: "Local PDF extraction (MinerU unavailable)",
+      error_code: null,
+      error_message: null,
+      completed_at: now,
+    })
+    .eq("id", input.jobId)
+    .eq("user_id", input.userId);
 }
 
 async function upsertStubAnalysisAndMarkItemReady(
@@ -273,7 +389,36 @@ export async function retryExtractionJobForUser(jobId: string, userId: string): 
     parserMode: j.parser_mode,
   });
   if (!dispatch.ok) {
-    await markJobFailedByIdForUser(jobId, userId, dispatch.error ?? "dispatch_failed");
-    throw new Error(dispatch.error ?? "DISPATCH_FAILED");
+    const dispatchErr = [dispatch.status != null ? `HTTP ${dispatch.status}` : "", dispatch.error ?? ""]
+      .filter((s) => String(s).trim())
+      .join(": ")
+      .trim();
+    try {
+      const { extractKnowledgeFileWithServiceRole } = await import("@/lib/knowledge/ai/extractContent");
+      const originalName = j.input_file_path.split("/").pop() ?? "document.pdf";
+      const rawText = await extractKnowledgeFileWithServiceRole(j.input_file_path, originalName, undefined);
+      const { data: ki } = await supabase
+        .from("knowledge_items")
+        .select("title")
+        .eq("id", j.document_id)
+        .maybeSingle();
+      const title =
+        ki && typeof ki === "object" && "title" in ki && typeof (ki as { title?: unknown }).title === "string"
+          ? (ki as { title: string }).title
+          : "Document";
+      await completeExtractionJobWithLocalPdfFallback({
+        jobId,
+        userId,
+        documentId: j.document_id,
+        rawText,
+        documentTitle: title,
+        mineruErrorSummary: dispatchErr || "MinerU dispatch failed",
+      });
+      return;
+    } catch (fallbackErr) {
+      console.error("[document-brain] retry MinerU dispatch failed; local fallback failed", fallbackErr);
+      await markJobFailedByIdForUser(jobId, userId, dispatch.error ?? "dispatch_failed");
+      throw new Error(dispatch.error ?? "DISPATCH_FAILED");
+    }
   }
 }

@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   mapRowToItem,
+  type ContentType,
   type KnowledgeItem,
   type ThumbnailStyle,
   normalizeThumbnailStyle,
@@ -11,7 +12,7 @@ import {
 } from "@/types/knowledge";
 import { generateThumbnail } from "@/lib/knowledge/ai/generateThumbnail";
 import { generateTitleSuggestion } from "@/lib/knowledge/ai/generateTitleSuggestion";
-import { extractFileContent } from "@/lib/knowledge/ai/extractContent";
+import { extractFileContent, extractKnowledgeFileWithServiceRole } from "@/lib/knowledge/ai/extractContent";
 import { extractFileTextViaGemini } from "@/lib/knowledge/ai/geminiExtractFileText";
 import {
   buildYouTubeContextFromOEmbed,
@@ -145,6 +146,82 @@ async function markError(itemId: string, step: string, error: string) {
 }
 
 /**
+ * When MinerU HTTP dispatch fails (wrong URL, worker down, etc.), still extract PDF text
+ * in-process, mark the extraction job complete, write `document_analyses`, and run AI (soft-fail).
+ */
+async function recoverPdfKnowledgeItemAfterMinerUDispatchFailure(args: {
+  jobId: string;
+  userId: string;
+  documentId: string;
+  storagePath: string;
+  originalFileName: string;
+  fileMimeType: string | undefined;
+  itemTitle: string;
+  thumbnailStyle: ThumbnailStyle;
+  targetLanguage: AppLocale | undefined;
+  mineruError: string;
+  contentType: ContentType;
+}): Promise<boolean> {
+  try {
+    const rawText = await extractKnowledgeFileWithServiceRole(
+      args.storagePath,
+      args.originalFileName,
+      args.fileMimeType,
+    );
+    const { completeExtractionJobWithLocalPdfFallback } = await import(
+      "@/lib/document-brain/jobs/extractionJobService"
+    );
+    await completeExtractionJobWithLocalPdfFallback({
+      jobId: args.jobId,
+      userId: args.userId,
+      documentId: args.documentId,
+      rawText,
+      documentTitle: args.itemTitle,
+      mineruErrorSummary: args.mineruError,
+    });
+
+    try {
+      const syntheticIngest: NormalizedIngest = {
+        sourceType: "file_upload",
+        provider: "local",
+        category: mapContentTypeToCategory(args.contentType),
+        label: "File",
+        title: args.itemTitle,
+        titleSource: "extracted",
+        rawContent: rawText,
+        aiInputText: rawText,
+        metadata: {},
+        extractionStatus: "success",
+        transcriptStatus: "not_applicable",
+        askEnabled: true,
+        contentType: args.contentType,
+      };
+
+      await runSourceAwareAIProcessing({
+        itemId: args.documentId,
+        userId: args.userId,
+        ingest: syntheticIngest,
+        thumbnailStyle: args.thumbnailStyle,
+        skipAiThumbnail: args.thumbnailStyle === "na",
+        allowTitleSuggestion: args.thumbnailStyle === "na",
+        targetLanguage: args.targetLanguage,
+        softFail: true,
+      });
+    } catch (aiErr) {
+      console.warn(`[document-brain] Post-fallback AI skipped for ${args.documentId}`, aiErr);
+    }
+
+    console.warn(
+      `[document-brain] MinerU dispatch failed (${args.mineruError.slice(0, 160)}); local PDF fallback completed for ${args.documentId}`,
+    );
+    return true;
+  } catch (err) {
+    console.error(`[document-brain] Local PDF fallback failed for ${args.documentId}`, err);
+    return false;
+  }
+}
+
+/**
  * If processing finished with no tags (e.g. taxonomy join failed, or the
  * first suggestTags call returned nothing), run one more tag pass before
  * connections so cards are still discoverable.
@@ -208,6 +285,11 @@ type RunAiProcessingArgs = {
   allowTitleSuggestion: boolean;
   /** UI language the user has selected — AI output should always match it. */
   targetLanguage?: AppLocale;
+  /**
+   * When set, empty content / derivative failures log only — they do not flip the item to `error`.
+   * Used after MinerU dispatch fails but local PDF fallback already marked the row ready.
+   */
+  softFail?: boolean;
 };
 
 /** Ensure Gemini always receives non-empty text (snapshot-only ingests had none). */
@@ -300,6 +382,10 @@ async function runSourceAwareAIProcessing(args: RunAiProcessingArgs): Promise<vo
 
   const aiInputText = await resolveAiInputTextForProcessing(ingest);
   if (!aiInputText) {
+    if (args.softFail) {
+      console.warn(`[knowledge-ai] softFail: no AI input for ${itemId}, leaving prior item state`);
+      return;
+    }
     await markError(itemId, "content_extraction", "No content available for AI processing");
     return;
   }
@@ -333,6 +419,10 @@ async function runSourceAwareAIProcessing(args: RunAiProcessingArgs): Promise<vo
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[knowledge-ai] Derivative generation failed for ${itemId}:`, msg);
+    if (args.softFail) {
+      console.warn(`[knowledge-ai] softFail: derivative failure for ${itemId}, leaving prior item state`);
+      return;
+    }
     await markError(itemId, "summary", msg);
     return;
   }
@@ -810,7 +900,7 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
   const item = mapRowToItem(data as Record<string, unknown>);
 
   if (useMinerUQueue) {
-    const { insertQueuedExtractionJob, markJobFailedByIdForUser } = await import(
+    const { insertQueuedExtractionJob, markMinerUDispatchFailureAdmin } = await import(
       "@/lib/document-brain/jobs/extractionJobService"
     );
     const { dispatchMinerUExtractionHttp } = await import("@/lib/document-brain/parser/mineruClient");
@@ -840,18 +930,58 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
           parserMode: process.env.MINERU_PARSER_MODE?.trim() || null,
         });
         if (!res.ok) {
-          await markJobFailedByIdForUser(job.id, userId, res.error ?? "dispatch_failed");
-          await markError(item.id, "mineru_dispatch", res.error ?? "MinerU dispatch failed");
+          const dispatchErr = [res.status != null ? `HTTP ${res.status}` : "", res.error ?? ""]
+            .filter((s) => String(s).trim())
+            .join(": ")
+            .trim();
+          const recovered = await recoverPdfKnowledgeItemAfterMinerUDispatchFailure({
+            jobId: job.id,
+            userId,
+            documentId: item.id,
+            storagePath,
+            originalFileName,
+            fileMimeType,
+            itemTitle: item.title,
+            thumbnailStyle: effectiveThumbnailStyle,
+            targetLanguage,
+            mineruError: dispatchErr || "MinerU dispatch failed",
+            contentType,
+          });
+          if (!recovered) {
+            await markMinerUDispatchFailureAdmin({
+              jobId: job.id,
+              userId,
+              documentId: item.id,
+              jobErrorMessage: res.error ?? "dispatch_failed",
+              itemErrorMessage: res.error ?? "MinerU dispatch failed",
+            });
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error(`[document-brain] dispatch failed for ${item.id}`, msg);
-        try {
-          await markJobFailedByIdForUser(job.id, userId, msg);
-        } catch {
-          /* ignore secondary failure */
+        const recovered = await recoverPdfKnowledgeItemAfterMinerUDispatchFailure({
+          jobId: job.id,
+          userId,
+          documentId: item.id,
+          storagePath,
+          originalFileName,
+          fileMimeType,
+          itemTitle: item.title,
+          thumbnailStyle: effectiveThumbnailStyle,
+          targetLanguage,
+          mineruError: msg,
+          contentType,
+        });
+        if (!recovered) {
+          await markMinerUDispatchFailureAdmin({
+            jobId: job.id,
+            userId,
+            documentId: item.id,
+            jobErrorMessage: msg,
+            itemErrorMessage: msg,
+          });
         }
-        await markError(item.id, "mineru_dispatch", msg);
       }
     });
 
