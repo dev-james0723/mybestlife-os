@@ -356,6 +356,25 @@ def _page_for_char_offset(md: str, offset: int, page_boundaries: list[int]) -> i
     return len(page_boundaries)
 
 
+def _page_for_ratio(char_offset: int, total_chars: int, total_pages: int) -> int | None:
+    """
+    Estimate a 1-based page number from a character offset when exact page boundaries
+    are unavailable. Used as a fallback for sections/chunks.
+    """
+    if total_pages <= 0:
+        return None
+
+    if total_chars <= 0:
+        return 1
+
+    safe_offset = max(0, min(char_offset, total_chars))
+    ratio = safe_offset / max(total_chars, 1)
+
+    # Keep final offset inside last page, not page total_pages + 1.
+    page = int(ratio * total_pages) + 1
+    return max(1, min(total_pages, page))
+
+
 class DocOracleNormalizationError(Exception):
     pass
 
