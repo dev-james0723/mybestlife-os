@@ -446,7 +446,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
             <TabsContent value="chat" className="mt-0 min-h-[320px] text-[13px] text-muted-foreground">
               {isReady ? (
                 <DocOracleChatPanel
-                  ref={chatRef}
+                  panelRef={chatRef}
                   documentId={item.id}
                   suggestedPrompts={chatStarters}
                 />
