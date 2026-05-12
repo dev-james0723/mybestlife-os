@@ -481,6 +481,7 @@ def normalize_doc_oracle(
     document_title: str,
     input_storage_path: str,
     total_pages_hint: int,
+    source_pdf_path: Path | None = None,
 ) -> dict[str, Any]:
     """
     Upsert document_analyses and populate pages, sections, chunks, visuals, glossary.
@@ -646,10 +647,29 @@ def normalize_doc_oracle(
         analysis_id = str(ins.data[0]["id"])
 
     # --- pages ---
+    thumbs = manifest.get("page_thumbnail_files") or []
+    thumbnail_by_page: dict[int, str] = {}
+    for x in thumbs:
+        if not isinstance(x, dict):
+            continue
+        try:
+            pn = int(x["page_number"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        rel = x.get("path")
+        if not isinstance(rel, str) or not rel.strip():
+            continue
+        thumbnail_by_page[pn] = rel.strip().replace("\\", "/").lstrip("./")
+
     sug_global = _suggested_questions([h[1] for h in headings], lang_zh)
     page_rows: list[dict[str, Any]] = []
+    pages_with_rendered_image_path = 0
     for p in pages_payload:
         pn = int(p["page_number"])
+        rel_thumb = thumbnail_by_page.get(pn)
+        rendered_path = f"{storage_raw_prefix}/{rel_thumb}" if rel_thumb else None
+        if rendered_path:
+            pages_with_rendered_image_path += 1
         page_rows.append(
             {
                 "id": _new_id(),
@@ -666,7 +686,7 @@ def normalize_doc_oracle(
                 "keywords": p.get("keywords") or [],
                 "linked_terms": [],
                 "linked_sections": [],
-                "rendered_image_path": None,
+                "rendered_image_path": rendered_path,
                 "rendered_image_url": None,
                 "source_pdf_page_ref": str(pn),
                 "has_visual_assets": bool(p.get("has_visual_assets")),
@@ -676,6 +696,17 @@ def normalize_doc_oracle(
                 "created_at": now_iso,
                 "updated_at": now_iso,
             }
+        )
+    log.info(
+        "[mineru-worker] document_pages_ready total_pages=%s thumbnails=%s",
+        len(page_rows),
+        len(thumbnail_by_page),
+    )
+    if len(thumbnail_by_page) == 0:
+        log.warning(
+            "[mineru-worker] no_page_thumbnails_available manifest_entries=%s source_pdf=%s",
+            len(thumbs),
+            source_pdf_path.name if (source_pdf_path and source_pdf_path.is_file()) else None,
         )
     _batched_insert(client, "document_pages", page_rows)
 
@@ -838,8 +869,8 @@ def normalize_doc_oracle(
                 "document_id": document_id,
                 "analysis_id": analysis_id,
                 "term": tit[:200],
-                "definition": "Auto-extracted section heading; definition can be refined later.",
-                "category": "auto-extracted",
+                "definition": None,
+                "category": None,
                 "pages": [],
                 "related_terms": [],
                 "created_at": now_iso,
@@ -858,8 +889,8 @@ def normalize_doc_oracle(
                 "document_id": document_id,
                 "analysis_id": analysis_id,
                 "term": term[:200],
-                "definition": "Auto-extracted emphasized term from the document.",
-                "category": "auto-extracted",
+                "definition": None,
+                "category": None,
                 "pages": [],
                 "related_terms": [],
                 "created_at": now_iso,
@@ -880,8 +911,8 @@ def normalize_doc_oracle(
                 "document_id": document_id,
                 "analysis_id": analysis_id,
                 "term": term[:200],
-                "definition": f"Recurring term in this document (approx. {cnt} mentions).",
-                "category": "auto-extracted",
+                "definition": None,
+                "category": None,
                 "pages": [],
                 "related_terms": [],
                 "created_at": now_iso,
@@ -917,6 +948,8 @@ def normalize_doc_oracle(
         "total_pages": total_pages,
         "document_type": doc_type,
         "language": lang,
+        "page_thumbnails_total": len(thumbnail_by_page),
+        "pages_with_rendered_image_path": pages_with_rendered_image_path,
     }
 
 

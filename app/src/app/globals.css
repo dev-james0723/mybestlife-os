@@ -1821,3 +1821,119 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
     transition: none !important;
   }
 }
+
+/* ── Doc Oracle / Liquid Glass (liquid_glass_ui.md) ───────────────────────
+   Glass panels, immersive background pan, stat-card hover, focus rings,
+   and backdrop-filter fallback — keep Doc Oracle visually aligned with
+   MyBestLifeOS premium “Liquid Glass” direction. */
+
+@keyframes doc-oracle-subtle-pan {
+  from {
+    background-position: 48% 50%;
+  }
+  to {
+    background-position: 52% 50%;
+  }
+}
+
+.doc-oracle-liquid-bg {
+  animation: doc-oracle-subtle-pan 30s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-oracle-liquid-bg {
+    animation: none;
+  }
+}
+
+.lg-glass-panel {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .lg-glass-panel {
+    background: rgba(20, 18, 16, 0.85);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.lg-glass-panel-dark {
+  background: rgba(10, 8, 8, 0.5);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Doc Oracle on default page chrome (no full-bleed dark canvas) */
+.doc-oracle-workspace .lg-glass-panel {
+  background: color-mix(in oklch, var(--card) 92%, transparent);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 8px 28px oklch(0 0 0 / 0.06),
+    inset 0 1px 0 oklch(1 0 0 / 0.55);
+}
+
+.doc-oracle-workspace .lg-glass-panel-dark {
+  background: color-mix(in oklch, var(--muted) 90%, transparent);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 4px 16px oklch(0 0 0 / 0.05),
+    inset 0 1px 0 oklch(1 0 0 / 0.45);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .doc-oracle-workspace .lg-glass-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.08);
+  }
+}
+
+.lg-glass-stat-card {
+  background: rgba(10, 8, 8, 0.45);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  transition:
+    border-color 200ms ease-out,
+    box-shadow 200ms ease-out,
+    transform 200ms ease-out;
+}
+
+.lg-glass-stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-glass-stat-card {
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+
+  .lg-glass-stat-card:hover {
+    transform: none;
+  }
+}
+
+/* Lime focus ring — spec §9; scoped to Doc Oracle workspace only */
+.doc-oracle-workspace :is(a, button, [role="tab"]):focus-visible {
+  outline: 2px solid #c8e53a;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

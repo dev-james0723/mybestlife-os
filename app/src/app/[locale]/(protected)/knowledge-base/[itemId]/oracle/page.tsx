@@ -3,31 +3,22 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getKnowledgeItemForUser } from "@/lib/knowledge/queries";
 import {
   DocOracleWorkspace,
-  type DocOracleAnalysis,
-  type DocOracleGlossaryRow,
   type DocOraclePageRow,
-  type DocOracleSectionRow,
   type DocOracleVisualRow,
 } from "@/components/document-oracle/DocOracleWorkspace";
+import type {
+  DocOracleAnalysis,
+  DocOracleGlossaryRow,
+  DocOracleSectionRow,
+} from "@/components/document-oracle/docOracleWorkspaceTypes";
 import { DEFAULT_LOCALE_SLUG, normalizeLocaleSlug, type LocaleUrlSlug } from "@/lib/i18n/locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
+import {
+  buildCategorizedSuggestedQuestions,
+  buildLegacyFallbackPrompts,
+} from "@/lib/document-brain/suggested-questions";
 
 type PageProps = { params: Promise<{ locale: string; itemId: string }> };
-
-function buildSuggestedQuestions(sections: DocOracleSectionRow[], glossary: DocOracleGlossaryRow[]): string[] {
-  const out: string[] = [
-    "What is this document mainly about?",
-    "Summarize the key requirements.",
-    "What are the important dates, fees, or action items?",
-  ];
-  for (const s of sections.slice(0, 5)) {
-    out.push(`Explain the section “${s.title}”.`);
-  }
-  for (const g of glossary.slice(0, 4)) {
-    out.push(`What does “${g.term}” mean in this document?`);
-  }
-  return out.slice(0, 12);
-}
 
 export default async function DocOraclePage({ params }: PageProps) {
   const { locale: rawLocale, itemId } = await params;
@@ -53,11 +44,13 @@ export default async function DocOraclePage({ params }: PageProps) {
 
   const { data: pages } = await supabase
     .from("document_pages")
-    .select("id,page_number,page_summary,keywords,has_visual_assets,markdown,rendered_image_path")
+    .select(
+      "id,page_number,page_label,page_type,raw_text,markdown,page_summary,interpreted_page_meaning,keywords,linked_terms,linked_sections,rendered_image_path,rendered_image_url,source_pdf_page_ref,has_visual_assets,suggested_questions",
+    )
     .eq("document_id", itemId)
     .eq("user_id", user.id)
     .order("page_number", { ascending: true })
-    .limit(240);
+    .limit(600);
 
   const { data: sections } = await supabase
     .from("document_sections")
@@ -96,7 +89,17 @@ export default async function DocOraclePage({ params }: PageProps) {
 
   const secRows = (sections as DocOracleSectionRow[] | null) ?? [];
   const glossRows = (glossary as DocOracleGlossaryRow[] | null) ?? [];
-  const suggestedQuestions = buildSuggestedQuestions(secRows, glossRows);
+  const pageRows = (pages as DocOraclePageRow[] | null) ?? [];
+  const visualRows = (visuals as DocOracleVisualRow[] | null) ?? [];
+  const fallbackPrompts = buildLegacyFallbackPrompts(secRows, glossRows);
+  const suggestedQuestionCategories = buildCategorizedSuggestedQuestions({
+    analysis: analysisRow,
+    sections: secRows,
+    pages: pageRows,
+    glossary: glossRows,
+    visuals: visualRows,
+    fallbackPrompts,
+  });
 
   const showDebugLink = process.env.NODE_ENV === "development";
 
@@ -105,12 +108,12 @@ export default async function DocOraclePage({ params }: PageProps) {
       locale={locale}
       item={item}
       analysis={analysisRow}
-      pages={(pages as DocOraclePageRow[] | null) ?? []}
+      pages={pageRows}
       sections={secRows}
       glossary={glossRows}
-      visuals={(visuals as DocOracleVisualRow[] | null) ?? []}
+      visuals={visualRows}
       chunkCount={chunkCount}
-      suggestedQuestions={suggestedQuestions}
+      suggestedQuestionCategories={suggestedQuestionCategories}
       showDebugLink={showDebugLink}
     />
   );

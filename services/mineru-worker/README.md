@@ -31,6 +31,7 @@ Production parsing uses the **official API** so you get full MinerU output (Mark
 | `GEMINI_API_KEY` | **Optional.** When set, the worker enriches up to `DOCORACLE_VISUAL_GEMINI_LIMIT` visual assets per document with Gemini multimodal JSON (title, description, semantic category, tags). Never log this value. |
 | `DOCORACLE_VISUAL_GEMINI_LIMIT` | Max visuals per document to send to Gemini (default `40`). |
 | `DOCORACLE_VISUAL_GEMINI_MODEL` | Optional Gemini model id (default `gemini-2.0-flash`). |
+| `DOCORACLE_PAGE_THUMBNAIL_LIMIT` | Max PDF pages for **full-page** PyMuPDF renders into `page-thumbnails/page-NNN.png` before storage upload (default `300`, max `500`). Manifest lists them in `page_thumbnail_files`; `document_pages.rendered_image_path` points at `{output_base}/mineru/raw/...`. |
 
 Official API jobs POST `https://mineru.net/api/v4/extract/task` with the **same signed Supabase URL** the app sent to the worker (`url` field). MinerU’s servers must be able to fetch that URL; if extraction fails with timeouts, ensure the signed URL is reachable from their network (see MinerU docs on URL / region limits).
 

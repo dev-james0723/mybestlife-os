@@ -250,7 +250,7 @@ export function DocOracleSectionsPanel(props: {
           onClick={() => onAskAiSection(selectedSection)}
         >
           <MessageCircle className="h-4 w-4" aria-hidden />
-          Ask AI about this section
+          Ask Doc Oracle about this section
         </button>
         {pdfOpenHref ? (
           <a href={pdfOpenHref} target="_blank" rel="noreferrer" className={cn(limeBtn, "no-underline")}>

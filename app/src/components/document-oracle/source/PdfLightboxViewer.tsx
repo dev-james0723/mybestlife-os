@@ -2,15 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  Minus,
-  Plus,
-  Shrink,
-  X,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, Shrink, X } from "lucide-react";
 import type { DocOraclePageRow } from "@/components/document-oracle/docOraclePageTypes";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import { cn } from "@/lib/utils";
@@ -259,17 +251,6 @@ export function PdfLightboxViewer(props: {
             </>
           ) : null}
 
-          <a
-            href={pdfHref}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(headerBtn, "no-underline")}
-            aria-label="Open original file in new tab"
-          >
-            <ExternalLink className="h-4 w-4" />
-            <span className="hidden pl-1.5 text-[11px] font-semibold lg:inline">Open</span>
-          </a>
-
           <button type="button" className={cn(headerBtn, "ml-auto")} aria-label="Close" onClick={onClose}>
             <X className="h-5 w-5" />
           </button>
@@ -319,22 +300,13 @@ export function PdfLightboxViewer(props: {
           ) : (
             <div className="flex min-h-[50dvh] flex-col items-center justify-center gap-4 px-6 py-10 text-center">
               <p className="max-w-md text-[13px] leading-relaxed text-white/70">
-                Page screenshots are not available yet. On this device, opening the PDF in a new tab is the most reliable
-                option.
+                Page screenshots are not available yet. If the embedded preview below does not load, try again from a
+                desktop browser.
               </p>
-              <a
-                href={pdfHref}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-rose-900/50 bg-[#7f1d1d] px-4 py-3 text-[13px] font-semibold text-white no-underline transition hover:bg-[#991b1b]"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open Original File in New Tab
-              </a>
               <iframe
                 title="PDF"
                 src={pdfHref}
-                className="mt-4 hidden h-[min(70dvh,720px)] w-full max-w-[960px] rounded-lg border border-white/10 bg-neutral-900 md:block"
+                className="mt-4 h-[min(70dvh,720px)] w-full max-w-[960px] rounded-lg border border-white/10 bg-neutral-900"
               />
             </div>
           )}

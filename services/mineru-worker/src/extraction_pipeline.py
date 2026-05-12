@@ -11,6 +11,7 @@ from pathlib import Path
 import httpx
 
 from .docoracle_normalizer import DocOracleNormalizationError, normalize_doc_oracle
+from .page_thumbnails import render_pdf_page_thumbnails
 from .download_input import DownloadError, download_signed_pdf
 from .mineru_artifact_inspector import inspect_mineru_output
 from .mineru_engine import MinerUOfficialApiError, get_engine_provider, model_version, run_official_api_extract
@@ -286,6 +287,41 @@ async def run_extraction_job(body: dict) -> None:
 
         await send(
             "normalizing",
+            progress=62,
+            current_stage="Page thumbnails",
+            output_base_path=output_base_path,
+        )
+        try:
+            limit_raw = (os.environ.get("DOCORACLE_PAGE_THUMBNAIL_LIMIT", "300") or "300").strip()
+            try:
+                thumb_limit = max(0, min(500, int(limit_raw)))
+            except ValueError:
+                thumb_limit = 300
+            thumbnail_rel_paths = await asyncio.to_thread(
+                render_pdf_page_thumbnails,
+                source_pdf_path=input_pdf,
+                output_dir=output_dir,
+                limit=thumb_limit,
+            )
+            manifest["page_thumbnail_files"] = [
+                {"page_number": int(page), "path": rel}
+                for page, rel in sorted(thumbnail_rel_paths.items())
+            ]
+            log.info(
+                "[mineru-worker] page_thumbnails_ready count=%s job_id=%s",
+                len(thumbnail_rel_paths),
+                job_id,
+            )
+        except Exception as e:
+            log.warning(
+                "[mineru-worker] page_thumbnail_render_phase_failed job_id=%s err=%s",
+                job_id,
+                str(e)[:400],
+            )
+            manifest.setdefault("page_thumbnail_files", [])
+
+        await send(
+            "normalizing",
             progress=70,
             current_stage="Uploading MinerU artifacts",
             output_base_path=output_base_path,
@@ -377,6 +413,7 @@ async def run_extraction_job(body: dict) -> None:
                 document_title=doc_title,
                 input_storage_path=input_storage_path,
                 total_pages_hint=total_pages,
+                source_pdf_path=input_pdf,
             )
         except DocOracleNormalizationError as e:
             log.exception("[mineru-worker] docoracle_normalization_failed job_id=%s", job_id)

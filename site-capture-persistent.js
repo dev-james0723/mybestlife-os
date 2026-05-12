@@ -3,9 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 const CONFIG = {
-  OUTPUT_DIR: 'site_capture_output',
-  USER_DATA_DIR: './playwright-user-data',
-  HEADLESS: false,
+  OUTPUT_DIR: process.env.SITE_CAPTURE_OUTPUT_DIR || 'site_capture_output',
+  USER_DATA_DIR: process.env.SITE_CAPTURE_USER_DATA_DIR || './playwright-user-data',
+  HEADLESS:
+    process.env.SITE_CAPTURE_HEADLESS === '1' ||
+    process.env.SITE_CAPTURE_HEADLESS === 'true',
   PAGE_TIMEOUT: 90000,
   FIXED_WAIT_AFTER_GOTO: 5000,
   FIXED_WAIT_AFTER_SCROLL: 1500,
@@ -20,7 +22,7 @@ const CONFIG = {
 
 const BASE_URL = 'https://6973a91f1b2e3fec91aa1006.blocks-app.diy';
 
-const MANUAL_URLS = [
+const DEFAULT_MANUAL_URLS = [
   `${BASE_URL}/Dashboard`,
   `${BASE_URL}/DailyPlanner`,
   `${BASE_URL}/Tasks`,
@@ -51,6 +53,22 @@ const MANUAL_URLS = [
   `${BASE_URL}/AIAssistant`,
   `${BASE_URL}/Settings`,
 ];
+
+function loadManualUrls() {
+  const file = process.env.SITE_CAPTURE_URLS_FILE;
+  if (file) {
+    const abs = path.isAbsolute(file) ? file : path.join(__dirname, file);
+    const raw = fs.readFileSync(abs, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.every((u) => typeof u === 'string')) {
+      throw new Error('SITE_CAPTURE_URLS_FILE must be a JSON array of URL strings');
+    }
+    return parsed;
+  }
+  return DEFAULT_MANUAL_URLS;
+}
+
+const MANUAL_URLS = loadManualUrls();
 
 const DIRS = {
   root: CONFIG.OUTPUT_DIR,

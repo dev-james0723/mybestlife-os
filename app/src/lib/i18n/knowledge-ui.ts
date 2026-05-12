@@ -562,6 +562,16 @@ export function formatKnowledgeDate(locale: AppLocale, date: string): string {
   }).format(new Date(date));
 }
 
+/** Calendar date + clock time in the viewer's local timezone, ordered for `locale`. */
+export function formatKnowledgeLocalDateTime(locale: AppLocale, date: string): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(d);
+}
+
 export function formatKnowledgeRelativeAge(locale: AppLocale, date: string): string {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return "";

@@ -96,7 +96,7 @@ export function DocOracleVisualPreviewModal(props: {
           ) : null}
           <button type="button" className={cn(limeBtn)} onClick={() => onAskAiVisual(visual)}>
             <MessageCircle className="h-4 w-4" aria-hidden />
-            Ask AI about this visual
+            Ask Doc Oracle about this visual
           </button>
         </div>
       </div>

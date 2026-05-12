@@ -3,3 +3,14 @@
 .DS_Store
 node_modules/
 .venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Site capture / local QA artifacts (not for version control)
+DocOracle/
+docoracle-capture-run.log
+docoracle-capture-urls.json
+playwright-user-data-docoracle/

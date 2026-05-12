@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ExternalLink, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
@@ -26,9 +26,9 @@ import { DocOraclePagesPanel } from "@/components/document-oracle/DocOraclePages
 import { DocOraclePageDetailModal } from "@/components/document-oracle/DocOraclePageDetailModal";
 import { getPageTitle } from "@/components/document-oracle/docOraclePageHelpers";
 import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
-import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import { displayVisualTitle, getRelatedSectionTitleForVisual } from "@/components/document-oracle/docOracleVisualLabels";
 import { DocOracleOverviewPanel } from "@/components/document-oracle/overview/DocOracleOverviewPanel";
+import { DocOracleGlossaryPanel } from "@/components/document-oracle/glossary/DocOracleGlossaryPanel";
 import { DocOracleSourcePanel } from "@/components/document-oracle/source/DocOracleSourcePanel";
 import {
   flattenSuggestedQuestions,
@@ -41,18 +41,9 @@ import type {
   DocOracleSectionRow,
 } from "@/components/document-oracle/docOracleWorkspaceTypes";
 
-const openOriginalHeaderBtn = cn(
-  "inline-flex items-center justify-center gap-2 rounded-lg border border-rose-900/55 bg-[#7f1d1d] px-4 py-2 text-[13px] font-semibold text-white shadow-md transition-colors hover:bg-[#991b1b]",
-  "no-underline",
-);
-
 export type { DocOracleAnalysis, DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
 
 export type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
-
-function kwList(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 12) : [];
-}
 
 function isCompletedAnalysis(a: DocOracleAnalysis | null): a is DocOracleAnalysis {
   return a?.status === "completed";
@@ -78,7 +69,6 @@ export function DocOracleWorkspace(props: {
   const [pageDetail, setPageDetail] = useState<DocOraclePageRow | null>(null);
   const [sectionDetail, setSectionDetail] = useState<DocOracleSectionRow | null>(null);
   const [glossQ, setGlossQ] = useState("");
-  const [glossCat, setGlossCat] = useState<string | "all">("all");
   const [visualPreview, setVisualPreview] = useState<DocOracleVisualRow | null>(null);
   const [sourcePage, setSourcePage] = useState<number | null>(null);
   const [pendingChatRequest, setPendingChatRequest] = useState<{
@@ -225,27 +215,6 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
     return cap || item.rawContent?.slice(0, 14_000) || "";
   }, [pages, item.rawContent]);
 
-  const filteredGlossary = useMemo(() => {
-    const q = glossQ.trim().toLowerCase();
-    return glossary.filter((g) => {
-      if (glossCat !== "all" && (g.category || "").toLowerCase() !== glossCat.toLowerCase()) return false;
-      if (!q) return true;
-      return (
-        g.term.toLowerCase().includes(q) ||
-        (g.definition || "").toLowerCase().includes(q) ||
-        kwList(g.related_terms).some((t) => t.toLowerCase().includes(q))
-      );
-    });
-  }, [glossary, glossQ, glossCat]);
-
-  const glossCategories = useMemo(() => {
-    const s = new Set<string>();
-    for (const g of glossary) {
-      if (g.category) s.add(g.category);
-    }
-    return Array.from(s);
-  }, [glossary]);
-
   const chatStarters = useMemo(
     () => flattenSuggestedQuestions(displayedCategories, 24),
     [displayedCategories],
@@ -266,6 +235,15 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
       id: newChatRequestId(),
       prompt: question,
       retrievalFocus: null,
+    });
+    handleTabChange("chat");
+  };
+
+  const handleAskGlossaryInChat = (prompt: string, retrievalFocus: DocOracleChatRetrievalFocus | null) => {
+    setPendingChatRequest({
+      id: newChatRequestId(),
+      prompt,
+      retrievalFocus,
     });
     handleTabChange("chat");
   };
@@ -322,20 +300,6 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            {item.filePath ? (
-              <a
-                href={knowledgeFilesApiHref(item.filePath)}
-                target="_blank"
-                rel="noreferrer"
-                className={openOriginalHeaderBtn}
-                aria-label="Open original file in new tab"
-              >
-                <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
-                Open Original File in New Tab
-              </a>
-            ) : null}
-          </div>
         </motion.div>
 
         <motion.div
@@ -389,7 +353,6 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
                   setTab={handleTabChange}
                   setSectionDetail={setSectionDetail}
                   setGlossQ={setGlossQ}
-                  setGlossCat={setGlossCat}
                   setVisualPreview={setVisualPreview}
                   openSourceAtPage={item.filePath ? openSourceAtPage : undefined}
                 />
@@ -413,9 +376,8 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
                   onOpenSourcePage={item.filePath ? openSourceAtPage : () => {}}
                   onOpenVisual={setVisualPreview}
                   onFocusGlossary={(g) => {
-                    setGlossCat("all");
                     setGlossQ(g.term);
-                    setTab("glossary");
+                    handleTabChange("glossary");
                   }}
                   onFocusSection={(s) => {
                     setSectionDetail(s);
@@ -506,47 +468,26 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="glossary"
               id="doc-oracle-panel-glossary"
               aria-labelledby="doc-oracle-tab-glossary"
-              className="mt-0 space-y-3 text-[13px] text-muted-foreground"
+              className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    value={glossQ}
-                    onChange={(e) => setGlossQ(e.target.value)}
-                    placeholder="Search terms…"
-                    className="w-full rounded-xl border border-border bg-muted/60 py-2 pl-9 pr-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
-                  />
-                </div>
-                <select
-                  value={glossCat}
-                  onChange={(e) => setGlossCat(e.target.value as string | "all")}
-                  className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground"
-                >
-                  <option value="all">All categories</option>
-                  {glossCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {filteredGlossary.length === 0 ? (
-                <p>No matching terms.</p>
+              {!isReady ? (
+                <p className="text-muted-foreground">Glossary appears after document analysis is complete.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {filteredGlossary.map((g) => (
-                    <div key={g.id} className="rounded-2xl border border-border bg-muted/40 p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-foreground">{g.term}</p>
-                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                          {g.category || "term"}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[12px] text-muted-foreground">{g.definition}</p>
-                    </div>
-                  ))}
-                </div>
+                <DocOracleGlossaryPanel
+                  glossary={glossary}
+                  sections={sections}
+                  analysis={readyAnalysis}
+                  appLocale={appLocale}
+                  searchQuery={glossQ}
+                  onSearchChange={setGlossQ}
+                  filePath={item.filePath}
+                  onOpenSourcePage={item.filePath ? openSourceAtPage : undefined}
+                  onFocusSection={(s) => {
+                    setSectionDetail(s);
+                  }}
+                  onSwitchToSections={() => setTab("sections")}
+                  onAskGlossaryInChat={handleAskGlossaryInChat}
+                />
               )}
             </TabsContent>
 

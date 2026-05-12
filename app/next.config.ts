@@ -77,6 +77,9 @@ const devServerActionOrigins = [
 const devLanIps = devNonLoopbackIPv4Hostnames();
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  /** Smaller uploads and less exposure of source in production. */
+  productionBrowserSourceMaps: false,
   // Bare `127.0.0.1` / `::1` are required — `127.0.0.1:3000` alone never matched the hostname
   // and Next returned 403 for `/_next/*` on http://127.0.0.1:3000 (blank page in Cursor).
   // Also allow this machine's LAN IPv4s so the "Network" dev URL (e.g. http://192.168.x.x:3000) does
@@ -119,6 +122,24 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: workspaceRoot,
   turbopack: {
     root: workspaceRoot,
+  },
+  async headers() {
+    const base: { key: string; value: string }[] = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=()",
+      },
+    ];
+    if (process.env.VERCEL_ENV === "production") {
+      base.unshift({
+        key: "Strict-Transport-Security",
+        value: "max-age=31536000; includeSubDomains",
+      });
+    }
+    return [{ source: "/:path*", headers: base }];
   },
 };
 

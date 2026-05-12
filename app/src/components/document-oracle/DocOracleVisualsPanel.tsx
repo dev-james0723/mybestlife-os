@@ -6,18 +6,58 @@ import type { DocOracleSectionRow, DocOracleVisualRow } from "@/components/docum
 import { DocOracleVisualCard } from "@/components/document-oracle/DocOracleVisualCard";
 import { getRelatedSectionTitleForVisual } from "@/components/document-oracle/docOracleVisualLabels";
 
-const CATEGORIES = [
-  "all",
-  "image",
-  "table",
-  "figure",
-  "chart",
-  "formula",
-  "diagram",
-  "unknown",
+const VISUAL_TYPE_FILTERS = [
+  { id: "all", label: "All types" },
+  { id: "diagram", label: "Diagram" },
+  { id: "photo", label: "Photo" },
+  { id: "table", label: "Table" },
+  { id: "charts", label: "Charts" },
+  { id: "sketch", label: "Sketch" },
+  { id: "mixed", label: "Mixed" },
+  { id: "other", label: "Other / Unknown" },
 ] as const;
 
-type Cat = (typeof CATEGORIES)[number];
+type VisualTypeId = (typeof VISUAL_TYPE_FILTERS)[number]["id"];
+
+function typeBlob(v: DocOracleVisualRow): string {
+  return [
+    v.type,
+    v.semantic_category,
+    JSON.stringify(v.retrieval_tags),
+    JSON.stringify(v.extracted_labels),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function hasAny(t: string, words: string[]): boolean {
+  return words.some((w) => t.includes(w));
+}
+
+/** Single primary bucket for filter chips (heuristic over MinerU + semantic fields). */
+function inferVisualFamily(v: DocOracleVisualRow): Exclude<VisualTypeId, "all"> {
+  const t = typeBlob(v);
+  if (hasAny(t, ["mixed", "composite", "collage", "montage", "layout pack"])) return "mixed";
+  if (hasAny(t, ["table", "tabular", "grid", "spreadsheet", "matrix"])) return "table";
+  if (hasAny(t, ["chart", "graph", "plot", "histogram", "bar chart", "pie chart", "line chart"])) return "charts";
+  if (hasAny(t, ["diagram", "flowchart", "flow chart", "schematic", "schema", "wireframe", "architecture"])) return "diagram";
+  if (hasAny(t, ["sketch", "hand-drawn", "hand drawn", "doodle", "draft", "illustration"])) return "sketch";
+  if (
+    hasAny(t, ["photo", "photograph", "camera", "picture", "portrait", "snapshot"]) &&
+    !hasAny(t, ["chart", "diagram", "plot", "graph", "table"])
+  ) {
+    return "photo";
+  }
+  if (hasAny(t, ["image", "figure", "fig", "picture"]) && !hasAny(t, ["chart", "diagram", "table"])) return "photo";
+  return "other";
+}
+
+function matchesVisualType(v: DocOracleVisualRow, filterId: VisualTypeId): boolean {
+  if (filterId === "all") return true;
+  return inferVisualFamily(v) === filterId;
+}
+
 export function DocOracleVisualsPanel(props: {
   visuals: DocOracleVisualRow[];
   sections: DocOracleSectionRow[];
@@ -25,7 +65,7 @@ export function DocOracleVisualsPanel(props: {
 }) {
   const { visuals, sections, onOpen } = props;
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<Cat>("all");
+  const [cat, setCat] = useState<VisualTypeId>("all");
   const [pageFilter, setPageFilter] = useState<string>("all");
   const [sort, setSort] = useState<"doc" | "page" | "category">("doc");
 
@@ -41,10 +81,7 @@ export function DocOracleVisualsPanel(props: {
     const t = q.trim().toLowerCase();
     let list = visuals.filter((v) => v.image_path);
     if (cat !== "all") {
-      list = list.filter((v) => {
-        const a = (v.semantic_category || v.type || "unknown").toLowerCase();
-        return a.includes(cat) || (cat === "image" && a === "image");
-      });
+      list = list.filter((v) => matchesVisualType(v, cat));
     }
     if (pageFilter !== "all") {
       const pn = Number(pageFilter);
@@ -75,9 +112,7 @@ export function DocOracleVisualsPanel(props: {
         return (a.title || "").localeCompare(b.title || "");
       });
     } else if (sort === "category") {
-      sorted.sort((a, b) =>
-        (a.semantic_category || a.type || "").localeCompare(b.semantic_category || b.type || ""),
-      );
+      sorted.sort((a, b) => inferVisualFamily(a).localeCompare(inferVisualFamily(b)));
     }
     return sorted;
   }, [visuals, q, cat, pageFilter, sort]);
@@ -100,12 +135,12 @@ export function DocOracleVisualsPanel(props: {
         </div>
         <select
           value={cat}
-          onChange={(e) => setCat(e.target.value as Cat)}
-          className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground lg:w-40"
+          onChange={(e) => setCat(e.target.value as VisualTypeId)}
+          className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground lg:min-w-[180px]"
         >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c === "all" ? "All categories" : c}
+          {VISUAL_TYPE_FILTERS.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.label}
             </option>
           ))}
         </select>
@@ -128,7 +163,7 @@ export function DocOracleVisualsPanel(props: {
         >
           <option value="doc">Document order</option>
           <option value="page">Page number</option>
-          <option value="category">Category</option>
+          <option value="category">Visual type</option>
         </select>
       </div>
 

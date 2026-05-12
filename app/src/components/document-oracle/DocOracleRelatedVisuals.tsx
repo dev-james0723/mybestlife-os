@@ -12,10 +12,15 @@ function tagList(v: unknown): string[] {
 export function DocOracleRelatedVisuals(props: {
   visuals: DocOracleVisualRow[];
   onOpen: (v: DocOracleVisualRow) => void;
+  emptyMessage?: string;
 }) {
-  const { visuals, onOpen } = props;
+  const { visuals, onOpen, emptyMessage } = props;
   if (visuals.length === 0) {
-    return <p className="text-[12px] text-muted-foreground">No visuals matched this section.</p>;
+    return (
+      <p className="text-[12px] text-muted-foreground">
+        {emptyMessage ?? "No visuals matched this section."}
+      </p>
+    );
   }
   return (
     <div className="grid gap-2 sm:grid-cols-2">

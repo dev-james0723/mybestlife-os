@@ -7,3 +7,4 @@ mineru[pipeline]>=3.0.0
 beautifulsoup4>=4.12.3
 markdownify>=0.14.1
 Pillow>=10.4.0
+pymupdf>=1.24.0,<2

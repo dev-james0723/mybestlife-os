@@ -11,7 +11,7 @@ export async function compressImageForKnowledgeThumbnail(file: File): Promise<Bl
   }
 
   try {
-    let { width, height } = bitmap;
+    const { width, height } = bitmap;
     const maxSide = Math.max(width, height);
     const scale = maxSide > MAX_DIMENSION ? MAX_DIMENSION / maxSide : 1;
     const outW = Math.max(1, Math.round(width * scale));
