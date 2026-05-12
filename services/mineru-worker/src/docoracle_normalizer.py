@@ -135,9 +135,17 @@ def rewrite_mineru_image_paths(md: str, *, primary_rel: str, output_base_path: s
         return f"![{alt}]({storage})"
 
     return re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", repl, md)
+
+
+def _read_json(path: Path) -> Any | None:
     try:
         return json.loads(path.read_text(encoding="utf-8", errors="replace"))
-    except Exception:
+    except Exception as e:
+        log.warning(
+            "[mineru-worker] read_json_failed path=%s error=%s",
+            path.name,
+            str(e)[:300],
+        )
         return None
 
 
@@ -148,9 +156,29 @@ def _try_content_list(output_dir: Path, rel_paths: list[str]) -> list[dict[str, 
         p = output_dir / rel
         if not p.is_file():
             continue
+
         data = _read_json(p)
-        if isinstance(data, list) and data and isinstance(data[0], dict):
-            return [x for x in data if isinstance(x, dict)]
+        if data is None:
+            continue
+
+        if isinstance(data, list):
+            items = data
+        elif isinstance(data, dict):
+            items = None
+            for key in ("content", "items", "data", "pages"):
+                val = data.get(key)
+                if isinstance(val, list):
+                    items = val
+                    break
+            if items is None:
+                continue
+        else:
+            continue
+
+        rows = [x for x in items if isinstance(x, dict)]
+        if rows:
+            return rows
+
     return None
 
 
