@@ -18,7 +18,29 @@ function isChatTurn(v: unknown): v is ChatTurn {
   );
 }
 
-function scoreChunks(query: string, rows: { chunk_text: string; keywords: unknown }[]): number[] {
+type RetrievalFocus = {
+  pageStart: number | null;
+  pageEnd: number | null;
+  sectionTitle: string | null;
+};
+
+function parseRetrievalFocus(body: Record<string, unknown>): RetrievalFocus | null {
+  const rf = body.retrievalFocus;
+  if (!rf || typeof rf !== "object") return null;
+  const o = rf as Record<string, unknown>;
+  const pageStart = typeof o.pageStart === "number" && Number.isFinite(o.pageStart) ? o.pageStart : null;
+  const pageEnd = typeof o.pageEnd === "number" && Number.isFinite(o.pageEnd) ? o.pageEnd : null;
+  const sectionTitle =
+    typeof o.sectionTitle === "string" && o.sectionTitle.trim() ? o.sectionTitle.trim().slice(0, 400) : null;
+  if (pageStart == null && pageEnd == null && !sectionTitle) return null;
+  return { pageStart, pageEnd, sectionTitle };
+}
+
+function scoreChunks(
+  query: string,
+  rows: { chunk_text: string; keywords: unknown; page_number: unknown; section_path: unknown }[],
+  focus: RetrievalFocus | null,
+): number[] {
   const words = query
     .toLowerCase()
     .split(/[\s,，。.!/?；;:]+/)
@@ -31,6 +53,22 @@ function scoreChunks(query: string, rows: { chunk_text: string; keywords: unknow
     for (const w of words) {
       if (t.includes(w)) s += 2;
       if (kw.some((k) => k.includes(w))) s += 4;
+    }
+    if (focus) {
+      const page = typeof r.page_number === "number" && Number.isFinite(r.page_number) ? r.page_number : null;
+      const sec = typeof r.section_path === "string" ? r.section_path : "";
+      const ps = focus.pageStart;
+      const pe = focus.pageEnd;
+      if (page != null && ps != null && pe != null && ps <= pe && page >= ps && page <= pe) {
+        s += 14;
+      } else if (page != null && ps != null && pe == null && page === ps) {
+        s += 10;
+      } else if (page != null && ps != null && pe == null && page >= ps) {
+        s += 6;
+      }
+      if (focus.sectionTitle && sec.includes(focus.sectionTitle)) {
+        s += 10;
+      }
     }
     return s;
   });
@@ -59,6 +97,7 @@ export async function POST(
   const o = body as Record<string, unknown>;
   const messagesRaw = o.messages;
   const sessionIdIn = typeof o.sessionId === "string" && o.sessionId.trim() ? o.sessionId.trim() : null;
+  const retrievalFocus = parseRetrievalFocus(o);
 
   if (!Array.isArray(messagesRaw) || messagesRaw.length === 0) {
     return NextResponse.json({ error: "invalid_messages" }, { status: 400 });
@@ -112,14 +151,30 @@ export async function POST(
   }
 
   const lastUser = turns[turns.length - 1]!.content;
-  const scores = scoreChunks(lastUser, chunkRows as { chunk_text: string; keywords: unknown }[]);
+  const typedRows = chunkRows as {
+    chunk_text: string;
+    keywords: unknown;
+    page_number: unknown;
+    section_path: unknown;
+  }[];
+  const scores = scoreChunks(lastUser, typedRows, retrievalFocus);
+  const scoresNeutral = scoreChunks(lastUser, typedRows, null);
+  const maxFocus = Math.max(0, ...scores);
   const ranked = chunkRows
     .map((row, i) => ({ row, i, s: scores[i] ?? 0 }))
     .sort((a, b) => b.s - a.s)
     .slice(0, 14)
     .map((x) => x.row);
 
-  const contextBlocks = ranked.map((r, idx) => {
+  const rankedNeutral = chunkRows
+    .map((row, i) => ({ row, s: scoresNeutral[i] ?? 0 }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 14)
+    .map((x) => x.row);
+
+  const contextRows = retrievalFocus && maxFocus === 0 ? rankedNeutral : ranked;
+
+  const contextBlocks = contextRows.map((r, idx) => {
     const id = r.id as string;
     const text = (r.chunk_text as string).slice(0, 3500);
     const page = typeof r.page_number === "number" ? r.page_number : null;
@@ -143,8 +198,19 @@ export async function POST(
     .map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`)
     .join("\n\n");
 
+  const focusPreamble =
+    retrievalFocus &&
+    (retrievalFocus.sectionTitle ||
+      retrievalFocus.pageStart != null ||
+      retrievalFocus.pageEnd != null)
+      ? `Retrieval priority: prefer evidence from section "${retrievalFocus.sectionTitle ?? ""}" and pages ${
+          retrievalFocus.pageStart ?? "?"
+        }–${retrievalFocus.pageEnd ?? "?"}. Still answer ONLY from CONTEXT below.\n\n`
+      : "";
+
   const userText = [
     histText ? `Prior turns:\n${histText}\n\n` : "",
+    focusPreamble,
     `User question:\n${lastUser}\n\n`,
     "CONTEXT:\n",
     contextBlocks.join("\n\n---\n\n"),

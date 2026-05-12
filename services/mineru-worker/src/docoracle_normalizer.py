@@ -344,6 +344,96 @@ def _visual_type_from_name(name: str) -> str:
     return "image"
 
 
+def _parse_page_from_filename(name: str) -> tuple[int | None, float]:
+    """Return (1-based page number or None, confidence)."""
+    n = name.strip()
+    m = re.search(r"(?i)page[_\-]?idx[_\-](\d+)", n)
+    if m:
+        try:
+            return int(m.group(1)) + 1, 0.6
+        except ValueError:
+            pass
+    m = re.search(r"(?i)(?:^|[/\\])p(\d{2,4})(?:[_\-]|\.|$)", n)
+    if m:
+        try:
+            return int(m.group(1)), 0.6
+        except ValueError:
+            pass
+    m = re.search(r"(?i)page[_\-](\d+)", n)
+    if m:
+        try:
+            return int(m.group(1)), 0.6
+        except ValueError:
+            pass
+    m = re.search(r"(?i)images[/\\]page[_\-](\d+)[_\-]", n)
+    if m:
+        try:
+            return int(m.group(1)), 0.6
+        except ValueError:
+            pass
+    return None, 0.0
+
+
+def _build_image_page_map_from_content_list(items: list[dict[str, Any]]) -> dict[str, tuple[int, float]]:
+    """Map relative image paths (and basenames) to (1-based page, confidence)."""
+    out: dict[str, tuple[int, float]] = {}
+    for item in items:
+        img = item.get("img_path")
+        if not isinstance(img, str) or not img.strip():
+            continue
+        pidx = item.get("page_idx")
+        if not isinstance(pidx, int):
+            pidx = item.get("page_index")
+        if not isinstance(pidx, int):
+            continue
+        page_one = pidx + 1
+        rel = img.strip().replace("\\", "/").lstrip("./")
+        out[rel] = (page_one, 0.8)
+        base = Path(rel).name
+        out.setdefault(base, (page_one, 0.8))
+    return out
+
+
+def _page_from_markdown_image(
+    cleaned_md: str,
+    rel_key: str,
+    page_boundaries: list[int],
+) -> tuple[int | None, float]:
+    if not cleaned_md or not page_boundaries:
+        return None, 0.0
+    key = rel_key.replace("\\", "/")
+    idx = cleaned_md.find(key)
+    if idx < 0:
+        base = Path(key).name
+        if len(base) < 5:
+            return None, 0.0
+        idx = cleaned_md.find(base)
+    if idx < 0:
+        return None, 0.0
+    pg = _page_for_char_offset(cleaned_md, idx, page_boundaries)
+    if pg is None:
+        return None, 0.0
+    return pg, 0.4
+
+
+def _pick_best_page_number(candidates: list[tuple[int, float]]) -> tuple[int | None, float]:
+    if not candidates:
+        return None, 0.2
+    return max(candidates, key=lambda x: x[1])
+
+
+def _related_section_ids_for_page(page_num: int | None, section_rows: list[dict[str, Any]]) -> list[str]:
+    if page_num is None:
+        return []
+    out: list[str] = []
+    for r in section_rows:
+        ps = r.get("page_start")
+        pe = r.get("page_end")
+        if isinstance(ps, int) and isinstance(pe, int) and ps <= page_num <= pe:
+            out.append(str(r["id"]))
+    return out[:5]
+
+
 def _page_for_char_offset(md: str, offset: int, page_boundaries: list[int]) -> int | None:
     """page_boundaries: cumulative char lengths per page end; return 1-based page."""
     if not page_boundaries:
@@ -664,6 +754,9 @@ def normalize_doc_oracle(
     _batched_insert(client, "document_chunks", chunk_rows)
 
     # --- visuals ---
+    content_list_rows: list[dict[str, Any]] = [x for x in (content_list or []) if isinstance(x, dict)]
+    img_page_map = _build_image_page_map_from_content_list(content_list_rows)
+
     visual_rows: list[dict[str, Any]] = []
     for rel in manifest.get("image_files") or []:
         rel_s = str(rel).strip()
@@ -671,13 +764,23 @@ def normalize_doc_oracle(
             continue
         name = Path(rel_s).name
         storage_path = f"{storage_raw_prefix}/{rel_s}"
-        page_guess = None
-        m = re.search(r"page[_\-]?(\d+)", name, re.I)
-        if m:
-            try:
-                page_guess = int(m.group(1))
-            except ValueError:
-                page_guess = None
+        rel_norm = rel_s.replace("\\", "/").lstrip("./")
+
+        cands: list[tuple[int, float]] = []
+        fn_pg, fn_cf = _parse_page_from_filename(name)
+        if fn_pg is not None:
+            cands.append((fn_pg, fn_cf))
+
+        hit = img_page_map.get(rel_norm) or img_page_map.get(name)
+        if hit:
+            cands.append(hit)
+
+        md_pg, md_cf = _page_from_markdown_image(cleaned, rel_norm, page_boundaries)
+        if md_pg is not None:
+            cands.append((md_pg, md_cf))
+
+        page_guess, conf = _pick_best_page_number(cands)
+        related_secs = _related_section_ids_for_page(page_guess, section_rows)
         vtype = _visual_type_from_name(name)
         desc = f"Visual asset extracted from the document ({name})."
         visual_rows.append(
@@ -688,7 +791,7 @@ def normalize_doc_oracle(
                 "analysis_id": analysis_id,
                 "source_page_number": page_guess,
                 "type": vtype,
-                "semantic_category": "mineru_output",
+                "semantic_category": vtype,
                 "title": name[:200],
                 "description": desc,
                 "image_path": storage_path,
@@ -696,12 +799,28 @@ def normalize_doc_oracle(
                 "extracted_labels": [name],
                 "retrieval_tags": _keywords_from_text(name),
                 "related_terms": [],
-                "related_sections": [],
-                "confidence": 0.35,
+                "related_sections": related_secs,
+                "confidence": float(conf),
                 "created_at": now_iso,
                 "updated_at": now_iso,
             }
         )
+
+    try:
+        from .docoracle_visual_gemini import enrich_visual_rows_with_gemini
+
+        enrich_visual_rows_with_gemini(
+            visual_rows,
+            output_dir=output_dir,
+            document_language=lang,
+            document_title=document_title,
+        )
+    except Exception as e:
+        log.warning(
+            "[mineru-worker] visual_gemini_hook_failed err=%s",
+            str(e)[:240],
+        )
+
     _batched_insert(client, "document_visual_assets", visual_rows)
 
     # --- glossary ---

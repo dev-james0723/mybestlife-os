@@ -28,6 +28,9 @@ Production parsing uses the **official API** so you get full MinerU output (Mark
 | `NEXT_PUBLIC_APP_URL` | Legacy alias: same as callback base if `WORKER_CALLBACK_APP_URL` unset. |
 | `MINERU_INTERNAL_API_URL` | **local_cli + Docker:** set by `docker-entrypoint.sh` (default `http://127.0.0.1:8877`). The `mineru` CLI uses `--api-url` against in-container `mineru-api`. |
 | `MINERU_API_HOST` / `MINERU_API_PORT` | **local_cli + Docker:** optional overrides for internal `mineru-api` bind address. |
+| `GEMINI_API_KEY` | **Optional.** When set, the worker enriches up to `DOCORACLE_VISUAL_GEMINI_LIMIT` visual assets per document with Gemini multimodal JSON (title, description, semantic category, tags). Never log this value. |
+| `DOCORACLE_VISUAL_GEMINI_LIMIT` | Max visuals per document to send to Gemini (default `40`). |
+| `DOCORACLE_VISUAL_GEMINI_MODEL` | Optional Gemini model id (default `gemini-2.0-flash`). |
 
 Official API jobs POST `https://mineru.net/api/v4/extract/task` with the **same signed Supabase URL** the app sent to the worker (`url` field). MinerU’s servers must be able to fetch that URL; if extraction fails with timeouts, ensure the signed URL is reachable from their network (see MinerU docs on URL / region limits).
 

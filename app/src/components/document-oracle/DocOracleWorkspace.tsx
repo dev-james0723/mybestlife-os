@@ -1,28 +1,26 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  ImageIcon,
-  Layers,
-  MessageCircle,
-  Search,
-  Sparkles,
-} from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, FileText, Search, Sparkles } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
 import type { KnowledgeItem } from "@/types/knowledge";
 import { DocOracleMarkdown } from "@/components/document-oracle/DocOracleMarkdown";
-import { DocOracleChatPanel } from "@/components/document-oracle/DocOracleChatPanel";
+import {
+  DocOracleChatPanel,
+  type DocOracleChatPanelHandle,
+  type DocOracleChatRetrievalFocus,
+} from "@/components/document-oracle/DocOracleChatPanel";
+import { DocOracleTabBar } from "@/components/document-oracle/DocOracleTabBar";
+import { DocOracleSectionsPanel } from "@/components/document-oracle/DocOracleSectionsPanel";
+import { DocOracleVisualsPanel } from "@/components/document-oracle/DocOracleVisualsPanel";
+import { DocOracleVisualPreviewModal } from "@/components/document-oracle/DocOracleVisualPreviewModal";
+import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
+import { displayVisualTitle, getRelatedSectionTitleForVisual } from "@/components/document-oracle/docOracleVisualLabels";
 
 const limeBtn =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8E53A] px-4 py-2 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition-[filter,transform] duration-[120ms] ease-out hover:scale-[1.02] hover:brightness-[1.12]";
@@ -80,11 +78,10 @@ export type DocOracleVisualRow = {
   source_page_number: number | null;
   extracted_labels: unknown;
   retrieval_tags: unknown;
+  related_terms: unknown;
+  related_sections: unknown;
+  confidence: number | null;
 };
-
-function knowledgeFilesApiHref(filePath: string): string {
-  return `/api/knowledge-files/${filePath.split("/").map(encodeURIComponent).join("/")}`;
-}
 
 function kwList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 12) : [];
@@ -92,73 +89,6 @@ function kwList(v: unknown): string[] {
 
 function isCompletedAnalysis(a: DocOracleAnalysis | null): a is DocOracleAnalysis {
   return a?.status === "completed";
-}
-
-function SectionTree(props: {
-  sections: DocOracleSectionRow[];
-  onPick: (s: DocOracleSectionRow) => void;
-  selectedId: string | null;
-}) {
-  const { sections, onPick, selectedId } = props;
-  const byParent = useMemo(() => {
-    const m = new Map<string | null, DocOracleSectionRow[]>();
-    for (const s of sections) {
-      const k = s.parent_id;
-      if (!m.has(k)) m.set(k, []);
-      m.get(k)!.push(s);
-    }
-    for (const arr of m.values()) {
-      arr.sort((a, b) => (a.page_start ?? 0) - (b.page_start ?? 0));
-    }
-    return m;
-  }, [sections]);
-
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-
-  const renderNodes = (parent: string | null, depth: number): ReactNode => {
-    const kids = byParent.get(parent) ?? [];
-    return kids.map((s) => {
-      const hasChildren = (byParent.get(s.id) ?? []).length > 0;
-      const isOpen = open[s.id] ?? depth < 2;
-      return (
-        <div key={s.id} className="select-none">
-          <button
-            type="button"
-            onClick={() => {
-              if (hasChildren) setOpen((o) => ({ ...o, [s.id]: !isOpen }));
-              onPick(s);
-            }}
-            className={cn(
-              "flex w-full items-start gap-1 rounded-lg px-2 py-1.5 text-left text-[12.5px] transition",
-              selectedId === s.id ? "bg-white/[0.12] text-white" : "text-white/75 hover:bg-white/[0.06]",
-            )}
-            style={{ paddingLeft: 8 + depth * 12 }}
-          >
-            {hasChildren ? (
-              isOpen ? (
-                <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/45" aria-hidden />
-              ) : (
-                <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/45" aria-hidden />
-              )
-            ) : (
-              <span className="inline-block w-3.5 shrink-0" />
-            )}
-            <span className="min-w-0 flex-1">
-              <span className="font-medium text-white/90">{s.title}</span>
-              <span className="mt-0.5 block text-[11px] text-white/45">
-                {s.page_start != null || s.page_end != null
-                  ? `pp. ${s.page_start ?? "?"}–${s.page_end ?? "?"}`
-                  : "pages n/a"}
-              </span>
-            </span>
-          </button>
-          {hasChildren && isOpen ? <div>{renderNodes(s.id, depth + 1)}</div> : null}
-        </div>
-      );
-    });
-  };
-
-  return <div className="space-y-0.5">{renderNodes(null, 0)}</div>;
 }
 
 export function DocOracleWorkspace(props: {
@@ -182,6 +112,42 @@ export function DocOracleWorkspace(props: {
   const [glossQ, setGlossQ] = useState("");
   const [glossCat, setGlossCat] = useState<string | "all">("all");
   const [visualPreview, setVisualPreview] = useState<DocOracleVisualRow | null>(null);
+  const chatRef = useRef<DocOracleChatPanelHandle>(null);
+
+  const focusForSection = (s: DocOracleSectionRow): DocOracleChatRetrievalFocus => ({
+    pageStart: s.page_start,
+    pageEnd: s.page_end,
+    sectionTitle: s.title,
+  });
+
+  const handleAskSection = (s: DocOracleSectionRow) => {
+    const prompt = `Please summarize this section with citations:
+Section: ${s.title}
+Page range: ${s.page_start ?? "?"}-${s.page_end ?? "?"}
+Focus on key requirements, action items, dates, people, fees, and related visuals.
+Cite only supported document passages and include page numbers where possible.`;
+    setTab("chat");
+    requestAnimationFrame(() => {
+      void chatRef.current?.sendMessage(prompt, focusForSection(s));
+    });
+  };
+
+  const handleAskVisual = (v: DocOracleVisualRow) => {
+    const prompt = `Please describe this visual and its role in the document with citations:
+Visual: ${displayVisualTitle(v)}
+Page: ${v.source_page_number ?? "unknown"}
+Explain what it shows and how it relates to the surrounding document. Cite pages where possible.`;
+    setVisualPreview(null);
+    setTab("chat");
+    requestAnimationFrame(() => {
+      const pg = v.source_page_number;
+      void chatRef.current?.sendMessage(prompt, {
+        pageStart: pg,
+        pageEnd: pg,
+        sectionTitle: null,
+      });
+    });
+  };
 
   const readyAnalysis = isCompletedAnalysis(analysis) ? analysis : null;
   const isReady = readyAnalysis !== null;
@@ -234,16 +200,7 @@ export function DocOracleWorkspace(props: {
   }, [suggestedQuestions]);
 
   return (
-    <div className="doc-oracle-workspace relative min-h-[100dvh] w-full overflow-x-hidden bg-[#0f0d0c] text-white">
-      <div
-        className="doc-oracle-liquid-bg pointer-events-none fixed inset-0 -z-10 bg-[length:120%_120%] bg-center opacity-95"
-        style={{
-          backgroundImage:
-            "linear-gradient(165deg, rgba(26,22,20,0.92) 0%, rgba(12,10,9,0.96) 45%, rgba(8,7,6,0.98) 100%), radial-gradient(ellipse 120% 80% at 50% -20%, rgba(200,229,58,0.08), transparent 55%)",
-        }}
-        aria-hidden
-      />
-
+    <div className="doc-oracle-workspace relative min-h-[100dvh] w-full overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-8 sm:py-10">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -254,20 +211,20 @@ export function DocOracleWorkspace(props: {
           <div className="min-w-0 space-y-2">
             <Link
               href={backHref}
-              className="inline-flex items-center gap-2 text-[12px] font-medium text-white/55 transition hover:text-white/85"
+              className="inline-flex items-center gap-2 text-[12px] font-medium text-muted-foreground transition hover:text-foreground"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
               Knowledge Base
             </Link>
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#C8E53A] shadow-inner">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted/60 text-[#C8E53A] shadow-inner">
                 <Sparkles className="h-4 w-4" aria-hidden />
               </span>
               <div className="min-w-0">
                 <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
                   {analysis?.document_title ?? item.title}
                 </h1>
-                <p className="text-[12px] text-white/50">
+                <p className="text-[12px] text-muted-foreground">
                   {isReady ? (
                     <>
                       Doc Oracle · {readyAnalysis.parser ?? "MinerU"}
@@ -305,7 +262,7 @@ export function DocOracleWorkspace(props: {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.4, ease: "easeOut" }}
-          className={cn("lg-glass-panel min-h-[420px] p-4 sm:p-8")}
+          className={cn("lg-glass-panel min-h-[420px] overflow-visible p-4 sm:p-8")}
         >
           {!isReady ? (
             <div
@@ -315,38 +272,17 @@ export function DocOracleWorkspace(props: {
               <p className="font-medium text-amber-100">Workspace shell — extraction not finished</p>
               <p className="mt-1 text-[12px] text-amber-100/85">
                 When MinerU completes and normalizes, every tab fills with structured intelligence. Re-open after the
-                knowledge card shows <strong className="text-white">ready</strong>.
+                knowledge card shows <strong className="text-foreground">ready</strong>.
               </p>
             </div>
           ) : null}
 
           <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 w-full min-w-0 flex-col gap-4">
-            <TabsList className="lg-glass-panel-dark flex h-auto w-full min-w-0 flex-wrap justify-start gap-1 overflow-x-auto p-1 sm:flex-nowrap">
-              {[
-                { id: "overview", label: "Overview", Icon: BookOpen },
-                { id: "chat", label: "Chat", Icon: MessageCircle },
-                { id: "pages", label: "Pages", Icon: Layers },
-                { id: "sections", label: "Sections", Icon: Layers },
-                { id: "glossary", label: "Glossary", Icon: BookOpen },
-                { id: "visuals", label: "Visuals", Icon: ImageIcon },
-                { id: "source", label: "Source", Icon: FileText },
-              ].map(({ id, label, Icon }) => (
-                <TabsTrigger
-                  key={id}
-                  value={id}
-                  className={cn(
-                    "shrink-0 gap-1.5 rounded-xl px-3 py-2 text-[12px] font-medium text-white/55 transition-colors duration-150 ease-out hover:bg-white/[0.05] data-[state=active]:bg-white data-[state=active]:text-[#0d0d0d] data-[state=active]:shadow-sm sm:text-[13px]",
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 opacity-80" aria-hidden />
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <DocOracleTabBar />
 
-            <TabsContent value="overview" className="mt-0 min-h-[280px] space-y-5 text-[13px] leading-relaxed text-white/75">
+            <TabsContent value="overview" className="mt-0 min-h-[280px] space-y-5 text-[13px] leading-relaxed text-muted-foreground">
               {!isReady ? (
-                <p className="text-white/70">
+                <p className="text-muted-foreground">
                   {analysis
                     ? `Analysis record exists but is not complete yet (status: ${analysis.status}).`
                     : "No `document_analyses` row yet."}
@@ -354,20 +290,20 @@ export function DocOracleWorkspace(props: {
               ) : (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:col-span-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Document</p>
-                      <p className="mt-1 text-base font-semibold text-white">{readyAnalysis.document_title ?? item.title}</p>
-                      <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-white/65">
+                    <div className="rounded-2xl border border-border bg-muted/50 p-4 sm:col-span-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Document</p>
+                      <p className="mt-1 text-base font-semibold text-foreground">{readyAnalysis.document_title ?? item.title}</p>
+                      <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
                         <div>
-                          <dt className="text-white/40">Parser</dt>
+                          <dt className="text-muted-foreground">Parser</dt>
                           <dd>{readyAnalysis.parser ?? "mineru"}</dd>
                         </div>
                         <div>
-                          <dt className="text-white/40">Type</dt>
+                          <dt className="text-muted-foreground">Type</dt>
                           <dd>{readyAnalysis.document_type ?? "—"}</dd>
                         </div>
                         <div>
-                          <dt className="text-white/40">Pages</dt>
+                          <dt className="text-muted-foreground">Pages</dt>
                           <dd>
                             {readyAnalysis.total_pages != null && readyAnalysis.total_pages > 0
                               ? readyAnalysis.total_pages
@@ -377,61 +313,61 @@ export function DocOracleWorkspace(props: {
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-white/40">Language</dt>
+                          <dt className="text-muted-foreground">Language</dt>
                           <dd>{readyAnalysis.language ?? "—"}</dd>
                         </div>
                       </dl>
-                      <p className="mt-3 text-[11px] text-white/45">
+                      <p className="mt-3 text-[11px] text-muted-foreground">
                         Extraction quality: <span className="text-emerald-300/90">normalized workspace</span>
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Structure</p>
-                      <div className="mt-2 space-y-1 text-2xl font-semibold tabular-nums text-white">
+                    <div className="rounded-2xl border border-border bg-muted/50 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Structure</p>
+                      <div className="mt-2 space-y-1 text-2xl font-semibold tabular-nums text-foreground">
                         <p>{pages.length} pages</p>
-                        <p className="text-base text-white/70">{sections.length} sections</p>
-                        <p className="text-base text-white/70">{chunkCount} chunks</p>
+                        <p className="text-base text-muted-foreground">{sections.length} sections</p>
+                        <p className="text-base text-muted-foreground">{chunkCount} chunks</p>
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Knowledge</p>
-                      <div className="mt-2 space-y-1 text-2xl font-semibold tabular-nums text-white">
+                    <div className="rounded-2xl border border-border bg-muted/50 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Knowledge</p>
+                      <div className="mt-2 space-y-1 text-2xl font-semibold tabular-nums text-foreground">
                         <p>{glossary.length} glossary</p>
-                        <p className="text-base text-white/70">{visuals.length} visuals</p>
+                        <p className="text-base text-muted-foreground">{visuals.length} visuals</p>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Executive overview
                     </p>
-                    <div className="rounded-2xl border border-white/10 bg-black/25 p-4 sm:p-5">
+                    <div className="rounded-2xl border border-border bg-muted/40 p-4 sm:p-5">
                       <DocOracleMarkdown source={readyAnalysis.summary ?? ""} />
                     </div>
                   </div>
 
                   <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Readable preview
                     </p>
-                    <div className="max-h-[min(55vh,560px)] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-4 sm:p-5">
+                    <div className="max-h-[min(55vh,560px)] overflow-y-auto rounded-2xl border border-border bg-muted/40 p-4 sm:p-5">
                       {overviewBody ? (
                         <DocOracleMarkdown source={overviewBody} />
                       ) : (
-                        <p className="text-white/50">No preview text available.</p>
+                        <p className="text-muted-foreground">No preview text available.</p>
                       )}
                     </div>
                   </div>
 
                   {topicList.length ? (
                     <div>
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">Key topics</p>
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Key topics</p>
                       <div className="flex flex-wrap gap-2">
                         {topicList.map((t) => (
                           <span
                             key={t}
-                            className="rounded-full border border-white/12 bg-white/[0.05] px-3 py-1 text-[11.5px] text-white/80"
+                            className="rounded-full border border-border bg-muted/50 px-3 py-1 text-[11.5px] text-muted-foreground"
                           >
                             {t}
                           </span>
@@ -442,14 +378,14 @@ export function DocOracleWorkspace(props: {
 
                   {sections.length ? (
                     <div>
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Table of contents
                       </p>
-                      <ul className="space-y-1 rounded-2xl border border-white/10 bg-black/20 p-3 text-[12.5px] text-white/80">
+                      <ul className="space-y-1 rounded-2xl border border-border bg-muted/40 p-3 text-[12.5px] text-muted-foreground">
                         {sections.slice(0, 10).map((s) => (
-                          <li key={s.id} className="flex justify-between gap-3 border-b border-white/[0.06] py-1.5 last:border-0">
+                          <li key={s.id} className="flex justify-between gap-3 border-b border-border/60 py-1.5 last:border-0">
                             <span className="min-w-0 truncate">{s.title}</span>
-                            <span className="shrink-0 text-white/45">
+                            <span className="shrink-0 text-muted-foreground">
                               {s.page_start != null ? `p.${s.page_start}` : ""}
                             </span>
                           </li>
@@ -460,7 +396,7 @@ export function DocOracleWorkspace(props: {
 
                   {visuals.length ? (
                     <div>
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Visual highlights
                       </p>
                       <div className="grid gap-3 sm:grid-cols-3">
@@ -470,7 +406,7 @@ export function DocOracleWorkspace(props: {
                               key={v.id}
                               type="button"
                               onClick={() => setVisualPreview(v)}
-                              className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 text-left transition hover:border-[#C8E53A]/35"
+                              className="overflow-hidden rounded-2xl border border-border bg-muted/60 text-left transition hover:border-[#C8E53A]/35"
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
@@ -478,7 +414,9 @@ export function DocOracleWorkspace(props: {
                                 alt={v.title || "visual"}
                                 className="h-28 w-full object-cover"
                               />
-                              <p className="truncate px-2 py-1.5 text-[11px] text-white/70">{v.title}</p>
+                              <p className="truncate px-2 py-1.5 text-[11px] text-muted-foreground">
+                                {displayVisualTitle(v)}
+                              </p>
                             </button>
                           ) : null,
                         )}
@@ -487,14 +425,14 @@ export function DocOracleWorkspace(props: {
                   ) : null}
 
                   <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Suggested questions
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {chatStarters.map((q) => (
                         <span
                           key={q}
-                          className="rounded-full border border-white/12 bg-white/[0.05] px-3 py-1.5 text-[11.5px] text-white/75"
+                          className="rounded-full border border-border bg-muted/50 px-3 py-1.5 text-[11.5px] text-muted-foreground"
                         >
                           {q}
                         </span>
@@ -505,15 +443,19 @@ export function DocOracleWorkspace(props: {
               )}
             </TabsContent>
 
-            <TabsContent value="chat" className="mt-0 min-h-[320px] text-[13px] text-white/70">
+            <TabsContent value="chat" className="mt-0 min-h-[320px] text-[13px] text-muted-foreground">
               {isReady ? (
-                <DocOracleChatPanel documentId={item.id} suggestedPrompts={chatStarters} />
+                <DocOracleChatPanel
+                  ref={chatRef}
+                  documentId={item.id}
+                  suggestedPrompts={chatStarters}
+                />
               ) : (
                 <p>Chat unlocks when analysis is completed.</p>
               )}
             </TabsContent>
 
-            <TabsContent value="pages" className="mt-0 space-y-3 text-[13px] text-white/70">
+            <TabsContent value="pages" className="mt-0 space-y-3 text-[13px] text-muted-foreground">
               {pages.length === 0 ? (
                 <p>No page rows yet.</p>
               ) : (
@@ -523,14 +465,14 @@ export function DocOracleWorkspace(props: {
                       key={p.id}
                       type="button"
                       onClick={() => setPageDetail(p)}
-                      className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left transition hover:border-white/20"
+                      className="rounded-2xl border border-border bg-muted/40 p-4 text-left transition hover:border-border"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8E53A]">
                           Page {p.page_number}
                         </p>
                         {p.has_visual_assets ? (
-                          <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] text-white/60">
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
                             visuals
                           </span>
                         ) : null}
@@ -543,9 +485,9 @@ export function DocOracleWorkspace(props: {
                           className="mt-2 h-24 w-full rounded-lg object-cover"
                         />
                       ) : null}
-                      <p className="mt-2 line-clamp-3 text-[12px] text-white/75">{p.page_summary}</p>
+                      <p className="mt-2 line-clamp-3 text-[12px] text-muted-foreground">{p.page_summary}</p>
                       {kwList(p.keywords).length ? (
-                        <p className="mt-2 text-[11px] text-white/45">{kwList(p.keywords).join(" · ")}</p>
+                        <p className="mt-2 text-[11px] text-muted-foreground">{kwList(p.keywords).join(" · ")}</p>
                       ) : null}
                     </button>
                   ))}
@@ -553,48 +495,39 @@ export function DocOracleWorkspace(props: {
               )}
             </TabsContent>
 
-            <TabsContent value="sections" className="mt-0 grid gap-4 text-[13px] text-white/70 lg:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-                {sections.length === 0 ? (
-                  <p>No sections yet.</p>
-                ) : (
-                  <SectionTree sections={sections} onPick={setSectionDetail} selectedId={sectionDetail?.id ?? null} />
-                )}
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                {sectionDetail ? (
-                  <>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Section</p>
-                    <p className="mt-1 text-base font-semibold text-white">{sectionDetail.title}</p>
-                    <p className="mt-2 text-[12px] text-white/60">{sectionDetail.summary}</p>
-                    <p className="mt-2 text-[11px] text-white/45">
-                      Pages {sectionDetail.page_start ?? "?"} – {sectionDetail.page_end ?? "?"}
-                    </p>
-                    {kwList(sectionDetail.keywords).length ? (
-                      <p className="mt-2 text-[11px] text-white/50">{kwList(sectionDetail.keywords).join(" · ")}</p>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-white/50">Select a section.</p>
-                )}
-              </div>
+            <TabsContent value="sections" className="mt-0 text-[13px] text-muted-foreground">
+              {sections.length === 0 ? (
+                <p>No sections yet.</p>
+              ) : (
+                <DocOracleSectionsPanel
+                  sections={sections}
+                  pages={pages}
+                  visuals={visuals}
+                  filePath={item.filePath}
+                  selectedSection={sectionDetail}
+                  onSelectSection={setSectionDetail}
+                  onAskAiSection={handleAskSection}
+                  onOpenVisual={setVisualPreview}
+                  onOpenPageDetail={setPageDetail}
+                />
+              )}
             </TabsContent>
 
-            <TabsContent value="glossary" className="mt-0 space-y-3 text-[13px] text-white/70">
+            <TabsContent value="glossary" className="mt-0 space-y-3 text-[13px] text-muted-foreground">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     value={glossQ}
                     onChange={(e) => setGlossQ(e.target.value)}
                     placeholder="Search terms…"
-                    className="w-full rounded-xl border border-white/12 bg-black/30 py-2 pl-9 pr-3 text-[13px] text-white outline-none placeholder:text-white/35"
+                    className="w-full rounded-xl border border-border bg-muted/60 py-2 pl-9 pr-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
                   />
                 </div>
                 <select
                   value={glossCat}
                   onChange={(e) => setGlossCat(e.target.value as string | "all")}
-                  className="rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-[12px] text-white"
+                  className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground"
                 >
                   <option value="all">All categories</option>
                   {glossCategories.map((c) => (
@@ -609,54 +542,25 @@ export function DocOracleWorkspace(props: {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {filteredGlossary.map((g) => (
-                    <div key={g.id} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <div key={g.id} className="rounded-2xl border border-border bg-muted/40 p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-white">{g.term}</p>
-                        <span className="shrink-0 rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] text-white/55">
+                        <p className="font-semibold text-foreground">{g.term}</p>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
                           {g.category || "term"}
                         </span>
                       </div>
-                      <p className="mt-2 text-[12px] text-white/70">{g.definition}</p>
+                      <p className="mt-2 text-[12px] text-muted-foreground">{g.definition}</p>
                     </div>
                   ))}
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="visuals" className="mt-0 space-y-3 text-[13px] text-white/70">
-              {visuals.length === 0 ? (
-                <p>No visual assets were detected in this MinerU output.</p>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {visuals.map((v) =>
-                    v.image_path ? (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setVisualPreview(v)}
-                        className="overflow-hidden rounded-2xl border border-white/10 bg-black/25 text-left transition hover:border-[#C8E53A]/35"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={knowledgeFilesApiHref(v.image_path)}
-                          alt={v.title || "visual"}
-                          className="aspect-[4/3] w-full object-cover"
-                        />
-                        <div className="space-y-1 p-3">
-                          <p className="truncate text-[12px] font-medium text-white">{v.title}</p>
-                          <p className="text-[11px] text-white/50">
-                            {v.type} · p.{v.source_page_number ?? "?"}
-                          </p>
-                          <p className="line-clamp-3 text-[11px] text-white/60">{v.description}</p>
-                        </div>
-                      </button>
-                    ) : null,
-                  )}
-                </div>
-              )}
+            <TabsContent value="visuals" className="mt-0 text-[13px] text-muted-foreground">
+              <DocOracleVisualsPanel sections={sections} visuals={visuals} onOpen={setVisualPreview} />
             </TabsContent>
 
-            <TabsContent value="source" className="mt-0 space-y-4 text-[13px] text-white/70">
+            <TabsContent value="source" className="mt-0 space-y-4 text-[13px] text-muted-foreground">
               {item.filePath ? (
                 <>
                   <div className="flex flex-wrap gap-2">
@@ -665,33 +569,33 @@ export function DocOracleWorkspace(props: {
                       Open original file
                     </a>
                   </div>
-                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+                  <div className="overflow-hidden rounded-2xl border border-border bg-muted">
                     <iframe
                       title="Source document"
                       src={knowledgeFilesApiHref(item.filePath)}
                       className="h-[min(72vh,720px)] w-full bg-neutral-900"
                     />
                   </div>
-                  <dl className="grid gap-2 rounded-2xl border border-white/10 bg-black/25 p-4 text-[12px] sm:grid-cols-2">
+                  <dl className="grid gap-2 rounded-2xl border border-border bg-muted/40 p-4 text-[12px] sm:grid-cols-2">
                     <div>
-                      <dt className="text-white/45">Filename</dt>
-                      <dd className="text-white/85">{item.filePath.split("/").pop()}</dd>
+                      <dt className="text-muted-foreground">Filename</dt>
+                      <dd className="text-foreground/90">{item.filePath.split("/").pop()}</dd>
                     </div>
                     <div>
-                      <dt className="text-white/45">Parser version</dt>
-                      <dd className="text-white/85">{analysis?.parser_version ?? "—"}</dd>
+                      <dt className="text-muted-foreground">Parser version</dt>
+                      <dd className="text-foreground/90">{analysis?.parser_version ?? "—"}</dd>
                     </div>
                     <div>
-                      <dt className="text-white/45">Uploaded</dt>
-                      <dd className="text-white/85">{item.dateAdded}</dd>
+                      <dt className="text-muted-foreground">Uploaded</dt>
+                      <dd className="text-foreground/90">{item.dateAdded}</dd>
                     </div>
                     <div>
-                      <dt className="text-white/45">Modified</dt>
-                      <dd className="text-white/85">{item.dateModified}</dd>
+                      <dt className="text-muted-foreground">Modified</dt>
+                      <dd className="text-foreground/90">{item.dateModified}</dd>
                     </div>
                   </dl>
                   {showDebugLink ? (
-                    <p className="text-[11px] text-white/40">
+                    <p className="text-[11px] text-muted-foreground">
                       Diagnostics:{" "}
                       <a
                         className="text-[#C8E53A] underline-offset-4 hover:underline"
@@ -719,18 +623,18 @@ export function DocOracleWorkspace(props: {
           role="dialog"
           aria-modal
         >
-          <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/15 bg-[#141210] p-5 shadow-2xl">
+          <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-white">Page {pageDetail.page_number}</p>
+              <p className="text-sm font-semibold text-foreground">Page {pageDetail.page_number}</p>
               <button
                 type="button"
-                className="rounded-lg border border-white/15 px-3 py-1 text-[12px] text-white/80"
+                className="rounded-lg border border-border px-3 py-1 text-[12px] text-muted-foreground"
                 onClick={() => setPageDetail(null)}
               >
                 Close
               </button>
             </div>
-            <div className="mt-4 max-h-[60vh] overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-4">
+            <div className="mt-4 max-h-[60vh] overflow-y-auto rounded-xl border border-border bg-muted/60 p-4">
               <DocOracleMarkdown source={pageDetail.markdown || ""} />
             </div>
           </div>
@@ -738,31 +642,13 @@ export function DocOracleWorkspace(props: {
       ) : null}
 
       {visualPreview?.image_path ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-          role="dialog"
-          aria-modal
-        >
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/15 bg-[#141210] p-4">
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-sm font-semibold text-white">{visualPreview.title}</p>
-              <button
-                type="button"
-                className="rounded-lg border border-white/15 px-3 py-1 text-[12px] text-white/80"
-                onClick={() => setVisualPreview(null)}
-              >
-                Close
-              </button>
-            </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={knowledgeFilesApiHref(visualPreview.image_path)}
-              alt=""
-              className="mt-3 max-h-[75vh] w-full rounded-xl object-contain"
-            />
-            <p className="mt-3 text-[12px] text-white/65">{visualPreview.description}</p>
-          </div>
-        </div>
+        <DocOracleVisualPreviewModal
+          visual={visualPreview}
+          filePath={item.filePath}
+          relatedSectionTitle={getRelatedSectionTitleForVisual(visualPreview, sections)}
+          onClose={() => setVisualPreview(null)}
+          onAskAiVisual={handleAskVisual}
+        />
       ) : null}
     </div>
   );

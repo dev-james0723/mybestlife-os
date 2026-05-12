@@ -76,7 +76,9 @@ export default async function DocOraclePage({ params }: PageProps) {
 
   const { data: visuals } = await supabase
     .from("document_visual_assets")
-    .select("id,type,semantic_category,title,description,image_path,source_page_number,extracted_labels,retrieval_tags")
+    .select(
+      "id,type,semantic_category,title,description,image_path,source_page_number,extracted_labels,retrieval_tags,related_terms,related_sections,confidence",
+    )
     .eq("document_id", itemId)
     .eq("user_id", user.id)
     .limit(120);

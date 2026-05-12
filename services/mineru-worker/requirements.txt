@@ -6,3 +6,4 @@ supabase>=2.10.0,<3
 mineru[pipeline]>=3.0.0
 beautifulsoup4>=4.12.3
 markdownify>=0.14.1
+Pillow>=10.4.0
