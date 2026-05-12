@@ -1,87 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, FileText, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, ExternalLink, Search, Sparkles } from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
+import { urlSlugToAppLocale } from "@/lib/i18n/locale-slug";
 import type { KnowledgeItem } from "@/types/knowledge";
-import { DocOracleMarkdown } from "@/components/document-oracle/DocOracleMarkdown";
 import {
   DocOracleChatPanel,
   type DocOracleChatPanelHandle,
   type DocOracleChatRetrievalFocus,
 } from "@/components/document-oracle/DocOracleChatPanel";
 import { DocOracleTabBar } from "@/components/document-oracle/DocOracleTabBar";
+import { DocOracleMindMapPanel } from "@/components/document-oracle/DocOracleMindMapPanel";
+import { DocOracleInfographicPanel } from "@/components/document-oracle/infographic/DocOracleInfographicPanel";
+import { DocOracleAudioSummaryPanel } from "@/components/document-oracle/audio-summary/DocOracleAudioSummaryPanel";
 import { DocOracleSectionsPanel } from "@/components/document-oracle/DocOracleSectionsPanel";
 import { DocOracleVisualsPanel } from "@/components/document-oracle/DocOracleVisualsPanel";
 import { DocOracleVisualPreviewModal } from "@/components/document-oracle/DocOracleVisualPreviewModal";
+import { DocOraclePagesPanel } from "@/components/document-oracle/DocOraclePagesPanel";
+import { DocOraclePageDetailModal } from "@/components/document-oracle/DocOraclePageDetailModal";
+import { getPageTitle } from "@/components/document-oracle/docOraclePageHelpers";
+import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import { displayVisualTitle, getRelatedSectionTitleForVisual } from "@/components/document-oracle/docOracleVisualLabels";
+import { DocOracleOverviewPanel } from "@/components/document-oracle/overview/DocOracleOverviewPanel";
+import { DocOracleSourcePanel } from "@/components/document-oracle/source/DocOracleSourcePanel";
+import {
+  flattenSuggestedQuestions,
+  parseSuggestedQuestionCategoriesPayload,
+  type SuggestedQuestionCategory,
+} from "@/lib/document-brain/suggested-questions";
+import type {
+  DocOracleAnalysis,
+  DocOracleGlossaryRow,
+  DocOracleSectionRow,
+} from "@/components/document-oracle/docOracleWorkspaceTypes";
 
-const limeBtn =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8E53A] px-4 py-2 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition-[filter,transform] duration-[120ms] ease-out hover:scale-[1.02] hover:brightness-[1.12]";
+const openOriginalHeaderBtn = cn(
+  "inline-flex items-center justify-center gap-2 rounded-lg border border-rose-900/55 bg-[#7f1d1d] px-4 py-2 text-[13px] font-semibold text-white shadow-md transition-colors hover:bg-[#991b1b]",
+  "no-underline",
+);
 
-export type DocOracleAnalysis = {
-  id: string;
-  document_title: string | null;
-  summary: string | null;
-  total_pages: number | null;
-  parser: string | null;
-  parser_version: string | null;
-  status: string;
-  document_type: string | null;
-  language: string | null;
-};
+export type { DocOracleAnalysis, DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
 
-export type DocOraclePageRow = {
-  id: string;
-  page_number: number;
-  page_summary: string | null;
-  keywords: unknown;
-  has_visual_assets: boolean;
-  markdown: string | null;
-  rendered_image_path: string | null;
-};
-
-export type DocOracleSectionRow = {
-  id: string;
-  title: string;
-  level: number;
-  parent_id: string | null;
-  page_start: number | null;
-  page_end: number | null;
-  summary: string | null;
-  keywords: unknown;
-  representative_pages: unknown;
-};
-
-export type DocOracleGlossaryRow = {
-  id: string;
-  term: string;
-  definition: string | null;
-  category: string | null;
-  pages: unknown;
-  related_terms: unknown;
-};
-
-export type DocOracleVisualRow = {
-  id: string;
-  type: string | null;
-  semantic_category: string | null;
-  title: string | null;
-  description: string | null;
-  image_path: string | null;
-  source_page_number: number | null;
-  extracted_labels: unknown;
-  retrieval_tags: unknown;
-  related_terms: unknown;
-  related_sections: unknown;
-  confidence: number | null;
-};
+export type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 
 function kwList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 12) : [];
@@ -100,11 +67,12 @@ export function DocOracleWorkspace(props: {
   glossary: DocOracleGlossaryRow[];
   visuals: DocOracleVisualRow[];
   chunkCount: number;
-  suggestedQuestions: string[];
+  suggestedQuestionCategories: SuggestedQuestionCategory[];
   showDebugLink: boolean;
 }) {
-  const { locale, item, analysis, pages, sections, glossary, visuals, chunkCount, suggestedQuestions, showDebugLink } =
+  const { locale, item, analysis, pages, sections, glossary, visuals, chunkCount, suggestedQuestionCategories, showDebugLink } =
     props;
+  const appLocale = urlSlugToAppLocale(locale);
   const backHref = useMemo(() => withLocalePrefix(locale, "/knowledge-base"), [locale]);
   const [tab, setTab] = useState("overview");
   const [pageDetail, setPageDetail] = useState<DocOraclePageRow | null>(null);
@@ -112,7 +80,61 @@ export function DocOracleWorkspace(props: {
   const [glossQ, setGlossQ] = useState("");
   const [glossCat, setGlossCat] = useState<string | "all">("all");
   const [visualPreview, setVisualPreview] = useState<DocOracleVisualRow | null>(null);
+  const [sourcePage, setSourcePage] = useState<number | null>(null);
+  const [pendingChatRequest, setPendingChatRequest] = useState<{
+    id: string;
+    prompt: string;
+    retrievalFocus: DocOracleChatRetrievalFocus | null;
+  } | null>(null);
+  const [displayedCategories, setDisplayedCategories] = useState<SuggestedQuestionCategory[]>(suggestedQuestionCategories);
   const chatRef = useRef<DocOracleChatPanelHandle>(null);
+
+  useEffect(() => {
+    setDisplayedCategories(suggestedQuestionCategories);
+  }, [suggestedQuestionCategories]);
+
+  useEffect(() => {
+    if (!isCompletedAnalysis(analysis)) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await fetch(`/api/document-brain/${encodeURIComponent(item.id)}/suggested-questions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          });
+          if (!res.ok || cancelled) return;
+          const data: unknown = await res.json();
+          if (cancelled || !data || typeof data !== "object") return;
+          const o = data as Record<string, unknown>;
+          if (o.source !== "gemini") return;
+          const cats = parseSuggestedQuestionCategoriesPayload(data);
+          if (cats.length >= 2) setDisplayedCategories(cats);
+        } catch {
+          /* optional enrichment — ignore */
+        }
+      })();
+    }, 500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [analysis, item.id]);
+
+  const pagesInDocOrder = useMemo(() => [...pages].sort((a, b) => a.page_number - b.page_number), [pages]);
+
+  const visualsForPageDetail = useMemo(() => {
+    if (!pageDetail) return [];
+    const n = pageDetail.page_number;
+    return visuals.filter((v) => v.source_page_number === n);
+  }, [pageDetail, visuals]);
+
+  const openSourceAtPage = (page: number) => {
+    if (!Number.isFinite(page)) return;
+    setSourcePage(Math.floor(page));
+    setTab("source");
+  };
 
   const focusForSection = (s: DocOracleSectionRow): DocOracleChatRetrievalFocus => ({
     pageStart: s.page_start,
@@ -147,6 +169,42 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
         sectionTitle: null,
       });
     });
+  };
+
+  const handleAskPage = (p: DocOraclePageRow) => {
+    setPageDetail(null);
+    const pageTitle = getPageTitle(p);
+    const prompt = `Please explain page ${p.page_number}: ${pageTitle}. Summarize the key points, cite this page, and mention any related visuals.`;
+    setPendingChatRequest({
+      id: newChatRequestId(),
+      prompt,
+      retrievalFocus: {
+        pageStart: p.page_number,
+        pageEnd: p.page_number,
+        sectionTitle: null,
+      },
+    });
+    setTab("chat");
+  };
+
+  const handlePageDetailQuestion = (question: string, p: DocOraclePageRow) => {
+    setPageDetail(null);
+    setPendingChatRequest({
+      id: newChatRequestId(),
+      prompt: question,
+      retrievalFocus: {
+        pageStart: p.page_number,
+        pageEnd: p.page_number,
+        sectionTitle: null,
+      },
+    });
+    setTab("chat");
+  };
+
+  const handleFocusSectionFromPage = (s: DocOracleSectionRow) => {
+    setPageDetail(null);
+    setSectionDetail(s);
+    setTab("sections");
   };
 
   const readyAnalysis = isCompletedAnalysis(analysis) ? analysis : null;
@@ -188,16 +246,38 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
     return Array.from(s);
   }, [glossary]);
 
-  const chatStarters = useMemo(() => {
-    const base = suggestedQuestions.length
-      ? suggestedQuestions
-      : [
-          "What is this document mainly about?",
-          "Summarize the key requirements.",
-          "What are the important dates, fees, or action items?",
-        ];
-    return base;
-  }, [suggestedQuestions]);
+  const chatStarters = useMemo(
+    () => flattenSuggestedQuestions(displayedCategories, 24),
+    [displayedCategories],
+  );
+
+  const handleTabChange = (v: string) => {
+    setTab(v);
+    if (v !== "source") setSourcePage(null);
+  };
+
+  const newChatRequestId = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `rq-${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+
+  const askSuggestedQuestion = (question: string) => {
+    setPendingChatRequest({
+      id: newChatRequestId(),
+      prompt: question,
+      retrievalFocus: null,
+    });
+    handleTabChange("chat");
+  };
+
+  const askChatFromOverview = (prompt: string, retrievalFocus: DocOracleChatRetrievalFocus | null) => {
+    setPendingChatRequest({
+      id: newChatRequestId(),
+      prompt,
+      retrievalFocus,
+    });
+    handleTabChange("chat");
+  };
 
   return (
     <div className="doc-oracle-workspace relative min-h-[100dvh] w-full overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
@@ -248,11 +328,11 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
                 href={knowledgeFilesApiHref(item.filePath)}
                 target="_blank"
                 rel="noreferrer"
-                className={cn(limeBtn, "no-underline")}
-                aria-label="Open original file in a new tab"
+                className={openOriginalHeaderBtn}
+                aria-label="Open original file in new tab"
               >
-                <FileText className="h-4 w-4" aria-hidden />
-                Source file
+                <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                Open Original File in New Tab
               </a>
             ) : null}
           </div>
@@ -277,10 +357,15 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
             </div>
           ) : null}
 
-          <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 w-full min-w-0 flex-col gap-4">
-            <DocOracleTabBar />
+          <Tabs value={tab} onValueChange={handleTabChange} className="flex min-h-0 w-full min-w-0 flex-col gap-4">
+            <DocOracleTabBar value={tab} onValueChange={handleTabChange} />
 
-            <TabsContent value="overview" className="mt-0 min-h-[280px] space-y-5 text-[13px] leading-relaxed text-muted-foreground">
+            <TabsContent
+              value="overview"
+              id="doc-oracle-panel-overview"
+              aria-labelledby="doc-oracle-tab-overview"
+              className="mt-0 min-h-[280px] space-y-5 text-[13px] leading-relaxed text-muted-foreground"
+            >
               {!isReady ? (
                 <p className="text-muted-foreground">
                   {analysis
@@ -288,214 +373,118 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
                     : "No `document_analyses` row yet."}
                 </p>
               ) : (
-                <>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-2xl border border-border bg-muted/50 p-4 sm:col-span-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Document</p>
-                      <p className="mt-1 text-base font-semibold text-foreground">{readyAnalysis.document_title ?? item.title}</p>
-                      <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
-                        <div>
-                          <dt className="text-muted-foreground">Parser</dt>
-                          <dd>{readyAnalysis.parser ?? "mineru"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Type</dt>
-                          <dd>{readyAnalysis.document_type ?? "—"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Pages</dt>
-                          <dd>
-                            {readyAnalysis.total_pages != null && readyAnalysis.total_pages > 0
-                              ? readyAnalysis.total_pages
-                              : pages.length > 0
-                                ? pages.length
-                                : "—"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Language</dt>
-                          <dd>{readyAnalysis.language ?? "—"}</dd>
-                        </div>
-                      </dl>
-                      <p className="mt-3 text-[11px] text-muted-foreground">
-                        Extraction quality: <span className="text-emerald-300/90">normalized workspace</span>
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-border bg-muted/50 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Structure</p>
-                      <div className="mt-2 space-y-1 text-2xl font-semibold tabular-nums text-foreground">
-                        <p>{pages.length} pages</p>
-                        <p className="text-base text-muted-foreground">{sections.length} sections</p>
-                        <p className="text-base text-muted-foreground">{chunkCount} chunks</p>
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-border bg-muted/50 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Knowledge</p>
-                      <div className="mt-2 space-y-1 text-2xl font-semibold tabular-nums text-foreground">
-                        <p>{glossary.length} glossary</p>
-                        <p className="text-base text-muted-foreground">{visuals.length} visuals</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Executive overview
-                    </p>
-                    <div className="rounded-2xl border border-border bg-muted/40 p-4 sm:p-5">
-                      <DocOracleMarkdown source={readyAnalysis.summary ?? ""} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Readable preview
-                    </p>
-                    <div className="max-h-[min(55vh,560px)] overflow-y-auto rounded-2xl border border-border bg-muted/40 p-4 sm:p-5">
-                      {overviewBody ? (
-                        <DocOracleMarkdown source={overviewBody} />
-                      ) : (
-                        <p className="text-muted-foreground">No preview text available.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {topicList.length ? (
-                    <div>
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Key topics</p>
-                      <div className="flex flex-wrap gap-2">
-                        {topicList.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-full border border-border bg-muted/50 px-3 py-1 text-[11.5px] text-muted-foreground"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {sections.length ? (
-                    <div>
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Table of contents
-                      </p>
-                      <ul className="space-y-1 rounded-2xl border border-border bg-muted/40 p-3 text-[12.5px] text-muted-foreground">
-                        {sections.slice(0, 10).map((s) => (
-                          <li key={s.id} className="flex justify-between gap-3 border-b border-border/60 py-1.5 last:border-0">
-                            <span className="min-w-0 truncate">{s.title}</span>
-                            <span className="shrink-0 text-muted-foreground">
-                              {s.page_start != null ? `p.${s.page_start}` : ""}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  {visuals.length ? (
-                    <div>
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Visual highlights
-                      </p>
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        {visuals.slice(0, 6).map((v) =>
-                          v.image_path ? (
-                            <button
-                              key={v.id}
-                              type="button"
-                              onClick={() => setVisualPreview(v)}
-                              className="overflow-hidden rounded-2xl border border-border bg-muted/60 text-left transition hover:border-[#C8E53A]/35"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={knowledgeFilesApiHref(v.image_path)}
-                                alt={v.title || "visual"}
-                                className="h-28 w-full object-cover"
-                              />
-                              <p className="truncate px-2 py-1.5 text-[11px] text-muted-foreground">
-                                {displayVisualTitle(v)}
-                              </p>
-                            </button>
-                          ) : null,
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Suggested questions
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {chatStarters.map((q) => (
-                        <span
-                          key={q}
-                          className="rounded-full border border-border bg-muted/50 px-3 py-1.5 text-[11.5px] text-muted-foreground"
-                        >
-                          {q}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </>
+                <DocOracleOverviewPanel
+                  readyAnalysis={readyAnalysis}
+                  item={item}
+                  pages={pages}
+                  sections={sections}
+                  glossary={glossary}
+                  visuals={visuals}
+                  chunkCount={chunkCount}
+                  overviewBody={overviewBody}
+                  topicList={topicList}
+                  suggestedQuestionCategories={displayedCategories}
+                  onAskChat={askChatFromOverview}
+                  onAskSuggestedQuestion={askSuggestedQuestion}
+                  setTab={handleTabChange}
+                  setSectionDetail={setSectionDetail}
+                  setGlossQ={setGlossQ}
+                  setGlossCat={setGlossCat}
+                  setVisualPreview={setVisualPreview}
+                  openSourceAtPage={item.filePath ? openSourceAtPage : undefined}
+                />
               )}
             </TabsContent>
 
-            <TabsContent value="chat" className="mt-0 min-h-[320px] text-[13px] text-muted-foreground">
+            <TabsContent
+              value="mindMap"
+              id="doc-oracle-panel-mindMap"
+              aria-labelledby="doc-oracle-tab-mindMap"
+              className="mt-0 min-w-0 text-[13px] text-muted-foreground"
+            >
+              {!isReady ? (
+                <p className="text-muted-foreground">Mind Map will appear after document analysis is complete.</p>
+              ) : (
+                <DocOracleMindMapPanel
+                  documentId={item.id}
+                  sections={sections}
+                  glossary={glossary}
+                  visuals={visuals}
+                  onOpenSourcePage={item.filePath ? openSourceAtPage : () => {}}
+                  onOpenVisual={setVisualPreview}
+                  onFocusGlossary={(g) => {
+                    setGlossCat("all");
+                    setGlossQ(g.term);
+                    setTab("glossary");
+                  }}
+                  onFocusSection={(s) => {
+                    setSectionDetail(s);
+                    setTab("sections");
+                  }}
+                  onAskMindMapNode={(prompt, retrievalFocus) => {
+                    setPendingChatRequest({
+                      id: newChatRequestId(),
+                      prompt,
+                      retrievalFocus,
+                    });
+                    setTab("chat");
+                  }}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent
+              value="chat"
+              id="doc-oracle-panel-chat"
+              aria-labelledby="doc-oracle-tab-chat"
+              className="mt-0 flex min-h-[65vh] min-w-0 flex-col text-[13px] text-muted-foreground"
+            >
               {isReady ? (
                 <DocOracleChatPanel
                   panelRef={chatRef}
                   documentId={item.id}
                   suggestedPrompts={chatStarters}
+                  filePath={item.filePath}
+                  pendingChatRequest={pendingChatRequest}
+                  onPendingChatConsumed={(id) => {
+                    setPendingChatRequest((cur) => (cur?.id === id ? null : cur));
+                  }}
+                  onOpenSourcePage={item.filePath ? openSourceAtPage : undefined}
+                  onOpenVisualById={(id) => {
+                    const v = visuals.find((x) => x.id === id);
+                    if (v) setVisualPreview(v);
+                  }}
                 />
               ) : (
                 <p>Chat unlocks when analysis is completed.</p>
               )}
             </TabsContent>
 
-            <TabsContent value="pages" className="mt-0 space-y-3 text-[13px] text-muted-foreground">
+            <TabsContent
+              value="pages"
+              id="doc-oracle-panel-pages"
+              aria-labelledby="doc-oracle-tab-pages"
+              className="mt-0 min-w-0 text-[13px] text-muted-foreground"
+            >
               {pages.length === 0 ? (
                 <p>No page rows yet.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {pages.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setPageDetail(p)}
-                      className="rounded-2xl border border-border bg-muted/40 p-4 text-left transition hover:border-border"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8E53A]">
-                          Page {p.page_number}
-                        </p>
-                        {p.has_visual_assets ? (
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                            visuals
-                          </span>
-                        ) : null}
-                      </div>
-                      {p.rendered_image_path ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={knowledgeFilesApiHref(p.rendered_image_path)}
-                          alt=""
-                          className="mt-2 h-24 w-full rounded-lg object-cover"
-                        />
-                      ) : null}
-                      <p className="mt-2 line-clamp-3 text-[12px] text-muted-foreground">{p.page_summary}</p>
-                      {kwList(p.keywords).length ? (
-                        <p className="mt-2 text-[11px] text-muted-foreground">{kwList(p.keywords).join(" · ")}</p>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
+                <DocOraclePagesPanel
+                  pages={pages}
+                  filePath={item.filePath}
+                  onOpenSourcePage={item.filePath ? openSourceAtPage : undefined}
+                  onAskAiPage={isReady ? handleAskPage : undefined}
+                  onOpenPageDetail={setPageDetail}
+                />
               )}
             </TabsContent>
 
-            <TabsContent value="sections" className="mt-0 text-[13px] text-muted-foreground">
+            <TabsContent
+              value="sections"
+              id="doc-oracle-panel-sections"
+              aria-labelledby="doc-oracle-tab-sections"
+              className="mt-0 text-[13px] text-muted-foreground"
+            >
               {sections.length === 0 ? (
                 <p>No sections yet.</p>
               ) : (
@@ -513,7 +502,12 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               )}
             </TabsContent>
 
-            <TabsContent value="glossary" className="mt-0 space-y-3 text-[13px] text-muted-foreground">
+            <TabsContent
+              value="glossary"
+              id="doc-oracle-panel-glossary"
+              aria-labelledby="doc-oracle-tab-glossary"
+              className="mt-0 space-y-3 text-[13px] text-muted-foreground"
+            >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -556,89 +550,75 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               )}
             </TabsContent>
 
-            <TabsContent value="visuals" className="mt-0 text-[13px] text-muted-foreground">
+            <TabsContent
+              value="visuals"
+              id="doc-oracle-panel-visuals"
+              aria-labelledby="doc-oracle-tab-visuals"
+              className="mt-0 text-[13px] text-muted-foreground"
+            >
               <DocOracleVisualsPanel sections={sections} visuals={visuals} onOpen={setVisualPreview} />
             </TabsContent>
 
-            <TabsContent value="source" className="mt-0 space-y-4 text-[13px] text-muted-foreground">
-              {item.filePath ? (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    <a href={knowledgeFilesApiHref(item.filePath)} target="_blank" rel="noreferrer" className={cn(limeBtn, "no-underline")}>
-                      <FileText className="h-4 w-4" aria-hidden />
-                      Open original file
-                    </a>
-                  </div>
-                  <div className="overflow-hidden rounded-2xl border border-border bg-muted">
-                    <iframe
-                      title="Source document"
-                      src={knowledgeFilesApiHref(item.filePath)}
-                      className="h-[min(72vh,720px)] w-full bg-neutral-900"
-                    />
-                  </div>
-                  <dl className="grid gap-2 rounded-2xl border border-border bg-muted/40 p-4 text-[12px] sm:grid-cols-2">
-                    <div>
-                      <dt className="text-muted-foreground">Filename</dt>
-                      <dd className="text-foreground/90">{item.filePath.split("/").pop()}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Parser version</dt>
-                      <dd className="text-foreground/90">{analysis?.parser_version ?? "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Uploaded</dt>
-                      <dd className="text-foreground/90">{item.dateAdded}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Modified</dt>
-                      <dd className="text-foreground/90">{item.dateModified}</dd>
-                    </div>
-                  </dl>
-                  {showDebugLink ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      Diagnostics:{" "}
-                      <a
-                        className="text-[#C8E53A] underline-offset-4 hover:underline"
-                        href={`/api/document-brain/${encodeURIComponent(item.id)}/debug`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        GET /api/document-brain/…/debug
-                      </a>{" "}
-                      (owner-only JSON)
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <p>No file on record.</p>
-              )}
+            <TabsContent
+              value="infographic"
+              id="doc-oracle-panel-infographic"
+              aria-labelledby="doc-oracle-tab-infographic"
+              className="mt-0 min-w-0 text-[13px] text-muted-foreground"
+            >
+              <DocOracleInfographicPanel documentId={item.id} enabled={isReady} />
+            </TabsContent>
+
+            <TabsContent
+              value="audio_summary"
+              id="doc-oracle-panel-audio_summary"
+              aria-labelledby="doc-oracle-tab-audio_summary"
+              className="mt-0 min-w-0 text-[13px] text-muted-foreground"
+            >
+              <DocOracleAudioSummaryPanel
+                documentId={item.id}
+                enabled={isReady}
+                onOpenSourcePage={item.filePath ? openSourceAtPage : undefined}
+              />
+            </TabsContent>
+
+            <TabsContent
+              value="source"
+              id="doc-oracle-panel-source"
+              aria-labelledby="doc-oracle-tab-source"
+              className="mt-0 text-[13px] text-muted-foreground"
+            >
+              <DocOracleSourcePanel
+                item={item}
+                pagesSorted={pagesInDocOrder}
+                appLocale={appLocale}
+                sourceJumpPage={sourcePage}
+                onClearSourceJump={() => setSourcePage(null)}
+                showDebugLink={showDebugLink}
+              />
             </TabsContent>
           </Tabs>
         </motion.div>
       </div>
 
       {pageDetail ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
-          role="dialog"
-          aria-modal
-        >
-          <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-foreground">Page {pageDetail.page_number}</p>
-              <button
-                type="button"
-                className="rounded-lg border border-border px-3 py-1 text-[12px] text-muted-foreground"
-                onClick={() => setPageDetail(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-4 max-h-[60vh] overflow-y-auto rounded-xl border border-border bg-muted/60 p-4">
-              <DocOracleMarkdown source={pageDetail.markdown || ""} />
-            </div>
-          </div>
-        </div>
+        <DocOraclePageDetailModal
+          page={pageDetail}
+          orderedPages={pagesInDocOrder}
+          sections={sections}
+          glossary={glossary}
+          visualsOnPage={visualsForPageDetail}
+          filePath={item.filePath}
+          onClose={() => setPageDetail(null)}
+          onSelectPage={setPageDetail}
+          onOpenSourcePage={item.filePath ? openSourceAtPage : undefined}
+          onAskAiPage={isReady ? handleAskPage : undefined}
+          onAskQuestion={isReady ? handlePageDetailQuestion : undefined}
+          onOpenVisual={(v) => {
+            setPageDetail(null);
+            setVisualPreview(v);
+          }}
+          onFocusSection={handleFocusSectionFromPage}
+        />
       ) : null}
 
       {visualPreview?.image_path ? (
