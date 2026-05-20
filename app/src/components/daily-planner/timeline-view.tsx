@@ -1,9 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { computeSequentialSchedule } from "@/lib/daily-planner/plan-schedule-math";
 import type { DailyPlanTask, Task } from "@/types/database";
+import type { DailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
+import { PlannerGoogleSyncDot } from "@/components/daily-planner/PlannerGoogleSyncDot";
 
 /** One grid row = 10 minutes (one “block”), matches planner block model */
 const DEFAULT_BLOCK_MINUTES = 10;
@@ -66,6 +70,9 @@ export interface TimelineViewProps {
   taskCardBlockCount: (blocks: number) => string;
   onTaskClick?: (planTask: DailyPlanTask) => void;
   blockMinutes?: number;
+  /** When set with `plannerCopy`, shows subtle Google Calendar sync dots on task cards. */
+  taskSyncStatusByPlannerId?: Record<string, string>;
+  plannerCopy?: DailyPlannerUiCopy;
   /**
    * `1` when End Time wraps past midnight, `0` otherwise. Used to size the timeline so
    * cross-day plans render as one continuous track instead of an empty grid.
@@ -89,7 +96,7 @@ export function TimelineView({
   startTime,
   endTime,
   tasks,
-  selectedDate: _selectedDate,
+  selectedDate,
   allTasks: _allTasks,
   scheduleTitle,
   formatTime12,
@@ -100,6 +107,8 @@ export function TimelineView({
   blockMinutes: blockMinutesProp,
   endDayOffset = 0,
   nextDayBadge,
+  taskSyncStatusByPlannerId,
+  plannerCopy,
 }: TimelineViewProps) {
   const blockMinutes = blockMinutesProp ?? DEFAULT_BLOCK_MINUTES;
   const sortedTasks = useMemo(
@@ -128,28 +137,37 @@ export function TimelineView({
     return Array.from({ length: rowCount }, (_, i) => startMinute + i * blockMinutes);
   }, [rowCount, startMinute, blockMinutes]);
 
+  const planDateForSchedule = useMemo(
+    () => format(selectedDate, "yyyy-MM-dd"),
+    [selectedDate],
+  );
+
   const taskLayouts = useMemo((): TaskLayout[] => {
-    return sortedTasks.reduce<{ layouts: TaskLayout[]; cumBlocks: number }>(
-      (acc, task, index) => {
-        const layoutBlocks = Math.max(task.blocks ?? 0, 1);
-        const { cumBlocks, layouts } = acc;
-        const layout: TaskLayout = {
-          task,
-          index,
-          topPx: cumBlocks * ROW_HEIGHT_PX,
-          heightPx: layoutBlocks * ROW_HEIGHT_PX,
-          startMin: startMinute + cumBlocks * blockMinutes,
-          endMin: startMinute + (cumBlocks + layoutBlocks) * blockMinutes,
-          color: getPlanTaskColor(index),
-        };
-        return {
-          cumBlocks: cumBlocks + layoutBlocks,
-          layouts: [...layouts, layout],
-        };
-      },
-      { cumBlocks: 0, layouts: [] },
-    ).layouts;
-  }, [sortedTasks, startMinute, blockMinutes]);
+    const schedule = computeSequentialSchedule(
+      planDateForSchedule,
+      startTime,
+      sortedTasks,
+      blockMinutes,
+    );
+    let cumBlocks = 0;
+    return schedule.map((row, index) => {
+      const layoutBlocks = Math.max(
+        1,
+        Math.round((row.endMinFromPlanMidnight - row.startMinFromPlanMidnight) / blockMinutes),
+      );
+      const topPx = cumBlocks * ROW_HEIGHT_PX;
+      cumBlocks += layoutBlocks;
+      return {
+        task: row.task,
+        index,
+        topPx,
+        heightPx: layoutBlocks * ROW_HEIGHT_PX,
+        startMin: row.startMinFromPlanMidnight,
+        endMin: row.endMinFromPlanMidnight,
+        color: getPlanTaskColor(index),
+      };
+    });
+  }, [sortedTasks, startTime, blockMinutes, planDateForSchedule]);
 
   return (
     <Card className="overflow-hidden">
@@ -232,8 +250,22 @@ export function TimelineView({
                   }}
                   onClick={() => onTaskClick?.(layout.task)}
                 >
-                  <span className="block w-full min-w-0 overflow-x-hidden text-ellipsis whitespace-nowrap text-center text-sm font-semibold leading-snug text-foreground">
-                    {layout.task.taskName ?? untitledTask}
+                  <span className="flex w-full min-w-0 items-center justify-center gap-1.5">
+                    {plannerCopy ? (
+                      <PlannerGoogleSyncDot
+                        plannerTaskId={layout.task.plannerTaskId}
+                        syncStatus={
+                          layout.task.plannerTaskId
+                            ? taskSyncStatusByPlannerId?.[layout.task.plannerTaskId]
+                            : undefined
+                        }
+                        copy={plannerCopy}
+                        className="shrink-0"
+                      />
+                    ) : null}
+                    <span className="block min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap text-center text-sm font-semibold leading-snug text-foreground">
+                      {layout.task.taskName ?? untitledTask}
+                    </span>
                   </span>
                   {isCompactBlock ? (
                     <span className="w-full min-w-0 text-center text-[11px] leading-snug text-muted-foreground">

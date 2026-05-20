@@ -121,6 +121,20 @@ async function getCurrentUserId() {
   return data.user.id;
 }
 
+function readAllLocalDailyPlansInRange(from: string, to: string): DailyPlan[] {
+  if (typeof window === "undefined") return [];
+  const plans: DailyPlan[] = [];
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key?.startsWith(LOCAL_DAILY_PLAN_STORAGE_PREFIX)) continue;
+    const planDate = key.slice(LOCAL_DAILY_PLAN_STORAGE_PREFIX.length);
+    if (planDate < from || planDate > to) continue;
+    const plan = readLocalDailyPlan(planDate);
+    if (plan) plans.push(plan);
+  }
+  return plans.sort((a, b) => a.plan_date.localeCompare(b.plan_date));
+}
+
 export const dailyPlansRepository = {
   async getAll(): Promise<DailyPlan[]> {
     if (isBrowserLocalDailyPlansMode()) {
@@ -150,6 +164,22 @@ export const dailyPlansRepository = {
     if (error) throw error;
     const row = (data as DailyPlan | null) ?? null;
     return row ? withNormalizedTasks(row) : null;
+  },
+
+  async getRange(from: string, to: string): Promise<DailyPlan[]> {
+    if (isBrowserLocalDailyPlansMode()) {
+      return readAllLocalDailyPlansInRange(from, to);
+    }
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("daily_plans")
+      .select("*")
+      .gte("plan_date", from)
+      .lte("plan_date", to)
+      .order("plan_date", { ascending: true });
+
+    if (error) throw error;
+    return ((data ?? []) as DailyPlan[]).map(withNormalizedTasks);
   },
 
   async create(input: CreateDailyPlanInput): Promise<DailyPlan> {

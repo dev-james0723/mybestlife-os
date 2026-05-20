@@ -27,7 +27,7 @@
     "seed:prompt-library": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts",
     "seed:prompt-library:dry": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts --dry-run",
     "seed:awesome-prompts:export-sql": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts --export-sql supabase/migrations/20260430120000_seed_ai_boost_awesome_prompts.sql",
-    "vercel:prod": "npm run vercel:prod --prefix .."
+    "vercel:prod": "cd .. && npx --yes vercel@latest deploy --prod --yes"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
@@ -54,6 +54,7 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.38.0",
     "fuse.js": "^7.3.0",
+    "googleapis": "^146.0.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
     "mammoth": "^1.12.0",

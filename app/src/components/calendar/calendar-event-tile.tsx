@@ -1,9 +1,13 @@
 "use client";
 
-import { Calendar, CheckCircle2, Flag, MapPin, Repeat, Target, Zap } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, Flag, ListTodo, MapPin, Repeat, Target, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CalendarItem, CalendarItemTask } from "@/lib/calendar/types";
+import type {
+  CalendarItem,
+  CalendarItemPlannerFreeTask,
+  CalendarItemTask,
+} from "@/lib/calendar/types";
 
 type Variant = "tile" | "row" | "chip";
 
@@ -13,7 +17,24 @@ const SOURCE_ICONS: Record<CalendarItem["source_type"], LucideIcon> = {
   milestone: Flag,
   reminder: Zap,
   external: Calendar,
+  planner_time_block: Clock,
+  planner_free_task: ListTodo,
 };
+
+const FREE_PRIORITY_BADGE: Record<CalendarItemPlannerFreeTask["free_priority"], string> = {
+  must: "Must Do",
+  should: "Should Do",
+  could: "Could Do",
+  done: "Done",
+};
+
+function plannerBadge(item: CalendarItem): string | null {
+  if (item.source_type === "planner_time_block") return "Planned";
+  if (item.source_type === "planner_free_task") {
+    return `Free Plan · ${FREE_PRIORITY_BADGE[(item as CalendarItemPlannerFreeTask).free_priority]}`;
+  }
+  return null;
+}
 
 type Props = {
   item: CalendarItem;
@@ -38,10 +59,15 @@ export function CalendarEventTile({
   const Icon = SOURCE_ICONS[item.source_type];
   const overdue = isTaskOverdue(item);
   const color = item.color ?? "#64748b";
+  const badge = plannerBadge(item);
   const timeLabel =
     item.start_time && item.end_time && item.start_time !== item.end_time
       ? `${item.start_time}–${item.end_time}`
       : item.start_time ?? null;
+  const metaLine = [badge, timeLabel, item.subtitle].filter(Boolean).join(" · ");
+  const isDone =
+    item.source_type === "planner_free_task" &&
+    (item as CalendarItemPlannerFreeTask).free_priority === "done";
 
   if (variant === "chip") {
     return (
@@ -80,14 +106,23 @@ export function CalendarEventTile({
           <span className="block truncate text-sm font-medium text-foreground">
             {item.title}
           </span>
-          {(item.subtitle || timeLabel) && (
-            <span className="block truncate text-xs text-muted-foreground">
-              {[timeLabel, item.subtitle].filter(Boolean).join(" · ")}
-            </span>
+          {metaLine && (
+            <span className="block truncate text-xs text-muted-foreground">{metaLine}</span>
           )}
+          {item.source_type === "planner_free_task" &&
+            (item as CalendarItemPlannerFreeTask).notes && (
+              <span className="mt-0.5 block truncate text-[11px] text-muted-foreground/80">
+                {(item as CalendarItemPlannerFreeTask).notes}
+              </span>
+            )}
         </span>
         {overdue && (
           <span className="ml-auto inline-block h-2 w-2 rounded-full bg-rose-500" aria-label="Overdue" />
+        )}
+        {isDone && (
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Done
+          </span>
         )}
       </button>
     );

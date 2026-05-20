@@ -32,12 +32,24 @@ import {
   type GratefulThingsUiCopy,
   type GratitudeCategoryValue,
 } from "@/lib/i18n/grateful-things-ui";
+import { compressDataUrlForGratitudePhoto } from "@/lib/grateful-things/compress-gratitude-photo";
+import { GRATEFUL_THINGS_PHOTO_MAX_BYTES } from "@/lib/grateful-things/photo-storage";
 
 function isGratitudeCategoryValue(v: string): v is GratitudeCategoryValue {
   return (GRATITUDE_CATEGORY_VALUES as readonly string[]).includes(v);
 }
 
-const PHOTO_MAX_BYTES = 1_500_000;
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("read_failed"));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("read_failed"));
+    reader.readAsDataURL(blob);
+  });
+}
 
 /** Wait after typing before calling classify (avoids spamming Gemini). */
 const CLASSIFY_DEBOUNCE_MS = 900;
@@ -57,13 +69,6 @@ function plainTextToSafeEditorHtml(text: string): string {
     .filter((p) => p.length > 0);
   if (blocks.length === 0) return "<p></p>";
   return blocks.map((p) => `<p>${escape(p)}</p>`).join("");
-}
-
-function approxBase64BytesInDataUrl(dataUrl: string): number {
-  const idx = dataUrl.indexOf("base64,");
-  if (idx === -1) return 0;
-  const b64 = dataUrl.slice(idx + "base64,".length);
-  return Math.floor((b64.length * 3) / 4);
 }
 
 type Props = {
@@ -118,6 +123,12 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
   }, [cancelPendingClassify]);
 
   useEffect(() => () => cancelPendingClassify(), [cancelPendingClassify]);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = requestAnimationFrame(() => syncEditorFromRef());
+    return () => cancelAnimationFrame(id);
+  }, [open, syncEditorFromRef]);
 
   const runClassifyFromEditor = useCallback(async () => {
     if (categoryManualOverrideRef.current) return;
@@ -174,7 +185,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
   const handlePhotoFiles = (files: FileList | null) => {
     const file = files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
-    if (file.size > PHOTO_MAX_BYTES) {
+    if (file.size > GRATEFUL_THINGS_PHOTO_MAX_BYTES) {
       toast.error(copy.toastPhotoTooLarge);
       return;
     }
@@ -184,6 +195,15 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
     };
     reader.readAsDataURL(file);
   };
+
+  const setPhotoPreviewFromDataUrl = useCallback(async (dataUrl: string) => {
+    try {
+      const compressed = await compressDataUrlForGratitudePhoto(dataUrl);
+      setPhotoDataUrl(await blobToDataUrl(compressed));
+    } catch {
+      setPhotoDataUrl(dataUrl);
+    }
+  }, []);
 
   const handleGeneratePhotoAi = async () => {
     const text = editorRef.current?.getText().trim() ?? "";
@@ -210,11 +230,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
         toast.error(copy.toastAiFailed);
         return;
       }
-      if (approxBase64BytesInDataUrl(data.imageUrl) > PHOTO_MAX_BYTES) {
-        toast.error(copy.toastPhotoTooLarge);
-        return;
-      }
-      setPhotoDataUrl(data.imageUrl);
+      await setPhotoPreviewFromDataUrl(data.imageUrl);
       toast.success(copy.toastAiPhotoSuccess, { description: copy.toastAiPhotoTitle });
     } catch {
       toast.error(copy.toastAiFailed);
@@ -269,10 +285,13 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
   const handleSave = async () => {
     const html = editorRef.current?.getHtml() ?? "";
     const text = editorRef.current?.getText().trim() ?? "";
-    if (!text && !/<img\b/i.test(html)) return;
+    const hasEditorContent = Boolean(text) || /<img\b/i.test(html);
+    if (!hasEditorContent && !photoDataUrl) return;
+
+    const content = html.trim() || text || copy.photoOnlyFallbackContent;
     try {
       await onSave({
-        content: html.trim() || text,
+        content,
         entry_date: entryDate,
         category: category || null,
         photo_url: photoDataUrl,
@@ -285,17 +304,19 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
   };
 
   const canSave =
-    editorSnapshot.textTrimmed.length > 0 || /<img\b/i.test(editorSnapshot.html);
+    editorSnapshot.textTrimmed.length > 0 ||
+    /<img\b/i.test(editorSnapshot.html) ||
+    Boolean(photoDataUrl);
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent
         showCloseButton={false}
         className={cn(
-          "max-h-[min(90vh,760px)] w-[calc(100%-2rem)] max-w-lg gap-0 overflow-y-auto rounded-2xl border border-border bg-popover p-0 text-popover-foreground shadow-lg sm:max-w-xl"
+          "flex max-h-[min(90vh,760px)] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-popover p-0 text-popover-foreground shadow-lg sm:max-w-xl"
         )}
       >
-        <DialogHeader className="relative border-b border-border bg-popover px-6 pb-4 pt-6 text-center">
+        <DialogHeader className="relative shrink-0 border-b border-border bg-popover px-6 pb-4 pt-6 text-center">
           <DialogTitle className="font-sans text-lg font-semibold tracking-tight text-foreground">
             {copy.createDialogTitle}
           </DialogTitle>
@@ -311,7 +332,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
           </Button>
         </DialogHeader>
 
-        <div className="space-y-5 bg-popover px-6 py-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-popover px-6 py-5">
           <RichTextEditor
             ref={editorRef}
             onChange={handleEditorChange}
@@ -453,7 +474,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border bg-muted/30 px-6 py-4">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-6 py-4">
           <Button
             type="button"
             variant="outline"

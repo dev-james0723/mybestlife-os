@@ -266,9 +266,9 @@ export function DocOracleSectionsPanel(props: {
   );
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:min-h-[480px] lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-6">
+    <div className="flex flex-col gap-4 md:grid md:min-h-[480px] md:grid-cols-[minmax(200px,0.38fr)_minmax(0,1fr)] md:gap-5 lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-6">
       {/* Navigator */}
-      <div className="flex min-h-0 flex-col gap-2 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-8rem)]">
+      <div className="flex min-h-0 flex-col gap-2 md:sticky md:top-4 md:max-h-[calc(100dvh-8rem)]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -279,8 +279,8 @@ export function DocOracleSectionsPanel(props: {
           />
         </div>
 
-        {/* Mobile: compact dropdown */}
-        <div className="lg:hidden">
+        {/* Narrow screens: compact dropdown */}
+        <div className="md:hidden">
           <label className="sr-only" htmlFor="doc-oracle-section-select">
             Section
           </label>
@@ -303,7 +303,7 @@ export function DocOracleSectionsPanel(props: {
           </select>
         </div>
 
-        <div className="hidden min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2 lg:block">
+        <div className="hidden min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2 md:block">
           {sections.length === 0 ? (
             <p className="p-2 text-[13px] text-muted-foreground">No sections yet.</p>
           ) : (

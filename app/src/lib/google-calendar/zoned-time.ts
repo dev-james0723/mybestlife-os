@@ -67,3 +67,8 @@ export function planDateCleanupEndUtc(planDate: string, timeZone: string): strin
   const afterStr = format(addDays(parseISO(planDate), 2), "yyyy-MM-dd");
   return zonedWallClockToUtc(afterStr, 0, 0, timeZone).toISOString();
 }
+
+/** Local calendar date (YYYY-MM-DD) for an absolute instant in `timeZone`. */
+export function resolvePlannerDateFromDateTime(d: Date, timeZone: string): string {
+  return getZonedParts(d, timeZone).dateStr;
+}

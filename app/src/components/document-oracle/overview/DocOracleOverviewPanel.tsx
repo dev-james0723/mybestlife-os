@@ -78,7 +78,7 @@ export function DocOracleOverviewPanel(props: {
   };
 
   return (
-    <div className="space-y-6 text-[13px] leading-relaxed text-muted-foreground">
+    <div className="min-w-0 w-full max-w-full space-y-6 text-[13px] leading-relaxed text-muted-foreground">
       <DocumentSnapshotCard
         readyAnalysis={readyAnalysis}
         item={item}

@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, Loader2, RefreshCw, Search, Shrink, StretchHorizontal } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, Focus, Loader2, RefreshCw, Search, Shrink, StretchHorizontal, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type MindMapTypeFilterId =
@@ -32,6 +33,7 @@ export type MindMapToolbarProps = {
   typeFilter: MindMapTypeFilterId;
   onTypeFilterChange: (v: MindMapTypeFilterId) => void;
   onFitView: () => void;
+  onResetView: () => void;
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onRegenerate: () => void;
@@ -41,7 +43,7 @@ export type MindMapToolbarProps = {
 };
 
 const btn =
-  "inline-flex touch-manipulation items-center justify-center gap-1 rounded-lg border border-white/12 bg-black/50 px-2 py-1.5 text-[10px] font-medium text-white/80 transition hover:border-[#C8E53A]/35 hover:text-white sm:text-[11px]";
+  "inline-flex touch-manipulation shrink-0 items-center justify-center gap-0.5 rounded-lg border border-white/12 bg-black/50 px-1.5 py-1.5 text-[10px] font-medium text-white/80 transition hover:border-[#C8E53A]/35 hover:text-white sm:gap-1 sm:px-2 sm:py-1.5 sm:text-[11px]";
 
 export function MindMapToolbar({
   search,
@@ -49,6 +51,7 @@ export function MindMapToolbar({
   typeFilter,
   onTypeFilterChange,
   onFitView,
+  onResetView,
   onExpandAll,
   onCollapseAll,
   onRegenerate,
@@ -56,29 +59,55 @@ export function MindMapToolbar({
   onToggleBranch,
   branchToggleDisabled,
 }: MindMapToolbarProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    if (search.trim()) setSearchOpen(true);
+  }, [search]);
+
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/55 p-2 shadow-lg backdrop-blur-md">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <div className="relative min-w-[120px] flex-1 basis-[140px]">
+    <div className="flex max-w-full flex-col gap-1.5 rounded-xl border border-white/10 bg-black/55 p-1.5 shadow-lg backdrop-blur-md sm:gap-2 sm:p-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-1 sm:gap-1.5">
+        <button
+          type="button"
+          className={cn(btn, "sm:hidden")}
+          aria-expanded={searchOpen}
+          aria-label={searchOpen ? "Hide search" : "Search"}
+          onClick={() => setSearchOpen((o) => !o)}
+        >
+          <Search className="size-3.5" aria-hidden />
+        </button>
+        <div
+          className={cn(
+            "relative min-w-0 flex-1 basis-[140px] max-sm:order-last max-sm:w-full",
+            !searchOpen && "max-sm:hidden",
+          )}
+        >
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-white/35" />
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search…"
-            className="h-8 w-full rounded-lg border border-white/10 bg-black/60 py-1 pl-8 pr-2 text-[11px] text-white placeholder:text-white/35 outline-none focus:border-[#C8E53A]/40"
+            className="h-8 w-full min-w-0 rounded-lg border border-white/10 bg-black/60 py-1 pl-8 pr-2 text-[11px] text-white placeholder:text-white/35 outline-none focus:border-[#C8E53A]/40"
             aria-label="Search concepts"
           />
         </div>
-        <button type="button" className={btn} onClick={onFitView}>
-          Fit view
+        <button type="button" className={btn} onClick={onFitView} title="Fit view">
+          <Focus className="size-3.5 sm:hidden" aria-hidden />
+          <span className="hidden sm:inline">Fit</span>
+        </button>
+        <button type="button" className={btn} onClick={onResetView} title="Reset view">
+          <Home className="size-3.5 sm:hidden" aria-hidden />
+          <span className="hidden sm:inline">Reset</span>
         </button>
         <button type="button" className={btn} onClick={onExpandAll} title="Expand all branches">
           <StretchHorizontal className="size-3.5" aria-hidden />
-          <span className="hidden sm:inline">Expand</span>
+          <span className="hidden md:inline">Expand</span>
         </button>
         <button type="button" className={btn} onClick={onCollapseAll} title="Collapse branches">
           <Shrink className="size-3.5" aria-hidden />
-          <span className="hidden sm:inline">Collapse</span>
+          <span className="hidden md:inline">Collapse</span>
         </button>
         <button
           type="button"
@@ -88,26 +117,40 @@ export function MindMapToolbar({
           title="Expand or collapse this node branch"
         >
           <ChevronDown className="size-3.5" aria-hidden />
-          <span className="hidden sm:inline">Branch</span>
+          <span className="hidden md:inline">Branch</span>
         </button>
         <button
           type="button"
           className={cn(btn, "border-[#C8E53A]/30 text-[#d4f06a]")}
           disabled={regenerateBusy}
           onClick={onRegenerate}
+          title="Regenerate mind map"
         >
           {regenerateBusy ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" aria-hidden />}
-          <span className="hidden sm:inline">Regenerate</span>
+          <span className="hidden sm:inline">Regen</span>
+        </button>
+        <button
+          type="button"
+          className={cn(btn, "sm:hidden")}
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((o) => !o)}
+        >
+          Filters
         </button>
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div
+        className={cn(
+          "-mx-0.5 flex max-w-full gap-1 overflow-x-auto overflow-y-hidden pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible",
+          !filtersOpen && "max-sm:hidden sm:flex",
+        )}
+      >
         {FILTERS.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => onTypeFilterChange(f.id)}
             className={cn(
-              "touch-manipulation rounded-md px-2 py-1 text-[9px] font-medium sm:text-[10px]",
+              "shrink-0 touch-manipulation rounded-md px-2 py-1 text-[9px] font-medium sm:text-[10px]",
               typeFilter === f.id ? "bg-[#C8E53A] text-black" : "bg-white/5 text-white/65 hover:bg-white/10",
             )}
           >

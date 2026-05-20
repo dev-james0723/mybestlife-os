@@ -1,5 +1,36 @@
 import type { AppLocale } from "./app-locale";
 import { createLocaleCopyMap } from "./copy-helpers";
+
+export type PlannerGcalSyncToastResult = {
+  localPushed: number;
+  remoteApplied: number;
+  remoteFetched: number;
+  conflicts: number;
+};
+
+export function formatPlannerGcalSyncToast(result: PlannerGcalSyncToastResult): string {
+  const parts: string[] = [];
+  if (result.localPushed > 0) {
+    parts.push(
+      `${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`,
+    );
+  }
+  if (result.remoteApplied > 0) {
+    parts.push(
+      `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+    );
+  }
+  if (result.conflicts > 0) {
+    return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+  }
+  if (parts.length === 0) {
+    if (result.remoteFetched > 0) {
+      return "Calendar sync finished · no remote changes to apply";
+    }
+    return "Calendar sync finished · 0 remote updates found";
+  }
+  return `Calendar sync finished · ${parts.join(" · ")}`;
+}
 import { dailyPlannerJa, dailyPlannerKo } from "./daily-planner-locale-ja-ko";
 import {
   dailyPlannerFr,
@@ -18,6 +49,25 @@ export type DailyPlannerUiCopy = {
   loadTemplate: string;
   today: string;
   syncGoogleCalendar: string;
+  /** Runs server Calendar sync (retry pending + pull remote changes). */
+  googleCalendarSyncNowButton: string;
+  /** Shown on the button while a push or sync request is in flight. */
+  googleCalendarSyncingNowButton: string;
+  /** Shown under End Time when Google Calendar is connected; `email` may be null if not returned by Google. */
+  googleCalendarConnectedAccountHint: (email: string | null) => string;
+  /** Inline status while the debounced plan save and Google push/pull are running. */
+  googleCalendarSaveAndSyncLoading: string;
+  /** `stamp` is formatted as `YYYY-MM-DD HH:mm:ss` in the app timezone. */
+  googleCalendarLastUpdatedLabel: (stamp: string) => string;
+  googleCalendarServerSyncHint: string;
+  googleCalendarFreeModeSyncHint: string;
+  toastGoogleCalendarSyncNowOk: (result: PlannerGcalSyncToastResult) => string;
+  toastGoogleCalendarSyncNowFailed: string;
+  calendarSyncTooltipSynced: string;
+  calendarSyncTooltipPending: string;
+  calendarSyncTooltipError: string;
+  calendarSyncTooltipConflict: string;
+  calendarSyncTooltipRemoteDeleted: string;
   startTime: string;
   endTime: string;
   /** Compact suffix shown on the End Time picker when the range crosses midnight (e.g. "+1 day"). */
@@ -56,6 +106,18 @@ export type DailyPlannerUiCopy = {
   freeRemoveTask: string;
   freeChangePriority: string;
   freeMoveTaskToBucket: (priority: string) => string;
+  freeTaskDetailsTitle: string;
+  freeTaskTitleLabel: string;
+  freeTaskNotesLabel: string;
+  freeTaskNotesPlaceholder: string;
+  freeTaskPriorityLabel: string;
+  freeTaskSaveChanges: string;
+  freeTaskDelete: string;
+  freeTaskCancel: string;
+  freeTaskAddNotes: string;
+  freeTaskHideNotes: string;
+  freeTaskTitleRequired: string;
+  freeTaskOpenDetails: (title: string) => string;
   freePlanSummaryTitle: string;
   freePlanSummaryBlurb: string;
   freeGoogleSyncTitle: (formattedDate: string) => string;
@@ -137,6 +199,12 @@ export type DailyPlannerUiCopy = {
   detailRelatedNotes: string;
   detailRelatedKnowledge: string;
   detailRelatedIdeas: string;
+  /** Shown when a Smart Links row references an idea id that is not in the library (yet). */
+  smartLinkMissingIdea: string;
+  smartLinkMissingNote: string;
+  smartLinkMissingKnowledge: string;
+  /** Brief placeholder while related entities are still loading. */
+  smartLinkLoading: string;
   detailSource: string;
   detailSourceLink: string;
   detailAiGenerated: string;
@@ -285,6 +353,19 @@ const en: DailyPlannerUiCopy = {
   freeRemoveTask: "Remove task",
   freeChangePriority: "Change priority",
   freeMoveTaskToBucket: (priority) => `Move to ${priority}`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "Free Plan Summary",
   freePlanSummaryBlurb:
     "A clean checklist of today's free plan, grouped by priority. No fake time slots.",
@@ -354,6 +435,25 @@ const en: DailyPlannerUiCopy = {
     `Synced ${n} calendar event${n !== 1 ? "s" : ""} to Google Calendar (earlier Life OS events that day were replaced).`,
   toastGoogleSyncFailed: "Could not sync to Google Calendar. Try again or reconnect in Settings.",
   toastGoogleReauthorize: "Reconnecting to Google so Calendar access is granted…",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "After each save we push your Time Block tasks to Google Calendar, then pull remote edits (for example duration changes in Google) back into this page. You can still use Sync now anytime.",
+  googleCalendarFreeModeSyncHint:
+    "Free Plan tasks sync as one all-day Google Calendar event per task. Use Sync now after editing in Google.",
+  toastGoogleCalendarSyncNowOk: formatPlannerGcalSyncToast,
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   toastFocusActivated: "Focus mode activated!",
   ariaBackToTop: "Back to the top",
   detailDialogTitle: "Task details",
@@ -366,6 +466,10 @@ const en: DailyPlannerUiCopy = {
   detailRelatedNotes: "Related Notes",
   detailRelatedKnowledge: "Related Knowledge",
   detailRelatedIdeas: "Related Ideas",
+  smartLinkMissingIdea: "Idea not found",
+  smartLinkMissingNote: "Note not found",
+  smartLinkMissingKnowledge: "Knowledge item not found",
+  smartLinkLoading: "Loading…",
   detailSource: "Source",
   detailSourceLink: "Open resource",
   detailAiGenerated: "AI Generated",
@@ -554,6 +658,32 @@ const zhTW: DailyPlannerUiCopy = {
     `已將 ${n} 個日曆活動同步到 Google 日曆（已取代當日先前由本 app 同步的行程）。`,
   toastGoogleSyncFailed: "無法同步到 Google 日曆。請再試一次，或到設定重新連結。",
   toastGoogleReauthorize: "正在重新連結 Google 以取得日曆權限…",
+  googleCalendarSyncNowButton: "Google Calendar 立即同步",
+  googleCalendarSyncingNowButton: "Google Calendar 同步中",
+  googleCalendarConnectedAccountHint: (email) =>
+    email ? `已連結 Google 日曆 · ${email}` : "已連結 Google 日曆",
+  googleCalendarSaveAndSyncLoading: "正在儲存規劃並與 Google 日曆同步…",
+  googleCalendarLastUpdatedLabel: (stamp) => `最後更新：${stamp}`,
+  googleCalendarServerSyncHint:
+    "每次儲存後會先把時間區塊推到 Google 日曆，再拉回遠端修改（例如在 Google 改短時長）。你仍可隨時按「立即同步」。",
+  googleCalendarFreeModeSyncHint:
+    "逐項 Google 同步僅適用於時間區塊模式。若要管理日曆，請切換模式或前往設定。",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `日曆同步衝突 · ${result.conflicts} 項需檢視`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) parts.push(`已推送 ${result.localPushed} 項本機變更`);
+    if (result.remoteApplied > 0) parts.push(`已套用 ${result.remoteApplied} 項遠端變更`);
+    if (parts.length === 0) return "日曆同步完成 · 無遠端變更";
+    return `日曆同步完成 · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "日曆同步未完成；你的規劃仍已安全儲存在本機。",
+  calendarSyncTooltipSynced: "Google 日曆：已同步",
+  calendarSyncTooltipPending: "Google 日曆：等待上傳",
+  calendarSyncTooltipError: "Google 日曆：同步錯誤（請至設定重試）",
+  calendarSyncTooltipConflict: "Google 日曆：衝突 — 請在設定或重試流程中處理",
+  calendarSyncTooltipRemoteDeleted: "已在 Google 日曆刪除此事件 — 請在設定決定下一步",
   toastFocusActivated: "專注模式已啟動！",
   ariaBackToTop: "回到頂端",
   detailDialogTitle: "任務詳情",
@@ -566,6 +696,10 @@ const zhTW: DailyPlannerUiCopy = {
   detailRelatedNotes: "相關筆記",
   detailRelatedKnowledge: "相關知識",
   detailRelatedIdeas: "相關想法",
+  smartLinkMissingIdea: "找不到此想法",
+  smartLinkMissingNote: "找不到此筆記",
+  smartLinkMissingKnowledge: "找不到此知識項目",
+  smartLinkLoading: "載入中…",
   detailSource: "來源",
   detailSourceLink: "打開資源",
   detailAiGenerated: "AI 生成",
@@ -698,6 +832,18 @@ const zhTW: DailyPlannerUiCopy = {
   freeRemoveTask: "移除任務",
   freeChangePriority: "調整優先級",
   freeMoveTaskToBucket: (priority) => `移到「${priority}」`,
+  freeTaskDetailsTitle: "任務詳情",
+  freeTaskTitleLabel: "任務名稱",
+  freeTaskNotesLabel: "筆記",
+  freeTaskNotesPlaceholder: "加入這個任務的背景、細節或提醒……",
+  freeTaskPriorityLabel: "優先分類",
+  freeTaskSaveChanges: "儲存修改",
+  freeTaskDelete: "刪除",
+  freeTaskCancel: "取消",
+  freeTaskAddNotes: "加入筆記",
+  freeTaskHideNotes: "收起筆記",
+  freeTaskTitleRequired: "請輸入任務名稱",
+  freeTaskOpenDetails: (title) => `開啟「${title}」的任務詳情`,
   freePlanSummaryTitle: "自由規劃摘要",
   freePlanSummaryBlurb: "依優先級彙整今天的自由規劃，不會生成虛構時段。",
   freeGoogleSyncTitle: (formattedDate) => `自由規劃 — ${formattedDate}`,
@@ -780,6 +926,30 @@ const zhCN: DailyPlannerUiCopy = {
     `已将 ${n} 个日历活动同步到 Google 日历（已替换当日先前由本应用同步的日程）。`,
   toastGoogleSyncFailed: "无法同步到 Google 日历。请重试，或到设置重新连接。",
   toastGoogleReauthorize: "正在重新连接 Google 以获取日历权限…",
+  googleCalendarSyncNowButton: "Google Calendar 立即同步",
+  googleCalendarSyncingNowButton: "Google Calendar 同步中",
+  googleCalendarConnectedAccountHint: (email) =>
+    email ? `已连接 Google 日历 · ${email}` : "已连接 Google 日历",
+  googleCalendarSaveAndSyncLoading: "正在保存规划并与 Google 日历同步…",
+  googleCalendarLastUpdatedLabel: (stamp) => `最后更新：${stamp}`,
+  googleCalendarServerSyncHint: "每次保存后会先推送时间块到 Google 日历，再拉回远程修改（例如在 Google 缩短时长）。你仍可随时使用「立即同步」。",
+  googleCalendarFreeModeSyncHint: "逐项 Google 同步仅适用于时间块模式。若要管理日历，请切换模式或打开设置。",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `日历同步冲突 · ${result.conflicts} 项需处理`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) parts.push(`已推送 ${result.localPushed} 项本地变更`);
+    if (result.remoteApplied > 0) parts.push(`已应用 ${result.remoteApplied} 项远程变更`);
+    if (parts.length === 0) return "日历同步完成 · 无远程变更";
+    return `日历同步完成 · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "日历同步未完成；你的规划仍已保存在本地。",
+  calendarSyncTooltipSynced: "Google 日历：已同步",
+  calendarSyncTooltipPending: "Google 日历：等待上传",
+  calendarSyncTooltipError: "Google 日历：同步错误（请在设置重试）",
+  calendarSyncTooltipConflict: "Google 日历：冲突 — 请在设置或重试流程中处理",
+  calendarSyncTooltipRemoteDeleted: "该事件已在 Google 日历删除 — 请在设置决定下一步",
   toastFocusActivated: "专注模式已启动！",
   ariaBackToTop: "回到顶部",
   detailDialogTitle: "任务详情",
@@ -792,6 +962,10 @@ const zhCN: DailyPlannerUiCopy = {
   detailRelatedNotes: "相关笔记",
   detailRelatedKnowledge: "相关知识",
   detailRelatedIdeas: "相关想法",
+  smartLinkMissingIdea: "未找到该想法",
+  smartLinkMissingNote: "未找到该笔记",
+  smartLinkMissingKnowledge: "未找到该知识条目",
+  smartLinkLoading: "加载中…",
   detailSource: "来源",
   detailSourceLink: "打开资源",
   detailAiGenerated: "AI 生成",
@@ -924,6 +1098,18 @@ const zhCN: DailyPlannerUiCopy = {
   freeRemoveTask: "移除任务",
   freeChangePriority: "调整优先级",
   freeMoveTaskToBucket: (priority) => `移到「${priority}」`,
+  freeTaskDetailsTitle: "任务详情",
+  freeTaskTitleLabel: "任务名称",
+  freeTaskNotesLabel: "笔记",
+  freeTaskNotesPlaceholder: "加入这个任务的背景、细节或提醒……",
+  freeTaskPriorityLabel: "优先分类",
+  freeTaskSaveChanges: "保存修改",
+  freeTaskDelete: "删除",
+  freeTaskCancel: "取消",
+  freeTaskAddNotes: "加入笔记",
+  freeTaskHideNotes: "收起笔记",
+  freeTaskTitleRequired: "请输入任务名称",
+  freeTaskOpenDetails: (title) => `开启「${title}」的任务详情`,
   freePlanSummaryTitle: "自由规划摘要",
   freePlanSummaryBlurb: "按优先级整理今天的自由规划，不生成虚构时段。",
   freeGoogleSyncTitle: (formattedDate) => `自由规划 — ${formattedDate}`,

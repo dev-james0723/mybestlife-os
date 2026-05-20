@@ -7,8 +7,10 @@ import {
   type CreateDailyPlanInput,
   type UpdateDailyPlanInput,
 } from "@/lib/repositories/daily-plans";
+import { CALENDAR_QUERY_KEY } from "@/lib/calendar/query-keys";
 import { useAppStore } from "@/stores/app-store";
 import { getDailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
+import { requestPlannerGoogleCalendarPush } from "@/lib/google/planner-calendar-push-request";
 
 function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -30,6 +32,14 @@ export function useDailyPlans() {
   });
 }
 
+export function useDailyPlansInRange(from: string, to: string) {
+  return useQuery({
+    queryKey: ["daily-plans", "range", from, to],
+    queryFn: () => dailyPlansRepository.getRange(from, to),
+    enabled: !!from && !!to,
+  });
+}
+
 export function useDailyPlan(planDate: string) {
   return useQuery({
     queryKey: ["daily-plans", planDate],
@@ -43,9 +53,18 @@ export function useUpsertDailyPlan() {
 
   return useMutation({
     mutationFn: (input: CreateDailyPlanInput) => dailyPlansRepository.upsertByDate(input),
-    onSuccess: (_data, input) => {
+    onSuccess: async (_data, input) => {
       queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
       queryClient.invalidateQueries({ queryKey: ["daily-plans", input.plan_date] });
+      queryClient.invalidateQueries({ queryKey: ["daily-plans", "range"] });
+      queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["google-calendar-planner-status"] });
+      queryClient.invalidateQueries({ queryKey: ["google-calendar-task-sync", input.plan_date] });
+      await requestPlannerGoogleCalendarPush(input.plan_date);
+      queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["daily-plans", input.plan_date] });
+      queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["google-calendar-task-sync", input.plan_date] });
     },
     onError: (err) => {
       const ui = getDailyPlannerUiCopy(useAppStore.getState().language);
@@ -62,6 +81,8 @@ export function useUpdateDailyPlan() {
       dailyPlansRepository.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["daily-plans", "range"] });
+      queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
     },
     onError: (err) => {
       const ui = getDailyPlannerUiCopy(useAppStore.getState().language);

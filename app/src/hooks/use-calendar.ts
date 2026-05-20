@@ -6,6 +6,8 @@ import { addDays, format, subDays } from "date-fns";
 import { useTasks } from "@/hooks/use-tasks";
 import { useGoals } from "@/hooks/use-goals";
 import { useHabits, useAllCompletions } from "@/hooks/use-habits";
+import { useDailyPlansInRange } from "@/hooks/use-daily-plans";
+import { useProfile } from "@/hooks/use-settings";
 import { buildMockSources } from "@/lib/calendar/mock/week";
 import {
   buildDayContext,
@@ -14,9 +16,11 @@ import {
   itemsPerDate,
   projectToCalendarItems,
 } from "@/lib/calendar/projection";
+import { mapDailyPlansToCalendarItems } from "@/lib/calendar/sources/daily-plans";
 import { mapTaskRowsToCalendarTasks } from "@/lib/calendar/sources/tasks";
 import { mapGoalRowsToMilestones } from "@/lib/calendar/sources/milestones";
 import { expandHabitsToOccurrences } from "@/lib/calendar/sources/habits";
+import { CALENDAR_QUERY_KEY } from "@/lib/calendar/query-keys";
 import type {
   CalendarHabitOccurrence,
   CalendarItem,
@@ -26,6 +30,8 @@ import type {
   DayContext,
 } from "@/lib/calendar/types";
 
+const DEFAULT_BLOCK_MINUTES = 10;
+
 /**
  * Range covered by the calendar projection at any given time. The
  * upcoming agenda scrolls 14 days forward and the Orbital view uses
@@ -34,78 +40,76 @@ import type {
 const PAST_DAYS = 14;
 const FUTURE_DAYS = 30;
 
-const CALENDAR_QUERY_KEY = ["calendar", "items"] as const;
-
 type UseCalendarItemsReturn = {
   data: CalendarItem[] | undefined;
   isLoading: boolean;
   isFetching: boolean;
 };
 
+function shouldUseMockCalendar(args: {
+  taskRows: unknown;
+  goalRows: unknown;
+  habitRows: unknown;
+  dailyPlanRows: unknown;
+}): boolean {
+  if (process.env.NODE_ENV !== "development") return false;
+  if (process.env.NEXT_PUBLIC_ENABLE_CALENDAR_MOCKS !== "true") return false;
+  return !args.taskRows && !args.goalRows && !args.habitRows && !args.dailyPlanRows;
+}
+
 /**
- * Central data hook. Reads from the existing domain hooks
- * (`useTasks`, `useGoals`, `useHabits`, `useAllHabitCompletions`) and
- * composes the projection. When any source hook is still loading, we
- * fall through to the mock week so the UI is never blank during first
- * paint or for users with a pristine account.
- *
- * All mock-to-real seams are annotated with `TODO: replace with …` so
- * grep finds them for future backend work.
+ * Central data hook. Reads from domain hooks and composes the projection.
+ * Daily Planner tasks are included via `mapDailyPlansToCalendarItems`.
  */
 export function useCalendarItems(): UseCalendarItemsReturn {
   const today = useMemo(() => new Date(), []);
 
-  // Real source hooks — each encapsulates its own Supabase query.
-  //
-  // TODO: replace with Supabase query — shape in lib/calendar/sources/tasks.ts
   const { data: taskRows, isLoading: tasksLoading } = useTasks();
-  // TODO: replace with Supabase query — shape in lib/calendar/sources/milestones.ts
   const { data: goalRows, isLoading: goalsLoading } = useGoals();
-  // TODO: replace with Supabase query — shape in lib/calendar/sources/habits.ts
   const { data: habitRows, isLoading: habitsLoading } = useHabits();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+
   const rangeStart = useMemo(() => subDays(today, PAST_DAYS), [today]);
   const rangeEnd = useMemo(() => addDays(today, FUTURE_DAYS), [today]);
+  const rangeFrom = format(rangeStart, "yyyy-MM-dd");
+  const rangeTo = format(rangeEnd, "yyyy-MM-dd");
+
   const { data: habitCompletionRows, isLoading: completionsLoading } =
     useAllCompletions({
-      from: format(rangeStart, "yyyy-MM-dd"),
-      to: format(rangeEnd, "yyyy-MM-dd"),
+      from: rangeFrom,
+      to: rangeTo,
     });
 
+  const { data: dailyPlanRows, isLoading: dailyPlansLoading } = useDailyPlansInRange(
+    rangeFrom,
+    rangeTo,
+  );
+
+  const blockMinutes = profile?.block_minutes ?? DEFAULT_BLOCK_MINUTES;
+
   const isLoading =
-    tasksLoading || goalsLoading || habitsLoading || completionsLoading;
+    tasksLoading ||
+    goalsLoading ||
+    habitsLoading ||
+    completionsLoading ||
+    dailyPlansLoading ||
+    profileLoading;
 
   const data = useMemo<CalendarItem[] | undefined>(() => {
-    // If any source hook errors / returns undefined, fall back to mock.
-    // This keeps the Orbital / Today views visually useful during
-    // development and on fresh accounts.
-    if (!taskRows && !goalRows && !habitRows) {
+    if (shouldUseMockCalendar({ taskRows, goalRows, habitRows, dailyPlanRows })) {
       const sources = buildMockSources(today);
       return projectToCalendarItems(sources);
     }
 
-    const tasks: CalendarTask[] = taskRows
-      ? mapTaskRowsToCalendarTasks(taskRows)
-      : [];
+    const tasks: CalendarTask[] = taskRows ? mapTaskRowsToCalendarTasks(taskRows) : [];
 
-    const milestones: CalendarMilestone[] = goalRows
-      ? mapGoalRowsToMilestones(goalRows)
-      : [];
+    const milestones: CalendarMilestone[] = goalRows ? mapGoalRowsToMilestones(goalRows) : [];
 
     const habitOccurrences: CalendarHabitOccurrence[] =
       habitRows && habitCompletionRows
-        ? expandHabitsToOccurrences(
-            habitRows,
-            habitCompletionRows,
-            rangeStart,
-            rangeEnd
-          )
+        ? expandHabitsToOccurrences(habitRows, habitCompletionRows, rangeStart, rangeEnd)
         : [];
 
-    // Reminders: derived from tasks with `reminder_date` set. We piggy-
-    // back on the existing tasks query — no separate query yet.
-    //
-    // TODO: if/when a dedicated `reminders` table ships, read it here
-    // via `lib/calendar/sources/reminders.ts`.
     const reminders: CalendarReminder[] = (taskRows ?? [])
       .filter((t) => t.reminder_date)
       .map((t) => ({
@@ -115,15 +119,21 @@ export function useCalendarItems(): UseCalendarItemsReturn {
         source_task_id: t.id,
       }));
 
-    // If a real user has no sources at all, seed with the mock week so
-    // the UI demonstrates its full capabilities instead of showing empty.
-    if (
-      tasks.length === 0 &&
-      milestones.length === 0 &&
-      habitOccurrences.length === 0
-    ) {
-      const sources = buildMockSources(today);
-      return projectToCalendarItems(sources);
+    const plannerItems = mapDailyPlansToCalendarItems({
+      dailyPlans: dailyPlanRows ?? [],
+      taskRows: taskRows ?? [],
+      blockMinutes,
+    });
+
+    const hasRealData =
+      tasks.length > 0 ||
+      milestones.length > 0 ||
+      habitOccurrences.length > 0 ||
+      reminders.length > 0 ||
+      plannerItems.length > 0;
+
+    if (!hasRealData) {
+      return [];
     }
 
     return projectToCalendarItems({
@@ -131,18 +141,24 @@ export function useCalendarItems(): UseCalendarItemsReturn {
       habitOccurrences,
       milestones,
       reminders,
+      plannerItems,
     });
-  }, [taskRows, goalRows, habitRows, habitCompletionRows, today, rangeStart, rangeEnd]);
+  }, [
+    taskRows,
+    goalRows,
+    habitRows,
+    habitCompletionRows,
+    dailyPlanRows,
+    today,
+    rangeStart,
+    rangeEnd,
+    blockMinutes,
+  ]);
 
   return { data, isLoading, isFetching: isLoading };
 }
 
-// React Query key kept for cross-feature invalidation.
 export { CALENDAR_QUERY_KEY };
-
-// ──────────────────────────────────────────────────────────────────────
-// Derived hooks (unchanged API)
-// ──────────────────────────────────────────────────────────────────────
 
 export function useItemsForDate(date: string) {
   const { data, isLoading } = useCalendarItems();

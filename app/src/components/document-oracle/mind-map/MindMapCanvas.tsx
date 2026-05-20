@@ -172,13 +172,35 @@ function neighborIds(edges: MindMapDbEdge[], nid: string): Set<string> {
   return s;
 }
 
-function ToolbarWithFit(props: Omit<MindMapToolbarProps, "onFitView">) {
+function AutoFitView({ mapKey, nodeCount }: { mapKey: number; nodeCount: number }) {
+  const rf = useReactFlow();
+  const lastSignature = useRef<string>("");
+  useEffect(() => {
+    if (nodeCount === 0) {
+      lastSignature.current = "";
+      return;
+    }
+    const sig = `${mapKey}:${nodeCount}`;
+    if (lastSignature.current === sig) return;
+    lastSignature.current = sig;
+    const id = requestAnimationFrame(() => {
+      rf.fitView({ padding: 0.18, duration: 300 });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [mapKey, nodeCount, rf]);
+  return null;
+}
+
+function ToolbarWithFit(props: Omit<MindMapToolbarProps, "onFitView" | "onResetView">) {
   const rf = useReactFlow();
   return (
     <MindMapToolbar
       {...props}
       onFitView={() => {
-        void rf.fitView({ padding: 0.2, duration: 280 });
+        void rf.fitView({ padding: 0.18, duration: 280 });
+      }}
+      onResetView={() => {
+        rf.setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 220 });
       }}
     />
   );
@@ -199,6 +221,7 @@ function MindMapShell(props: {
   regenerateBusy: boolean;
   branchNudge: number;
   unlockNeighborsNudge: number;
+  viewportResetKey: number;
 }) {
   const {
     dbNodes,
@@ -215,6 +238,7 @@ function MindMapShell(props: {
     regenerateBusy,
     branchNudge,
     unlockNeighborsNudge,
+    viewportResetKey,
   } = props;
 
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
@@ -329,8 +353,8 @@ function MindMapShell(props: {
   const miniColor = useCallback((n: MindMapFlowNode) => mindMapNodeAccent(n.data.db.node_type).minimap, []);
 
   return (
-    <div className="flex h-[min(68vh,640px)] min-h-[420px] w-full min-w-0 flex-col rounded-2xl border border-white/10 bg-[#050508]">
-      <div className="relative min-h-0 flex-1">
+    <div className="flex h-[72dvh] min-h-[520px] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#050508] md:h-[70dvh] md:min-h-[620px] xl:h-[min(76vh,760px)] xl:min-h-[620px]">
+      <div className="relative min-h-0 flex-1 touch-pan-y">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -339,14 +363,23 @@ function MindMapShell(props: {
           nodeTypes={nodeTypes}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
-          fitView
-          minZoom={0.15}
-          maxZoom={1.8}
+          minZoom={0.12}
+          maxZoom={2}
+          fitView={false}
+          fitViewOptions={{ padding: 0.18 }}
+          panOnDrag
+          zoomOnScroll
+          zoomOnPinch
+          panOnScroll={false}
+          nodesDraggable
+          elementsSelectable
+          preventScrolling={false}
           proOptions={{ hideAttribution: true }}
           className="!bg-transparent"
           defaultEdgeOptions={{ type: "smoothstep", style: { strokeWidth: 1.2 } }}
         >
-          <Panel position="top-left" className="!m-0 w-[min(100%,920px)] max-w-[calc(100%-6px)] p-1">
+          <AutoFitView mapKey={viewportResetKey} nodeCount={dbNodes.length} />
+          <Panel position="top-left" className="!m-0 w-[min(100%,920px)] max-w-[calc(100%-8px)] p-1 sm:p-1.5">
             <ToolbarWithFit
               search={search}
               onSearchChange={onSearchChange}
@@ -361,16 +394,19 @@ function MindMapShell(props: {
             />
           </Panel>
           <Background id="mm-grid" variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(148,163,184,0.12)" />
-          <Controls className="!m-2 !border-white/10 !bg-black/70 !shadow-lg" />
+          <Controls className="!m-2 !scale-90 !border-white/10 !bg-black/70 !shadow-lg sm:!scale-100" />
           <MiniMap
-            className="!m-2 !rounded-lg !border !border-white/10 !bg-black/60"
+            className="!m-2 !hidden !rounded-lg !border !border-white/10 !bg-black/60 md:!block"
             pannable
             zoomable
             nodeStrokeWidth={2}
             nodeColor={miniColor}
           />
-          <Panel position="bottom-right" className="hidden text-[10px] text-white/35 sm:block">
-            Pinch · two-finger pan
+          <Panel position="bottom-center" className="!m-2 max-w-[calc(100%-1rem)] text-center text-[10px] text-white/40 md:hidden">
+            Pinch to zoom · drag to move
+          </Panel>
+          <Panel position="bottom-right" className="!m-2 hidden text-[10px] text-white/35 md:block">
+            Scroll to zoom · drag to pan
           </Panel>
         </ReactFlow>
       </div>
@@ -382,6 +418,7 @@ export function MindMapCanvas(props: {
   dbNodes: MindMapDbNode[];
   dbEdges: MindMapDbEdge[];
   selectedId: string | null;
+  viewportResetKey: number;
   onSelect: (n: MindMapDbNode | null) => void;
   search: string;
   typeFilter: MindMapTypeFilterId;

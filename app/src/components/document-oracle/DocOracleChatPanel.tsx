@@ -135,17 +135,19 @@ function ChatBubble({
   return (
     <div
       className={cn(
-        "relative isolate max-w-[92%] sm:max-w-[76%]",
-        user ? "ml-auto" : "mr-auto",
+        "relative isolate w-full min-w-0",
+        user
+          ? "ml-auto max-w-[90%] md:max-w-[76%] lg:max-w-[76%]"
+          : "mr-auto w-full max-w-full md:max-w-[96%] lg:max-w-[92%]",
         className,
       )}
     >
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-[0_8px_30px_rgba(0,0,0,0.12)]",
+          "relative w-full min-w-0 overflow-hidden rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]",
           user
-            ? "rounded-br-sm bg-[#C8E53A] text-[#0d0d0d] dark:bg-[#c5df42] dark:text-[#0d0d0d]"
-            : "rounded-bl-sm border border-[#C8E53A]/22 bg-white/[0.05] text-foreground backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)]",
+            ? "rounded-br-sm px-4 py-3 text-[13px] leading-relaxed bg-[#C8E53A] text-[#0d0d0d] dark:bg-[#c5df42] dark:text-[#0d0d0d]"
+            : "rounded-bl-sm border border-white/10 bg-white/[0.05] px-4 py-4 text-[15px] leading-7 text-foreground backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)] sm:px-5 sm:py-5 sm:text-[15.5px]",
         )}
       >
         {!user ? (
@@ -183,8 +185,8 @@ function BouncingDots({ className }: { className?: string }) {
 
 function OracleThinkingBubble() {
   return (
-    <div className="flex w-full max-w-[92%] flex-col gap-1.5 sm:max-w-[76%]">
-      <ChatBubble role="assistant" className="mr-auto">
+    <div className="mr-auto flex w-full min-w-0 max-w-full flex-col gap-1.5 md:max-w-[96%] lg:max-w-[92%]">
+      <ChatBubble role="assistant">
         <BouncingDots />
       </ChatBubble>
       <p className="pl-1 text-[11px] text-muted-foreground/90">Oracle is thinking…</p>
@@ -212,7 +214,7 @@ function AssistantMeta(props: {
   };
 
   return (
-    <div className="mt-3 flex w-full max-w-[92%] flex-col gap-4 sm:max-w-[76%]">
+    <div className="mt-3 flex w-full min-w-0 max-w-full flex-col gap-4 md:max-w-[96%] lg:max-w-[92%]">
       {sourcePages.length > 0 ? (
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/90">Sources used</p>
@@ -297,7 +299,7 @@ function AssistantMeta(props: {
       {related_visuals && related_visuals.length > 0 ? (
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/90">Related visuals</p>
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-x-visible">
+          <div className="mt-2 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
             {related_visuals.map((v) => {
               const thumb = v.image_path ? knowledgeFilesApiHref(v.image_path) : null;
               const label = displayVisualTitle({
@@ -315,7 +317,7 @@ function AssistantMeta(props: {
                   onClick={() => onOpenVisualById?.(v.id)}
                   disabled={!onOpenVisualById}
                   className={cn(
-                    "flex min-w-[200px] max-w-[260px] shrink-0 gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/25 p-2 text-left transition sm:min-w-0 sm:max-w-none",
+                    "flex min-w-0 w-full gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/25 p-2 text-left transition",
                     onOpenVisualById ? "hover:border-[#C8E53A]/35" : "opacity-80",
                   )}
                 >
@@ -691,17 +693,18 @@ export function DocOracleChatPanel({
   };
 
   return (
-    <div className="flex min-h-[62vh] max-h-[72vh] flex-col gap-3 sm:min-h-[560px] sm:max-h-[calc(100vh-320px)]">
-      <p className="shrink-0 text-[12px] leading-relaxed text-muted-foreground">
-        Answers use retrieved passages from this document only. Open the Source tab or a new tab from page chips to
-        jump in the PDF.
-      </p>
+    <div className="flex w-full max-w-none flex-1 flex-col min-h-[72dvh] sm:min-h-[640px]">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
+        <p className="shrink-0 text-[12px] leading-relaxed text-muted-foreground">
+          Answers use retrieved passages from this document only. Open the Source tab or a new tab from page chips to
+          jump in the PDF.
+        </p>
 
-      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-medium text-muted-foreground">
           <span className="uppercase tracking-wide">Conversation history</span>
           <select
-            className="h-10 w-full max-w-full rounded-lg border border-border bg-muted/50 px-2 text-[13px] text-foreground outline-none focus:border-[#C8E53A]/45 sm:max-w-md"
+            className="h-10 w-full max-w-full rounded-lg border border-border bg-muted/50 px-2 text-[13px] text-foreground outline-none focus:border-[#C8E53A]/45"
             value={sessionId ?? ""}
             disabled={historyLoading}
             onChange={onSessionSelect}
@@ -721,23 +724,23 @@ export function DocOracleChatPanel({
       </div>
 
       {starters.length > 0 && messages.length === 0 && !historyLoading ? (
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex w-full max-w-none shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
           {starters.map((s) => (
             <button
               key={s}
               type="button"
               disabled={loading}
               onClick={() => void runSend(s, null)}
-              className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-left text-[11.5px] text-muted-foreground transition hover:border-border hover:bg-muted hover:text-foreground"
+              className="w-full max-w-full min-w-0 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-left text-[12px] leading-snug text-muted-foreground transition hover:border-border hover:bg-muted hover:text-foreground sm:w-auto sm:max-w-[min(100%,28rem)] sm:rounded-full sm:py-1.5 sm:text-[11.5px]"
             >
-              {s}
+              <span className="line-clamp-2 sm:line-clamp-none">{s}</span>
             </button>
           ))}
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        <div className="flex flex-col gap-4 pb-2">
+      <div className="min-h-0 flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
+        <div className="flex w-full min-w-0 max-w-none flex-col gap-4 pb-32 sm:pb-24">
           {historyLoading ? (
             <p className="text-[12px] text-muted-foreground">Loading conversation…</p>
           ) : null}
@@ -755,9 +758,12 @@ export function DocOracleChatPanel({
                 </ChatBubble>
               </div>
             ) : (
-              <div key={key} className="flex w-full flex-col items-start gap-1">
+              <div key={key} className="flex w-full min-w-0 flex-col gap-1">
                 <ChatBubble role="assistant">
-                  <DocOracleMarkdown className="text-[13px] leading-relaxed" source={m.content} />
+                  <DocOracleMarkdown
+                    className="w-full max-w-none text-[15px] leading-7 sm:text-[15.5px] [&_blockquote]:max-w-none [&_li]:max-w-none [&_ol]:max-w-none [&_p]:max-w-none [&_ul]:max-w-none"
+                    source={m.content}
+                  />
                 </ChatBubble>
 
                 <AssistantMeta
@@ -769,7 +775,7 @@ export function DocOracleChatPanel({
                   onOpenVisualById={onOpenVisualById}
                 />
 
-                <div className="mt-1 flex max-w-[92%] flex-wrap gap-2 sm:max-w-[76%]">
+                <div className="mt-1 flex w-full max-w-full flex-wrap gap-2 md:max-w-[96%] lg:max-w-[92%]">
                   <button
                     type="button"
                     disabled={!m.userQuestion || imgBusyIdx !== null || loading}
@@ -826,10 +832,14 @@ export function DocOracleChatPanel({
                   ) : null}
                 </div>
 
-                {imgErrByIdx[i] ? <p className="max-w-[92%] text-[11.5px] text-rose-600 sm:max-w-[76%] dark:text-rose-300/90">{imgErrByIdx[i]}</p> : null}
+                {imgErrByIdx[i] ? (
+                  <p className="w-full max-w-full text-[11.5px] text-rose-600 md:max-w-[96%] lg:max-w-[92%] dark:text-rose-300/90">
+                    {imgErrByIdx[i]}
+                  </p>
+                ) : null}
 
                 {m.generated_image_url ? (
-                  <div className="mt-2 w-full max-w-[92%] space-y-2 rounded-xl border border-white/10 bg-black/30 p-3 sm:max-w-[76%]">
+                  <div className="mt-2 w-full max-w-full space-y-2 rounded-xl border border-white/10 bg-black/30 p-3 md:max-w-[96%] lg:max-w-[92%]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       Image explanation
                     </p>
@@ -837,7 +847,7 @@ export function DocOracleChatPanel({
                     <img
                       src={m.generated_image_url}
                       alt="Generated explanation diagram"
-                      className="max-h-[min(52vh,420px)] w-full rounded-lg object-contain"
+                      className="max-h-[min(65dvh,560px)] w-full rounded-lg object-contain"
                     />
                   </div>
                 ) : null}
@@ -851,8 +861,8 @@ export function DocOracleChatPanel({
 
       {error ? <p className="shrink-0 text-[12px] text-rose-600 dark:text-rose-300/90">{error}</p> : null}
 
-      <div className="shrink-0 border-t border-border/60 bg-background/80 pt-3 backdrop-blur-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <div className="sticky bottom-0 z-30 w-full shrink-0 border-t border-white/10 bg-black/70 px-3 pt-3 backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] max-sm:pr-[max(0.75rem,calc(env(safe-area-inset-right,0px)+4.75rem))] sm:bg-background/80 sm:px-0 sm:pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:backdrop-blur-sm">
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
           <textarea
             ref={textareaRef}
             value={input}
@@ -860,7 +870,7 @@ export function DocOracleChatPanel({
             rows={3}
             maxLength={12000}
             placeholder="Ask Doc Oracle…"
-            className="min-h-[96px] flex-1 resize-y rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-[#C8E53A]/45"
+            className="min-h-[96px] w-full min-w-0 flex-1 resize-y rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-[#C8E53A]/45"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -868,11 +878,17 @@ export function DocOracleChatPanel({
               }
             }}
           />
-          <button type="button" disabled={loading} className={cn(limeBtn, "min-h-[44px] shrink-0")} onClick={() => void runSend(input, null)}>
+          <button
+            type="button"
+            disabled={loading}
+            className={cn(limeBtn, "min-h-[44px] w-full shrink-0 sm:w-auto")}
+            onClick={() => void runSend(input, null)}
+          >
             <Send className="h-4 w-4" aria-hidden />
             Send
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

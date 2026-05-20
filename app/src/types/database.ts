@@ -153,10 +153,21 @@ export type KeyResult = {
 };
 
 export type DailyPlanTask = {
+  /** Stable id for this planner row (JSON); used for Google Calendar ↔ planner sync. */
+  plannerTaskId?: string;
+  /** Optional gap in block units before this task, from the previous task end (or plan start). */
+  gapBlocks?: number;
   taskName?: string;
   taskId?: string;
   blocks?: number;
   order?: number;
+  /** Exact wall-clock start (HH:mm) on plan_date when Google or user set a non-sequential slot. */
+  start_time?: string;
+  /** Exact wall-clock end (HH:mm); may be on the next calendar day when past midnight. */
+  end_time?: string;
+  google_calendar_event_id?: string;
+  google_calendar_etag?: string;
+  google_calendar_updated_at?: string;
 };
 
 /** Mode the user last selected for a given planner date. Stored on the daily_plans row. */
@@ -234,6 +245,8 @@ export type Idea = {
   linked_project_ids: string[];
   linked_task_ids: string[];
   status: "captured" | "reviewed" | "archived";
+  /** User-chosen bucket for browsing (see `IDEA_CATEGORIES` in lib/ideas/constants). */
+  category: string;
   created_at: string;
   updated_at: string;
   // v2 columns — nullable / defaulted; present on all rows after migration
@@ -241,7 +254,7 @@ export type Idea = {
   ai_tags: string[];
   manual_tags: string[];
   destinations: string[];
-  attachments: Json;
+  attachments: Json[];
   ai_suggestions: Json | null;
   processing_step: string | null;
   linked_knowledge_item_ids: string[];
@@ -338,6 +351,7 @@ export type GratefulThing = {
   entry_date: string;
   category: string | null;
   photo_url: string | null;
+  thumbnail_url: string | null;
   is_favorite: boolean;
   created_at: string;
   updated_at: string;

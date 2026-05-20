@@ -131,7 +131,7 @@ export function DocOracleInfographicPanel(props: {
   const disabled = !props.enabled || focusLoading;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 text-[13px] text-muted-foreground">
+    <div className="flex w-full max-w-none flex-col gap-5 text-[13px] text-muted-foreground">
       <header className="space-y-1">
         <h2 className="text-lg font-semibold text-foreground">Infographic</h2>
         <p className="text-[12px] leading-relaxed">Turn this document into a shareable visual summary.</p>
@@ -160,7 +160,7 @@ export function DocOracleInfographicPanel(props: {
 
       <InfographicFocusSelector options={focusData?.focus_options ?? []} selectedIds={selected} onToggle={toggle} disabled={disabled} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <InfographicAspectRatioSelector value={aspect} onChange={setAspect} disabled={disabled || genBusy} />
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Language</p>

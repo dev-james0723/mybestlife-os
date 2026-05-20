@@ -40,67 +40,81 @@ export function DocOracleTabBar({
       <div
         role="tablist"
         aria-label="Doc Oracle"
-        className="w-full rounded-2xl border border-white/10 bg-white/[0.06] p-1.5 shadow-inner backdrop-blur-xl [-webkit-backdrop-filter:blur(24px)]"
+        className={cn(
+          "w-full rounded-[28px] border p-2",
+          "border-black/10 bg-black/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_18px_50px_rgba(0,0,0,0.08)]",
+          "backdrop-blur-[24px] [-webkit-backdrop-filter:blur(24px)]",
+          "supports-[backdrop-filter]:bg-black/[0.028]",
+          "dark:border-white/12 dark:bg-white/[0.055] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_50px_rgba(0,0,0,0.22)]",
+          "supports-[backdrop-filter]:dark:bg-white/[0.05]",
+        )}
       >
-        <div className="relative">
-          <div
-            className={cn(
-              "grid w-full min-w-0 grid-cols-2 gap-1.5",
-              "sm:flex sm:flex-nowrap sm:gap-1.5 sm:overflow-x-auto sm:overflow-y-visible sm:overscroll-x-contain sm:pb-0.5",
-              "sm:[-webkit-overflow-scrolling:touch] sm:[scrollbar-width:thin] sm:[scrollbar-color:rgba(255,255,255,0.22)_transparent]",
-            )}
-          >
-            {TAB_DEFS.map((t) => {
-              const active = value === t.id;
-              const { id, label, Icon } = t;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-label={label}
-                  aria-selected={active}
-                  aria-controls={`doc-oracle-panel-${id}`}
-                  id={`doc-oracle-tab-${id}`}
-                  tabIndex={active ? 0 : -1}
-                  onClick={() => onValueChange(id)}
-                  className={cn(
-                    "touch-manipulation select-none",
-                    "inline-flex flex-row items-center justify-center gap-2",
-                    "rounded-xl px-3 py-2 text-[12px] font-medium leading-none",
-                    "transition-colors duration-150",
-                    "min-h-[48px]",
-                    "max-sm:w-full max-sm:justify-center",
-                    id === "audio_summary" && "max-sm:col-span-2",
-                    "sm:flex-none sm:shrink-0 sm:w-auto sm:min-w-max",
-                    active
-                      ? "bg-[#C8E53A] text-black shadow-sm"
-                      : "text-white/60 hover:bg-white/[0.08] hover:text-white",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  <span className="whitespace-nowrap text-center leading-none">{label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-7 bg-gradient-to-r from-black/35 to-transparent sm:block"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-[1] hidden w-7 bg-gradient-to-l from-black/35 to-transparent sm:block"
-            aria-hidden
-          />
-        </div>
-
-        <p
-          className="hidden px-1 pt-1.5 text-center text-[10px] leading-snug text-white/45 sm:block lg:hidden"
-          aria-hidden
+        <div
+          className={cn(
+            "grid w-full min-w-0 grid-cols-2 gap-2",
+            "md:grid-cols-5",
+            "xl:grid-cols-10",
+          )}
         >
-          Swipe tabs →
-        </p>
+          {TAB_DEFS.map((t) => {
+            const active = value === t.id;
+            const { id, label, Icon } = t;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-label={label}
+                aria-selected={active}
+                aria-controls={`doc-oracle-panel-${id}`}
+                id={`doc-oracle-tab-${id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => onValueChange(id)}
+                className={cn(
+                  "group relative isolate min-h-[56px] w-full overflow-hidden rounded-2xl",
+                  "md:min-h-[58px]",
+                  "xl:min-h-[48px] xl:py-2.5",
+                  "inline-flex items-center justify-center gap-2 px-3 py-3",
+                  "touch-manipulation select-none text-[13px] font-semibold leading-tight tracking-tight",
+                  "border backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]",
+                  "transition-all duration-200 ease-out",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E53A]/70",
+                  "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:opacity-100",
+                  "before:bg-gradient-to-br before:from-white/12 before:via-transparent before:to-transparent",
+                  "after:pointer-events-none after:absolute after:inset-x-2 after:top-0 after:h-px after:rounded-full",
+                  "after:bg-gradient-to-r after:from-transparent after:via-white/25 after:to-transparent after:opacity-60",
+                  active
+                    ? [
+                        "z-[1] border-[#C8E53A]/60 bg-[#C8E53A] text-black",
+                        "shadow-[0_14px_34px_rgba(200,229,58,0.28),0_0_0_1px_rgba(200,229,58,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]",
+                        "before:from-white/30 before:opacity-90",
+                        "after:via-white/40",
+                      ]
+                    : [
+                        "z-0 border-black/10 bg-black/[0.035] text-black/[0.65]",
+                        "shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]",
+                        "hover:border-black/15 hover:bg-black/[0.055] hover:text-black",
+                        "dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70",
+                        "dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+                        "dark:hover:border-white/18 dark:hover:bg-white/[0.075] dark:hover:text-white",
+                        "before:opacity-50 dark:before:from-white/10",
+                        "after:opacity-40 dark:after:via-white/15",
+                      ],
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "relative z-[1] size-[18px] shrink-0",
+                    active ? "text-black" : "text-black/55 dark:text-white/70",
+                  )}
+                  aria-hidden
+                />
+                <span className="relative z-[1] text-center leading-tight whitespace-normal">{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

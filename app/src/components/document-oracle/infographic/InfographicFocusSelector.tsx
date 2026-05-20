@@ -21,7 +21,7 @@ export function InfographicFocusSelector(props: {
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Focus</p>
-      <div className="flex max-h-[min(52vh,520px)] flex-col gap-2 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch]">
+      <div className="grid max-h-[min(52vh,560px)] grid-cols-1 gap-2 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch] md:max-h-[min(60vh,640px)] md:grid-cols-2 xl:grid-cols-3">
         {props.options.map((o) => {
           const on = props.selectedIds.has(o.id);
           const badges = (o.recommended_styles ?? []).filter((s): s is string => typeof s === "string" && s.length > 0);

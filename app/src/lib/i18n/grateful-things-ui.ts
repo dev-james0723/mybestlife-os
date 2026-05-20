@@ -76,6 +76,7 @@ export type GratefulThingsUiCopy = {
   regeneratePhoto: string;
   createMarkFavorite: string;
   saveEntry: string;
+  photoOnlyFallbackContent: string;
   toastPhotoTooLarge: string;
   toastAiPhotoTitle: string;
   toastAiEnhanceTitle: string;
@@ -140,7 +141,8 @@ const en: GratefulThingsUiCopy = {
   regeneratePhoto: "Regenerate",
   createMarkFavorite: "Mark as favorite",
   saveEntry: "Save Entry",
-  toastPhotoTooLarge: "Photo must be under about 1.5 MB (connect storage for larger files).",
+  photoOnlyFallbackContent: "Grateful moment",
+  toastPhotoTooLarge: "Photo must be under 5 MB.",
   toastAiPhotoTitle: "Generate Photo with AI",
   toastAiEnhanceTitle: "Enhance with AI",
   toastAiEnhanceSuccess: "Entry polished with Gemini.",
@@ -225,7 +227,8 @@ const zhTW: GratefulThingsUiCopy = {
   regeneratePhoto: "重新生成",
   createMarkFavorite: "標為最愛",
   saveEntry: "儲存條目",
-  toastPhotoTooLarge: "照片需小於約 1.5 MB（連接雲端儲存後可支援更大檔案）。",
+  photoOnlyFallbackContent: "感恩時刻",
+  toastPhotoTooLarge: "照片需小於 5 MB。",
   toastAiPhotoTitle: "用 AI 產生圖片",
   toastAiEnhanceTitle: "用 AI 潤飾文字",
   toastAiEnhanceSuccess: "已用 Gemini 潤飾文字。",
@@ -310,7 +313,8 @@ const zhCN: GratefulThingsUiCopy = {
   regeneratePhoto: "重新生成",
   createMarkFavorite: "标为收藏",
   saveEntry: "保存条目",
-  toastPhotoTooLarge: "照片需小于约 1.5 MB（连接云存储后可支持更大文件）。",
+  photoOnlyFallbackContent: "感恩时刻",
+  toastPhotoTooLarge: "照片需小于 5 MB。",
   toastAiPhotoTitle: "用 AI 生成图片",
   toastAiEnhanceTitle: "用 AI 润色文字",
   toastAiEnhanceSuccess: "已用 Gemini 润色文字。",

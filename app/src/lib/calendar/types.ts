@@ -94,7 +94,9 @@ export type CalendarItemSourceType =
   | "habit"
   | "milestone"
   | "reminder"
-  | "external";
+  | "external"
+  | "planner_time_block"
+  | "planner_free_task";
 
 type CalendarItemBase = {
   id: string;
@@ -149,12 +151,50 @@ export type CalendarItemExternal = CalendarItemBase & {
   location: string | null;
 };
 
+export type CalendarItemPlannerTimeBlock = CalendarItemBase & {
+  source_type: "planner_time_block";
+  source_id: string;
+  plan_id: string;
+  plan_date: string;
+  planner_task_id: string;
+  linked_task_id: string | null;
+  mode: "time-block";
+  blocks: number;
+  duration_minutes: number;
+  order: number;
+  priority: CalendarTaskPriority | "planned";
+  status: CalendarTaskStatus | "planned";
+  project_id: string | null;
+  project_name: string | null;
+  tags: string[];
+};
+
+export type CalendarItemPlannerFreeTask = CalendarItemBase & {
+  source_type: "planner_free_task";
+  source_id: string;
+  plan_id: string;
+  plan_date: string;
+  planner_task_id: string;
+  linked_task_id: string | null;
+  mode: "free";
+  free_priority: "must" | "should" | "could" | "done";
+  notes: string | null;
+  estimated_minutes: number | null;
+  order: number;
+  status: CalendarTaskStatus | "planned" | "done";
+  project_id: string | null;
+  project_name: string | null;
+  tags: string[];
+};
+
 export type CalendarItem =
   | CalendarItemTask
   | CalendarItemHabit
   | CalendarItemMilestone
   | CalendarItemReminder
-  | CalendarItemExternal;
+  | CalendarItemExternal
+  | CalendarItemPlannerTimeBlock
+  | CalendarItemPlannerFreeTask;
 
 // ──────────────────────────────────────────────────────────────────────
 // Day context & load

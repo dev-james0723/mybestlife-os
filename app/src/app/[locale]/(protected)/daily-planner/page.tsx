@@ -6,13 +6,15 @@ import {
   useMemo,
   useRef,
   useEffect,
+  useLayoutEffect,
   createContext,
   useContext,
   type ReactNode,
 } from "react";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { stripHtml } from "@/lib/utils/html";
 import { useAppStore } from "@/stores/app-store";
 import {
   getDailyPlannerUiCopy,
@@ -33,18 +35,24 @@ import {
   useDeleteScheduleTemplate,
 } from "@/hooks/use-schedule-templates";
 import { useTasks } from "@/hooks/use-tasks";
+import { useIdeas } from "@/hooks/use-ideas";
+import { useNotes } from "@/hooks/use-notes";
+import { useKnowledgeItemsPickList, type KnowledgePickRow } from "@/hooks/use-knowledge-items-pick";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth";
 import { useProfile, useUpdateProfile } from "@/hooks/use-settings";
+import {
+  useGoogleCalendarPlannerStatus,
+  useGoogleCalendarTaskSyncForDate,
+  usePlannerGcalLastPushAt,
+  usePlannerGcalPushPending,
+} from "@/hooks/use-google-calendar-planner";
 import { useQueryClient } from "@tanstack/react-query";
+import { CALENDAR_QUERY_KEY } from "@/lib/calendar/query-keys";
+import { ensurePlannerTaskIds } from "@/lib/normalize-plan-tasks";
 import { settingsRepository } from "@/lib/repositories/settings";
 import { createClient } from "@/lib/supabase/client";
 import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
-import {
-  buildFreePlanGoogleEvent,
-  buildPlannerGoogleEvents,
-} from "@/lib/google-calendar/plan-to-events";
-import { syncDailyPlanToGoogleCalendar } from "@/lib/google-calendar/sync";
+import { setPlannerGcalLastPushAt } from "@/lib/google/planner-calendar-push-request";
 import {
   QUICK_TASK_ICON_MAP,
   inferQuickTaskIconKey,
@@ -63,6 +71,8 @@ import type {
   Task,
   ScheduleTemplate,
   QuickTaskDef,
+  Idea,
+  Note,
 } from "@/types/database";
 
 import { PageShell } from "@/components/shared/page-shell";
@@ -195,6 +205,51 @@ function getColor(i: number): string {
   return TASK_COLORS[i % TASK_COLORS.length];
 }
 
+function trimPreviewPlain(text: string, max: number): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+function smartLinkIdeaDisplayLabel(
+  idea: Idea | undefined,
+  loading: boolean,
+  copy: Pick<DailyPlannerUiCopy, "smartLinkMissingIdea" | "smartLinkLoading" | "untitledTask">,
+): string {
+  if (loading && !idea) return copy.smartLinkLoading;
+  if (!idea) return copy.smartLinkMissingIdea;
+  const head = idea.title?.trim();
+  if (head) return head;
+  const preview = trimPreviewPlain(stripHtml(idea.content), 80);
+  return preview || copy.untitledTask;
+}
+
+function smartLinkNoteDisplayLabel(
+  note: Note | undefined,
+  loading: boolean,
+  copy: Pick<DailyPlannerUiCopy, "smartLinkMissingNote" | "smartLinkLoading" | "untitledTask">,
+): string {
+  if (loading && !note) return copy.smartLinkLoading;
+  if (!note) return copy.smartLinkMissingNote;
+  const head = note.title?.trim();
+  if (head) return head;
+  const preview = trimPreviewPlain(stripHtml(note.content ?? ""), 80);
+  return preview || copy.untitledTask;
+}
+
+function smartLinkKnowledgeDisplayLabel(
+  row: KnowledgePickRow | undefined,
+  loading: boolean,
+  copy: Pick<DailyPlannerUiCopy, "smartLinkMissingKnowledge" | "smartLinkLoading" | "untitledTask">,
+): string {
+  if (loading && !row) return copy.smartLinkLoading;
+  if (!row) return copy.smartLinkMissingKnowledge;
+  const head = row.title?.trim();
+  if (head) return head;
+  return copy.untitledTask;
+}
+
 type PlannerLocaleContextValue = {
   copy: DailyPlannerUiCopy;
   fmtBlocks: (blocks: number) => string;
@@ -268,11 +323,15 @@ function withUid(t: DailyPlanTask): LocalPlanTask {
   return local._uid ? local : { ...t, _uid: newUid() };
 }
 
-/** Drop the in-memory `_uid` field before persisting. */
-function stripUid(t: LocalPlanTask): DailyPlanTask {
+/** Drop the in-memory `_uid` field before persisting; ensure stable planner ids for Google sync. */
+function persistTask(t: LocalPlanTask, order: number): DailyPlanTask {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _uid, ...rest } = t;
-  return rest;
+  return { ...rest, order };
+}
+
+function persistTasks(tasks: LocalPlanTask[]): DailyPlanTask[] {
+  return ensurePlannerTaskIds(tasks.map((task, i) => persistTask(task, i)));
 }
 
 /* ─────────────────── WheelColumn ─────────────────── */
@@ -728,17 +787,96 @@ export default function DailyPlannerPage() {
   const { data: tomorrowPlan } = useDailyPlan(tomorrowStr);
   const upsertPlan = useUpsertDailyPlan();
   const { data: allTasks = [] } = useTasks();
+  const { data: ideasData, isPending: ideasPending } = useIdeas();
+  const { data: notesData, isPending: notesPending } = useNotes();
+  const { data: knowledgePickData, isPending: knowledgePickPending } =
+    useKnowledgeItemsPickList();
+  const ideasById = useMemo(() => {
+    const list = ideasData ?? [];
+    return new Map(list.map((i) => [i.id, i]));
+  }, [ideasData]);
+  const notesById = useMemo(() => {
+    const list = notesData ?? [];
+    return new Map(list.map((n) => [n.id, n]));
+  }, [notesData]);
+  const knowledgeById = useMemo(() => {
+    const list = knowledgePickData ?? [];
+    return new Map(list.map((k) => [k.id, k]));
+  }, [knowledgePickData]);
+  const ideasLibraryHref = useLocalizedPath("/ideas");
+  const notesLibraryHref = useLocalizedPath("/notes");
+  const knowledgeLibraryHref = useLocalizedPath("/knowledge-base");
   const { data: templates = [] } = useScheduleTemplates();
   const createTemplate = useCreateScheduleTemplate();
   const deleteTemplate = useDeleteScheduleTemplate();
-  const { startGoogleCalendarAccessFlow } = useAuth();
+  const { data: gcalStatus } = useGoogleCalendarPlannerStatus();
+  const { data: taskSyncMap } = useGoogleCalendarTaskSyncForDate(dateStr);
   const [googleSyncBusy, setGoogleSyncBusy] = useState(false);
+  const gcalPushPending = usePlannerGcalPushPending();
+  const plannerGcalLastPushIso = usePlannerGcalLastPushAt(dateStr);
 
-  const effectiveTimeZone = useMemo(() => {
-    const tz = profile?.timezone?.trim();
-    if (tz && tz.toLowerCase() !== "auto") return tz;
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }, [profile?.timezone]);
+  const gcalSilentPullGuardsRef = useRef({
+    upsertPending: false,
+    pushPending: false,
+    manualSync: false,
+  });
+
+  useLayoutEffect(() => {
+    gcalSilentPullGuardsRef.current = {
+      upsertPending: upsertPlan.isPending,
+      pushPending: gcalPushPending,
+      manualSync: googleSyncBusy,
+    };
+  }, [upsertPlan.isPending, gcalPushPending, googleSyncBusy]);
+
+  const taskSyncStatusByPlannerId = useMemo(() => {
+    const out: Record<string, string> = {};
+    if (!taskSyncMap) return out;
+    for (const [pid, row] of Object.entries(taskSyncMap)) {
+      out[pid] = row.sync_status;
+    }
+    return out;
+  }, [taskSyncMap]);
+
+  const lastSilentCalendarPullRef = useRef(0);
+
+  useEffect(() => {
+    if (!gcalStatus?.connected || !gcalStatus.syncEnabled) return;
+    if (hasDevLoginBypassCookie()) return;
+
+    const pull = async () => {
+      const g = gcalSilentPullGuardsRef.current;
+      if (g.upsertPending || g.pushPending || g.manualSync) return;
+      const now = Date.now();
+      if (now - lastSilentCalendarPullRef.current < 10_000) return;
+      lastSilentCalendarPullRef.current = now;
+      try {
+        const res = await fetch("/api/google/calendar/sync-now", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planDate: dateStr }),
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        await queryClient.invalidateQueries({ queryKey: ["daily-plans", dateStr] });
+        await queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
+        await queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ["google-calendar-task-sync", dateStr] });
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const onVis = () => {
+      if (document.visibilityState === "visible") void pull();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const intervalId = window.setInterval(() => void pull(), 120_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.clearInterval(intervalId);
+    };
+  }, [gcalStatus?.connected, gcalStatus?.syncEnabled, mode, dateStr, queryClient]);
 
   // ── sync server → local on plan load or date change ──
   useEffect(() => {
@@ -774,7 +912,7 @@ export default function DailyPlannerPage() {
           start_time: st,
           end_time: et,
           // strip client-only `_uid` before persistence
-          tasks: t.map((task, i) => ({ ...stripUid(task), order: i })),
+          tasks: persistTasks(t),
           schedule_image_url: scheduleImageUrlRef.current,
         });
       }, 600);
@@ -798,6 +936,21 @@ export default function DailyPlannerPage() {
           schedule_image_url: scheduleImageUrlRef.current,
         });
       }, 600);
+    },
+    [dateStr, upsertPlan],
+  );
+
+  /** Skip debounce: persist Time Block rows immediately (faster Google Calendar push). */
+  const flushTimeBlockPlan = useCallback(
+    async (nextTasks: LocalPlanTask[], st: string, et: string) => {
+      clearTimeout(saveTimerRef.current);
+      await upsertPlan.mutateAsync({
+        plan_date: dateStr,
+        start_time: st,
+        end_time: et,
+        tasks: persistTasks(nextTasks),
+        schedule_image_url: scheduleImageUrlRef.current,
+      });
     },
     [dateStr, upsertPlan],
   );
@@ -848,10 +1001,11 @@ export default function DailyPlannerPage() {
       if (mode === "free") {
         saveFreePlan(freeTasks, v, endTime);
       } else {
-        savePlan(tasks, v, endTime);
+        clearTimeout(saveTimerRef.current);
+        void flushTimeBlockPlan(tasks, v, endTime);
       }
     },
-    [mode, savePlan, saveFreePlan, tasks, freeTasks, endTime],
+    [mode, saveFreePlan, flushTimeBlockPlan, tasks, freeTasks, endTime],
   );
 
   const handleEndTimeChange = useCallback(
@@ -860,10 +1014,11 @@ export default function DailyPlannerPage() {
       if (mode === "free") {
         saveFreePlan(freeTasks, startTime, v);
       } else {
-        savePlan(tasks, startTime, v);
+        clearTimeout(saveTimerRef.current);
+        void flushTimeBlockPlan(tasks, startTime, v);
       }
     },
-    [mode, savePlan, saveFreePlan, tasks, freeTasks, startTime],
+    [mode, saveFreePlan, flushTimeBlockPlan, tasks, freeTasks, startTime],
   );
 
   // ── per-row presentation metadata for the sortable list ──
@@ -1135,9 +1290,10 @@ export default function DailyPlannerPage() {
         ...tasks,
         { taskName: name, blocks, taskId, order: tasks.length, _uid: newUid() },
       ];
-      updateTasks(next);
+      setTasks(next);
+      void flushTimeBlockPlan(next, startTime, endTime);
     },
-    [mode, tasks, freeTasks, updateTasks, saveFreePlan, startTime, endTime, blockMinutes],
+    [mode, tasks, freeTasks, saveFreePlan, startTime, endTime, blockMinutes, flushTimeBlockPlan],
   );
 
   // ── quick add ──
@@ -1157,12 +1313,14 @@ export default function DailyPlannerPage() {
           .map((id, i) => {
             const t = allTasks.find((at) => at.id === id);
             if (!t) return null;
+            const desc = t.description?.trim();
             return {
               id: `f-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2, 6)}`,
               title: t.title,
               taskId: t.id,
               priority: "should" as const,
               order: baseOrder + i,
+              notes: desc ? stripHtml(desc) : undefined,
               estimatedMinutes: t.estimated_blocks
                 ? t.estimated_blocks * blockMinutes
                 : undefined,
@@ -1293,7 +1451,7 @@ export default function DailyPlannerPage() {
 
     const tomorrowTasks = [
       ...(tomorrowPlan?.tasks ?? []),
-      { ...stripUid(taskToMove), order: tomorrowPlan?.tasks?.length ?? 0 },
+      persistTask(taskToMove, tomorrowPlan?.tasks?.length ?? 0),
     ];
     await upsertPlan.mutateAsync({
       plan_date: tomorrowStr,
@@ -1337,13 +1495,11 @@ export default function DailyPlannerPage() {
     [deleteTemplate],
   );
 
-  // ── Google Calendar: replace prior same-day synced events, insert current plan ──
-  // In Free Mode we sync ONE event spanning the planning window with the task list grouped
-  // by priority in the description, instead of inventing per-task slots.
-  const handleGoogleSync = useCallback(async () => {
-    const isFree = mode === "free";
-    if (isFree ? freeTasks.length === 0 : tasks.length === 0) {
-      toast.message(isFree ? copy.freeGoogleNoTasksToast : copy.toastGoogleNoTasks);
+  const handleCalendarSyncNow = useCallback(async () => {
+    const hasWork =
+      mode === "free" ? freeTasks.length > 0 : tasks.length > 0;
+    if (!hasWork) {
+      toast.message(copy.toastGoogleNoTasks);
       return;
     }
     if (hasDevLoginBypassCookie()) {
@@ -1358,84 +1514,79 @@ export default function DailyPlannerPage() {
       toast.message(copy.toastGoogleNeedSignIn);
       return;
     }
-    const accessToken = session.provider_token ?? undefined;
-    if (!accessToken) {
-      try {
-        await startGoogleCalendarAccessFlow();
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : copy.toastGoogleSyncFailed);
-      }
-      return;
-    }
     setGoogleSyncBusy(true);
     try {
-      if (isFree) {
-        const formattedDate = format(selectedDate, "MMMM d, yyyy", { locale: dateLocale });
-        const titlePrefix = copy.freeGoogleSyncTitle(formattedDate);
-        const event = buildFreePlanGoogleEvent({
-          planDate: dateStr,
-          startTime,
-          endTime,
-          endDayOffset: planRange.endDayOffset,
-          freeTasks,
-          timeZone: effectiveTimeZone,
-          titlePrefix,
+      if (mode === "time-block") {
+        await flushTimeBlockPlan(tasks, startTime, endTime);
+      } else {
+        clearTimeout(saveTimerRef.current);
+        await upsertPlan.mutateAsync({
+          plan_date: dateStr,
+          start_time: startTime,
+          end_time: endTime,
+          free_tasks: freeTasks,
+          mode: "free",
+          schedule_image_url: scheduleImageUrlRef.current,
         });
-        const events = event ? [event] : [];
-        await syncDailyPlanToGoogleCalendar(
-          accessToken,
-          dateStr,
-          effectiveTimeZone,
-          events,
-        );
-        toast.success(copy.freeGoogleSyncedToast);
-      } else {
-        const events = buildPlannerGoogleEvents(
-          dateStr,
-          startTime,
-          tasks,
-          blockMinutes,
-          effectiveTimeZone,
-          copy.googleCalendarEventPrefix,
-        );
-        await syncDailyPlanToGoogleCalendar(accessToken, dateStr, effectiveTimeZone, events);
-        toast.success(copy.toastGoogleSynced(events.length));
       }
+      const res = await fetch("/api/google/calendar/sync-now", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planDate: dateStr }),
+        credentials: "include",
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        localPushed?: number;
+        remoteApplied?: number;
+        remoteFetched?: number;
+        conflicts?: number;
+        processed?: number;
+        error?: string;
+        syncedAt?: string;
+      };
+      if (!res.ok) {
+        throw new Error(j.error || `sync_failed_${res.status}`);
+      }
+      if (typeof j.syncedAt === "string") {
+        setPlannerGcalLastPushAt(dateStr, j.syncedAt);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["google-calendar-planner-status"] });
+      await queryClient.invalidateQueries({ queryKey: ["google-calendar-task-sync", dateStr] });
+      await queryClient.invalidateQueries({ queryKey: ["daily-plans", dateStr] });
+      await queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
+      await queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+      toast.success(
+        copy.toastGoogleCalendarSyncNowOk({
+          localPushed: Number(j.localPushed ?? 0),
+          remoteApplied: Number(j.remoteApplied ?? j.processed ?? 0),
+          remoteFetched: Number(j.remoteFetched ?? 0),
+          conflicts: Number(j.conflicts ?? 0),
+        }),
+      );
     } catch (e) {
-      const raw = e instanceof Error ? e.message : "";
-      const needsReauth =
-        /\b401\b/.test(raw) ||
-        /\b403\b/.test(raw) ||
-        /insufficient/i.test(raw) ||
-        /invalid_grant/i.test(raw);
-      if (needsReauth) {
-        toast.message(copy.toastGoogleReauthorize);
-        try {
-          await startGoogleCalendarAccessFlow();
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : copy.toastGoogleSyncFailed);
-        }
-      } else {
-        toast.error(raw || copy.toastGoogleSyncFailed);
-      }
+      toast.error(e instanceof Error ? e.message : copy.toastGoogleCalendarSyncNowFailed);
     } finally {
       setGoogleSyncBusy(false);
     }
   }, [
     mode,
-    blockMinutes,
-    copy,
-    dateStr,
-    dateLocale,
-    selectedDate,
-    effectiveTimeZone,
-    endTime,
-    freeTasks,
-    planRange.endDayOffset,
-    startGoogleCalendarAccessFlow,
-    startTime,
     tasks,
+    freeTasks,
+    startTime,
+    endTime,
+    copy,
+    queryClient,
+    dateStr,
+    flushTimeBlockPlan,
+    upsertPlan,
   ]);
+
+  const plannerGcalPushSpinning =
+    googleSyncBusy || gcalPushPending || (mode === "time-block" && upsertPlan.isPending);
+  const lastGcalStamp =
+    plannerGcalLastPushIso != null
+      ? format(parseISO(plannerGcalLastPushIso), "yyyy-MM-dd HH:mm:ss")
+      : null;
 
   /* ────────────── RENDER ────────────── */
 
@@ -1553,15 +1704,35 @@ export default function DailyPlannerPage() {
                   freeLabel={copy.modeFree}
                 />
               </div>
+            <div className="flex flex-col items-stretch gap-1 sm:items-end">
               <Button
                 size="sm"
-                className="h-9 w-full shrink-0 gap-2 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700 sm:w-auto"
-                onClick={() => void handleGoogleSync()}
-                disabled={googleSyncBusy}
+                className="relative h-9 w-full shrink-0 gap-2 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700 sm:w-auto"
+                onClick={() => void handleCalendarSyncNow()}
+                disabled={plannerGcalPushSpinning}
               >
-                <CalendarSync className="h-3.5 w-3.5" />
-                <span className="truncate">{copy.syncGoogleCalendar}</span>
+                {plannerGcalPushSpinning ? (
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <CalendarSync className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                )}
+                <span className="truncate">
+                  {plannerGcalPushSpinning
+                    ? copy.googleCalendarSyncingNowButton
+                    : copy.googleCalendarSyncNowButton}
+                </span>
               </Button>
+              {lastGcalStamp ? (
+                <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right tabular-nums">
+                  {copy.googleCalendarLastUpdatedLabel(lastGcalStamp)}
+                </p>
+              ) : null}
+              {mode === "time-block" && gcalStatus?.connected && gcalStatus.syncEnabled ? (
+                <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right">
+                  {copy.googleCalendarServerSyncHint}
+                </p>
+              ) : null}
+            </div>
             </div>
           </div>
 
@@ -1574,23 +1745,41 @@ export default function DailyPlannerPage() {
               value={startTime}
               onChange={handleStartTimeChange}
             />
-            <TimeWheelPicker
-              label={copy.endTime}
-              value={endTime}
-              onChange={handleEndTimeChange}
-              hint={
-                planRange.endDayOffset > 0
-                  ? copy.crossesIntoDayLabel(
-                      format(
-                        addDays(selectedDate, planRange.endDayOffset),
-                        "EEEE, MMMM d",
-                        { locale: dateLocale },
-                      ),
-                    )
-                  : undefined
-              }
-            />
+            <div className="min-w-0 space-y-1">
+              <TimeWheelPicker
+                label={copy.endTime}
+                value={endTime}
+                onChange={handleEndTimeChange}
+                hint={
+                  planRange.endDayOffset > 0
+                    ? copy.crossesIntoDayLabel(
+                        format(
+                          addDays(selectedDate, planRange.endDayOffset),
+                          "EEEE, MMMM d",
+                          { locale: dateLocale },
+                        ),
+                      )
+                    : undefined
+                }
+              />
+              {mode === "time-block" && gcalStatus?.connected && gcalStatus.syncEnabled ? (
+                <p className="text-[11px] leading-snug text-emerald-800/90 dark:text-emerald-200/90">
+                  {copy.googleCalendarConnectedAccountHint(gcalStatus.email ?? null)}
+                </p>
+              ) : null}
+            </div>
           </div>
+
+          {mode === "time-block" && (upsertPlan.isPending || gcalPushPending) ? (
+            <div
+              className="flex items-center gap-2 text-[12px] text-muted-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+              <span>{copy.googleCalendarSaveAndSyncLoading}</span>
+            </div>
+          ) : null}
 
           <Separator />
 
@@ -1798,6 +1987,7 @@ export default function DailyPlannerPage() {
                   meta={taskMeta}
                   isMobile={isMobile}
                   copy={copy}
+                  taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
                   onReorder={handleReorder}
                   onChangeBlocks={handleChangeBlocks}
                   onDelete={handleDelete}
@@ -1829,7 +2019,7 @@ export default function DailyPlannerPage() {
                 plan_date: dateStr,
                 start_time: startTime,
                 end_time: endTime,
-                tasks: tasks.map((task, i) => ({ ...stripUid(task), order: i })),
+                tasks: persistTasks(tasks),
                 schedule_image_url: url,
               });
             }}
@@ -1843,6 +2033,8 @@ export default function DailyPlannerPage() {
             selectedDate={selectedDate}
             allTasks={allTasks}
             blockMinutes={blockMinutes}
+            taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
+            plannerCopy={copy}
             scheduleTitle={copy.timelineTitle(
               format(selectedDate, "MMMM d, yyyy", {
                 locale: dateLocale,
@@ -2086,15 +2278,40 @@ export default function DailyPlannerPage() {
                   <div className="space-y-3 rounded-xl border border-violet-200/50 bg-violet-50/30 p-3 dark:border-violet-400/20 dark:bg-violet-500/8">
                     <p className="inline-flex items-center gap-1.5 text-sm font-medium">
                       <Lightbulb className="h-4 w-4 text-violet-500" />
-                      Smart Links
+                      {copy.reviewSmartLinks}
                     </p>
                     {notesList.length > 0 && (
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">{copy.detailRelatedNotes}</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {notesList.map((id) => (
-                            <Badge key={id} variant="outline" className="border-violet-400/50 text-xs">{id}</Badge>
-                          ))}
+                          {notesList.map((id) => {
+                            const note = notesById.get(id);
+                            const label = smartLinkNoteDisplayLabel(note, notesPending, copy);
+                            const href = note
+                              ? `${notesLibraryHref}?note=${encodeURIComponent(id)}`
+                              : undefined;
+                            const badge = (
+                              <Badge
+                                variant="outline"
+                                className="max-w-[min(100%,280px)] border-violet-400/50 text-xs font-normal"
+                              >
+                                <span className="truncate">{label}</span>
+                              </Badge>
+                            );
+                            return href ? (
+                              <Link
+                                key={id}
+                                href={href}
+                                className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                {badge}
+                              </Link>
+                            ) : (
+                              <span key={id} className="inline-flex max-w-full min-w-0">
+                                {badge}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -2102,9 +2319,34 @@ export default function DailyPlannerPage() {
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">{copy.detailRelatedKnowledge}</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {knowledgeList.map((id) => (
-                            <Badge key={id} variant="outline" className="border-amber-400/50 text-xs">{id}</Badge>
-                          ))}
+                          {knowledgeList.map((id) => {
+                            const row = knowledgeById.get(id);
+                            const label = smartLinkKnowledgeDisplayLabel(row, knowledgePickPending, copy);
+                            const href = row
+                              ? `${knowledgeLibraryHref}?item=${encodeURIComponent(id)}`
+                              : undefined;
+                            const badge = (
+                              <Badge
+                                variant="outline"
+                                className="max-w-[min(100%,280px)] border-amber-400/50 text-xs font-normal"
+                              >
+                                <span className="truncate">{label}</span>
+                              </Badge>
+                            );
+                            return href ? (
+                              <Link
+                                key={id}
+                                href={href}
+                                className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                {badge}
+                              </Link>
+                            ) : (
+                              <span key={id} className="inline-flex max-w-full min-w-0">
+                                {badge}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -2112,9 +2354,34 @@ export default function DailyPlannerPage() {
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">{copy.detailRelatedIdeas}</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {ideasList.map((id) => (
-                            <Badge key={id} variant="outline" className="border-cyan-400/50 text-xs">{id}</Badge>
-                          ))}
+                          {ideasList.map((id) => {
+                            const idea = ideasById.get(id);
+                            const label = smartLinkIdeaDisplayLabel(idea, ideasPending, copy);
+                            const href = idea
+                              ? `${ideasLibraryHref}?idea=${encodeURIComponent(id)}`
+                              : undefined;
+                            const badge = (
+                              <Badge
+                                variant="outline"
+                                className="max-w-[min(100%,280px)] border-cyan-400/50 text-xs font-normal"
+                              >
+                                <span className="truncate">{label}</span>
+                              </Badge>
+                            );
+                            return href ? (
+                              <Link
+                                key={id}
+                                href={href}
+                                className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                {badge}
+                              </Link>
+                            ) : (
+                              <span key={id} className="inline-flex max-w-full min-w-0">
+                                {badge}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

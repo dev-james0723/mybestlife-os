@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { Calendar, CheckCircle2, Flag, Repeat, Target, Zap } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, Flag, ListTodo, Repeat, Target, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDateFnsLocale } from "@/lib/i18n/date-locale";
 import { getCalendarUiCopy } from "@/lib/i18n/calendar-ui";
@@ -62,6 +62,22 @@ function itemBadge(
       icon: Calendar,
     };
   }
+  if (item.source_type === "planner_time_block") {
+    return {
+      label: "Planned",
+      bg: "rgba(99, 102, 241, 0.18)",
+      text: "#a5b4fc",
+      icon: Clock,
+    };
+  }
+  if (item.source_type === "planner_free_task") {
+    return {
+      label: "Free Plan",
+      bg: "rgba(249, 115, 22, 0.18)",
+      text: "#fdba74",
+      icon: ListTodo,
+    };
+  }
   // task
   const t = item as CalendarItemTask;
   if (t.priority === "urgent" || t.priority === "high") {
@@ -94,6 +110,8 @@ const SOURCE_ICON: Record<CalendarItemSourceType, typeof Calendar> = {
   milestone: Flag,
   reminder: Zap,
   external: Calendar,
+  planner_time_block: Clock,
+  planner_free_task: ListTodo,
 };
 
 export function UpcomingPrioritiesPanel({ items, viewAllHref }: Props) {

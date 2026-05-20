@@ -26,9 +26,11 @@ export function useCreateGratefulThing() {
       const ui = getGratefulThingsUiCopy(useAppStore.getState().language);
       toast.success(ui.toastEntrySaved);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[grateful_things:create] Failed to save entry", error);
       const ui = getGratefulThingsUiCopy(useAppStore.getState().language);
-      toast.error(ui.toastEntrySaveFailed);
+      const detail = error instanceof Error ? error.message : null;
+      toast.error(detail && detail !== "Failed to save entry" ? detail : ui.toastEntrySaveFailed);
     },
   });
 }
@@ -43,7 +45,8 @@ export function useUpdateGratefulThing() {
       const ui = getGratefulThingsUiCopy(useAppStore.getState().language);
       toast.success(ui.toastEntryUpdated);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[grateful_things:update] Failed to update entry", error);
       const ui = getGratefulThingsUiCopy(useAppStore.getState().language);
       toast.error(ui.toastEntryUpdateFailed);
     },
@@ -59,7 +62,8 @@ export function useDeleteGratefulThing() {
       const ui = getGratefulThingsUiCopy(useAppStore.getState().language);
       toast.success(ui.toastEntryDeleted);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[grateful_things:delete] Failed to delete entry", error);
       const ui = getGratefulThingsUiCopy(useAppStore.getState().language);
       toast.error(ui.toastEntryDeleteFailed);
     },

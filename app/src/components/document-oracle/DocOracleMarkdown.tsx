@@ -26,7 +26,8 @@ export function DocOracleMarkdown({ source, className }: Props) {
   return (
     <div
       className={cn(
-        "doc-oracle-md max-w-none text-[13px] leading-relaxed text-foreground/90",
+        "doc-oracle-md w-full min-w-0 max-w-none text-[13px] leading-relaxed text-foreground/90",
+        "[&_blockquote]:max-w-none [&_li]:max-w-none [&_ol]:max-w-none [&_p]:max-w-none [&_ul]:max-w-none",
         "[&_a]:text-[#C8E53A] [&_a]:underline [&_a]:underline-offset-2",
         "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[12px] [&_code]:text-foreground",
         "[&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted/60 [&_pre]:p-3 [&_pre]:text-[12px]",

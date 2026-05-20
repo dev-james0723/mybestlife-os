@@ -33,7 +33,7 @@ export function DocOracleSourcePanel(props: {
   }
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-full flex-col gap-5">
+    <div className="flex w-full min-w-0 max-w-none flex-col gap-5">
       <PdfPreviewCard filePath={filePath} pagesSorted={pagesSorted} onOpenLightbox={() => setLightboxOpen(true)} />
 
       <dl className="grid gap-2 rounded-2xl border border-border bg-muted/40 p-4 text-[12px] sm:grid-cols-2">

@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/client";
+import { normalizeIdea } from "@/lib/ideas/normalize-idea";
 import type { Idea } from "@/types/database";
+
+export { normalizeIdea } from "@/lib/ideas/normalize-idea";
 
 export type CreateIdeaInput = {
   content: string;
@@ -9,6 +12,7 @@ export type CreateIdeaInput = {
   linked_project_ids?: string[];
   linked_task_ids?: string[];
   status?: Idea["status"];
+  category?: string;
   // v2 fields
   title?: string | null;
   ai_tags?: string[];
@@ -37,14 +41,16 @@ export const ideasRepository = {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data ?? []) as Idea[];
+    return (data ?? [])
+      .map((row) => normalizeIdea(row))
+      .filter((idea) => idea.id.length > 0);
   },
 
   async getById(id: string): Promise<Idea> {
     const supabase = createClient();
     const { data, error } = await supabase.from("ideas").select("*").eq("id", id).single();
     if (error) throw error;
-    return data as Idea;
+    return normalizeIdea(data);
   },
 
   async create(input: CreateIdeaInput): Promise<Idea> {
@@ -61,21 +67,20 @@ export const ideasRepository = {
         linked_project_ids: input.linked_project_ids ?? [],
         linked_task_ids: input.linked_task_ids ?? [],
         status: input.status ?? "captured",
-        // v2 fields
-        ...(input.title !== undefined && { title: input.title }),
-        ...(input.manual_tags !== undefined && { manual_tags: input.manual_tags }),
-        ...(input.destinations !== undefined && { destinations: input.destinations }),
-        ...(input.attachments !== undefined && { attachments: input.attachments }),
-        ...(input.ai_suggestions !== undefined && { ai_suggestions: input.ai_suggestions }),
-        ...(input.linked_knowledge_item_ids !== undefined && {
-          linked_knowledge_item_ids: input.linked_knowledge_item_ids,
-        }),
-        ...(input.linked_node_ids !== undefined && { linked_node_ids: input.linked_node_ids }),
+        category: input.category?.trim() || "random",
+        title: input.title ?? null,
+        manual_tags: input.manual_tags ?? [],
+        ai_tags: input.ai_tags ?? [],
+        destinations: input.destinations ?? [],
+        attachments: input.attachments ?? [],
+        ai_suggestions: input.ai_suggestions ?? null,
+        linked_knowledge_item_ids: input.linked_knowledge_item_ids ?? [],
+        linked_node_ids: input.linked_node_ids ?? [],
       })
       .select()
       .single();
     if (error) throw error;
-    return data as Idea;
+    return normalizeIdea(data);
   },
 
   async update(id: string, input: UpdateIdeaInput): Promise<Idea> {
@@ -87,7 +92,7 @@ export const ideasRepository = {
       .select()
       .single();
     if (error) throw error;
-    return data as Idea;
+    return normalizeIdea(data);
   },
 
   async delete(id: string): Promise<void> {

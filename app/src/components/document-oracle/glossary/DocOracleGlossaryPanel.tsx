@@ -257,7 +257,7 @@ export function DocOracleGlossaryPanel(props: Props) {
       {visible.length === 0 ? (
         <p className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-6 text-center text-[13px]">{emptyMsg}</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((e) => (
             <GlossaryTermCard
               key={e.row.id}

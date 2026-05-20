@@ -11,7 +11,7 @@ export function InfographicStyleSelector(props: {
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Style</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {INFOGRAPHIC_STYLE_PRESETS.map((p) => {
           const active = props.value === p.id;
           return (

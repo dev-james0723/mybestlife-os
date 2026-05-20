@@ -19,7 +19,7 @@ export function AudioFocusSelector(props: {
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Focus</p>
-      <div className="flex max-h-[min(48vh,480px)] flex-col gap-2 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch]">
+      <div className="grid max-h-[min(48vh,480px)] grid-cols-1 gap-2 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch] md:max-h-[min(56vh,560px)] md:grid-cols-2 xl:grid-cols-3">
         {props.options.map((o) => {
           const on = props.selectedIds.has(o.id);
           return (

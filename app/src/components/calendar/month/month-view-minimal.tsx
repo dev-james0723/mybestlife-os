@@ -37,6 +37,8 @@ const SOURCE_DOT_COLOR: Record<CalendarItemSourceType, string> = {
   milestone: "#a855f7",
   reminder: "#eab308",
   external: "#3b82f6",
+  planner_time_block: "#6366f1",
+  planner_free_task: "#f97316",
 };
 
 function uniqueSourceTypes(items: readonly CalendarItem[]): CalendarItemSourceType[] {

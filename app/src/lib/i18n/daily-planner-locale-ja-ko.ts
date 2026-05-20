@@ -11,6 +11,40 @@ export const dailyPlannerJa: DailyPlannerUiCopy = {
   loadTemplate: "テンプレートを読み込む",
   today: "今日",
   syncGoogleCalendar: "Google カレンダーに同期",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "Time Block tasks sync automatically after each save when Google Calendar is connected in Settings.",
+  googleCalendarFreeModeSyncHint:
+    "Per-task Google sync applies to Time Block mode. Switch modes or open Settings to manage Calendar.",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) {
+      parts.push(`${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`);
+    }
+    if (result.remoteApplied > 0) {
+      parts.push(
+        `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+      );
+    }
+    if (parts.length === 0) return "Calendar sync finished · 0 remote updates found";
+    return `Calendar sync finished · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   startTime: "開始時刻",
   endTime: "終了時刻",
   nextDayBadge: "翌日",
@@ -89,6 +123,10 @@ export const dailyPlannerJa: DailyPlannerUiCopy = {
   detailRelatedNotes: "関連ノート",
   detailRelatedKnowledge: "関連ナレッジ",
   detailRelatedIdeas: "関連アイデア",
+  smartLinkMissingIdea: "アイデアが見つかりません",
+  smartLinkMissingNote: "ノートが見つかりません",
+  smartLinkMissingKnowledge: "ナレッジ項目が見つかりません",
+  smartLinkLoading: "読み込み中…",
   detailSource: "ソース",
   detailSourceLink: "リソースを開く",
   detailAiGenerated: "AI 生成",
@@ -223,6 +261,19 @@ export const dailyPlannerJa: DailyPlannerUiCopy = {
   freeRemoveTask: "タスクを削除",
   freeChangePriority: "優先順位を変更",
   freeMoveTaskToBucket: (priority) => `「${priority}」に移動`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "フリープラン サマリー",
   freePlanSummaryBlurb:
     "優先順位ごとに整理された今日のフリープラン。架空の時間枠は使いません。",
@@ -241,6 +292,40 @@ export const dailyPlannerKo: DailyPlannerUiCopy = {
   loadTemplate: "템플릿 불러오기",
   today: "오늘",
   syncGoogleCalendar: "Google 캘린더에 동기화",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "Time Block tasks sync automatically after each save when Google Calendar is connected in Settings.",
+  googleCalendarFreeModeSyncHint:
+    "Per-task Google sync applies to Time Block mode. Switch modes or open Settings to manage Calendar.",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) {
+      parts.push(`${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`);
+    }
+    if (result.remoteApplied > 0) {
+      parts.push(
+        `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+      );
+    }
+    if (parts.length === 0) return "Calendar sync finished · 0 remote updates found";
+    return `Calendar sync finished · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   startTime: "시작 시간",
   endTime: "종료 시간",
   nextDayBadge: "+1일",
@@ -319,6 +404,10 @@ export const dailyPlannerKo: DailyPlannerUiCopy = {
   detailRelatedNotes: "관련 노트",
   detailRelatedKnowledge: "관련 지식",
   detailRelatedIdeas: "관련 아이디어",
+  smartLinkMissingIdea: "아이디어를 찾을 수 없음",
+  smartLinkMissingNote: "노트를 찾을 수 없음",
+  smartLinkMissingKnowledge: "지식 항목을 찾을 수 없음",
+  smartLinkLoading: "불러오는 중…",
   detailSource: "출처",
   detailSourceLink: "리소스 열기",
   detailAiGenerated: "AI 생성",
@@ -451,6 +540,19 @@ export const dailyPlannerKo: DailyPlannerUiCopy = {
   freeRemoveTask: "태스크 제거",
   freeChangePriority: "우선순위 변경",
   freeMoveTaskToBucket: (priority) => `「${priority}」(으)로 이동`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "프리 플랜 요약",
   freePlanSummaryBlurb:
     "우선순위별로 정리된 오늘의 프리 플랜입니다. 가짜 시간대를 만들지 않습니다.",

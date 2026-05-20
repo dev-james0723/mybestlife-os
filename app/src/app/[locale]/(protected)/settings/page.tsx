@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   Bell,
   CalendarDays,
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGoogleCalendarPlannerStatus } from "@/hooks/use-google-calendar-planner";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
 import {
@@ -64,7 +65,6 @@ import { getSettingsUiCopy } from "@/lib/i18n/settings-ui";
 import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/constants/app-meta";
 import { settingsRepository } from "@/lib/repositories/settings";
@@ -146,6 +146,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const dailyPlannerHref = useLocalizedPath("/daily-planner");
   const privacyHref = useLocalizedPath("/privacy");
   const {
@@ -163,7 +164,7 @@ export default function SettingsPage() {
     refetch: refetchNotifications,
   } = useNotificationPreferences();
   const updateNotifications = useUpdateNotificationPreferences();
-  const { startGoogleCalendarAccessFlow } = useAuth();
+  const { data: gcalStatus, refetch: refetchGcal } = useGoogleCalendarPlannerStatus();
   const [googleCalendarBusy, setGoogleCalendarBusy] = useState(false);
 
   const locale = useAppStore((s) => s.language);
@@ -256,16 +257,99 @@ export default function SettingsPage() {
     }
   };
 
-  const handleGoogleCalendarConnect = async () => {
+  const handleGoogleCalendarConnect = (opts?: { switchAccount?: boolean }) => {
+    const q = new URLSearchParams();
+    q.set("returnTo", pathname);
+    if (opts?.switchAccount) q.set("switchAccount", "1");
+    window.location.href = `/api/google/calendar/connect?${q.toString()}`;
+  };
+
+  const handleGoogleCalendarDisconnect = async () => {
     setGoogleCalendarBusy(true);
     try {
-      await startGoogleCalendarAccessFlow();
+      const res = await fetch("/api/google/calendar/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await refetchGcal();
+      await queryClient.invalidateQueries({ queryKey: ["google-calendar-planner-status"] });
+      toast.success(ui.googleCalendarDisconnectedToast);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : ui.googleCalendarConnectFailed);
     } finally {
       setGoogleCalendarBusy(false);
     }
   };
+
+  const handleGoogleCalendarSyncNow = async () => {
+    setGoogleCalendarBusy(true);
+    try {
+      const res = await fetch("/api/google/calendar/sync-now", {
+        method: "POST",
+        credentials: "include",
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(j.error || "sync_failed");
+      await refetchGcal();
+      toast.success(ui.googleCalendarSyncNowToast);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : ui.googleCalendarConnectFailed);
+    } finally {
+      setGoogleCalendarBusy(false);
+    }
+  };
+
+  const handleGoogleCalendarTogglePause = async () => {
+    if (!gcalStatus?.connected) return;
+    setGoogleCalendarBusy(true);
+    try {
+      const res = await fetch("/api/google/calendar/sync-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ syncEnabled: !gcalStatus.syncEnabled }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await refetchGcal();
+      toast.success(ui.googleCalendarPreferencesSavedToast);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : ui.googleCalendarConnectFailed);
+    } finally {
+      setGoogleCalendarBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    const ok = searchParams.get("google_cal");
+    const err = searchParams.get("google_cal_err");
+    if (ok !== "connected" && !err) return;
+
+    let cancelled = false;
+    void (async () => {
+      if (ok === "connected") {
+        await queryClient.invalidateQueries({ queryKey: ["google-calendar-planner-status"] });
+        const res = await refetchGcal();
+        if (!cancelled && res.isError) {
+          toast.error(
+            `${ui.googleCalendarConnectFailed}: ${res.error instanceof Error ? res.error.message : String(res.error)}`,
+            { id: "gcal-settings-oauth" },
+          );
+        } else if (!cancelled) {
+          toast.success(ui.googleCalendarConnectedToast, { id: "gcal-settings-oauth" });
+        }
+      } else if (err && !cancelled) {
+        toast.error(`${ui.googleCalendarConnectFailed}: ${err}`, { id: "gcal-settings-oauth" });
+      }
+      if (!cancelled) {
+        router.replace(pathname);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, pathname, router, refetchGcal, queryClient, ui.googleCalendarConnectedToast, ui.googleCalendarConnectFailed]);
 
   if (profileLoading || notifLoading) return <LoadingPage />;
 
@@ -533,14 +617,86 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">{ui.googleCalendarPlannerBlurb}</p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                onClick={() => void handleGoogleCalendarConnect()}
-                disabled={googleCalendarBusy}
-              >
-                {googleCalendarBusy ? ui.googleCalendarConnecting : ui.googleCalendarConnect}
-              </Button>
+            {gcalStatus?.connected ? (
+              <div className="rounded-lg border bg-muted/20 px-3 py-2 text-sm space-y-1">
+                <p className="font-medium text-foreground">
+                  {gcalStatus.email
+                    ? `${ui.googleCalendarTitle}: ${gcalStatus.email}`
+                    : ui.googleCalendarTitle}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {gcalStatus.syncEnabled ? "Sync enabled" : "Sync paused"} · Pending:{" "}
+                  {gcalStatus.pendingCount} · Errors: {gcalStatus.errorCount} · Conflicts:{" "}
+                  {gcalStatus.conflictCount} · Removed in Google: {gcalStatus.remoteDeletedCount}
+                </p>
+                {gcalStatus.watchExpiration ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Webhook channel expires: {new Date(gcalStatus.watchExpiration).toLocaleString()}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Not connected — timed tasks stay local only.</p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {gcalStatus?.connected ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled
+                    className="cursor-default opacity-90"
+                  >
+                    {ui.googleCalendarConnectedButton}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={googleCalendarBusy}
+                    onClick={() => handleGoogleCalendarConnect({ switchAccount: true })}
+                  >
+                    {ui.googleCalendarSwitchAccount}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={googleCalendarBusy}
+                    onClick={() => void handleGoogleCalendarDisconnect()}
+                  >
+                    {ui.googleCalendarDisconnect}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => handleGoogleCalendarConnect()}
+                  disabled={googleCalendarBusy}
+                >
+                  {googleCalendarBusy ? ui.googleCalendarConnecting : ui.googleCalendarConnect}
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {gcalStatus?.connected ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={googleCalendarBusy}
+                    onClick={() => void handleGoogleCalendarSyncNow()}
+                  >
+                    {ui.googleCalendarSyncNow}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={googleCalendarBusy}
+                    onClick={() => void handleGoogleCalendarTogglePause()}
+                  >
+                    {gcalStatus.syncEnabled ? ui.googleCalendarPauseSync : ui.googleCalendarResumeSync}
+                  </Button>
+                </>
+              ) : null}
               <Link
                 href={dailyPlannerHref}
                 className={cn(

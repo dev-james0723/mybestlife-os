@@ -49,6 +49,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
       generated_at: null,
       status: "missing" as const,
       analysis_status: analysis?.status ?? null,
+      can_generate: false,
     });
   }
 
@@ -65,6 +66,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
         edges: [],
         generated_at: null,
         status: "missing" as const,
+        can_generate: true,
       });
     }
     return NextResponse.json({
@@ -72,6 +74,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
       edges,
       generated_at: generatedAt,
       status: "ready" as const,
+      can_generate: false,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -82,6 +85,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
         generated_at: null,
         status: "missing" as const,
         detail: "mind_map_tables_unavailable",
+        can_generate: false,
       });
     }
     return NextResponse.json({ error: "mind_map_fetch_failed", detail: msg.slice(0, 200) }, { status: 500 });

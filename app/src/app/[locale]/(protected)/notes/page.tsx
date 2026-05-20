@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, type MouseEvent } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, Suspense, type MouseEvent } from "react";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar, type ViewMode } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
@@ -48,6 +48,7 @@ import {
 } from "@/components/shared/rich-text-editor";
 import { RichTextReadOnly } from "@/components/shared/rich-text-read-only";
 import { stripHtml } from "@/lib/utils/html";
+import { useSearchParams } from "next/navigation";
 
 const sortOptions = [
   { value: "updated_at", label: "Last Updated" },
@@ -65,6 +66,23 @@ function parseTags(input: string): string[] {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+}
+
+function NotesQueryParamSync({
+  notes,
+  onOpen,
+}: {
+  notes: Note[] | undefined;
+  onOpen: (n: Note) => void;
+}) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const id = searchParams.get("note")?.trim();
+    if (!id || !notes?.length) return;
+    const found = notes.find((n) => n.id === id);
+    if (found) onOpen(found);
+  }, [searchParams, notes, onOpen]);
+  return null;
 }
 
 function NoteCard({
@@ -246,7 +264,7 @@ export default function NotesPage() {
     setShowDeleteConfirm(false);
   };
 
-  const openDetail = (note: Note) => {
+  const openDetail = useCallback((note: Note) => {
     setSelectedNote(note);
     setForm({
       title: note.title,
@@ -256,7 +274,7 @@ export default function NotesPage() {
       is_favorite: note.is_favorite,
     });
     setIsEditing(false);
-  };
+  }, []);
 
   const toggleFavorite = async (note: Note, e?: MouseEvent<HTMLButtonElement>) => {
     e?.stopPropagation();
@@ -287,6 +305,9 @@ export default function NotesPage() {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <NotesQueryParamSync notes={notes} onOpen={openDetail} />
+      </Suspense>
       <PageShell
         title="Notes"
         description="Capture ideas and reference material"

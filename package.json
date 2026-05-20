@@ -18,7 +18,8 @@
     "dev:pm2:stop": "pm2 delete life-os-next-dev",
     "dev:pm2:logs": "pm2 logs life-os-next-dev --lines 80",
     "dev:pm2:status": "pm2 status life-os-next-dev",
-    "vercel:prod": "vercel deploy --prod --yes"
+    "vercel:prod": "npx --yes vercel@latest deploy --prod --yes",
+    "vercel:preview": "npx --yes vercel@latest deploy --yes"
   },
   "keywords": [],
   "author": "",

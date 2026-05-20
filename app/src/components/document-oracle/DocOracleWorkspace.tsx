@@ -258,8 +258,8 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
   };
 
   return (
-    <div className="doc-oracle-workspace relative min-h-[100dvh] w-full overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-8 sm:py-10">
+    <div className="doc-oracle-workspace relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
+      <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col gap-5 px-3 py-6 sm:px-4 sm:py-8 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -306,7 +306,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.4, ease: "easeOut" }}
-          className={cn("lg-glass-panel min-h-[420px] overflow-visible p-4 sm:p-8")}
+          className={cn("lg-glass-panel flex min-h-[420px] flex-1 flex-col overflow-visible px-0 py-5 sm:px-4 sm:py-6 md:px-5")}
         >
           {!isReady ? (
             <div
@@ -321,14 +321,14 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
             </div>
           ) : null}
 
-          <Tabs value={tab} onValueChange={handleTabChange} className="flex min-h-0 w-full min-w-0 flex-col gap-4">
+          <Tabs value={tab} onValueChange={handleTabChange} className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
             <DocOracleTabBar value={tab} onValueChange={handleTabChange} />
 
             <TabsContent
               value="overview"
               id="doc-oracle-panel-overview"
               aria-labelledby="doc-oracle-tab-overview"
-              className="mt-0 min-h-[280px] space-y-5 text-[13px] leading-relaxed text-muted-foreground"
+              className="mt-0 min-h-[280px] min-w-0 w-full max-w-full space-y-5 text-[13px] leading-relaxed text-muted-foreground"
             >
               {!isReady ? (
                 <p className="text-muted-foreground">
@@ -399,7 +399,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="chat"
               id="doc-oracle-panel-chat"
               aria-labelledby="doc-oracle-tab-chat"
-              className="mt-0 flex min-h-[65vh] min-w-0 flex-col text-[13px] text-muted-foreground"
+              className="mt-0 flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col text-[13px] text-muted-foreground"
             >
               {isReady ? (
                 <DocOracleChatPanel

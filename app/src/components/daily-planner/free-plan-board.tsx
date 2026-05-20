@@ -51,9 +51,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { FreePlanTaskDetailSheet } from "@/components/daily-planner/free-plan-task-detail-sheet";
 import { cn } from "@/lib/utils";
+import { stripHtml } from "@/lib/utils/html";
 import type { DailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
 import type { FreePlanTask } from "@/types/database";
+
+function notePreviewText(notes: string | undefined): string {
+  const trimmed = notes?.trim();
+  if (!trimmed) return "";
+  return stripHtml(trimmed);
+}
 
 const PRIORITIES: ReadonlyArray<FreePlanTask["priority"]> = [
   "must",
@@ -205,7 +214,12 @@ export function FreePlanBoard({
 }: FreePlanBoardProps) {
   const prefersReduced = useReducedMotion();
   const [draftTitle, setDraftTitle] = useState("");
+  const [draftNotes, setDraftNotes] = useState("");
+  const [showDraftNotes, setShowDraftNotes] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const dragJustEndedRef = useRef(false);
 
   const buckets = useMemo(() => {
     const grouped: Record<FreePlanTask["priority"], FreePlanTask[]> = {
@@ -224,6 +238,12 @@ export function FreePlanBoard({
   const completedCount = buckets.done.length;
   const mustCount = buckets.must.length;
   const totalCount = tasks.length;
+
+  const selectedTask = useMemo(
+    () =>
+      selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null,
+    [selectedTaskId, tasks],
+  );
 
   const commitTasks = useCallback(
     (next: FreePlanTask[]) => {
@@ -258,14 +278,17 @@ export function FreePlanBoard({
         title,
         priority: "should",
         order,
+        notes: draftNotes.trim() || undefined,
       };
       commitTasks([...tasks, next]);
       setDraftTitle("");
+      setDraftNotes("");
+      setShowDraftNotes(false);
       if (keepFocus) {
         requestAnimationFrame(() => inputRef.current?.focus());
       }
     },
-    [draftTitle, tasks, buckets.should.length, commitTasks],
+    [draftTitle, draftNotes, tasks, buckets.should.length, commitTasks],
   );
 
   const handleQuickAddKey = useCallback(
@@ -274,6 +297,18 @@ export function FreePlanBoard({
       e.preventDefault();
       const keepFocus = e.metaKey || e.ctrlKey;
       submitDraft(keepFocus);
+    },
+    [submitDraft],
+  );
+
+  const handleDraftNotesKey = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const keepFocus = true;
+        submitDraft(keepFocus);
+        return;
+      }
     },
     [submitDraft],
   );
@@ -312,6 +347,22 @@ export function FreePlanBoard({
     [tasks, commitTasks],
   );
 
+  const handleSaveTaskDetails = useCallback(
+    (updatedTask: FreePlanTask) => {
+      commitTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+      setSelectedTaskId(null);
+    },
+    [tasks, commitTasks],
+  );
+
+  const handleDeleteFromDetail = useCallback(
+    (id: string) => {
+      handleDelete(id);
+      setSelectedTaskId(null);
+    },
+    [handleDelete],
+  );
+
   const handleMoveWithinBucket = useCallback(
     (id: string, delta: -1 | 1) => {
       const target = tasks.find((t) => t.id === id);
@@ -348,6 +399,14 @@ export function FreePlanBoard({
     [activeId, tasks],
   );
 
+  const handleOpenTask = useCallback(
+    (id: string) => {
+      if (activeId || dragJustEndedRef.current) return;
+      setSelectedTaskId(id);
+    },
+    [activeId],
+  );
+
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveId(String(e.active.id));
   }, []);
@@ -359,6 +418,10 @@ export function FreePlanBoard({
   const handleDragEnd = useCallback(
     (e: DragEndEvent) => {
       setActiveId(null);
+      dragJustEndedRef.current = true;
+      requestAnimationFrame(() => {
+        dragJustEndedRef.current = false;
+      });
       const { active, over } = e;
       if (!over) return;
       const next = applyDragMove(tasks, String(active.id), String(over.id));
@@ -394,24 +457,71 @@ export function FreePlanBoard({
                 </p>
               </div>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Input
-                ref={inputRef}
-                value={draftTitle}
-                onChange={(e) => setDraftTitle(e.target.value)}
-                onKeyDown={handleQuickAddKey}
-                placeholder={copy.freeQuickCapturePlaceholder}
-                className="h-10 flex-1 bg-background/60 backdrop-blur-sm"
-                aria-label={copy.freeQuickCaptureHeading}
-              />
-              <Button
-                size="sm"
-                className="h-10 shrink-0 px-5"
-                onClick={() => submitDraft(false)}
-                disabled={!draftTitle.trim()}
-              >
-                {copy.freeQuickCaptureSubmit}
-              </Button>
+            <div className="space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  ref={inputRef}
+                  value={draftTitle}
+                  onChange={(e) => setDraftTitle(e.target.value)}
+                  onKeyDown={handleQuickAddKey}
+                  placeholder={copy.freeQuickCapturePlaceholder}
+                  className="h-10 flex-1 bg-background/60 backdrop-blur-sm"
+                  aria-label={copy.freeQuickCaptureHeading}
+                />
+                <Button
+                  size="sm"
+                  className="h-10 shrink-0 px-5"
+                  onClick={() => submitDraft(false)}
+                  disabled={!draftTitle.trim()}
+                >
+                  {copy.freeQuickCaptureSubmit}
+                </Button>
+              </div>
+              {draftTitle.trim() && !showDraftNotes ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-[12px] text-muted-foreground"
+                  onClick={() => {
+                    setShowDraftNotes(true);
+                    requestAnimationFrame(() => notesRef.current?.focus());
+                  }}
+                >
+                  {copy.freeTaskAddNotes}
+                </Button>
+              ) : null}
+              {showDraftNotes ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="free-quick-notes" className="text-[12px]">
+                      {copy.freeTaskNotesLabel}
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] text-muted-foreground"
+                      onClick={() => {
+                        setShowDraftNotes(false);
+                        setDraftNotes("");
+                      }}
+                    >
+                      {copy.freeTaskHideNotes}
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="free-quick-notes"
+                    ref={notesRef}
+                    value={draftNotes}
+                    onChange={(e) => setDraftNotes(e.target.value)}
+                    onKeyDown={handleDraftNotesKey}
+                    placeholder={copy.freeTaskNotesPlaceholder}
+                    rows={3}
+                    className="min-h-[4.5rem] resize-y bg-background/60 backdrop-blur-sm"
+                  />
+                </div>
+              ) : null}
             </div>
             <p className="text-[11px] leading-snug text-muted-foreground/80">
               {copy.freeQuickCaptureKeyboardHint}
@@ -488,6 +598,7 @@ export function FreePlanBoard({
                 onToggleDone={handleToggleDone}
                 onDelete={handleDelete}
                 onMoveWithinBucket={handleMoveWithinBucket}
+                onOpenTask={handleOpenTask}
               />
             </motion.div>
           ))}
@@ -507,11 +618,23 @@ export function FreePlanBoard({
               onToggleDone={() => undefined}
               onDelete={() => undefined}
               onMoveWithinBucket={() => undefined}
+              onOpenTask={undefined}
               isOverlay
             />
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <FreePlanTaskDetailSheet
+        copy={copy}
+        task={selectedTask}
+        open={selectedTaskId != null}
+        onOpenChange={(o) => {
+          if (!o) setSelectedTaskId(null);
+        }}
+        onSave={handleSaveTaskDetails}
+        onDelete={handleDeleteFromDetail}
+      />
     </div>
   );
 }
@@ -575,6 +698,7 @@ function FreePriorityColumn({
   onToggleDone,
   onDelete,
   onMoveWithinBucket,
+  onOpenTask,
 }: {
   copy: DailyPlannerUiCopy;
   priority: FreePlanTask["priority"];
@@ -584,6 +708,7 @@ function FreePriorityColumn({
   onToggleDone: (task: FreePlanTask) => void;
   onDelete: (id: string) => void;
   onMoveWithinBucket: (id: string, delta: -1 | 1) => void;
+  onOpenTask: (id: string) => void;
 }) {
   const label = priorityLabel(copy, priority);
   const ids = useMemo(() => tasks.map((t) => t.id), [tasks]);
@@ -657,6 +782,7 @@ function FreePriorityColumn({
                     onToggleDone={onToggleDone}
                     onDelete={onDelete}
                     onMoveWithinBucket={onMoveWithinBucket}
+                    onOpenTask={onOpenTask}
                   />
                 </motion.div>
               ))}
@@ -690,6 +816,7 @@ interface FreeTaskCardCommonProps {
   onToggleDone: (task: FreePlanTask) => void;
   onDelete: (id: string) => void;
   onMoveWithinBucket: (id: string, delta: -1 | 1) => void;
+  onOpenTask?: (id: string) => void;
 }
 
 function SortableFreeTaskCard(props: FreeTaskCardCommonProps) {
@@ -748,8 +875,10 @@ function FreeTaskCardShell({
   onToggleDone,
   onDelete,
   onMoveWithinBucket,
+  onOpenTask,
 }: FreeTaskCardShellProps) {
   const isDone = task.priority === "done";
+  const preview = notePreviewText(task.notes);
   return (
     <div
       ref={ref}
@@ -785,7 +914,10 @@ function FreeTaskCardShell({
       <button
         type="button"
         aria-label={isDone ? copy.freeChangePriority : copy.freePriorityDone}
-        onClick={() => onToggleDone(task)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleDone(task);
+        }}
         disabled={isOverlay}
         className={cn(
           "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-150",
@@ -797,9 +929,18 @@ function FreeTaskCardShell({
         <Check className="h-3 w-3" strokeWidth={3} />
       </button>
 
-      {/* Title + optional estimate — given the lion's share of horizontal width.
-       *  `min-w-0` ensures `break-words` actually flows long titles instead of overflowing. */}
-      <div className="min-w-0 flex-1 pr-1">
+      {/* Title + notes preview — click opens detail sheet; drag stays on handle only. */}
+      <button
+        type="button"
+        disabled={isOverlay || !onOpenTask}
+        onClick={() => onOpenTask?.(task.id)}
+        aria-label={copy.freeTaskOpenDetails(task.title)}
+        className={cn(
+          "min-w-0 flex-1 pr-1 text-left",
+          "rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+          onOpenTask && !isOverlay && "cursor-pointer",
+        )}
+      >
         <p
           className={cn(
             "break-words text-[14px] leading-relaxed sm:text-[15px]",
@@ -808,6 +949,11 @@ function FreeTaskCardShell({
         >
           {task.title}
         </p>
+        {preview ? (
+          <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-muted-foreground/75">
+            {preview}
+          </p>
+        ) : null}
         {task.estimatedMinutes ? (
           <p className="mt-0.5 text-[11px] text-muted-foreground/80">
             <Label className="text-[11px]">{copy.detailEstimatedPrefix}</Label>{" "}
@@ -815,7 +961,7 @@ function FreeTaskCardShell({
             {copy.formatMinutes(task.estimatedMinutes).split(" ").slice(-1)[0]}
           </p>
         ) : null}
-      </div>
+      </button>
 
       {/* Action cluster: Up arrow · Down arrow · Section switcher · Trash.
        *  All chevrons here are arrows (move actions); no six-dot icons. */}
@@ -825,7 +971,10 @@ function FreeTaskCardShell({
           aria-label={copy.ariaHoldToReorder + " (up)"}
           className="hidden h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:opacity-30 sm:flex"
           disabled={isFirst || isOverlay}
-          onClick={() => onMoveWithinBucket(task.id, -1)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveWithinBucket(task.id, -1);
+          }}
         >
           <ChevronUp className="h-4 w-4" aria-hidden />
         </button>
@@ -834,7 +983,10 @@ function FreeTaskCardShell({
           aria-label={copy.ariaHoldToReorder + " (down)"}
           className="hidden h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:opacity-30 sm:flex"
           disabled={isLast || isOverlay}
-          onClick={() => onMoveWithinBucket(task.id, 1)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveWithinBucket(task.id, 1);
+          }}
         >
           <ChevronDown className="h-4 w-4" aria-hidden />
         </button>
@@ -847,6 +999,7 @@ function FreeTaskCardShell({
               <button
                 type="button"
                 aria-label={copy.freeChangePriority}
+                onClick={(e) => e.stopPropagation()}
                 className="flex h-7 shrink-0 items-center gap-1 rounded-md border border-border/40 bg-background/40 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
               />
             }
@@ -883,7 +1036,10 @@ function FreeTaskCardShell({
         <button
           type="button"
           aria-label={copy.freeRemoveTask}
-          onClick={() => onDelete(task.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id);
+          }}
           disabled={isOverlay}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-destructive/15 hover:text-destructive"
         >

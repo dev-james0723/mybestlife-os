@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { applyWorkerJobStatus, type WorkerJobStatusPayload } from "@/lib/document-brain/jobs/extractionJobService";
+import { autoGenerateMindMapForDocument } from "@/lib/document-brain/mind-map/autoGenerateMindMap";
 import type { ExtractionJobStatus } from "@/lib/document-brain/jobs/extractionJobStatus";
 import { EXTRACTION_JOB_STATUSES } from "@/lib/document-brain/jobs/extractionJobStatus";
 
@@ -87,5 +88,28 @@ export async function POST(req: Request) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.error === "unauthorized" ? 401 : 400 });
   }
+
+  if (workerSecretValid && payload.status === "completed") {
+    after(async () => {
+      try {
+        const mm = await autoGenerateMindMapForDocument({
+          userId: payload.user_id,
+          documentId: payload.document_id,
+          reason: "extraction_completed",
+        });
+        if (!mm.ok) {
+          console.error(
+            `${TAG} mind_map_auto_generation_failed document_id=${payload.document_id} error=${mm.error ?? "unknown"}`,
+          );
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(
+          `${TAG} mind_map_auto_generation_exception document_id=${payload.document_id} error=${msg.slice(0, 400)}`,
+        );
+      }
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }

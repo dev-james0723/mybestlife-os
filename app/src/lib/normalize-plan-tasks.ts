@@ -51,13 +51,37 @@ function coerceBlocks(raw: unknown): number {
   return 1;
 }
 
+function coerceGapBlocks(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return Math.max(0, Math.floor(raw));
+  }
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+  return undefined;
+}
+
+function coerceWallClock(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const t = raw.trim();
+  return /^\d{1,2}:\d{2}$/.test(t) ? t : undefined;
+}
+
 function coerceDailyPlanTask(item: unknown, index: number): DailyPlanTask {
   if (!item || typeof item !== "object") {
     return { taskName: "Untitled", blocks: 1, order: index };
   }
   const o = item as Record<string, unknown>;
   const name = stringifyUnknown(o.taskName).trim();
+  const gapBlocks = coerceGapBlocks(o.gapBlocks);
+  const startTime = coerceWallClock(o.start_time);
+  const endTime = coerceWallClock(o.end_time);
   return {
+    plannerTaskId:
+      typeof o.plannerTaskId === "string" && o.plannerTaskId.trim().length > 0
+        ? o.plannerTaskId.trim()
+        : undefined,
+    ...(gapBlocks !== undefined ? { gapBlocks } : {}),
     taskName: name || "Untitled",
     taskId: typeof o.taskId === "string" ? o.taskId : undefined,
     blocks: coerceBlocks(o.blocks),
@@ -65,13 +89,35 @@ function coerceDailyPlanTask(item: unknown, index: number): DailyPlanTask {
       typeof o.order === "number" && Number.isFinite(o.order)
         ? o.order
         : index,
+    ...(startTime ? { start_time: startTime } : {}),
+    ...(endTime ? { end_time: endTime } : {}),
+    ...(typeof o.google_calendar_event_id === "string"
+      ? { google_calendar_event_id: o.google_calendar_event_id }
+      : {}),
+    ...(typeof o.google_calendar_etag === "string"
+      ? { google_calendar_etag: o.google_calendar_etag }
+      : {}),
+    ...(typeof o.google_calendar_updated_at === "string"
+      ? { google_calendar_updated_at: o.google_calendar_updated_at }
+      : {}),
   };
 }
 
-/** Ensures JSON-backed plan rows only contain render-safe task fields. */
-export function coerceDailyPlanTasks(input: unknown): DailyPlanTask[] {
-  if (!Array.isArray(input)) return [];
-  return input.map((item, index) => coerceDailyPlanTask(item, index));
+function newPlannerTaskId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** Assigns a stable `plannerTaskId` to any time-block row missing one (persisted on next save). */
+export function ensurePlannerTaskIds(tasks: DailyPlanTask[]): DailyPlanTask[] {
+  return tasks.map((t, i) => {
+    if (typeof t.plannerTaskId === "string" && t.plannerTaskId.trim().length > 0) {
+      return { ...t, order: i };
+    }
+    return { ...t, plannerTaskId: newPlannerTaskId(), order: i };
+  });
 }
 
 /** Coerces an arbitrary planning-mode value into the strictly-typed enum, defaulting to time-block. */
@@ -115,6 +161,12 @@ function coerceFreePlanTask(item: unknown, index: number): FreePlanTask {
     estimatedMinutes: estimated,
     taskId: typeof o.taskId === "string" ? o.taskId : undefined,
   };
+}
+
+/** Coerces JSON-backed plan rows and guarantees stable planner task ids for Google sync. */
+export function coerceDailyPlanTasks(input: unknown): DailyPlanTask[] {
+  if (!Array.isArray(input)) return [];
+  return ensurePlannerTaskIds(input.map((item, index) => coerceDailyPlanTask(item, index)));
 }
 
 /** Coerces and re-numbers free-plan tasks so each priority bucket has 0..n-1 ordering. */

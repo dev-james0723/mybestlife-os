@@ -8,7 +8,7 @@ type StatusBadgeVariant = "status" | "priority" | "custom";
 
 interface StatusBadgeProps {
   variant?: StatusBadgeVariant;
-  value: string;
+  value?: string | null;
   /** When set, overrides the auto-formatted value label (e.g. localized status). */
   label?: string;
   className?: string;
@@ -20,21 +20,26 @@ export function StatusBadge({
   label,
   className,
 }: StatusBadgeProps) {
+  const safeValue = typeof value === "string" && value.trim() !== "" ? value : "unknown";
   let colorClass = "";
 
   if (variant === "status") {
-    colorClass = statusColors[value as keyof typeof statusColors] ?? "";
+    colorClass = statusColors[safeValue as keyof typeof statusColors] ?? "";
   } else if (variant === "priority") {
-    colorClass = priorityColors[value as keyof typeof priorityColors] ?? "";
+    colorClass = priorityColors[safeValue as keyof typeof priorityColors] ?? "";
   }
+
+  const autoLabel =
+    safeValue === "unknown"
+      ? "Unknown"
+      : safeValue.charAt(0).toUpperCase() + safeValue.slice(1).replace("-", " ");
 
   return (
     <Badge
       variant="secondary"
       className={cn("text-xs font-medium border-0", colorClass, className)}
     >
-      {label ??
-        value.charAt(0).toUpperCase() + value.slice(1).replace("-", " ")}
+      {label ?? autoLabel}
     </Badge>
   );
 }

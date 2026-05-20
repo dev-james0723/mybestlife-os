@@ -136,6 +136,7 @@ export type CalendarSources = {
   habitOccurrences: CalendarHabitOccurrence[];
   milestones: CalendarMilestone[];
   reminders: CalendarReminder[];
+  plannerItems?: CalendarItem[];
 };
 
 /**
@@ -158,6 +159,9 @@ export function projectToCalendarItems(sources: CalendarSources): CalendarItem[]
   }
   for (const r of sources.reminders) {
     items.push(reminderToCalendarItem(r));
+  }
+  if (sources.plannerItems?.length) {
+    items.push(...sources.plannerItems);
   }
   return items.sort(sortItemsByDateAndTime);
 }

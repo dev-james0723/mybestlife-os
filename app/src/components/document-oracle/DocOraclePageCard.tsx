@@ -63,13 +63,13 @@ export function DocOraclePageCard(props: {
         className="flex min-h-0 flex-1 flex-col text-left"
         aria-label={`Open details for ${title}`}
       >
-        <div className="relative aspect-[4/3] w-full shrink-0 bg-neutral-100">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-neutral-100">
           {showThumb ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumbSrc!}
               alt=""
-              className="h-full w-full object-contain object-center"
+              className="h-full w-full object-cover object-top"
               onError={() => setThumbFailed(true)}
             />
           ) : (

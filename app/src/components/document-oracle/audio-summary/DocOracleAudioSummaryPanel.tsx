@@ -170,7 +170,7 @@ export function DocOracleAudioSummaryPanel(props: {
   const disabled = !props.enabled || focusLoading;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 text-[13px] text-muted-foreground">
+    <div className="flex w-full max-w-none flex-col gap-5 text-[13px] text-muted-foreground">
       <header className="space-y-1">
         <h2 className="text-lg font-semibold text-foreground">Audio Summary</h2>
         <p className="text-[12px] leading-relaxed">Generate a hosted audio briefing from this PDF.</p>
@@ -196,7 +196,7 @@ export function DocOracleAudioSummaryPanel(props: {
 
       <VoiceSelector value={voice} onChange={setVoice} disabled={disabled || busy} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Format</p>
           <div className="flex flex-col gap-2">

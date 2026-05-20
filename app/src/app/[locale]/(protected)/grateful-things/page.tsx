@@ -342,11 +342,20 @@ export default function GratefulThingsPage() {
           />
         ) : (
           <div className="space-y-3">
-            {filtered.map((e) => (
+            {filtered.map((e) => {
+              const thumbSrc = e.thumbnail_url ?? e.photo_url;
+              return (
               <EntityCard
                 key={e.id}
                 icon={
-                  e.is_favorite ? (
+                  thumbSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumbSrc}
+                      alt=""
+                      className="h-10 w-10 rounded-lg object-cover"
+                    />
+                  ) : e.is_favorite ? (
                     <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
                   ) : (
                     <Heart className="h-5 w-5 text-primary" />
@@ -362,7 +371,8 @@ export default function GratefulThingsPage() {
                 }
                 onClick={() => openDetail(e)}
               />
-            ))}
+            );
+            })}
           </div>
         )}
       </PageShell>

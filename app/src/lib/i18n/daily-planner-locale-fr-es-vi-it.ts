@@ -10,6 +10,40 @@ export const dailyPlannerFr: DailyPlannerUiCopy = {
   loadTemplate: "Charger un modèle",
   today: "Aujourd’hui",
   syncGoogleCalendar: "Synchroniser avec Google Agenda",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "Time Block tasks sync automatically after each save when Google Calendar is connected in Settings.",
+  googleCalendarFreeModeSyncHint:
+    "Per-task Google sync applies to Time Block mode. Switch modes or open Settings to manage Calendar.",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) {
+      parts.push(`${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`);
+    }
+    if (result.remoteApplied > 0) {
+      parts.push(
+        `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+      );
+    }
+    if (parts.length === 0) return "Calendar sync finished · 0 remote updates found";
+    return `Calendar sync finished · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   startTime: "Heure de début",
   endTime: "Heure de fin",
   nextDayBadge: "+1 jour",
@@ -88,6 +122,10 @@ export const dailyPlannerFr: DailyPlannerUiCopy = {
   detailRelatedNotes: "Notes liées",
   detailRelatedKnowledge: "Connaissances liées",
   detailRelatedIdeas: "Idées liées",
+  smartLinkMissingIdea: "Idée introuvable",
+  smartLinkMissingNote: "Note introuvable",
+  smartLinkMissingKnowledge: "Élément de connaissance introuvable",
+  smartLinkLoading: "Chargement…",
   detailSource: "Source",
   detailSourceLink: "Ouvrir la ressource",
   detailAiGenerated: "Généré par l’IA",
@@ -216,6 +254,19 @@ export const dailyPlannerFr: DailyPlannerUiCopy = {
   freeRemoveTask: "Supprimer la tâche",
   freeChangePriority: "Changer la priorité",
   freeMoveTaskToBucket: (priority) => `Déplacer vers ${priority}`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "Résumé du plan libre",
   freePlanSummaryBlurb:
     "Une checklist nette du plan libre du jour, par priorité. Sans créneaux fictifs.",
@@ -243,6 +294,40 @@ export const dailyPlannerEs: DailyPlannerUiCopy = {
   loadTemplate: "Cargar plantilla",
   today: "Hoy",
   syncGoogleCalendar: "Sincronizar con Google Calendar",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "Time Block tasks sync automatically after each save when Google Calendar is connected in Settings.",
+  googleCalendarFreeModeSyncHint:
+    "Per-task Google sync applies to Time Block mode. Switch modes or open Settings to manage Calendar.",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) {
+      parts.push(`${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`);
+    }
+    if (result.remoteApplied > 0) {
+      parts.push(
+        `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+      );
+    }
+    if (parts.length === 0) return "Calendar sync finished · 0 remote updates found";
+    return `Calendar sync finished · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   startTime: "Hora de inicio",
   endTime: "Hora de fin",
   nextDayBadge: "+1 día",
@@ -321,6 +406,10 @@ export const dailyPlannerEs: DailyPlannerUiCopy = {
   detailRelatedNotes: "Notas relacionadas",
   detailRelatedKnowledge: "Conocimiento relacionado",
   detailRelatedIdeas: "Ideas relacionadas",
+  smartLinkMissingIdea: "Idea no encontrada",
+  smartLinkMissingNote: "Nota no encontrada",
+  smartLinkMissingKnowledge: "Elemento de conocimiento no encontrado",
+  smartLinkLoading: "Cargando…",
   detailSource: "Fuente",
   detailSourceLink: "Abrir recurso",
   detailAiGenerated: "Generado por IA",
@@ -449,6 +538,19 @@ export const dailyPlannerEs: DailyPlannerUiCopy = {
   freeRemoveTask: "Eliminar tarea",
   freeChangePriority: "Cambiar prioridad",
   freeMoveTaskToBucket: (priority) => `Mover a ${priority}`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "Resumen del plan libre",
   freePlanSummaryBlurb:
     "Una checklist clara del plan libre de hoy, por prioridad. Sin franjas horarias falsas.",
@@ -476,6 +578,40 @@ export const dailyPlannerVi: DailyPlannerUiCopy = {
   loadTemplate: "Tải mẫu",
   today: "Hôm nay",
   syncGoogleCalendar: "Đồng bộ Google Calendar",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "Time Block tasks sync automatically after each save when Google Calendar is connected in Settings.",
+  googleCalendarFreeModeSyncHint:
+    "Per-task Google sync applies to Time Block mode. Switch modes or open Settings to manage Calendar.",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) {
+      parts.push(`${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`);
+    }
+    if (result.remoteApplied > 0) {
+      parts.push(
+        `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+      );
+    }
+    if (parts.length === 0) return "Calendar sync finished · 0 remote updates found";
+    return `Calendar sync finished · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   startTime: "Giờ bắt đầu",
   endTime: "Giờ kết thúc",
   nextDayBadge: "+1 ngày",
@@ -554,6 +690,10 @@ export const dailyPlannerVi: DailyPlannerUiCopy = {
   detailRelatedNotes: "Ghi chú liên quan",
   detailRelatedKnowledge: "Kiến thức liên quan",
   detailRelatedIdeas: "Ý tưởng liên quan",
+  smartLinkMissingIdea: "Không tìm thấy ý tưởng",
+  smartLinkMissingNote: "Không tìm thấy ghi chú",
+  smartLinkMissingKnowledge: "Không tìm thấy mục kiến thức",
+  smartLinkLoading: "Đang tải…",
   detailSource: "Nguồn",
   detailSourceLink: "Mở tài nguyên",
   detailAiGenerated: "Do AI tạo",
@@ -679,6 +819,19 @@ export const dailyPlannerVi: DailyPlannerUiCopy = {
   freeRemoveTask: "Xóa việc",
   freeChangePriority: "Đổi mức ưu tiên",
   freeMoveTaskToBucket: (priority) => `Chuyển sang ${priority}`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "Tóm tắt kế hoạch tự do",
   freePlanSummaryBlurb:
     "Một bảng việc gọn gàng theo mức ưu tiên — không tạo khung giờ giả.",
@@ -706,6 +859,40 @@ export const dailyPlannerIt: DailyPlannerUiCopy = {
   loadTemplate: "Carica modello",
   today: "Oggi",
   syncGoogleCalendar: "Sincronizza con Google Calendar",
+  googleCalendarSyncNowButton: "Google Calendar sync now",
+  googleCalendarSyncingNowButton: "Google Calendar syncing now",
+  googleCalendarConnectedAccountHint: (email) =>
+    email
+      ? `Connected to Google Calendar · ${email}`
+      : "Connected to Google Calendar",
+  googleCalendarSaveAndSyncLoading: "Saving your plan and syncing with Google Calendar…",
+  googleCalendarLastUpdatedLabel: (stamp) => `Last updated: ${stamp}`,
+  googleCalendarServerSyncHint:
+    "Time Block tasks sync automatically after each save when Google Calendar is connected in Settings.",
+  googleCalendarFreeModeSyncHint:
+    "Per-task Google sync applies to Time Block mode. Switch modes or open Settings to manage Calendar.",
+  toastGoogleCalendarSyncNowOk: (result) => {
+    if (result.conflicts > 0) {
+      return `Calendar sync conflict · ${result.conflicts} item${result.conflicts !== 1 ? "s" : ""} need review`;
+    }
+    const parts: string[] = [];
+    if (result.localPushed > 0) {
+      parts.push(`${result.localPushed} local update${result.localPushed !== 1 ? "s" : ""} pushed`);
+    }
+    if (result.remoteApplied > 0) {
+      parts.push(
+        `${result.remoteApplied} remote update${result.remoteApplied !== 1 ? "s" : ""} applied`,
+      );
+    }
+    if (parts.length === 0) return "Calendar sync finished · 0 remote updates found";
+    return `Calendar sync finished · ${parts.join(" · ")}`;
+  },
+  toastGoogleCalendarSyncNowFailed: "Calendar sync could not finish. Your plan is still saved locally.",
+  calendarSyncTooltipSynced: "Google Calendar: synced",
+  calendarSyncTooltipPending: "Google Calendar: pending push",
+  calendarSyncTooltipError: "Google Calendar: sync error (retry from Settings)",
+  calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
+  calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   startTime: "Ora di inizio",
   endTime: "Ora di fine",
   nextDayBadge: "+1 giorno",
@@ -784,6 +971,10 @@ export const dailyPlannerIt: DailyPlannerUiCopy = {
   detailRelatedNotes: "Note correlate",
   detailRelatedKnowledge: "Conoscenze correlate",
   detailRelatedIdeas: "Idee correlate",
+  smartLinkMissingIdea: "Idea non trovata",
+  smartLinkMissingNote: "Nota non trovata",
+  smartLinkMissingKnowledge: "Elemento della knowledge base non trovato",
+  smartLinkLoading: "Caricamento…",
   detailSource: "Fonte",
   detailSourceLink: "Apri risorsa",
   detailAiGenerated: "Generato da IA",
@@ -912,6 +1103,19 @@ export const dailyPlannerIt: DailyPlannerUiCopy = {
   freeRemoveTask: "Rimuovi attività",
   freeChangePriority: "Cambia priorità",
   freeMoveTaskToBucket: (priority) => `Sposta in ${priority}`,
+  freeTaskDetailsTitle: "Task details",
+  freeTaskTitleLabel: "Task title",
+  freeTaskNotesLabel: "Notes",
+  freeTaskNotesPlaceholder:
+    "Add context, details, or reminders for this task...",
+  freeTaskPriorityLabel: "Priority",
+  freeTaskSaveChanges: "Save changes",
+  freeTaskDelete: "Delete",
+  freeTaskCancel: "Cancel",
+  freeTaskAddNotes: "Add Notes",
+  freeTaskHideNotes: "Hide Notes",
+  freeTaskTitleRequired: "Task title is required",
+  freeTaskOpenDetails: (title) => `Open task details for ${title}`,
   freePlanSummaryTitle: "Riepilogo del piano libero",
   freePlanSummaryBlurb:
     "Una checklist pulita del piano libero di oggi, per priorità. Senza orari fittizi.",

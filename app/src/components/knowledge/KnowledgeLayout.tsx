@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { mapRowToItem, type KnowledgeItem, type SmartCollection } from "@/types/knowledge";
@@ -27,6 +28,18 @@ interface KnowledgeLayoutProps {
   initialItems: KnowledgeItem[];
   initialCollections: SmartCollection[];
   userId: string;
+}
+
+function KnowledgeDeepLinkSync() {
+  const searchParams = useSearchParams();
+  const items = useKnowledgeStore((s) => s.items);
+  const selectItem = useKnowledgeStore((s) => s.selectItem);
+  useEffect(() => {
+    const id = searchParams.get("item")?.trim();
+    if (!id) return;
+    if (items.some((i) => i.id === id)) selectItem(id);
+  }, [searchParams, items, selectItem]);
+  return null;
 }
 
 export function KnowledgeLayout({
@@ -268,6 +281,9 @@ export function KnowledgeLayout({
         </div>
       }
     >
+      <Suspense fallback={null}>
+        <KnowledgeDeepLinkSync />
+      </Suspense>
       <div className="relative">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
           <KnowledgeSidebar />

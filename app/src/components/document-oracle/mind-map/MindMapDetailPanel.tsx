@@ -93,7 +93,7 @@ export function MindMapDetailPanel(props: {
   const shell = cn(
     "flex flex-col gap-3 text-[12px] text-white/80",
     variant === "sheet"
-      ? "max-h-[42vh] overflow-y-auto rounded-t-2xl border border-white/10 border-b-0 bg-[#0a0a0e] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_40px_rgba(0,0,0,0.55)]"
+      ? "max-h-[60dvh] overflow-y-auto rounded-t-2xl border border-white/10 border-b-0 bg-[#0a0a0e] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_40px_rgba(0,0,0,0.55)]"
       : "h-full min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-[#0a0a0e]/95 p-4",
   );
 

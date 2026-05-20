@@ -44,7 +44,7 @@ async function insertMindMapRows(params: {
 }): Promise<{ nodes: MindMapDbNode[]; edges: MindMapDbEdge[] }> {
   const { supabase, userId, documentId, analysisId, nodes, edges } = params;
 
-  const nodeRows = nodes.map((n) => ({
+  const nodeRowsRaw = nodes.map((n) => ({
     id: n.id,
     user_id: userId,
     document_id: documentId,
@@ -66,13 +66,20 @@ async function insertMindMapRows(params: {
     metadata: n.metadata as Record<string, unknown>,
   }));
 
+  const seenNodeKeys = new Set<string>();
+  const nodeRows = nodeRowsRaw.filter((r) => {
+    if (seenNodeKeys.has(r.node_key)) return false;
+    seenNodeKeys.add(r.node_key);
+    return true;
+  });
+
   for (let i = 0; i < nodeRows.length; i += 40) {
     const slice = nodeRows.slice(i, i + 40);
     const { error } = await supabase.from("document_mind_map_nodes").insert(slice);
     if (error) throw new Error(`mind_map_nodes_insert: ${error.message}`);
   }
 
-  const edgeRows = edges.map((e) => ({
+  const edgeRowsRaw = edges.map((e) => ({
     id: e.id,
     user_id: userId,
     document_id: documentId,
@@ -85,6 +92,14 @@ async function insertMindMapRows(params: {
     confidence: e.confidence,
     metadata: e.metadata,
   }));
+
+  const seenEdgeKeys = new Set<string>();
+  const edgeRows = edgeRowsRaw.filter((r) => {
+    const k = `${r.source_node_id}:${r.target_node_id}:${r.relationship_type ?? ""}`;
+    if (seenEdgeKeys.has(k)) return false;
+    seenEdgeKeys.add(k);
+    return true;
+  });
 
   for (let i = 0; i < edgeRows.length; i += 60) {
     const slice = edgeRows.slice(i, i + 60);

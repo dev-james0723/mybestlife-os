@@ -108,14 +108,14 @@ export function DocOraclePagesPanel(props: {
 
   return (
     <div className="w-full min-w-0 space-y-5">
-      <div className="mx-auto max-w-6xl space-y-2">
+      <div className="space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">Pages</h2>
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           Browse all {pages.length} pages of this document. Click any page for full details.
         </p>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-4 rounded-2xl border border-white/[0.06] bg-gradient-to-b from-neutral-950/85 to-neutral-950/50 px-3 py-5 sm:px-6">
+      <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-gradient-to-b from-neutral-950/85 to-neutral-950/50 px-3 py-5 sm:px-6">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -167,7 +167,7 @@ export function DocOraclePagesPanel(props: {
         {filtered.length === 0 ? (
           <p className="py-8 text-center text-[13px] text-muted-foreground">No pages match your search or filters.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((p) => (
               <DocOraclePageCard
                 key={p.id}

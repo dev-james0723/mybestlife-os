@@ -36,6 +36,30 @@ const NODE_POS: Record<NodeKey, NodePos> = {
 
 const ROOT_POS: NodePos = { x: 500, y: 640 };
 
+/** Mobile “bonsai” canvas — viewBox coords = layout at 390×620 */
+const MOB_W = 390;
+const MOB_H = 620;
+const MOB_ROOT: NodePos = { x: 195, y: 285 };
+const MOB_NODE: Record<NodeKey, NodePos> = {
+  pages: { x: 195, y: 50 },
+  glossary: { x: 70, y: 155 },
+  sections: { x: 320, y: 155 },
+  visuals: { x: 78, y: 409 },
+  topics: { x: 312, y: 409 },
+  chat: { x: 195, y: 521 },
+};
+/** Lower trunk rising into root */
+const MOB_TRUNK_D =
+  "M 195 605 C 192 535 198 455 195 380 C 193 345 196 310 195 285";
+const MOB_BRANCHES: Record<NodeKey, string> = {
+  pages: "M 195 285 C 202 210 198 130 195 50",
+  glossary: "M 192 282 C 150 255 100 205 70 155",
+  sections: "M 198 282 C 240 255 290 205 320 155",
+  visuals: "M 188 288 C 145 325 105 365 78 409",
+  topics: "M 202 288 C 245 325 285 365 312 409",
+  chat: "M 195 290 C 188 365 190 445 195 521",
+};
+
 // Organic pebble border-radii per node — gives each card an asymmetric blob
 // shape rather than a uniform rounded rectangle.
 const PEBBLE: Record<NodeKey, { card: string; ghost: string }> = {
@@ -144,7 +168,7 @@ export function DocumentTreeMap(props: {
   );
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(120%_80%_at_50%_100%,rgba(200,229,58,0.10),rgba(0,0,0,0)_55%),linear-gradient(180deg,rgba(8,10,8,0.55),rgba(0,0,0,0.55))] p-4 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:p-6">
+    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(120%_80%_at_50%_100%,rgba(200,229,58,0.10),rgba(0,0,0,0)_55%),linear-gradient(180deg,rgba(8,10,8,0.55),rgba(0,0,0,0.55))] p-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:p-5 md:p-6">
       {/* Header */}
       <div className="relative z-10 mb-3 flex items-start justify-between gap-3 sm:mb-4">
         <div>
@@ -189,7 +213,7 @@ export function DocumentTreeMap(props: {
 
       {/* Desktop / tablet tree */}
       <div className="relative hidden md:block">
-        <div className="relative mx-auto aspect-[1000/720] w-full max-w-[1080px]">
+        <div className="relative mx-auto aspect-[1000/720] w-full max-w-[min(100%,1280px)]">
           <TreeSvg
             gid={gid}
             hovered={hovered}
@@ -224,13 +248,16 @@ export function DocumentTreeMap(props: {
         </div>
       </div>
 
-      {/* Mobile vertical guided tree */}
+      {/* Mobile compact bonsai tree (curved SVG branches + positioned leaf cards) */}
       <div className="md:hidden">
-        <MobileTree
+        <DocumentTreeMapMobile
+          gid={gid}
           rootLabel={rootLabel}
           nodes={nodes}
           onOpenSource={() => onNavigate("source")}
           reducedMotion={!!reducedMotion}
+          hovered={hovered}
+          onHoverChange={setHovered}
         />
       </div>
 
@@ -600,9 +627,10 @@ function LeafCard(props: {
   );
 }
 
-/* ---------- Mobile vertical tree ---------- */
+/* ---------- Mobile compact bonsai tree ---------- */
 
-function MobileTree(props: {
+export function DocumentTreeMapMobile(props: {
+  gid: string;
   rootLabel: string;
   nodes: Array<{
     key: NodeKey;
@@ -613,73 +641,325 @@ function MobileTree(props: {
   }>;
   onOpenSource: () => void;
   reducedMotion: boolean;
+  hovered: NodeKey | "root" | null;
+  onHoverChange: (next: NodeKey | "root" | null) => void;
 }) {
-  const { rootLabel, nodes, onOpenSource, reducedMotion } = props;
+  const { gid, rootLabel, nodes, onOpenSource, reducedMotion, hovered, onHoverChange } = props;
+  const branchKeys = Object.keys(MOB_BRANCHES) as NodeKey[];
+
   return (
-    <div className="relative">
-      {/* simplified vertical trunk */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[88px] bottom-6 -translate-x-1/2 bg-gradient-to-b from-[#C8E53A]/40 via-[#9aaf52]/30 to-[#C8E53A]/0"
-        style={{ width: 2 }}
+    <div
+      className="relative mx-auto w-full max-w-[min(100%,420px)] min-[401px]:max-w-[min(100%,520px)] min-[600px]:max-w-[min(100%,720px)] overflow-visible max-[359px]:h-[560px] h-[620px] max-[359px]:text-[11px]"
+      aria-label="Document structure tree map"
+    >
+      <MobileTreeSvg
+        gid={gid}
+        hovered={hovered}
+        reducedMotion={reducedMotion}
+        branchKeys={branchKeys}
       />
 
-      {/* Root at top for mobile guided stack */}
-      <div className="relative z-10 flex justify-center">
+      <MobileRootCard
+        label={rootLabel}
+        onClick={onOpenSource}
+        pos={MOB_ROOT}
+        reducedMotion={reducedMotion}
+        dimmed={hovered !== null && hovered !== "root"}
+        onHoverChange={(h) => onHoverChange(h ? "root" : null)}
+      />
+
+      {nodes.map((n, idx) => (
+        <MobileLeafCard
+          key={n.key}
+          nodeKey={n.key}
+          pos={MOB_NODE[n.key]}
+          label={n.label}
+          sub={n.sub}
+          icon={n.icon}
+          onClick={n.onClick}
+          reducedMotion={reducedMotion}
+          phase={idx}
+          dimmed={hovered !== null && hovered !== n.key}
+          onHoverChange={(h) => onHoverChange(h ? n.key : null)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MobileTreeSvg(props: {
+  gid: string;
+  hovered: NodeKey | "root" | null;
+  reducedMotion: boolean;
+  branchKeys: NodeKey[];
+}) {
+  const { gid, hovered, reducedMotion, branchKeys } = props;
+  const pfx = `mob-${gid}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${MOB_W} ${MOB_H}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      aria-hidden
+    >
+      <defs>
+        <linearGradient
+          id={`${pfx}-trunk`}
+          gradientUnits="userSpaceOnUse"
+          x1={MOB_ROOT.x}
+          y1={MOB_ROOT.y}
+          x2={MOB_ROOT.x}
+          y2={MOB_H}
+        >
+          <stop offset="0%" stopColor="#C8E53A" stopOpacity="0.75" />
+          <stop offset="45%" stopColor="#9aaf52" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#6a7448" stopOpacity="0.2" />
+        </linearGradient>
+        <linearGradient
+          id={`${pfx}-branch`}
+          gradientUnits="userSpaceOnUse"
+          x1={MOB_ROOT.x}
+          y1={MOB_ROOT.y}
+          x2={MOB_ROOT.x}
+          y2={0}
+        >
+          <stop offset="0%" stopColor="#C8E53A" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#8a9670" stopOpacity="0.22" />
+        </linearGradient>
+        <radialGradient id={`${pfx}-root-glow`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#C8E53A" stopOpacity="0.45" />
+          <stop offset="55%" stopColor="#C8E53A" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#C8E53A" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <circle
+        cx={MOB_ROOT.x}
+        cy={MOB_ROOT.y}
+        r={120}
+        fill={`url(#${pfx}-root-glow)`}
+      />
+
+      <g stroke="#C8E53A" strokeOpacity="0.28" strokeWidth="1" fill="none" strokeLinecap="round">
+        <path d="M 175 598 C 155 605 130 610 108 614" />
+        <path d="M 185 602 C 170 612 145 618 120 622" />
+        <path d="M 215 598 C 235 605 260 610 282 614" />
+        <path d="M 205 602 C 220 612 245 618 270 622" />
+      </g>
+
+      <motion.path
+        d={MOB_TRUNK_D}
+        fill="none"
+        stroke={`url(#${pfx}-trunk)`}
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={reducedMotion ? false : { pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 0.85, ease: "easeOut" }}
+      />
+
+      {branchKeys.map((k, i) => {
+        const isHovered = hovered === k;
+        const isDim = hovered !== null && hovered !== k && hovered !== "root";
+        return (
+          <motion.path
+            key={k}
+            d={MOB_BRANCHES[k]}
+            fill="none"
+            stroke={`url(#${pfx}-branch)`}
+            strokeWidth={isHovered ? 2.2 : 1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={reducedMotion ? false : { pathLength: 0, opacity: 0 }}
+            animate={{
+              pathLength: 1,
+              opacity: isDim ? 0.32 : isHovered ? 1 : 0.82,
+            }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.12 + i * 0.07 }}
+          />
+        );
+      })}
+
+      {branchKeys.flatMap((k, i) => {
+        const p = MOB_NODE[k];
+        const ts = [0.4, 0.72];
+        return ts.map((t, j) => {
+          const lx = MOB_ROOT.x + (p.x - MOB_ROOT.x) * t;
+          const ly = MOB_ROOT.y + (p.y - MOB_ROOT.y) * t;
+          const jitter = ((i + j) * 13) % 10 - 5;
+          return (
+            <SvgLeaf
+              key={`mob-leaf-${k}-${j}`}
+              x={lx + jitter}
+              y={ly - 3}
+              rotate={(i * 47 + j * 61) % 360}
+              delay={0.35 + i * 0.05 + j * 0.04}
+              reducedMotion={reducedMotion}
+              scale={j === 0 ? 0.75 : 0.55}
+            />
+          );
+        });
+      })}
+    </svg>
+  );
+}
+
+function mobilePosStyle(pos: NodePos): CSSProperties {
+  return {
+    left: `${(pos.x / MOB_W) * 100}%`,
+    top: `${(pos.y / MOB_H) * 100}%`,
+  };
+}
+
+function MobileRootCard(props: {
+  label: string;
+  onClick: () => void;
+  pos: NodePos;
+  reducedMotion: boolean;
+  dimmed: boolean;
+  onHoverChange: (h: boolean) => void;
+}) {
+  const { label, onClick, pos, reducedMotion, dimmed, onHoverChange } = props;
+  return (
+    <motion.div
+      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+      style={mobilePosStyle(pos)}
+      initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.96 }}
+      animate={{
+        opacity: dimmed ? 0.88 : 1,
+        y: 0,
+        scale: reducedMotion ? 1 : [1, 1.008, 1],
+      }}
+      transition={{
+        opacity: { duration: 0.25 },
+        y: { duration: 0.45, ease: "easeOut" },
+        scale: { duration: 5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
+      }}
+    >
+      <div className="relative">
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute -inset-4 rounded-[28px] bg-[#C8E53A]/[0.12] blur-xl max-[359px]:-inset-3"
+          animate={
+            reducedMotion
+              ? undefined
+              : { opacity: [0.45, 0.75, 0.45], scale: [1, 1.04, 1] }
+          }
+          transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+        />
         <motion.button
           type="button"
-          onClick={onOpenSource}
+          onClick={onClick}
+          onMouseEnter={() => onHoverChange(true)}
+          onMouseLeave={() => onHoverChange(false)}
+          onFocus={() => onHoverChange(true)}
+          onBlur={() => onHoverChange(false)}
           whileTap={{ scale: 0.985 }}
-          animate={reducedMotion ? undefined : { scale: [1, 1.01, 1] }}
-          transition={{ duration: 4.5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-          className="flex w-full max-w-[260px] flex-col items-center gap-1.5 rounded-2xl border border-[#C8E53A]/50 bg-[#0d1208]/85 px-4 py-4 text-center shadow-[0_0_30px_rgba(200,229,58,0.22)]"
+          whileHover={reducedMotion ? undefined : { y: -2, scale: 1.02 }}
+          aria-label={`Open source for ${label}`}
+          className={cn(
+            "relative flex w-[min(92vw,248px)] max-[359px]:w-[min(92vw,220px)] flex-col items-center gap-1 rounded-2xl border border-[#C8E53A]/55",
+            "bg-[radial-gradient(120%_120%_at_50%_0%,rgba(40,52,18,0.92),rgba(10,14,8,0.92))] px-3 py-3 text-center shadow-[0_0_40px_rgba(200,229,58,0.28),inset_0_0_20px_rgba(200,229,58,0.12)] backdrop-blur-md max-[359px]:py-2.5",
+          )}
         >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#C8E53A]/40 bg-black/40 text-[#dff58a]">
-            <FileText className="h-4 w-4" aria-hidden />
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#C8E53A]/40 bg-black/40 text-[#dff58a] max-[359px]:h-7 max-[359px]:w-7">
+            <FileText className="h-4 w-4 max-[359px]:h-3.5 max-[359px]:w-3.5" aria-hidden />
           </span>
-          <span className="line-clamp-2 text-[12.5px] font-semibold leading-tight tracking-tight text-foreground">
-            {rootLabel}
+          <span className="line-clamp-2 max-w-full text-[12px] font-semibold leading-tight tracking-tight text-foreground max-[359px]:text-[11px]">
+            {label}
           </span>
-          <span className="text-[11px] font-medium text-[#d4f06a]">Open source</span>
+          <span className="text-[10.5px] font-medium text-[#d4f06a]">Open source</span>
         </motion.button>
       </div>
+    </motion.div>
+  );
+}
 
-      <div className="relative z-10 mt-4 flex flex-col gap-3">
-        {nodes.map((n, i) => (
-          <div key={n.key} className="relative flex items-center">
-            {/* side branch stub */}
-            <span
-              aria-hidden
-              className={cn(
-                "absolute top-1/2 h-px w-6 -translate-y-1/2 bg-gradient-to-r",
-                i % 2 === 0
-                  ? "left-1/2 -translate-x-[28px] from-[#C8E53A]/45 to-transparent"
-                  : "left-1/2 translate-x-[4px] from-[#C8E53A]/45 to-transparent",
-              )}
-            />
-            <button
-              type="button"
-              onClick={n.onClick}
-              className={cn(
-                "group relative ml-auto mr-auto flex w-[88%] max-w-[320px] items-center gap-3 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(20,24,18,0.78),rgba(8,10,8,0.78))] px-3 py-2.5 text-left shadow-md transition hover:border-[#C8E53A]/35",
-                i % 2 === 0 ? "flex-row" : "flex-row-reverse text-right",
-              )}
-            >
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-foreground/90 group-hover:text-[#dff58a]">
-                {n.icon}
-              </span>
-              <span className="flex flex-1 flex-col">
-                <span className="text-[12.5px] font-semibold leading-tight tracking-tight text-foreground">
-                  {n.label}
-                </span>
-                <span className="text-[10.5px] leading-snug text-muted-foreground">{n.sub}</span>
-              </span>
-              <LeafGlyph className="h-3.5 w-3.5 shrink-0 text-[#C8E53A]/70 group-hover:text-[#C8E53A]" />
-            </button>
-          </div>
-        ))}
+function MobileLeafCard(props: {
+  nodeKey: NodeKey;
+  pos: NodePos;
+  label: string;
+  sub: string;
+  icon: ReactNode;
+  onClick: () => void;
+  reducedMotion: boolean;
+  phase: number;
+  dimmed: boolean;
+  onHoverChange: (h: boolean) => void;
+}) {
+  const { nodeKey, pos, label, sub, icon, onClick, reducedMotion, phase, dimmed, onHoverChange } = props;
+  const shape = PEBBLE[nodeKey];
+  const duration = 5 + (phase % 3) * 0.5;
+  const rotateRange = phase % 2 === 0 ? [-0.6, 0.6, -0.6] : [0.6, -0.6, 0.6];
+  const yRange = phase % 2 === 0 ? [-1, 1, -1] : [1, -1, 1];
+
+  return (
+    <motion.div
+      className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+      style={mobilePosStyle(pos)}
+      initial={reducedMotion ? false : { opacity: 0, y: 8, scale: 0.96 }}
+      animate={
+        reducedMotion
+          ? { opacity: dimmed ? 0.85 : 1, y: 0, scale: 1 }
+          : {
+              opacity: dimmed ? 0.85 : 1,
+              y: yRange,
+              rotate: rotateRange,
+              scale: 1,
+            }
+      }
+      transition={{
+        opacity: { duration: 0.35, delay: 0.08 + phase * 0.06, ease: "easeOut" },
+        y: reducedMotion
+          ? { duration: 0.45, delay: 0.08 + phase * 0.06 }
+          : { duration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: phase * 0.12 },
+        rotate: reducedMotion
+          ? { duration: 0.45 }
+          : { duration: duration + 0.8, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: phase * 0.1 },
+        scale: { duration: 0.45, delay: 0.08 + phase * 0.06, ease: "easeOut" },
+      }}
+    >
+      <div className="relative w-[138px] max-[359px]:w-[130px]">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -inset-2 border border-dashed border-[#C8E53A]/18"
+          style={{ borderRadius: shape.ghost }}
+        />
+        <LeafGlyph
+          aria-hidden
+          className="pointer-events-none absolute -left-2 top-1/2 h-3 w-3 -translate-y-1/2 -rotate-[32deg] text-[#C8E53A]/55 max-[359px]:h-2.5 max-[359px]:w-2.5"
+        />
+
+        <motion.button
+          type="button"
+          onClick={onClick}
+          onMouseEnter={() => onHoverChange(true)}
+          onMouseLeave={() => onHoverChange(false)}
+          onFocus={() => onHoverChange(true)}
+          onBlur={() => onHoverChange(false)}
+          whileTap={{ scale: 0.985 }}
+          whileHover={reducedMotion ? undefined : { y: -2, scale: 1.02 }}
+          style={{ borderRadius: shape.card }}
+          aria-label={label}
+          className={cn(
+            "group relative flex min-h-[72px] max-[359px]:min-h-[68px] w-full flex-col items-center gap-0.5 border border-white/12",
+            "bg-[radial-gradient(120%_120%_at_50%_0%,rgba(36,42,28,0.92),rgba(10,12,9,0.88))] px-2 py-2.5 text-center shadow-[0_8px_28px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md transition hover:border-[#C8E53A]/35 max-[359px]:px-1.5 max-[359px]:py-2",
+          )}
+        >
+          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/35 text-foreground/90 transition group-hover:border-[#C8E53A]/40 group-hover:text-[#dff58a] max-[359px]:h-6 max-[359px]:w-6">
+            {icon}
+          </span>
+          <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight tracking-tight text-foreground max-[359px]:text-[10.5px]">
+            {label}
+          </span>
+          <span className="line-clamp-2 w-full text-[9.5px] leading-snug text-muted-foreground max-[359px]:text-[9px]">
+            {sub}
+          </span>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

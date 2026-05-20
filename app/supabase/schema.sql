@@ -266,11 +266,12 @@ CREATE TABLE IF NOT EXISTS journal_entries (
 
 CREATE TABLE IF NOT EXISTS grateful_things (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
   content TEXT NOT NULL,
   entry_date DATE DEFAULT CURRENT_DATE,
   category TEXT,
   photo_url TEXT,
+  thumbnail_url TEXT,
   is_favorite BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -280,6 +281,7 @@ CREATE TABLE IF NOT EXISTS grateful_things (
 ALTER TABLE grateful_things
   ADD COLUMN IF NOT EXISTS category TEXT,
   ADD COLUMN IF NOT EXISTS photo_url TEXT,
+  ADD COLUMN IF NOT EXISTS thumbnail_url TEXT,
   ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS habits (

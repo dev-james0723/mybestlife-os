@@ -2,14 +2,16 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ideasRepository, type CreateIdeaInput, type UpdateIdeaInput } from "@/lib/repositories/ideas";
+import type { Idea } from "@/types/database";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
 import { getMiscUiCopy } from "@/lib/i18n/misc-ui";
 
-export function useIdeas() {
+export function useIdeas(options?: { initialData?: Idea[] }) {
   return useQuery({
     queryKey: ["ideas"],
     queryFn: ideasRepository.getAll,
+    initialData: options?.initialData,
   });
 }
 

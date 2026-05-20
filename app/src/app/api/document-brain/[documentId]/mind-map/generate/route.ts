@@ -1,14 +1,30 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { generateAndPersistMindMap } from "@/lib/document-brain/mind-map/generateMindMap";
+import { fetchMindMapFromDb, generateAndPersistMindMap } from "@/lib/document-brain/mind-map/generateMindMap";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-export async function POST(_req: Request, ctx: { params: Promise<{ documentId: string }> }) {
+function maxIso(dates: string[]): string | null {
+  if (dates.length === 0) return null;
+  return dates.sort().slice(-1)[0] ?? null;
+}
+
+export async function POST(req: Request, ctx: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  let force = false;
+  try {
+    const raw = await req.text();
+    if (raw.trim()) {
+      const j = JSON.parse(raw) as { force?: unknown };
+      if (typeof j.force === "boolean") force = j.force;
+    }
+  } catch {
+    force = false;
   }
 
   const supabase = await createServerSupabaseClient();
@@ -43,6 +59,52 @@ export async function POST(_req: Request, ctx: { params: Promise<{ documentId: s
   }
 
   const analysisId = analysis.id as string;
+
+  if (!force) {
+    const { count, error: cErr } = await supabase
+      .from("document_mind_map_nodes")
+      .select("id", { count: "exact", head: true })
+      .eq("analysis_id", analysisId)
+      .eq("user_id", user.id);
+
+    if (cErr) {
+      const msg = cErr.message ?? String(cErr);
+      if (/document_mind_map|schema cache/i.test(msg)) {
+        return NextResponse.json(
+          {
+            error: "mind_map_tables_unavailable",
+            detail: "mind_map_tables_unavailable",
+            status: "missing" as const,
+            nodes: [],
+            edges: [],
+          },
+          { status: 503 },
+        );
+      }
+      return NextResponse.json({ error: "mind_map_count_failed", detail: msg.slice(0, 200) }, { status: 500 });
+    }
+
+    if ((count ?? 0) > 0) {
+      try {
+        const { nodes, edges } = await fetchMindMapFromDb(supabase, user.id, analysisId);
+        const generatedAt = maxIso(
+          nodes.map((n) => n.updated_at || n.created_at).filter((x): x is string => typeof x === "string"),
+        );
+        return NextResponse.json({
+          nodes,
+          edges,
+          generated_at: generatedAt,
+          status: "ready" as const,
+          skipped: "already_exists" as const,
+          gemini_used: null,
+          gemini_error: null,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return NextResponse.json({ error: "mind_map_fetch_failed", detail: msg.slice(0, 200) }, { status: 500 });
+      }
+    }
+  }
 
   const [sectionsRes, pagesRes, glossaryRes, visualsRes, chunksRes] = await Promise.all([
     supabase
@@ -79,6 +141,52 @@ export async function POST(_req: Request, ctx: { params: Promise<{ documentId: s
 
   if (sectionsRes.error || pagesRes.error || glossaryRes.error || visualsRes.error || chunksRes.error) {
     return NextResponse.json({ error: "data_load_failed" }, { status: 500 });
+  }
+
+  if (!force) {
+    const { count: lateCount, error: lateErr } = await supabase
+      .from("document_mind_map_nodes")
+      .select("id", { count: "exact", head: true })
+      .eq("analysis_id", analysisId)
+      .eq("user_id", user.id);
+
+    if (lateErr) {
+      const msg = lateErr.message ?? String(lateErr);
+      if (/document_mind_map|schema cache/i.test(msg)) {
+        return NextResponse.json(
+          {
+            error: "mind_map_tables_unavailable",
+            detail: "mind_map_tables_unavailable",
+            status: "missing" as const,
+            nodes: [],
+            edges: [],
+          },
+          { status: 503 },
+        );
+      }
+      return NextResponse.json({ error: "mind_map_count_failed", detail: msg.slice(0, 200) }, { status: 500 });
+    }
+
+    if ((lateCount ?? 0) > 0) {
+      try {
+        const { nodes, edges } = await fetchMindMapFromDb(supabase, user.id, analysisId);
+        const generatedAt = maxIso(
+          nodes.map((n) => n.updated_at || n.created_at).filter((x): x is string => typeof x === "string"),
+        );
+        return NextResponse.json({
+          nodes,
+          edges,
+          generated_at: generatedAt,
+          status: "ready" as const,
+          skipped: "already_exists" as const,
+          gemini_used: null,
+          gemini_error: null,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return NextResponse.json({ error: "mind_map_fetch_failed", detail: msg.slice(0, 200) }, { status: 500 });
+      }
+    }
   }
 
   try {

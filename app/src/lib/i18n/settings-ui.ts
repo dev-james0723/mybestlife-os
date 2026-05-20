@@ -44,12 +44,23 @@ export type SettingsUiCopy = {
   googleCalendarPlannerBlurb: string;
   googleCalendarConnect: string;
   googleCalendarConnecting: string;
+  /** Shown as a non-action control when Calendar OAuth is linked */
+  googleCalendarConnectedButton: string;
+  googleCalendarSwitchAccount: string;
+  googleCalendarConnectedToast: string;
   googleCalendarSetupTitle: string;
   googleCalendarSetupStepSupabase: string;
   googleCalendarSetupStepGoogleCloud: string;
   googleCalendarSetupStepConsent: string;
   googleCalendarGoPlanner: string;
   googleCalendarConnectFailed: string;
+  googleCalendarDisconnectedToast: string;
+  googleCalendarSyncNowToast: string;
+  googleCalendarPreferencesSavedToast: string;
+  googleCalendarDisconnect: string;
+  googleCalendarSyncNow: string;
+  googleCalendarPauseSync: string;
+  googleCalendarResumeSync: string;
   blockMinutesTitle: string;
   blockMinutesDescription: string;
   blockMinutesLabel: string;
@@ -111,9 +122,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -123,6 +137,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",
@@ -182,9 +203,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "允許 My Best Life OS 將「每日規劃」的時間軸，建立到你 Google 帳戶的主要日曆。",
     googleCalendarPlannerBlurb:
-      "在每日規劃頁按「同步到 Google 日曆」，即可把當日排程一鍵匯出成有起迄時間的活動。",
+      "在每日規劃頁使用「Google Calendar Sync Now」拉取遠端變更並重試未完成推送。已連結時，時間塊模式會在每次儲存後自動推送到 Google。",
     googleCalendarConnect: "連結 Google 日曆",
     googleCalendarConnecting: "正在開啟 Google…",
+    googleCalendarConnectedButton: "Google 日曆已連結",
+    googleCalendarSwitchAccount: "更改 Google 日曆帳戶",
+    googleCalendarConnectedToast: "Google 日曆已連結。",
     googleCalendarSetupTitle: "首次設定（專案管理員）",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google：設定 Web Client ID／Secret；Redirect URLs 需包含應用程式的 /callback。",
@@ -194,6 +218,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "按下連結後，Google 會要求日曆權限；完成後回到每日規劃再按一次同步即可。",
     googleCalendarGoPlanner: "開啟每日規劃",
     googleCalendarConnectFailed: "無法開始 Google 連線，請先確認已登入。",
+    googleCalendarDisconnectedToast: "已中斷此帳戶的 Google 日曆連結。",
+    googleCalendarSyncNowToast: "日曆同步完成（重試未完成項目並拉取遠端變更）。",
+    googleCalendarPreferencesSavedToast: "已儲存日曆同步偏好。",
+    googleCalendarDisconnect: "中斷 Google 日曆帳戶連結",
+    googleCalendarSyncNow: "Google 日曆立即同步",
+    googleCalendarPauseSync: "暫停同步",
+    googleCalendarResumeSync: "恢復同步",
     blockMinutesTitle: "時間塊長度",
     blockMinutesDescription: "每日規劃中，每個時間塊所代表的分鐘數。",
     blockMinutesLabel: "每塊分鐘數",
@@ -251,9 +282,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "允许 My Best Life OS 将「每日规划」的时间线创建到你 Google 账户的主日历。",
     googleCalendarPlannerBlurb:
-      "在每日规划页点击「同步到 Google 日历」，即可把当天排程导出为带起止时间的活动。",
+      "在每日规划页使用「Google Calendar Sync Now」拉取远程变更并重试未完成推送。已连接时，时间块模式会在每次保存后自动推送到 Google。",
     googleCalendarConnect: "连接 Google 日历",
     googleCalendarConnecting: "正在打开 Google…",
+    googleCalendarConnectedButton: "Google 日历已连接",
+    googleCalendarSwitchAccount: "更改 Google 日历账户",
+    googleCalendarConnectedToast: "Google 日历已连接。",
     googleCalendarSetupTitle: "首次设置（项目管理员）",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google：配置 Web Client ID／Secret；Redirect URLs 需包含应用的 /callback。",
@@ -263,6 +297,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "点击连接后，Google 会请求日历权限；完成后回到每日规划再次同步即可。",
     googleCalendarGoPlanner: "打开每日规划",
     googleCalendarConnectFailed: "无法开始 Google 连接，请先登录。",
+    googleCalendarDisconnectedToast: "已断开此账户的 Google 日历连接。",
+    googleCalendarSyncNowToast: "日历同步完成（重试未完成项并拉取远程变更）。",
+    googleCalendarPreferencesSavedToast: "已保存日历同步偏好。",
+    googleCalendarDisconnect: "断开 Google 日历账户连接",
+    googleCalendarSyncNow: "Google 日历立即同步",
+    googleCalendarPauseSync: "暂停同步",
+    googleCalendarResumeSync: "恢复同步",
     blockMinutesTitle: "时间块长度",
     blockMinutesDescription: "每日规划中，每个时间块所代表的分钟数。",
     blockMinutesLabel: "每块分钟数",
@@ -321,9 +362,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -333,6 +377,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",
@@ -392,9 +443,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -404,6 +458,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",
@@ -464,9 +525,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -476,6 +540,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",
@@ -536,9 +607,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -548,6 +622,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",
@@ -608,9 +689,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -620,6 +704,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",
@@ -680,9 +771,12 @@ const m: Record<AppLocale, SettingsUiCopy> = {
     googleCalendarDescription:
       "Allow My Best Life OS to create events in your primary Google calendar from the Daily Planner.",
     googleCalendarPlannerBlurb:
-      "On Daily Planner, use “Sync to Google Calendar” to push the current day’s timeline as timed events.",
+      "On Daily Planner, use “Google Calendar Sync Now” to pull remote changes and retry pending pushes. Time Block saves push automatically when connected.",
     googleCalendarConnect: "Connect Google Calendar",
     googleCalendarConnecting: "Opening Google…",
+    googleCalendarConnectedButton: "Google Calendar Connected",
+    googleCalendarSwitchAccount: "Change Google Calendar Account",
+    googleCalendarConnectedToast: "Google Calendar connected.",
     googleCalendarSetupTitle: "First-time setup (project admin)",
     googleCalendarSetupStepSupabase:
       "Supabase → Authentication → Providers → Google: ensure your Web client ID/secret are set; redirect URLs must include your app’s /callback.",
@@ -692,6 +786,13 @@ const m: Record<AppLocale, SettingsUiCopy> = {
       "After you tap Connect, Google asks for calendar access; then return to Daily Planner and sync again.",
     googleCalendarGoPlanner: "Open Daily Planner",
     googleCalendarConnectFailed: "Could not start Google connection. Try signing in first.",
+    googleCalendarDisconnectedToast: "Google Calendar disconnected for this account.",
+    googleCalendarSyncNowToast: "Calendar sync finished (pending pushes + remote updates).",
+    googleCalendarPreferencesSavedToast: "Calendar sync preference saved.",
+    googleCalendarDisconnect: "Disconnect Google Calendar Account",
+    googleCalendarSyncNow: "Google Calendar sync now",
+    googleCalendarPauseSync: "Pause sync",
+    googleCalendarResumeSync: "Resume sync",
     blockMinutesTitle: "Time Block Duration",
     blockMinutesDescription: "How many minutes each planning block represents in the Daily Planner.",
     blockMinutesLabel: "Minutes per block",

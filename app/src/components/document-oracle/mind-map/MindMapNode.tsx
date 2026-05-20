@@ -48,18 +48,20 @@ export function MindMapNode({ data }: NodeProps<MindMapFlowNode>) {
   return (
     <div
       className={cn(
-        "relative w-[200px] max-w-[200px] rounded-xl border bg-[#0a0a0c]/95 px-2.5 py-2 text-left backdrop-blur-md transition-[opacity,transform,box-shadow]",
+        "relative w-[min(100%,200px)] max-w-[180px] rounded-xl border bg-[#0a0a0c]/95 px-2 py-1.5 text-left backdrop-blur-md transition-[opacity,transform,box-shadow] sm:max-w-[220px] sm:px-2.5 sm:py-2",
         accent.border,
         selected ? cn("ring-2 ring-[#C8E53A]/70", accent.glow) : accent.glow,
         dimmed ? "opacity-35" : "opacity-100",
       )}
     >
       <Handle type="target" position={Position.Left} className="!size-2 !border-0 !bg-zinc-500" />
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-1.5 sm:gap-2">
         <TypeIcon t={db.node_type} />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold leading-snug text-white/95">{mindMapNodeLabel(db)}</p>
-          <p className="mt-0.5 text-[9px] uppercase tracking-wide text-white/40">{db.node_type.replace(/_/g, " ")}</p>
+          <p className="line-clamp-2 text-[11px] font-semibold leading-snug text-white/95 sm:text-xs">{mindMapNodeLabel(db)}</p>
+          <p className="mt-0.5 truncate text-[8px] uppercase tracking-wide text-white/40 sm:text-[9px]">
+            {db.node_type.replace(/_/g, " ")}
+          </p>
         </div>
       </div>
       <Handle type="source" position={Position.Right} className="!size-2 !border-0 !bg-zinc-500" />

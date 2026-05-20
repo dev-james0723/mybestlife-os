@@ -66,6 +66,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { DailyPlanTask } from "@/types/database";
 import type { DailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
+import { PlannerGoogleSyncDot } from "@/components/daily-planner/PlannerGoogleSyncDot";
 
 /* ────────────────────────────── types ────────────────────────────── */
 
@@ -83,6 +84,8 @@ interface SortableTaskListProps {
   meta: TaskMeta[];
   isMobile: boolean;
   copy: DailyPlannerUiCopy;
+  /** Optional `plannerTaskId` → Google Calendar `sync_status` for subtle row indicators. */
+  taskSyncStatusByPlannerId?: Record<string, string>;
   onReorder: (next: LocalPlanTask[]) => void;
   onChangeBlocks: (index: number, delta: number) => void;
   onDelete: (index: number) => void;
@@ -154,6 +157,7 @@ export function SortableTaskList({
   meta,
   isMobile,
   copy,
+  taskSyncStatusByPlannerId,
   onReorder,
   onChangeBlocks,
   onDelete,
@@ -245,6 +249,7 @@ export function SortableTaskList({
               meta={meta[i]}
               isMobile={isMobile}
               copy={copy}
+              taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
               isActiveDrag={ids[i] === activeId}
               openRowId={openRowId}
               setOpenRowId={setOpenRowId}
@@ -284,6 +289,7 @@ interface SortableRowProps {
   meta: TaskMeta;
   isMobile: boolean;
   copy: DailyPlannerUiCopy;
+  taskSyncStatusByPlannerId?: Record<string, string>;
   isActiveDrag: boolean;
   openRowId: string | null;
   setOpenRowId: (id: string | null) => void;
@@ -300,6 +306,7 @@ function SortableRow({
   meta,
   isMobile,
   copy,
+  taskSyncStatusByPlannerId,
   isActiveDrag,
   openRowId,
   setOpenRowId,
@@ -339,6 +346,7 @@ function SortableRow({
         meta={meta}
         isMobile={isMobile}
         copy={copy}
+        taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
         presentation={isActiveDrag ? "placeholder" : "default"}
         dndListeners={listeners}
         dndAttributes={attributes}
@@ -368,6 +376,7 @@ interface TaskRowContentProps {
   meta: TaskMeta;
   isMobile: boolean;
   copy: DailyPlannerUiCopy;
+  taskSyncStatusByPlannerId?: Record<string, string>;
   presentation: RowPresentation;
   dndListeners?: ReturnType<typeof useSortable>["listeners"];
   dndAttributes?: ReturnType<typeof useSortable>["attributes"];
@@ -388,6 +397,7 @@ function TaskRowContent({
   meta,
   isMobile,
   copy,
+  taskSyncStatusByPlannerId,
   presentation,
   dndListeners,
   dndAttributes,
@@ -799,9 +809,21 @@ function TaskRowContent({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium break-words">
-            {task.taskName ?? copy.untitledTask}
-          </p>
+          <div className="flex items-start gap-1.5 min-w-0">
+            <p className="text-sm font-medium break-words min-w-0 flex-1">
+              {task.taskName ?? copy.untitledTask}
+            </p>
+            <PlannerGoogleSyncDot
+              plannerTaskId={task.plannerTaskId}
+              syncStatus={
+                task.plannerTaskId
+                  ? taskSyncStatusByPlannerId?.[task.plannerTaskId]
+                  : undefined
+              }
+              copy={copy}
+              className="mt-1.5"
+            />
+          </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
             <Badge
               variant="secondary"
