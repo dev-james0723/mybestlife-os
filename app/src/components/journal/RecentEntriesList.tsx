@@ -78,7 +78,7 @@ export function RecentEntriesList({
       </div>
 
       {isLoading && entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">…</p>
+        <SkeletonList />
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {copy.recentEntriesEmpty}
@@ -103,6 +103,19 @@ export function RecentEntriesList({
         onClose={() => setOpenEntry(null)}
       />
     </div>
+  );
+}
+
+function SkeletonList() {
+  return (
+    <ul className="space-y-2" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <li
+          key={i}
+          className="h-16 animate-pulse rounded-md border border-border bg-muted/40"
+        />
+      ))}
+    </ul>
   );
 }
 
