@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { PageShell } from "@/components/shared/page-shell";
 import { Button } from "@/components/ui/button";
@@ -14,33 +15,167 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-import { JournalForm } from "@/components/journal/JournalForm";
+import {
+  JournalForm,
+  type JournalFormHandle,
+} from "@/components/journal/JournalForm";
+import { PastAISummaryCard } from "@/components/journal/PastAISummaryCard";
+import {
+  AIAddonsPanel,
+  type AudioMedia,
+  type IllustrationMedia,
+} from "@/components/journal/AIAddonsPanel";
 import { UnsavedChangesDialog } from "@/components/journal/UnsavedChangesDialog";
 import { useUnsavedChanges } from "@/hooks/journal/useUnsavedChanges";
 import { getJournalUiCopy } from "@/lib/i18n/journal-ui";
+import { DEFAULT_AI_DEFAULTS } from "@/lib/journal/constants";
+import { aiOutputSchema, type AIOutput } from "@/lib/journal/schema";
 import { useAppStore } from "@/stores/app-store";
 import type { JournalEntry } from "@/types/database";
 
-/**
- * Journal page (Phase 2). The inline form is the first thing the user sees.
- * Phases 3 & 4 will wire AI summary/add-ons and the recent-entries +
- * trends sections; for now those slots render Phase-N placeholders.
- */
 export default function JournalPage() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getJournalUiCopy(language), [language]);
 
-  // Tracks whether the form has unsaved content. The page passes a
-  // controlled `hasUnsavedChanges` flag to the hook; the JournalForm
-  // bumps it via its onChange callbacks.
+  const formRef = useRef<JournalFormHandle | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  // Bump on every save so we re-mount JournalForm with a fresh state when
-  // the user clicks "Start new entry" from somewhere outside.
   const [formKey, setFormKey] = useState(0);
-  // The latest persisted entry — Phase 3 will pass this into the AI panels.
-  const [latestEntry, setLatestEntry] = useState<JournalEntry | null>(null);
+  const [savedEntry, setSavedEntry] = useState<JournalEntry | null>(null);
+  const [aiOutput, setAiOutput] = useState<AIOutput | null>(null);
+
+  const [illustration, setIllustration] = useState<IllustrationMedia | null>(null);
+  const [audio, setAudio] = useState<AudioMedia | null>(null);
+  const [illustrationLoading, setIllustrationLoading] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
 
   const guard = useUnsavedChanges(hasUnsavedChanges);
+
+  // ----- save handlers passed to JournalForm -----
+  const handleSaved = useCallback((entry: JournalEntry) => {
+    setSavedEntry(entry);
+    setHasUnsavedChanges(false);
+    // Reset previous AI media since this is a fresh entry.
+    setIllustration(null);
+    setAudio(null);
+    setAiOutput(null);
+  }, []);
+
+  const handleSummaryReady = useCallback((entry: JournalEntry) => {
+    if (entry.aiOutput) {
+      const parsed = aiOutputSchema.safeParse(entry.aiOutput);
+      if (parsed.success) setAiOutput(parsed.data);
+    }
+    setSavedEntry(entry);
+  }, []);
+
+  // ----- start new entry -----
+  const startNewEntry = useCallback(() => {
+    setFormKey((k) => k + 1);
+    setSavedEntry(null);
+    setAiOutput(null);
+    setIllustration(null);
+    setAudio(null);
+    setHasUnsavedChanges(false);
+  }, []);
+
+  // ----- AI Add-ons handlers -----
+
+  // Builds the request payload from the saved entry. Returns null if there's
+  // no saved entry yet (caller must auto-save first).
+  const summaryStringForMedia = useMemo(
+    () => aiOutput?.journalEntry,
+    [aiOutput],
+  );
+
+  const ensureSavedEntry = useCallback(async (): Promise<JournalEntry | null> => {
+    if (savedEntry) return savedEntry;
+    const inserted = await formRef.current?.saveNow();
+    return inserted ?? null;
+  }, [savedEntry]);
+
+  const generateIllustration = useCallback(async () => {
+    const entry = await ensureSavedEntry();
+    if (!entry) return;
+    setIllustrationLoading(true);
+    try {
+      const res = await fetch("/api/journal/illustration", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          entryId: entry.id,
+          quadrant: entry.quadrant,
+          primaryEmotion: entry.primaryEmotion,
+          intensity: entry.intensity,
+          bullets: entry.bullets.items,
+          needs: entry.needs.items,
+          aiSummary: summaryStringForMedia,
+          stylePreset: DEFAULT_AI_DEFAULTS.stylePreset,
+          aspectRatio: DEFAULT_AI_DEFAULTS.aspectRatio,
+          literalVsSymbolic: DEFAULT_AI_DEFAULTS.literalVsSymbolicSlider,
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        imageUrl?: string;
+        image?: IllustrationMedia;
+      };
+      if (!res.ok || !body.imageUrl) {
+        toast.error(copy.toastIllustrationFailed);
+        return;
+      }
+      setIllustration(
+        body.image ?? { url: body.imageUrl },
+      );
+      toast.success(copy.toastIllustrationSuccess);
+    } catch {
+      toast.error(copy.toastIllustrationFailed);
+    } finally {
+      setIllustrationLoading(false);
+    }
+  }, [ensureSavedEntry, summaryStringForMedia, copy]);
+
+  const generateAudio = useCallback(async () => {
+    const entry = await ensureSavedEntry();
+    if (!entry) return;
+    setAudioLoading(true);
+    try {
+      const res = await fetch("/api/journal/audio", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          entryId: entry.id,
+          topic: entry.topic,
+          quadrant: entry.quadrant,
+          primaryEmotion: entry.primaryEmotion,
+          secondaryEmotion: entry.secondaryEmotion ?? undefined,
+          intensity: entry.intensity,
+          bullets: entry.bullets.items,
+          selfStory: entry.selfStory ?? undefined,
+          needs: entry.needs.items,
+          nextTinyStep: entry.nextTinyStep,
+          aiSummary: summaryStringForMedia,
+          voice: DEFAULT_AI_DEFAULTS.voice,
+          speed: DEFAULT_AI_DEFAULTS.speed,
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        audioUrl?: string;
+        script?: string;
+        audio?: AudioMedia;
+      };
+      if (!res.ok || !body.audioUrl || !body.script) {
+        toast.error(copy.toastAudioFailed);
+        return;
+      }
+      setAudio(
+        body.audio ?? { url: body.audioUrl, transcript: body.script },
+      );
+      toast.success(copy.toastAudioSuccess);
+    } catch {
+      toast.error(copy.toastAudioFailed);
+    } finally {
+      setAudioLoading(false);
+    }
+  }, [ensureSavedEntry, summaryStringForMedia, copy]);
 
   return (
     <PageShell
@@ -55,10 +190,7 @@ export default function JournalPage() {
                 if (!hasUnsavedChanges) return;
                 e.preventDefault();
                 guard.confirmNavigate(() => {
-                  // Allow the navigation by resetting dirty state and
-                  // re-triggering the click programmatically.
                   setHasUnsavedChanges(false);
-                  setFormKey((k) => k + 1);
                   window.location.href = "/grateful-things";
                 });
               }}
@@ -81,12 +213,12 @@ export default function JournalPage() {
           <CardContent>
             <JournalForm
               key={formKey}
+              ref={formRef}
               copy={copy}
-              onSaved={(entry) => {
-                setLatestEntry(entry);
-                setHasUnsavedChanges(false);
-              }}
+              onSaved={handleSaved}
+              onSummaryReady={handleSummaryReady}
               onDirtyChange={setHasUnsavedChanges}
+              onReset={startNewEntry}
             />
           </CardContent>
         </Card>
@@ -94,44 +226,38 @@ export default function JournalPage() {
         {/* 2. Past AI Summary. */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle>{copy.pastSummaryTitle}</CardTitle>
-              <PhasePlaceholderBadge phase={3} />
-            </div>
+            <CardTitle>{copy.pastSummaryTitle}</CardTitle>
           </CardHeader>
           <CardContent>
-            <PlaceholderBlock>
-              {latestEntry
-                ? `Saved entry ${latestEntry.id.slice(0, 8)}… AI summary lands in Phase 3.`
-                : copy.pastSummaryEmpty}
-            </PlaceholderBlock>
+            <PastAISummaryCard
+              aiOutput={aiOutput}
+              copy={copy}
+              generating={savedEntry !== null && aiOutput === null}
+            />
           </CardContent>
         </Card>
 
         {/* 3. AI Add-ons. */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle>{copy.addonsTitle}</CardTitle>
-                <CardDescription>{copy.addonsDescription}</CardDescription>
-              </div>
-              <PhasePlaceholderBadge phase={3} />
-            </div>
+            <CardTitle>{copy.addonsTitle}</CardTitle>
+            <CardDescription>{copy.addonsDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <PlaceholderBlock title={copy.illustrationTitle}>
-                {copy.illustrationEmpty}
-              </PlaceholderBlock>
-              <PlaceholderBlock title={copy.audioTitle}>
-                {copy.audioEmpty}
-              </PlaceholderBlock>
-            </div>
+            <AIAddonsPanel
+              copy={copy}
+              canGenerate={savedEntry !== null}
+              illustration={illustration}
+              audio={audio}
+              onGenerateIllustration={generateIllustration}
+              onGenerateAudio={generateAudio}
+              illustrationLoading={illustrationLoading}
+              audioLoading={audioLoading}
+            />
           </CardContent>
         </Card>
 
-        {/* 4. Recent Entries. */}
+        {/* 4. Recent Entries — Phase 4. */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -147,7 +273,7 @@ export default function JournalPage() {
           </CardContent>
         </Card>
 
-        {/* 5. Weekly Mood Trends. */}
+        {/* 5. Weekly Mood Trends — Phase 4. */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">

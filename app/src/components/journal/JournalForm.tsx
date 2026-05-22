@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,7 +43,10 @@ import {
   type Topic,
 } from "@/lib/journal/constants";
 import { TOPIC_CONFIG } from "@/lib/journal/topic-config";
-import { journalEntryInputSchema } from "@/lib/journal/schema";
+import {
+  journalEntryInputSchema,
+  type AIOutput,
+} from "@/lib/journal/schema";
 import {
   emptyFormState,
   isFormDirty,
@@ -62,16 +72,40 @@ type FieldErrors = Partial<Record<string, string>>;
 
 interface JournalFormProps {
   copy: JournalUiCopy;
-  /** Called after a successful save. */
+  /** Called after a successful save (before AI summary). */
   onSaved?: (entry: JournalEntry) => void;
   /** Fires whenever the form transitions between clean and dirty. */
   onDirtyChange?: (dirty: boolean) => void;
+  /**
+   * Called after the AI summary has been generated and persisted back onto
+   * the row. The entry passed here has `aiOutput` populated. Fires once per
+   * save cycle. If the summary call fails, this is NOT called.
+   */
+  onSummaryReady?: (entry: JournalEntry) => void;
+  /** Called when the user clicks "Start new entry" after a save. */
+  onReset?: () => void;
 }
 
-export function JournalForm({ copy, onSaved, onDirtyChange }: JournalFormProps) {
+export interface JournalFormHandle {
+  /**
+   * Imperatively trigger a save (with AI summary). Returns the saved entry
+   * (already updated with `aiOutput` on success) or `null` if validation
+   * failed / the user is already in the saved-locked state.
+   */
+  saveNow: () => Promise<JournalEntry | null>;
+  /** True when the form has been saved and is currently locked. */
+  isSaved: () => boolean;
+}
+
+export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
+  function JournalForm(
+    { copy, onSaved, onDirtyChange, onSummaryReady, onReset },
+    ref,
+  ) {
   const [form, setForm] = useState<JournalFormState>(emptyFormState);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
   const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
 
@@ -88,7 +122,8 @@ export function JournalForm({ copy, onSaved, onDirtyChange }: JournalFormProps) 
     setForm(emptyFormState());
     setErrors({});
     setSavedEntryId(null);
-  }, []);
+    onReset?.();
+  }, [onReset]);
 
   // ----- setters ---------------------------------------------------------
 
@@ -120,8 +155,10 @@ export function JournalForm({ copy, onSaved, onDirtyChange }: JournalFormProps) 
 
   // ----- save ------------------------------------------------------------
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (): Promise<JournalEntry | null> => {
     setErrors({});
+
+    if (savedEntryId !== null) return null;
 
     // Normalize bullets / strings before validation.
     const trimmedBullets = form.bullets
@@ -161,10 +198,11 @@ export function JournalForm({ copy, onSaved, onDirtyChange }: JournalFormProps) 
       setErrors(next);
       const firstMessage = parsed.error.issues[0]?.message ?? copy.toastSaveFailed;
       toast.error(firstMessage);
-      return;
+      return null;
     }
 
     setSaving(true);
+    let inserted: JournalEntry | null = null;
     try {
       const input: CreateJournalEntryInput = {
         entryDate: parsed.data.entryDate,
@@ -185,20 +223,60 @@ export function JournalForm({ copy, onSaved, onDirtyChange }: JournalFormProps) 
         taskIds: parsed.data.metadata?.taskIds ?? [],
       };
 
-      const entry = await journalRepository.create(input);
-      setSavedEntryId(entry.id);
-      // Phase 2: skip the AI summary copy — Phase 3 will replace this toast.
-      toast.success(copy.toastSaveSuccess);
-      onSaved?.(entry);
+      inserted = await journalRepository.create(input);
+      setSavedEntryId(inserted.id);
+      onSaved?.(inserted);
     } catch (err) {
       toast.error(copy.toastSaveFailed);
       if (process.env.NODE_ENV !== "production") {
         console.error("[journal] save failed:", err);
       }
+      setSaving(false);
+      return null;
+    }
+
+    // Insert succeeded — now generate the AI summary in the background.
+    setGeneratingSummary(true);
+    try {
+      const res = await fetch("/api/journal/summary", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...parsed.data, entryId: inserted.id }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        aiOutput?: AIOutput;
+        error?: string;
+      };
+      if (!res.ok || !body.aiOutput) {
+        // Save succeeded; only summary failed. Surface a softer toast.
+        toast.error(copy.toastSaveFailed);
+        toast.success(copy.toastSaveSuccess);
+      } else {
+        const withAi: JournalEntry = { ...inserted, aiOutput: body.aiOutput };
+        toast.success(copy.toastSaveSuccess);
+        onSummaryReady?.(withAi);
+      }
+    } catch (err) {
+      toast.success(copy.toastSaveSuccess);
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[journal] summary fetch failed:", err);
+      }
     } finally {
+      setGeneratingSummary(false);
       setSaving(false);
     }
-  }, [form, copy, onSaved]);
+
+    return inserted;
+  }, [form, copy, onSaved, onSummaryReady, savedEntryId]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      saveNow: handleSave,
+      isSaved: () => savedEntryId !== null,
+    }),
+    [handleSave, savedEntryId],
+  );
 
   // ----- derived helpers -------------------------------------------------
 
@@ -483,13 +561,14 @@ export function JournalForm({ copy, onSaved, onDirtyChange }: JournalFormProps) 
       <SaveBar
         copy={copy}
         saving={saving}
+        generatingSummary={generatingSummary}
         saved={isLocked}
         onSave={handleSave}
         onReset={resetAll}
       />
     </div>
   );
-}
+});
 
 function CollapsibleSection({
   title,
@@ -526,12 +605,14 @@ function CollapsibleSection({
 function SaveBar({
   copy,
   saving,
+  generatingSummary,
   saved,
   onSave,
   onReset,
 }: {
   copy: JournalUiCopy;
   saving: boolean;
+  generatingSummary: boolean;
   saved: boolean;
   onSave: () => void;
   onReset: () => void;
@@ -554,7 +635,12 @@ function SaveBar({
         disabled={saving || saved}
         size="lg"
       >
-        {saving ? (
+        {generatingSummary ? (
+          <>
+            <Loader2 className="animate-spin" aria-hidden />
+            {copy.savingSummaryButton}
+          </>
+        ) : saving ? (
           <>
             <Loader2 className="animate-spin" aria-hidden />
             {copy.savingButton}
