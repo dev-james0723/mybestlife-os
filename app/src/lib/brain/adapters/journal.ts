@@ -1,43 +1,52 @@
 /**
  * Journal adapter — emits `journal_entry` nodes and edges from
- * `linked_project_ids` / `linked_task_ids`.
+ * `project_ids` / `task_ids` (camelCase in the JournalEntry TS shape).
  */
 
 import type { JournalEntry } from "@/types/database";
 import type { ConstellationEdge, ConstellationNode } from "@/types/constellation";
-import { type AdapterOutput, makeEdge, nodeId, ownedBy, truncate } from "./_shared";
+import { type AdapterOutput, makeEdge, nodeId, truncate } from "./_shared";
 
 export function journalToGraph(input: {
   rows: JournalEntry[] | undefined;
   userId: string;
 }): AdapterOutput {
-  const rows = ownedBy(input.rows, input.userId);
+  const rows = (input.rows ?? []).filter((r) => r.userId === input.userId);
   const nodes: ConstellationNode[] = [];
   const edges: ConstellationEdge[] = [];
 
   for (const j of rows) {
     const id = nodeId("journal_entry", j.id);
-    const label = `Journal — ${j.entry_date}`;
+    const label = `Journal — ${j.entryDate}`;
+    const firstBullet = j.bullets?.items?.[0];
+    const aiNarrative =
+      j.aiOutput && typeof j.aiOutput === "object" && !Array.isArray(j.aiOutput)
+        ? (j.aiOutput as { journalEntry?: string }).journalEntry
+        : undefined;
     nodes.push({
       id,
       userId: input.userId,
       label,
       type: "journal_entry",
       journalEntryId: j.id,
-      description: j.content
-        ? truncate(j.content, 140)
-        : j.ai_summary
-          ? truncate(j.ai_summary, 140)
+      description: firstBullet
+        ? truncate(firstBullet, 140)
+        : aiNarrative
+          ? truncate(aiNarrative, 140)
           : undefined,
-      createdAt: j.created_at,
-      updatedAt: j.updated_at,
+      createdAt: j.createdAt,
+      updatedAt: j.updatedAt,
       metadata: {
-        entry_date: j.entry_date,
-        needs: j.needs,
+        entry_date: j.entryDate,
+        topic: j.topic,
+        quadrant: j.quadrant,
+        primary_emotion: j.primaryEmotion,
+        intensity: j.intensity,
+        needs: j.needs.items,
       },
     });
 
-    for (const projectId of j.linked_project_ids ?? []) {
+    for (const projectId of j.projectIds ?? []) {
       edges.push(
         makeEdge({
           userId: input.userId,
@@ -51,7 +60,7 @@ export function journalToGraph(input: {
       );
     }
 
-    for (const taskId of j.linked_task_ids ?? []) {
+    for (const taskId of j.taskIds ?? []) {
       edges.push(
         makeEdge({
           userId: input.userId,

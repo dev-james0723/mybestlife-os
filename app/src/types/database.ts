@@ -273,20 +273,36 @@ export type JapaneseStudySession = {
   updated_at: string;
 };
 
+/**
+ * Journal v2 — structured emotional-processing entry.
+ * Replaces the legacy HTML-content + pleasantness/activation map. The TS
+ * shape is camelCase; the DB columns are snake_case and mapped in
+ * `lib/repositories/journal.ts`.
+ */
 export type JournalEntry = {
   id: string;
-  user_id: string;
-  entry_date: string;
-  content: string | null;
-  emotion_quadrant: Json | null;
-  needs: string[];
-  linked_project_ids: string[];
-  linked_task_ids: string[];
-  ai_summary: string | null;
-  ai_illustration_url: string | null;
-  ai_audio_url: string | null;
-  created_at: string;
-  updated_at: string;
+  userId: string;
+  entryDate: string; // YYYY-MM-DD
+  topic: string;
+  quadrant: "RED" | "YELLOW" | "BLUE" | "GREEN";
+  primaryEmotion: string;
+  secondaryEmotion: string | null;
+  intensity: number;
+  target: string | null;
+  bullets: { items: string[] };
+  selfStory: string | null;
+  needs: { items: string[] };
+  nextTinyStep: string;
+  appreciation: string | null;
+  topicExtras: Json | null;
+  contextFactors: Json | null;
+  projectIds: string[];
+  taskIds: string[];
+  aiOutput: Json | null;
+  aiMedia: Json | null;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 /**

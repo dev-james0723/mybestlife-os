@@ -40,12 +40,18 @@ export function WisdomProfileTab() {
     if (!window.confirm(copy.sendToJournalConfirm)) return;
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const content = `<p><em>${copy.wisdomInsightTitle}</em></p><p>${profile.monthly_insight}</p>`;
+      const insight = profile.monthly_insight;
       await createJournalEntry.mutateAsync({
-        entry_date: today,
-        content,
-        needs: [],
-        ai_summary: profile.monthly_insight,
+        entryDate: today,
+        topic: "Quick Reset",
+        quadrant: "GREEN",
+        primaryEmotion: "Thoughtful",
+        intensity: 5,
+        bullets: { items: [copy.wisdomInsightTitle] },
+        needs: { items: ["Clarity"] },
+        nextTinyStep: copy.wisdomInsightTitle,
+        appreciation: insight,
+        selfStory: insight,
       });
       toast.success(copy.sendToJournalSuccess);
     } catch {

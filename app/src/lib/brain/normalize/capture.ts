@@ -18,30 +18,48 @@ export function journalEntriesToBrainNodes(input: {
   rows: JournalEntry[] | undefined;
   userId: string;
 }): BrainNode[] {
-  return ownedBy(input.rows, input.userId).map((j) =>
-    makeBrainNode(
-      {
-        sourceId: j.id,
-        type: "journal_entry",
-        userId: input.userId,
-        title: `Journal — ${j.entry_date}`,
-        summary: j.ai_summary ?? (j.content ? truncate(j.content, 140) : undefined),
-        bodyText: composeBody(j.content, j.ai_summary, j.needs?.join(" · ")),
-        tags: j.needs ?? [],
-        sourceType: "journal_entries",
-        createdAt: j.created_at,
-        updatedAt: j.updated_at,
-        importance: 0.5,
-        metadata: {
-          entry_date: j.entry_date,
-          needs: j.needs,
-          linked_project_ids: j.linked_project_ids,
-          linked_task_ids: j.linked_task_ids,
+  return (input.rows ?? [])
+    .filter((j) => j.userId === input.userId)
+    .map((j) => {
+      const needsList = j.needs?.items ?? [];
+      const bulletsText = (j.bullets?.items ?? []).join(" · ");
+      const aiNarrative =
+        j.aiOutput && typeof j.aiOutput === "object" && !Array.isArray(j.aiOutput)
+          ? (j.aiOutput as { journalEntry?: string }).journalEntry
+          : undefined;
+      return makeBrainNode(
+        {
+          sourceId: j.id,
+          type: "journal_entry",
+          userId: input.userId,
+          title: `Journal — ${j.entryDate}`,
+          summary:
+            aiNarrative ?? (bulletsText ? truncate(bulletsText, 140) : undefined),
+          bodyText: composeBody(
+            bulletsText,
+            j.selfStory ?? undefined,
+            aiNarrative,
+            needsList.join(" · "),
+          ),
+          tags: needsList,
+          sourceType: "journal_entries",
+          createdAt: j.createdAt,
+          updatedAt: j.updatedAt,
+          importance: 0.5,
+          metadata: {
+            entry_date: j.entryDate,
+            topic: j.topic,
+            quadrant: j.quadrant,
+            primary_emotion: j.primaryEmotion,
+            intensity: j.intensity,
+            needs: needsList,
+            project_ids: j.projectIds,
+            task_ids: j.taskIds,
+          },
         },
-      },
-      { sourceModule: "journal_entry" },
-    ),
-  );
+        { sourceModule: "journal_entry" },
+      );
+    });
 }
 
 export function quotesToBrainNodes(input: {
