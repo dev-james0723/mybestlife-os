@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 import {
   JournalForm,
@@ -25,8 +24,11 @@ import {
   type AudioMedia,
   type IllustrationMedia,
 } from "@/components/journal/AIAddonsPanel";
+import { MoodTrendsChart } from "@/components/journal/MoodTrendsChart";
+import { RecentEntriesList } from "@/components/journal/RecentEntriesList";
 import { UnsavedChangesDialog } from "@/components/journal/UnsavedChangesDialog";
 import { useUnsavedChanges } from "@/hooks/journal/useUnsavedChanges";
+import { useRecentJournalEntries } from "@/hooks/use-journal";
 import { getJournalUiCopy } from "@/lib/i18n/journal-ui";
 import { DEFAULT_AI_DEFAULTS } from "@/lib/journal/constants";
 import { aiOutputSchema, type AIOutput } from "@/lib/journal/schema";
@@ -49,6 +51,8 @@ export default function JournalPage() {
   const [audioLoading, setAudioLoading] = useState(false);
 
   const guard = useUnsavedChanges(hasUnsavedChanges);
+
+  const { data: recentEntries, isLoading: recentLoading } = useRecentJournalEntries();
 
   // ----- save handlers passed to JournalForm -----
   const handleSaved = useCallback((entry: JournalEntry) => {
@@ -257,35 +261,29 @@ export default function JournalPage() {
           </CardContent>
         </Card>
 
-        {/* 4. Recent Entries — Phase 4. */}
+        {/* 4. Recent Entries. */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle>{copy.recentEntriesTitle}</CardTitle>
-                <CardDescription>{copy.recentEntriesDescription}</CardDescription>
-              </div>
-              <PhasePlaceholderBadge phase={4} />
-            </div>
+            <CardTitle>{copy.recentEntriesTitle}</CardTitle>
+            <CardDescription>{copy.recentEntriesDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <PlaceholderBlock>{copy.recentEntriesEmpty}</PlaceholderBlock>
+            <RecentEntriesList
+              entries={recentEntries ?? []}
+              copy={copy}
+              isLoading={recentLoading}
+            />
           </CardContent>
         </Card>
 
-        {/* 5. Weekly Mood Trends — Phase 4. */}
+        {/* 5. Weekly Mood Trends. */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle>{copy.trendsTitle}</CardTitle>
-                <CardDescription>{copy.trendsDescription}</CardDescription>
-              </div>
-              <PhasePlaceholderBadge phase={4} />
-            </div>
+            <CardTitle>{copy.trendsTitle}</CardTitle>
+            <CardDescription>{copy.trendsDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <PlaceholderBlock>{copy.trendsEmpty}</PlaceholderBlock>
+            <MoodTrendsChart entries={recentEntries ?? []} copy={copy} />
           </CardContent>
         </Card>
       </div>
@@ -297,28 +295,5 @@ export default function JournalPage() {
         copy={copy}
       />
     </PageShell>
-  );
-}
-
-function PhasePlaceholderBadge({ phase }: { phase: number }) {
-  return (
-    <Badge variant="secondary" className="text-xs font-normal">
-      Phase {phase}
-    </Badge>
-  );
-}
-
-function PlaceholderBlock({
-  title,
-  children,
-}: {
-  title?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-md border border-dashed border-border bg-muted/30 p-6 text-sm text-muted-foreground">
-      {title && <div className="font-medium mb-1 text-foreground">{title}</div>}
-      <p>{children}</p>
-    </div>
   );
 }
