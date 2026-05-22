@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -29,6 +30,7 @@ export function PastAISummaryCard({
 }: PastAISummaryCardProps) {
   // Open by default once a summary exists.
   const [open, setOpen] = useState(true);
+  const reduceMotion = useReducedMotion();
 
   if (!aiOutput && !generating) {
     return (
@@ -38,7 +40,11 @@ export function PastAISummaryCard({
 
   if (generating && !aiOutput) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex items-center gap-2 text-sm text-muted-foreground"
+      >
         <Sparkles className="size-4 animate-pulse text-primary" aria-hidden />
         {copy.savingSummaryButton}
       </div>
@@ -48,6 +54,11 @@ export function PastAISummaryCard({
   if (!aiOutput) return null;
 
   return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger
         render={
@@ -106,6 +117,7 @@ export function PastAISummaryCard({
         </div>
       </CollapsibleContent>
     </Collapsible>
+    </motion.div>
   );
 }
 

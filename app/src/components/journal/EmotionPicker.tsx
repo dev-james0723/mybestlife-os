@@ -69,7 +69,7 @@ export function EmotionPicker({
 
   return (
     <div
-      role="radiogroup"
+      role="group"
       aria-label={copy.labelEmotionPicker}
       className="grid grid-cols-2 gap-3"
     >
@@ -84,8 +84,8 @@ export function EmotionPicker({
               buttonsRef.current[idx] = el;
             }}
             type="button"
-            role="radio"
-            aria-checked={selected}
+            aria-pressed={selected}
+            aria-label={`${copy.quadrantName[q]} — ${copy.quadrantSubtitle[q]}`}
             tabIndex={isInTabOrder ? 0 : -1}
             disabled={disabled}
             onClick={() => onChange(q)}

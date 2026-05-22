@@ -617,6 +617,14 @@ function SaveBar({
   onSave: () => void;
   onReset: () => void;
 }) {
+  const statusMessage = generatingSummary
+    ? copy.savingSummaryButton
+    : saving
+      ? copy.savingButton
+      : saved
+        ? copy.savedButton
+        : "";
+
   return (
     <div
       className={cn(
@@ -624,6 +632,11 @@ function SaveBar({
         "sm:static sm:mx-0 sm:border-transparent sm:bg-transparent sm:p-0 sm:backdrop-blur-none",
       )}
     >
+      {/* Polite live region announces save / summary progress to AT. */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {statusMessage}
+      </span>
+
       {saved && (
         <Button type="button" variant="outline" onClick={onReset}>
           {copy.startNewEntryButton}
