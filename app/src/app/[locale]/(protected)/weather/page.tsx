@@ -5,12 +5,15 @@ import { useTheme } from "@/lib/theme-context";
 
 import { WeatherAtmosphericInsights } from "@/components/weather/WeatherAtmosphericInsights";
 import { WeatherBackgroundScene } from "@/components/weather/WeatherBackgroundScene";
+import { WeatherForecastTabs } from "@/components/weather/WeatherForecastTabs";
 import { WeatherHero } from "@/components/weather/WeatherHero";
 import { WeatherImpactPanel } from "@/components/weather/WeatherImpactPanel";
 import { WeatherMetricsGrid } from "@/components/weather/WeatherMetricsGrid";
+import { WeatherRadarPanel } from "@/components/weather/WeatherRadarPanel";
 import { WeatherRainIntensity } from "@/components/weather/WeatherRainIntensity";
 import { WeatherSmartReminders } from "@/components/weather/WeatherSmartReminders";
 import { WeatherTopBar } from "@/components/weather/WeatherTopBar";
+import { WeatherTrendChart } from "@/components/weather/WeatherTrendChart";
 
 import { useWeatherPage } from "@/hooks/weather/use-weather-page";
 import { getWeatherUiCopy } from "@/lib/i18n/weather-ui";
@@ -96,6 +99,12 @@ export default function WeatherPage() {
               insight={insight}
             />
 
+            <WeatherRadarPanel
+              copy={copy}
+              latitude={data.location.latitude}
+              longitude={data.location.longitude}
+            />
+
             <WeatherMetricsGrid copy={copy} current={data.current} />
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -108,10 +117,23 @@ export default function WeatherPage() {
               <WeatherImpactPanel copy={copy} insight={insight} />
             </div>
 
-            {/* Phase D placeholder — radar + charts + forecast tabs. */}
-            <PhasePlaceholders
-              hourly={data.hourly.length}
-              daily={data.daily.length}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <WeatherTrendChart
+                copy={copy}
+                hourly={data.hourly}
+                kind="temperature"
+              />
+              <WeatherTrendChart
+                copy={copy}
+                hourly={data.hourly}
+                kind="precipitation"
+              />
+            </div>
+
+            <WeatherForecastTabs
+              copy={copy}
+              hourly={data.hourly}
+              daily={data.daily}
             />
           </>
         )}
@@ -174,22 +196,3 @@ function ErrorPanel({
   );
 }
 
-function PhasePlaceholders({
-  hourly,
-  daily,
-}: {
-  hourly: number;
-  daily: number;
-}) {
-  return (
-    <div className="weather-glass-panel space-y-2 p-5 text-xs text-[var(--weather-text-secondary)]">
-      <p>
-        ▸ Metric cards / radar / charts / forecast tabs land in Phase C + D.
-      </p>
-      <p>
-        Pipeline check: hourly={hourly} entries, daily={daily} entries (incl.
-        extended outlook).
-      </p>
-    </div>
-  );
-}
