@@ -15,6 +15,7 @@ import { useTodayContext } from "@/hooks/use-today-context";
 import { useWeather } from "@/hooks/use-weather";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { DayLoadBadge } from "@/components/calendar/day-load-badge";
+import { DashboardWeatherWidget } from "@/components/calendar/dashboard-weather-widget";
 import { TimelinePreview } from "@/components/calendar/timeline-preview";
 import { FreeWindowChips } from "@/components/calendar/free-window-chips";
 import { AISummaryCard } from "@/components/calendar/ai-summary-card";
@@ -58,6 +59,11 @@ export function TodayBlock() {
   const conflictCount = conflicts.length;
   const load = context?.load ?? "Balanced";
   const freeWindows = context?.free_windows ?? [];
+
+  // Outdoor commitments today → weather suggestion can flag commute/timing.
+  const hasOutdoorEvents = items.some(
+    (item) => item.source_type === "external" && !!item.location,
+  );
 
   const weatherLabel =
     weather?.status === "ok"
@@ -110,6 +116,9 @@ export function TodayBlock() {
             <DayLoadBadge load={load} label={copy.dayLoadLabels[load]} />
           </div>
         </header>
+
+        {/* Weather widget — glanceable today status, links to Weather page */}
+        <DashboardWeatherWidget load={load} hasOutdoorEvents={hasOutdoorEvents} />
 
         {/* Alert strip */}
         {(overdueCount > 0 || conflictCount > 0) && (
