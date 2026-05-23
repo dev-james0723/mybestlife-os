@@ -15,6 +15,15 @@ import {
   type RadarFrames,
 } from "@/lib/weather/rainviewer";
 
+/** RainViewer publishes radar tiles only up to zoom 7. */
+const RADAR_MAX_NATIVE_ZOOM = 7;
+/**
+ * Default / recenter zoom. One step past RainViewer's native max so the
+ * view frames the user's locality; the radar overlay is upscaled 2x from
+ * z7, which is imperceptible for a translucent precipitation layer.
+ */
+const RADAR_DEFAULT_ZOOM = 8;
+
 export interface RadarMapHandle {
   zoomIn: () => void;
   zoomOut: () => void;
@@ -63,7 +72,11 @@ const WeatherRadarInner = forwardRef<RadarMapHandle, WeatherRadarInnerProps>(
 
         const map = L.map(containerRef.current, {
           center: [latitude, longitude],
-          zoom: 8,
+          zoom: RADAR_DEFAULT_ZOOM,
+          minZoom: 4,
+          // RainViewer radar only exists up to z7; allow a little extra
+          // zoom (upscaled) but not so much that radar turns to mush.
+          maxZoom: 10,
           zoomControl: false,
           attributionControl: true,
           dragging: true,
@@ -145,9 +158,14 @@ const WeatherRadarInner = forwardRef<RadarMapHandle, WeatherRadarInnerProps>(
       if (existing) return existing;
       const layer = L.tileLayer(radarTileUrl(host, frame), {
         opacity: 0,
-        maxZoom: 19,
-        // RainViewer tiles tolerate over-zoom by upscaling.
-        maxNativeZoom: 12,
+        tileSize: 256,
+        // RainViewer's radar tiles only exist up to z7 — requesting any
+        // higher zoom returns a "Zoom Level Not Supported" placeholder
+        // PNG. Capping maxNativeZoom makes Leaflet fetch z7 tiles and
+        // upscale them for closer views instead of requesting tiles that
+        // don't exist.
+        maxNativeZoom: RADAR_MAX_NATIVE_ZOOM,
+        maxZoom: 10,
       }).addTo(map);
       frameLayers.current.set(index, layer);
       return layer;
@@ -157,7 +175,9 @@ const WeatherRadarInner = forwardRef<RadarMapHandle, WeatherRadarInnerProps>(
       zoomIn: () => mapRef.current?.zoomIn(),
       zoomOut: () => mapRef.current?.zoomOut(),
       recenter: () =>
-        mapRef.current?.setView([latitude, longitude], 8, { animate: true }),
+        mapRef.current?.setView([latitude, longitude], RADAR_DEFAULT_ZOOM, {
+          animate: true,
+        }),
       showFrame: () => {
         /* Frame swap is driven by the `frameIndex` prop effect above. */
       },
