@@ -2084,8 +2084,22 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  animation: weather-bg-pan 240s ease-in-out infinite;
   filter: saturate(115%);
+  /* Fade in once the background URL resolves so the page doesn't pop;
+     keep the slow pan from the original spec running in parallel. */
+  opacity: 0;
+  animation:
+    weather-bg-pan 240s ease-in-out infinite,
+    weather-scene-photo-in 800ms ease-out forwards;
+}
+
+@keyframes weather-scene-photo-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Dark scrim guarantees text contrast over animated photos. */
@@ -2093,7 +2107,7 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 35%, rgba(0, 0, 0, 0.7) 100%);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.2) 35%, rgba(0, 0, 0, 0.65) 100%);
 }
 
 /* =========================================================================

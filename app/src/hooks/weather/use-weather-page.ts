@@ -17,6 +17,7 @@ import {
 } from "@/lib/weather/openweather-forecast";
 import { resolveCoordsForWeather } from "@/lib/weather/resolve-weather-coords";
 import { fetchUnsplashBackground } from "@/lib/weather/unsplash";
+import { fetchWikimediaBackground } from "@/lib/weather/wikimedia";
 import {
   getWeatherScene,
   timeOfDayFromDate,
@@ -114,23 +115,48 @@ export function useWeatherPage() {
     setScene(sceneNow);
     setInsight(generateWeatherInsight({ current, hourly }));
 
-    // Kick off Unsplash background lookup in parallel (best-effort).
-    const photo = await fetchUnsplashBackground({
-      city: location?.city,
-      country: location?.country,
-      conditionCode: current.conditionCode,
-      timeOfDay: sceneNow.timeOfDay,
-    });
-
+    // Render the page immediately with whatever we have; the cinematic
+    // background photo loads asynchronously and patches in once ready.
     setData({
       status: "ok",
       location,
       current,
       hourly,
       daily,
-      backgroundImageUrl: photo?.url ?? null,
-      backgroundCredit: photo?.credit,
+      backgroundImageUrl: null,
     });
+
+    // Background-photo chain: Unsplash (best, needs key) → Wikipedia
+    // (zero-config, always works for named places) → CSS scene.
+    const unsplash = await fetchUnsplashBackground({
+      city: location?.city,
+      country: location?.country,
+      conditionCode: current.conditionCode,
+      timeOfDay: sceneNow.timeOfDay,
+    });
+    if (unsplash) {
+      setData((prev) => ({
+        ...prev,
+        backgroundImageUrl: unsplash.url,
+        backgroundCredit: unsplash.credit,
+      }));
+      return;
+    }
+
+    const wiki = await fetchWikimediaBackground({
+      city: location?.city,
+      region: location?.region,
+      country: location?.country,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
+    });
+    if (wiki) {
+      setData((prev) => ({
+        ...prev,
+        backgroundImageUrl: wiki.url,
+        backgroundCredit: wiki.credit,
+      }));
+    }
   }, [overrideCoords, profile, user]);
 
   // Initial load + re-runs when auth / profile coords / manual override change.
