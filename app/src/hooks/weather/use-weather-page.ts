@@ -13,8 +13,10 @@ import {
   fetchCurrentWeatherRich,
   fetchForecast,
   reverseGeocodeCoordinates,
+  uvLabelFromIndex,
   type RichCurrentResult,
 } from "@/lib/weather/openweather-forecast";
+import { fetchUvAndAirQuality } from "@/lib/weather/open-meteo";
 import { resolveCoordsForWeather } from "@/lib/weather/resolve-weather-coords";
 import { fetchUnsplashBackground } from "@/lib/weather/unsplash";
 import { fetchWikimediaBackground } from "@/lib/weather/wikimedia";
@@ -71,10 +73,11 @@ export function useWeatherPage() {
       return;
     }
 
-    const [currentResult, forecastResult, geoResult] = await Promise.all([
+    const [currentResult, forecastResult, geoResult, uvAqi] = await Promise.all([
       fetchCurrentWeatherRich(coords),
       fetchForecast(coords),
       reverseGeocodeCoordinates(coords.lat, coords.lon),
+      fetchUvAndAirQuality(coords.lat, coords.lon),
     ]);
 
     if (currentResult.status !== "ok") {
@@ -105,6 +108,14 @@ export function useWeatherPage() {
         hourly[0]?.rainChance ?? daily[0]?.rainChance ?? currentResult.current.rainChance,
       high: daily[0]?.high ?? currentResult.current.high,
       low: daily[0]?.low ?? currentResult.current.low,
+      // UV + AQI come from Open-Meteo (OpenWeather's free tier omits both).
+      uvIndex: uvAqi.uvIndex ?? currentResult.current.uvIndex,
+      uvLabel:
+        uvAqi.uvIndex != null
+          ? uvLabelFromIndex(uvAqi.uvIndex)
+          : currentResult.current.uvLabel,
+      airQualityIndex: uvAqi.airQualityIndex ?? undefined,
+      aqiCategory: uvAqi.aqiCategory ?? undefined,
     };
 
     const sceneNow = getWeatherScene({

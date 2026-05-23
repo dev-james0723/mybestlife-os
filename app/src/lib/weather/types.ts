@@ -93,6 +93,14 @@ export type CurrentWeather = {
   /** °C. */
   dewPoint?: number;
   airQualityIndex?: number;
+  /** US-EPA AQI category, when air quality is available. */
+  aqiCategory?:
+    | "good"
+    | "moderate"
+    | "sensitive"
+    | "unhealthy"
+    | "very-unhealthy"
+    | "hazardous";
   updatedAt: string; // ISO
 };
 

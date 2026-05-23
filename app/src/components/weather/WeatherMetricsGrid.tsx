@@ -63,9 +63,35 @@ export function WeatherMetricsGrid({ copy, current }: WeatherMetricsGridProps) {
         icon={Activity}
         label={copy.metricAirQuality}
         value={current.airQualityIndex != null ? String(current.airQualityIndex) : "—"}
+        trailing={
+          current.aqiCategory ? aqiLabelToCopy(copy, current.aqiCategory) : undefined
+        }
+        accent={
+          current.airQualityIndex != null && current.airQualityIndex > 100
+        }
       />
     </div>
   );
+}
+
+function aqiLabelToCopy(
+  copy: WeatherUiCopy,
+  category: NonNullable<CurrentWeather["aqiCategory"]>,
+): string {
+  switch (category) {
+    case "good":
+      return copy.aqiGood;
+    case "moderate":
+      return copy.aqiModerate;
+    case "sensitive":
+      return copy.aqiSensitive;
+    case "unhealthy":
+      return copy.aqiUnhealthy;
+    case "very-unhealthy":
+      return copy.aqiVeryUnhealthy;
+    case "hazardous":
+      return copy.aqiHazardous;
+  }
 }
 
 function uvLabelToCopy(copy: WeatherUiCopy, label: CurrentWeather["uvLabel"]): string {
