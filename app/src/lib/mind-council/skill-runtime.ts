@@ -1,6 +1,6 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import { fetchGeminiChatText, getGeminiServerApiKey } from "@/lib/ai/gemini-text";
-import { localeToGeminiLanguage } from "@/lib/journal/journal-ai-helpers";
+import { localeToGeminiLanguage } from "@/lib/i18n/gemini-locale";
 import {
   buildBundledLensSystemInstruction,
   hasBundledSkill,
