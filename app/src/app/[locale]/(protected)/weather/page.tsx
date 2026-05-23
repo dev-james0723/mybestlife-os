@@ -3,8 +3,13 @@
 import { useMemo, useState } from "react";
 import { useTheme } from "@/lib/theme-context";
 
+import { WeatherAtmosphericInsights } from "@/components/weather/WeatherAtmosphericInsights";
 import { WeatherBackgroundScene } from "@/components/weather/WeatherBackgroundScene";
 import { WeatherHero } from "@/components/weather/WeatherHero";
+import { WeatherImpactPanel } from "@/components/weather/WeatherImpactPanel";
+import { WeatherMetricsGrid } from "@/components/weather/WeatherMetricsGrid";
+import { WeatherRainIntensity } from "@/components/weather/WeatherRainIntensity";
+import { WeatherSmartReminders } from "@/components/weather/WeatherSmartReminders";
 import { WeatherTopBar } from "@/components/weather/WeatherTopBar";
 
 import { useWeatherPage } from "@/hooks/weather/use-weather-page";
@@ -83,19 +88,33 @@ export default function WeatherPage() {
         ) : data.status === "loading" || !data.current || !data.location ? (
           <HeroSkeleton />
         ) : (
-          <WeatherHero
-            copy={copy}
-            location={data.location}
-            current={data.current}
-            insight={insight}
-          />
-        )}
+          <>
+            <WeatherHero
+              copy={copy}
+              location={data.location}
+              current={data.current}
+              insight={insight}
+            />
 
-        {/* Phase C/D placeholders — replaced in upcoming commits. */}
-        <PhasePlaceholders
-          hourly={data.hourly.length}
-          daily={data.daily.length}
-        />
+            <WeatherMetricsGrid copy={copy} current={data.current} />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <WeatherAtmosphericInsights copy={copy} current={data.current} />
+              <WeatherRainIntensity copy={copy} hourly={data.hourly} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <WeatherSmartReminders copy={copy} insight={insight} />
+              <WeatherImpactPanel copy={copy} insight={insight} />
+            </div>
+
+            {/* Phase D placeholder — radar + charts + forecast tabs. */}
+            <PhasePlaceholders
+              hourly={data.hourly.length}
+              daily={data.daily.length}
+            />
+          </>
+        )}
 
         {/* Unsplash attribution footer. */}
         {data.backgroundCredit ? (
