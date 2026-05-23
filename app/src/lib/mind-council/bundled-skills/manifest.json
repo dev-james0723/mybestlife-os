@@ -1,0 +1,181 @@
+{
+  "generatedAt": "2026-05-23T17:41:35.977Z",
+  "skills": {
+    "lens-elon-musk": {
+      "repo": "alchaincyf/elon-musk-skill",
+      "url": "https://raw.githubusercontent.com/alchaincyf/elon-musk-skill/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 23968,
+      "status": "fetched"
+    },
+    "lens-steve-jobs": {
+      "repo": "alchaincyf/steve-jobs-skill",
+      "url": "https://raw.githubusercontent.com/alchaincyf/steve-jobs-skill/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 23601,
+      "status": "fetched"
+    },
+    "lens-jeff-bezos": {
+      "repo": "sethmblack/persona-jeff-bezos",
+      "url": "https://raw.githubusercontent.com/sethmblack/persona-jeff-bezos/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 72260,
+      "status": "fetched"
+    },
+    "lens-sam-altman": {
+      "repo": "sethmblack/skill-sam-altman",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-sam-altman/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 59317,
+      "status": "fetched"
+    },
+    "lens-warren-buffett": {
+      "repo": "will2025btc/buffett-perspective",
+      "url": "https://raw.githubusercontent.com/will2025btc/buffett-perspective/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 18928,
+      "status": "fetched"
+    },
+    "lens-charlie-munger": {
+      "repo": "alchaincyf/munger-skill",
+      "url": "https://raw.githubusercontent.com/alchaincyf/munger-skill/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 24918,
+      "status": "fetched"
+    },
+    "lens-ray-dalio": {
+      "repo": "jazzqi/ray-dalio-skill",
+      "url": "https://raw.githubusercontent.com/jazzqi/ray-dalio-skill/main/SKILL.md",
+      "bytes": 13836,
+      "status": "fetched"
+    },
+    "lens-michael-jackson": {
+      "repo": "ONE-0508/michaeljacksonskill",
+      "url": "https://raw.githubusercontent.com/ONE-0508/michaeljacksonskill/main/SKILL.md",
+      "bytes": 20621,
+      "status": "fetched"
+    },
+    "lens-kobe-bryant": {
+      "repo": "zobinHuang/kobe.skill",
+      "url": "https://raw.githubusercontent.com/zobinHuang/kobe.skill/main/SKILL.md",
+      "bytes": 88632,
+      "status": "fetched"
+    },
+    "lens-serena-williams": {
+      "repo": "sethmblack/skill-serena-williams",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-serena-williams/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 51416,
+      "status": "fetched"
+    },
+    "lens-barack-obama": {
+      "repo": "will-assistant/openclaw-agents",
+      "url": "https://raw.githubusercontent.com/will-assistant/openclaw-agents/main/agents/politicians/barack-obama/SOUL.md",
+      "note": "Combined SOUL.md + IDENTITY.md from openclaw-agents",
+      "bytes": 3462,
+      "status": "fetched"
+    },
+    "lens-nelson-mandela": {
+      "repo": "sethmblack/skill-nelson-mandela",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-nelson-mandela/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 36634,
+      "status": "fetched"
+    },
+    "lens-winston-churchill": {
+      "repo": "sethmblack/skill-winston-churchill",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-winston-churchill/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 28521,
+      "status": "fetched"
+    },
+    "lens-albert-einstein": {
+      "repo": "sethmblack/skill-albert-einstein",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-albert-einstein/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 40632,
+      "status": "fetched"
+    },
+    "lens-richard-feynman": {
+      "repo": "alchaincyf/feynman-skill",
+      "url": "https://raw.githubusercontent.com/alchaincyf/feynman-skill/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 24037,
+      "status": "fetched"
+    },
+    "lens-charles-darwin": {
+      "repo": "alchaincyf/darwin-skill",
+      "url": "https://raw.githubusercontent.com/alchaincyf/darwin-skill/master/SKILL.md",
+      "license": "MIT",
+      "bytes": 22484,
+      "status": "fetched"
+    },
+    "lens-marcus-aurelius": {
+      "repo": "sethmblack/skill-marcus-aurelius",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-marcus-aurelius/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 12455,
+      "status": "fetched"
+    },
+    "lens-friedrich-nietzsche": {
+      "repo": "Massif-5279/nietzsche-skill",
+      "url": "https://raw.githubusercontent.com/Massif-5279/nietzsche-skill/main/SKILL.md",
+      "bytes": 40792,
+      "status": "fetched"
+    },
+    "lens-virginia-woolf": {
+      "repo": "sethmblack/skill-virginia-woolf",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-virginia-woolf/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 42286,
+      "status": "fetched"
+    },
+    "lens-thich-nhat-hanh": {
+      "repo": "sethmblack/skill-thich-nhat-hanh",
+      "url": "https://raw.githubusercontent.com/sethmblack/skill-thich-nhat-hanh/main/SKILL.md",
+      "license": "MIT",
+      "bytes": 11603,
+      "status": "fetched"
+    },
+    "lens-beyonce": {
+      "repo": "MyBestLifeOS/bundled-public-materials",
+      "url": "/Users/ouxianxing/My_life_os/app/scripts/mind-council-fallback-skills/lens-beyonce.md",
+      "note": "Curated from public interviews, speeches, and biographies (no upstream Agent Skill repo found)",
+      "license": "MIT",
+      "bytes": 2405,
+      "status": "bundled-fallback"
+    },
+    "lens-glenn-gould": {
+      "repo": "MyBestLifeOS/bundled-public-materials",
+      "url": "/Users/ouxianxing/My_life_os/app/scripts/mind-council-fallback-skills/lens-glenn-gould.md",
+      "note": "Curated from public interviews, speeches, and biographies (no upstream Agent Skill repo found)",
+      "license": "MIT",
+      "bytes": 2321,
+      "status": "bundled-fallback"
+    },
+    "lens-lang-lang": {
+      "repo": "MyBestLifeOS/bundled-public-materials",
+      "url": "/Users/ouxianxing/My_life_os/app/scripts/mind-council-fallback-skills/lens-lang-lang.md",
+      "note": "Curated from public interviews, speeches, and biographies (no upstream Agent Skill repo found)",
+      "license": "MIT",
+      "bytes": 2300,
+      "status": "bundled-fallback"
+    },
+    "lens-leonard-bernstein": {
+      "repo": "MyBestLifeOS/bundled-public-materials",
+      "url": "/Users/ouxianxing/My_life_os/app/scripts/mind-council-fallback-skills/lens-leonard-bernstein.md",
+      "note": "Curated from public interviews, speeches, and biographies (no upstream Agent Skill repo found)",
+      "license": "MIT",
+      "bytes": 2280,
+      "status": "bundled-fallback"
+    },
+    "lens-lebron-james": {
+      "repo": "MyBestLifeOS/bundled-public-materials",
+      "url": "/Users/ouxianxing/My_life_os/app/scripts/mind-council-fallback-skills/lens-lebron-james.md",
+      "note": "Curated from public interviews, speeches, and biographies (no upstream Agent Skill repo found)",
+      "license": "MIT",
+      "bytes": 2296,
+      "status": "bundled-fallback"
+    }
+  }
+}

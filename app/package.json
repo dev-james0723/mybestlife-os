@@ -18,7 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:i18n": "node scripts/check-i18n.mjs",
-    "generate:quick-task-presets": "npx --yes tsx scripts/generate-quick-task-preset-icons.ts",
+    "fetch:mind-council-skills": "node scripts/fetch-mind-council-skills.mjs",
     "test:bio-lab": "node --experimental-strip-types scripts/test-bio-lab-pure.ts",
     "test:knowledge": "node --experimental-strip-types --import ./scripts/test-node-alias-resolver.mjs scripts/test-knowledge-classify.ts",
     "test:knowledge-taxonomy-zod": "node scripts/test-knowledge-dynamic-taxonomy-zod.mjs",

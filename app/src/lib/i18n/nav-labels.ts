@@ -368,6 +368,17 @@ const item = {
     es: "Conocimiento IA",
     vi: "Kiến thức AI",
   },
+  "mind-council": {
+    en: "Mind Council",
+    "zh-TW": "智囊議會",
+    "zh-CN": "智囊议会",
+    ja: "マインド・カウンシル",
+    ko: "마인드 카운실",
+    fr: "Mind Council",
+    it: "Mind Council",
+    es: "Mind Council",
+    vi: "Hội đồng Tư duy",
+  },
   "japanese-study": {
     en: "Japanese Study",
     "zh-TW": "日語學習",
