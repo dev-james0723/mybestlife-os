@@ -1,163 +1,176 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useTheme } from "@/lib/theme-context";
 
-import { PageShell } from "@/components/shared/page-shell";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { WeatherBackgroundScene } from "@/components/weather/WeatherBackgroundScene";
+import { WeatherHero } from "@/components/weather/WeatherHero";
+import { WeatherTopBar } from "@/components/weather/WeatherTopBar";
 
 import { useWeatherPage } from "@/hooks/weather/use-weather-page";
 import { getWeatherUiCopy } from "@/lib/i18n/weather-ui";
 import { useAppStore } from "@/stores/app-store";
+import { requestDeviceGeolocation } from "@/lib/weather/openweather";
+import { cn } from "@/lib/utils";
 
 /**
- * Phase A skeleton: page mounts under Command Center between Calendar
- * and Analytics. Data layer is fully wired (current + hourly + daily +
- * Unsplash + scene + insight). UI sections render placeholder cards
- * showing the resolved data inline so we can validate the pipeline
- * before Phase B builds the cinematic hero / metric cards.
+ * Cinematic, full-bleed Weather page. Sits under Command Center between
+ * Calendar and Analytics. Phase B lands the background scene + hero +
+ * location search; Phases C/D fill in metric cards, radar, charts and
+ * forecast tabs. The workspace deliberately bypasses PageShell so the
+ * cinematic background can extend edge-to-edge.
  */
 export default function WeatherPage() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getWeatherUiCopy(language), [language]);
+  const { colorMode } = useTheme();
 
-  const { data, scene, insight } = useWeatherPage();
+  const { data, scene, insight, refresh, setSelectedLocation } = useWeatherPage();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleUseMyLocation = async () => {
+    const coords = await requestDeviceGeolocation();
+    if (!coords) return;
+    setSelectedLocation({
+      name: "Current location",
+      city: "Current location",
+      country: "",
+      latitude: coords.lat,
+      longitude: coords.lon,
+      precision: "gps",
+      displayLabel: "Current location",
+    });
+  };
 
   return (
-    <PageShell title={copy.pageTitle} description={copy.pageSubtitle}>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <StatusBadge status={data.status} />
-              {data.errorMessage && (
-                <span className="text-destructive">{data.errorMessage}</span>
-              )}
-            </div>
-            {data.location && (
-              <p className="text-muted-foreground">
-                {data.location.displayLabel} ({data.location.latitude.toFixed(3)},{" "}
-                {data.location.longitude.toFixed(3)}) — {data.location.precision}
-              </p>
-            )}
-            {data.current && (
-              <p>
-                {data.current.temperature}° · {data.current.condition} · Feels{" "}
-                {data.current.feelsLike}° · H{data.current.high}° / L{data.current.low}°
-              </p>
-            )}
-            {scene && (
-              <p className="text-xs text-muted-foreground">
-                Scene: <code>{scene.id}</code> · layers{" "}
-                {Object.entries(scene.layers)
-                  .filter(([, v]) => v)
-                  .map(([k]) => k)
-                  .join(", ") || "none"}
-              </p>
-            )}
-            {data.backgroundCredit && (
-              <p className="text-xs text-muted-foreground">
-                {copy.photoCredit(data.backgroundCredit.name)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+    <div
+      className={cn(
+        "weather-workspace relative -mx-4 min-h-[calc(100vh-3.5rem)] overflow-hidden px-4 pb-8 pt-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+        colorMode === "light" && "weather-light",
+      )}
+    >
+      <WeatherBackgroundScene
+        scene={scene}
+        backgroundImageUrl={data.backgroundImageUrl}
+      />
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Hourly forecast (next 24h)</CardTitle>
-              <Badge variant="secondary">Phase B</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {data.hourly.slice(0, 8).map((h) => (
-                <div
-                  key={h.time}
-                  className="min-w-[80px] rounded-md border border-border bg-muted/30 p-2 text-center text-xs"
-                >
-                  <div className="text-muted-foreground">{h.hourLabel}</div>
-                  <div className="text-base font-semibold">{h.temperature}°</div>
-                  <div className="truncate">{h.condition}</div>
-                  <div className="text-primary">{h.rainChance}%</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col gap-5">
+        <WeatherTopBar
+          copy={copy}
+          selectedLabel={
+            data.location?.precision === "manual"
+              ? data.location.displayLabel
+              : undefined
+          }
+          onSelect={setSelectedLocation}
+          onClear={() => setSelectedLocation(null)}
+          onUseMyLocation={handleUseMyLocation}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+        />
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Daily forecast (real + extended)</CardTitle>
-              <Badge variant="secondary">Phase D</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-1.5 text-sm">
-              {data.daily.map((d) => (
-                <li key={d.date} className="flex items-center justify-between gap-3">
-                  <span className="w-12 text-muted-foreground">{d.dayLabel}</span>
-                  <span className="w-24">{d.condition}</span>
-                  <span>
-                    {d.high}° / {d.low}°
-                  </span>
-                  <span className="text-primary">{d.rainChance}%</span>
-                  <Badge
-                    variant={d.confidence === "high" ? "secondary" : "outline"}
-                    className="text-[10px]"
-                  >
-                    {d.confidence}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {insight && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>{copy.aiBriefTitle}</CardTitle>
-                <Badge variant="secondary">Phase C</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p>{insight.brief}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {insight.tags.map((t) => (
-                  <Badge key={t} variant="outline" className="text-[10px]">
-                    {t}
-                  </Badge>
-                ))}
-              </div>
-              <ul className="ml-5 list-disc text-xs text-muted-foreground">
-                {insight.reminders.map((r, i) => (
-                  <li key={i}>{r.message}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+        {data.status === "error" ? (
+          <ErrorPanel message={data.errorMessage} retry={handleRefresh} />
+        ) : data.status === "loading" || !data.current || !data.location ? (
+          <HeroSkeleton />
+        ) : (
+          <WeatherHero
+            copy={copy}
+            location={data.location}
+            current={data.current}
+            insight={insight}
+          />
         )}
+
+        {/* Phase C/D placeholders — replaced in upcoming commits. */}
+        <PhasePlaceholders
+          hourly={data.hourly.length}
+          daily={data.daily.length}
+        />
+
+        {/* Unsplash attribution footer. */}
+        {data.backgroundCredit ? (
+          <p className="text-right text-[11px] text-[var(--weather-text-muted)]">
+            <a
+              href={data.backgroundCredit.photoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-2 hover:underline"
+            >
+              {copy.photoCredit(data.backgroundCredit.name)}
+            </a>
+            {" · "}
+            <a
+              href="https://unsplash.com?utm_source=mybestlife-os&utm_medium=referral"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-2 hover:underline"
+            >
+              Unsplash
+            </a>
+          </p>
+        ) : null}
       </div>
-    </PageShell>
+    </div>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function HeroSkeleton() {
   return (
-    <Badge variant="secondary" className="text-xs">
-      {status}
-    </Badge>
+    <div className="weather-glass-panel h-[360px] animate-pulse" aria-hidden />
+  );
+}
+
+function ErrorPanel({
+  message,
+  retry,
+}: {
+  message?: string;
+  retry: () => void;
+}) {
+  return (
+    <div className="weather-glass-panel space-y-3 p-6">
+      <h2 className="text-lg font-semibold text-[var(--weather-text-primary)]">
+        Weather unavailable
+      </h2>
+      <p className="text-sm text-[var(--weather-text-secondary)]">{message}</p>
+      <button
+        type="button"
+        onClick={retry}
+        className="weather-glass-pill"
+        data-accent="lime"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function PhasePlaceholders({
+  hourly,
+  daily,
+}: {
+  hourly: number;
+  daily: number;
+}) {
+  return (
+    <div className="weather-glass-panel space-y-2 p-5 text-xs text-[var(--weather-text-secondary)]">
+      <p>
+        ▸ Metric cards / radar / charts / forecast tabs land in Phase C + D.
+      </p>
+      <p>
+        Pipeline check: hourly={hourly} entries, daily={daily} entries (incl.
+        extended outlook).
+      </p>
+    </div>
   );
 }
