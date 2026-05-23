@@ -192,6 +192,17 @@ const item = {
     es: "Calendario",
     vi: "Lịch",
   },
+  weather: {
+    en: "Weather",
+    "zh-TW": "天氣",
+    "zh-CN": "天气",
+    ja: "天気",
+    ko: "날씨",
+    fr: "Météo",
+    it: "Meteo",
+    es: "Clima",
+    vi: "Thời tiết",
+  },
   analytics: {
     en: "Analytics",
     "zh-TW": "分析",

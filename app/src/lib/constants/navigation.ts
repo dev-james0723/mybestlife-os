@@ -33,6 +33,7 @@ import {
   FileText,
   Quote,
   Compass,
+  CloudSun,
   type LucideIcon,
 } from "lucide-react";
 
@@ -76,6 +77,7 @@ export const navigationCategories: NavCategory[] = [
       { itemId: "tasks", title: "Tasks", url: "/tasks", icon: CheckSquare },
       { itemId: "weekly-review", title: "Weekly Review", url: "/weekly-review", icon: CalendarCheck },
       { itemId: "calendar", title: "Calendar", url: "/calendar", icon: CalendarDays },
+      { itemId: "weather", title: "Weather", url: "/weather", icon: CloudSun },
       { itemId: "analytics", title: "Analytics", url: "/analytics", icon: BarChart3 },
       { itemId: "finance", title: "Finance", url: "/finance", icon: Wallet },
     ],
