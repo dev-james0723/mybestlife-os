@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTheme } from "@/lib/theme-context";
 
 import { WeatherAtmosphericInsights } from "@/components/weather/WeatherAtmosphericInsights";
-import { WeatherBackgroundScene } from "@/components/weather/WeatherBackgroundScene";
+import { WeatherImmersiveScene } from "@/components/weather/WeatherImmersiveScene";
 import { WeatherForecastTabs } from "@/components/weather/WeatherForecastTabs";
 import { WeatherHero } from "@/components/weather/WeatherHero";
 import { WeatherImpactPanel } from "@/components/weather/WeatherImpactPanel";
@@ -62,7 +62,7 @@ export default function WeatherPage() {
   return (
     <div
       className={cn(
-        "weather-workspace relative -mx-4 min-h-[calc(100vh-3.5rem)] overflow-hidden px-4 pb-8 pt-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+        "weather-workspace relative -mx-4 min-h-[calc(100vh-3.5rem)] px-4 pb-8 pt-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
         colorMode === "light" && "weather-light",
       )}
       aria-label={copy.pageTitle}
@@ -77,9 +77,11 @@ export default function WeatherPage() {
               ? `${data.location?.displayLabel ?? ""} ${data.current.temperature}° ${data.current.condition}`
               : ""}
       </span>
-      <WeatherBackgroundScene
+      {/* Full-viewport cinematic background, portaled behind all app chrome. */}
+      <WeatherImmersiveScene
         scene={scene}
         backgroundImageUrl={data.backgroundImageUrl}
+        colorMode={colorMode}
       />
 
       <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col gap-5">
