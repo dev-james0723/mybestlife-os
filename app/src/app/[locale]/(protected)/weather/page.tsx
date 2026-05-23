@@ -65,7 +65,18 @@ export default function WeatherPage() {
         "weather-workspace relative -mx-4 min-h-[calc(100vh-3.5rem)] overflow-hidden px-4 pb-8 pt-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
         colorMode === "light" && "weather-light",
       )}
+      aria-label={copy.pageTitle}
     >
+      {/* Live region for status updates (loading / error / refreshed). */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {data.status === "loading"
+          ? copy.loadingTitle
+          : data.status === "error"
+            ? `${copy.errorTitle} ${data.errorMessage ?? ""}`
+            : data.current
+              ? `${data.location?.displayLabel ?? ""} ${data.current.temperature}° ${data.current.condition}`
+              : ""}
+      </span>
       <WeatherBackgroundScene
         scene={scene}
         backgroundImageUrl={data.backgroundImageUrl}
@@ -87,7 +98,12 @@ export default function WeatherPage() {
         />
 
         {data.status === "error" ? (
-          <ErrorPanel message={data.errorMessage} retry={handleRefresh} />
+          <ErrorPanel
+            message={data.errorMessage}
+            retry={handleRefresh}
+            errorTitle={copy.errorTitle}
+            retryLabel={copy.retry}
+          />
         ) : data.status === "loading" || !data.current || !data.location ? (
           <HeroSkeleton />
         ) : (
@@ -174,14 +190,18 @@ function HeroSkeleton() {
 function ErrorPanel({
   message,
   retry,
+  errorTitle,
+  retryLabel,
 }: {
   message?: string;
   retry: () => void;
+  errorTitle: string;
+  retryLabel: string;
 }) {
   return (
-    <div className="weather-glass-panel space-y-3 p-6">
+    <div className="weather-glass-panel space-y-3 p-6" role="alert">
       <h2 className="text-lg font-semibold text-[var(--weather-text-primary)]">
-        Weather unavailable
+        {errorTitle}
       </h2>
       <p className="text-sm text-[var(--weather-text-secondary)]">{message}</p>
       <button
@@ -190,7 +210,7 @@ function ErrorPanel({
         className="weather-glass-pill"
         data-accent="lime"
       >
-        Retry
+        {retryLabel}
       </button>
     </div>
   );
