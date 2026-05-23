@@ -1,94 +1,177 @@
 "use client";
 
-/**
- * Placeholder radar surface. Renders a stylised SVG "radar sweep" over
- * a dark background so the panel doesn't feel decorative-only. Will be
- * swapped for a real tile-based radar provider (RainViewer, OWM tile
- * layer, etc.) in a follow-up.
- */
-export default function WeatherRadarInner({
-  view,
-}: {
-  view: "satellite" | "street";
-}) {
-  return (
-    <div
-      className="absolute inset-0 overflow-hidden"
-      data-view={view}
-    >
-      {/* Base — dark night-vision tint. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 50%, #0d1a14 0%, #050908 100%)",
-        }}
-      />
+import { useEffect, useImperativeHandle, useRef, forwardRef } from "react";
+import type {
+  Map as LeafletMap,
+  TileLayer as LeafletTileLayer,
+  CircleMarker as LeafletCircleMarker,
+} from "leaflet";
 
-      {/* Grid overlay. */}
-      <svg
-        className="absolute inset-0 size-full"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-hidden
-      >
-        <defs>
-          <pattern id="radar-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path
-              d="M 10 0 L 0 0 0 10"
-              fill="none"
-              stroke="rgba(200,229,58,0.06)"
-              strokeWidth="0.5"
-            />
-          </pattern>
-          <radialGradient id="radar-sweep" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(200,229,58,0.4)" />
-            <stop offset="60%" stopColor="rgba(200,229,58,0.05)" />
-            <stop offset="100%" stopColor="rgba(200,229,58,0)" />
-          </radialGradient>
-        </defs>
-        <rect width="100" height="100" fill="url(#radar-grid)" />
-        {/* Concentric rings. */}
-        {[15, 25, 35, 45].map((r) => (
-          <circle
-            key={r}
-            cx="50"
-            cy="50"
-            r={r}
-            fill="none"
-            stroke="rgba(200,229,58,0.12)"
-            strokeWidth="0.3"
-          />
-        ))}
-        {/* Centre marker. */}
-        <circle cx="50" cy="50" r="1.2" fill="#c8e53a" />
-      </svg>
+import "leaflet/dist/leaflet.css";
 
-      {/* Sweep line — rotates. */}
-      <div
-        className="absolute left-1/2 top-1/2 size-[140%] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          background:
-            "conic-gradient(from 0deg, transparent 75%, rgba(200,229,58,0.25) 92%, transparent 100%)",
-          animation: "weather-radar-sweep 8s linear infinite",
-        }}
-      />
+import {
+  radarTileUrl,
+  type RadarFrame,
+  type RadarFrames,
+} from "@/lib/weather/rainviewer";
 
-      <style jsx>{`
-        @keyframes weather-radar-sweep {
-          from {
-            transform: translate(-50%, -50%) rotate(0deg);
-          }
-          to {
-            transform: translate(-50%, -50%) rotate(360deg);
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          div[style*="weather-radar-sweep"] {
-            animation: none !important;
-          }
-        }
-      `}</style>
-    </div>
-  );
+export interface RadarMapHandle {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  recenter: () => void;
+  /** Swap the visible radar frame (used by the playback timeline). */
+  showFrame: (index: number) => void;
 }
+
+interface WeatherRadarInnerProps {
+  latitude: number;
+  longitude: number;
+  frames: RadarFrames | null;
+  /** Current frame index controlled by the parent timeline. */
+  frameIndex: number;
+}
+
+/**
+ * Real radar surface: a dark Carto basemap centred on the user's
+ * coordinates, a pulsing marker for "you are here", and a RainViewer
+ * radar tile layer that swaps frames as the timeline plays.
+ *
+ * Built on raw Leaflet (not react-leaflet) to avoid React-19 peer-dep
+ * friction and to keep tight control over frame swapping without
+ * re-rendering the whole map.
+ */
+const WeatherRadarInner = forwardRef<RadarMapHandle, WeatherRadarInnerProps>(
+  function WeatherRadarInner({ latitude, longitude, frames, frameIndex }, ref) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<LeafletMap | null>(null);
+    const radarLayerRef = useRef<LeafletTileLayer | null>(null);
+    const markerRef = useRef<LeafletCircleMarker | null>(null);
+    // Cache one tile layer per frame so scrubbing back and forth is instant
+    // and we can cross-fade instead of flashing.
+    const frameLayers = useRef<Map<number, LeafletTileLayer>>(new Map());
+    const leafletRef = useRef<typeof import("leaflet") | null>(null);
+
+    // Initialise the map once.
+    useEffect(() => {
+      let cancelled = false;
+      const layers = frameLayers.current;
+      void (async () => {
+        const mod = await import("leaflet");
+        const L = (mod.default ?? mod) as typeof import("leaflet");
+        if (cancelled || !containerRef.current || mapRef.current) return;
+        leafletRef.current = L;
+
+        const map = L.map(containerRef.current, {
+          center: [latitude, longitude],
+          zoom: 8,
+          zoomControl: false,
+          attributionControl: true,
+          dragging: true,
+          scrollWheelZoom: false,
+          doubleClickZoom: true,
+        });
+        mapRef.current = map;
+
+        // Dark basemap — Carto "Dark Matter" (free, attribution required).
+        L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+          {
+            subdomains: "abcd",
+            maxZoom: 19,
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a> · Radar <a href="https://www.rainviewer.com/">RainViewer</a>',
+          },
+        ).addTo(map);
+
+        // "You are here" — pulsing lime marker.
+        const marker = L.circleMarker([latitude, longitude], {
+          radius: 6,
+          color: "#c8e53a",
+          weight: 2,
+          fillColor: "#c8e53a",
+          fillOpacity: 0.9,
+        }).addTo(map);
+        markerRef.current = marker;
+
+        // Force a resize pass — the container animates in from a parent.
+        setTimeout(() => map.invalidateSize(), 100);
+      })();
+
+      return () => {
+        cancelled = true;
+        mapRef.current?.remove();
+        mapRef.current = null;
+        layers.clear();
+        radarLayerRef.current = null;
+        markerRef.current = null;
+      };
+      // Re-create only when coordinates change meaningfully.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Recenter when coordinates change without rebuilding the map.
+    useEffect(() => {
+      const map = mapRef.current;
+      const marker = markerRef.current;
+      if (!map || !marker) return;
+      marker.setLatLng([latitude, longitude]);
+      map.setView([latitude, longitude], map.getZoom(), { animate: true });
+    }, [latitude, longitude]);
+
+    // Swap the visible radar frame.
+    useEffect(() => {
+      const map = mapRef.current;
+      const L = leafletRef.current;
+      if (!map || !L || !frames) return;
+      const frame = frames.frames[frameIndex];
+      if (!frame) return;
+
+      const layer = getOrCreateFrameLayer(L, map, frames.host, frame, frameIndex);
+      if (radarLayerRef.current && radarLayerRef.current !== layer) {
+        radarLayerRef.current.setOpacity(0);
+      }
+      layer.setOpacity(0.75);
+      radarLayerRef.current = layer;
+    }, [frames, frameIndex]);
+
+    function getOrCreateFrameLayer(
+      L: typeof import("leaflet"),
+      map: LeafletMap,
+      host: string,
+      frame: RadarFrame,
+      index: number,
+    ): LeafletTileLayer {
+      const existing = frameLayers.current.get(index);
+      if (existing) return existing;
+      const layer = L.tileLayer(radarTileUrl(host, frame), {
+        opacity: 0,
+        maxZoom: 19,
+        // RainViewer tiles tolerate over-zoom by upscaling.
+        maxNativeZoom: 12,
+      }).addTo(map);
+      frameLayers.current.set(index, layer);
+      return layer;
+    }
+
+    useImperativeHandle(ref, () => ({
+      zoomIn: () => mapRef.current?.zoomIn(),
+      zoomOut: () => mapRef.current?.zoomOut(),
+      recenter: () =>
+        mapRef.current?.setView([latitude, longitude], 8, { animate: true }),
+      showFrame: () => {
+        /* Frame swap is driven by the `frameIndex` prop effect above. */
+      },
+    }));
+
+    return (
+      <div
+        ref={containerRef}
+        className="weather-radar-map absolute inset-0"
+        aria-label="Precipitation radar map centred on your location"
+        role="img"
+      />
+    );
+  },
+);
+
+export default WeatherRadarInner;
