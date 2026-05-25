@@ -28,8 +28,60 @@ export type AiKnowledgeUiCopy = {
     library: string;
     myPrompts: string;
     favorites: string;
+    folders: string;
     recent: string;
     activity: string;
+  };
+
+  /** Multi-select toolbar + bulk actions (spans Library / My prompts / Favorites). */
+  selection: {
+    select: string;
+    done: string;
+    cancel: string;
+    selectedCount: (n: number) => string;
+    addToFolder: string;
+    addToFavorites: string;
+    delete: string;
+    /** Primary CTA shown when the intent is to create a new folder. */
+    createFolderFromSelection: (n: number) => string;
+    emptyHint: string;
+  };
+
+  /** Folders surface — cards, detail drawer, create/edit form, quick strip. */
+  folders: {
+    quickStripTitle: string;
+    newFolder: string;
+    itemCount: (n: number) => string;
+    open: string;
+    addPrompts: string;
+    removeFromFolder: string;
+    rename: string;
+    editFolder: string;
+    deleteFolder: string;
+    deleteConfirmTitle: string;
+    deleteConfirmBody: (name: string) => string;
+    deleteConfirmAction: string;
+    detailEmpty: string;
+    // create / edit form
+    formCreateTitle: string;
+    formEditTitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    summaryLabel: string;
+    summaryPlaceholder: string;
+    iconLabel: string;
+    autoFill: string;
+    autoFilling: string;
+    save: string;
+    saving: string;
+    create: string;
+    creating: string;
+    // add-to-folder picker
+    pickTitle: string;
+    pickDescription: string;
+    pickCreateNew: string;
+    pickExisting: string;
+    pickNoFolders: string;
   };
 
   filters: {
@@ -203,6 +255,8 @@ export type AiKnowledgeUiCopy = {
     emptyFavoritesDescription: string;
     emptyRecentTitle: string;
     emptyRecentDescription: string;
+    emptyFoldersTitle: string;
+    emptyFoldersDescription: string;
     noSearchResultsTitle: string;
     noSearchResultsDescription: string;
   };
@@ -225,6 +279,19 @@ export type AiKnowledgeUiCopy = {
     wizardDraftReady: string;
     copyBodySuccess: string;
     copyBodyFailed: string;
+    folderCreated: (name: string) => string;
+    folderCreateFailed: string;
+    folderUpdated: string;
+    folderUpdateFailed: string;
+    folderDeleted: string;
+    folderDeleteFailed: string;
+    addedToFolder: (name: string) => string;
+    addToFolderFailed: string;
+    removedFromFolder: string;
+    bulkFavorited: (n: number) => string;
+    bulkDeleted: (n: number) => string;
+    bulkDeleteSkippedLibrary: (n: number) => string;
+    folderAutofillFailed: string;
   };
 };
 
@@ -245,8 +312,55 @@ const en: AiKnowledgeUiCopy = {
     library: "Library",
     myPrompts: "My prompts",
     favorites: "Favorites",
+    folders: "Folders",
     recent: "Recent",
     activity: "Activity",
+  },
+  selection: {
+    select: "Select",
+    done: "Done",
+    cancel: "Cancel",
+    selectedCount: (n) => (n === 1 ? "1 selected" : `${n} selected`),
+    addToFolder: "Add to folder",
+    addToFavorites: "Add to favorites",
+    delete: "Delete",
+    createFolderFromSelection: (n) =>
+      n === 1 ? "Create folder from 1 prompt" : `Create folder from ${n} prompts`,
+    emptyHint: "Pick prompts from any tab, then add them to a folder.",
+  },
+  folders: {
+    quickStripTitle: "Folders",
+    newFolder: "New folder",
+    itemCount: (n) => (n === 1 ? "1 prompt" : `${n} prompts`),
+    open: "Open",
+    addPrompts: "Add prompts",
+    removeFromFolder: "Remove from folder",
+    rename: "Rename",
+    editFolder: "Edit folder",
+    deleteFolder: "Delete folder",
+    deleteConfirmTitle: "Delete folder?",
+    deleteConfirmBody: (name) =>
+      `"${name}" will be removed. Your prompts stay safe — only the folder is deleted.`,
+    deleteConfirmAction: "Delete folder",
+    detailEmpty: "This folder is empty. Add prompts to start filling it.",
+    formCreateTitle: "Create folder",
+    formEditTitle: "Edit folder",
+    nameLabel: "Folder name",
+    namePlaceholder: "e.g. Writing toolkit",
+    summaryLabel: "Summary",
+    summaryPlaceholder: "One line on what this folder collects…",
+    iconLabel: "Icon",
+    autoFill: "Auto-fill with AI",
+    autoFilling: "Naming with AI…",
+    save: "Save folder",
+    saving: "Saving…",
+    create: "Create folder",
+    creating: "Creating…",
+    pickTitle: "Add to folder",
+    pickDescription: "Drop the selected prompts into a folder.",
+    pickCreateNew: "Create new folder",
+    pickExisting: "Add to an existing folder",
+    pickNoFolders: "No folders yet — create your first one.",
   },
   activity: {
     statsRuns: "Runs in history",
@@ -472,6 +586,9 @@ const en: AiKnowledgeUiCopy = {
     emptyFavoritesDescription: "Star prompts you love to keep them one tap away.",
     emptyRecentTitle: "Nothing recent",
     emptyRecentDescription: "Prompts you run will surface here.",
+    emptyFoldersTitle: "No folders yet",
+    emptyFoldersDescription:
+      "Group related prompts into folders — select prompts and let AI name the folder for you.",
     noSearchResultsTitle: "No matching prompts",
     noSearchResultsDescription:
       "Try a different keyword, tag, or category — or clear filters.",
@@ -494,6 +611,23 @@ const en: AiKnowledgeUiCopy = {
     wizardDraftReady: "Draft generated — review and save below.",
     copyBodySuccess: "Prompt copied to clipboard",
     copyBodyFailed: "Couldn't copy the prompt",
+    folderCreated: (name) => `Folder "${name}" created`,
+    folderCreateFailed: "Couldn't create the folder",
+    folderUpdated: "Folder updated",
+    folderUpdateFailed: "Couldn't update the folder",
+    folderDeleted: "Folder deleted",
+    folderDeleteFailed: "Couldn't delete the folder",
+    addedToFolder: (name) => `Added to "${name}"`,
+    addToFolderFailed: "Couldn't add to the folder",
+    removedFromFolder: "Removed from folder",
+    bulkFavorited: (n) =>
+      n === 1 ? "1 prompt favorited" : `${n} prompts favorited`,
+    bulkDeleted: (n) => (n === 1 ? "1 prompt deleted" : `${n} prompts deleted`),
+    bulkDeleteSkippedLibrary: (n) =>
+      n === 1
+        ? "1 library prompt skipped (can't be deleted)"
+        : `${n} library prompts skipped (can't be deleted)`,
+    folderAutofillFailed: "Couldn't name the folder with AI. Fill it in manually.",
   },
 };
 
@@ -513,8 +647,54 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     library: "精選庫",
     myPrompts: "我的提示詞",
     favorites: "最愛",
+    folders: "資料夾",
     recent: "最近使用",
     activity: "執行紀錄",
+  },
+  selection: {
+    select: "選取",
+    done: "完成",
+    cancel: "取消",
+    selectedCount: (n) => `已選 ${n} 個`,
+    addToFolder: "加入資料夾",
+    addToFavorites: "加入最愛",
+    delete: "刪除",
+    createFolderFromSelection: (n) => `用這 ${n} 個提示詞建立資料夾`,
+    emptyHint: "可橫跨任何分頁挑選提示詞，再一次過加入資料夾。",
+  },
+  folders: {
+    quickStripTitle: "資料夾",
+    newFolder: "新增資料夾",
+    itemCount: (n) => `${n} 個提示詞`,
+    open: "開啟",
+    addPrompts: "加入提示詞",
+    removeFromFolder: "移出資料夾",
+    rename: "重新命名",
+    editFolder: "編輯資料夾",
+    deleteFolder: "刪除資料夾",
+    deleteConfirmTitle: "刪除資料夾？",
+    deleteConfirmBody: (name) =>
+      `將會移除「${name}」。你的提示詞不會被刪除，只會移除這個資料夾。`,
+    deleteConfirmAction: "刪除資料夾",
+    detailEmpty: "這個資料夾還是空的，加入提示詞開始收藏吧。",
+    formCreateTitle: "建立資料夾",
+    formEditTitle: "編輯資料夾",
+    nameLabel: "資料夾名稱",
+    namePlaceholder: "例如：寫作工具箱",
+    summaryLabel: "簡介",
+    summaryPlaceholder: "用一句話說明這個資料夾收藏了什麼…",
+    iconLabel: "圖示",
+    autoFill: "用 AI 自動填寫",
+    autoFilling: "AI 命名中…",
+    save: "儲存資料夾",
+    saving: "儲存中…",
+    create: "建立資料夾",
+    creating: "建立中…",
+    pickTitle: "加入資料夾",
+    pickDescription: "把已選的提示詞放進資料夾。",
+    pickCreateNew: "建立新資料夾",
+    pickExisting: "加入現有資料夾",
+    pickNoFolders: "還沒有資料夾 — 建立第一個吧。",
   },
   filters: {
     allCategories: "所有分類",
@@ -619,6 +799,9 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     emptyFavoritesDescription: "將喜愛的提示詞加入最愛，方便隨時使用。",
     emptyRecentTitle: "尚無紀錄",
     emptyRecentDescription: "執行過的提示詞會出現在這裡。",
+    emptyFoldersTitle: "尚未建立資料夾",
+    emptyFoldersDescription:
+      "把相關的提示詞整理成資料夾 — 選取提示詞，讓 AI 幫你命名。",
     noSearchResultsTitle: "找不到提示詞",
     noSearchResultsDescription: "試試其他關鍵字、標籤或分類，或清除篩選條件。",
   },
@@ -640,6 +823,19 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     wizardDraftReady: "草稿已產生，請於下方檢視並儲存。",
     copyBodySuccess: "提示詞已複製到剪貼簿",
     copyBodyFailed: "複製失敗",
+    folderCreated: (name) => `已建立資料夾「${name}」`,
+    folderCreateFailed: "建立資料夾失敗",
+    folderUpdated: "資料夾已更新",
+    folderUpdateFailed: "更新資料夾失敗",
+    folderDeleted: "資料夾已刪除",
+    folderDeleteFailed: "刪除資料夾失敗",
+    addedToFolder: (name) => `已加入「${name}」`,
+    addToFolderFailed: "加入資料夾失敗",
+    removedFromFolder: "已移出資料夾",
+    bulkFavorited: (n) => `已將 ${n} 個提示詞加入最愛`,
+    bulkDeleted: (n) => `已刪除 ${n} 個提示詞`,
+    bulkDeleteSkippedLibrary: (n) => `已略過 ${n} 個系統範本（無法刪除）`,
+    folderAutofillFailed: "AI 命名失敗，請手動填寫。",
   },
 };
 

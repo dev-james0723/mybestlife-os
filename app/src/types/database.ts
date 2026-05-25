@@ -1355,3 +1355,24 @@ export type PromptRunRow = {
   started_at: string;
   completed_at: string | null;
 };
+
+export type PromptFolderRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  summary: string | null;
+  icon: string | null;
+  color: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PromptFolderItemRow = {
+  id: string;
+  folder_id: string;
+  user_id: string;
+  library_prompt_id: string | null;
+  custom_prompt_id: string | null;
+  added_at: string;
+};
