@@ -901,6 +901,70 @@ export type CareerHighlight = {
   year?: number | null;
 };
 
+/** Structured AI diagnosis stored in career_profile.ai_diagnosis. */
+export type CareerAiDiagnosis = {
+  scores: {
+    clarity: number;
+    momentum: number;
+    positioning: number;
+    network: number;
+    skill_fit: number;
+    risk: number;
+  };
+  narrative: string;
+  main_tension?: string;
+  main_risk?: string;
+  strengths?: string[];
+  gaps?: string[];
+  tensions?: {
+    a: string;
+    b: string;
+    explanation: string;
+    severity?: string;
+  }[];
+};
+
+/** One recommended next action stored in career_profile.ai_next_actions. */
+export type CareerNextAction = {
+  title: string;
+  why?: string;
+  effort?: string;
+  horizon?: string;
+};
+
+/** Synthesised work-style profile stored in career_profile.work_style_profile. */
+export type CareerWorkStyleProfile = {
+  energy_pattern?: string;
+  motivation_drivers?: string[];
+  decision_style?: string;
+  feedback_preference?: string;
+  ideal_environment?: string;
+  organizational_triggers?: string[];
+  communication_preference?: string;
+  ai_coaching_style?: string;
+};
+
+/** Loose personal-brand asset inventory stored in personal_brand_assets. */
+export type PersonalBrandAssets = {
+  has?: string[];
+  missing?: string[];
+  priorities?: string[];
+};
+
+export type CareerSetupStatus =
+  | "not_started"
+  | "in_progress"
+  | "completed"
+  | "skipped";
+
+export type CareerBannerStatus =
+  | "none"
+  | "pending"
+  | "generating"
+  | "completed"
+  | "failed"
+  | "fallback";
+
 export type CareerProfile = {
   user_id: string;
   current_role: string | null;
@@ -929,6 +993,90 @@ export type CareerProfile = {
   transition_goal: string | null;
   transition_progress: number | null;
 
+  // AI Career Mirror (WS1) extensions — all nullable/defaulted.
+  setup_status: CareerSetupStatus;
+  setup_completed_at: string | null;
+  setup_answers: Record<string, unknown>;
+  completion_score: number | null;
+  missing_fields: string[];
+  ai_summary: string | null;
+  ai_diagnosis: CareerAiDiagnosis | null;
+  ai_next_actions: CareerNextAction[];
+  ai_reframed_problem: string | null;
+  career_identity: string | null;
+  career_stage: string | null;
+  current_status_summary: string | null;
+  motivation_drivers: string[];
+  ambition_style: string | null;
+  desired_reputation: string | null;
+  visibility_goal: string | null;
+  personal_brand_strategy: string | null;
+  content_strategy_direction: string | null;
+  self_reported_personality_type: string | null;
+  work_energy_pattern: string | null;
+  work_style_profile: CareerWorkStyleProfile | null;
+  decision_style: string | null;
+  feedback_preference: string | null;
+  preferred_mentor_style: string | null;
+  ideal_work_environment: string | null;
+  culture_fit: string | null;
+  organizational_triggers: string[];
+  transition_type: string | null;
+  transition_timeline: string | null;
+  blocker_category: string | null;
+  risk_factors: string[];
+  career_banner_url: string | null;
+  career_banner_prompt: string | null;
+  career_banner_style: string | null;
+  career_banner_status: CareerBannerStatus;
+  career_banner_generated_at: string | null;
+  portfolio_links: string[];
+  personal_brand_assets: PersonalBrandAssets;
+
+  created_at: string;
+  updated_at: string;
+};
+
+/** Structured AI review for one week (career_weekly_reviews.review). */
+export type CareerWeeklyReview = {
+  id: string;
+  user_id: string;
+  week_start: string;
+  review: Record<string, unknown>;
+  model_used: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Saved "what-if" career simulation. */
+export type CareerScenario = {
+  id: string;
+  user_id: string;
+  title: string;
+  inputs: Record<string, unknown>;
+  result: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Append-only career mirror observation. */
+export type CareerMemoryEntry = {
+  id: string;
+  user_id: string;
+  kind: string;
+  content: Record<string, unknown>;
+  source: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Generated bundle of prompts for the user. */
+export type CareerPromptPack = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  prompts: unknown[];
+  generated_for: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };
