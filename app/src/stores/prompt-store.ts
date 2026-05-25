@@ -21,10 +21,17 @@ import {
   type NewUserPromptInput,
   type UpdateUserPromptInput,
 } from "@/lib/repositories/ai-knowledge-prompts";
+import {
+  aiKnowledgeFoldersRepository,
+  type NewFolderInput,
+  type UpdateFolderInput,
+} from "@/lib/repositories/ai-knowledge-folders";
 import type {
   CustomPrompt,
   LibraryPrompt,
   PromptCategory,
+  PromptFolder,
+  PromptFolderItemRef,
   PromptRun,
   PromptTopCategory,
 } from "@/types/prompt";
@@ -37,10 +44,18 @@ export type PromptSurfaceTab =
   | "library"
   | "my_prompts"
   | "favorites"
+  | "folders"
   | "recent"
   | "activity";
 
 export type PromptLayout = "grid" | "list";
+
+/**
+ * Why the user is in multi-select mode. `manage` shows the full bulk toolbar
+ * (add to folder / favorite / delete). `new_folder` means the next confirm
+ * action creates a brand-new folder from the selection (AI-named).
+ */
+export type SelectionIntent = "manage" | "new_folder";
 
 // ---------------------------------------------------------------------------
 // Store contract
@@ -53,6 +68,7 @@ interface PromptStoreState {
   categories: PromptCategory[];
   favoriteIds: string[];
   recentRuns: PromptRun[];
+  folders: PromptFolder[];
 
   // ---- loading flags ----
   libraryLoaded: boolean;
@@ -60,6 +76,7 @@ interface PromptStoreState {
   categoriesLoaded: boolean;
   favoritesLoaded: boolean;
   runsLoaded: boolean;
+  foldersLoaded: boolean;
   isLoading: boolean;
   lastError: string | null;
 
@@ -73,6 +90,12 @@ interface PromptStoreState {
   layout: PromptLayout;
   isPaletteOpen: boolean;
 
+  // ---- multi-select (spans tabs so users can collect across Library / My
+  //      prompts / Favorites before acting) ----
+  selectionMode: boolean;
+  selectionIntent: SelectionIntent;
+  selectedPromptIds: string[];
+
   // ---- setters ----
   setActiveTab: (tab: PromptSurfaceTab) => void;
   setSearchQuery: (q: string) => void;
@@ -85,6 +108,12 @@ interface PromptStoreState {
   closePalette: () => void;
   resetFilters: () => void;
 
+  // ---- selection setters ----
+  setSelectionMode: (on: boolean, intent?: SelectionIntent) => void;
+  toggleSelected: (id: string) => void;
+  setSelectedIds: (ids: string[]) => void;
+  clearSelection: () => void;
+
   // ---- data actions ----
   hydrate: (data: {
     library: LibraryPrompt[];
@@ -92,13 +121,31 @@ interface PromptStoreState {
     categories: PromptCategory[];
     favoriteIds: string[];
     recentRuns: PromptRun[];
+    folders?: PromptFolder[];
   }) => void;
   fetchLibrary: () => Promise<void>;
   fetchUserPrompts: () => Promise<void>;
   fetchCategories: () => Promise<void>;
   fetchFavorites: () => Promise<void>;
   fetchRecentRuns: (limit?: number) => Promise<void>;
+  fetchFolders: () => Promise<void>;
   fetchAll: () => Promise<void>;
+
+  // ---- folder mutations ----
+  createFolder: (
+    input: NewFolderInput,
+    items?: PromptFolderItemRef[],
+  ) => Promise<PromptFolder>;
+  updateFolder: (id: string, input: UpdateFolderInput) => Promise<void>;
+  deleteFolder: (id: string) => Promise<void>;
+  addPromptsToFolder: (
+    folderId: string,
+    refs: PromptFolderItemRef[],
+  ) => Promise<void>;
+  removePromptFromFolder: (
+    folderId: string,
+    ref: PromptFolderItemRef,
+  ) => Promise<void>;
 
   toggleFavorite: (libraryPromptId: string) => Promise<void>;
   forkLibraryPrompt: (libraryPromptId: string) => Promise<CustomPrompt>;
@@ -137,12 +184,14 @@ export const usePromptStore = create<PromptStoreState>()(
       categories: [],
       favoriteIds: [],
       recentRuns: [],
+      folders: [],
 
       libraryLoaded: false,
       userPromptsLoaded: false,
       categoriesLoaded: false,
       favoritesLoaded: false,
       runsLoaded: false,
+      foldersLoaded: false,
       isLoading: false,
       lastError: null,
 
@@ -154,6 +203,10 @@ export const usePromptStore = create<PromptStoreState>()(
       selectedPromptId: null,
       layout: "grid",
       isPaletteOpen: false,
+
+      selectionMode: false,
+      selectionIntent: "manage",
+      selectedPromptIds: [],
 
       // ---- setters ----
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -174,6 +227,23 @@ export const usePromptStore = create<PromptStoreState>()(
           activeTag: null,
         }),
 
+      // ---- selection ----
+      setSelectionMode: (on, intent) =>
+        set((state) => ({
+          selectionMode: on,
+          selectionIntent: intent ?? (on ? state.selectionIntent : "manage"),
+          // Leaving select mode clears the working set.
+          selectedPromptIds: on ? state.selectedPromptIds : [],
+        })),
+      toggleSelected: (id) =>
+        set((state) => ({
+          selectedPromptIds: state.selectedPromptIds.includes(id)
+            ? state.selectedPromptIds.filter((x) => x !== id)
+            : [...state.selectedPromptIds, id],
+        })),
+      setSelectedIds: (ids) => set({ selectedPromptIds: ids }),
+      clearSelection: () => set({ selectedPromptIds: [] }),
+
       // ---- hydration (SSR entrypoint) ----
       hydrate: (data) =>
         set({
@@ -182,11 +252,13 @@ export const usePromptStore = create<PromptStoreState>()(
           categories: data.categories,
           favoriteIds: data.favoriteIds,
           recentRuns: data.recentRuns,
+          folders: data.folders ?? [],
           libraryLoaded: true,
           userPromptsLoaded: true,
           categoriesLoaded: true,
           favoritesLoaded: true,
           runsLoaded: true,
+          foldersLoaded: data.folders !== undefined,
         }),
 
       // ---- fetchers ----
@@ -242,32 +314,153 @@ export const usePromptStore = create<PromptStoreState>()(
         }
       },
 
+      fetchFolders: async () => {
+        try {
+          const folders = await aiKnowledgeFoldersRepository.listFolders();
+          set({ folders, foldersLoaded: true });
+        } catch (err) {
+          set({ lastError: errorMessage(err) });
+          throw err;
+        }
+      },
+
       fetchAll: async () => {
         set({ isLoading: true, lastError: null });
         try {
-          const [library, userPrompts, categories, favoriteIds, recentRuns] =
-            await Promise.all([
-              aiKnowledgeRepository.listLibrary(),
-              aiKnowledgeRepository.listUserPrompts(),
-              aiKnowledgeRepository.listCategories(),
-              aiKnowledgeRepository.listFavoriteIds(),
-              aiKnowledgeRepository.listRecentRuns(50),
-            ]);
+          const [
+            library,
+            userPrompts,
+            categories,
+            favoriteIds,
+            recentRuns,
+            folders,
+          ] = await Promise.all([
+            aiKnowledgeRepository.listLibrary(),
+            aiKnowledgeRepository.listUserPrompts(),
+            aiKnowledgeRepository.listCategories(),
+            aiKnowledgeRepository.listFavoriteIds(),
+            aiKnowledgeRepository.listRecentRuns(50),
+            aiKnowledgeFoldersRepository.listFolders(),
+          ]);
           set({
             library,
             userPrompts,
             categories,
             favoriteIds,
             recentRuns,
+            folders,
             libraryLoaded: true,
             userPromptsLoaded: true,
             categoriesLoaded: true,
             favoritesLoaded: true,
             runsLoaded: true,
+            foldersLoaded: true,
             isLoading: false,
           });
         } catch (err) {
           set({ lastError: errorMessage(err), isLoading: false });
+          throw err;
+        }
+      },
+
+      // ---- folder mutations ----
+      createFolder: async (input, items = []) => {
+        try {
+          const folder = await aiKnowledgeFoldersRepository.createFolder(input);
+          if (items.length > 0) {
+            await aiKnowledgeFoldersRepository.addItems(folder.id, items);
+          }
+          const created: PromptFolder = { ...folder, items };
+          set((state) => ({ folders: [created, ...state.folders] }));
+          return created;
+        } catch (err) {
+          set({ lastError: errorMessage(err) });
+          throw err;
+        }
+      },
+
+      updateFolder: async (id, input) => {
+        const snapshot = get().folders;
+        // Optimistic patch of the metadata fields.
+        set({
+          folders: snapshot.map((f) =>
+            f.id === id
+              ? {
+                  ...f,
+                  name: input.name ?? f.name,
+                  summary: input.summary !== undefined ? input.summary : f.summary,
+                  icon: input.icon !== undefined ? input.icon : f.icon,
+                  color: input.color !== undefined ? input.color : f.color,
+                  sort_order: input.sort_order ?? f.sort_order,
+                }
+              : f,
+          ),
+        });
+        try {
+          await aiKnowledgeFoldersRepository.updateFolder(id, input);
+        } catch (err) {
+          set({ folders: snapshot, lastError: errorMessage(err) });
+          throw err;
+        }
+      },
+
+      deleteFolder: async (id) => {
+        const snapshot = get().folders;
+        set({ folders: snapshot.filter((f) => f.id !== id) });
+        try {
+          await aiKnowledgeFoldersRepository.deleteFolder(id);
+        } catch (err) {
+          set({ folders: snapshot, lastError: errorMessage(err) });
+          throw err;
+        }
+      },
+
+      addPromptsToFolder: async (folderId, refs) => {
+        const snapshot = get().folders;
+        set({
+          folders: snapshot.map((f) => {
+            if (f.id !== folderId) return f;
+            const existing = new Set(
+              f.items.map((i) => `${i.source}:${i.prompt_id}`),
+            );
+            const merged = [...f.items];
+            for (const ref of refs) {
+              const key = `${ref.source}:${ref.prompt_id}`;
+              if (!existing.has(key)) {
+                existing.add(key);
+                merged.push(ref);
+              }
+            }
+            return { ...f, items: merged };
+          }),
+        });
+        try {
+          await aiKnowledgeFoldersRepository.addItems(folderId, refs);
+        } catch (err) {
+          set({ folders: snapshot, lastError: errorMessage(err) });
+          throw err;
+        }
+      },
+
+      removePromptFromFolder: async (folderId, ref) => {
+        const snapshot = get().folders;
+        set({
+          folders: snapshot.map((f) =>
+            f.id === folderId
+              ? {
+                  ...f,
+                  items: f.items.filter(
+                    (i) =>
+                      !(i.source === ref.source && i.prompt_id === ref.prompt_id),
+                  ),
+                }
+              : f,
+          ),
+        });
+        try {
+          await aiKnowledgeFoldersRepository.removeItem(folderId, ref);
+        } catch (err) {
+          set({ folders: snapshot, lastError: errorMessage(err) });
           throw err;
         }
       },
@@ -340,11 +533,25 @@ export const usePromptStore = create<PromptStoreState>()(
 
       deleteUserPrompt: async (id) => {
         const snapshot = get().userPrompts;
-        set({ userPrompts: snapshot.filter((p) => p.id !== id) });
+        const foldersSnapshot = get().folders;
+        set({
+          userPrompts: snapshot.filter((p) => p.id !== id),
+          // DB cascades the folder_item rows; mirror that locally.
+          folders: foldersSnapshot.map((f) => ({
+            ...f,
+            items: f.items.filter(
+              (i) => !(i.source === "custom" && i.prompt_id === id),
+            ),
+          })),
+        });
         try {
           await aiKnowledgeRepository.deleteUserPrompt(id);
         } catch (err) {
-          set({ userPrompts: snapshot, lastError: errorMessage(err) });
+          set({
+            userPrompts: snapshot,
+            folders: foldersSnapshot,
+            lastError: errorMessage(err),
+          });
           throw err;
         }
       },
@@ -475,4 +682,31 @@ export function selectVisiblePrompts(
     }
     return true;
   });
+}
+
+/** Resolve a prompt id to its loaded object (library first, then custom). */
+export function findPromptById(
+  state: Pick<PromptStoreState, "library" | "userPrompts">,
+  id: string,
+): LibraryPrompt | CustomPrompt | undefined {
+  return (
+    state.library.find((p) => p.id === id) ??
+    state.userPrompts.find((p) => p.id === id)
+  );
+}
+
+/** Resolve a folder's item refs to the loaded prompt objects, preserving order. */
+export function resolveFolderPrompts(
+  state: Pick<PromptStoreState, "library" | "userPrompts">,
+  folder: PromptFolder,
+): Array<LibraryPrompt | CustomPrompt> {
+  const out: Array<LibraryPrompt | CustomPrompt> = [];
+  for (const ref of folder.items) {
+    const p =
+      ref.source === "library"
+        ? state.library.find((lp) => lp.id === ref.prompt_id)
+        : state.userPrompts.find((up) => up.id === ref.prompt_id);
+    if (p) out.push(p);
+  }
+  return out;
 }

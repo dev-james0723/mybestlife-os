@@ -9,20 +9,36 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search, Sparkles } from "lucide-react";
+import { ListChecks, Plus, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAppStore } from "@/stores/app-store";
 import {
+  findPromptById,
   selectVisiblePrompts,
   usePromptStore,
   type PromptSurfaceTab,
 } from "@/stores/prompt-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
-import { pickLocalizedText, type CustomPrompt, type LibraryPrompt } from "@/types/prompt";
+import {
+  pickLocalizedText,
+  type CustomPrompt,
+  type LibraryPrompt,
+  type PromptFolder,
+} from "@/types/prompt";
 import { cn } from "@/lib/utils";
 import { AiKnowledgeFilterBar } from "@/components/ai-knowledge/AiKnowledgeFilterBar";
 import { TopCategoryRail } from "@/components/ai-knowledge/TopCategoryRail";
@@ -39,6 +55,11 @@ import {
   CreatePromptModal,
   type CreatePromptModalStep,
 } from "@/components/ai-knowledge/CreatePromptModal";
+import { FoldersTab } from "@/components/ai-knowledge/FoldersTab";
+import { FolderDetailDrawer } from "@/components/ai-knowledge/FolderDetailDrawer";
+import { FolderQuickStrip } from "@/components/ai-knowledge/FolderQuickStrip";
+import { PromptSelectionToolbar } from "@/components/ai-knowledge/PromptSelectionToolbar";
+import { AddToFolderDialog } from "@/components/ai-knowledge/AddToFolderDialog";
 
 type AnyPrompt = LibraryPrompt | CustomPrompt;
 
@@ -117,12 +138,34 @@ export default function AiKnowledgePage() {
   const toggleFavorite = usePromptStore((s) => s.toggleFavorite);
   const forkLibraryPrompt = usePromptStore((s) => s.forkLibraryPrompt);
   const deleteUserPrompt = usePromptStore((s) => s.deleteUserPrompt);
+  const updateUserPrompt = usePromptStore((s) => s.updateUserPrompt);
   const fetchRecentRuns = usePromptStore((s) => s.fetchRecentRuns);
+
+  // --- folders + selection ---
+  const folders = usePromptStore((s) => s.folders);
+  const foldersLoaded = usePromptStore((s) => s.foldersLoaded);
+  const deleteFolder = usePromptStore((s) => s.deleteFolder);
+
+  const selectionMode = usePromptStore((s) => s.selectionMode);
+  const selectionIntent = usePromptStore((s) => s.selectionIntent);
+  const selectedPromptIds = usePromptStore((s) => s.selectedPromptIds);
+  const setSelectionMode = usePromptStore((s) => s.setSelectionMode);
+  const toggleSelected = usePromptStore((s) => s.toggleSelected);
 
   const visible = usePromptStore(useShallow(selectVisiblePrompts));
 
   const [editPrompt, setEditPrompt] = useState<CustomPrompt | null>(null);
   const [runsRefreshing, setRunsRefreshing] = useState(false);
+
+  const [openFolder, setOpenFolder] = useState<PromptFolder | null>(null);
+  const [addToFolderOpen, setAddToFolderOpen] = useState(false);
+  const [folderPendingDelete, setFolderPendingDelete] =
+    useState<PromptFolder | null>(null);
+
+  const selectedSet = useMemo(
+    () => new Set(selectedPromptIds),
+    [selectedPromptIds],
+  );
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitial, setCreateModalInitial] =
@@ -167,6 +210,7 @@ export default function AiKnowledgePage() {
         { id: "library" as const, label: ui.tabs.library },
         { id: "my_prompts" as const, label: ui.tabs.myPrompts },
         { id: "favorites" as const, label: ui.tabs.favorites },
+        { id: "folders" as const, label: ui.tabs.folders },
         { id: "recent" as const, label: ui.tabs.recent },
         { id: "activity" as const, label: ui.tabs.activity },
       ] satisfies Array<{ id: PromptSurfaceTab; label: string }>,
@@ -210,6 +254,7 @@ export default function AiKnowledgePage() {
         }
         return ordered;
       }
+      case "folders":
       case "activity":
         return [];
     }
@@ -321,6 +366,113 @@ export default function AiKnowledgePage() {
     }
   }, [fetchRecentRuns, ui.toast.runFailed]);
 
+  // --- selection + folders ---
+  const selectedPrompts = useMemo<AnyPrompt[]>(
+    () =>
+      selectedPromptIds
+        .map((id) => findPromptById({ library, userPrompts }, id))
+        .filter((p): p is AnyPrompt => Boolean(p)),
+    [selectedPromptIds, library, userPrompts],
+  );
+  const selectedCustomCount = useMemo(
+    () => selectedPrompts.filter((p) => p.source === "custom").length,
+    [selectedPrompts],
+  );
+
+  const isPromptTab =
+    activeTab === "library" ||
+    activeTab === "my_prompts" ||
+    activeTab === "favorites" ||
+    activeTab === "recent";
+
+  const handleToggleSelect = useCallback(
+    (prompt: AnyPrompt) => toggleSelected(prompt.id),
+    [toggleSelected],
+  );
+
+  const handleStartNewFolder = useCallback(() => {
+    if (!isPromptTab) setActiveTab("library");
+    setSelectionMode(true, "new_folder");
+  }, [isPromptTab, setActiveTab, setSelectionMode]);
+
+  const handleOpenFolder = useCallback((folder: PromptFolder) => {
+    setOpenFolder(folder);
+  }, []);
+
+  const handleAddPromptsToFolder = useCallback(() => {
+    setOpenFolder(null);
+    if (!isPromptTab) setActiveTab("library");
+    setSelectionMode(true, "manage");
+  }, [isPromptTab, setActiveTab, setSelectionMode]);
+
+  const handleBulkFavorite = useCallback(async () => {
+    if (selectedPrompts.length === 0) return;
+    try {
+      await Promise.all(
+        selectedPrompts.map((p) => {
+          if (p.source === "library") {
+            return favoriteIds.includes(p.id)
+              ? Promise.resolve()
+              : toggleFavorite(p.id);
+          }
+          return p.is_favorite
+            ? Promise.resolve()
+            : updateUserPrompt(p.id, { is_favorite: true }).then(() => undefined);
+        }),
+      );
+      toast.success(ui.toast.bulkFavorited(selectedPrompts.length));
+      setSelectionMode(false);
+    } catch {
+      toast.error(ui.toast.favoriteFailed);
+    }
+  }, [
+    selectedPrompts,
+    favoriteIds,
+    toggleFavorite,
+    updateUserPrompt,
+    ui.toast,
+    setSelectionMode,
+  ]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const customs = selectedPrompts.filter(
+      (p): p is CustomPrompt => p.source === "custom",
+    );
+    const skipped = selectedPrompts.length - customs.length;
+    if (customs.length === 0) {
+      if (skipped > 0) toast.message(ui.toast.bulkDeleteSkippedLibrary(skipped));
+      return;
+    }
+    try {
+      await Promise.all(customs.map((p) => deleteUserPrompt(p.id)));
+      toast.success(ui.toast.bulkDeleted(customs.length));
+      if (skipped > 0) toast.message(ui.toast.bulkDeleteSkippedLibrary(skipped));
+      setSelectionMode(false);
+    } catch {
+      toast.error(ui.toast.deleteFailed);
+    }
+  }, [selectedPrompts, deleteUserPrompt, ui.toast, setSelectionMode]);
+
+  const handleConfirmDeleteFolder = useCallback(async () => {
+    if (!folderPendingDelete) return;
+    const target = folderPendingDelete;
+    setFolderPendingDelete(null);
+    try {
+      await deleteFolder(target.id);
+      toast.success(ui.toast.folderDeleted);
+      if (openFolder?.id === target.id) setOpenFolder(null);
+    } catch {
+      toast.error(ui.toast.folderDeleteFailed);
+    }
+  }, [folderPendingDelete, deleteFolder, ui.toast, openFolder]);
+
+  // Keep the open folder drawer in sync with store updates (rename, add/remove).
+  const openFolderLive = useMemo(
+    () =>
+      openFolder ? folders.find((f) => f.id === openFolder.id) ?? null : null,
+    [openFolder, folders],
+  );
+
   return (
     <>
       <Suspense fallback={null}>
@@ -341,6 +493,17 @@ export default function AiKnowledgePage() {
             <Search className="h-4 w-4" />
             {ui.header.commandPaletteShortcut}
           </Button>
+          {isPromptTab && !selectionMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setSelectionMode(true, "manage")}
+            >
+              <ListChecks className="h-4 w-4" />
+              {ui.selection.select}
+            </Button>
+          )}
           <Button
             size="sm"
             className="gap-2"
@@ -372,7 +535,7 @@ export default function AiKnowledgePage() {
           ))}
         </div>
 
-        {activeTab !== "activity" && (
+        {isPromptTab && (
           <>
             <TopCategoryRail
               prompts={poolForRail}
@@ -396,6 +559,14 @@ export default function AiKnowledgePage() {
               onClear={resetFilters}
               onOpenPalette={openPalette}
             />
+
+            {!selectionMode && (
+              <FolderQuickStrip
+                folders={folders}
+                onOpenFolder={handleOpenFolder}
+                onSeeAll={() => setActiveTab("folders")}
+              />
+            )}
           </>
         )}
 
@@ -416,6 +587,14 @@ export default function AiKnowledgePage() {
               onOpenPrompt={(id) => setSelectedPromptId(id)}
             />
           </div>
+        ) : activeTab === "folders" ? (
+          <FoldersTab
+            folders={folders}
+            isLoading={isLoading && !foldersLoaded}
+            onOpenFolder={handleOpenFolder}
+            onNewFolder={handleStartNewFolder}
+            onDeleteFolder={setFolderPendingDelete}
+          />
         ) : (
           <PromptGrid
             prompts={visible}
@@ -426,6 +605,9 @@ export default function AiKnowledgePage() {
             errorMessage={lastError}
             activeTab={activeTab}
             showClearFiltersWhenEmpty={poolForRail.length > 0}
+            selectable={selectionMode}
+            selectedSet={selectedSet}
+            onToggleSelect={handleToggleSelect}
             onOpen={handleOpen}
             onRun={handleRun}
             onToggleFavorite={handleToggleFavorite}
@@ -483,6 +665,67 @@ export default function AiKnowledgePage() {
         initialStep={createModalInitial}
         onCreated={handleCreatedPrompt}
       />
+
+      {selectionMode && (
+        <PromptSelectionToolbar
+          count={selectedPromptIds.length}
+          deletableCount={selectedCustomCount}
+          intent={selectionIntent}
+          onAddToFolder={() => setAddToFolderOpen(true)}
+          onAddFavorites={handleBulkFavorite}
+          onDelete={handleBulkDelete}
+          onCancel={() => setSelectionMode(false)}
+        />
+      )}
+
+      <AddToFolderDialog
+        open={addToFolderOpen}
+        onOpenChange={setAddToFolderOpen}
+        prompts={selectedPrompts}
+        startInCreate={selectionIntent === "new_folder"}
+        onDone={() => setSelectionMode(false)}
+      />
+
+      <FolderDetailDrawer
+        key={openFolder?.id ?? "none"}
+        folder={openFolderLive}
+        open={openFolder !== null}
+        onClose={() => setOpenFolder(null)}
+        onOpenPrompt={(p) => {
+          setOpenFolder(null);
+          setSelectedPromptId(p.id);
+        }}
+        onRunPrompt={handleRun}
+        onAddPrompts={handleAddPromptsToFolder}
+        onDeleteFolder={setFolderPendingDelete}
+      />
+
+      <AlertDialog
+        open={folderPendingDelete !== null}
+        onOpenChange={(o) => {
+          if (!o) setFolderPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{ui.folders.deleteConfirmTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {folderPendingDelete
+                ? ui.folders.deleteConfirmBody(folderPendingDelete.name)
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{ui.selection.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleConfirmDeleteFolder}
+            >
+              {ui.folders.deleteConfirmAction}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -491,7 +734,7 @@ export default function AiKnowledgePage() {
 // Internal: prompt grid/list with loading + empty + error states
 // ---------------------------------------------------------------------------
 
-type PromptGridTab = Exclude<PromptSurfaceTab, "activity">;
+type PromptGridTab = Exclude<PromptSurfaceTab, "activity" | "folders">;
 
 interface PromptGridProps {
   prompts: AnyPrompt[];
@@ -503,6 +746,9 @@ interface PromptGridProps {
   activeTab: PromptGridTab;
   /** When the grid is empty because search/category filters hide rows, offer reset. */
   showClearFiltersWhenEmpty: boolean;
+  selectable: boolean;
+  selectedSet: Set<string>;
+  onToggleSelect: (prompt: AnyPrompt) => void;
   onOpen: (prompt: AnyPrompt) => void;
   onRun: (prompt: AnyPrompt) => void;
   onToggleFavorite: (prompt: AnyPrompt) => void;
@@ -521,6 +767,9 @@ function PromptGrid({
   errorMessage,
   activeTab,
   showClearFiltersWhenEmpty,
+  selectable,
+  selectedSet,
+  onToggleSelect,
   onOpen,
   onRun,
   onToggleFavorite,
@@ -586,6 +835,9 @@ function PromptGrid({
               key={p.id}
               prompt={p}
               isFavorite={isFav}
+              selectable={selectable}
+              selected={selectedSet.has(p.id)}
+              onToggleSelect={onToggleSelect}
               onOpen={onOpen}
               onRun={onRun}
               onToggleFavorite={onToggleFavorite}
@@ -609,6 +861,9 @@ function PromptGrid({
             key={p.id}
             prompt={p}
             isFavorite={isFav}
+            selectable={selectable}
+            selected={selectedSet.has(p.id)}
+            onToggleSelect={onToggleSelect}
             onOpen={onOpen}
             onRun={onRun}
             onToggleFavorite={onToggleFavorite}

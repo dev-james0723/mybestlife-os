@@ -218,6 +218,39 @@ export type PromptFavorite =
     };
 
 // ---------------------------------------------------------------------------
+// Folders (user-owned collections that group prompts across both sources)
+// ---------------------------------------------------------------------------
+
+/**
+ * A reference to a prompt held inside a folder. Folders are polymorphic: an
+ * item points at either a curated library prompt or the user's custom prompt
+ * (never both). `prompt_id` is the row id in the corresponding table.
+ */
+export type PromptFolderItemRef = {
+  source: PromptSource;
+  prompt_id: string;
+};
+
+/**
+ * A user-owned folder. Library prompts are referenced (not copied), so editing
+ * the library never mutates a folder and vice versa. `icon` is a single emoji
+ * representing the folder's theme; `summary` is the one-sentence "what this
+ * folder collects" blurb (AI-generated, user-editable).
+ */
+export type PromptFolder = {
+  id: string;
+  user_id: string;
+  name: string;
+  summary: string | null;
+  icon: string | null;
+  color: string | null;
+  sort_order: number;
+  items: PromptFolderItemRef[];
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
 // Wizard state (Phase 4 uses this; defined now so types compile end-to-end)
 // ---------------------------------------------------------------------------
 

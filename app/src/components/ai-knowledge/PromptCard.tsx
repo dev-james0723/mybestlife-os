@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
@@ -28,6 +29,10 @@ interface PromptCardProps {
   onFork?: (prompt: LibraryPrompt) => void;
   onEdit?: (prompt: CustomPrompt) => void;
   onDelete?: (prompt: CustomPrompt) => void;
+  /** When true, the card is in multi-select mode: clicking toggles selection. */
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (prompt: AnyPrompt) => void;
 }
 
 const MAX_TAG_CHIPS = 3;
@@ -41,6 +46,9 @@ function PromptCardImpl({
   onFork,
   onEdit,
   onDelete,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }: PromptCardProps) {
   const language = useAppStore((s) => s.language);
   const ui = getAiKnowledgeUiCopy(language);
@@ -62,14 +70,32 @@ function PromptCardImpl({
       ? ui.promptCard.usedCount(prompt.usage_count)
       : null;
 
+  const handleCardClick = () => {
+    if (selectable) onToggleSelect?.(prompt);
+    else onOpen(prompt);
+  };
+
   return (
     <article
-      onClick={() => onOpen(prompt)}
+      onClick={handleCardClick}
+      data-selected={selectable && selected ? "" : undefined}
       className={cn(
         "group/card relative flex flex-col rounded-xl bg-card p-5 text-sm ring-1 ring-foreground/10",
         "transition-all cursor-pointer hover:ring-foreground/20 hover:shadow-sm",
+        selectable && selected && "ring-2 ring-primary bg-primary/[0.04]",
       )}
     >
+      {selectable && (
+        <div className="absolute right-2.5 top-2.5 z-10">
+          <Checkbox
+            checked={selected}
+            aria-label={title}
+            onClick={(e) => e.stopPropagation()}
+            onCheckedChange={() => onToggleSelect?.(prompt)}
+          />
+        </div>
+      )}
+
       {/* Source + featured badge */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -93,26 +119,28 @@ function PromptCardImpl({
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(prompt);
-          }}
-          aria-label={
-            isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite
-          }
-          aria-pressed={isFavorite}
-          className={cn(
-            "shrink-0 rounded-md p-1 transition-colors",
-            "hover:bg-muted",
-            isFavorite ? "text-amber-500" : "text-muted-foreground",
-          )}
-        >
-          <Star
-            className={cn("h-4 w-4", isFavorite && "fill-current")}
-          />
-        </button>
+        {!selectable && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(prompt);
+            }}
+            aria-label={
+              isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite
+            }
+            aria-pressed={isFavorite}
+            className={cn(
+              "shrink-0 rounded-md p-1 transition-colors",
+              "hover:bg-muted",
+              isFavorite ? "text-amber-500" : "text-muted-foreground",
+            )}
+          >
+            <Star
+              className={cn("h-4 w-4", isFavorite && "fill-current")}
+            />
+          </button>
+        )}
       </div>
 
       <h3 className="font-medium leading-snug line-clamp-2 mb-1">{title}</h3>
@@ -152,7 +180,10 @@ function PromptCardImpl({
       </div>
 
       <div
-        className="mt-4 flex items-center justify-end gap-1 opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity"
+        className={cn(
+          "mt-4 flex items-center justify-end gap-1 opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity",
+          selectable && "hidden",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         {prompt.source === "library" && onFork && (
@@ -215,6 +246,9 @@ function PromptListRowImpl({
   onRun,
   onToggleFavorite,
   onFork,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }: PromptListRowProps) {
   const language = useAppStore((s) => s.language);
   const ui = getAiKnowledgeUiCopy(language);
@@ -222,28 +256,44 @@ function PromptListRowImpl({
   const description = pickLocalizedText(prompt.description_i18n, language);
   const categoryLabel = ui.topCategoryLabels[prompt.top_category];
 
+  const handleRowClick = () => {
+    if (selectable) onToggleSelect?.(prompt);
+    else onOpen(prompt);
+  };
+
   return (
     <li
-      onClick={() => onOpen(prompt)}
+      onClick={handleRowClick}
+      data-selected={selectable && selected ? "" : undefined}
       className={cn(
         "group/row flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10",
         "transition-all cursor-pointer hover:ring-foreground/20",
+        selectable && selected && "ring-2 ring-primary bg-primary/[0.04]",
       )}
     >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite(prompt);
-        }}
-        aria-label={isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite}
-        className={cn(
-          "shrink-0 rounded-md p-1 transition-colors hover:bg-muted",
-          isFavorite ? "text-amber-500" : "text-muted-foreground",
-        )}
-      >
-        <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
-      </button>
+      {selectable ? (
+        <Checkbox
+          checked={selected}
+          aria-label={title}
+          onClick={(e) => e.stopPropagation()}
+          onCheckedChange={() => onToggleSelect?.(prompt)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(prompt);
+          }}
+          aria-label={isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite}
+          className={cn(
+            "shrink-0 rounded-md p-1 transition-colors hover:bg-muted",
+            isFavorite ? "text-amber-500" : "text-muted-foreground",
+          )}
+        >
+          <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+        </button>
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -268,7 +318,10 @@ function PromptListRowImpl({
       </div>
 
       <div
-        className="flex items-center gap-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity"
+        className={cn(
+          "flex items-center gap-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity",
+          selectable && "hidden",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         {prompt.source === "library" && onFork && (
