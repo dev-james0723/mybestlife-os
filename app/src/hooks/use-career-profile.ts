@@ -18,13 +18,15 @@ export function useCareerProfile() {
   });
 }
 
-export function useUpsertCareerProfile() {
+export function useUpsertCareerProfile(options?: { silent?: boolean }) {
   const qc = useQueryClient();
+  const silent = options?.silent ?? false;
   return useMutation({
     mutationFn: (input: CareerProfileUpsertInput) =>
       careerProfileRepository.upsert(input),
     onSuccess: (saved) => {
       qc.setQueryData(KEY, saved);
+      if (silent) return;
       const copy = getAICoachCopy(useAppStore.getState().language);
       toast.success(copy.toast.profileSaved);
     },

@@ -130,7 +130,9 @@ export function useCareerMirror(): UseCareerMirror {
   // --- Debounced autosave ---------------------------------------------------
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const upsertRef = React.useRef(upsert);
-  upsertRef.current = upsert;
+  React.useEffect(() => {
+    upsertRef.current = upsert;
+  });
 
   React.useEffect(
     () => () => {
