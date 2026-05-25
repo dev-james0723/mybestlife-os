@@ -319,47 +319,53 @@ export const usePromptStore = create<PromptStoreState>()(
           const folders = await aiKnowledgeFoldersRepository.listFolders();
           set({ folders, foldersLoaded: true });
         } catch (err) {
-          set({ lastError: errorMessage(err) });
-          throw err;
+          // Best-effort: a missing folders migration must never surface as a
+          // page-level error. Folders just stay empty until the table exists.
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[ai-knowledge] folders fetch failed:", err);
+          }
+          set({ folders: [], foldersLoaded: false });
         }
       },
 
       fetchAll: async () => {
         set({ isLoading: true, lastError: null });
         try {
-          const [
-            library,
-            userPrompts,
-            categories,
-            favoriteIds,
-            recentRuns,
-            folders,
-          ] = await Promise.all([
-            aiKnowledgeRepository.listLibrary(),
-            aiKnowledgeRepository.listUserPrompts(),
-            aiKnowledgeRepository.listCategories(),
-            aiKnowledgeRepository.listFavoriteIds(),
-            aiKnowledgeRepository.listRecentRuns(50),
-            aiKnowledgeFoldersRepository.listFolders(),
-          ]);
+          const [library, userPrompts, categories, favoriteIds, recentRuns] =
+            await Promise.all([
+              aiKnowledgeRepository.listLibrary(),
+              aiKnowledgeRepository.listUserPrompts(),
+              aiKnowledgeRepository.listCategories(),
+              aiKnowledgeRepository.listFavoriteIds(),
+              aiKnowledgeRepository.listRecentRuns(50),
+            ]);
           set({
             library,
             userPrompts,
             categories,
             favoriteIds,
             recentRuns,
-            folders,
             libraryLoaded: true,
             userPromptsLoaded: true,
             categoriesLoaded: true,
             favoritesLoaded: true,
             runsLoaded: true,
-            foldersLoaded: true,
             isLoading: false,
           });
         } catch (err) {
           set({ lastError: errorMessage(err), isLoading: false });
           throw err;
+        }
+        // Folders load separately and best-effort: the prompt arsenal must
+        // still render even if the folders migration hasn't been applied yet.
+        try {
+          const folders = await aiKnowledgeFoldersRepository.listFolders();
+          set({ folders, foldersLoaded: true });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[ai-knowledge] folders fetch failed:", err);
+          }
+          set({ folders: [], foldersLoaded: false });
         }
       },
 
@@ -374,7 +380,8 @@ export const usePromptStore = create<PromptStoreState>()(
           set((state) => ({ folders: [created, ...state.folders] }));
           return created;
         } catch (err) {
-          set({ lastError: errorMessage(err) });
+          // Surfaced via the caller's toast; do NOT set page-level lastError,
+          // which would blank the prompt grid.
           throw err;
         }
       },
@@ -399,7 +406,7 @@ export const usePromptStore = create<PromptStoreState>()(
         try {
           await aiKnowledgeFoldersRepository.updateFolder(id, input);
         } catch (err) {
-          set({ folders: snapshot, lastError: errorMessage(err) });
+          set({ folders: snapshot });
           throw err;
         }
       },
@@ -410,7 +417,7 @@ export const usePromptStore = create<PromptStoreState>()(
         try {
           await aiKnowledgeFoldersRepository.deleteFolder(id);
         } catch (err) {
-          set({ folders: snapshot, lastError: errorMessage(err) });
+          set({ folders: snapshot });
           throw err;
         }
       },
@@ -437,7 +444,7 @@ export const usePromptStore = create<PromptStoreState>()(
         try {
           await aiKnowledgeFoldersRepository.addItems(folderId, refs);
         } catch (err) {
-          set({ folders: snapshot, lastError: errorMessage(err) });
+          set({ folders: snapshot });
           throw err;
         }
       },
@@ -460,7 +467,7 @@ export const usePromptStore = create<PromptStoreState>()(
         try {
           await aiKnowledgeFoldersRepository.removeItem(folderId, ref);
         } catch (err) {
-          set({ folders: snapshot, lastError: errorMessage(err) });
+          set({ folders: snapshot });
           throw err;
         }
       },
