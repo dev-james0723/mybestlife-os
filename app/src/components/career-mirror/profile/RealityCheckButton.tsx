@@ -139,8 +139,7 @@ export function RealityCheckButton({
               {copy.panels.realityCheck}
             </DialogTitle>
             <DialogDescription>
-              Name a target. You'll get a direct, evidence-based read on where you
-              actually stand — no sugar-coating, no piling on.
+              {"Name a target. You'll get a direct, evidence-based read on where you actually stand — no sugar-coating, no piling on."}
             </DialogDescription>
           </DialogHeader>
 

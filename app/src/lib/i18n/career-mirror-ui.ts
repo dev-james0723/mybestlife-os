@@ -73,6 +73,22 @@ export type CareerMirrorUiCopy = {
     assetGapAudit: string;
     careerIdentityMap: string;
   };
+  profileSections: {
+    aiDiagnosis: string;
+    mainTension: string;
+    mainRisk: string;
+    reframedProblem: string;
+    workStyle: string;
+    personalityType: string;
+    energyPattern: string;
+    decisionStyle: string;
+    feedbackPreference: string;
+    idealEnvironment: string;
+    motivationDrivers: string;
+    nextActions: string;
+    manualDetails: string;
+    generateMissingWithAi: string;
+  };
   trust: {
     privacyNote: string;
     aiNote: string;
@@ -149,6 +165,22 @@ const en: CareerMirrorUiCopy = {
     promptPack: "Prompt pack",
     assetGapAudit: "Asset gap audit",
     careerIdentityMap: "Career identity map",
+  },
+  profileSections: {
+    aiDiagnosis: "AI diagnosis",
+    mainTension: "Main tension",
+    mainRisk: "Main risk",
+    reframedProblem: "Reframed problem",
+    workStyle: "Work style",
+    personalityType: "Personality type",
+    energyPattern: "Energy pattern",
+    decisionStyle: "Decision style",
+    feedbackPreference: "Feedback preference",
+    idealEnvironment: "Ideal environment",
+    motivationDrivers: "Motivation drivers",
+    nextActions: "Recommended next actions",
+    manualDetails: "Manual details",
+    generateMissingWithAi: "Generate missing fields with AI",
   },
   trust: {
     privacyNote:
@@ -227,6 +259,22 @@ const zhTW: CareerMirrorUiCopy = {
     promptPack: "提示語包",
     assetGapAudit: "素材缺口盤點",
     careerIdentityMap: "職涯身分地圖",
+  },
+  profileSections: {
+    aiDiagnosis: "AI 診斷",
+    mainTension: "主要張力",
+    mainRisk: "主要風險",
+    reframedProblem: "重新定義你的問題",
+    workStyle: "工作風格",
+    personalityType: "性格類型",
+    energyPattern: "能量模式",
+    decisionStyle: "決策風格",
+    feedbackPreference: "回饋偏好",
+    idealEnvironment: "理想環境",
+    motivationDrivers: "驅動力",
+    nextActions: "建議的下一步",
+    manualDetails: "手動編輯所有欄位",
+    generateMissingWithAi: "用 AI 補齊缺少的欄位",
   },
   trust: {
     privacyNote: "你的答案只留在你的帳號裡，用不用、何時用，都由你決定。",

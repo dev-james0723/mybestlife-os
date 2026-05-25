@@ -167,7 +167,7 @@ export function CareerIdentityMap({ profile, className }: CareerIdentityMapProps
             {copy.panels.careerIdentityMap}
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            How who you are connects to where you're heading.
+            {"How who you are connects to where you're heading."}
           </p>
         </div>
       </header>

@@ -5,7 +5,7 @@ import {
   normalizeLocaleSlug,
 } from "@/lib/i18n/locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
-import { ProfileForm } from "@/components/career-profile/ProfileForm";
+import { CareerMirrorProfile } from "@/components/career-mirror/profile/CareerMirrorProfile";
 
 type PageProps = { params: Promise<{ locale: string }> };
 
@@ -17,5 +17,5 @@ export default async function CareerProfilePage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(withLocalePrefix(slug, "/login"));
-  return <ProfileForm />;
+  return <CareerMirrorProfile />;
 }

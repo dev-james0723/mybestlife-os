@@ -78,7 +78,7 @@ export function AssetGapAuditPanel({
             {copy.panels.assetGapAudit}
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            What you already have, what's missing, what to build first.
+            {"What you already have, what's missing, what to build first."}
           </p>
         </div>
       </header>

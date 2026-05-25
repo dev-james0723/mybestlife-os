@@ -13,3 +13,10 @@ export { AssetGapAuditPanel, type AssetGapAuditPanelProps } from "./AssetGapAudi
 export { RealityCheckButton, type RealityCheckButtonProps } from "./RealityCheckButton";
 export { CareerIdentityMap, type CareerIdentityMapProps } from "./CareerIdentityMap";
 export { BannerStylePicker, type BannerStylePickerProps } from "./BannerStylePicker";
+export { CareerMirrorHero, type CareerMirrorHeroProps } from "./CareerMirrorHero";
+export { CompletionWidget, type CompletionWidgetProps } from "./CompletionWidget";
+export {
+  AiSuggestionControl,
+  type AiSuggestionControlProps,
+} from "./AiSuggestionControl";
+export { CareerMirrorProfile } from "./CareerMirrorProfile";
