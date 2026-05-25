@@ -2402,3 +2402,47 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
     animation: none !important;
   }
 }
+
+/* =========================================================================
+   Immersive mode — extend the weather scene behind ALL app chrome
+   Active only while the Weather page is mounted (it toggles
+   `html.weather-immersive`). Every rule is scoped to that class so other
+   pages keep their normal opaque chrome.
+   ========================================================================= */
+
+/* The portaled scene fills the viewport behind everything. */
+.weather-immersive-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Let the fixed scene show through the app shell. The sidebar wrapper is
+   normally `bg-background` (opaque, full viewport) and carries the theme
+   atmosphere glow — both would otherwise hide the scene. */
+html.weather-immersive [data-slot="sidebar-wrapper"] {
+  background: transparent !important;
+}
+html.weather-immersive [data-slot="sidebar-wrapper"]::before {
+  display: none !important;
+}
+html.weather-immersive [data-slot="sidebar-inset"] {
+  background: transparent !important;
+}
+/* The protected scroll region (`bg-muted/40`). */
+html.weather-immersive [aria-label="Main content"] {
+  background: transparent !important;
+}
+
+/* Sidebar stays as readable glass, but thinner so the animation reads
+   through it. backdrop-blur (already on the element) keeps text legible. */
+html.weather-immersive [data-slot="sidebar-inner"],
+html.weather-immersive [data-slot="sidebar"] {
+  background: rgba(8, 11, 16, 0.5) !important;
+}
+html.weather-immersive.weather-immersive-light [data-slot="sidebar-inner"],
+html.weather-immersive.weather-immersive-light [data-slot="sidebar"] {
+  background: rgba(255, 255, 255, 0.55) !important;
+}
