@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { getPresetSkillById } from "@/lib/mind-council/preset-skills";
+import { AdvisorPortrait } from "@/components/mind-council/AdvisorPortrait";
 
 type AdvisorRecommendationPanelProps = {
   ui: MindCouncilUiCopy;
@@ -53,8 +54,13 @@ export function AdvisorRecommendationPanel({
           const s = getPresetSkillById(id);
           if (!s) return null;
           return (
-            <Badge key={id} variant="secondary" className="max-w-full truncate rounded-lg px-3 py-1 text-xs font-normal">
-              {s.lensTitle}
+            <Badge
+              key={id}
+              variant="secondary"
+              className="max-w-full gap-1.5 truncate rounded-lg py-1 pl-1 pr-3 text-xs font-normal"
+            >
+              <AdvisorPortrait skill={s} className="h-6 w-6" pixelSize={24} rounded="rounded-md" />
+              <span className="truncate">{s.lensTitle}</span>
             </Badge>
           );
         })}

@@ -11,7 +11,6 @@ import { HotPipelineWidget } from "@/components/career-dashboard/HotPipeline";
 import { ColdRelationshipsWidget } from "@/components/career-dashboard/ColdRelationships";
 import { SkillsGapWidget } from "@/components/career-dashboard/SkillsGap";
 import { AISuggestionsWidget } from "@/components/career-dashboard/AISuggestions";
-import { CareerSubmenuGrid } from "@/components/career-dashboard/SubmenuGrid";
 import { OmnisearchTrigger } from "@/components/career/Omnisearch";
 
 /**
@@ -52,10 +51,6 @@ export default function CareerCommandCenterPage() {
             </div>
           </section>
         </div>
-      </div>
-
-      <div className="mt-4">
-        <CareerSubmenuGrid />
       </div>
     </PageShell>
   );

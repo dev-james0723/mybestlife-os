@@ -110,7 +110,13 @@ export type HabitLinkKind =
   | "knowledge"
   | "project"
   | "task"
-  | "timeline";
+  | "timeline"
+  | "calendar_event"
+  | "career_profile"
+  | "ai_knowledge"
+  | "planner_block"
+  | "health_metric"
+  | "journal_pattern";
 
 export type HabitLink = {
   id: string;
@@ -166,6 +172,68 @@ export type RoutineCompletion = {
 export type RoutineWithSteps = Routine & { steps: RoutineStep[] };
 
 // ============================================================
+// AI visuals, persistent timers, and reflections
+// ============================================================
+
+export type HabitVisualKind = "habit" | "routine";
+
+export type HabitVisual = {
+  id: string;
+  user_id: string;
+  habit_id: string | null;
+  routine_id: string | null;
+  kind: HabitVisualKind;
+  visual_prompt: string;
+  image_url: string;
+  storage_path: string | null;
+  model_used: string | null;
+  source_hash: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TimerSessionStatus =
+  | "running"
+  | "paused"
+  | "completed"
+  | "cancelled";
+
+export type TimerSession = {
+  id: string;
+  user_id: string;
+  habit_id: string | null;
+  routine_id: string | null;
+  routine_step_id: string | null;
+  started_at: string;
+  target_duration_seconds: number;
+  paused_at: string | null;
+  total_paused_seconds: number;
+  status: TimerSessionStatus;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HabitReflectionMood =
+  | "easy"
+  | "fine"
+  | "too_hard"
+  | "bad_timing"
+  | "modify_next_time";
+
+export type HabitReflection = {
+  id: string;
+  user_id: string;
+  habit_id: string | null;
+  routine_id: string | null;
+  timer_session_id: string | null;
+  reflection_date: string;
+  mood: HabitReflectionMood | null;
+  note: string | null;
+  created_at: string;
+};
+
+// ============================================================
 // Reminders
 // ============================================================
 
@@ -199,6 +267,10 @@ export type AIInsightKind =
   | "review_habit"
   | "correlation_insight"
   | "quarterly_narrative"
+  | "secretary_brief"
+  | "onboarding_recommend"
+  | "cross_page_suggestions"
+  | "timer_complete_reflection"
   // ----- Bio Lab AI features (see lib/ai/bio-lab/) -----
   // Names mirror BIO_LAB_AI_INSIGHT_KINDS in lib/ai/bio-lab/insight-kinds.ts.
   // Both files MUST stay in sync; one is the runtime guard, the other is

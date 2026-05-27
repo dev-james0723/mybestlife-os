@@ -20,7 +20,10 @@ function currentWindowStart(): string {
 export async function consumeVaultAutofillQuota(params: {
   supabase: Supabase;
   userId: string;
+  /** Credits consumed (default 1). Grounded autofill uses 2. */
+  cost?: number;
 }): Promise<{ allowed: boolean; remaining: number; reset: Date }> {
+  const cost = Math.max(1, Math.floor(params.cost ?? 1));
   const windowStart = currentWindowStart();
   const reset = new Date(new Date(windowStart).getTime() + 60 * 60 * 1000);
 
@@ -32,11 +35,11 @@ export async function consumeVaultAutofillQuota(params: {
     .maybeSingle();
 
   const current = existing?.count ?? 0;
-  if (current >= HOURLY_LIMIT) {
-    return { allowed: false, remaining: 0, reset };
+  if (current + cost > HOURLY_LIMIT) {
+    return { allowed: false, remaining: Math.max(0, HOURLY_LIMIT - current), reset };
   }
 
-  const nextCount = current + 1;
+  const nextCount = current + cost;
   if (existing) {
     await params.supabase
       .from("vault_autofill_rate_limit")

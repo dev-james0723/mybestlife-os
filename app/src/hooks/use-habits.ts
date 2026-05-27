@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   habitsRepository,
@@ -8,6 +9,9 @@ import {
   tagsRepository,
   habitTagsRepository,
   habitLinksRepository,
+  habitVisualsRepository,
+  timerSessionsRepository,
+  habitReflectionsRepository,
   type CreateHabitInput,
   type UpdateHabitInput,
   type CreateCompletionInput,
@@ -15,6 +19,8 @@ import {
   type CreateFreezeInput,
   type CreateTagInput,
   type CreateHabitLinkInput,
+  type CreateTimerSessionInput,
+  type CreateHabitReflectionInput,
 } from "@/lib/repositories/habits";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
@@ -30,7 +36,37 @@ export const habitsKeys = {
   allFreezes: ["habit-freezes", "all"] as const,
   tags: ["habit-tags"] as const,
   links: (habitId: string) => ["habit-links", habitId] as const,
+  visuals: (habitIds: readonly string[]) =>
+    ["habit-visuals", [...habitIds].sort()] as const,
+  allVisuals: ["habit-visuals"] as const,
+  activeTimer: ["timer-sessions", "active"] as const,
+  reflections: ["habit-reflections"] as const,
 };
+
+function requestHabitVisual(row: {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  time_of_day: string;
+}) {
+  if (typeof window === "undefined") return;
+  window.setTimeout(() => {
+    void fetch("/api/ai/habits/generate-visual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        habitId: row.id,
+        habitName: row.name,
+        description: row.description,
+        type: row.type,
+        timeOfDay: row.time_of_day,
+      }),
+    }).catch(() => {
+      // Visual generation is best-effort and must never block habit creation.
+    });
+  }, 0);
+}
 
 // ============================================================
 // Habit queries
@@ -55,8 +91,10 @@ export function useCreateHabit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateHabitInput) => habitsRepository.create(input),
-    onSuccess: () => {
+    onSuccess: (row) => {
       queryClient.invalidateQueries({ queryKey: habitsKeys.all });
+      queryClient.invalidateQueries({ queryKey: habitsKeys.allVisuals });
+      requestHabitVisual(row);
       const ui = getMiscUiCopy(useAppStore.getState().language).toasts.habits;
       toast.success(ui.created);
     },
@@ -261,6 +299,107 @@ export function useCreateHabitLink() {
       queryClient.invalidateQueries({
         queryKey: habitsKeys.links(variables.habit_id),
       });
+    },
+  });
+}
+
+// ============================================================
+// Habit visuals
+// ============================================================
+
+export function useHabitVisuals(habitIds: readonly string[]) {
+  return useQuery({
+    queryKey: habitsKeys.visuals(habitIds),
+    queryFn: () => habitVisualsRepository.getForHabits(habitIds),
+    enabled: habitIds.length > 0,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+// ============================================================
+// Persistent timer sessions
+// ============================================================
+
+function invalidateTimerQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: habitsKeys.activeTimer });
+  queryClient.invalidateQueries({ queryKey: habitsKeys.allCompletions });
+  queryClient.invalidateQueries({ queryKey: habitsKeys.all });
+}
+
+export function useActiveTimerSession() {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: habitsKeys.activeTimer,
+    queryFn: timerSessionsRepository.getActive,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+
+  useEffect(() => {
+    const refetch = () => {
+      queryClient.invalidateQueries({ queryKey: habitsKeys.activeTimer });
+    };
+    window.addEventListener("focus", refetch);
+    window.addEventListener("online", refetch);
+    document.addEventListener("visibilitychange", refetch);
+    return () => {
+      window.removeEventListener("focus", refetch);
+      window.removeEventListener("online", refetch);
+      document.removeEventListener("visibilitychange", refetch);
+    };
+  }, [queryClient]);
+
+  return query;
+}
+
+export function useStartTimerSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateTimerSessionInput) =>
+      timerSessionsRepository.create(input),
+    onSuccess: () => invalidateTimerQueries(queryClient),
+  });
+}
+
+export function usePauseTimerSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => timerSessionsRepository.pause(id),
+    onSuccess: () => invalidateTimerQueries(queryClient),
+  });
+}
+
+export function useResumeTimerSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => timerSessionsRepository.resume(id),
+    onSuccess: () => invalidateTimerQueries(queryClient),
+  });
+}
+
+export function useCompleteTimerSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => timerSessionsRepository.complete(id),
+    onSuccess: () => invalidateTimerQueries(queryClient),
+  });
+}
+
+export function useCancelTimerSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => timerSessionsRepository.cancel(id),
+    onSuccess: () => invalidateTimerQueries(queryClient),
+  });
+}
+
+export function useCreateHabitReflection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateHabitReflectionInput) =>
+      habitReflectionsRepository.create(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: habitsKeys.reflections });
     },
   });
 }

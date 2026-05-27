@@ -31,6 +31,8 @@ export interface TodayViewProps {
   onSaveTodayNumeric?: HabitCardProps["onSaveTodayNumeric"];
   saveValuePending?: boolean;
   onStartRoutine?: (routine: RoutineWithSteps) => void;
+  onStartHabitTimer?: (habit: Habit) => void;
+  visualByHabitId?: ReadonlyMap<string, string>;
 }
 
 const BUCKET_ORDER: TimeOfDay[] = [
@@ -76,6 +78,8 @@ export function TodayView({
   onSaveTodayNumeric,
   saveValuePending,
   onStartRoutine,
+  onStartHabitTimer,
+  visualByHabitId,
 }: TodayViewProps) {
   const reduceMotion = useReducedMotion();
 
@@ -139,7 +143,7 @@ export function TodayView({
             </span>
             <div className="h-px flex-1 bg-border/70" />
           </div>
-          <ul className="space-y-2.5">
+          <ul className="grid gap-3 md:grid-cols-2">
             {bucket.habits.map((h) => (
               <li key={h.id} data-habit-id={h.id}>
                 <HabitCard
@@ -155,6 +159,8 @@ export function TodayView({
                   saveNotePending={saveNotePending}
                   onSaveTodayNumeric={onSaveTodayNumeric}
                   saveValuePending={saveValuePending}
+                  visualUrl={visualByHabitId?.get(h.id)}
+                  onStartTimer={onStartHabitTimer}
                 />
               </li>
             ))}

@@ -1,3 +1,38 @@
+/** Decode common HTML entities once (for stored rich text). */
+export function decodeHtmlEntities(input: string): string {
+  return input
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
+}
+
+/** True if string likely contains HTML tags (for choosing render path). */
+export function htmlLooksLikeMarkup(html: string): boolean {
+  return /<\/?[a-z][^>]*>/i.test(html);
+}
+
+/** True if markup is entity-escaped rather than raw HTML. */
+export function htmlLooksEscaped(html: string): boolean {
+  return /&lt;\/?[a-z][^&]*&gt;/i.test(html);
+}
+
+/** Strip dangerous tags/attributes from rich HTML before rendering. */
+export function sanitizeRichTextHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/\sstyle=(["']).*?\1/gi, "");
+}
+
+/** Normalize stored rich text: decode escaped HTML once, then sanitize. */
+export function normalizeStoredRichText(content: string | null | undefined): string {
+  if (!content) return "";
+  const decoded = htmlLooksEscaped(content) ? decodeHtmlEntities(content) : content;
+  return htmlLooksLikeMarkup(decoded) ? sanitizeRichTextHtml(decoded) : decoded;
+}
+
 /** Plain-text preview for HTML stored in gratitude (or other) entries. */
 export function stripHtml(html: string): string {
   return html
@@ -6,11 +41,6 @@ export function stripHtml(html: string): string {
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-/** True if string likely contains HTML tags (for choosing render path). */
-export function htmlLooksLikeMarkup(html: string): boolean {
-  return /<[a-z][\s>/]/i.test(html);
 }
 
 /** Tailwind classes for read-only rich HTML (match editor output). */

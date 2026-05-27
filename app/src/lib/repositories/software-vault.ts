@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/client";
 import type { SoftwareVaultEntry } from "@/types/database";
+import type {
+  BillingCycle,
+  ConfidenceLevel,
+  FieldSource,
+  PricingPlan,
+  SoftwareAlternative,
+} from "@/types/vault-smart-autofill";
 
 export type CreateSoftwareVaultInput = {
   app_name: string;
@@ -22,6 +29,14 @@ export type CreateSoftwareVaultInput = {
   default_tool_for?: string | null;
   summary?: string | null;
   ai_generated_fields?: string[];
+  pricing_plans?: PricingPlan[];
+  selected_plan_id?: string | null;
+  billing_cycle?: BillingCycle | null;
+  cost_currency?: string | null;
+  alternative_options?: SoftwareAlternative[];
+  field_sources?: FieldSource[];
+  field_confidence?: Record<string, ConfidenceLevel>;
+  pricing_last_checked_at?: string | null;
   is_default_stack?: boolean;
 };
 
@@ -78,6 +93,14 @@ export const softwareVaultRepository = {
         default_tool_for: input.default_tool_for ?? null,
         summary: input.summary ?? null,
         ai_generated_fields: input.ai_generated_fields ?? [],
+        pricing_plans: input.pricing_plans ?? [],
+        selected_plan_id: input.selected_plan_id ?? null,
+        billing_cycle: input.billing_cycle ?? null,
+        cost_currency: input.cost_currency ?? null,
+        alternative_options: input.alternative_options ?? [],
+        field_sources: input.field_sources ?? [],
+        field_confidence: input.field_confidence ?? {},
+        pricing_last_checked_at: input.pricing_last_checked_at ?? null,
         is_default_stack: input.is_default_stack ?? false,
       })
       .select()

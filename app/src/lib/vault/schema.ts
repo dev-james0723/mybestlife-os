@@ -4,6 +4,16 @@ export const VAULT_STATUSES = ["Testing", "Active", "Retired", "Wishlist"] as co
 export const VAULT_PRIORITIES = ["Must-have", "Nice-to-have", "Optional"] as const;
 export const VAULT_COST_TYPES = ["Free", "Freemium", "Paid", "Subscription"] as const;
 
+export const vaultPricingOptionSchema = z.object({
+  plan_name: z.string().trim().min(1).max(120),
+  cost_type: z.enum(VAULT_COST_TYPES),
+  cost_amount: z.number().nonnegative().nullable(),
+  cost_period: z.string().trim().max(60),
+  currency: z.string().trim().max(12).optional(),
+  billing_label: z.string().trim().max(120).optional(),
+  source_url: z.string().trim().url().optional(),
+});
+
 /**
  * Schema used to validate the Gemini JSON response for software autofill.
  * We keep every field optional so partial responses can still succeed — the
@@ -33,9 +43,11 @@ export const vaultAutofillSchema = z.object({
   tags: z.string().trim().max(240).optional(),
   default_tool_for: z.string().trim().max(200).optional(),
   summary: z.string().trim().max(280).optional(),
+  pricing_options: z.array(vaultPricingOptionSchema).max(12).optional(),
 });
 
 export type VaultAutofill = z.infer<typeof vaultAutofillSchema>;
+export type VaultPricingOption = z.infer<typeof vaultPricingOptionSchema>;
 
 export const vaultAutofillRequestSchema = z.object({
   query: z.string().trim().min(1).max(400),

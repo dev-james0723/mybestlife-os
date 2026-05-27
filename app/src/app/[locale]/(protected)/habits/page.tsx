@@ -1,31 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   endOfWeek,
   format,
   startOfWeek,
   subDays,
 } from "date-fns";
-import { LayoutList, Plus, Sparkles, Wand2 } from "lucide-react";
+import { Archive, Sparkles } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import {
   TodayView,
   HabitCard,
-  RoutineCard,
-  HeatmapPlaceholder,
   HabitDetailDrawer,
-  InsightCallout,
-  WeeklyReviewCard,
   RoutineRunDialog,
   CreateEditHabitDialog,
   CreateRoutineDialog,
   AiHabitBuilderDialog,
   AiRoutineComposerDialog,
+  HabitsSecretaryHero,
+  HabitAnalyticsPanel,
+  RoutineStudio,
+  CrossPageHabitSuggestions,
+  ActiveTimerPill,
 } from "@/components/habits";
 import {
   useHabits,
@@ -34,16 +34,25 @@ import {
   useUpsertCompletion,
   useDeleteCompletionForDate,
   useUpdateHabit,
+  useHabitVisuals,
+  useStartTimerSession,
+  useCreateHabit,
 } from "@/hooks/use-habits";
 import { useRoutinesWithSteps } from "@/hooks/use-routines";
 import { useAIInsight } from "@/hooks/use-ai-insight";
+import { habitProposalToCreateInput } from "@/lib/habits/map-proposal-to-create-input";
 import type { StruggleDetectionResponse } from "@/lib/ai/schemas/habits/struggle-detection";
+import type {
+  CrossPageHabitSuggestion,
+  CrossPageSuggestionsResponse,
+  SecretaryBriefResponse,
+} from "@/lib/ai/schemas/habits/secretary";
 import type { Habit, HabitCompletion, RoutineWithSteps } from "@/lib/habits/types";
 import { computeStreak } from "@/lib/habits/streak";
 import { useAppStore } from "@/stores/app-store";
 import { useHabitsStore } from "@/stores/habits-store";
 import { getHabitsUiCopy } from "@/lib/i18n/habits-ui";
-import { cn } from "@/lib/utils";
+import { prepareTimerNotifications } from "@/lib/habits/timer-notifications";
 
 /**
  * Habits hub: logging, streaks, heatmap, routine runs, and cached AI insights.
@@ -87,6 +96,8 @@ export default function HabitsPage() {
   const upsertCompletion = useUpsertCompletion();
   const deleteCompletion = useDeleteCompletionForDate();
   const updateHabit = useUpdateHabit();
+  const startTimer = useStartTimerSession();
+  const createHabit = useCreateHabit();
 
   const [runRoutine, setRunRoutine] = useState<RoutineWithSteps | null>(null);
   const [habitForm, setHabitForm] = useState<{ open: boolean; habit: Habit | null }>({
@@ -96,6 +107,7 @@ export default function HabitsPage() {
   const [routineOpen, setRoutineOpen] = useState(false);
   const [aiHabitOpen, setAiHabitOpen] = useState(false);
   const [aiRoutineOpen, setAiRoutineOpen] = useState(false);
+  const analyticsRef = useRef<HTMLDivElement | null>(null);
 
   const weeklyInsight = useAIInsight<{ text: string }>(
     "weekly_review",
@@ -109,8 +121,30 @@ export default function HabitsPage() {
     { enabled: !habitsLoading && !routinesLoading },
   );
 
+  const secretaryBrief = useAIInsight<SecretaryBriefResponse>(
+    "secretary_brief",
+    { today, timeZone },
+    { enabled: !habitsLoading && !routinesLoading },
+  );
+
+  const crossPageSuggestions = useAIInsight<CrossPageSuggestionsResponse>(
+    "cross_page_suggestions",
+    { today, timeZone },
+    { enabled: !habitsLoading && !routinesLoading },
+  );
+
   const habitList = useMemo(() => habits ?? [], [habits]);
   const routineList = useMemo(() => routines ?? [], [routines]);
+  const habitIds = useMemo(() => habitList.map((h) => h.id), [habitList]);
+  const { data: habitVisuals } = useHabitVisuals(habitIds);
+
+  const visualByHabitId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const visual of habitVisuals ?? []) {
+      if (visual.habit_id && visual.image_url) m.set(visual.habit_id, visual.image_url);
+    }
+    return m;
+  }, [habitVisuals]);
 
   const completionByHabitId = useMemo(() => {
     const m = new Map<string, { status: "done" | "skipped" }>();
@@ -216,6 +250,44 @@ export default function HabitsPage() {
     [completionByHabitId, deleteCompletion, today, upsertCompletion],
   );
 
+  const handleStartHabitTimer = useCallback(
+    (habit: Habit) => {
+      const duration =
+        habit.type === "duration" && habit.target_value
+          ? Math.max(60, Math.round(habit.target_value))
+          : 5 * 60;
+      void prepareTimerNotifications();
+      startTimer.mutate({
+        habit_id: habit.id,
+        target_duration_seconds: duration,
+      });
+    },
+    [startTimer],
+  );
+
+  const handleStartRoutine = useCallback(
+    (routine: RoutineWithSteps) => {
+      const totalSeconds = routine.steps.reduce(
+        (sum, step) => sum + (step.duration_seconds ?? 0),
+        0,
+      );
+      void prepareTimerNotifications();
+      startTimer.mutate({
+        routine_id: routine.id,
+        target_duration_seconds: totalSeconds > 0 ? totalSeconds : 15 * 60,
+      });
+      setRunRoutine(routine);
+    },
+    [startTimer],
+  );
+
+  const handleCreateSuggestion = useCallback(
+    (suggestion: CrossPageHabitSuggestion) => {
+      createHabit.mutate(habitProposalToCreateInput(suggestion));
+    },
+    [createHabit],
+  );
+
   const { activeHabits, archivedHabits } = useMemo(() => {
     const active: typeof habitList = [];
     const archived: typeof habitList = [];
@@ -235,205 +307,144 @@ export default function HabitsPage() {
       ? String((weeklyInsight.data.content as { text: string }).text)
       : "";
 
-  const struggleBody = struggleInsight.data?.content ? (
-    <div className="space-y-3">
-      <p>{struggleInsight.data.content.overallObservation}</p>
-      {struggleInsight.data.content.struggling.length > 0 && (
-        <ul className="space-y-2">
-          {struggleInsight.data.content.struggling.map((s) => (
-            <li
-              key={s.habitId}
-              className="rounded-lg border border-border/60 bg-card/50 px-3 py-2"
-            >
-              <p className="text-sm font-medium text-foreground">{s.habitName}</p>
-              <p className="mt-1 text-xs leading-relaxed">{s.pattern}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {s.suggestedAdjustment}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  ) : null;
-
-  const pageActions = (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button size="sm" variant="default" onClick={() => setHabitForm({ open: true, habit: null })}>
-        <Plus className="size-3.5" />
-        {copy.actionsAddHabit}
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => setRoutineOpen(true)}>
-        <Plus className="size-3.5" />
-        {copy.actionsAddRoutine}
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => setAiHabitOpen(true)}>
-        <Wand2 className="size-3.5" />
-        {copy.actionsAiHabit}
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => setAiRoutineOpen(true)}>
-        <Wand2 className="size-3.5" />
-        {copy.actionsAiRoutine}
-      </Button>
-    </div>
-  );
+  const struggleText =
+    struggleInsight.data?.content?.overallObservation ??
+    struggleInsight.data?.content?.struggling?.[0]?.suggestedAdjustment ??
+    "";
 
   if (habitsLoading || routinesLoading) return <LoadingPage />;
 
-  return (
-    <PageShell title={copy.pageTitle} description={copy.pageDescription} actions={pageActions}>
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="space-y-6 xl:col-span-8">
-          <Card className="overflow-hidden border-border/80 shadow-sm">
-            <CardHeader className="border-b border-border/60 bg-muted/15">
-              <CardTitle className="text-lg">{copy.todaySectionTitle}</CardTitle>
-              <CardDescription>{copy.todaySectionDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <TodayView
-                habits={habitList}
-                routines={routineList}
-                date={today}
-                copy={copy}
-                completionByHabitId={completionByHabitId}
-                todayCompletionByHabitId={todayCompletionByHabitId}
-                onToggleHabit={handleToggleHabit}
-                onOpenHabit={(h) => openHabitDetail(h.id)}
-                onOpenRoutine={(r) => openRoutineDetail(r.id)}
-                onSaveTodayNote={(input) => upsertCompletion.mutate(input)}
-                saveNotePending={upsertCompletion.isPending}
-                onSaveTodayNumeric={handleSaveTodayNumeric}
-                saveValuePending={upsertCompletion.isPending}
-                onStartRoutine={(r) => setRunRoutine(r)}
-              />
-            </CardContent>
-          </Card>
+  const completedToday = [...completionByHabitId.values()].filter(
+    (c) => c.status === "done",
+  ).length;
+  const todayTotal =
+    habitList.filter((h) => h.is_active && !h.archived_at).length +
+    routineList.filter((r) => r.is_active && !r.archived_at).length;
+  const analyticsNarrative = weeklyText || struggleText;
 
-          <Card className="overflow-hidden border-border/80 shadow-sm">
-            <CardHeader className="border-b border-border/60 bg-muted/15">
-              <CardTitle className="text-lg">{copy.habitsSectionTitle}</CardTitle>
-              <CardDescription>{copy.habitsSectionDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-6">
-              {habitList.length === 0 ? (
-                <EmptyState
-                  icon={Sparkles}
-                  title={copy.habitsEmpty}
-                  description={copy.pageDescription}
-                />
-              ) : (
-                <>
-                  <div className="space-y-2.5">
-                    {activeHabits.map((habit) => (
+  return (
+    <PageShell title={copy.pageTitle} description={copy.pageDescription}>
+      <div className="space-y-6 pb-20">
+        <HabitsSecretaryHero
+          copy={copy}
+          habits={habitList}
+          routines={routineList}
+          completedToday={completedToday}
+          totalToday={todayTotal}
+          brief={secretaryBrief.data?.content ?? null}
+          loading={secretaryBrief.isLoading}
+          onPlan={() => setAiHabitOpen(true)}
+          onManual={() => setHabitForm({ open: true, habit: null })}
+          onReview={() => analyticsRef.current?.scrollIntoView({ behavior: "smooth" })}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-12" data-stagger>
+          <GlassPanel className="space-y-4 p-4 sm:p-5 xl:col-span-8" variant="strong">
+            <div>
+              <h2 className="text-lg font-semibold">{copy.todaySectionTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {copy.todaySectionDescription}
+              </p>
+            </div>
+            <TodayView
+              habits={habitList}
+              routines={routineList}
+              date={today}
+              copy={copy}
+              completionByHabitId={completionByHabitId}
+              todayCompletionByHabitId={todayCompletionByHabitId}
+              onToggleHabit={handleToggleHabit}
+              onOpenHabit={(h) => openHabitDetail(h.id)}
+              onOpenRoutine={(r) => openRoutineDetail(r.id)}
+              onSaveTodayNote={(input) => upsertCompletion.mutate(input)}
+              saveNotePending={upsertCompletion.isPending}
+              onSaveTodayNumeric={handleSaveTodayNumeric}
+              saveValuePending={upsertCompletion.isPending}
+              onStartRoutine={handleStartRoutine}
+              onStartHabitTimer={handleStartHabitTimer}
+              visualByHabitId={visualByHabitId}
+            />
+          </GlassPanel>
+
+          <div className="space-y-6 xl:col-span-4">
+            <CrossPageHabitSuggestions
+              copy={copy}
+              data={crossPageSuggestions.data?.content ?? null}
+              loading={crossPageSuggestions.isLoading}
+              error={!!crossPageSuggestions.error}
+              refreshing={crossPageSuggestions.isRefreshing}
+              onRefresh={() => void crossPageSuggestions.refresh()}
+              onCreate={handleCreateSuggestion}
+              creating={createHabit.isPending}
+            />
+            <RoutineStudio
+              routines={routineList}
+              copy={copy}
+              onCreate={() => setRoutineOpen(true)}
+              onOpen={(r) => openRoutineDetail(r.id)}
+              onStart={handleStartRoutine}
+            />
+          </div>
+
+          <div ref={analyticsRef} className="xl:col-span-12">
+            <HabitAnalyticsPanel
+              habits={habitList}
+              completions={rangeCompletions ?? []}
+              freezes={streakFreezes ?? []}
+              from={heatmapFrom}
+              to={today}
+              today={today}
+              timeZone={timeZone}
+              copy={copy}
+              aiNarrative={analyticsNarrative}
+              loading={
+                completionsLoading ||
+                weeklyInsight.isLoading ||
+                struggleInsight.isLoading
+              }
+            />
+          </div>
+
+          <GlassPanel className="space-y-4 p-4 sm:p-5 xl:col-span-12" variant="strong">
+            <details>
+              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
+                <Archive className="size-4 text-primary" />
+                {copy.maintenanceTitle}
+              </summary>
+              <div className="mt-4">
+                {habitList.length === 0 ? (
+                  <EmptyState
+                    icon={Sparkles}
+                    title={copy.habitsEmpty}
+                    description={copy.pageDescription}
+                  />
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {[...activeHabits, ...archivedHabits].map((habit) => (
                       <HabitCard
                         key={habit.id}
                         habit={habit}
                         variant="default"
                         copy={copy}
                         currentStreak={streakByHabitId.get(habit.id)}
+                        visualUrl={visualByHabitId.get(habit.id)}
                         onClick={(h) => openHabitDetail(h.id)}
                       />
                     ))}
                   </div>
-                  {archivedHabits.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                      <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {copy.archivedBadge}
-                      </p>
-                      {archivedHabits.map((habit) => (
-                        <HabitCard
-                          key={habit.id}
-                          habit={habit}
-                          variant="default"
-                          copy={copy}
-                          currentStreak={streakByHabitId.get(habit.id)}
-                          onClick={(h) => openHabitDetail(h.id)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-border/80 shadow-sm">
-            <CardHeader className="border-b border-border/60 bg-muted/15">
-              <CardTitle className="text-lg">{copy.routinesSectionTitle}</CardTitle>
-              <CardDescription>{copy.routinesSectionDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2.5 pt-6">
-              {routineList.length === 0 ? (
-                <EmptyState
-                  icon={LayoutList}
-                  title={copy.routinesEmpty}
-                  description={copy.routinesSectionDescription}
-                />
-              ) : (
-                routineList.map((routine) => (
-                  <RoutineCard
-                    key={routine.id}
-                    routine={routine}
-                    copy={copy}
-                    expanded={routine.steps.length <= 5}
-                    onClick={(r) => openRoutineDetail(r.id)}
-                    onStart={(r) => setRunRoutine(r)}
-                  />
-                ))
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </div>
+            </details>
+          </GlassPanel>
         </div>
-
-        <div className="space-y-6 xl:col-span-4">
-          <WeeklyReviewCard
-            weekStart={weekStart}
-            body={weeklyText}
-            error={!!weeklyInsight.error}
-            loading={weeklyInsight.isLoading}
-            onGenerate={() => weeklyInsight.refresh()}
-            isRefreshing={weeklyInsight.isRefreshing}
-            cached={weeklyInsight.data?.cached}
-            copy={copy}
-          />
-          <InsightCallout
-            title={copy.insightStruggleTitle}
-            body={
-              struggleInsight.error ? (
-                <span className="text-destructive">{copy.insightFailed}</span>
-              ) : (
-                struggleBody
-              )
-            }
-            loading={struggleInsight.isLoading}
-            fallback={copy.insightEmpty}
-            onRefresh={() => struggleInsight.refresh()}
-            isRefreshing={struggleInsight.isRefreshing}
-            cached={struggleInsight.data?.cached}
-            refreshLabel={copy.insightRefresh}
-            cachedLabel={copy.insightCached}
-          />
-        </div>
-
-        <Card className="border-border/80 shadow-sm xl:col-span-12">
-          <CardHeader className="border-b border-border/60 bg-muted/15">
-            <CardTitle className="text-lg">{copy.heatmapSectionTitle}</CardTitle>
-            <CardDescription>{copy.heatmapSectionDescription}</CardDescription>
-          </CardHeader>
-          <CardContent className={cn("pt-6", completionsLoading && "opacity-60")}>
-            <HeatmapPlaceholder
-              habits={habitList}
-              from={heatmapFrom}
-              to={today}
-              today={today}
-              timeZone={timeZone}
-              copy={copy}
-              completions={rangeCompletions ?? []}
-              freezes={streakFreezes ?? []}
-            />
-          </CardContent>
-        </Card>
       </div>
+
+      <ActiveTimerPill
+        habits={habitList}
+        routines={routineList}
+        today={today}
+        copy={copy}
+      />
 
       <HabitDetailDrawer
         open={detailOpen}

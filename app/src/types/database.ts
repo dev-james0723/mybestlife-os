@@ -1,4 +1,11 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type {
+  BillingCycle,
+  ConfidenceLevel,
+  FieldSource,
+  PricingPlan,
+  SoftwareAlternative,
+} from "@/types/vault-smart-autofill";
 
 export type Json =
   | string
@@ -620,6 +627,14 @@ export type SoftwareVaultEntry = {
   default_tool_for: string | null;
   summary: string | null;
   ai_generated_fields: string[];
+  pricing_plans: PricingPlan[];
+  selected_plan_id: string | null;
+  billing_cycle: BillingCycle | null;
+  cost_currency: string | null;
+  alternative_options: SoftwareAlternative[];
+  field_sources: FieldSource[];
+  field_confidence: Record<string, ConfidenceLevel>;
+  pricing_last_checked_at: string | null;
   is_default_stack: boolean;
   launch_count: number;
   last_opened_at: string | null;

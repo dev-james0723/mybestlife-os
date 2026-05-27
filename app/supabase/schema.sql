@@ -577,6 +577,18 @@ CREATE TABLE IF NOT EXISTS software_vault (
   default_tool_for TEXT,
   summary TEXT,
   ai_generated_fields TEXT[] DEFAULT '{}',
+  pricing_plans JSONB NOT NULL DEFAULT '[]'::jsonb,
+  selected_plan_id TEXT,
+  billing_cycle TEXT CHECK (
+    billing_cycle IS NULL OR billing_cycle IN (
+      'monthly', 'annually', 'one-time', 'usage-based', 'unknown'
+    )
+  ),
+  cost_currency TEXT DEFAULT 'USD',
+  alternative_options JSONB NOT NULL DEFAULT '[]'::jsonb,
+  field_sources JSONB NOT NULL DEFAULT '[]'::jsonb,
+  field_confidence JSONB NOT NULL DEFAULT '{}'::jsonb,
+  pricing_last_checked_at TIMESTAMPTZ,
   is_default_stack BOOLEAN DEFAULT false,
   launch_count INTEGER DEFAULT 0,
   last_opened_at TIMESTAMPTZ,

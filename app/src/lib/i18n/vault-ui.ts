@@ -9,6 +9,10 @@ import { getVaultBuildStackCopy } from "./vault-build-stack-ui";
 import { getVaultIndustryLabels } from "./vault-industry-i18n";
 import type { VaultCompareCopy, VaultInsightsCopy } from "./vault-phase4-ui";
 import { getVaultPhase4Copy } from "./vault-phase4-ui";
+import {
+  getVaultSmartAutofillCopy,
+  type VaultSmartAutofillCopy,
+} from "./vault-smart-autofill-i18n";
 
 /**
  * Full i18n manifest for the Software Vault feature across the 9 supported
@@ -117,6 +121,11 @@ export type VaultUiCopy = {
     iconUrl: string;
     iconUrlPh: string;
     iconPreview: string;
+    changeIcon: string;
+    iconUploadHint: string;
+    iconUploading: string;
+    iconUploadFailed: string;
+    iconInvalidType: string;
     summary: string;
     categoryPh: string;
     platformsPh: string;
@@ -166,6 +175,10 @@ export type VaultUiCopy = {
   buildStack: VaultBuildStackCopy;
   compare: VaultCompareCopy;
   insights: VaultInsightsCopy;
+  identify: VaultSmartAutofillCopy["identify"];
+  planPicker: VaultSmartAutofillCopy["planPicker"];
+  review: VaultSmartAutofillCopy["review"];
+  confidence: VaultSmartAutofillCopy["confidence"];
 };
 
 function makeCopy(
@@ -275,6 +288,11 @@ function makeCopy(
     formIconUrl: string;
     formIconUrlPh: string;
     formIconPreview: string;
+    formChangeIcon: string;
+    formIconUploadHint: string;
+    formIconUploading: string;
+    formIconUploadFailed: string;
+    formIconInvalidType: string;
     formSummary: string;
     formCategoryPh: string;
     formPlatformsPh: string;
@@ -319,7 +337,10 @@ function makeCopy(
     recSelectAll: string;
     recSelectNone: string;
   },
-): Omit<VaultUiCopy, "buildStack" | "compare" | "insights"> {
+): Omit<
+  VaultUiCopy,
+  "buildStack" | "compare" | "insights" | "identify" | "planPicker" | "review" | "confidence"
+> {
   return {
     nav: {
       default: opts.navDefault,
@@ -459,6 +480,11 @@ function makeCopy(
       iconUrl: opts.formIconUrl,
       iconUrlPh: opts.formIconUrlPh,
       iconPreview: opts.formIconPreview,
+      changeIcon: opts.formChangeIcon,
+      iconUploadHint: opts.formIconUploadHint,
+      iconUploading: opts.formIconUploading,
+      iconUploadFailed: opts.formIconUploadFailed,
+      iconInvalidType: opts.formIconInvalidType,
       summary: opts.formSummary,
       categoryPh: opts.formCategoryPh,
       platformsPh: opts.formPlatformsPh,
@@ -618,6 +644,11 @@ const en = makeCopy({
   formIconUrl: "Icon URL",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "App icon",
+  formChangeIcon: "Change",
+  formIconUploadHint: "Drag & drop or click Change to upload",
+  formIconUploading: "Uploading…",
+  formIconUploadFailed: "Icon upload failed",
+  formIconInvalidType: "Please upload PNG, JPG, WebP, SVG, or ICO",
   formSummary: "Summary",
   formCategoryPh: "Productivity, Dev Tools…",
   formPlatformsPh: "macOS, iOS, Web…",
@@ -777,6 +808,11 @@ const zhTW = makeCopy({
   formIconUrl: "圖示網址",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "App 圖示",
+  formChangeIcon: "更換",
+  formIconUploadHint: "拖放圖片，或按「更換」上載",
+  formIconUploading: "上載中…",
+  formIconUploadFailed: "圖示上載失敗",
+  formIconInvalidType: "請上載 PNG、JPG、WebP、SVG 或 ICO",
   formSummary: "摘要",
   formCategoryPh: "例如：生產力、開發工具…",
   formPlatformsPh: "macOS、iOS、Web…",
@@ -936,6 +972,11 @@ const zhCN = makeCopy({
   formIconUrl: "图标网址",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "应用图标",
+  formChangeIcon: "更换",
+  formIconUploadHint: "拖放图片，或点击「更换」上传",
+  formIconUploading: "上传中…",
+  formIconUploadFailed: "图标上传失败",
+  formIconInvalidType: "请上传 PNG、JPG、WebP、SVG 或 ICO",
   formSummary: "摘要",
   formCategoryPh: "生产力、开发工具…",
   formPlatformsPh: "macOS、iOS、Web…",
@@ -1095,6 +1136,11 @@ const ja = makeCopy({
   formIconUrl: "アイコン URL",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "アプリアイコン",
+  formChangeIcon: "変更",
+  formIconUploadHint: "ドラッグ＆ドロップ、または「変更」でアップロード",
+  formIconUploading: "アップロード中…",
+  formIconUploadFailed: "アイコンのアップロードに失敗しました",
+  formIconInvalidType: "PNG、JPG、WebP、SVG、ICO をアップロードしてください",
   formSummary: "要約",
   formCategoryPh: "生産性、開発ツール…",
   formPlatformsPh: "macOS、iOS、Web…",
@@ -1254,6 +1300,11 @@ const ko = makeCopy({
   formIconUrl: "아이콘 URL",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "앱 아이콘",
+  formChangeIcon: "변경",
+  formIconUploadHint: "드래그 앤 드롭하거나 「변경」으로 업로드",
+  formIconUploading: "업로드 중…",
+  formIconUploadFailed: "아이콘 업로드 실패",
+  formIconInvalidType: "PNG, JPG, WebP, SVG 또는 ICO를 업로드하세요",
   formSummary: "요약",
   formCategoryPh: "생산성, 개발 도구…",
   formPlatformsPh: "macOS, iOS, Web…",
@@ -1413,6 +1464,11 @@ const fr = makeCopy({
   formIconUrl: "URL de l'icône",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "Icône de l'app",
+  formChangeIcon: "Changer",
+  formIconUploadHint: "Glissez-déposez ou cliquez sur Changer pour téléverser",
+  formIconUploading: "Téléversement…",
+  formIconUploadFailed: "Échec du téléversement de l'icône",
+  formIconInvalidType: "Veuillez téléverser PNG, JPG, WebP, SVG ou ICO",
   formSummary: "Résumé",
   formCategoryPh: "Productivité, Dev…",
   formPlatformsPh: "macOS, iOS, Web…",
@@ -1572,6 +1628,11 @@ const it = makeCopy({
   formIconUrl: "URL dell'icona",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "Icona app",
+  formChangeIcon: "Cambia",
+  formIconUploadHint: "Trascina e rilascia o clicca Cambia per caricare",
+  formIconUploading: "Caricamento…",
+  formIconUploadFailed: "Caricamento icona non riuscito",
+  formIconInvalidType: "Carica PNG, JPG, WebP, SVG o ICO",
   formSummary: "Riepilogo",
   formCategoryPh: "Produttività, Dev…",
   formPlatformsPh: "macOS, iOS, Web…",
@@ -1731,6 +1792,11 @@ const es = makeCopy({
   formIconUrl: "URL del icono",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "Icono de la app",
+  formChangeIcon: "Cambiar",
+  formIconUploadHint: "Arrastra y suelta o pulsa Cambiar para subir",
+  formIconUploading: "Subiendo…",
+  formIconUploadFailed: "Error al subir el icono",
+  formIconInvalidType: "Sube PNG, JPG, WebP, SVG o ICO",
   formSummary: "Resumen",
   formCategoryPh: "Productividad, Dev…",
   formPlatformsPh: "macOS, iOS, Web…",
@@ -1890,6 +1956,11 @@ const vi = makeCopy({
   formIconUrl: "URL biểu tượng",
   formIconUrlPh: "https://…/icon.png",
   formIconPreview: "Biểu tượng app",
+  formChangeIcon: "Đổi",
+  formIconUploadHint: "Kéo thả hoặc bấm Đổi để tải lên",
+  formIconUploading: "Đang tải lên…",
+  formIconUploadFailed: "Tải biểu tượng thất bại",
+  formIconInvalidType: "Vui lòng tải lên PNG, JPG, WebP, SVG hoặc ICO",
   formSummary: "Tóm tắt",
   formCategoryPh: "Năng suất, công cụ lập trình…",
   formPlatformsPh: "macOS, iOS, Web…",
@@ -1943,7 +2014,10 @@ const vi = makeCopy({
   recSelectNone: "Bỏ chọn",
 });
 
-const VAULT_COPY: Record<AppLocale, Omit<VaultUiCopy, "buildStack" | "compare" | "insights">> = {
+const VAULT_COPY: Record<
+  AppLocale,
+  Omit<VaultUiCopy, "buildStack" | "compare" | "insights" | "identify" | "planPicker" | "review" | "confidence">
+> = {
   en,
   "zh-TW": zhTW,
   "zh-CN": zhCN,
@@ -1958,10 +2032,15 @@ const VAULT_COPY: Record<AppLocale, Omit<VaultUiCopy, "buildStack" | "compare" |
 export function getVaultUiCopy(locale: AppLocale): VaultUiCopy {
   const base = VAULT_COPY[locale] ?? VAULT_COPY.en;
   const phase4 = getVaultPhase4Copy(locale);
+  const smart = getVaultSmartAutofillCopy(locale);
   return {
     ...base,
     buildStack: getVaultBuildStackCopy(locale),
     compare: phase4.compare,
     insights: phase4.insights,
+    identify: smart.identify,
+    planPicker: smart.planPicker,
+    review: smart.review,
+    confidence: smart.confidence,
   };
 }

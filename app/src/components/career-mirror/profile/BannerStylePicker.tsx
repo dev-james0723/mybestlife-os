@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import {
@@ -20,14 +21,28 @@ export type BannerStylePickerProps = {
   className?: string;
 };
 
+const BANNER_STYLE_PREVIEW_SRC: Record<CareerBannerStyle, string> = {
+  "editorial-portrait":
+    "/career-mirror/banner-style-previews/editorial-portrait.jpg",
+  "illustrative-photo":
+    "/career-mirror/banner-style-previews/illustrative-photo.jpg",
+  "cinematic-founder":
+    "/career-mirror/banner-style-previews/cinematic-founder.jpg",
+  "minimal-knowledge":
+    "/career-mirror/banner-style-previews/minimal-knowledge.jpg",
+  "abstract-landscape":
+    "/career-mirror/banner-style-previews/abstract-landscape.jpg",
+  "brand-poster": "/career-mirror/banner-style-previews/brand-poster.jpg",
+};
+
 /**
  * BannerStylePicker — selectable grid of dark Liquid-Glass banner previews for
  * the AI Career Mirror identity banner.
  *
  * Mirrors `@/components/knowledge/ThumbnailStylePicker` (preview tiles,
- * selection ring + scale, accessible listbox/option roles) but renders each
- * preview purely from CSS using `CAREER_BANNER_PLACEHOLDER_GRADIENTS` plus a
- * small abstract "career path" motif — no external image assets required.
+ * selection ring + scale, accessible listbox/option roles), but uses curated
+ * real-photo references in `public/career-mirror/banner-style-previews` so
+ * users can visually distinguish each style immediately.
  */
 export function BannerStylePicker({
   value,
@@ -63,6 +78,7 @@ export function BannerStylePicker({
         const isSelected = value === style;
         const label = labels[style];
         const grad = CAREER_BANNER_PLACEHOLDER_GRADIENTS[style];
+        const previewSrc = BANNER_STYLE_PREVIEW_SRC[style];
         return (
           <motion.button
             key={style}
@@ -96,31 +112,20 @@ export function BannerStylePicker({
               }}
               aria-hidden
             >
-              {/* Abstract career motif: glow + rising path with nodes. */}
+              <Image
+                src={previewSrc}
+                alt={`${label.name} banner style preview`}
+                fill
+                sizes="160px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-black/35" />
               <div
                 className="absolute inset-0"
                 style={{
                   background: `radial-gradient(60% 70% at 78% 22%, ${grad.accent}38, transparent 70%)`,
                 }}
               />
-              <svg
-                className="absolute inset-0 h-full w-full"
-                viewBox="0 0 160 90"
-                preserveAspectRatio="none"
-                fill="none"
-              >
-                <path
-                  d="M16 74 L46 60 L74 64 L100 42 L126 48 L148 24"
-                  stroke={grad.accent}
-                  strokeOpacity="0.55"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="46" cy="60" r="2.2" fill={grad.accent} fillOpacity="0.6" />
-                <circle cx="100" cy="42" r="2.2" fill={grad.accent} fillOpacity="0.6" />
-                <circle cx="148" cy="24" r="4" fill={grad.accent} fillOpacity="0.95" />
-              </svg>
             </div>
             <span
               className={cn(

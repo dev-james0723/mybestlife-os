@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { isValidPublicUrl } from "@/lib/vault/safe-fetch";
 
-const MAX_ICON_BYTES = 2 * 1024 * 1024;
+export const MAX_ICON_BYTES = 2 * 1024 * 1024;
 
 const MIME_TO_EXT: Record<string, string> = {
   "image/png": "png",
@@ -45,20 +45,22 @@ export async function fetchRemoteIconBytes(
  * `vault-icons` bucket under `{userId}/{uuid}.{ext}`. Returns the public URL
  * or null if fetch/upload fails (caller may fall back to the remote URL).
  */
-export async function uploadVaultIconFromRemoteUrl(
+export async function uploadVaultIconFromBytes(
   supabase: SupabaseClient,
   userId: string,
-  sourceUrl: string,
+  buffer: ArrayBuffer,
+  contentType: string,
 ): Promise<string | null> {
-  const fetched = await fetchRemoteIconBytes(sourceUrl);
-  if (!fetched) return null;
+  const normalized = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+  if (!ALLOWED_FETCH.test(normalized)) return null;
+  if (buffer.byteLength === 0 || buffer.byteLength > MAX_ICON_BYTES) return null;
+
   const ext =
-    MIME_TO_EXT[fetched.contentType.toLowerCase()] ??
-    (fetched.contentType.toLowerCase().includes("svg") ? "svg" : "png");
+    MIME_TO_EXT[normalized] ?? (normalized.includes("svg") ? "svg" : "png");
   const objectPath = `${userId}/${randomUUID()}.${ext}`;
-  const body = new Uint8Array(fetched.buffer);
+  const body = new Uint8Array(buffer);
   const { error } = await supabase.storage.from("vault-icons").upload(objectPath, body, {
-    contentType: fetched.contentType,
+    contentType: normalized,
     upsert: false,
   });
   if (error) {
@@ -69,4 +71,14 @@ export async function uploadVaultIconFromRemoteUrl(
   }
   const { data } = supabase.storage.from("vault-icons").getPublicUrl(objectPath);
   return data.publicUrl;
+}
+
+export async function uploadVaultIconFromRemoteUrl(
+  supabase: SupabaseClient,
+  userId: string,
+  sourceUrl: string,
+): Promise<string | null> {
+  const fetched = await fetchRemoteIconBytes(sourceUrl);
+  if (!fetched) return null;
+  return uploadVaultIconFromBytes(supabase, userId, fetched.buffer, fetched.contentType);
 }

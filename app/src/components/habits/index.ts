@@ -34,3 +34,11 @@ export {
   AiRoutineComposerDialog,
   type AiRoutineComposerDialogProps,
 } from "./AiRoutineComposerDialog";
+export { HabitsSecretaryHero, type HabitsSecretaryHeroProps } from "./HabitsSecretaryHero";
+export { HabitAnalyticsPanel, type HabitAnalyticsPanelProps } from "./HabitAnalyticsPanel";
+export { RoutineStudio, type RoutineStudioProps } from "./RoutineStudio";
+export {
+  CrossPageHabitSuggestions,
+  type CrossPageHabitSuggestionsProps,
+} from "./CrossPageHabitSuggestions";
+export { ActiveTimerPill, type ActiveTimerPillProps } from "./ActiveTimerPill";

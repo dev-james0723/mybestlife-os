@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Loader2, Upload } from "lucide-react";
+import { FieldConfidenceBadge } from "@/components/vault/FieldConfidenceBadge";
+import type {
+  ConfidenceLevel,
+  FieldSource,
+  PricingPlan,
+  SoftwareAlternative,
+} from "@/types/vault-smart-autofill";
 import {
   Select,
   SelectContent,
@@ -16,6 +25,20 @@ import {
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
 import type { SoftwareVaultEntry } from "@/types/database";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const ICON_ACCEPT = {
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/webp": [".webp"],
+  "image/svg+xml": [".svg"],
+  "image/x-icon": [".ico"],
+  "image/vnd.microsoft.icon": [".ico"],
+  "image/gif": [".gif"],
+} as const;
+
+const MAX_ICON_BYTES = 2 * 1024 * 1024;
 
 export type VaultFormState = {
   app_name: string;
@@ -107,32 +130,118 @@ export function entryToForm(e: SoftwareVaultEntry): VaultFormState {
 
 type FieldKey = keyof VaultFormState;
 
+export type VaultFormMetadata = {
+  pricing_plans?: PricingPlan[];
+  selected_plan_id?: string | null;
+  billing_cycle?: string | null;
+  cost_currency?: string | null;
+  alternative_options?: SoftwareAlternative[];
+  field_sources?: FieldSource[];
+  field_confidence?: Record<string, ConfidenceLevel>;
+};
+
 type Props = {
   form: VaultFormState;
   onChange: (patch: Partial<VaultFormState>) => void;
   aiFields?: Set<string>;
+  fieldConfidence?: Record<string, ConfidenceLevel>;
+  fieldSources?: FieldSource[];
+  alternativeOptions?: SoftwareAlternative[];
+  onFieldUserEdit?: (field: keyof VaultFormState) => void;
 };
 
-export function VaultEntryForm({ form, onChange, aiFields }: Props) {
+export function VaultEntryForm({
+  form,
+  onChange,
+  aiFields,
+  fieldConfidence,
+  fieldSources,
+  alternativeOptions = [],
+  onFieldUserEdit,
+}: Props) {
   const language = useAppStore((s) => s.language);
   const copy = getVaultUiCopy(language);
   const f = copy.form;
   const fields = copy.fields;
   /** When set, image at this exact URL failed to load (clears automatically when URL changes). */
   const [iconFailedForUrl, setIconFailedForUrl] = useState<string | null>(null);
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const trimmedIconUrl = String(form.icon_url ?? "").trim();
   const iconLoadFailed = iconFailedForUrl !== null && iconFailedForUrl === trimmedIconUrl;
   const appNameFallback = String(form.app_name ?? "").trim();
+  const iconInvalidTypeCopy = f.iconInvalidType;
+  const iconUploadFailedCopy = f.iconUploadFailed;
+
+  const uploadIconFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error(iconInvalidTypeCopy);
+      return;
+    }
+    if (file.size === 0 || file.size > MAX_ICON_BYTES) {
+      toast.error(iconUploadFailedCopy);
+      return;
+    }
+    setIsUploadingIcon(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/vault/icon-upload", { method: "POST", body });
+      if (!res.ok) {
+        toast.error(iconUploadFailedCopy);
+        return;
+      }
+      const data = (await res.json()) as { icon_url?: string };
+      if (data.icon_url) {
+        setIconFailedForUrl(null);
+        onChange({ icon_url: data.icon_url });
+      } else {
+        toast.error(iconUploadFailedCopy);
+      }
+    } catch {
+      toast.error(iconUploadFailedCopy);
+    } finally {
+      setIsUploadingIcon(false);
+    }
+  };
+
+  const onDropIcon = (accepted: File[]) => {
+    const file = accepted[0];
+    if (file) void uploadIconFile(file);
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: onDropIcon,
+    accept: ICON_ACCEPT,
+    maxFiles: 1,
+    maxSize: MAX_ICON_BYTES,
+    noClick: true,
+    noKeyboard: true,
+    disabled: isUploadingIcon,
+  });
+
+  const sourceFor = (key: string) => fieldSources?.find((s) => s.field === key);
 
   const labelWithBadge = (label: string, key: FieldKey, required?: boolean) => (
-    <Label className="flex items-center gap-1.5">
+    <Label className="flex items-center gap-1.5 flex-wrap">
       {label}
       {required && " *"}
-      {aiFields?.has(key) && (
+      {fieldConfidence?.[key] ? (
+        <FieldConfidenceBadge
+          field={key}
+          confidence={fieldConfidence[key]}
+          source={sourceFor(key)}
+        />
+      ) : aiFields?.has(key) ? (
         <Sparkles className="h-3 w-3 text-primary" aria-label={f.aiBadge} />
-      )}
+      ) : null}
     </Label>
   );
+
+  const handleFieldChange = (key: FieldKey, value: string) => {
+    onChange({ [key]: value } as Partial<VaultFormState>);
+    onFieldUserEdit?.(key);
+  };
 
   const input = (
     label: string,
@@ -145,7 +254,7 @@ export function VaultEntryForm({ form, onChange, aiFields }: Props) {
       <Input
         type={opts?.type}
         value={form[key]}
-        onChange={(ev) => onChange({ [key]: ev.target.value } as Partial<VaultFormState>)}
+        onChange={(ev) => handleFieldChange(key, ev.target.value)}
         placeholder={placeholder}
         {...(opts?.type === "number" ? { step: "0.01", min: 0 } : {})}
       />
@@ -157,7 +266,7 @@ export function VaultEntryForm({ form, onChange, aiFields }: Props) {
       {labelWithBadge(label, key)}
       <Textarea
         value={form[key]}
-        onChange={(ev) => onChange({ [key]: ev.target.value } as Partial<VaultFormState>)}
+        onChange={(ev) => handleFieldChange(key, ev.target.value)}
         rows={rows}
       />
     </div>
@@ -197,10 +306,21 @@ export function VaultEntryForm({ form, onChange, aiFields }: Props) {
           {f.sectionBasic}
         </p>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <div className="flex shrink-0 flex-col items-center gap-1.5 sm:items-start">
+          <div
+            {...getRootProps()}
+            className="flex shrink-0 flex-col items-center gap-2 sm:items-start"
+          >
             <span className="text-xs font-medium text-muted-foreground">{f.iconPreview}</span>
-            <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm ring-1 ring-border/60">
-              {trimmedIconUrl && !iconLoadFailed ? (
+            <div
+              className={cn(
+                "relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm ring-1 ring-border/60 transition-colors",
+                isDragActive && "border-primary bg-primary/5 ring-primary/40",
+              )}
+            >
+              <input {...getInputProps()} />
+              {isUploadingIcon ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : trimmedIconUrl && !iconLoadFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element -- user-supplied or vault-hosted URL
                 <img
                   src={trimmedIconUrl}
@@ -215,7 +335,41 @@ export function VaultEntryForm({ form, onChange, aiFields }: Props) {
                   {(appNameFallback || "?").charAt(0).toUpperCase()}
                 </span>
               )}
+              {isDragActive && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                  <Upload className="h-5 w-5 text-primary" />
+                </div>
+              )}
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/gif"
+              className="hidden"
+              onChange={(ev) => {
+                const file = ev.target.files?.[0];
+                if (file) void uploadIconFile(file);
+                ev.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={isUploadingIcon}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {isUploadingIcon ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {isUploadingIcon ? f.iconUploading : f.changeIcon}
+            </Button>
+            <p className="max-w-[9rem] text-center text-[11px] leading-snug text-muted-foreground sm:text-left">
+              {f.iconUploadHint}
+            </p>
           </div>
           <div className="min-w-0 flex-1 space-y-4">
             {input(f.appName, "app_name", f.appNamePh, { required: true })}
@@ -265,7 +419,32 @@ export function VaultEntryForm({ form, onChange, aiFields }: Props) {
           {textarea(fields.bestFeature, "best_feature")}
           {textarea(fields.biggestDownside, "biggest_downside")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {input(fields.bestAlternative, "best_alternative")}
+            <div className="space-y-2">
+              {labelWithBadge(fields.bestAlternative, "best_alternative")}
+              {alternativeOptions.length > 1 ? (
+                <Select
+                  value={form.best_alternative}
+                  onValueChange={(v) => {
+                    if (v != null) handleFieldChange("best_alternative", v);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={fields.bestAlternative} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alternativeOptions.map((alt) => (
+                      <SelectItem key={alt.name} value={alt.name}>
+                        {alt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+              <Input
+                value={form.best_alternative}
+                onChange={(ev) => handleFieldChange("best_alternative", ev.target.value)}
+              />
+            </div>
             {input(fields.replaces, "replaces")}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -388,11 +567,16 @@ export function sanitizeVaultFormPatch(
   return out;
 }
 
-export function buildCreatePayload(form: VaultFormState, aiFields?: Set<string>) {
+export function buildCreatePayload(
+  form: VaultFormState,
+  aiFields?: Set<string>,
+  metadata?: VaultFormMetadata,
+) {
   const f = normalizeVaultFormEnums(form);
   const costAmountStr = asString(f.cost_amount).trim();
   const parsedCost = costAmountStr === "" ? null : Number.parseFloat(costAmountStr);
   const costAmount = parsedCost != null && Number.isFinite(parsedCost) ? parsedCost : null;
+  const billing = metadata?.billing_cycle as VaultFormMetadata["billing_cycle"];
   return {
     app_name: trimmed(f.app_name),
     website_url: trimmed(f.website_url) || null,
@@ -405,6 +589,11 @@ export function buildCreatePayload(form: VaultFormState, aiFields?: Set<string>)
     cost_type: f.cost_type,
     cost_amount: costAmount,
     cost_period: trimmed(f.cost_period) || null,
+    cost_currency: metadata?.cost_currency ?? null,
+    billing_cycle:
+      billing && ["monthly", "annually", "one-time", "usage-based", "unknown"].includes(billing)
+        ? (billing as import("@/types/vault-smart-autofill").BillingCycle)
+        : null,
     why_i_use_it: trimmed(f.why_i_use_it) || null,
     best_feature: trimmed(f.best_feature) || null,
     biggest_downside: trimmed(f.biggest_downside) || null,
@@ -414,5 +603,11 @@ export function buildCreatePayload(form: VaultFormState, aiFields?: Set<string>)
     default_tool_for: trimmed(f.default_tool_for) || null,
     summary: trimmed(f.summary) || null,
     ai_generated_fields: aiFields ? Array.from(aiFields) : undefined,
+    pricing_plans: metadata?.pricing_plans ?? [],
+    selected_plan_id: metadata?.selected_plan_id ?? null,
+    alternative_options: metadata?.alternative_options ?? [],
+    field_sources: metadata?.field_sources ?? [],
+    field_confidence: metadata?.field_confidence ?? {},
+    pricing_last_checked_at: new Date().toISOString(),
   };
 }

@@ -21,6 +21,12 @@ const KIND_TO_TARGET: Record<
   task: { nodeType: "task", reasonVerb: "supports" },
   knowledge: { nodeType: "knowledge_card", reasonVerb: "informs" },
   timeline: { nodeType: "career_event", reasonVerb: "marks" },
+  calendar_event: { nodeType: "event", reasonVerb: "anchors" },
+  career_profile: { nodeType: "career_project", reasonVerb: "supports" },
+  ai_knowledge: { nodeType: "ai_knowledge", reasonVerb: "operationalizes" },
+  planner_block: { nodeType: "daily_plan", reasonVerb: "anchors" },
+  health_metric: { nodeType: "health_goal", reasonVerb: "supports" },
+  journal_pattern: { nodeType: "journal_entry", reasonVerb: "responds to" },
 };
 
 export function generateHabitLinkEdges(input: {

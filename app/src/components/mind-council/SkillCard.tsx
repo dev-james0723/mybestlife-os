@@ -43,7 +43,7 @@ export function SkillCard({
           className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
           aria-label={skill.lensTitle}
         >
-          <AdvisorPortrait skill={skill} className="h-12 w-12" pixelSize={48} />
+          <AdvisorPortrait skill={skill} className="h-14 w-14" pixelSize={56} />
         </button>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">

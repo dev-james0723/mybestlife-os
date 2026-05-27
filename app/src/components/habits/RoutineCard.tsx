@@ -1,10 +1,10 @@
 "use client";
 
-import { ListOrdered, Play } from "lucide-react";
+import { ListOrdered, Play, Timer } from "lucide-react";
 import type { RoutineWithSteps } from "@/lib/habits/types";
 import type { HabitsUiCopy } from "@/lib/i18n/habits-ui";
 import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { timeOfDayPillClass } from "./TodayView";
@@ -44,19 +44,21 @@ export function RoutineCard({
   const totalMin = totalMinutes(routine);
 
   return (
-    <Card
+    <GlassPanel
       data-testid="routine-card"
       data-routine-id={routine.id}
       className={cn(
-        "overflow-hidden border-border/80 shadow-none transition-colors",
+        "overflow-hidden transition-colors",
         archived && "opacity-70",
-        onClick && "cursor-pointer hover:bg-muted/40",
+        onClick && "cursor-pointer",
       )}
+      interactive={!!onClick}
       onClick={() => onClick?.(routine)}
     >
       <div className="flex items-stretch gap-0">
-        <div className="flex w-11 shrink-0 flex-col items-center justify-center gap-1 border-r border-border/60 bg-muted/15 py-3">
-          <ListOrdered className="size-4 text-muted-foreground" />
+        <div className="flex w-14 shrink-0 flex-col items-center justify-center gap-1 border-r border-white/10 bg-white/[0.05] py-3">
+          <ListOrdered className="size-5 text-primary" />
+          {totalMin > 0 && <Timer className="size-3.5 text-muted-foreground" />}
         </div>
         <div className="min-w-0 flex-1 space-y-2 p-3.5">
           <div className="flex items-start justify-between gap-2">
@@ -79,7 +81,7 @@ export function RoutineCard({
             </div>
             <div onClick={(e) => e.stopPropagation()}>
               <Button
-                variant="secondary"
+                variant="default"
                 size="sm"
                 className="h-8 shrink-0 gap-1.5"
                 disabled={!onStart}
@@ -109,7 +111,7 @@ export function RoutineCard({
             )}
           </div>
           {(expanded || steps.length <= 4) && steps.length > 0 && (
-            <ol className="mt-1 space-y-1 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+            <ol className="mt-1 space-y-1 border-t border-white/10 pt-2 text-xs text-muted-foreground">
               {steps.map((s, i) => (
                 <li key={s.id} className="flex gap-2">
                   <span className="w-4 shrink-0 font-mono text-[0.65rem] text-muted-foreground/80">
@@ -129,6 +131,6 @@ export function RoutineCard({
           )}
         </div>
       </div>
-    </Card>
+    </GlassPanel>
   );
 }

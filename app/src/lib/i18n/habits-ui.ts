@@ -3,6 +3,20 @@ import { DEFAULT_LOCALE } from "./app-locale";
 import { createLocaleCopyMap } from "./copy-helpers";
 import type { HabitFrequency, HabitType, TimeOfDay, Weekday } from "@/lib/habits/types";
 
+export type HabitWizardStepKey =
+  | "improvementArea"
+  | "supportNeed"
+  | "realisticTime"
+  | "effort"
+  | "blocker";
+
+export type HabitWizardStepCopy = {
+  key: HabitWizardStepKey;
+  title: string;
+  options: string[];
+  defaultOption: string;
+};
+
 /**
  * Habits & Routine UI copy — section chrome, heatmap legend, detail drawer,
  * and small formatters. Missing keys in locale overrides fall back to English.
@@ -10,6 +24,44 @@ import type { HabitFrequency, HabitType, TimeOfDay, Weekday } from "@/lib/habits
 export type HabitsUiCopy = {
   pageTitle: string;
   pageDescription: string;
+  secretaryHeroTitle: string;
+  secretaryHeroSubtitle: string;
+  secretaryPrimaryCta: string;
+  secretaryManualCta: string;
+  secretaryReviewCta: string;
+  secretaryFallbackSummary: string;
+  secretaryTodayProgress: (completed: number, total: number) => string;
+  aiArchitectTitle: string;
+  aiArchitectDescription: string;
+  aiArchitectEmpty: string;
+  aiCreateSuggestion: string;
+  aiDifficultyEasy: string;
+  aiDifficultyMedium: string;
+  aiDifficultyHard: string;
+  routineStudioTitle: string;
+  routineStudioDescription: string;
+  analyticsTitle: string;
+  analyticsNarrativeTitle: string;
+  analyticsFilterAll: string;
+  analyticsMetric7Days: string;
+  analyticsMetric30Days: string;
+  analyticsMetricSkipped: string;
+  analyticsMetricVolatility: string;
+  analyticsVolatilityPoints: (points: number) => string;
+  analyticsFallbackNarrative: (best: string, weakest: string) => string;
+  analyticsDifficultyTitle: string;
+  analyticsTooAmbitious: string;
+  analyticsNoOverreach: string;
+  maintenanceTitle: string;
+  timerStart: string;
+  timerPause: string;
+  timerResume: string;
+  timerComplete: string;
+  timerCancel: string;
+  timerReady: string;
+  timerNoActive: string;
+  habitActionMarkDone: string;
+  habitActionStillAvoided: string;
 
   todaySectionTitle: string;
   todaySectionDescription: string;
@@ -125,6 +177,11 @@ export type HabitsUiCopy = {
   aiGenerating: string;
   aiUsePrimary: string;
   aiRationale: string;
+  aiWizardSteps: HabitWizardStepCopy[];
+  aiWizardBack: string;
+  aiWizardNext: string;
+  aiWizardBackToAnswers: string;
+  aiWizardPrimaryRecommendation: string;
   routineStepTitle: string;
   routineStepMinutes: string;
   routineAddStep: string;
@@ -140,6 +197,46 @@ export type HabitsUiCopy = {
 const en: HabitsUiCopy = {
   pageTitle: "Habits & Routine",
   pageDescription: "A calm record of the small things you are trying to do often.",
+  secretaryHeroTitle: "AI Secretary for daily behavior",
+  secretaryHeroSubtitle: "Your habits, routines, goals, planner, and calendar in one calm command center.",
+  secretaryPrimaryCta: "Plan my habits",
+  secretaryManualCta: "Manual setup",
+  secretaryReviewCta: "Review patterns",
+  secretaryFallbackSummary:
+    "I’ll keep today small: protect the highest-value habit, avoid crowded timing, and adjust anything that keeps slipping.",
+  secretaryTodayProgress: (completed, total) => `${completed}/${total} done today.`,
+  aiArchitectTitle: "AI Habit Architect",
+  aiArchitectDescription: "Suggestions from your goals, planner, projects, knowledge, career direction, and current habits.",
+  aiArchitectEmpty: "No cross-page suggestion yet. Generate a brief after your system has enough context.",
+  aiCreateSuggestion: "Create habit",
+  aiDifficultyEasy: "Easy",
+  aiDifficultyMedium: "Medium",
+  aiDifficultyHard: "Hard",
+  routineStudioTitle: "Routine Studio",
+  routineStudioDescription: "Run step-by-step flows with a timer-backed execution state.",
+  analyticsTitle: "Patterns and consistency",
+  analyticsNarrativeTitle: "Secretary analysis",
+  analyticsFilterAll: "All",
+  analyticsMetric7Days: "7 days",
+  analyticsMetric30Days: "30 days",
+  analyticsMetricSkipped: "Skipped",
+  analyticsMetricVolatility: "Volatility",
+  analyticsVolatilityPoints: (points) => `${points} pts`,
+  analyticsFallbackNarrative: (best, weakest) =>
+    `Best time: ${best}. Weakest time: ${weakest}. If a habit keeps slipping, reduce the starter version before changing the goal.`,
+  analyticsDifficultyTitle: "Difficulty warning",
+  analyticsTooAmbitious: "Targets look too ambitious this week",
+  analyticsNoOverreach: "No strong overreach signal in the current window.",
+  maintenanceTitle: "Maintenance",
+  timerStart: "Start",
+  timerPause: "Pause",
+  timerResume: "Resume",
+  timerComplete: "Complete",
+  timerCancel: "Cancel",
+  timerReady: "Ready",
+  timerNoActive: "No active timer",
+  habitActionMarkDone: "Mark done",
+  habitActionStillAvoided: "Still avoided",
 
   todaySectionTitle: "Today",
   todaySectionDescription: "What you set out to do today.",
@@ -257,6 +354,83 @@ const en: HabitsUiCopy = {
   aiGenerating: "Generating…",
   aiUsePrimary: "Use primary suggestion",
   aiRationale: "Why",
+  aiWizardSteps: [
+    {
+      key: "improvementArea",
+      title: "What are you improving?",
+      options: [
+        "Focus",
+        "Health",
+        "Energy",
+        "Learning",
+        "Music practice",
+        "Career",
+        "Relationships",
+        "Money",
+        "Sleep",
+        "Emotional stability",
+      ],
+      defaultOption: "Focus",
+    },
+    {
+      key: "supportNeed",
+      title: "What support do you need?",
+      options: [
+        "Make it easier",
+        "Make it more consistent",
+        "Find the best time",
+        "Break it into smaller steps",
+        "Connect it to a goal",
+        "Recover from missed days",
+      ],
+      defaultOption: "Make it easier",
+    },
+    {
+      key: "realisticTime",
+      title: "When is this realistic?",
+      options: [
+        "Morning",
+        "Afternoon",
+        "Evening",
+        "Anytime",
+        "Before existing calendar event",
+        "After existing calendar event",
+        "AI decides",
+      ],
+      defaultOption: "AI decides",
+    },
+    {
+      key: "effort",
+      title: "How much effort can you honestly handle?",
+      options: [
+        "2 minutes",
+        "5 minutes",
+        "10 minutes",
+        "20 minutes",
+        "30 minutes",
+        "AI chooses a starter version",
+      ],
+      defaultOption: "5 minutes",
+    },
+    {
+      key: "blocker",
+      title: "What usually blocks you?",
+      options: [
+        "I forget",
+        "I over-plan",
+        "I start too big",
+        "My schedule changes",
+        "I get tired",
+        "I lose motivation",
+        "I do not know what to do next",
+      ],
+      defaultOption: "I start too big",
+    },
+  ],
+  aiWizardBack: "Back",
+  aiWizardNext: "Next",
+  aiWizardBackToAnswers: "Back to answers",
+  aiWizardPrimaryRecommendation: "Primary recommendation",
   routineStepTitle: "Step title",
   routineStepMinutes: "Minutes (optional)",
   routineAddStep: "Add step",
@@ -271,7 +445,47 @@ const en: HabitsUiCopy = {
 
 const zhTW: Partial<HabitsUiCopy> = {
   pageTitle: "習慣與作息",
-  pageDescription: "靜靜記下你想常常做的那些小事。",
+  pageDescription: "用比較安靜的方法，安排每天真正做得到的行為。",
+  secretaryHeroTitle: "每日行為設計秘書",
+  secretaryHeroSubtitle: "把習慣、例行、目標、行程和計劃放在同一個安靜的指揮台。",
+  secretaryPrimaryCta: "幫我規劃習慣",
+  secretaryManualCta: "手動設定",
+  secretaryReviewCta: "查看模式",
+  secretaryFallbackSummary:
+    "今天先保持細小：保護最重要的一個習慣，避開太迫的時段，並調整最近常漏掉的項目。",
+  secretaryTodayProgress: (completed, total) => `今日完成 ${completed}/${total}。`,
+  aiArchitectTitle: "AI 習慣設計師",
+  aiArchitectDescription: "根據目標、計劃、項目、知識、職涯方向和現有習慣提出建議。",
+  aiArchitectEmpty: "暫時未有跨頁建議。當系統有更多脈絡後，可以重新產生。",
+  aiCreateSuggestion: "建立習慣",
+  aiDifficultyEasy: "輕量",
+  aiDifficultyMedium: "中等",
+  aiDifficultyHard: "偏難",
+  routineStudioTitle: "例行工作室",
+  routineStudioDescription: "用有時間紀錄的方式，執行一步一步的流程。",
+  analyticsTitle: "模式與穩定度",
+  analyticsNarrativeTitle: "秘書分析",
+  analyticsFilterAll: "全部",
+  analyticsMetric7Days: "7 日",
+  analyticsMetric30Days: "30 日",
+  analyticsMetricSkipped: "略過",
+  analyticsMetricVolatility: "波動",
+  analyticsVolatilityPoints: (points) => `${points} 點`,
+  analyticsFallbackNarrative: (best, weakest) =>
+    `最好時段：${best}。最弱時段：${weakest}。如果一個習慣一直漏掉，先縮小起步版本，不要急著改目標。`,
+  analyticsDifficultyTitle: "難度提醒",
+  analyticsTooAmbitious: "今週目標可能設得太大",
+  analyticsNoOverreach: "目前沒有明顯過度用力的訊號。",
+  maintenanceTitle: "整理與封存",
+  timerStart: "開始",
+  timerPause: "暫停",
+  timerResume: "繼續",
+  timerComplete: "完成",
+  timerCancel: "取消",
+  timerReady: "可以收尾",
+  timerNoActive: "沒有進行中的計時",
+  habitActionMarkDone: "標記完成",
+  habitActionStillAvoided: "今日有避開",
 
   todaySectionTitle: "今日",
   todaySectionDescription: "你今天想做的事。",
@@ -297,6 +511,76 @@ const zhTW: Partial<HabitsUiCopy> = {
   weeklyReviewTitle: "每週回顧",
   weeklyReviewEmpty: "記錄幾天後,這裡會出現一段回顧。",
   weeklyReviewRefresh: "重新整理週回顧",
+  aiWizardSteps: [
+    {
+      key: "improvementArea",
+      title: "你想改善哪一方面？",
+      options: [
+        "專注",
+        "健康",
+        "精力",
+        "學習",
+        "音樂練習",
+        "職涯",
+        "關係",
+        "金錢",
+        "睡眠",
+        "情緒穩定",
+      ],
+      defaultOption: "專注",
+    },
+    {
+      key: "supportNeed",
+      title: "你需要哪種支援？",
+      options: [
+        "變得更容易開始",
+        "變得更穩定",
+        "找出最好時段",
+        "拆成更細步驟",
+        "連到一個目標",
+        "漏掉後容易恢復",
+      ],
+      defaultOption: "變得更容易開始",
+    },
+    {
+      key: "realisticTime",
+      title: "哪個時段最現實？",
+      options: [
+        "早晨",
+        "下午",
+        "晚上",
+        "不限時段",
+        "現有行程之前",
+        "現有行程之後",
+        "由 AI 判斷",
+      ],
+      defaultOption: "由 AI 判斷",
+    },
+    {
+      key: "effort",
+      title: "你老實可以承受多少？",
+      options: ["2 分鐘", "5 分鐘", "10 分鐘", "20 分鐘", "30 分鐘", "由 AI 選一個起步版本"],
+      defaultOption: "5 分鐘",
+    },
+    {
+      key: "blocker",
+      title: "通常是什麼卡住你？",
+      options: [
+        "我會忘記",
+        "我會計劃過度",
+        "一開始設得太大",
+        "時間表常常變",
+        "我會太累",
+        "動力會跌",
+        "不知道下一步做什麼",
+      ],
+      defaultOption: "一開始設得太大",
+    },
+  ],
+  aiWizardBack: "返回",
+  aiWizardNext: "下一步",
+  aiWizardBackToAnswers: "返回答案",
+  aiWizardPrimaryRecommendation: "主要建議",
 
   todayGroupMorning: "上午",
   todayGroupAfternoon: "下午",

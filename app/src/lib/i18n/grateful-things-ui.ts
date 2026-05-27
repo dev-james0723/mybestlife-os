@@ -36,6 +36,12 @@ export type GratefulThingsUiCopy = {
   sortEntryDate: string;
   sortDateAdded: string;
   sortPlaceholder: string;
+  viewList: string;
+  viewGrid: string;
+  viewHeart: string;
+  viewListAria: string;
+  viewGridAria: string;
+  viewHeartAria: string;
   emptyTitle: string;
   emptyDescNoEntries: string;
   emptyDescSearch: string;
@@ -101,6 +107,12 @@ const en: GratefulThingsUiCopy = {
   sortEntryDate: "Entry date",
   sortDateAdded: "Date added",
   sortPlaceholder: "Sort by",
+  viewList: "List",
+  viewGrid: "Grid",
+  viewHeart: "Heart",
+  viewListAria: "List view",
+  viewGridAria: "Grid view",
+  viewHeartAria: "Heart view",
   emptyTitle: "No entries yet",
   emptyDescNoEntries: "Write down one thing you are grateful for today",
   emptyDescSearch: "Nothing matches your search",
@@ -187,6 +199,12 @@ const zhTW: GratefulThingsUiCopy = {
   sortEntryDate: "條目日期",
   sortDateAdded: "新增日期",
   sortPlaceholder: "排序",
+  viewList: "列表",
+  viewGrid: "網格",
+  viewHeart: "愛心",
+  viewListAria: "列表檢視",
+  viewGridAria: "網格檢視",
+  viewHeartAria: "愛心檢視",
   emptyTitle: "尚無條目",
   emptyDescNoEntries: "寫下今天一件值得感恩的事",
   emptyDescSearch: "沒有符合搜尋的內容",
@@ -273,6 +291,12 @@ const zhCN: GratefulThingsUiCopy = {
   sortEntryDate: "条目日期",
   sortDateAdded: "添加日期",
   sortPlaceholder: "排序",
+  viewList: "列表",
+  viewGrid: "网格",
+  viewHeart: "爱心",
+  viewListAria: "列表视图",
+  viewGridAria: "网格视图",
+  viewHeartAria: "爱心视图",
   emptyTitle: "暂无条目",
   emptyDescNoEntries: "写下今天一件值得感恩的事",
   emptyDescSearch: "没有符合搜索的内容",

@@ -22,6 +22,12 @@ const LINK_KIND_TO_EDGE: Record<
   task: { edge: "habit_task", targetType: "task", nodeType: "task" },
   knowledge: { edge: "habit_knowledge", targetType: "knowledge", nodeType: null },
   timeline: { edge: "timeline_relation", targetType: "career_event", nodeType: "career_event" },
+  calendar_event: { edge: "timeline_relation", targetType: "daily_plan", nodeType: "daily_plan" },
+  career_profile: { edge: "timeline_relation", targetType: "about_me", nodeType: "about_me" },
+  ai_knowledge: { edge: "habit_knowledge", targetType: "ai_prompt", nodeType: "ai_prompt" },
+  planner_block: { edge: "habit_task", targetType: "daily_plan", nodeType: "daily_plan" },
+  health_metric: { edge: "goal_habit", targetType: "health_goal", nodeType: "health_goal" },
+  journal_pattern: { edge: "timeline_relation", targetType: "journal_entry", nodeType: "journal_entry" },
 };
 
 export function habitsToGraph(input: {

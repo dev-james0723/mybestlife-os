@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +14,10 @@ import {
   VaultEntryForm,
   entryToForm,
   buildCreatePayload,
+  type VaultFormMetadata,
   type VaultFormState,
 } from "@/components/vault/VaultEntryForm";
+import type { ConfidenceLevel } from "@/types/vault-smart-autofill";
 import { useUpdateSoftwareVaultEntry } from "@/hooks/use-software-vault";
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
@@ -50,6 +52,21 @@ function EditForm({
   onOpenChange: (open: boolean) => void;
 }) {
   const [form, setForm] = useState<VaultFormState>(() => entryToForm(entry));
+  const [fieldConfidence, setFieldConfidence] = useState<Record<string, ConfidenceLevel>>(
+    () => ({ ...(entry.field_confidence ?? {}) }),
+  );
+  const metadata = useMemo<VaultFormMetadata>(
+    () => ({
+      pricing_plans: entry.pricing_plans ?? [],
+      selected_plan_id: entry.selected_plan_id,
+      billing_cycle: entry.billing_cycle,
+      cost_currency: entry.cost_currency,
+      alternative_options: entry.alternative_options ?? [],
+      field_sources: entry.field_sources ?? [],
+      field_confidence: fieldConfidence,
+    }),
+    [entry, fieldConfidence],
+  );
   const updateMutation = useUpdateSoftwareVaultEntry();
   const language = useAppStore((s) => s.language);
   const copy = getVaultUiCopy(language);
@@ -57,8 +74,12 @@ function EditForm({
   const handleChange = (patch: Partial<VaultFormState>) =>
     setForm((f) => ({ ...f, ...patch }));
 
+  const handleFieldUserEdit = (field: keyof VaultFormState) => {
+    setFieldConfidence((prev) => ({ ...prev, [field]: "user_confirmed" }));
+  };
+
   const handleSave = async () => {
-    const payload = buildCreatePayload(form);
+    const payload = buildCreatePayload(form, undefined, metadata);
     try {
       await updateMutation.mutateAsync({ id: entry.id, data: payload });
       onOpenChange(false);
@@ -72,7 +93,14 @@ function EditForm({
       <DialogHeader className="pr-10">
         <DialogTitle>{copy.form.editTitle(entry.app_name)}</DialogTitle>
       </DialogHeader>
-      <VaultEntryForm form={form} onChange={handleChange} />
+      <VaultEntryForm
+        form={form}
+        onChange={handleChange}
+        fieldConfidence={fieldConfidence}
+        fieldSources={entry.field_sources ?? []}
+        alternativeOptions={entry.alternative_options ?? []}
+        onFieldUserEdit={handleFieldUserEdit}
+      />
       <DialogFooter className="mt-4">
         <Button
           type="button"

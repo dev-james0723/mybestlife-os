@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUserId } from "@/lib/grateful-things/repository-core";
 import type {
   Routine,
   RoutineCompletion,
@@ -102,9 +103,11 @@ export const routinesRepository = {
 
   async create(input: CreateRoutineInput): Promise<Routine> {
     const supabase = createClient();
+    const userId = await requireAuthenticatedUserId(supabase);
     const { data, error } = await supabase
       .from("routines")
       .insert({
+        user_id: userId,
         name: input.name,
         description: input.description ?? null,
         time_of_day: input.time_of_day ?? "anytime",
@@ -156,9 +159,11 @@ export const routineStepsRepository = {
 
   async create(input: CreateRoutineStepInput): Promise<RoutineStep> {
     const supabase = createClient();
+    const userId = await requireAuthenticatedUserId(supabase);
     const { data, error } = await supabase
       .from("routine_steps")
       .insert({
+        user_id: userId,
         routine_id: input.routine_id,
         position: input.position,
         title: input.title,
@@ -247,10 +252,12 @@ export const routineCompletionsRepository = {
     input: CreateRoutineCompletionInput,
   ): Promise<RoutineCompletion> {
     const supabase = createClient();
+    const userId = await requireAuthenticatedUserId(supabase);
     const { data, error } = await supabase
       .from("routine_completions")
       .upsert(
         {
+          user_id: userId,
           routine_id: input.routine_id,
           completion_date: input.completion_date,
           completed_step_ids: input.completed_step_ids ?? [],

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { User } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { MindSkill } from "@/lib/mind-council/types";
 import { getAdvisorPortraitPath } from "@/lib/mind-council/advisor-portraits";
@@ -24,9 +25,10 @@ export function AdvisorPortrait({
   alt,
 }: AdvisorPortraitProps) {
   const portraitPath = getAdvisorPortraitPath(skill.skillId);
+  const [errored, setErrored] = useState(false);
   const [from, to] = skill.avatarGradient;
 
-  if (!portraitPath) {
+  if (!portraitPath || errored) {
     return (
       <span
         className={cn(
@@ -55,6 +57,7 @@ export function AdvisorPortrait({
         fill
         sizes={`${Math.max(pixelSize, 32)}px`}
         className="object-cover object-[center_20%]"
+        onError={() => setErrored(true)}
       />
     </span>
   );

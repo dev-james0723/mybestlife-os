@@ -31,7 +31,11 @@ type InsightEndpoint =
   | "struggle-detection"
   | "review-habit"
   | "correlation-insight"
-  | "quarterly-narrative";
+  | "quarterly-narrative"
+  | "secretary-brief"
+  | "onboarding-recommend"
+  | "cross-page-suggestions"
+  | "timer-complete-reflection";
 
 /**
  * The hook is bound to the habits AI surface (`/api/ai/habits/*`). Bio Lab
@@ -57,6 +61,10 @@ const KIND_TO_ENDPOINT: Record<HabitsAIInsightKind, InsightEndpoint> = {
   review_habit: "review-habit",
   correlation_insight: "correlation-insight",
   quarterly_narrative: "quarterly-narrative",
+  secretary_brief: "secretary-brief",
+  onboarding_recommend: "onboarding-recommend",
+  cross_page_suggestions: "cross-page-suggestions",
+  timer_complete_reflection: "timer-complete-reflection",
 };
 
 export type AIInsightPayload<TContent = unknown> = {
