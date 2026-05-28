@@ -194,6 +194,8 @@ export function BrainView({ userId }: BrainViewProps) {
 
   const canvasRef = useRef<BrainCanvasHandle | null>(null);
   const sphereRef = useRef<BrainSphere3DHandle | null>(null);
+  /** Ensures a `?focus=` deep link is applied at most once per mount. */
+  const focusParamHandledRef = useRef(false);
   const graphFullscreenRef = useRef<HTMLDivElement | null>(null);
   const [explodedFocus, setExplodedFocus] = useState(false);
   const [zoom, setZoom] = useState<number>(1);
@@ -757,6 +759,28 @@ export function BrainView({ userId }: BrainViewProps) {
       }
     }
   }, [search, matchedIds, isSphere, setSelectedNodeId]);
+
+  // Focus a node from a `?focus=scope:id` deep link (e.g. the Idea detail
+  // sheet's "Access My Brain" button uses `?focus=idea:<id>`). Runs once, only
+  // after the target node exists in the graph. Node ids are `type::sourceId`,
+  // so a single-colon `scope:id` is normalised to `scope::id`.
+  useEffect(() => {
+    if (focusParamHandledRef.current) return;
+    if (typeof window === "undefined") return;
+    const raw = new URLSearchParams(window.location.search).get("focus");
+    if (!raw) return;
+    const nodeId = raw.includes("::") ? raw : raw.replace(":", "::");
+    if (!nodeIndex.has(nodeId)) return;
+    focusParamHandledRef.current = true;
+    setSelectedNodeId(nodeId);
+    requestAnimationFrame(() => {
+      if (isSphere) {
+        sphereRef.current?.focusNode(nodeId);
+      } else {
+        canvasRef.current?.focusNode(nodeId);
+      }
+    });
+  }, [nodeIndex, isSphere, setSelectedNodeId]);
 
   // ── Counts per domain (for the Legend) ─────────────────────────────
   const domainCounts = useMemo(() => {

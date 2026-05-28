@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "content is required" }, { status: 400 });
   }
 
-  const systemInstruction = `You analyze a captured idea or note and return structured metadata to help route it.
+  const systemInstruction = `You analyze a captured idea or note and return structured metadata to help route it. You GENERALIZE — you never copy the user's first sentence.
 
 Return ONLY valid JSON with this exact shape:
 {
@@ -69,8 +69,11 @@ Return ONLY valid JSON with this exact shape:
 }
 
 Rules:
-- title: concise noun phrase, <= 60 chars, no trailing period, no quotes.
-- ai_tags: up to 5 lowercase hyphenated tags (e.g. "side-project", "career", "learning"). No leading "#".
+- LANGUAGE: match the idea's dominant script. Traditional Chinese / Cantonese stays natural Traditional Chinese; English stays English.
+- title: a GENERALIZED noun phrase revealing the concept/category — NOT the first sentence. No trailing punctuation, no quotes. Max 10 Chinese characters OR 8 English words.
+  GOOD: "美國品牌構想", "日本家庭旅行", "US Brand Idea". BAD: "今日要去行山".
+- ai_tags: up to 5 SHORT semantic keywords, NOT sentences, no punctuation, no "#", no duplicates. Chinese: 2-6 characters (proper nouns like 新幹線 ok). English: 1-3 words.
+  For "今日諗到去日本旅行，帶阿爸阿媽去賞櫻，由東京搭新幹線去日本" GOOD: ["日本","東京","旅行","家庭","新幹線"].
 - suggestedDestinations: pick any that fit (multiple allowed). Heuristics:
   * "task" — the idea includes an actionable verb or clear next step.
   * "kb" — the idea is a fact, quote, reference, or longer reflection worth archiving.

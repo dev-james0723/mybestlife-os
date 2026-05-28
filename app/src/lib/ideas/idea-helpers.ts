@@ -1,4 +1,5 @@
 import { clampIdeaTitle } from "@/lib/ideas/clamp-idea-title";
+import { isSuggestionTooSimilar } from "@/lib/ideas/idea-suggestion-guard";
 import { stripHtml } from "@/lib/utils/html";
 import type { Idea } from "@/types/database";
 import type {
@@ -43,7 +44,9 @@ function isScope(value: unknown): value is IdeaRelatedScope {
     value === "goal" ||
     value === "resource" ||
     value === "task" ||
-    value === "knowledge"
+    value === "knowledge" ||
+    value === "bucket" ||
+    value === "career"
   );
 }
 
@@ -114,6 +117,16 @@ export function ideaAiSuggestions(idea: Idea): IdeaAiSuggestions {
   const o = raw as Record<string, unknown>;
   const out: IdeaAiSuggestions = {};
   if (typeof o.summary === "string" && o.summary.trim()) out.summary = o.summary.trim();
+  const str = (v: unknown, max = 280): string | undefined =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined;
+  const coreInsight = str(o.coreInsight);
+  if (coreInsight) out.coreInsight = coreInsight;
+  const suggestedNextStep = str(o.suggestedNextStep);
+  if (suggestedNextStep) out.suggestedNextStep = suggestedNextStep;
+  const possibleUse = str(o.possibleUse);
+  if (possibleUse) out.possibleUse = possibleUse;
+  const clarifyingQuestion = str(o.clarifyingQuestion);
+  if (clarifyingQuestion) out.clarifyingQuestion = clarifyingQuestion;
   if (Array.isArray(o.ai_tags)) {
     const tags = o.ai_tags
       .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
@@ -135,6 +148,33 @@ export function ideaAiSuggestions(idea: Idea): IdeaAiSuggestions {
 
 export function ideaAiSummary(idea: Idea): string | null {
   return ideaAiSuggestions(idea).summary ?? null;
+}
+
+export type IdeaStructuredSuggestion = {
+  label: "coreInsight" | "suggestedNextStep" | "possibleUse" | "clarifyingQuestion";
+  text: string;
+};
+
+/**
+ * Structured AI suggestion panel fields, with the similarity guard applied:
+ * fields that merely echo the idea content (Core Insight especially) are
+ * dropped so the panel always adds value instead of repeating the content.
+ */
+export function ideaStructuredSuggestions(idea: Idea): IdeaStructuredSuggestion[] {
+  const s = ideaAiSuggestions(idea);
+  const content = idea.content ?? "";
+  const out: IdeaStructuredSuggestion[] = [];
+
+  const coreInsight = s.coreInsight ?? s.summary;
+  if (coreInsight && !isSuggestionTooSimilar(coreInsight, content)) {
+    out.push({ label: "coreInsight", text: coreInsight });
+  }
+  if (s.suggestedNextStep) out.push({ label: "suggestedNextStep", text: s.suggestedNextStep });
+  if (s.possibleUse) out.push({ label: "possibleUse", text: s.possibleUse });
+  if (s.clarifyingQuestion) {
+    out.push({ label: "clarifyingQuestion", text: s.clarifyingQuestion });
+  }
+  return out;
 }
 
 export function ideaRelatedResources(idea: Idea): IdeaRelatedResource[] {

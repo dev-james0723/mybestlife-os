@@ -1,38 +1,43 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { extractInlineImageFromResponse } from "@/lib/ai/gemini-image";
 
-const GEOMETRY_BRAND_STYLE = [
-  "My Best Life OS / Geometry brand: minimalist illustrative line art,",
-  "clean vector strokes, subtle dark or near-black background,",
-  "3–5 accent strokes in emerald (#22c55e), sky (#38bdf8), amber (#f97316),",
-  "occasional violet (#e879f9); Bauhaus-meets-tech geometry,",
-  "circles and arcs used sparingly as framing, not random decoration.",
+/**
+ * Fixed Idea Capture illustration style — a refined notebook illustration for
+ * a personal knowledge system. Warm ivory paper, minimalist black ink line
+ * art, one small muted orange accent. There is intentionally NO style picker;
+ * every idea card uses this single style.
+ */
+const IDEA_CAPTURE_STYLE = [
+  "Style: warm ivory paper background, minimalist hand-drawn black ink line art,",
+  "fine ink strokes with subtle cross-hatching, clean Japanese editorial / notebook",
+  "illustration feeling. Add only ONE small muted orange accent detail where it fits",
+  "(a sun, a dot, or a tiny object accent) — nothing more.",
 ].join(" ");
 
 export function buildIdeaCardIconPrompt(params: {
   ideaContent: string;
   title: string;
   tags: string[];
-  palette: string[];
+  /** Accepted for backwards-compat; the Idea Capture style is fixed and ignores it. */
+  palette?: string[];
 }): string {
-  const palette =
-    params.palette.length > 0 ? params.palette.join(", ") : "#22c55e, #38bdf8, #f97316";
   const content = params.ideaContent.trim().slice(0, 1200);
   const title = params.title.trim().slice(0, 120);
   const tags = params.tags.slice(0, 8).join(", ");
 
   return [
-    "Create ONE portrait illustration for the left panel of an idea card (aspect ratio 2:3, taller than wide).",
-    GEOMETRY_BRAND_STYLE,
-    "CRITICAL: The drawing MUST visually represent the specific idea below —",
-    "use recognizable metaphors and objects (e.g. airplane wings for flying, piano keys for music).",
-    "Do NOT output generic abstract squiggles, random circles, or unrelated geometry.",
-    "Style: simplified illustrative line art only — no text, no letters, no watermark, no photorealism.",
-    "Fill the vertical frame; subject centered with breathing room at top and bottom.",
-    `Accent palette: ${palette}.`,
-    `Idea title (context): ${title || "(untitled)"}`,
-    `Idea content (must inspire the illustration): ${content}`,
+    "Create ONE editorial line-art illustration for an Idea Capture card.",
+    `Idea title: ${title || "(untitled)"}`,
+    `Idea content: ${content}`,
     tags ? `Tags: ${tags}` : "",
+    IDEA_CAPTURE_STYLE,
+    "Composition: use recognizable objects or metaphors that clearly represent the idea",
+    "(e.g. travel → landmarks/luggage/train; business → product/market/chart; music → instruments;",
+    "family → home/together without detailed faces). The image must make sense even without reading",
+    "the card. Center the subject with breathing room. Designed for a vertical card thumbnail crop.",
+    "Mandatory: no text, no letters, no numbers, no logo, no watermark, no random abstract squiggles,",
+    "no random circles, no generic geometry, no photorealism, no distorted hands,",
+    "no faces unless absolutely necessary, no cheap colorful gradients, no generic SaaS icons.",
   ]
     .filter(Boolean)
     .join("\n");
