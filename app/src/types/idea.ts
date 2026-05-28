@@ -7,7 +7,9 @@ export type IdeaRelatedScope =
   | "goal"
   | "resource"
   | "task"
-  | "knowledge";
+  | "knowledge"
+  | "bucket"
+  | "career";
 
 export type IdeaResourceKind =
   | "project_resource"
@@ -39,7 +41,16 @@ export type IdeaCardVisual = {
 };
 
 export type IdeaAiSuggestions = {
+  /** @deprecated overview now mirrors user content; kept for backward compat. */
   summary?: string;
+  /** One short sentence: what this idea is really about. */
+  coreInsight?: string;
+  /** One concrete action the user can take next. */
+  suggestedNextStep?: string;
+  /** How this idea can be used inside My Best Life OS. */
+  possibleUse?: string;
+  /** One useful follow-up question (omitted when not helpful). */
+  clarifyingQuestion?: string;
   ai_tags?: string[];
   relatedResources?: IdeaRelatedResource[];
   cardVisual?: IdeaCardVisual;

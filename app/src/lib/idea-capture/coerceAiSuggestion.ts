@@ -1,4 +1,6 @@
 import type { AISuggestions } from "@/types/idea";
+import { clampIdeaTitle } from "@/lib/ideas/clamp-idea-title";
+import { normalizeIdeaTags } from "@/lib/ideas/normalize-idea-tag";
 
 const ALLOWED_DESTINATIONS = new Set(["task", "kb", "timeline", "graph"]);
 const ALLOWED_KINDS = new Set(["idea", "task", "note", "goal"]);
@@ -21,24 +23,13 @@ export function coerceSuggestionPayload(raw: unknown): AISuggestions {
   const o = raw as Record<string, unknown>;
 
   const titleRaw = o.title;
+  // Preserve the original script (Traditional Chinese stays Traditional Chinese)
+  // and clamp by the idea-title rules instead of slicing bytes.
   const title =
-    typeof titleRaw === "string"
-      ? titleRaw.trim().replace(/\.+$/, "").slice(0, 60) || null
-      : null;
+    typeof titleRaw === "string" ? clampIdeaTitle(titleRaw) || null : null;
 
-  const ai_tags = Array.isArray(o.ai_tags)
-    ? o.ai_tags
-        .filter((t): t is string => typeof t === "string")
-        .map((t) =>
-          t
-            .trim()
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]+/g, ""),
-        )
-        .filter(Boolean)
-        .slice(0, 5)
-    : [];
+  // Normalize into short semantic keywords; never destroy non-ASCII tags.
+  const ai_tags = normalizeIdeaTags(o.ai_tags, 5);
 
   const suggestedDestinations = Array.isArray(o.suggestedDestinations)
     ? o.suggestedDestinations

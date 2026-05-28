@@ -1,6 +1,8 @@
 import type { AppLocale } from "./app-locale";
 import { createLocaleCopyMap } from "./copy-helpers";
 import { IDEA_DESTINATION_OPTIONS, type IdeaCategorySlug } from "@/lib/ideas/constants";
+import type { IdeaRelatedCategory } from "@/lib/ideas/idea-related-display";
+import type { IdeaRelatedScope } from "@/types/idea";
 
 export type IdeasUiCopy = {
   pageTitle: string;
@@ -23,7 +25,8 @@ export type IdeasUiCopy = {
   linkedResource: string;
   linkedKnowledge: string;
   noRelatedResource: string;
-  relatedScopeLabels: Record<"idea" | "project" | "goal" | "resource" | "task" | "knowledge", string>;
+  relatedScopeLabels: Record<IdeaRelatedScope, string>;
+  relatedCategoryLabels: Record<IdeaRelatedCategory, string>;
   expandDirectory: string;
   collapseDirectory: string;
   searchPlaceholder: string;
@@ -101,6 +104,13 @@ export type IdeasUiCopy = {
   detailCancelEdit: string;
   contentSection: string;
   aiSuggestionsSection: string;
+  coreInsightLabel: string;
+  nextStepLabel: string;
+  possibleUseLabel: string;
+  clarifyingQuestionLabel: string;
+  accessBrain: string;
+  visualPreviewSection: string;
+  visualPending: string;
   relatedSection: string;
   attachmentsSection: string;
   destinationsSection: string;
@@ -151,6 +161,21 @@ const en: IdeasUiCopy = {
     resource: "Resource",
     task: "Task",
     knowledge: "Knowledge",
+    bucket: "Bucket List",
+    career: "Career",
+  },
+  relatedCategoryLabels: {
+    knowledge: "Knowledge",
+    idea: "Idea",
+    task: "Task",
+    project: "Project",
+    goal: "Goal",
+    bucket: "Bucket List",
+    career: "Career",
+    asset: "Asset",
+    document: "Document",
+    software: "Software",
+    resource: "Resource",
   },
   expandDirectory: "Expand sidebar",
   collapseDirectory: "Collapse sidebar",
@@ -270,6 +295,13 @@ const en: IdeasUiCopy = {
   detailCancelEdit: "Cancel",
   contentSection: "Content",
   aiSuggestionsSection: "AI suggestions",
+  coreInsightLabel: "Core insight",
+  nextStepLabel: "Suggested next step",
+  possibleUseLabel: "Possible use",
+  clarifyingQuestionLabel: "Question to clarify",
+  accessBrain: "Access My Brain",
+  visualPreviewSection: "Visual",
+  visualPending: "Visual is being generated…",
   relatedSection: "Related resources",
   attachmentsSection: "Attachments",
   destinationsSection: "Destinations",

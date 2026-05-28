@@ -14,6 +14,8 @@ import {
 import { ideaOverviewFromContent } from "@/lib/ideas/idea-overview";
 import { normalizeIdea } from "@/lib/ideas/normalize-idea";
 import { ideaAiSuggestions, previewIdeaTitle } from "@/lib/ideas/idea-helpers";
+import { normalizeIdeaTags } from "@/lib/ideas/normalize-idea-tag";
+import { isSuggestionTooSimilar } from "@/lib/ideas/idea-suggestion-guard";
 import { IDEA_CATEGORIES, type IdeaCategorySlug } from "@/lib/ideas/constants";
 import { stripHtml } from "@/lib/utils/html";
 import type { Idea, Json } from "@/types/database";
@@ -51,6 +53,10 @@ type GeminiRelated = {
 type GeminiAnalysis = {
   title: string;
   summary: string;
+  coreInsight: string;
+  suggestedNextStep: string;
+  possibleUse: string;
+  clarifyingQuestion: string;
   aiTags: string[];
   category: IdeaCategorySlug;
   captureKind: Idea["capture_kind"];
@@ -67,6 +73,8 @@ const KIND_LIMITS: Record<IdeaRelatedScope, number> = {
   resource: 18,
   task: 14,
   knowledge: 20,
+  bucket: 10,
+  career: 8,
 };
 
 const KIND_ORDER: IdeaRelatedScope[] = [
@@ -76,6 +84,8 @@ const KIND_ORDER: IdeaRelatedScope[] = [
   "task",
   "knowledge",
   "idea",
+  "bucket",
+  "career",
 ];
 
 const VALID_CAPTURE_KINDS = new Set<Idea["capture_kind"]>(["idea", "task", "note", "goal"]);
@@ -249,6 +259,17 @@ function firstParagraphSummary(plain: string): string {
   return `${compact.slice(0, 277)}...`;
 }
 
+const FALLBACK_EXPLANATION: Record<IdeaRelatedScope, string> = {
+  task: "Could become a concrete next action for this idea.",
+  project: "Overlaps with an existing project's scope and goals.",
+  goal: "Supports a goal you are already tracking.",
+  knowledge: "Covers related background that informs this idea.",
+  idea: "A nearby idea that shares the same theme.",
+  resource: "A resource that supports executing this idea.",
+  bucket: "Connects to something on your bucket list.",
+  career: "Relevant to a career opportunity you are tracking.",
+};
+
 function fallbackAnalysis(idea: Idea, plain: string, candidates: Candidate[]): GeminiAnalysis {
   const scored = candidates
     .map((candidate) => ({ candidate, score: heuristicScore(plain, candidate) }))
@@ -262,22 +283,22 @@ function fallbackAnalysis(idea: Idea, plain: string, candidates: Candidate[]): G
     title: candidate.title,
     subtitle: candidate.subtitle,
     percentage: Math.max(45, Math.min(88, Math.round(score * 100))),
-    explanation: "Shares keywords, entities, or nearby intent with this idea.",
+    explanation: FALLBACK_EXPLANATION[candidate.scope] ?? FALLBACK_EXPLANATION.resource,
     url: candidate.url,
     resourceKind: candidate.resourceKind,
     source: candidate.source,
   }));
 
   const title = clampIdeaTitle(previewIdeaTitle(idea, 72));
-  const tags = Array.from(tokenSet(plain))
-    .filter((t) => t.length >= 2)
-    .slice(0, 5)
-    .map(normalizeTag)
-    .filter(Boolean);
+  const tags = normalizeIdeaTags(Array.from(tokenSet(plain)).filter((t) => t.length >= 2));
 
   return {
     title,
     summary: ideaOverviewFromContent(idea.content, 2000) || firstParagraphSummary(plain),
+    coreInsight: "",
+    suggestedNextStep: "",
+    possibleUse: "",
+    clarifyingQuestion: "",
     aiTags: tags,
     category: "random",
     captureKind: idea.capture_kind,
@@ -329,16 +350,16 @@ async function maybeGenerateCardVisual(params: {
   existing?: IdeaCardVisual;
 }): Promise<IdeaCardVisual | undefined> {
   const ideaContent = params.ideaPlainContent || params.analysis.summary || params.analysis.title;
-  const prompt =
-    (params.analysis.cardVisualPrompt
-      ? `${params.analysis.cardVisualPrompt}\nIdea content (must match illustration): ${ideaContent.slice(0, 900)}`
-      : null) ||
-    buildIdeaCardIconPrompt({
-      ideaContent,
-      title: params.analysis.title,
-      tags: params.analysis.aiTags,
-      palette: params.analysis.cardVisualPalette,
-    });
+  // Always apply the fixed ivory line-art style; the AI's cardVisualPrompt is
+  // only a hint about which symbols to draw.
+  const basePrompt = buildIdeaCardIconPrompt({
+    ideaContent,
+    title: params.analysis.title,
+    tags: params.analysis.aiTags,
+  });
+  const prompt = params.analysis.cardVisualPrompt
+    ? `${basePrompt}\nSuggested symbols (keep the fixed style above): ${params.analysis.cardVisualPrompt.slice(0, 400)}`
+    : basePrompt;
 
   const base: IdeaCardVisual = {
     ...params.existing,
@@ -437,6 +458,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string
     assetsRes,
     documentsRes,
     softwareRes,
+    bucketRes,
+    careerRes,
   ] = await Promise.all([
     supabase
       .from("ideas")
@@ -493,6 +516,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(100),
+    supabase
+      .from("bucket_items")
+      .select("id,title,description,why_this_matters,type,status,category_tags,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("career_opportunities")
+      .select("id,company_name,role_title,location,stage,job_description,job_url,notes,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(60),
   ]);
 
   const candidates: Candidate[] = [];
@@ -644,6 +679,41 @@ export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string
     );
   }
 
+  for (const row of (bucketRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "bucket",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(row.title, "Bucket list item"),
+        body: [row.description, row.why_this_matters].map((v) => cleanText(v, 600)).filter(Boolean).join(" "),
+        tags: coerceTags(row.category_tags),
+        subtitle: typeof row.type === "string" ? row.type : "Bucket list",
+      }),
+    );
+  }
+
+  for (const row of (careerRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "career",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(
+          [row.role_title, row.company_name].filter(Boolean).join(" · ") || row.company_name,
+          "Career opportunity",
+        ),
+        body: [row.job_description, row.notes, row.location]
+          .map((v) => cleanText(v, 600))
+          .filter(Boolean)
+          .join(" "),
+        tags: typeof row.stage === "string" ? [row.stage] : [],
+        subtitle: typeof row.stage === "string" ? row.stage : "Career",
+        url: typeof row.job_url === "string" ? row.job_url : undefined,
+      }),
+    );
+  }
+
   const selected = selectCandidates(plain, candidates);
   const candidateByKey = new Map(selected.map((candidate) => [candidateKey(candidate.scope, candidate.id), candidate]));
   const apiKey = getGeminiServerApiKey() ?? null;
@@ -667,32 +737,49 @@ export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string
     try {
       const { text, modelUsed } = await fetchGeminiPlannerJsonText({
         apiKey,
-        systemInstruction: `You organize a personal Life OS idea library.
+        systemInstruction: `You are organizing a personal Life OS idea library. You GENERALIZE ideas into clean knowledge objects — you never copy the user's sentences back.
 
 Return ONLY valid JSON with this exact shape:
 {
   "title": string,
-  "summary": string,
+  "coreInsight": string,
+  "suggestedNextStep": string,
+  "possibleUse": string,
+  "clarifyingQuestion": string,
   "ai_tags": string[],
   "category": ${JSON.stringify(IDEA_CATEGORIES)},
   "captureKind": "idea" | "task" | "note" | "goal",
-  "related": [{ "scope": "idea" | "project" | "goal" | "resource" | "task" | "knowledge", "id": string, "percentage": number, "explanation": string }],
+  "related": [{ "scope": "idea" | "project" | "goal" | "resource" | "task" | "knowledge" | "bucket" | "career", "id": string, "percentage": number, "explanation": string }],
   "cardVisualPrompt": string,
   "cardVisualPalette": string[]
 }
 
-Rules:
-- Match the idea's dominant language/script. Cantonese Traditional Chinese should remain Cantonese Traditional.
-- title: specific, no trailing period; at most 10 Chinese characters OR 8 English letters.
-- summary: leave empty string (overview comes from user content on the client).
-- ai_tags: 4-8 useful semantic tags, lowercase/hyphenated where possible, no leading #.
-- category: choose one allowed category exactly.
-- related: choose only candidates listed by the user. Use the candidate id exactly. Include genuinely useful matches across Ideas, Projects, Goals, Resources, Tasks, and Knowledge when present.
-- percentage is semantic closeness from 0-100. Only include items >= 42.
-- explanation: one concise reason explaining why the candidate is connected to this idea.
-- cardVisualPrompt: detailed prompt for a portrait (2:3) illustrative line-art image that MUST depict this specific idea (recognizable objects/metaphors), Geometry Life OS minimalist brand, no text.
-- cardVisualPalette: 3-5 distinct hex colors.
-- Output JSON only.`,
+LANGUAGE: Match the idea's dominant language/script. Traditional Chinese / Cantonese input MUST produce natural Traditional Chinese output (avoid mainland corporate wording). English input produces English output.
+
+title — a GENERALIZED noun phrase revealing the category/concept. NOT the first sentence. No trailing punctuation, no quotes, no markdown. Max 10 Chinese characters OR 8 English words.
+  GOOD: "美國品牌構想", "日本家庭旅行", "報名資料核對", "US Brand Idea", "D Festival Ops".
+  BAD (copies the sentence): "今日要去行山", "今日去野餐".
+
+ai_tags — 4-8 SHORT semantic keywords, NOT sentences. No punctuation, no #, no duplicates. Chinese: 2-6 characters (proper nouns like 新幹線 ok). English: 1-3 words.
+  For "今日諗到去日本旅行，帶阿爸阿媽去賞櫻，由東京搭新幹線去日本" GOOD tags: ["日本","東京","旅行","家庭","新幹線"]. NEVER ["今日諗到去日本旅行", ...].
+
+AI suggestions — these MUST add value and MUST NOT repeat the content:
+  coreInsight: one short sentence on what the idea is really about (a level of abstraction above the text).
+  suggestedNextStep: one concrete action the user can take.
+  possibleUse: how this idea connects to modules of My Best Life OS (Products, Projects, Goals, Knowledge, etc.).
+  clarifyingQuestion: one useful follow-up question — or empty string "" if nothing helpful.
+  Never restate the content. No motivational filler ("this is an interesting idea"). Be direct.
+
+category — choose exactly one allowed value.
+
+related — choose ONLY from the candidates provided below, using the candidate id EXACTLY. Pick genuinely useful matches across Ideas, Projects, Goals, Resources, Tasks, Knowledge, Bucket list, and Career when present.
+  percentage: semantic closeness 0-100. Include only items >= 45.
+  explanation: one SPECIFIC reason naming the shared topic/intent (e.g. "Both target US-market DTC validation"), never generic boilerplate.
+
+cardVisualPrompt — describe ONLY the concrete SYMBOLS/OBJECTS to draw that represent this idea (e.g. "Mount Fuji, cherry blossoms, a shinkansen train, a small family silhouette"). Do NOT describe art style — the fixed ivory line-art style is applied automatically. No text/letters.
+cardVisualPalette — 3-5 distinct hex colors (decorative metadata only).
+
+Output JSON only, no fences, no preamble.`,
         userText: `IDEA:
 Title: ${idea.title ?? "(none)"}
 Content: ${plain.slice(0, 6000)}
@@ -704,10 +791,16 @@ ${candidateBlock || "(none)"}`,
       const parsed = parseJsonObject(text);
       if (parsed) {
         const related = coerceRelated(parsed.related, candidateByKey);
+        const insight = cleanText(parsed.coreInsight, 280);
         analysis = {
           title: clampIdeaTitle(cleanTitle(parsed.title, analysis.title)),
           summary: ideaOverviewFromContent(idea.content, 2000) || analysis.summary,
-          aiTags: coerceTags(parsed.ai_tags),
+          // Drop a Core Insight that just echoes the content.
+          coreInsight: insight && !isSuggestionTooSimilar(insight, plain) ? insight : "",
+          suggestedNextStep: cleanText(parsed.suggestedNextStep, 280),
+          possibleUse: cleanText(parsed.possibleUse, 280),
+          clarifyingQuestion: cleanText(parsed.clarifyingQuestion, 280),
+          aiTags: normalizeIdeaTags(parsed.ai_tags),
           category: isCategory(parsed.category) ? parsed.category : analysis.category,
           captureKind: coerceCaptureKind(parsed.captureKind, idea.capture_kind),
           related: related.length > 0 ? related : analysis.related,
@@ -743,6 +836,10 @@ ${candidateBlock || "(none)"}`,
   const aiSuggestions: IdeaAiSuggestions = {
     ...existingSuggestions,
     summary: ideaOverviewFromContent(idea.content, 2000) || analysis.summary,
+    coreInsight: analysis.coreInsight || existingSuggestions.coreInsight,
+    suggestedNextStep: analysis.suggestedNextStep || existingSuggestions.suggestedNextStep,
+    possibleUse: analysis.possibleUse || existingSuggestions.possibleUse,
+    clarifyingQuestion: analysis.clarifyingQuestion || existingSuggestions.clarifyingQuestion,
     ai_tags: analysis.aiTags,
     relatedResources: analysis.related,
     cardVisual,

@@ -25,8 +25,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Brain, Pencil, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
 import { useIdeasStore } from "@/stores/ideas-store";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy, ideaDestinationLabel } from "@/lib/i18n/ideas-ui";
@@ -42,7 +44,13 @@ import {
 import { RichTextReadOnly } from "@/components/shared/rich-text-read-only";
 import type { Idea } from "@/types/database";
 import { IDEA_CATEGORIES, IDEA_DESTINATION_OPTIONS } from "@/lib/ideas/constants";
-import { ideaAiSummary } from "@/lib/ideas/idea-helpers";
+import {
+  ideaAiSuggestions,
+  ideaAiSummary,
+  ideaCardVisual,
+  ideaStructuredSuggestions,
+  type IdeaStructuredSuggestion,
+} from "@/lib/ideas/idea-helpers";
 import { IdeaCategoryBadge } from "./IdeaCategoryBadge";
 import { IdeaRelatedResources } from "./IdeaRelatedResources";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -106,7 +114,11 @@ function IdeaDetailInner({
       data: {
         content: html.trim() || text,
         title: titleDraft.trim() || null,
-        ai_suggestions: summaryDraft.trim() ? { summary: summaryDraft.trim() } : null,
+        // Merge: preserve AI insight/related/visual; only the overview is editable here.
+        ai_suggestions: {
+          ...ideaAiSuggestions(idea),
+          summary: summaryDraft.trim() || undefined,
+        },
         status,
         source_type: sourceType,
         capture_kind: captureKind,
@@ -137,6 +149,19 @@ function IdeaDetailInner({
   const badgeCategory = editing ? category : idea.category;
   const badgeStatus = editing ? status : idea.status;
   const badgeSource = editing ? sourceType : idea.source_type;
+
+  const suggestions = ideaStructuredSuggestions(idea);
+  const cardVisual = ideaCardVisual(idea);
+  const brainHref = withAppLocalePrefix(
+    language,
+    `/brain?focus=idea:${encodeURIComponent(idea.id)}`,
+  );
+  const suggestionLabels: Record<IdeaStructuredSuggestion["label"], string> = {
+    coreInsight: ui.coreInsightLabel,
+    suggestedNextStep: ui.nextStepLabel,
+    possibleUse: ui.possibleUseLabel,
+    clarifyingQuestion: ui.clarifyingQuestionLabel,
+  };
 
   return (
     <>
@@ -357,10 +382,19 @@ function IdeaDetailInner({
           ) : (
             <div className="grid gap-6 pb-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
               <div className="space-y-4">
-                {ideaAiSummary(idea) ? (
-                  <div className="rounded-lg border border-border/50 bg-muted/10 p-3 text-sm text-muted-foreground">
-                    <p className="text-xs font-medium text-foreground">{ui.aiSuggestionsSection}</p>
-                    <p className="mt-1 leading-relaxed">{ideaAiSummary(idea)}</p>
+                {suggestions.length > 0 ? (
+                  <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/10 p-3.5">
+                    <p className="text-xs font-semibold text-foreground">{ui.aiSuggestionsSection}</p>
+                    <div className="space-y-2.5">
+                      {suggestions.map((s) => (
+                        <div key={s.label}>
+                          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
+                            {suggestionLabels[s.label]}
+                          </p>
+                          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{s.text}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
                 <div>
@@ -375,6 +409,18 @@ function IdeaDetailInner({
                 ) : null}
               </div>
               <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-center gap-2 rounded-xl border-violet-300/40 bg-violet-500/15",
+                    "text-violet-700 shadow-[0_10px_30px_rgba(139,92,246,0.18)] backdrop-blur-xl",
+                    "hover:border-violet-300/55 hover:bg-violet-500/25 dark:text-violet-100",
+                  )}
+                  render={<Link href={brainHref} />}
+                >
+                  <Brain className="h-4 w-4" aria-hidden />
+                  {ui.accessBrain}
+                </Button>
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.aiTags}</p>
                   <div className="flex flex-wrap gap-1">
@@ -391,6 +437,23 @@ function IdeaDetailInner({
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.relatedSection}</p>
                   <IdeaRelatedResources idea={idea} language={language} />
                 </div>
+                {cardVisual?.imageUrl ? (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.visualPreviewSection}</p>
+                      <div className="overflow-hidden rounded-lg border border-border/50">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
+                        <img
+                          src={cardVisual.imageUrl}
+                          alt=""
+                          className="aspect-[3/4] w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
           )}

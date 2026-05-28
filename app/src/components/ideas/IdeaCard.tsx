@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Idea } from "@/types/database";
 import type { AppLocale } from "@/lib/i18n/app-locale";
@@ -15,36 +16,12 @@ import {
   previewIdeaBody,
   previewIdeaTitle,
 } from "@/lib/ideas/idea-helpers";
+import { resolveIdeaRelatedCategory } from "@/lib/ideas/idea-related-display";
 
 const TAG_CAP = 3;
 
-const DEFAULT_PALETTES = [
-  ["#22c55e", "#38bdf8", "#f97316", "#e879f9"],
-  ["#06b6d4", "#facc15", "#fb7185", "#a3e635"],
-  ["#60a5fa", "#34d399", "#f59e0b", "#f472b6"],
-  ["#14b8a6", "#f43f5e", "#c084fc", "#fde047"],
-];
-
-function hashString(input: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return Math.abs(hash);
-}
-
-function visualPalette(seed: string, palette?: string[]): string[] {
-  if (palette && palette.length >= 3) return palette;
-  return DEFAULT_PALETTES[hashString(seed) % DEFAULT_PALETTES.length] ?? DEFAULT_PALETTES[0]!;
-}
-
-function IdeaVisual({ idea, title }: { idea: Idea; title: string }) {
+function IdeaVisual({ idea, pendingLabel }: { idea: Idea; pendingLabel: string }) {
   const visual = ideaCardVisual(idea);
-  const seed = visual?.fallbackSeed ?? `${idea.id}:${title}`;
-  const palette = visualPalette(seed, visual?.palette);
-  const h = hashString(seed);
-  const p = (i: number, min: number, span: number) => min + ((h >> (i * 3)) % span);
 
   if (visual?.imageUrl) {
     return (
@@ -60,34 +37,14 @@ function IdeaVisual({ idea, title }: { idea: Idea; title: string }) {
     );
   }
 
+  // Deterministic "visual pending" placeholder — never random line art. Tuned
+  // to the warm ivory paper of the real generated illustrations.
   return (
-    <div className="relative h-full min-h-[168px] overflow-hidden bg-muted/20">
-      <svg viewBox="0 0 120 180" aria-hidden className="h-full w-full" preserveAspectRatio="xMidYMid slice">
-        <rect width="120" height="180" fill="rgba(255,255,255,0.02)" />
-        <path
-          d={`M${p(1, 18, 28)} ${p(2, 28, 24)} C ${p(3, 48, 30)} ${p(4, 8, 36)}, ${p(5, 86, 28)} ${p(6, 50, 36)}, ${p(7, 118, 20)} ${p(8, 22, 28)}`}
-          fill="none"
-          stroke={palette[0]}
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-        <path
-          d={`M${p(9, 20, 22)} ${p(10, 92, 24)} Q ${p(11, 74, 28)} ${p(12, 114, 18)}, ${p(13, 132, 14)} ${p(14, 82, 30)}`}
-          fill="none"
-          stroke={palette[1]}
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        <circle cx={p(15, 42, 72)} cy={p(16, 40, 60)} r={p(17, 14, 22)} fill="none" stroke={palette[2]} strokeWidth="6" />
-        <path
-          d={`M${p(18, 28, 24)} ${p(19, 132, 10)} L ${p(20, 78, 26)} ${p(21, 106, 20)} L ${p(22, 128, 16)} ${p(23, 132, 12)}`}
-          fill="none"
-          stroke={palette[3] ?? palette[0]}
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+    <div className="relative flex h-full min-h-[168px] flex-col items-center justify-center gap-2 overflow-hidden bg-[#f5efe3] text-[#8a7857] dark:bg-[#1b1915] dark:text-[#a9986f]">
+      <Sparkles className="h-6 w-6 opacity-70" aria-hidden />
+      <span className="px-3 text-center text-[10px] font-medium leading-tight opacity-80">
+        {pendingLabel}
+      </span>
     </div>
   );
 }
@@ -132,7 +89,7 @@ export function IdeaCard({
         }
       }}
     >
-      <IdeaVisual idea={idea} title={title} />
+      <IdeaVisual idea={idea} pendingLabel={ui.visualPending} />
       <div className="flex min-w-0 flex-col p-3.5">
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
           <IdeaCategoryBadge category={idea.category} language={language} />
@@ -163,7 +120,9 @@ export function IdeaCard({
         ) : null}
         <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[10px] text-muted-foreground">
           <span className="min-w-0 truncate">
-            {topRelated ? `${topRelated.percentage}% ${ui.relatedScopeLabels[topRelated.scope]}` : ui.relatedCount(rel)}
+            {topRelated
+              ? `${ui.relatedCategoryLabels[resolveIdeaRelatedCategory(topRelated)]} · ${topRelated.percentage}%`
+              : ui.relatedCount(rel)}
           </span>
           <span className="shrink-0 tabular-nums">{formatDateShort(idea.updated_at)}</span>
         </div>

@@ -12,6 +12,11 @@ import {
   Target,
   Package,
   ExternalLink,
+  Trophy,
+  Building2,
+  FileText,
+  Box,
+  AppWindow,
 } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
@@ -24,6 +29,11 @@ import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
 import { IDEA_DESTINATION_OPTIONS } from "@/lib/ideas/constants";
 import { ideaRelatedResources } from "@/lib/ideas/idea-helpers";
+import {
+  IDEA_RELATED_CATEGORY_PILL,
+  resolveIdeaRelatedCategory,
+  type IdeaRelatedCategory,
+} from "@/lib/ideas/idea-related-display";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIdeasStore } from "@/stores/ideas-store";
@@ -33,6 +43,7 @@ type Row = {
   key: string;
   icon: typeof Briefcase;
   scope?: IdeaRelatedScope;
+  category?: IdeaRelatedCategory;
   title: string;
   subtitle?: string;
   href?: string;
@@ -41,13 +52,18 @@ type Row = {
   explanation?: string;
 };
 
-const SCOPE_ICON: Record<IdeaRelatedScope, typeof Briefcase> = {
+const CATEGORY_ICON: Record<IdeaRelatedCategory, typeof Briefcase> = {
   idea: Lightbulb,
   project: Briefcase,
   goal: Target,
-  resource: Package,
   task: CheckSquare,
   knowledge: BookOpen,
+  bucket: Trophy,
+  career: Building2,
+  asset: Box,
+  document: FileText,
+  software: AppWindow,
+  resource: Package,
 };
 
 function relatedHref(r: IdeaRelatedResource, language: AppLocale): { href?: string; external?: boolean } {
@@ -60,6 +76,11 @@ function relatedHref(r: IdeaRelatedResource, language: AppLocale): { href?: stri
   if (r.scope === "project") return { href: withAppLocalePrefix(language, "/projects") };
   if (r.scope === "goal") return { href: withAppLocalePrefix(language, "/goals") };
   if (r.scope === "task") return { href: withAppLocalePrefix(language, "/tasks") };
+  if (r.scope === "bucket") return { href: withAppLocalePrefix(language, "/bucket-list") };
+  if (r.scope === "career") {
+    if (r.url) return { href: r.url, external: true };
+    return { href: withAppLocalePrefix(language, "/career") };
+  }
   if (r.scope === "resource") {
     if (r.url) return { href: r.url, external: true };
     if (r.resourceKind === "software_vault") return { href: withAppLocalePrefix(language, "/vault") };
@@ -91,7 +112,8 @@ export function IdeaRelatedResources({
   const seen = new Set<string>();
 
   for (const rel of ideaRelatedResources(idea).sort((a, b) => b.percentage - a.percentage)) {
-    const Icon = SCOPE_ICON[rel.scope] ?? Package;
+    const category = resolveIdeaRelatedCategory(rel);
+    const Icon = CATEGORY_ICON[category] ?? Package;
     const link = relatedHref(rel, language);
     const key = `${rel.scope}-${rel.id}`;
     seen.add(key);
@@ -99,6 +121,7 @@ export function IdeaRelatedResources({
       key,
       icon: Icon,
       scope: rel.scope,
+      category,
       title: rel.title,
       subtitle: rel.subtitle ?? ui.relatedScopeLabels[rel.scope],
       href: link.href,
@@ -115,6 +138,7 @@ export function IdeaRelatedResources({
       key: `p-${id}`,
       icon: Briefcase,
       scope: "project",
+      category: "project",
       title: name ?? ui.unknownProject,
       subtitle: name ? undefined : id.slice(0, 8),
       href: withAppLocalePrefix(language, "/projects"),
@@ -128,6 +152,7 @@ export function IdeaRelatedResources({
       key: `g-${id}`,
       icon: Target,
       scope: "goal",
+      category: "goal",
       title: goal?.name ?? ui.unknownGoal,
       subtitle: goal?.status ?? id.slice(0, 8),
       href: withAppLocalePrefix(language, "/goals"),
@@ -141,6 +166,7 @@ export function IdeaRelatedResources({
       key: `t-${id}`,
       icon: CheckSquare,
       scope: "task",
+      category: "task",
       title: t?.title ?? ui.unknownTask,
       subtitle: t?.title ? undefined : id.slice(0, 8),
       href: withAppLocalePrefix(language, "/tasks"),
@@ -154,6 +180,7 @@ export function IdeaRelatedResources({
       key: `k-${id}`,
       icon: BookOpen,
       scope: "knowledge",
+      category: "knowledge",
       title: k?.title?.trim() || ui.unknownKnowledge,
       href: withAppLocalePrefix(language, `/knowledge-base/${id}/oracle`),
     });
@@ -166,6 +193,7 @@ export function IdeaRelatedResources({
       key: `i-${id}`,
       icon: Lightbulb,
       scope: "idea",
+      category: "idea",
       title: linked?.title?.trim() || ui.unknownIdea,
       subtitle: id.slice(0, 8),
       href: withAppLocalePrefix(language, `/ideas?idea=${encodeURIComponent(id)}`),
@@ -177,6 +205,7 @@ export function IdeaRelatedResources({
     rows.push({
       key: `n-${id}`,
       icon: Share2,
+      category: "career",
       title: n?.name ?? ui.nodeLabel,
       subtitle: n?.name ? undefined : id.slice(0, 8),
     });
@@ -220,8 +249,18 @@ export function IdeaRelatedResources({
           >
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <p className="truncate font-medium leading-tight">{r.title}</p>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                {r.category ? (
+                  <span
+                    className={cn(
+                      "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium backdrop-blur-xl",
+                      IDEA_RELATED_CATEGORY_PILL[r.category],
+                    )}
+                  >
+                    {ui.relatedCategoryLabels[r.category]}
+                  </span>
+                ) : null}
+                <p className="min-w-0 flex-1 truncate font-medium leading-tight">{r.title}</p>
                 {typeof r.percentage === "number" && r.percentage > 0 ? (
                   <span className="shrink-0 rounded-md border border-border/50 bg-background/70 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
                     {r.percentage}%
@@ -229,7 +268,7 @@ export function IdeaRelatedResources({
                 ) : null}
               </div>
               {r.subtitle ? (
-                <p className="truncate font-mono text-[10px] text-muted-foreground">{r.subtitle}</p>
+                <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">{r.subtitle}</p>
               ) : null}
               {r.explanation ? (
                 <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">

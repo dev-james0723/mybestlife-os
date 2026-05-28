@@ -1,7 +1,12 @@
 /** Max CJK characters for an idea card title. */
-export const IDEA_TITLE_MAX_CJK = 10;
-/** Max Latin letters for an idea card title. */
-export const IDEA_TITLE_MAX_LATIN = 8;
+export const MAX_CHINESE_TITLE_CHARS = 10;
+/** Max Latin (whitespace-separated) words for an idea card title. */
+export const MAX_ENGLISH_TITLE_WORDS = 8;
+
+/** @deprecated use {@link MAX_CHINESE_TITLE_CHARS} */
+export const IDEA_TITLE_MAX_CJK = MAX_CHINESE_TITLE_CHARS;
+/** @deprecated titles now clamp by words — see {@link MAX_ENGLISH_TITLE_WORDS} */
+export const IDEA_TITLE_MAX_LATIN = MAX_ENGLISH_TITLE_WORDS;
 
 function countCjkChars(text: string): number {
   const matches = text.match(/[\p{Script=Han}]/gu);
@@ -20,11 +25,15 @@ function isMostlyCjk(text: string): boolean {
 }
 
 /**
- * Enforces idea title length: ≤10 Chinese characters OR ≤8 English letters.
- * Mixed titles use the stricter applicable limit for each script present.
+ * Enforces idea title length: ≤10 Chinese characters OR ≤8 English words.
+ * Mixed titles use the stricter applicable limit for the dominant script.
  */
 export function clampIdeaTitle(raw: string): string {
-  const title = raw.replace(/\s+/g, " ").replace(/\.+$/u, "").trim();
+  const title = raw
+    .replace(/\s+/g, " ")
+    .replace(/["“”'‘’]/gu, "")
+    .replace(/[.。!！?？,，、;；:：]+$/u, "")
+    .trim();
   if (!title) return "";
 
   const cjkCount = countCjkChars(title);
@@ -35,7 +44,7 @@ export function clampIdeaTitle(raw: string): string {
     let out = "";
     for (const ch of title) {
       if (/[\p{Script=Han}]/u.test(ch)) {
-        if (kept >= IDEA_TITLE_MAX_CJK) continue;
+        if (kept >= MAX_CHINESE_TITLE_CHARS) continue;
         kept += 1;
       }
       out += ch;
@@ -44,19 +53,12 @@ export function clampIdeaTitle(raw: string): string {
   }
 
   if (latinCount > 0) {
-    let kept = 0;
-    let out = "";
-    for (const ch of title) {
-      if (/[A-Za-z]/.test(ch)) {
-        if (kept >= IDEA_TITLE_MAX_LATIN) continue;
-        kept += 1;
-      }
-      out += ch;
-    }
-    return out.replace(/\s+/g, " ").trim();
+    const words = title.split(" ").filter(Boolean);
+    if (words.length <= MAX_ENGLISH_TITLE_WORDS) return title;
+    return words.slice(0, MAX_ENGLISH_TITLE_WORDS).join(" ");
   }
 
-  return title.slice(0, IDEA_TITLE_MAX_CJK);
+  return title.slice(0, MAX_CHINESE_TITLE_CHARS);
 }
 
 /** Local title when Gemini is unavailable or returns unusable output. */
