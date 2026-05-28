@@ -2,8 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
+import { fetchIdeaCardVisual } from "@/lib/ideas/fetchIdeaCardVisual";
+import { IDEA_CARD_VISUAL_STYLE_VERSION } from "@/lib/ideas/generate-idea-card-icon";
 import {
   ideaAiSummary,
+  ideaCardVisual,
   ideaRelatedResourceCount,
   previewIdeaTitle,
 } from "@/lib/ideas/idea-helpers";
@@ -19,16 +22,33 @@ function titleLooksRaw(idea: Idea): boolean {
   return preview === plain.slice(0, preview.length) || plain.startsWith(idea.title.trim());
 }
 
-function needsEnrichment(idea: Idea): boolean {
+function summaryLooksRaw(idea: Idea): boolean {
+  const summary = ideaAiSummary(idea)?.trim();
+  if (!summary) return true;
+  const plain = stripHtml(idea.content).replace(/\s+/g, " ").trim();
+  if (!plain) return false;
+  return summary === plain.slice(0, summary.length) || plain.startsWith(summary.slice(0, 80));
+}
+
+function needsTextEnrichment(idea: Idea): boolean {
   if (idea.processing_step === "ai-enriched" || idea.processing_step === "ai-enriched-fallback") {
-    return false;
+    if (!titleLooksRaw(idea) && !summaryLooksRaw(idea) && (idea.ai_tags?.length ?? 0) > 0) {
+      return ideaRelatedResourceCount(idea) === 0;
+    }
   }
   return (
     titleLooksRaw(idea) ||
-    !ideaAiSummary(idea) ||
+    summaryLooksRaw(idea) ||
     (idea.ai_tags?.length ?? 0) === 0 ||
     ideaRelatedResourceCount(idea) === 0
   );
+}
+
+function needsCardVisual(idea: Idea): boolean {
+  const visual = ideaCardVisual(idea);
+  if (!visual?.imageUrl) return true;
+  if (visual.error) return true;
+  return visual.styleVersion !== IDEA_CARD_VISUAL_STYLE_VERSION;
 }
 
 export function IdeasAutoEnrichmentRunner({ items }: { items: Idea[] }) {
@@ -38,9 +58,14 @@ export function IdeasAutoEnrichmentRunner({ items }: { items: Idea[] }) {
 
   useEffect(() => {
     if (runningRef.current) return;
+
     const queue = items
-      .filter((idea) => needsEnrichment(idea) && !queuedRef.current.has(idea.id))
-      .slice(0, 8);
+      .filter((idea) => {
+        const needs = needsTextEnrichment(idea) || needsCardVisual(idea);
+        return needs && !queuedRef.current.has(idea.id);
+      })
+      .slice(0, 12);
+
     if (queue.length === 0) return;
 
     let cancelled = false;
@@ -51,13 +76,19 @@ export function IdeasAutoEnrichmentRunner({ items }: { items: Idea[] }) {
       for (const idea of queue) {
         if (cancelled) break;
         try {
-          const enriched = await fetchIdeaAutoEnrich({
-            ideaId: idea.id,
-            includeVisual: false,
-          });
+          const visualOnly = needsCardVisual(idea) && !needsTextEnrichment(idea);
+          const enriched = visualOnly
+            ? await fetchIdeaCardVisual({ ideaId: idea.id })
+            : await fetchIdeaAutoEnrich({
+                ideaId: idea.id,
+                includeVisual: needsCardVisual(idea),
+              });
           if (!cancelled) upsertIdea(enriched);
         } catch (err) {
-          console.warn("[ideas] background auto-enrich failed:", err instanceof Error ? err.message : String(err));
+          console.warn(
+            "[ideas] background auto-enrich failed:",
+            err instanceof Error ? err.message : String(err),
+          );
         }
       }
     })().finally(() => {

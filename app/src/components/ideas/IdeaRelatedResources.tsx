@@ -245,8 +245,9 @@ export function IdeaRelatedResources({
         return (
           <li
             key={r.key}
-            className="flex items-start gap-2 rounded-lg border border-border/50 bg-muted/10 px-3 py-2 text-sm"
+            className="flex min-w-0 flex-col gap-2 rounded-lg border border-border/50 bg-muted/10 px-3 py-2 text-sm sm:flex-row sm:items-start"
           >
+            <div className="flex min-w-0 items-start gap-2 sm:flex-1">
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -260,7 +261,9 @@ export function IdeaRelatedResources({
                     {ui.relatedCategoryLabels[r.category]}
                   </span>
                 ) : null}
-                <p className="min-w-0 flex-1 truncate font-medium leading-tight">{r.title}</p>
+                <p className="min-w-0 flex-1 break-words font-medium leading-tight [overflow-wrap:anywhere] sm:truncate">
+                  {r.title}
+                </p>
                 {typeof r.percentage === "number" && r.percentage > 0 ? (
                   <span className="shrink-0 rounded-md border border-border/50 bg-background/70 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
                     {r.percentage}%
@@ -276,11 +279,12 @@ export function IdeaRelatedResources({
                 </p>
               ) : null}
             </div>
+            </div>
             {r.href ? (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 shrink-0 gap-1 px-2 text-xs"
+                className="h-8 w-full shrink-0 gap-1 px-2 text-xs sm:w-auto sm:self-start"
                 render={
                   <Link
                     href={r.href}

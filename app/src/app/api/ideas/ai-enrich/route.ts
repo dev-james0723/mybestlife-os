@@ -5,28 +5,50 @@ import {
   getGeminiServerApiKey,
 } from "@/lib/ai/gemini-text";
 import {
+  clampIdeaSummary,
   clampIdeaTitle,
   fallbackIdeaTitleFromPlain,
-  parseGeminiTitleJson,
+  parseGeminiEnrichJson,
 } from "@/lib/ideas/clamp-idea-title";
-import { ideaOverviewFromContent } from "@/lib/ideas/idea-overview";
+import { isSuggestionTooSimilar } from "@/lib/ideas/idea-suggestion-guard";
 import { stripHtml } from "@/lib/utils/html";
 
 export const runtime = "nodejs";
 
 const MAX_HTML_CHARS = 24_000;
 
-function buildEnrichResponse(contentHtml: string, plain: string, titleRaw: string): {
+function firstParagraphSummary(plain: string, max = 480): string {
+  const compact = plain.replace(/\s+/g, " ").trim();
+  if (!compact) return "";
+  const sentence = compact.split(/[。！？.!?\n]/u)[0]?.trim() || compact;
+  return clampIdeaSummary(sentence, max);
+}
+
+function buildEnrichResponse(
+  plain: string,
+  titleRaw: string,
+  summaryRaw: string,
+): {
   title: string;
   summary: string;
   titleSource: "gemini" | "fallback";
+  summarySource: "gemini" | "fallback";
 } {
-  const overview = ideaOverviewFromContent(contentHtml, 2000);
   const title = clampIdeaTitle(titleRaw) || fallbackIdeaTitleFromPlain(plain);
+  const summaryCandidate = clampIdeaSummary(summaryRaw);
+  const summary =
+    summaryCandidate && !isSuggestionTooSimilar(summaryCandidate, plain, 0.72)
+      ? summaryCandidate
+      : firstParagraphSummary(plain);
+
   return {
     title,
-    summary: overview,
+    summary,
     titleSource: titleRaw.trim() && clampIdeaTitle(titleRaw) ? "gemini" : "fallback",
+    summarySource:
+      summaryCandidate && !isSuggestionTooSimilar(summaryCandidate, plain, 0.72)
+        ? "gemini"
+        : "fallback",
   };
 }
 
@@ -35,8 +57,7 @@ function buildEnrichResponse(contentHtml: string, plain: string, titleRaw: strin
  *
  * Body: `{ contentHtml: string }`
  *
- * Returns `{ title, summary }`. Title is Gemini-generated (length-clamped).
- * Summary is the user's plain-text content (overview), not an AI rewrite.
+ * Returns `{ title, summary }`. Both are Gemini-generated when configured.
  */
 export async function POST(req: Request) {
   const supabase = await createServerSupabaseClient();
@@ -64,26 +85,27 @@ export async function POST(req: Request) {
     );
   }
 
-  const systemInstruction = `You help organize personal ideas captured in a notes app.
+  const systemInstruction = `You analyze a captured personal idea and return structured metadata. You GENERALIZE — never copy the user's first sentence verbatim into title or summary.
 
 Return ONLY valid JSON with this exact shape:
 {
-  "title": string
+  "title": string,
+  "summary": string
 }
 
 Rules:
-- title: one line, specific to this idea, no trailing period, no surrounding quotes.
-- Match the dominant language and script of the source (e.g. Cantonese Traditional Chinese stays Cantonese Traditional).
-- Length: at most 10 Chinese characters OR at most 8 English letters (whichever script dominates).
+- LANGUAGE: match the idea's dominant script (Traditional Chinese / Cantonese stays natural Traditional; English stays English).
+- title: one generalized noun phrase or short label for the idea — NOT the opening sentence. No trailing punctuation, no quotes. Max 10 Chinese characters OR 8 English words.
+  GOOD: "晚餐聚會", "商標註冊", "Dinner plans". BAD: "hi I want to go to dinner", "簡單嚟講，同一個名係可".
+- summary: 2–4 sentences that synthesize what the idea is about, why it matters, or what the user is exploring. Add abstraction — do NOT paste or lightly rephrase the source text. Max 120 Chinese characters OR 80 English words.
 - Do not invent facts not supported by the text.
 - Output JSON only, no code fences, no preamble.`;
 
   const userText = `Idea content (plain text extracted from rich text):\n${plain}`;
-  const contentHtml = payload.contentHtml ?? "";
 
   if (!apiKey) {
-    console.warn("[ideas/ai-enrich] GEMINI_API_KEY missing — using fallback title");
-    const fallback = buildEnrichResponse(contentHtml, plain, "");
+    console.warn("[ideas/ai-enrich] GEMINI_API_KEY missing — using fallback");
+    const fallback = buildEnrichResponse(plain, "", "");
     return NextResponse.json({ ...fallback, warning: "gemini_not_configured" });
   }
 
@@ -94,16 +116,16 @@ Rules:
       userText,
     });
 
-    const titleRaw = parseGeminiTitleJson(text);
-    const result = buildEnrichResponse(contentHtml, plain, titleRaw);
-    if (result.titleSource === "fallback") {
-      console.warn("[ideas/ai-enrich] Gemini returned empty/unparseable title — using fallback");
+    const { title: titleRaw, summary: summaryRaw } = parseGeminiEnrichJson(text);
+    const result = buildEnrichResponse(plain, titleRaw, summaryRaw);
+    if (result.titleSource === "fallback" || result.summarySource === "fallback") {
+      console.warn("[ideas/ai-enrich] Gemini returned partial output — using fallback fields");
     }
     return NextResponse.json(result);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error("[ideas/ai-enrich]", message);
-    const fallback = buildEnrichResponse(contentHtml, plain, "");
+    const fallback = buildEnrichResponse(plain, "", "");
     return NextResponse.json({ ...fallback, warning: "gemini_failed" });
   }
 }

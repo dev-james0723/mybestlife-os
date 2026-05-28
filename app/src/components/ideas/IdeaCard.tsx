@@ -40,7 +40,7 @@ function IdeaVisual({ idea, pendingLabel }: { idea: Idea; pendingLabel: string }
   // Deterministic "visual pending" placeholder — never random line art. Tuned
   // to the warm ivory paper of the real generated illustrations.
   return (
-    <div className="relative flex h-full min-h-[168px] flex-col items-center justify-center gap-2 overflow-hidden bg-[#f5efe3] text-[#8a7857] dark:bg-[#1b1915] dark:text-[#a9986f]">
+    <div className="relative flex h-full min-h-[168px] flex-col items-center justify-center gap-2 overflow-hidden bg-gradient-to-b from-sky-200/80 via-rose-100/60 to-blue-300/70 text-sky-900/70 dark:from-slate-800 dark:via-violet-950/40 dark:to-slate-900 dark:text-slate-300/80">
       <Sparkles className="h-6 w-6 opacity-70" aria-hidden />
       <span className="px-3 text-center text-[10px] font-medium leading-tight opacity-80">
         {pendingLabel}
@@ -76,7 +76,7 @@ export function IdeaCard({
       transition={{ duration: 0.18 }}
       whileHover={{ y: -2 }}
       className={cn(
-        "group grid min-h-[176px] cursor-pointer grid-cols-[minmax(0,1fr)_minmax(0,2fr)] overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[border-color,box-shadow] hover:border-border hover:shadow-md",
+        "group grid min-h-[176px] cursor-pointer grid-cols-1 overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[border-color,box-shadow] hover:border-border hover:shadow-md sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]",
         className,
       )}
       role="button"

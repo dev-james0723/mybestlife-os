@@ -69,17 +69,42 @@ export function fallbackIdeaTitleFromPlain(plain: string): string {
   return clampIdeaTitle(firstSentence);
 }
 
-function parseGeminiTitleJson(text: string): string {
+function parseGeminiJsonObject(text: string): Record<string, unknown> | null {
   const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/u, "").trim();
   const start = trimmed.indexOf("{");
   const end = trimmed.lastIndexOf("}");
-  if (start < 0 || end <= start) return "";
+  if (start < 0 || end <= start) return null;
   try {
-    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as Record<string, unknown>;
-    return typeof parsed.title === "string" ? parsed.title.trim() : "";
+    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
   } catch {
-    return "";
+    return null;
   }
+}
+
+function parseGeminiTitleJson(text: string): string {
+  const parsed = parseGeminiJsonObject(text);
+  return typeof parsed?.title === "string" ? parsed.title.trim() : "";
+}
+
+/** Short AI overview for capture dialogs (2–4 sentences). */
+export function clampIdeaSummary(raw: string, max = 480): string {
+  const summary = raw.replace(/\s+/g, " ").trim();
+  if (!summary) return "";
+  if (summary.length <= max) return summary;
+  const cut = summary.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  if (lastSpace > max * 0.6) return `${cut.slice(0, lastSpace).trim()}…`;
+  return `${cut.trim()}…`;
+}
+
+export function parseGeminiEnrichJson(text: string): { title: string; summary: string } {
+  const parsed = parseGeminiJsonObject(text);
+  const title = typeof parsed?.title === "string" ? parsed.title.trim() : "";
+  const summary = typeof parsed?.summary === "string" ? parsed.summary.trim() : "";
+  return { title, summary };
 }
 
 export { parseGeminiTitleJson };

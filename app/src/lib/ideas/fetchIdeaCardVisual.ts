@@ -1,16 +1,16 @@
 import type { Idea } from "@/types/database";
 import { normalizeIdea } from "@/lib/ideas/normalize-idea";
 
-export async function fetchIdeaAutoEnrich(params: {
+export async function fetchIdeaCardVisual(params: {
   ideaId: string;
-  includeVisual?: boolean;
+  force?: boolean;
   signal?: AbortSignal;
 }): Promise<Idea> {
-  const res = await fetch(`/api/ideas/${encodeURIComponent(params.ideaId)}/auto-enrich`, {
+  const res = await fetch(`/api/ideas/${encodeURIComponent(params.ideaId)}/card-visual`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
-    body: JSON.stringify({ includeVisual: params.includeVisual ?? false }),
+    body: JSON.stringify({ force: params.force ?? false }),
     signal: params.signal,
   });
 
@@ -20,7 +20,7 @@ export async function fetchIdeaAutoEnrich(params: {
 
   const payload = (await res.json()) as { idea?: unknown; error?: string };
   if (!payload.idea) {
-    throw new Error(payload.error ?? "auto_enrich_missing_idea");
+    throw new Error(payload.error ?? "card_visual_missing_idea");
   }
   return normalizeIdea(payload.idea);
 }

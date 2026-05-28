@@ -5,17 +5,18 @@ import {
   fetchGeminiPlannerJsonText,
   getGeminiServerApiKey,
 } from "@/lib/ai/gemini-text";
-import { clampIdeaTitle } from "@/lib/ideas/clamp-idea-title";
+import { clampIdeaSummary, clampIdeaTitle } from "@/lib/ideas/clamp-idea-title";
+import { isSuggestionTooSimilar } from "@/lib/ideas/idea-suggestion-guard";
 import {
   buildIdeaCardIconPrompt,
-  generateIdeaCardIconImage,
+  generateIdeaCardThumbnail,
   getIdeaCardIconModel,
+  IDEA_CARD_VISUAL_STYLE_VERSION,
 } from "@/lib/ideas/generate-idea-card-icon";
 import { ideaOverviewFromContent } from "@/lib/ideas/idea-overview";
 import { normalizeIdea } from "@/lib/ideas/normalize-idea";
 import { ideaAiSuggestions, previewIdeaTitle } from "@/lib/ideas/idea-helpers";
 import { normalizeIdeaTags } from "@/lib/ideas/normalize-idea-tag";
-import { isSuggestionTooSimilar } from "@/lib/ideas/idea-suggestion-guard";
 import { IDEA_CATEGORIES, type IdeaCategorySlug } from "@/lib/ideas/constants";
 import { stripHtml } from "@/lib/utils/html";
 import type { Idea, Json } from "@/types/database";
@@ -350,8 +351,7 @@ async function maybeGenerateCardVisual(params: {
   existing?: IdeaCardVisual;
 }): Promise<IdeaCardVisual | undefined> {
   const ideaContent = params.ideaPlainContent || params.analysis.summary || params.analysis.title;
-  // Always apply the fixed ivory line-art style; the AI's cardVisualPrompt is
-  // only a hint about which symbols to draw.
+  // Fixed minimalist gradient style; cardVisualPrompt hints mood/motif only.
   const basePrompt = buildIdeaCardIconPrompt({
     ideaContent,
     title: params.analysis.title,
@@ -369,42 +369,56 @@ async function maybeGenerateCardVisual(params: {
     generatedAt: new Date().toISOString(),
   };
 
-  if (!params.includeVisual || !params.apiKey || params.existing?.imageUrl) {
-    return base;
+  const hasCurrentStyle =
+    params.existing?.styleVersion === IDEA_CARD_VISUAL_STYLE_VERSION && Boolean(params.existing?.imageUrl);
+  if (!params.includeVisual || !params.apiKey || hasCurrentStyle) {
+    return { ...base, styleVersion: params.existing?.styleVersion ?? IDEA_CARD_VISUAL_STYLE_VERSION };
   }
 
-  const model = getIdeaCardIconModel();
   try {
-    const image = await generateIdeaCardIconImage({
+    const image = await generateIdeaCardThumbnail({
       apiKey: params.apiKey,
-      model,
       prompt,
+      title: params.analysis.title,
+      palette: params.analysis.cardVisualPalette,
     });
-    const ext = image.mimeType.includes("jpeg") || image.mimeType.includes("jpg")
-      ? "jpg"
-      : image.mimeType.includes("webp")
-        ? "webp"
-        : "png";
+    const ext = image.mimeType.includes("svg")
+      ? "svg"
+      : image.mimeType.includes("jpeg") || image.mimeType.includes("jpg")
+        ? "jpg"
+        : image.mimeType.includes("webp")
+          ? "webp"
+          : "png";
     const storagePath = `${params.userId}/${params.ideaId}/${randomUUID()}.${ext}`;
     const { error: uploadError } = await params.supabase.storage
       .from("idea-card-icons")
       .upload(storagePath, image.imageBytes, {
-        contentType: image.mimeType || "image/png",
+        contentType: image.mimeType,
         upsert: false,
       });
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error("[ideas/auto-enrich] card icon upload:", uploadError.message);
+      return {
+        ...base,
+        model: image.modelUsed,
+        styleVersion: params.existing?.styleVersion,
+        error: uploadError.message.slice(0, 180),
+      };
+    }
     const { data } = params.supabase.storage.from("idea-card-icons").getPublicUrl(storagePath);
     return {
       ...base,
       imageUrl: data.publicUrl,
       storagePath,
-      model,
+      model: image.modelUsed,
       prompt: image.promptUsed,
+      styleVersion: IDEA_CARD_VISUAL_STYLE_VERSION,
       error: undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { ...base, model, error: message.slice(0, 180) };
+    console.error("[ideas/auto-enrich] card visual:", message);
+    return { ...base, model: getIdeaCardIconModel(), styleVersion: params.existing?.styleVersion, error: message.slice(0, 180) };
   }
 }
 
@@ -742,6 +756,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string
 Return ONLY valid JSON with this exact shape:
 {
   "title": string,
+  "summary": string,
   "coreInsight": string,
   "suggestedNextStep": string,
   "possibleUse": string,
@@ -760,6 +775,8 @@ title — a GENERALIZED noun phrase revealing the category/concept. NOT the firs
   GOOD: "美國品牌構想", "日本家庭旅行", "報名資料核對", "US Brand Idea", "D Festival Ops".
   BAD (copies the sentence): "今日要去行山", "今日去野餐".
 
+summary — 2–4 sentences synthesizing the idea at a useful abstraction. Do NOT copy or lightly rephrase the user's text. Max 120 Chinese characters OR 80 English words.
+
 ai_tags — 4-8 SHORT semantic keywords, NOT sentences. No punctuation, no #, no duplicates. Chinese: 2-6 characters (proper nouns like 新幹線 ok). English: 1-3 words.
   For "今日諗到去日本旅行，帶阿爸阿媽去賞櫻，由東京搭新幹線去日本" GOOD tags: ["日本","東京","旅行","家庭","新幹線"]. NEVER ["今日諗到去日本旅行", ...].
 
@@ -776,8 +793,8 @@ related — choose ONLY from the candidates provided below, using the candidate 
   percentage: semantic closeness 0-100. Include only items >= 45.
   explanation: one SPECIFIC reason naming the shared topic/intent (e.g. "Both target US-market DTC validation"), never generic boilerplate.
 
-cardVisualPrompt — describe ONLY the concrete SYMBOLS/OBJECTS to draw that represent this idea (e.g. "Mount Fuji, cherry blossoms, a shinkansen train, a small family silhouette"). Do NOT describe art style — the fixed ivory line-art style is applied automatically. No text/letters.
-cardVisualPalette — 3-5 distinct hex colors (decorative metadata only).
+cardVisualPrompt — mood + simple motif for a minimalist gradient thumbnail (e.g. "warm dinner glow, table silhouette"; "soft blue-peach sunrise, mountain horizon"). No text/letters.
+cardVisualPalette — 3-5 distinct hex colors for the gradient (must match the idea mood).
 
 Output JSON only, no fences, no preamble.`,
         userText: `IDEA:
@@ -792,9 +809,16 @@ ${candidateBlock || "(none)"}`,
       if (parsed) {
         const related = coerceRelated(parsed.related, candidateByKey);
         const insight = cleanText(parsed.coreInsight, 280);
+        const summaryRaw = clampIdeaSummary(cleanText(parsed.summary, 520));
+        const aiSummary =
+          summaryRaw && !isSuggestionTooSimilar(summaryRaw, plain, 0.72)
+            ? summaryRaw
+            : insight && !isSuggestionTooSimilar(insight, plain, 0.72)
+              ? insight
+              : analysis.summary;
         analysis = {
           title: clampIdeaTitle(cleanTitle(parsed.title, analysis.title)),
-          summary: ideaOverviewFromContent(idea.content, 2000) || analysis.summary,
+          summary: aiSummary,
           // Drop a Core Insight that just echoes the content.
           coreInsight: insight && !isSuggestionTooSimilar(insight, plain) ? insight : "",
           suggestedNextStep: cleanText(parsed.suggestedNextStep, 280),
@@ -835,7 +859,7 @@ ${candidateBlock || "(none)"}`,
 
   const aiSuggestions: IdeaAiSuggestions = {
     ...existingSuggestions,
-    summary: ideaOverviewFromContent(idea.content, 2000) || analysis.summary,
+    summary: analysis.summary || existingSuggestions.summary,
     coreInsight: analysis.coreInsight || existingSuggestions.coreInsight,
     suggestedNextStep: analysis.suggestedNextStep || existingSuggestions.suggestedNextStep,
     possibleUse: analysis.possibleUse || existingSuggestions.possibleUse,

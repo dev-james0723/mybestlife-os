@@ -167,7 +167,7 @@ function IdeaDetailInner({
     <>
       <div
         className={cn(
-          "mx-auto flex h-[min(92dvh,880px)] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl",
+          "mx-auto flex h-[min(92dvh,880px)] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-t-2xl sm:max-w-5xl",
           "bg-popover bg-clip-padding text-sm text-popover-foreground shadow-xl ring-1 ring-foreground/10",
         )}
       >
@@ -181,7 +181,7 @@ function IdeaDetailInner({
                 {formatDateTime(idea.created_at)} · {formatDateTime(idea.updated_at)}
               </span>
             </div>
-            <SheetTitle className="text-left text-lg font-semibold tracking-tight">
+            <SheetTitle className="text-left text-lg font-semibold tracking-tight break-words [overflow-wrap:anywhere]">
               {editing ? (
                 <Input
                   value={titleDraft}
@@ -210,7 +210,7 @@ function IdeaDetailInner({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-5">
           {editing ? (
             <div className="grid gap-6 pb-6 lg:grid-cols-[minmax(0,1fr)_300px]">
               <div className="space-y-4">
@@ -380,8 +380,8 @@ function IdeaDetailInner({
               </div>
             </div>
           ) : (
-            <div className="grid gap-6 pb-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
-              <div className="space-y-4">
+            <div className="grid min-w-0 gap-6 pb-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
+              <div className="min-w-0 space-y-4">
                 {suggestions.length > 0 ? (
                   <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/10 p-3.5">
                     <p className="text-xs font-semibold text-foreground">{ui.aiSuggestionsSection}</p>
@@ -399,7 +399,11 @@ function IdeaDetailInner({
                 ) : null}
                 <div>
                   <p className="mb-1 text-xs font-medium text-muted-foreground">{ui.contentSection}</p>
-                  <RichTextReadOnly value={idea.content} empty="—" />
+                  <RichTextReadOnly
+                    value={idea.content}
+                    empty="—"
+                    className="max-w-full break-words [overflow-wrap:anywhere]"
+                  />
                 </div>
                 {idea.source_type === "voice" && idea.voice_transcript ? (
                   <div>
@@ -408,11 +412,11 @@ function IdeaDetailInner({
                   </div>
                 ) : null}
               </div>
-              <div className="space-y-4">
+              <div className="min-w-0 space-y-4">
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-center gap-2 rounded-xl border-violet-300/40 bg-violet-500/15",
+                    "w-full max-w-full justify-center gap-2 rounded-xl border-violet-300/40 bg-violet-500/15",
                     "text-violet-700 shadow-[0_10px_30px_rgba(139,92,246,0.18)] backdrop-blur-xl",
                     "hover:border-violet-300/55 hover:bg-violet-500/25 dark:text-violet-100",
                   )}
@@ -425,7 +429,10 @@ function IdeaDetailInner({
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.aiTags}</p>
                   <div className="flex flex-wrap gap-1">
                     {(idea.ai_tags ?? []).map((t) => (
-                      <span key={t} className="rounded-md border border-dashed px-2 py-0.5 text-xs text-muted-foreground">
+                      <span
+                        key={t}
+                        className="max-w-full break-words rounded-md border border-dashed px-2 py-0.5 text-xs text-muted-foreground"
+                      >
                         {t}
                       </span>
                     ))}
@@ -516,7 +523,7 @@ export function IdeaDetailSheet() {
         className={cn(
           "!rounded-none !border-0 !bg-transparent !shadow-none !ring-0",
           "scheme-light dark:scheme-dark",
-          "sm:!max-w-5xl",
+          "w-full max-w-[100vw] overflow-x-hidden sm:!max-w-5xl",
         )}
       >
         {idea ? <IdeaDetailInner key={idea.id} idea={idea} onClose={close} /> : null}

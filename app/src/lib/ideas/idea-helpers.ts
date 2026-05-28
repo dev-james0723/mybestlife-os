@@ -101,6 +101,9 @@ function coerceCardVisual(value: unknown): IdeaCardVisual | undefined {
   if (typeof o.fallbackSeed === "string" && o.fallbackSeed.trim()) out.fallbackSeed = o.fallbackSeed.trim().slice(0, 120);
   if (typeof o.generatedAt === "string" && o.generatedAt.trim()) out.generatedAt = o.generatedAt.trim();
   if (typeof o.error === "string" && o.error.trim()) out.error = o.error.trim().slice(0, 200);
+  if (typeof o.styleVersion === "string" && o.styleVersion.trim()) {
+    out.styleVersion = o.styleVersion.trim().slice(0, 40);
+  }
   if (Array.isArray(o.palette)) {
     const palette = o.palette
       .filter((c): c is string => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c.trim()))

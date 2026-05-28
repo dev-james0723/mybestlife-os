@@ -27,8 +27,8 @@ import {
 } from "@/components/shared/rich-text-editor";
 import { fetchIdeaAiEnrich } from "@/lib/ideas/fetchIdeaAiEnrich";
 import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
+import { fetchIdeaCardVisual } from "@/lib/ideas/fetchIdeaCardVisual";
 import { fallbackIdeaTitleFromPlain } from "@/lib/ideas/clamp-idea-title";
-import { ideaOverviewFromContent } from "@/lib/ideas/idea-overview";
 import { stripHtml } from "@/lib/utils/html";
 import { useCreateIdea } from "@/hooks/use-ideas";
 import { useProjects } from "@/hooks/use-projects";
@@ -108,28 +108,31 @@ export function AddIdeaModal() {
     const timer = window.setTimeout(async () => {
       const html = editorRef.current?.getHtml() ?? "";
       const plain = stripHtml(html).trim();
-      const overview = ideaOverviewFromContent(html, 2000);
-      if (!userEditedAiRef.current) setSummary(overview);
 
-      if (plain.length < 12) {
-        if (!userEditedAiRef.current) setTitle("");
+      if (plain.length < 8) {
+        if (!userEditedAiRef.current) {
+          setTitle("");
+          setSummary("");
+        }
         setAiLoading(false);
         return;
       }
       setAiLoading(true);
       try {
-        const { title: t } = await fetchIdeaAiEnrich({
+        const { title: t, summary: s } = await fetchIdeaAiEnrich({
           contentHtml: html,
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
         if (!userEditedAiRef.current) {
           setTitle(t);
+          setSummary(s);
         }
       } catch (e) {
         if ((e as DOMException | undefined)?.name === "AbortError") return;
         if (!userEditedAiRef.current) {
           setTitle(fallbackIdeaTitleFromPlain(plain));
+          setSummary("");
         }
       } finally {
         if (!controller.signal.aborted) setAiLoading(false);
@@ -159,14 +162,14 @@ export function AddIdeaModal() {
     const html = editorRef.current?.getHtml() ?? "";
     const text = editorRef.current?.getText().trim() ?? "";
     if (!text && !/<img\b/i.test(html)) return;
-    const overview = ideaOverviewFromContent(html, 2000);
     const plain = stripHtml(html).trim();
     const resolvedTitle = title.trim() || fallbackIdeaTitleFromPlain(plain) || null;
+    const resolvedSummary = summary.trim() || null;
     try {
       const created = await createIdea.mutateAsync({
         content: html.trim() || text,
         title: resolvedTitle,
-        ai_suggestions: overview ? { summary: overview } : null,
+        ai_suggestions: resolvedSummary ? { summary: resolvedSummary } : null,
         status,
         source_type: sourceType,
         capture_kind: captureKind,
@@ -183,6 +186,14 @@ export function AddIdeaModal() {
         .then(upsertIdea)
         .catch((err) => {
           console.warn("[ideas/add] auto-enrich failed:", err instanceof Error ? err.message : String(err));
+          void fetchIdeaCardVisual({ ideaId: created.id })
+            .then(upsertIdea)
+            .catch((e2) => {
+              console.warn(
+                "[ideas/add] card-visual fallback failed:",
+                e2 instanceof Error ? e2.message : String(e2),
+              );
+            });
         });
       closeAddModal();
       reset();
@@ -195,7 +206,7 @@ export function AddIdeaModal() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         size="5xl"
-        className="max-h-[min(92dvh,900px)] overflow-y-auto gap-0 p-0 sm:p-0"
+        className="max-h-[min(92dvh,900px)] w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] overflow-x-hidden overflow-y-auto gap-0 p-0 sm:w-full sm:max-w-5xl sm:p-0"
         showCloseButton
       >
         <div className="border-b border-border/60 px-5 py-4">

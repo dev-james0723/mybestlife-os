@@ -38,6 +38,8 @@ export type IdeaCardVisual = {
   fallbackSeed?: string;
   generatedAt?: string;
   error?: string;
+  /** Bumped when thumbnail art direction changes (triggers one-time regen). */
+  styleVersion?: string;
 };
 
 export type IdeaAiSuggestions = {

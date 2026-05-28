@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import { ideasRepository } from "@/lib/repositories/ideas";
 import { addKnowledgeFromText } from "@/lib/knowledge/mutations";
 import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
+import { fetchIdeaCardVisual } from "@/lib/ideas/fetchIdeaCardVisual";
+import { useIdeasStore } from "@/stores/ideas-store";
 import { stripHtml } from "@/lib/utils/html";
 import type { DraftIdea, ImageAttachment } from "@/types/idea";
 import type { Idea } from "@/types/database";
@@ -104,9 +106,23 @@ export async function routeIdea(draft: DraftIdea): Promise<RouteResult> {
     }
   }
 
-  void fetchIdeaAutoEnrich({ ideaId: idea.id, includeVisual: true }).catch((err) => {
-    console.warn("[idea-capture] auto-enrich failed:", err instanceof Error ? err.message : String(err));
-  });
+  const upsertEnriched = (enriched: Idea) => {
+    if (enriched?.id) useIdeasStore.getState().upsertIdea(enriched);
+  };
+
+  void fetchIdeaAutoEnrich({ ideaId: idea.id, includeVisual: true })
+    .then(upsertEnriched)
+    .catch((err) => {
+      console.warn("[idea-capture] auto-enrich failed:", err instanceof Error ? err.message : String(err));
+      void fetchIdeaCardVisual({ ideaId: idea.id })
+        .then(upsertEnriched)
+        .catch((e2) => {
+          console.warn(
+            "[idea-capture] card-visual fallback failed:",
+            e2 instanceof Error ? e2.message : String(e2),
+          );
+        });
+    });
 
   return { idea, taskIds, nodeIds, knowledgeItemId, partialErrors };
 }
