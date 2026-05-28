@@ -18,8 +18,12 @@ export type IdeasUiCopy = {
   relatedFilters: string;
   linkedProject: string;
   linkedTask: string;
+  linkedGoal: string;
+  linkedIdea: string;
+  linkedResource: string;
   linkedKnowledge: string;
   noRelatedResource: string;
+  relatedScopeLabels: Record<"idea" | "project" | "goal" | "resource" | "task" | "knowledge", string>;
   expandDirectory: string;
   collapseDirectory: string;
   searchPlaceholder: string;
@@ -80,6 +84,7 @@ export type IdeasUiCopy = {
   destinationsLabel: string;
   linkedProjectsLabel: string;
   linkedTasksLabel: string;
+  linkedGoalsLabel: string;
   linkedKnowledgeLabel: string;
   cancel: string;
   save: string;
@@ -101,9 +106,13 @@ export type IdeasUiCopy = {
   destinationsSection: string;
   transcriptSection: string;
   openInKnowledge: string;
+  openRelated: string;
   unknownKnowledge: string;
   unknownTask: string;
   unknownProject: string;
+  unknownGoal: string;
+  unknownIdea: string;
+  unknownResource: string;
   nodeLabel: string;
   attachmentCount: (n: number) => string;
   deleteTitle: string;
@@ -130,8 +139,19 @@ const en: IdeasUiCopy = {
   relatedFilters: "Related",
   linkedProject: "Linked to project",
   linkedTask: "Linked to task",
+  linkedGoal: "Linked to goal",
+  linkedIdea: "Linked to idea",
+  linkedResource: "Linked to resource",
   linkedKnowledge: "Linked to knowledge",
   noRelatedResource: "No related resource",
+  relatedScopeLabels: {
+    idea: "Idea",
+    project: "Project",
+    goal: "Goal",
+    resource: "Resource",
+    task: "Task",
+    knowledge: "Knowledge",
+  },
   expandDirectory: "Expand sidebar",
   collapseDirectory: "Collapse sidebar",
   searchPlaceholder: "Search ideas…",
@@ -233,6 +253,7 @@ const en: IdeasUiCopy = {
   destinationsLabel: "Destinations",
   linkedProjectsLabel: "Linked projects",
   linkedTasksLabel: "Linked tasks",
+  linkedGoalsLabel: "Linked goals",
   linkedKnowledgeLabel: "Linked knowledge items",
   cancel: "Cancel",
   save: "Save",
@@ -254,9 +275,13 @@ const en: IdeasUiCopy = {
   destinationsSection: "Destinations",
   transcriptSection: "Transcript",
   openInKnowledge: "Open in Knowledge",
+  openRelated: "Open",
   unknownKnowledge: "Knowledge item",
   unknownTask: "Task",
   unknownProject: "Project",
+  unknownGoal: "Goal",
+  unknownIdea: "Idea",
+  unknownResource: "Resource",
   nodeLabel: "Graph node",
   attachmentCount: (n) => `${n} file${n === 1 ? "" : "s"}`,
   deleteTitle: "Delete idea",

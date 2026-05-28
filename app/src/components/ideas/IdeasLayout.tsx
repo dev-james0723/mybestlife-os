@@ -17,6 +17,7 @@ import { IdeasActiveFiltersBar } from "./IdeasActiveFiltersBar";
 import { IdeasContent } from "./IdeasContent";
 import { IdeaDetailSheet } from "./IdeaDetailSheet";
 import { AddIdeaModal } from "./AddIdeaModal";
+import { IdeasAutoEnrichmentRunner } from "./IdeasAutoEnrichmentRunner";
 import type { Idea } from "@/types/database";
 
 function IdeasDeepLinkSync() {
@@ -75,6 +76,7 @@ export function IdeasLayout({ initialIdeas }: { initialIdeas: Idea[] }) {
       <Suspense fallback={null}>
         <IdeasDeepLinkSync />
       </Suspense>
+      <IdeasAutoEnrichmentRunner items={data ?? initialIdeas} />
       <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
         <IdeasSidebar />
         <Card className="flex min-h-[min(70vh,640px)] min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">

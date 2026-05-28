@@ -20,13 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Loader2, Sparkles } from "lucide-react";
 import {
   RichTextEditor,
   type RichTextEditorHandle,
 } from "@/components/shared/rich-text-editor";
 import { fetchIdeaAiEnrich } from "@/lib/ideas/fetchIdeaAiEnrich";
+import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
 import { stripHtml } from "@/lib/utils/html";
 import { useCreateIdea } from "@/hooks/use-ideas";
 import { useProjects } from "@/hooks/use-projects";
@@ -37,13 +37,13 @@ import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy, ideaDestinationLabel } from "@/lib/i18n/ideas-ui";
 import { IDEA_CATEGORIES, IDEA_DESTINATION_OPTIONS } from "@/lib/ideas/constants";
 import type { Idea } from "@/types/database";
-import { IdeaTagEditor } from "./IdeaTagEditor";
 
 export function AddIdeaModal() {
   const language = useAppStore((s) => s.language);
   const ui = getIdeasUiCopy(language);
   const open = useIdeasStore((s) => s.isAddModalOpen);
   const closeAddModal = useIdeasStore((s) => s.closeAddModal);
+  const upsertIdea = useIdeasStore((s) => s.upsertIdea);
   const { data: projects } = useProjects();
   const { data: tasks } = useTasks();
   const { data: knowledgeRows } = useKnowledgeItemsPickList();
@@ -58,7 +58,6 @@ export function AddIdeaModal() {
   const [captureKind, setCaptureKind] = useState<Idea["capture_kind"]>("idea");
   const [category, setCategory] = useState<string>("random");
   const [voiceTranscript, setVoiceTranscript] = useState("");
-  const [manualTags, setManualTags] = useState<string[]>([]);
   const [destinations, setDestinations] = useState<string[]>([]);
   const [linkedProjectIds, setLinkedProjectIds] = useState<string[]>([]);
   const [linkedTaskIds, setLinkedTaskIds] = useState<string[]>([]);
@@ -79,7 +78,6 @@ export function AddIdeaModal() {
     setCaptureKind("idea");
     setCategory("random");
     setVoiceTranscript("");
-    setManualTags([]);
     setDestinations([]);
     setLinkedProjectIds([]);
     setLinkedTaskIds([]);
@@ -158,7 +156,7 @@ export function AddIdeaModal() {
     const html = editorRef.current?.getHtml() ?? "";
     const text = editorRef.current?.getText().trim() ?? "";
     if (!text && !/<img\b/i.test(html)) return;
-    await createIdea.mutateAsync({
+    const created = await createIdea.mutateAsync({
       content: html.trim() || text,
       title: title.trim() || null,
       ai_suggestions: summary.trim() ? { summary: summary.trim() } : null,
@@ -167,12 +165,18 @@ export function AddIdeaModal() {
       capture_kind: captureKind,
       category,
       voice_transcript: sourceType === "voice" ? voiceTranscript.trim() || null : null,
-      manual_tags: manualTags,
+      manual_tags: [],
       destinations,
       linked_project_ids: linkedProjectIds,
       linked_task_ids: linkedTaskIds,
       linked_knowledge_item_ids: linkedKnowledgeIds,
     });
+    upsertIdea(created);
+    void fetchIdeaAutoEnrich({ ideaId: created.id, includeVisual: true })
+      .then(upsertIdea)
+      .catch((err) => {
+        console.warn("[ideas/add] auto-enrich failed:", err instanceof Error ? err.message : String(err));
+      });
     closeAddModal();
     reset();
   };
@@ -308,17 +312,6 @@ export function AddIdeaModal() {
                 <Textarea value={voiceTranscript} onChange={(e) => setVoiceTranscript(e.target.value)} rows={3} />
               </div>
             ) : null}
-
-            <Separator />
-
-            <IdeaTagEditor
-              language={language}
-              manualTags={manualTags}
-              aiTags={[]}
-              onChangeManual={setManualTags}
-            />
-
-            <Separator />
 
             <div className="space-y-2">
               <Label>{ui.destinationsLabel}</Label>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
@@ -50,6 +51,7 @@ import {
   BarChart3,
   FileText,
   Loader2,
+  Lightbulb,
 } from "lucide-react";
 import {
   useGoals,
@@ -61,8 +63,11 @@ import {
   useUpdateKeyResult,
   useDeleteKeyResult,
 } from "@/hooks/use-goals";
+import { useIdeas } from "@/hooks/use-ideas";
+import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { formatDate } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
+import { stripHtml } from "@/lib/utils/html";
 import { toast } from "sonner";
 import type { Goal, KeyResult } from "@/types/database";
 import { GoalLinkedQuotes } from "@/components/quote-library/goal-linked-quotes";
@@ -213,6 +218,8 @@ function GoalDetailModal({
   const createKeyResult = useCreateKeyResult();
   const updateKeyResult = useUpdateKeyResult();
   const deleteKeyResult = useDeleteKeyResult();
+  const { data: ideas } = useIdeas();
+  const ideasHref = useLocalizedPath("/ideas");
 
   const [editing, setEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -229,6 +236,10 @@ function GoalDetailModal({
   const [deletedKRIds, setDeletedKRIds] = useState<string[]>([]);
 
   const progress = keyResults ? computeProgress(keyResults) : 0;
+  const linkedIdeas = useMemo(
+    () => (ideas ?? []).filter((idea) => idea.linked_goal_ids?.includes(goal.id)),
+    [goal.id, ideas],
+  );
 
   function enterEditMode() {
     setEditForm({
@@ -538,6 +549,31 @@ function GoalDetailModal({
                       <span className="font-medium">
                         {formatDate(goal.target_date)}
                       </span>
+                    </div>
+                  </>
+                )}
+
+                {linkedIdeas.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                        <h4 className="text-sm font-medium">Linked ideas</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {linkedIdeas.slice(0, 8).map((idea) => (
+                          <Link
+                            key={idea.id}
+                            href={`${ideasHref}?idea=${encodeURIComponent(idea.id)}`}
+                            className="block rounded-lg border border-border/60 p-3 text-sm transition-colors hover:bg-muted/30"
+                          >
+                            <p className="line-clamp-1 font-medium">
+                              {idea.title?.trim() || stripHtml(idea.content).slice(0, 80)}
+                            </p>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </>
                 )}

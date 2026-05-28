@@ -44,7 +44,6 @@ import type { Idea } from "@/types/database";
 import { IDEA_CATEGORIES, IDEA_DESTINATION_OPTIONS } from "@/lib/ideas/constants";
 import { ideaAiSummary } from "@/lib/ideas/idea-helpers";
 import { IdeaCategoryBadge } from "./IdeaCategoryBadge";
-import { IdeaTagEditor } from "./IdeaTagEditor";
 import { IdeaRelatedResources } from "./IdeaRelatedResources";
 import { StatusBadge } from "@/components/shared/status-badge";
 
@@ -75,7 +74,6 @@ function IdeaDetailInner({
   const [captureKind, setCaptureKind] = useState<Idea["capture_kind"]>(() => idea.capture_kind);
   const [category, setCategory] = useState(() => idea.category);
   const [voiceTranscript, setVoiceTranscript] = useState(() => idea.voice_transcript ?? "");
-  const [manualTags, setManualTags] = useState(() => [...(idea.manual_tags ?? [])]);
   const [aiTags, setAiTags] = useState(() => [...(idea.ai_tags ?? [])]);
   const [destinations, setDestinations] = useState(() => [...(idea.destinations ?? [])]);
   const [linkedProjectIds, setLinkedProjectIds] = useState(() => [...(idea.linked_project_ids ?? [])]);
@@ -114,7 +112,7 @@ function IdeaDetailInner({
         capture_kind: captureKind,
         category,
         voice_transcript: sourceType === "voice" ? voiceTranscript.trim() || null : null,
-        manual_tags: manualTags,
+        manual_tags: [],
         ai_tags: aiTags,
         destinations,
         linked_project_ids: linkedProjectIds,
@@ -272,13 +270,31 @@ function IdeaDetailInner({
                   </div>
                 ) : null}
                 <Separator />
-                <IdeaTagEditor
-                  language={language}
-                  manualTags={manualTags}
-                  aiTags={aiTags}
-                  onChangeManual={setManualTags}
-                  onRemoveAiTag={removeAiTag}
-                />
+                <div className="space-y-2">
+                  <Label>{ui.aiTags}</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiTags.length > 0 ? (
+                      aiTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-muted/25 px-2 py-1 text-xs"
+                        >
+                          <span>{tag}</span>
+                          <button
+                            type="button"
+                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() => removeAiTag(tag)}
+                            aria-label={ui.removeAiTag}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
                 <Separator />
                 <div className="space-y-2">
                   <Label>{ui.destinationsLabel}</Label>
@@ -359,17 +375,6 @@ function IdeaDetailInner({
                 ) : null}
               </div>
               <div className="space-y-4">
-                <div>
-                  <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.manualTags}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {(idea.manual_tags ?? []).map((t) => (
-                      <span key={t} className="rounded-md border bg-muted/20 px-2 py-0.5 text-xs">
-                        {t}
-                      </span>
-                    ))}
-                    {(idea.manual_tags ?? []).length === 0 ? <span className="text-xs text-muted-foreground">—</span> : null}
-                  </div>
-                </div>
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.aiTags}</p>
                   <div className="flex flex-wrap gap-1">

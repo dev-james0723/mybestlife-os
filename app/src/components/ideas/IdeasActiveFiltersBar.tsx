@@ -37,8 +37,14 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
 
   const relatedLabel = useMemo(() => {
     switch (relatedScopeFilter) {
+      case "hasIdea":
+        return ui.linkedIdea;
       case "hasProject":
         return ui.linkedProject;
+      case "hasGoal":
+        return ui.linkedGoal;
+      case "hasResource":
+        return ui.linkedResource;
       case "hasTask":
         return ui.linkedTask;
       case "hasKnowledge":
@@ -48,7 +54,16 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
       default:
         return "";
     }
-  }, [relatedScopeFilter, ui.linkedKnowledge, ui.linkedProject, ui.linkedTask, ui.noRelatedResource]);
+  }, [
+    relatedScopeFilter,
+    ui.linkedGoal,
+    ui.linkedIdea,
+    ui.linkedKnowledge,
+    ui.linkedProject,
+    ui.linkedResource,
+    ui.linkedTask,
+    ui.noRelatedResource,
+  ]);
 
   const hasFilters =
     searchQuery.trim().length > 0 ||

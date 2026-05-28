@@ -22,7 +22,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  RichTextEditor,
+  type RichTextEditorHandle,
+} from "@/components/shared/rich-text-editor";
 import {
   Sheet,
   SheetContent,
@@ -47,6 +50,7 @@ import { useIdeaCaptureTrigger } from "@/hooks/useIdeaCaptureTrigger";
 import { useGeminiVoiceCapture } from "@/hooks/useGeminiVoiceCapture";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { hasDraft } from "@/types/idea";
+import { stripHtml } from "@/lib/utils/html";
 import {
   EASE_HEAVY_GRACEFUL,
   EASE_IN_OUT_CUBIC,
@@ -761,6 +765,36 @@ export function IdeaCaptureSheet() {
     [openKnowledgeModal]
   );
 
+  // ── Rich text editor ─────────────────────────────────────────────────────
+  const editorRef = useRef<RichTextEditorHandle>(null);
+  const [editorKey, setEditorKey] = useState(0);
+  const [editorRevision, setEditorRevision] = useState(0);
+
+  const bumpEditorRevision = useCallback(() => {
+    setEditorRevision((n) => n + 1);
+  }, []);
+
+  const syncEditorToDraft = useCallback(() => {
+    const html = editorRef.current?.getHtml() ?? "";
+    setDraft({ content: html });
+    bumpEditorRevision();
+  }, [setDraft, bumpEditorRevision]);
+
+  const resetEditor = useCallback(() => {
+    editorRef.current?.reset();
+    setEditorKey((k) => k + 1);
+    bumpEditorRevision();
+  }, [bumpEditorRevision]);
+
+  useEffect(() => {
+    if (!open) return;
+    const stored = useIdeaCaptureStore.getState().draft.content;
+    queueMicrotask(() => {
+      if (stored) editorRef.current?.setHtml(stored);
+      bumpEditorRevision();
+    });
+  }, [open, editorKey, bumpEditorRevision]);
+
   // ── Draft restored banner ─────────────────────────────────────────────────
   const draftBannerShownRef = useRef(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
@@ -778,19 +812,31 @@ export function IdeaCaptureSheet() {
   const appendFromVoice = useCallback(
     (text: string) => {
       const current = useIdeaCaptureStore.getState().draft;
+      const html = editorRef.current?.getHtml() ?? current.content;
+      const plain = editorRef.current?.getText() ?? stripHtml(html);
       const joiner =
-        current.content.length === 0
+        plain.length === 0
           ? ""
-          : /\s$/.test(current.content)
+          : /\s$/.test(plain)
             ? ""
             : " ";
+      const escaped = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      const nextHtml = html + (plain.length === 0 ? escaped : joiner + escaped);
+      editorRef.current?.setHtml(nextHtml);
       setDraft({
-        content: current.content + joiner + text,
+        content: nextHtml,
         sourceType: "voice",
-        voiceTranscript: (current.voiceTranscript ?? "") + (current.voiceTranscript ? " " : "") + text,
+        voiceTranscript:
+          (current.voiceTranscript ?? "") +
+          (current.voiceTranscript ? " " : "") +
+          text,
       });
+      bumpEditorRevision();
     },
-    [setDraft]
+    [setDraft, bumpEditorRevision]
   );
 
   const voice = useGeminiVoiceCapture({ onFinal: appendFromVoice });
@@ -921,7 +967,8 @@ export function IdeaCaptureSheet() {
 
   const handleAIClick = useCallback(async () => {
     if (aiLoading) return;
-    const content = draft.content.trim();
+    const html = editorRef.current?.getHtml() ?? draft.content;
+    const content = stripHtml(html).trim();
     if (content.length < 4) return;
     const controller = new AbortController();
     aiAbortRef.current = controller;
@@ -952,15 +999,11 @@ export function IdeaCaptureSheet() {
   const handleApplySuggestions = useCallback(() => {
     if (!suggestions) return;
     const current = useIdeaCaptureStore.getState().draft;
-    const mergedTags = Array.from(
-      new Set([...current.manualTags, ...suggestions.ai_tags])
-    );
     const mergedDestinations = Array.from(
       new Set([...current.destinations, ...suggestions.suggestedDestinations])
     );
     setDraft({
       title: suggestions.title ?? current.title,
-      manualTags: mergedTags,
       destinations: mergedDestinations as DestinationRoute[],
       captureKind: suggestions.suggestedKind ?? current.captureKind,
     });
@@ -980,7 +1023,16 @@ export function IdeaCaptureSheet() {
     async (andCaptureAnother = false) => {
       // Guard against rapid double-invocation (clicking + Cmd+Enter).
       if (saveInFlightRef.current) return;
-      if (!hasDraft(draft)) return;
+
+      const html = editorRef.current?.getHtml() ?? "";
+      const text = editorRef.current?.getText().trim() ?? "";
+      const content = html.trim() || text;
+      const snapshot = {
+        ...useIdeaCaptureStore.getState().draft,
+        content,
+      };
+
+      if (!hasDraft(snapshot)) return;
       saveInFlightRef.current = true;
 
       // Drop any in-flight Gemini transcripts, then stop the mic.
@@ -990,7 +1042,7 @@ export function IdeaCaptureSheet() {
       cancelInFlightAI();
       setSaveState("saving");
       try {
-        const result = await routeIdea(draft);
+        const result = await routeIdea(snapshot);
 
         setSaveState("saved");
 
@@ -1018,12 +1070,14 @@ export function IdeaCaptureSheet() {
         if (andCaptureAnother) {
           revokeDraftPreviews();
           resetDraft();
+          resetEditor();
           setSuggestions(null);
           setSaveState("idle");
         } else {
           setTimeout(() => {
             revokeDraftPreviews();
             resetDraft();
+            resetEditor();
             setSuggestions(null);
             closeSheet();
             setSaveState("idle");
@@ -1044,12 +1098,12 @@ export function IdeaCaptureSheet() {
       }
     },
     [
-      draft,
       voice,
       ideasHref,
       ui,
       setSaveState,
       resetDraft,
+      resetEditor,
       closeSheet,
       cancelInFlightAI,
       revokeDraftPreviews,
@@ -1092,7 +1146,13 @@ export function IdeaCaptureSheet() {
   const saving = saveState === "saving";
   const saved = saveState === "saved";
   const canSave = hasDraft(draft) && !saving && !saved;
-  const characterCount = draft.content.length;
+  const characterCount = useMemo(() => {
+    void editorRevision;
+    return (
+      editorRef.current?.getText().length ??
+      stripHtml(draft.content).length
+    );
+  }, [editorRevision, draft.content]);
 
   return (
     <TooltipProvider delay={250}>
@@ -1188,20 +1248,13 @@ export function IdeaCaptureSheet() {
           />
 
           <div className="px-5 pt-3">
-            <Textarea
-              id="idea-capture-content"
-              value={draft.content}
-              onChange={(e) => setDraft({ content: e.target.value })}
+            <RichTextEditor
+              key={editorKey}
+              ref={editorRef}
+              initialHtml=""
               placeholder={ui.ideaCapturePlaceholder}
-              className={cn(
-                "min-h-[8rem] resize-none border-0 bg-transparent px-0 text-base leading-relaxed",
-                "placeholder:text-muted-foreground/50",
-                "focus-visible:ring-0 focus-visible:border-0",
-                "max-h-[40dvh] overflow-y-auto"
-              )}
-              autoFocus
-              aria-label={ui.ideaCaptureSheetTitle}
-              aria-multiline="true"
+              minHeightClass="min-h-[8rem] max-h-[40dvh] overflow-y-auto"
+              onChange={syncEditorToDraft}
             />
             {(voice.isRecording || voice.transcribing) && (
               <p

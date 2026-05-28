@@ -61,6 +61,8 @@ export function normalizeIdea(row: unknown): Idea {
 
     linked_project_ids: asStringArray(r.linked_project_ids),
     linked_task_ids: asStringArray(r.linked_task_ids),
+    linked_goal_ids: asStringArray(r.linked_goal_ids),
+    linked_idea_ids: asStringArray(r.linked_idea_ids),
 
     status: coerceStatus(r.status),
 
@@ -82,5 +84,6 @@ export function normalizeIdea(row: unknown): Idea {
 
     linked_knowledge_item_ids: asStringArray(r.linked_knowledge_item_ids),
     linked_node_ids: asStringArray(r.linked_node_ids),
+    related_resource_refs: asJsonArray(r.related_resource_refs),
   };
 }

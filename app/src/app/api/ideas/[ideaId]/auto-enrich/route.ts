@@ -1,0 +1,784 @@
+import { randomUUID } from "crypto";
+import { NextResponse } from "next/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  fetchGeminiPlannerJsonText,
+  getGeminiServerApiKey,
+} from "@/lib/ai/gemini-text";
+import {
+  buildIdeaCardIconPrompt,
+  generateIdeaCardIconImage,
+  getIdeaCardIconModel,
+} from "@/lib/ideas/generate-idea-card-icon";
+import { normalizeIdea } from "@/lib/ideas/normalize-idea";
+import { ideaAiSuggestions, previewIdeaTitle } from "@/lib/ideas/idea-helpers";
+import { IDEA_CATEGORIES, type IdeaCategorySlug } from "@/lib/ideas/constants";
+import { stripHtml } from "@/lib/utils/html";
+import type { Idea, Json } from "@/types/database";
+import type {
+  IdeaAiSuggestions,
+  IdeaCardVisual,
+  IdeaRelatedResource,
+  IdeaRelatedScope,
+  IdeaResourceKind,
+} from "@/types/idea";
+
+export const runtime = "nodejs";
+export const maxDuration = 120;
+
+type Candidate = {
+  scope: IdeaRelatedScope;
+  id: string;
+  dbId: string;
+  title: string;
+  body: string;
+  tags: string[];
+  subtitle?: string;
+  url?: string;
+  resourceKind?: IdeaResourceKind;
+  source?: string;
+};
+
+type GeminiRelated = {
+  scope?: unknown;
+  id?: unknown;
+  percentage?: unknown;
+  explanation?: unknown;
+};
+
+type GeminiAnalysis = {
+  title: string;
+  summary: string;
+  aiTags: string[];
+  category: IdeaCategorySlug;
+  captureKind: Idea["capture_kind"];
+  related: IdeaRelatedResource[];
+  cardVisualPrompt: string;
+  cardVisualPalette: string[];
+  model?: string;
+};
+
+const KIND_LIMITS: Record<IdeaRelatedScope, number> = {
+  idea: 10,
+  project: 10,
+  goal: 10,
+  resource: 18,
+  task: 14,
+  knowledge: 20,
+};
+
+const KIND_ORDER: IdeaRelatedScope[] = [
+  "project",
+  "goal",
+  "resource",
+  "task",
+  "knowledge",
+  "idea",
+];
+
+const VALID_CAPTURE_KINDS = new Set<Idea["capture_kind"]>(["idea", "task", "note", "goal"]);
+
+function cleanText(value: unknown, max = 1200): string {
+  if (typeof value !== "string") return "";
+  return stripHtml(value).replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function cleanTitle(value: unknown, fallback = "Untitled"): string {
+  const title = cleanText(value, 160).replace(/\.+$/u, "");
+  return title || fallback;
+}
+
+function normalizeTag(tag: string): string {
+  return tag
+    .trim()
+    .toLowerCase()
+    .replace(/[#＃]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^\p{Letter}\p{Number}-]+/gu, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+}
+
+function coerceTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const tag = normalizeTag(item);
+    if (tag && !out.includes(tag)) out.push(tag);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+function isScope(value: unknown): value is IdeaRelatedScope {
+  return KIND_ORDER.includes(value as IdeaRelatedScope);
+}
+
+function isCategory(value: unknown): value is IdeaCategorySlug {
+  return typeof value === "string" && IDEA_CATEGORIES.includes(value as IdeaCategorySlug);
+}
+
+function coerceCaptureKind(value: unknown, fallback: Idea["capture_kind"]): Idea["capture_kind"] {
+  return typeof value === "string" && VALID_CAPTURE_KINDS.has(value as Idea["capture_kind"])
+    ? (value as Idea["capture_kind"])
+    : fallback;
+}
+
+function parseJsonObject(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/u, "").trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    return JSON.parse(trimmed.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function tokenSet(text: string): Set<string> {
+  const normalized = text.toLowerCase();
+  const tokens = new Set<string>();
+  for (const m of normalized.matchAll(/[\p{Letter}\p{Number}]{2,}/gu)) {
+    tokens.add(m[0]);
+  }
+  for (const m of normalized.matchAll(/\p{Script=Han}+/gu)) {
+    const chars = Array.from(m[0]);
+    for (const ch of chars) tokens.add(ch);
+    for (let i = 0; i < chars.length - 1; i += 1) tokens.add(`${chars[i]}${chars[i + 1]}`);
+  }
+  return tokens;
+}
+
+function heuristicScore(ideaText: string, candidate: Candidate): number {
+  const a = tokenSet(ideaText);
+  if (a.size === 0) return 0;
+  const b = tokenSet(`${candidate.title} ${candidate.body} ${candidate.tags.join(" ")}`);
+  if (b.size === 0) return 0;
+  let overlap = 0;
+  for (const t of a) {
+    if (b.has(t)) overlap += t.length > 1 ? 2 : 0.65;
+  }
+  const titleBoost = ideaText.toLowerCase().includes(candidate.title.toLowerCase().slice(0, 18))
+    ? 2
+    : 0;
+  return (overlap + titleBoost) / Math.sqrt(a.size + b.size);
+}
+
+function selectCandidates(ideaText: string, candidates: Candidate[]): Candidate[] {
+  const byKind = new Map<IdeaRelatedScope, Candidate[]>();
+  for (const candidate of candidates) {
+    const score = heuristicScore(ideaText, candidate);
+    const enriched = { ...candidate, score } as Candidate & { score: number };
+    const list = byKind.get(candidate.scope) ?? [];
+    list.push(enriched);
+    byKind.set(candidate.scope, list);
+  }
+
+  const selected: Candidate[] = [];
+  for (const kind of KIND_ORDER) {
+    const list = (byKind.get(kind) ?? []) as Array<Candidate & { score: number }>;
+    list.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
+    selected.push(...list.slice(0, KIND_LIMITS[kind]));
+  }
+  return selected.slice(0, 82);
+}
+
+function candidateKey(scope: IdeaRelatedScope, id: string): string {
+  return `${scope}:${id}`;
+}
+
+function clampPercent(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function coercePalette(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((v): v is string => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v.trim()))
+    .map((v) => v.trim())
+    .slice(0, 5);
+}
+
+function coerceRelated(
+  value: unknown,
+  candidateByKey: Map<string, Candidate>,
+): IdeaRelatedResource[] {
+  if (!Array.isArray(value)) return [];
+  const out: IdeaRelatedResource[] = [];
+  const seen = new Set<string>();
+
+  for (const raw of value as GeminiRelated[]) {
+    const scope = raw.scope;
+    const id = typeof raw.id === "string" ? raw.id.trim() : "";
+    if (!isScope(scope) || !id) continue;
+    const candidate = candidateByKey.get(candidateKey(scope, id));
+    if (!candidate) continue;
+    const key = candidateKey(scope, id);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      scope,
+      id: candidate.id,
+      title: candidate.title,
+      subtitle: candidate.subtitle,
+      percentage: clampPercent(raw.percentage),
+      explanation:
+        typeof raw.explanation === "string" && raw.explanation.trim()
+          ? raw.explanation.trim().slice(0, 360)
+          : "Related by topic, intent, or supporting context.",
+      url: candidate.url,
+      resourceKind: candidate.resourceKind,
+      source: candidate.source,
+    });
+    if (out.length >= 14) break;
+  }
+
+  return out;
+}
+
+function firstParagraphSummary(plain: string): string {
+  const compact = plain.replace(/\s+/g, " ").trim();
+  if (compact.length <= 280) return compact;
+  return `${compact.slice(0, 277)}...`;
+}
+
+function fallbackAnalysis(idea: Idea, plain: string, candidates: Candidate[]): GeminiAnalysis {
+  const scored = candidates
+    .map((candidate) => ({ candidate, score: heuristicScore(plain, candidate) }))
+    .filter((x) => x.score > 0.03)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+
+  const related = scored.map(({ candidate, score }) => ({
+    scope: candidate.scope,
+    id: candidate.id,
+    title: candidate.title,
+    subtitle: candidate.subtitle,
+    percentage: Math.max(45, Math.min(88, Math.round(score * 100))),
+    explanation: "Shares keywords, entities, or nearby intent with this idea.",
+    url: candidate.url,
+    resourceKind: candidate.resourceKind,
+    source: candidate.source,
+  }));
+
+  const title = previewIdeaTitle(idea, 72);
+  const tags = Array.from(tokenSet(plain))
+    .filter((t) => t.length >= 2)
+    .slice(0, 5)
+    .map(normalizeTag)
+    .filter(Boolean);
+
+  return {
+    title,
+    summary: firstParagraphSummary(plain),
+    aiTags: tags,
+    category: "random",
+    captureKind: idea.capture_kind,
+    related,
+    cardVisualPrompt: "",
+    cardVisualPalette: ["#22c55e", "#38bdf8", "#f97316"],
+  };
+}
+
+function shouldReplaceTitle(idea: Idea): boolean {
+  if (!idea.title?.trim()) return true;
+  const plain = stripHtml(idea.content).replace(/\s+/g, " ").trim();
+  const title = idea.title.trim();
+  if (!plain) return false;
+  return plain.startsWith(title) || title.startsWith(plain.slice(0, Math.min(plain.length, 80)));
+}
+
+function mergeIds(...groups: string[][]): string[] {
+  const out: string[] = [];
+  for (const group of groups) {
+    for (const id of group) {
+      if (id && !out.includes(id)) out.push(id);
+    }
+  }
+  return out;
+}
+
+function resourceRefs(related: IdeaRelatedResource[]): Json[] {
+  return related
+    .filter((r) => r.scope === "resource")
+    .map((r) => ({
+      id: r.id.includes(":") ? r.id.split(":").slice(1).join(":") : r.id,
+      resourceKind: r.resourceKind ?? "project_resource",
+      title: r.title,
+      percentage: r.percentage,
+      explanation: r.explanation,
+      url: r.url,
+    })) as Json[];
+}
+
+async function maybeGenerateCardVisual(params: {
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+  apiKey: string | null;
+  userId: string;
+  ideaId: string;
+  includeVisual: boolean;
+  analysis: GeminiAnalysis;
+  existing?: IdeaCardVisual;
+}): Promise<IdeaCardVisual | undefined> {
+  const prompt =
+    params.analysis.cardVisualPrompt ||
+    buildIdeaCardIconPrompt({
+      title: params.analysis.title,
+      summary: params.analysis.summary,
+      tags: params.analysis.aiTags,
+      palette: params.analysis.cardVisualPalette,
+    });
+
+  const base: IdeaCardVisual = {
+    ...params.existing,
+    prompt,
+    palette: params.analysis.cardVisualPalette,
+    fallbackSeed: `${params.ideaId}:${params.analysis.title}`,
+    generatedAt: new Date().toISOString(),
+  };
+
+  if (!params.includeVisual || !params.apiKey || params.existing?.imageUrl) {
+    return base;
+  }
+
+  const model = getIdeaCardIconModel();
+  try {
+    const image = await generateIdeaCardIconImage({
+      apiKey: params.apiKey,
+      model,
+      prompt,
+    });
+    const ext = image.mimeType.includes("jpeg") || image.mimeType.includes("jpg")
+      ? "jpg"
+      : image.mimeType.includes("webp")
+        ? "webp"
+        : "png";
+    const storagePath = `${params.userId}/${params.ideaId}/${randomUUID()}.${ext}`;
+    const { error: uploadError } = await params.supabase.storage
+      .from("idea-card-icons")
+      .upload(storagePath, image.imageBytes, {
+        contentType: image.mimeType || "image/png",
+        upsert: false,
+      });
+    if (uploadError) throw uploadError;
+    const { data } = params.supabase.storage.from("idea-card-icons").getPublicUrl(storagePath);
+    return {
+      ...base,
+      imageUrl: data.publicUrl,
+      storagePath,
+      model,
+      prompt: image.promptUsed,
+      error: undefined,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ...base, model, error: message.slice(0, 180) };
+  }
+}
+
+function makeCandidate(input: Candidate): Candidate | null {
+  const title = cleanTitle(input.title, "");
+  if (!input.dbId || !title) return null;
+  return { ...input, title, body: cleanText(input.body), tags: input.tags.map(normalizeTag).filter(Boolean) };
+}
+
+export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string }> }) {
+  const { ideaId } = await ctx.params;
+  if (!ideaId) return NextResponse.json({ error: "invalid_idea" }, { status: 400 });
+
+  let body: { includeVisual?: boolean } = {};
+  try {
+    body = (await req.json()) as { includeVisual?: boolean };
+  } catch {
+    body = {};
+  }
+  const includeVisual = body.includeVisual !== false;
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: ideaRow, error: ideaError } = await supabase
+    .from("ideas")
+    .select("*")
+    .eq("id", ideaId)
+    .eq("user_id", user.id)
+    .single();
+  if (ideaError || !ideaRow) {
+    return NextResponse.json({ error: "Idea not found" }, { status: 404 });
+  }
+
+  const idea = normalizeIdea(ideaRow);
+  const plain = stripHtml(idea.content).replace(/\s+/g, " ").trim();
+  if (plain.length < 4) {
+    return NextResponse.json({ error: "Idea content is too short" }, { status: 400 });
+  }
+
+  const [
+    ideasRes,
+    projectsRes,
+    goalsRes,
+    tasksRes,
+    knowledgeRes,
+    projectResourcesRes,
+    assetsRes,
+    documentsRes,
+    softwareRes,
+  ] = await Promise.all([
+    supabase
+      .from("ideas")
+      .select("id,title,content,ai_tags,manual_tags,category,status,created_at")
+      .eq("user_id", user.id)
+      .neq("id", idea.id)
+      .order("created_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("projects")
+      .select("id,name,description,status,priority,tags,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("goals")
+      .select("id,name,description,status,category,target_date")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("tasks")
+      .select("id,title,description,status,priority,tags,project_id,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(120),
+    supabase
+      .from("knowledge_items")
+      .select("id,title,ai_summary,ai_tldr,ai_tags,manual_tags,raw_content,source_url,category,provider,date_added")
+      .eq("user_id", user.id)
+      .order("date_added", { ascending: false })
+      .limit(120),
+    supabase
+      .from("project_resources")
+      .select("id,project_id,category,title,url,source,description,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("assets")
+      .select("id,name,category,category_key,notes,location,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("documents")
+      .select("id,name,document_type,notes,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("software_vault")
+      .select("id,app_name,website_url,category,use_cases,why_i_use_it,summary,tags,status,updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(100),
+  ]);
+
+  const candidates: Candidate[] = [];
+  const push = (candidate: Candidate | null) => {
+    if (candidate) candidates.push(candidate);
+  };
+
+  for (const row of (ideasRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "idea",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(row.title, cleanText(row.content, 72) || "Idea"),
+        body: cleanText(row.content, 900),
+        tags: [...coerceTags(row.ai_tags), ...coerceTags(row.manual_tags)],
+        subtitle: "Idea",
+      }),
+    );
+  }
+
+  for (const row of (projectsRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "project",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(row.name, "Project"),
+        body: cleanText(row.description, 900),
+        tags: coerceTags(row.tags),
+        subtitle: typeof row.status === "string" ? row.status : "Project",
+      }),
+    );
+  }
+
+  for (const row of (goalsRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "goal",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(row.name, "Goal"),
+        body: cleanText(row.description, 900),
+        tags: typeof row.category === "string" ? [row.category] : [],
+        subtitle: typeof row.status === "string" ? row.status : "Goal",
+      }),
+    );
+  }
+
+  for (const row of (tasksRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "task",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(row.title, "Task"),
+        body: cleanText(row.description, 700),
+        tags: coerceTags(row.tags),
+        subtitle: typeof row.status === "string" ? row.status : "Task",
+      }),
+    );
+  }
+
+  for (const row of (knowledgeRes.data ?? []) as Record<string, unknown>[]) {
+    push(
+      makeCandidate({
+        scope: "knowledge",
+        id: String(row.id ?? ""),
+        dbId: String(row.id ?? ""),
+        title: cleanTitle(row.title, "Knowledge"),
+        body: [row.ai_summary, row.ai_tldr, cleanText(row.raw_content, 700)]
+          .map((v) => cleanText(v, 700))
+          .filter(Boolean)
+          .join(" "),
+        tags: [...coerceTags(row.ai_tags), ...coerceTags(row.manual_tags)],
+        subtitle: typeof row.category === "string" ? row.category : "Knowledge",
+        url: typeof row.source_url === "string" ? row.source_url : undefined,
+      }),
+    );
+  }
+
+  for (const row of (projectResourcesRes.data ?? []) as Record<string, unknown>[]) {
+    const id = String(row.id ?? "");
+    push(
+      makeCandidate({
+        scope: "resource",
+        id: `project_resource:${id}`,
+        dbId: id,
+        title: cleanTitle(row.title, "Resource"),
+        body: cleanText(row.description, 700),
+        tags: typeof row.category === "string" ? [row.category] : [],
+        subtitle: typeof row.category === "string" ? row.category : "Project resource",
+        url: typeof row.url === "string" ? row.url : undefined,
+        resourceKind: "project_resource",
+        source: typeof row.source === "string" ? row.source : undefined,
+      }),
+    );
+  }
+
+  for (const row of (assetsRes.data ?? []) as Record<string, unknown>[]) {
+    const id = String(row.id ?? "");
+    push(
+      makeCandidate({
+        scope: "resource",
+        id: `asset:${id}`,
+        dbId: id,
+        title: cleanTitle(row.name, "Asset"),
+        body: [row.notes, row.location].map((v) => cleanText(v, 500)).filter(Boolean).join(" "),
+        tags: [row.category, row.category_key].filter((v): v is string => typeof v === "string"),
+        subtitle: "Asset",
+        resourceKind: "asset",
+      }),
+    );
+  }
+
+  for (const row of (documentsRes.data ?? []) as Record<string, unknown>[]) {
+    const id = String(row.id ?? "");
+    push(
+      makeCandidate({
+        scope: "resource",
+        id: `document:${id}`,
+        dbId: id,
+        title: cleanTitle(row.name, "Document"),
+        body: cleanText(row.notes, 700),
+        tags: typeof row.document_type === "string" ? [row.document_type] : [],
+        subtitle: "Document",
+        resourceKind: "document",
+      }),
+    );
+  }
+
+  for (const row of (softwareRes.data ?? []) as Record<string, unknown>[]) {
+    const id = String(row.id ?? "");
+    push(
+      makeCandidate({
+        scope: "resource",
+        id: `software_vault:${id}`,
+        dbId: id,
+        title: cleanTitle(row.app_name, "Software"),
+        body: [row.summary, row.use_cases, row.why_i_use_it]
+          .map((v) => cleanText(v, 500))
+          .filter(Boolean)
+          .join(" "),
+        tags: [cleanText(row.category, 80), ...cleanText(row.tags, 200).split(/[,#\s]+/u)].filter(Boolean),
+        subtitle: "Software",
+        url: typeof row.website_url === "string" ? row.website_url : undefined,
+        resourceKind: "software_vault",
+      }),
+    );
+  }
+
+  const selected = selectCandidates(plain, candidates);
+  const candidateByKey = new Map(selected.map((candidate) => [candidateKey(candidate.scope, candidate.id), candidate]));
+  const apiKey = getGeminiServerApiKey() ?? null;
+  let analysis = fallbackAnalysis(idea, plain, selected);
+
+  if (apiKey && selected.length > 0) {
+    const candidateBlock = selected
+      .map((candidate) =>
+        JSON.stringify({
+          scope: candidate.scope,
+          id: candidate.id,
+          title: candidate.title,
+          subtitle: candidate.subtitle,
+          tags: candidate.tags.slice(0, 8),
+          notes: candidate.body.slice(0, 620),
+          url: candidate.url,
+        }),
+      )
+      .join("\n");
+
+    try {
+      const { text, modelUsed } = await fetchGeminiPlannerJsonText({
+        apiKey,
+        systemInstruction: `You organize a personal Life OS idea library.
+
+Return ONLY valid JSON with this exact shape:
+{
+  "title": string,
+  "summary": string,
+  "ai_tags": string[],
+  "category": ${JSON.stringify(IDEA_CATEGORIES)},
+  "captureKind": "idea" | "task" | "note" | "goal",
+  "related": [{ "scope": "idea" | "project" | "goal" | "resource" | "task" | "knowledge", "id": string, "percentage": number, "explanation": string }],
+  "cardVisualPrompt": string,
+  "cardVisualPalette": string[]
+}
+
+Rules:
+- Match the idea's dominant language/script. Cantonese Traditional Chinese should remain Cantonese Traditional.
+- title: specific, <= 72 characters, no trailing period.
+- summary: 2-4 compact sentences summarizing the idea without inventing facts.
+- ai_tags: 4-8 useful semantic tags, lowercase/hyphenated where possible, no leading #.
+- category: choose one allowed category exactly.
+- related: choose only candidates listed by the user. Use the candidate id exactly. Include genuinely useful matches across Ideas, Projects, Goals, Resources, Tasks, and Knowledge when present.
+- percentage is semantic closeness from 0-100. Only include items >= 42.
+- explanation: one concise reason explaining why the candidate is connected to this idea.
+- cardVisualPrompt: prompt for a no-text geometric line-art icon representing the idea.
+- cardVisualPalette: 3-5 distinct hex colors.
+- Output JSON only.`,
+        userText: `IDEA:
+Title: ${idea.title ?? "(none)"}
+Content: ${plain.slice(0, 6000)}
+
+CANDIDATES (one JSON object per line):
+${candidateBlock || "(none)"}`,
+      });
+
+      const parsed = parseJsonObject(text);
+      if (parsed) {
+        const related = coerceRelated(parsed.related, candidateByKey);
+        analysis = {
+          title: cleanTitle(parsed.title, analysis.title).slice(0, 96),
+          summary: cleanText(parsed.summary, 1200) || analysis.summary,
+          aiTags: coerceTags(parsed.ai_tags),
+          category: isCategory(parsed.category) ? parsed.category : analysis.category,
+          captureKind: coerceCaptureKind(parsed.captureKind, idea.capture_kind),
+          related: related.length > 0 ? related : analysis.related,
+          cardVisualPrompt: cleanText(parsed.cardVisualPrompt, 1800),
+          cardVisualPalette: coercePalette(parsed.cardVisualPalette),
+          model: modelUsed,
+        };
+      }
+    } catch (err) {
+      console.warn("[ideas/auto-enrich] gemini_text", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  if (analysis.aiTags.length === 0) {
+    analysis.aiTags = fallbackAnalysis(idea, plain, selected).aiTags;
+  }
+  if (analysis.cardVisualPalette.length === 0) {
+    analysis.cardVisualPalette = ["#22c55e", "#38bdf8", "#f97316"];
+  }
+
+  const existingSuggestions = ideaAiSuggestions(idea);
+  const cardVisual = await maybeGenerateCardVisual({
+    supabase,
+    apiKey,
+    userId: user.id,
+    ideaId: idea.id,
+    includeVisual,
+    analysis,
+    existing: existingSuggestions.cardVisual,
+  });
+
+  const aiSuggestions: IdeaAiSuggestions = {
+    ...existingSuggestions,
+    summary: analysis.summary,
+    ai_tags: analysis.aiTags,
+    relatedResources: analysis.related,
+    cardVisual,
+    generatedAt: new Date().toISOString(),
+    model: analysis.model,
+  };
+
+  const linkedProjects = analysis.related.filter((r) => r.scope === "project").map((r) => r.id);
+  const linkedTasks = analysis.related.filter((r) => r.scope === "task").map((r) => r.id);
+  const linkedGoals = analysis.related.filter((r) => r.scope === "goal").map((r) => r.id);
+  const linkedKnowledge = analysis.related.filter((r) => r.scope === "knowledge").map((r) => r.id);
+  const linkedIdeas = analysis.related.filter((r) => r.scope === "idea").map((r) => r.id);
+
+  const updatePayload: Record<string, unknown> = {
+    title: shouldReplaceTitle(idea) ? analysis.title : idea.title,
+    ai_tags: analysis.aiTags,
+    manual_tags: [],
+    ai_suggestions: aiSuggestions as unknown as Json,
+    category: idea.category === "random" ? analysis.category : idea.category,
+    capture_kind: idea.capture_kind === "idea" ? analysis.captureKind : idea.capture_kind,
+    linked_project_ids: mergeIds(idea.linked_project_ids, linkedProjects),
+    linked_task_ids: mergeIds(idea.linked_task_ids, linkedTasks),
+    linked_goal_ids: mergeIds(idea.linked_goal_ids, linkedGoals),
+    linked_knowledge_item_ids: mergeIds(idea.linked_knowledge_item_ids, linkedKnowledge),
+    linked_idea_ids: mergeIds(idea.linked_idea_ids, linkedIdeas),
+    related_resource_refs: resourceRefs(analysis.related),
+    processing_step: apiKey ? "ai-enriched" : "ai-enriched-fallback",
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: updated, error: updateError } = await supabase
+    .from("ideas")
+    .update(updatePayload)
+    .eq("id", idea.id)
+    .eq("user_id", user.id)
+    .select("*")
+    .single();
+
+  if (updateError || !updated) {
+    const detail = updateError?.message ?? "Failed to update idea";
+    console.error("[ideas/auto-enrich] update", detail);
+    return NextResponse.json({ error: "update_failed", detail }, { status: 502 });
+  }
+
+  return NextResponse.json({ idea: normalizeIdea(updated), relatedCount: analysis.related.length });
+}

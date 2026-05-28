@@ -11,6 +11,8 @@ export type CreateIdeaInput = {
   voice_transcript?: string | null;
   linked_project_ids?: string[];
   linked_task_ids?: string[];
+  linked_goal_ids?: string[];
+  linked_idea_ids?: string[];
   status?: Idea["status"];
   category?: string;
   // v2 fields
@@ -22,6 +24,7 @@ export type CreateIdeaInput = {
   ai_suggestions?: Idea["ai_suggestions"];
   linked_knowledge_item_ids?: string[];
   linked_node_ids?: string[];
+  related_resource_refs?: Idea["related_resource_refs"];
 };
 
 export type UpdateIdeaInput = Partial<CreateIdeaInput>;
@@ -66,6 +69,8 @@ export const ideasRepository = {
         voice_transcript: input.voice_transcript ?? null,
         linked_project_ids: input.linked_project_ids ?? [],
         linked_task_ids: input.linked_task_ids ?? [],
+        linked_goal_ids: input.linked_goal_ids ?? [],
+        linked_idea_ids: input.linked_idea_ids ?? [],
         status: input.status ?? "captured",
         category: input.category?.trim() || "random",
         title: input.title ?? null,
@@ -76,6 +81,7 @@ export const ideasRepository = {
         ai_suggestions: input.ai_suggestions ?? null,
         linked_knowledge_item_ids: input.linked_knowledge_item_ids ?? [],
         linked_node_ids: input.linked_node_ids ?? [],
+        related_resource_refs: input.related_resource_refs ?? [],
       })
       .select()
       .single();

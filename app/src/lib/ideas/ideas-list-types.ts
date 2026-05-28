@@ -23,7 +23,10 @@ export type IdeasQuickFilter =
 
 export type IdeasRelatedScopeFilter =
   | "none"
+  | "hasIdea"
   | "hasProject"
+  | "hasGoal"
+  | "hasResource"
   | "hasTask"
   | "hasKnowledge"
   | "noRelated";

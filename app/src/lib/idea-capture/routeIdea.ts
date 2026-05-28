@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/client";
 import { ideasRepository } from "@/lib/repositories/ideas";
 import { addKnowledgeFromText } from "@/lib/knowledge/mutations";
+import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
+import { stripHtml } from "@/lib/utils/html";
 import type { DraftIdea, ImageAttachment } from "@/types/idea";
 import type { Idea } from "@/types/database";
 
@@ -17,7 +19,8 @@ export type RouteResult = {
 
 function deriveTitle(draft: DraftIdea): string | null {
   if (draft.title.trim()) return draft.title.trim().slice(0, 120);
-  const firstLine = draft.content.split(/\r?\n/)[0]?.trim() ?? "";
+  const plain = stripHtml(draft.content);
+  const firstLine = plain.split(/\r?\n/)[0]?.trim() ?? "";
   if (firstLine.length >= 3) return firstLine.slice(0, 120);
   return null;
 }
@@ -25,7 +28,12 @@ function deriveTitle(draft: DraftIdea): string | null {
 function serialisableAttachments(attachments: ImageAttachment[]) {
   return attachments
     .filter((a) => a.upload_state === "done" && a.storage_path)
-    .map(({ file: _f, preview_url: _u, ...rest }) => rest);
+    .map((attachment) => {
+      const { file, preview_url, ...rest } = attachment;
+      void file;
+      void preview_url;
+      return rest;
+    });
 }
 
 export async function routeIdea(draft: DraftIdea): Promise<RouteResult> {
@@ -39,7 +47,7 @@ export async function routeIdea(draft: DraftIdea): Promise<RouteResult> {
     capture_kind: draft.captureKind,
     source_type: draft.sourceType,
     voice_transcript: draft.voiceTranscript,
-    manual_tags: draft.manualTags,
+    manual_tags: [],
     destinations: draft.destinations,
     attachments: serialisableAttachments(draft.attachments),
   });
@@ -95,6 +103,10 @@ export async function routeIdea(draft: DraftIdea): Promise<RouteResult> {
       });
     }
   }
+
+  void fetchIdeaAutoEnrich({ ideaId: idea.id, includeVisual: true }).catch((err) => {
+    console.warn("[idea-capture] auto-enrich failed:", err instanceof Error ? err.message : String(err));
+  });
 
   return { idea, taskIds, nodeIds, knowledgeItemId, partialErrors };
 }

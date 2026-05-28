@@ -56,6 +56,16 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
     closeMobileSidebar();
   };
 
+  const relatedRows: Array<{ value: IdeasRelatedScopeFilter; label: string }> = [
+    { value: "hasIdea", label: ui.linkedIdea },
+    { value: "hasProject", label: ui.linkedProject },
+    { value: "hasGoal", label: ui.linkedGoal },
+    { value: "hasResource", label: ui.linkedResource },
+    { value: "hasTask", label: ui.linkedTask },
+    { value: "hasKnowledge", label: ui.linkedKnowledge },
+    { value: "noRelated", label: ui.noRelatedResource },
+  ];
+
   return (
     <div className="space-y-4 p-4">
       {showTitle ? <h2 className="text-sm font-medium">{ui.sidebarTitle}</h2> : null}
@@ -127,46 +137,19 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
         <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {ui.relatedFilters}
         </p>
-        <button
-          type="button"
-          className={cn(
-            "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-            relatedScopeFilter === "hasProject" && "bg-accent font-medium",
-          )}
-          onClick={() => setRelated("hasProject")}
-        >
-          {ui.linkedProject}
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-            relatedScopeFilter === "hasTask" && "bg-accent font-medium",
-          )}
-          onClick={() => setRelated("hasTask")}
-        >
-          {ui.linkedTask}
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-            relatedScopeFilter === "hasKnowledge" && "bg-accent font-medium",
-          )}
-          onClick={() => setRelated("hasKnowledge")}
-        >
-          {ui.linkedKnowledge}
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-            relatedScopeFilter === "noRelated" && "bg-accent font-medium",
-          )}
-          onClick={() => setRelated("noRelated")}
-        >
-          {ui.noRelatedResource}
-        </button>
+        {relatedRows.map((row) => (
+          <button
+            key={row.value}
+            type="button"
+            className={cn(
+              "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
+              relatedScopeFilter === row.value && "bg-accent font-medium",
+            )}
+            onClick={() => setRelated(row.value)}
+          >
+            {row.label}
+          </button>
+        ))}
       </div>
 
       <Separator />

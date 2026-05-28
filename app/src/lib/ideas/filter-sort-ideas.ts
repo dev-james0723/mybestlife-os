@@ -2,6 +2,7 @@ import { stripHtml } from "@/lib/utils/html";
 import type { Idea } from "@/types/database";
 import {
   ideaHasAnyLinks,
+  ideaRelatedResources,
   previewIdeaBody,
   previewIdeaTitle,
   displayCategory,
@@ -26,7 +27,6 @@ function matchesSearch(idea: Idea, q: string): boolean {
     idea.title ?? "",
     stripHtml(idea.content),
     idea.voice_transcript ?? "",
-    ...(idea.manual_tags ?? []),
     ...(idea.ai_tags ?? []),
     displayCategory(idea.category),
     previewIdeaTitle(idea, 500),
@@ -41,7 +41,7 @@ function matchesQuickFilter(idea: Idea, f: IdeasQuickFilter): boolean {
   const now = Date.now();
   const recentMs = 14 * 24 * 60 * 60 * 1000;
   const created = new Date(idea.created_at).getTime();
-  const tagCount = (idea.manual_tags?.length ?? 0) + (idea.ai_tags?.length ?? 0);
+  const tagCount = idea.ai_tags?.length ?? 0;
   const linked = ideaHasAnyLinks(idea);
 
   switch (f) {
@@ -65,15 +65,22 @@ function matchesQuickFilter(idea: Idea, f: IdeasQuickFilter): boolean {
 }
 
 function matchesRelatedScope(idea: Idea, scope: IdeasRelatedScopeFilter): boolean {
+  const related = ideaRelatedResources(idea);
   switch (scope) {
     case "none":
       return true;
+    case "hasIdea":
+      return (idea.linked_idea_ids?.length ?? 0) > 0 || related.some((r) => r.scope === "idea");
     case "hasProject":
-      return (idea.linked_project_ids?.length ?? 0) > 0;
+      return (idea.linked_project_ids?.length ?? 0) > 0 || related.some((r) => r.scope === "project");
+    case "hasGoal":
+      return (idea.linked_goal_ids?.length ?? 0) > 0 || related.some((r) => r.scope === "goal");
+    case "hasResource":
+      return (idea.related_resource_refs?.length ?? 0) > 0 || related.some((r) => r.scope === "resource");
     case "hasTask":
-      return (idea.linked_task_ids?.length ?? 0) > 0;
+      return (idea.linked_task_ids?.length ?? 0) > 0 || related.some((r) => r.scope === "task");
     case "hasKnowledge":
-      return (idea.linked_knowledge_item_ids?.length ?? 0) > 0;
+      return (idea.linked_knowledge_item_ids?.length ?? 0) > 0 || related.some((r) => r.scope === "knowledge");
     case "noRelated":
       return !ideaHasAnyLinks(idea);
     default:

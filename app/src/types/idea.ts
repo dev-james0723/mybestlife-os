@@ -1,4 +1,51 @@
 import type { CaptureKind } from "@/types/database";
+import { stripHtml } from "@/lib/utils/html";
+
+export type IdeaRelatedScope =
+  | "idea"
+  | "project"
+  | "goal"
+  | "resource"
+  | "task"
+  | "knowledge";
+
+export type IdeaResourceKind =
+  | "project_resource"
+  | "asset"
+  | "document"
+  | "software_vault";
+
+export type IdeaRelatedResource = {
+  scope: IdeaRelatedScope;
+  id: string;
+  title: string;
+  subtitle?: string;
+  percentage: number;
+  explanation: string;
+  url?: string;
+  resourceKind?: IdeaResourceKind;
+  source?: string;
+};
+
+export type IdeaCardVisual = {
+  imageUrl?: string;
+  storagePath?: string;
+  prompt?: string;
+  model?: string;
+  palette?: string[];
+  fallbackSeed?: string;
+  generatedAt?: string;
+  error?: string;
+};
+
+export type IdeaAiSuggestions = {
+  summary?: string;
+  ai_tags?: string[];
+  relatedResources?: IdeaRelatedResource[];
+  cardVisual?: IdeaCardVisual;
+  generatedAt?: string;
+  model?: string;
+};
 
 // Where a captured idea can be routed after saving.
 // 'timeline' requires no extra write — ideas surface there via created_at.
@@ -62,9 +109,11 @@ export const DEFAULT_DRAFT: DraftIdea = {
 
 // Returns true when a draft has capturable content (text, voice, or attachments).
 export function hasDraft(draft: DraftIdea): boolean {
+  const textContent = stripHtml(draft.content).trim();
   return (
-    draft.content.trim().length > 0 ||
-    draft.voiceTranscript !== null ||
+    textContent.length > 0 ||
+    /<img\b/i.test(draft.content) ||
+    (draft.voiceTranscript?.trim().length ?? 0) > 0 ||
     draft.attachments.length > 0
   );
 }

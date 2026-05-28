@@ -35,7 +35,7 @@ export function IdeasTableView({
         </thead>
         <tbody>
           {items.map((idea) => {
-            const tags = [...(idea.manual_tags ?? []), ...(idea.ai_tags ?? [])].slice(0, 4).join(", ");
+            const tags = (idea.ai_tags ?? []).slice(0, 4).join(", ");
             const rel = ideaRelatedResourceCount(idea);
             return (
               <tr

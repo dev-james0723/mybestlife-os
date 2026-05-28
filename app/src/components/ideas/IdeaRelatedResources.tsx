@@ -8,9 +8,14 @@ import {
   Share2,
   Paperclip,
   MapPin,
+  Lightbulb,
+  Target,
+  Package,
+  ExternalLink,
 } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
+import { useGoals } from "@/hooks/use-goals";
 import { useKnowledgeItemsPickList } from "@/hooks/use-knowledge-items-pick";
 import { useCareerNetworkNodes } from "@/hooks/use-career-network";
 import type { Idea } from "@/types/database";
@@ -18,16 +23,50 @@ import type { AppLocale } from "@/lib/i18n/app-locale";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
 import { IDEA_DESTINATION_OPTIONS } from "@/lib/ideas/constants";
+import { ideaRelatedResources } from "@/lib/ideas/idea-helpers";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useIdeasStore } from "@/stores/ideas-store";
+import type { IdeaRelatedResource, IdeaRelatedScope } from "@/types/idea";
 
 type Row = {
   key: string;
   icon: typeof Briefcase;
+  scope?: IdeaRelatedScope;
   title: string;
   subtitle?: string;
   href?: string;
+  external?: boolean;
+  percentage?: number;
+  explanation?: string;
 };
+
+const SCOPE_ICON: Record<IdeaRelatedScope, typeof Briefcase> = {
+  idea: Lightbulb,
+  project: Briefcase,
+  goal: Target,
+  resource: Package,
+  task: CheckSquare,
+  knowledge: BookOpen,
+};
+
+function relatedHref(r: IdeaRelatedResource, language: AppLocale): { href?: string; external?: boolean } {
+  if (r.scope === "knowledge") {
+    return { href: withAppLocalePrefix(language, `/knowledge-base/${r.id}/oracle`) };
+  }
+  if (r.scope === "idea") {
+    return { href: withAppLocalePrefix(language, `/ideas?idea=${encodeURIComponent(r.id)}`) };
+  }
+  if (r.scope === "project") return { href: withAppLocalePrefix(language, "/projects") };
+  if (r.scope === "goal") return { href: withAppLocalePrefix(language, "/goals") };
+  if (r.scope === "task") return { href: withAppLocalePrefix(language, "/tasks") };
+  if (r.scope === "resource") {
+    if (r.url) return { href: r.url, external: true };
+    if (r.resourceKind === "software_vault") return { href: withAppLocalePrefix(language, "/vault") };
+    return { href: withAppLocalePrefix(language, "/resources") };
+  }
+  return {};
+}
 
 export function IdeaRelatedResources({
   idea,
@@ -43,38 +82,93 @@ export function IdeaRelatedResources({
   const ui = getIdeasUiCopy(language);
   const { data: projects } = useProjects();
   const { data: tasks } = useTasks();
+  const { data: goals } = useGoals();
   const { data: knowledgeRows } = useKnowledgeItemsPickList();
   const { data: nodes } = useCareerNetworkNodes();
+  const ideas = useIdeasStore((s) => s.items);
 
   const rows: Row[] = [];
+  const seen = new Set<string>();
+
+  for (const rel of ideaRelatedResources(idea).sort((a, b) => b.percentage - a.percentage)) {
+    const Icon = SCOPE_ICON[rel.scope] ?? Package;
+    const link = relatedHref(rel, language);
+    const key = `${rel.scope}-${rel.id}`;
+    seen.add(key);
+    rows.push({
+      key,
+      icon: Icon,
+      scope: rel.scope,
+      title: rel.title,
+      subtitle: rel.subtitle ?? ui.relatedScopeLabels[rel.scope],
+      href: link.href,
+      external: link.external,
+      percentage: rel.percentage,
+      explanation: rel.explanation,
+    });
+  }
 
   for (const id of idea.linked_project_ids) {
+    if (seen.has(`project-${id}`)) continue;
     const name = projects?.find((p) => p.id === id)?.name;
     rows.push({
       key: `p-${id}`,
       icon: Briefcase,
+      scope: "project",
       title: name ?? ui.unknownProject,
       subtitle: name ? undefined : id.slice(0, 8),
+      href: withAppLocalePrefix(language, "/projects"),
+    });
+  }
+
+  for (const id of idea.linked_goal_ids) {
+    if (seen.has(`goal-${id}`)) continue;
+    const goal = goals?.find((g) => g.id === id);
+    rows.push({
+      key: `g-${id}`,
+      icon: Target,
+      scope: "goal",
+      title: goal?.name ?? ui.unknownGoal,
+      subtitle: goal?.status ?? id.slice(0, 8),
+      href: withAppLocalePrefix(language, "/goals"),
     });
   }
 
   for (const id of idea.linked_task_ids) {
+    if (seen.has(`task-${id}`)) continue;
     const t = tasks?.find((x) => x.id === id);
     rows.push({
       key: `t-${id}`,
       icon: CheckSquare,
+      scope: "task",
       title: t?.title ?? ui.unknownTask,
       subtitle: t?.title ? undefined : id.slice(0, 8),
+      href: withAppLocalePrefix(language, "/tasks"),
     });
   }
 
   for (const id of idea.linked_knowledge_item_ids) {
+    if (seen.has(`knowledge-${id}`)) continue;
     const k = knowledgeRows?.find((x) => x.id === id);
     rows.push({
       key: `k-${id}`,
       icon: BookOpen,
+      scope: "knowledge",
       title: k?.title?.trim() || ui.unknownKnowledge,
       href: withAppLocalePrefix(language, `/knowledge-base/${id}/oracle`),
+    });
+  }
+
+  for (const id of idea.linked_idea_ids) {
+    if (seen.has(`idea-${id}`)) continue;
+    const linked = ideas.find((x) => x.id === id);
+    rows.push({
+      key: `i-${id}`,
+      icon: Lightbulb,
+      scope: "idea",
+      title: linked?.title?.trim() || ui.unknownIdea,
+      subtitle: id.slice(0, 8),
+      href: withAppLocalePrefix(language, `/ideas?idea=${encodeURIComponent(id)}`),
     });
   }
 
@@ -126,14 +220,38 @@ export function IdeaRelatedResources({
           >
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium leading-tight">{r.title}</p>
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate font-medium leading-tight">{r.title}</p>
+                {typeof r.percentage === "number" && r.percentage > 0 ? (
+                  <span className="shrink-0 rounded-md border border-border/50 bg-background/70 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
+                    {r.percentage}%
+                  </span>
+                ) : null}
+              </div>
               {r.subtitle ? (
                 <p className="truncate font-mono text-[10px] text-muted-foreground">{r.subtitle}</p>
               ) : null}
+              {r.explanation ? (
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                  {r.explanation}
+                </p>
+              ) : null}
             </div>
             {r.href ? (
-              <Button variant="ghost" size="sm" className="h-8 shrink-0 px-2 text-xs" render={<Link href={r.href} target="_blank" rel="noreferrer" />}>
-                {ui.openInKnowledge}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 gap-1 px-2 text-xs"
+                render={
+                  <Link
+                    href={r.href}
+                    target={r.external ? "_blank" : undefined}
+                    rel={r.external ? "noreferrer" : undefined}
+                  />
+                }
+              >
+                {r.scope === "knowledge" ? ui.openInKnowledge : ui.openRelated}
+                {r.external ? <ExternalLink className="h-3 w-3" aria-hidden /> : null}
               </Button>
             ) : null}
           </li>

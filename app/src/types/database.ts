@@ -251,6 +251,8 @@ export type Idea = {
   voice_transcript: string | null;
   linked_project_ids: string[];
   linked_task_ids: string[];
+  linked_goal_ids: string[];
+  linked_idea_ids: string[];
   status: "captured" | "reviewed" | "archived";
   /** User-chosen bucket for browsing (see `IDEA_CATEGORIES` in lib/ideas/constants). */
   category: string;
@@ -266,6 +268,7 @@ export type Idea = {
   processing_step: string | null;
   linked_knowledge_item_ids: string[];
   linked_node_ids: string[];
+  related_resource_refs: Json[];
 };
 
 export type JapaneseStudySession = {
