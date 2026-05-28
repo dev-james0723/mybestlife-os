@@ -5,11 +5,13 @@ import {
   fetchGeminiPlannerJsonText,
   getGeminiServerApiKey,
 } from "@/lib/ai/gemini-text";
+import { clampIdeaTitle } from "@/lib/ideas/clamp-idea-title";
 import {
   buildIdeaCardIconPrompt,
   generateIdeaCardIconImage,
   getIdeaCardIconModel,
 } from "@/lib/ideas/generate-idea-card-icon";
+import { ideaOverviewFromContent } from "@/lib/ideas/idea-overview";
 import { normalizeIdea } from "@/lib/ideas/normalize-idea";
 import { ideaAiSuggestions, previewIdeaTitle } from "@/lib/ideas/idea-helpers";
 import { IDEA_CATEGORIES, type IdeaCategorySlug } from "@/lib/ideas/constants";
@@ -266,7 +268,7 @@ function fallbackAnalysis(idea: Idea, plain: string, candidates: Candidate[]): G
     source: candidate.source,
   }));
 
-  const title = previewIdeaTitle(idea, 72);
+  const title = clampIdeaTitle(previewIdeaTitle(idea, 72));
   const tags = Array.from(tokenSet(plain))
     .filter((t) => t.length >= 2)
     .slice(0, 5)
@@ -275,7 +277,7 @@ function fallbackAnalysis(idea: Idea, plain: string, candidates: Candidate[]): G
 
   return {
     title,
-    summary: firstParagraphSummary(plain),
+    summary: ideaOverviewFromContent(idea.content, 2000) || firstParagraphSummary(plain),
     aiTags: tags,
     category: "random",
     captureKind: idea.capture_kind,
@@ -323,13 +325,17 @@ async function maybeGenerateCardVisual(params: {
   ideaId: string;
   includeVisual: boolean;
   analysis: GeminiAnalysis;
+  ideaPlainContent: string;
   existing?: IdeaCardVisual;
 }): Promise<IdeaCardVisual | undefined> {
+  const ideaContent = params.ideaPlainContent || params.analysis.summary || params.analysis.title;
   const prompt =
-    params.analysis.cardVisualPrompt ||
+    (params.analysis.cardVisualPrompt
+      ? `${params.analysis.cardVisualPrompt}\nIdea content (must match illustration): ${ideaContent.slice(0, 900)}`
+      : null) ||
     buildIdeaCardIconPrompt({
+      ideaContent,
       title: params.analysis.title,
-      summary: params.analysis.summary,
       tags: params.analysis.aiTags,
       palette: params.analysis.cardVisualPalette,
     });
@@ -677,14 +683,14 @@ Return ONLY valid JSON with this exact shape:
 
 Rules:
 - Match the idea's dominant language/script. Cantonese Traditional Chinese should remain Cantonese Traditional.
-- title: specific, <= 72 characters, no trailing period.
-- summary: 2-4 compact sentences summarizing the idea without inventing facts.
+- title: specific, no trailing period; at most 10 Chinese characters OR 8 English letters.
+- summary: leave empty string (overview comes from user content on the client).
 - ai_tags: 4-8 useful semantic tags, lowercase/hyphenated where possible, no leading #.
 - category: choose one allowed category exactly.
 - related: choose only candidates listed by the user. Use the candidate id exactly. Include genuinely useful matches across Ideas, Projects, Goals, Resources, Tasks, and Knowledge when present.
 - percentage is semantic closeness from 0-100. Only include items >= 42.
 - explanation: one concise reason explaining why the candidate is connected to this idea.
-- cardVisualPrompt: prompt for a no-text geometric line-art icon representing the idea.
+- cardVisualPrompt: detailed prompt for a portrait (2:3) illustrative line-art image that MUST depict this specific idea (recognizable objects/metaphors), Geometry Life OS minimalist brand, no text.
 - cardVisualPalette: 3-5 distinct hex colors.
 - Output JSON only.`,
         userText: `IDEA:
@@ -699,8 +705,8 @@ ${candidateBlock || "(none)"}`,
       if (parsed) {
         const related = coerceRelated(parsed.related, candidateByKey);
         analysis = {
-          title: cleanTitle(parsed.title, analysis.title).slice(0, 96),
-          summary: cleanText(parsed.summary, 1200) || analysis.summary,
+          title: clampIdeaTitle(cleanTitle(parsed.title, analysis.title)),
+          summary: ideaOverviewFromContent(idea.content, 2000) || analysis.summary,
           aiTags: coerceTags(parsed.ai_tags),
           category: isCategory(parsed.category) ? parsed.category : analysis.category,
           captureKind: coerceCaptureKind(parsed.captureKind, idea.capture_kind),
@@ -730,12 +736,13 @@ ${candidateBlock || "(none)"}`,
     ideaId: idea.id,
     includeVisual,
     analysis,
+    ideaPlainContent: plain,
     existing: existingSuggestions.cardVisual,
   });
 
   const aiSuggestions: IdeaAiSuggestions = {
     ...existingSuggestions,
-    summary: analysis.summary,
+    summary: ideaOverviewFromContent(idea.content, 2000) || analysis.summary,
     ai_tags: analysis.aiTags,
     relatedResources: analysis.related,
     cardVisual,

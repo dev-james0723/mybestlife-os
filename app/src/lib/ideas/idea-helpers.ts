@@ -1,3 +1,4 @@
+import { clampIdeaTitle } from "@/lib/ideas/clamp-idea-title";
 import { stripHtml } from "@/lib/utils/html";
 import type { Idea } from "@/types/database";
 import type {
@@ -20,7 +21,8 @@ export function displayCategory(category: string | null | undefined): IdeaCatego
 export function previewIdeaTitle(idea: Idea, max = 100): string {
   const head = idea.title?.trim();
   if (head) {
-    return head.length <= max ? head : `${head.slice(0, max)}…`;
+    const clamped = clampIdeaTitle(head);
+    return clamped.length <= max ? clamped : `${clamped.slice(0, max)}…`;
   }
   const line = stripHtml(idea.content).split("\n")[0]?.trim() ?? "";
   if (line.length <= max) return line || "Untitled idea";

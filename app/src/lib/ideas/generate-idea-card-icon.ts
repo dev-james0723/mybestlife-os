@@ -1,22 +1,41 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { extractInlineImageFromResponse } from "@/lib/ai/gemini-image";
 
+const GEOMETRY_BRAND_STYLE = [
+  "My Best Life OS / Geometry brand: minimalist illustrative line art,",
+  "clean vector strokes, subtle dark or near-black background,",
+  "3–5 accent strokes in emerald (#22c55e), sky (#38bdf8), amber (#f97316),",
+  "occasional violet (#e879f9); Bauhaus-meets-tech geometry,",
+  "circles and arcs used sparingly as framing, not random decoration.",
+].join(" ");
+
 export function buildIdeaCardIconPrompt(params: {
+  ideaContent: string;
   title: string;
-  summary: string;
   tags: string[];
   palette: string[];
 }): string {
-  const palette = params.palette.length > 0 ? params.palette.join(", ") : "#22c55e, #38bdf8, #f97316";
+  const palette =
+    params.palette.length > 0 ? params.palette.join(", ") : "#22c55e, #38bdf8, #f97316";
+  const content = params.ideaContent.trim().slice(0, 1200);
+  const title = params.title.trim().slice(0, 120);
+  const tags = params.tags.slice(0, 8).join(", ");
+
   return [
-    "Create a single square geometric illustrative icon for an idea card.",
-    "Style: minimal abstract line art, clean vector-like shapes, 3-5 colored strokes, subtle dark transparent background, no text, no letters, no logos, no watermark, no photorealism.",
-    "Composition: centered, generous padding, readable at 120px, colorful but restrained.",
-    `Palette hint: ${palette}.`,
-    `Idea title: ${params.title}`,
-    `Idea summary: ${params.summary}`,
-    `Idea tags: ${params.tags.slice(0, 8).join(", ")}`,
-  ].join("\n");
+    "Create ONE portrait illustration for the left panel of an idea card (aspect ratio 2:3, taller than wide).",
+    GEOMETRY_BRAND_STYLE,
+    "CRITICAL: The drawing MUST visually represent the specific idea below —",
+    "use recognizable metaphors and objects (e.g. airplane wings for flying, piano keys for music).",
+    "Do NOT output generic abstract squiggles, random circles, or unrelated geometry.",
+    "Style: simplified illustrative line art only — no text, no letters, no watermark, no photorealism.",
+    "Fill the vertical frame; subject centered with breathing room at top and bottom.",
+    `Accent palette: ${palette}.`,
+    `Idea title (context): ${title || "(untitled)"}`,
+    `Idea content (must inspire the illustration): ${content}`,
+    tags ? `Tags: ${tags}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function generateIdeaCardIconImage(params: {
@@ -30,7 +49,7 @@ export async function generateIdeaCardIconImage(params: {
     contents: params.prompt,
     config: {
       responseModalities: [Modality.TEXT, Modality.IMAGE],
-      temperature: 0.55,
+      temperature: 0.45,
     },
   });
 

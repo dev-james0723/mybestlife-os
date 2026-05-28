@@ -27,6 +27,8 @@ import {
 } from "@/components/shared/rich-text-editor";
 import { fetchIdeaAiEnrich } from "@/lib/ideas/fetchIdeaAiEnrich";
 import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
+import { fallbackIdeaTitleFromPlain } from "@/lib/ideas/clamp-idea-title";
+import { ideaOverviewFromContent } from "@/lib/ideas/idea-overview";
 import { stripHtml } from "@/lib/utils/html";
 import { useCreateIdea } from "@/hooks/use-ideas";
 import { useProjects } from "@/hooks/use-projects";
@@ -106,28 +108,29 @@ export function AddIdeaModal() {
     const timer = window.setTimeout(async () => {
       const html = editorRef.current?.getHtml() ?? "";
       const plain = stripHtml(html).trim();
-      if (plain.length < 35) {
-        if (!userEditedAiRef.current) {
-          setTitle("");
-          setSummary("");
-        }
+      const overview = ideaOverviewFromContent(html, 2000);
+      if (!userEditedAiRef.current) setSummary(overview);
+
+      if (plain.length < 12) {
+        if (!userEditedAiRef.current) setTitle("");
         setAiLoading(false);
         return;
       }
       setAiLoading(true);
       try {
-        const { title: t, summary: s } = await fetchIdeaAiEnrich({
+        const { title: t } = await fetchIdeaAiEnrich({
           contentHtml: html,
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
         if (!userEditedAiRef.current) {
           setTitle(t);
-          setSummary(s);
         }
       } catch (e) {
         if ((e as DOMException | undefined)?.name === "AbortError") return;
-        toast.error(ui.couldNotAiEnrich);
+        if (!userEditedAiRef.current) {
+          setTitle(fallbackIdeaTitleFromPlain(plain));
+        }
       } finally {
         if (!controller.signal.aborted) setAiLoading(false);
       }
@@ -156,29 +159,36 @@ export function AddIdeaModal() {
     const html = editorRef.current?.getHtml() ?? "";
     const text = editorRef.current?.getText().trim() ?? "";
     if (!text && !/<img\b/i.test(html)) return;
-    const created = await createIdea.mutateAsync({
-      content: html.trim() || text,
-      title: title.trim() || null,
-      ai_suggestions: summary.trim() ? { summary: summary.trim() } : null,
-      status,
-      source_type: sourceType,
-      capture_kind: captureKind,
-      category,
-      voice_transcript: sourceType === "voice" ? voiceTranscript.trim() || null : null,
-      manual_tags: [],
-      destinations,
-      linked_project_ids: linkedProjectIds,
-      linked_task_ids: linkedTaskIds,
-      linked_knowledge_item_ids: linkedKnowledgeIds,
-    });
-    upsertIdea(created);
-    void fetchIdeaAutoEnrich({ ideaId: created.id, includeVisual: true })
-      .then(upsertIdea)
-      .catch((err) => {
-        console.warn("[ideas/add] auto-enrich failed:", err instanceof Error ? err.message : String(err));
+    const overview = ideaOverviewFromContent(html, 2000);
+    const plain = stripHtml(html).trim();
+    const resolvedTitle = title.trim() || fallbackIdeaTitleFromPlain(plain) || null;
+    try {
+      const created = await createIdea.mutateAsync({
+        content: html.trim() || text,
+        title: resolvedTitle,
+        ai_suggestions: overview ? { summary: overview } : null,
+        status,
+        source_type: sourceType,
+        capture_kind: captureKind,
+        category,
+        voice_transcript: sourceType === "voice" ? voiceTranscript.trim() || null : null,
+        manual_tags: [],
+        destinations,
+        linked_project_ids: linkedProjectIds,
+        linked_task_ids: linkedTaskIds,
+        linked_knowledge_item_ids: linkedKnowledgeIds,
       });
-    closeAddModal();
-    reset();
+      upsertIdea(created);
+      void fetchIdeaAutoEnrich({ ideaId: created.id, includeVisual: true })
+        .then(upsertIdea)
+        .catch((err) => {
+          console.warn("[ideas/add] auto-enrich failed:", err instanceof Error ? err.message : String(err));
+        });
+      closeAddModal();
+      reset();
+    } catch {
+      /* createIdea mutation already surfaces toast via onError */
+    }
   };
 
   return (
@@ -234,13 +244,10 @@ export function AddIdeaModal() {
               <Textarea
                 id="add-idea-summary"
                 value={summary}
-                onChange={(e) => {
-                  userEditedAiRef.current = true;
-                  setSummary(e.target.value);
-                }}
+                readOnly
                 placeholder={ui.aiSummaryPlaceholder}
                 rows={3}
-                className="resize-y text-sm leading-relaxed"
+                className="resize-y text-sm leading-relaxed bg-muted/20"
               />
             </div>
           </div>

@@ -48,17 +48,22 @@ function IdeaVisual({ idea, title }: { idea: Idea; title: string }) {
 
   if (visual?.imageUrl) {
     return (
-      <div className="relative h-full min-h-[132px] overflow-hidden bg-muted/20">
+      <div className="relative h-full min-h-[168px] overflow-hidden bg-muted/20">
         {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
-        <img src={visual.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        <img
+          src={visual.imageUrl}
+          alt=""
+          className="h-full w-full object-cover object-center"
+          loading="lazy"
+        />
       </div>
     );
   }
 
   return (
-    <div className="relative h-full min-h-[132px] overflow-hidden bg-muted/20">
-      <svg viewBox="0 0 160 160" aria-hidden className="h-full w-full">
-        <rect width="160" height="160" fill="rgba(255,255,255,0.02)" />
+    <div className="relative h-full min-h-[168px] overflow-hidden bg-muted/20">
+      <svg viewBox="0 0 120 180" aria-hidden className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+        <rect width="120" height="180" fill="rgba(255,255,255,0.02)" />
         <path
           d={`M${p(1, 18, 28)} ${p(2, 28, 24)} C ${p(3, 48, 30)} ${p(4, 8, 36)}, ${p(5, 86, 28)} ${p(6, 50, 36)}, ${p(7, 118, 20)} ${p(8, 22, 28)}`}
           fill="none"
@@ -114,7 +119,7 @@ export function IdeaCard({
       transition={{ duration: 0.18 }}
       whileHover={{ y: -2 }}
       className={cn(
-        "group grid min-h-[172px] cursor-pointer grid-cols-[minmax(96px,1fr)_minmax(0,2fr)] overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[border-color,box-shadow] hover:border-border hover:shadow-md",
+        "group grid min-h-[176px] cursor-pointer grid-cols-[minmax(0,1fr)_minmax(0,2fr)] overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[border-color,box-shadow] hover:border-border hover:shadow-md",
         className,
       )}
       role="button"
