@@ -49,6 +49,12 @@ describe("normalizeIdeaTag", () => {
     expect(normalizeIdeaTag("日本，旅行")).toBeNull();
     expect(normalizeIdeaTag("travel, family")).toBeNull();
   });
+
+  it("strips HTML entities and QUESTION/ANS prefixes", () => {
+    expect(normalizeIdeaTag("&nbsp;旅行")).toBe("旅行");
+    expect(normalizeIdeaTag("QUESTION: travel")).toBe("travel");
+    expect(normalizeIdeaTag("ANS：日本")).toBe("日本");
+  });
 });
 
 describe("isBadIdeaTag", () => {

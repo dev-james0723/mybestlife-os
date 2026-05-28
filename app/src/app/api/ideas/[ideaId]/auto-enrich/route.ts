@@ -345,6 +345,7 @@ async function maybeGenerateCardVisual(params: {
   userId: string;
   ideaId: string;
   includeVisual: boolean;
+  forceVisual: boolean;
   analysis: GeminiAnalysis;
   ideaPlainContent: string;
   existing?: IdeaCardVisual;
@@ -361,16 +362,24 @@ async function maybeGenerateCardVisual(params: {
     ? `${basePrompt}\nSuggested symbols (keep the fixed style above): ${params.analysis.cardVisualPrompt.slice(0, 400)}`
     : basePrompt;
 
+  const now = new Date().toISOString();
   const base: IdeaCardVisual = {
     ...params.existing,
     prompt,
     palette: params.analysis.cardVisualPalette,
     fallbackSeed: `${params.ideaId}:${params.analysis.title}`,
-    generatedAt: new Date().toISOString(),
+    generatedAt: now,
   };
 
-  if (!params.includeVisual || !params.apiKey || params.existing?.imageUrl) {
-    return base;
+  // Keep an existing image unless an explicit regeneration was requested.
+  if (params.existing?.imageUrl && !params.forceVisual) {
+    return { ...base, status: "ready" };
+  }
+
+  // Not generating right now: leave the visual queued so the background runner
+  // (or a later save) can pick it up. Never present this as a finished visual.
+  if (!params.includeVisual || !params.apiKey) {
+    return { ...base, status: "queued" };
   }
 
   const model = getIdeaCardIconModel();
@@ -400,11 +409,13 @@ async function maybeGenerateCardVisual(params: {
       storagePath,
       model,
       prompt: image.promptUsed,
+      status: "ready",
+      lastAttemptAt: now,
       error: undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { ...base, model, error: message.slice(0, 180) };
+    return { ...base, model, status: "failed", lastAttemptAt: now, error: message.slice(0, 180) };
   }
 }
 
@@ -418,13 +429,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ ideaId: string
   const { ideaId } = await ctx.params;
   if (!ideaId) return NextResponse.json({ error: "invalid_idea" }, { status: 400 });
 
-  let body: { includeVisual?: boolean } = {};
+  let body: { includeVisual?: boolean; forceVisual?: boolean } = {};
   try {
-    body = (await req.json()) as { includeVisual?: boolean };
+    body = (await req.json()) as { includeVisual?: boolean; forceVisual?: boolean };
   } catch {
     body = {};
   }
-  const includeVisual = body.includeVisual !== false;
+  const forceVisual = body.forceVisual === true;
+  // A forced regeneration always generates; otherwise honour the caller's flag.
+  const includeVisual = forceVisual || body.includeVisual !== false;
 
   const supabase = await createServerSupabaseClient();
   const {
@@ -828,6 +841,7 @@ ${candidateBlock || "(none)"}`,
     userId: user.id,
     ideaId: idea.id,
     includeVisual,
+    forceVisual,
     analysis,
     ideaPlainContent: plain,
     existing: existingSuggestions.cardVisual,

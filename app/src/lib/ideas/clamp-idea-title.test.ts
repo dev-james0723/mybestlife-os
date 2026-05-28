@@ -38,4 +38,9 @@ describe("clampIdeaTitle", () => {
     expect(clampIdeaTitle("“日本旅行”")).toBe("日本旅行");
     expect(clampIdeaTitle("賞櫻旅行計劃。")).toBe("賞櫻旅行計劃");
   });
+
+  it("strips HTML entities and QUESTION/ANS prefixes", () => {
+    expect(clampIdeaTitle("QUESTION: US Brand Idea")).toBe("US Brand Idea");
+    expect(clampIdeaTitle("日本旅行&nbsp;")).toBe("日本旅行");
+  });
 });

@@ -99,7 +99,16 @@ function coerceCardVisual(value: unknown): IdeaCardVisual | undefined {
   if (typeof o.prompt === "string" && o.prompt.trim()) out.prompt = o.prompt.trim().slice(0, 2000);
   if (typeof o.model === "string" && o.model.trim()) out.model = o.model.trim().slice(0, 100);
   if (typeof o.fallbackSeed === "string" && o.fallbackSeed.trim()) out.fallbackSeed = o.fallbackSeed.trim().slice(0, 120);
+  if (
+    o.status === "queued" ||
+    o.status === "generating" ||
+    o.status === "ready" ||
+    o.status === "failed"
+  ) {
+    out.status = o.status;
+  }
   if (typeof o.generatedAt === "string" && o.generatedAt.trim()) out.generatedAt = o.generatedAt.trim();
+  if (typeof o.lastAttemptAt === "string" && o.lastAttemptAt.trim()) out.lastAttemptAt = o.lastAttemptAt.trim();
   if (typeof o.error === "string" && o.error.trim()) out.error = o.error.trim().slice(0, 200);
   if (Array.isArray(o.palette)) {
     const palette = o.palette
@@ -151,23 +160,27 @@ export function ideaAiSummary(idea: Idea): string | null {
 }
 
 export type IdeaStructuredSuggestion = {
-  label: "coreInsight" | "suggestedNextStep" | "possibleUse" | "clarifyingQuestion";
+  label: "overview" | "coreInsight" | "suggestedNextStep" | "possibleUse" | "clarifyingQuestion";
   text: string;
 };
 
 /**
  * Structured AI suggestion panel fields, with the similarity guard applied:
- * fields that merely echo the idea content (Core Insight especially) are
+ * fields that merely echo the idea content (overview / core insight) are
  * dropped so the panel always adds value instead of repeating the content.
+ * (Legacy ideas store the raw content overview as `summary`; the guard hides
+ * it until a re-enrichment produces a real AI summary.)
  */
 export function ideaStructuredSuggestions(idea: Idea): IdeaStructuredSuggestion[] {
   const s = ideaAiSuggestions(idea);
   const content = idea.content ?? "";
   const out: IdeaStructuredSuggestion[] = [];
 
-  const coreInsight = s.coreInsight ?? s.summary;
-  if (coreInsight && !isSuggestionTooSimilar(coreInsight, content)) {
-    out.push({ label: "coreInsight", text: coreInsight });
+  if (s.summary && !isSuggestionTooSimilar(s.summary, content)) {
+    out.push({ label: "overview", text: s.summary });
+  }
+  if (s.coreInsight && !isSuggestionTooSimilar(s.coreInsight, content)) {
+    out.push({ label: "coreInsight", text: s.coreInsight });
   }
   if (s.suggestedNextStep) out.push({ label: "suggestedNextStep", text: s.suggestedNextStep });
   if (s.possibleUse) out.push({ label: "possibleUse", text: s.possibleUse });

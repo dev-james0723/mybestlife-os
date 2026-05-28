@@ -104,6 +104,7 @@ export type IdeasUiCopy = {
   detailCancelEdit: string;
   contentSection: string;
   aiSuggestionsSection: string;
+  aiOverviewLabel: string;
   coreInsightLabel: string;
   nextStepLabel: string;
   possibleUseLabel: string;
@@ -111,6 +112,10 @@ export type IdeasUiCopy = {
   accessBrain: string;
   visualPreviewSection: string;
   visualPending: string;
+  visualQueued: string;
+  visualGenerating: string;
+  visualFailed: string;
+  regenerateVisual: string;
   relatedSection: string;
   attachmentsSection: string;
   destinationsSection: string;
@@ -295,13 +300,18 @@ const en: IdeasUiCopy = {
   detailCancelEdit: "Cancel",
   contentSection: "Content",
   aiSuggestionsSection: "AI suggestions",
+  aiOverviewLabel: "AI overview",
   coreInsightLabel: "Core insight",
   nextStepLabel: "Suggested next step",
   possibleUseLabel: "Possible use",
   clarifyingQuestionLabel: "Question to clarify",
   accessBrain: "Access My Brain",
   visualPreviewSection: "Visual",
-  visualPending: "Visual is being generated…",
+  visualPending: "Visual pending",
+  visualQueued: "Visual queued",
+  visualGenerating: "Generating visual…",
+  visualFailed: "Visual failed",
+  regenerateVisual: "Regenerate visual",
   relatedSection: "Related resources",
   attachmentsSection: "Attachments",
   destinationsSection: "Destinations",

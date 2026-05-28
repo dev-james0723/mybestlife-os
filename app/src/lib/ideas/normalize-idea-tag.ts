@@ -77,12 +77,14 @@ function isCjkTag(text: string): boolean {
   return HAN.test(text);
 }
 
-/** Strip hashes, surrounding quotes/brackets, and collapse whitespace. */
+/** Strip HTML entities, hashes, QUESTION/ANS prefixes, and collapse whitespace. */
 function cleanTagText(raw: string): string {
   return raw
     .normalize("NFC")
+    .replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;|&#\d+;/gi, " ")
+    .replace(/^\s*(?:question|ans|answer)\s*[:：]\s*/i, "")
     .replace(/^[#＃\s]+/u, "")
-    .replace(/[\s]+/gu, " ")
+    .replace(/\s+/gu, " ")
     .trim();
 }
 

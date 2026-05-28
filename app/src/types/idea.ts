@@ -29,6 +29,8 @@ export type IdeaRelatedResource = {
   source?: string;
 };
 
+export type IdeaCardVisualStatus = "queued" | "generating" | "ready" | "failed";
+
 export type IdeaCardVisual = {
   imageUrl?: string;
   storagePath?: string;
@@ -36,7 +38,9 @@ export type IdeaCardVisual = {
   model?: string;
   palette?: string[];
   fallbackSeed?: string;
+  status?: IdeaCardVisualStatus;
   generatedAt?: string;
+  lastAttemptAt?: string;
   error?: string;
 };
 

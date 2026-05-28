@@ -1,11 +1,23 @@
 /**
- * Gemini-backed title + summary for the Ideas capture dialog.
+ * Gemini-backed enrichment for the Ideas capture dialog: a generalized title,
+ * a real AI overview (summary, not raw content), plus core insight, next step,
+ * short semantic tags, and an image subject.
  */
 
 export type IdeaAiEnrichResult = {
   title: string;
-  summary: string;
+  overview: string;
+  coreInsight: string;
+  suggestedNextStep: string;
+  aiTags: string[];
+  visualSubject: string;
+  confidence: number;
+  source: "gemini" | "fallback";
 };
+
+function str(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
 
 export async function fetchIdeaAiEnrich(params: {
   contentHtml: string;
@@ -23,9 +35,19 @@ export async function fetchIdeaAiEnrich(params: {
     throw new Error(await res.text().catch(() => `HTTP ${res.status}`));
   }
 
-  const data = (await res.json()) as unknown;
-  const o = data as Record<string, unknown>;
-  const title = typeof o.title === "string" ? o.title.trim() : "";
-  const summary = typeof o.summary === "string" ? o.summary.trim() : "";
-  return { title, summary };
+  const o = (await res.json()) as Record<string, unknown>;
+  // `overview` is the new field; fall back to the legacy `summary` key.
+  const overview = str(o.overview) || str(o.summary);
+  return {
+    title: str(o.title),
+    overview,
+    coreInsight: str(o.coreInsight),
+    suggestedNextStep: str(o.suggestedNextStep),
+    aiTags: Array.isArray(o.aiTags)
+      ? o.aiTags.filter((t): t is string => typeof t === "string")
+      : [],
+    visualSubject: str(o.visualSubject),
+    confidence: typeof o.confidence === "number" ? o.confidence : 0,
+    source: o.source === "gemini" ? "gemini" : "fallback",
+  };
 }

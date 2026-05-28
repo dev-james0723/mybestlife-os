@@ -25,7 +25,7 @@ function IdeaVisual({ idea, pendingLabel }: { idea: Idea; pendingLabel: string }
 
   if (visual?.imageUrl) {
     return (
-      <div className="relative h-full min-h-[168px] overflow-hidden bg-muted/20">
+      <div className="relative h-36 w-full overflow-hidden bg-muted/20 sm:h-full sm:min-h-[168px]">
         {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
         <img
           src={visual.imageUrl}
@@ -40,7 +40,7 @@ function IdeaVisual({ idea, pendingLabel }: { idea: Idea; pendingLabel: string }
   // Deterministic "visual pending" placeholder — never random line art. Tuned
   // to the warm ivory paper of the real generated illustrations.
   return (
-    <div className="relative flex h-full min-h-[168px] flex-col items-center justify-center gap-2 overflow-hidden bg-[#f5efe3] text-[#8a7857] dark:bg-[#1b1915] dark:text-[#a9986f]">
+    <div className="relative flex h-36 w-full flex-col items-center justify-center gap-2 overflow-hidden bg-[#f5efe3] text-[#8a7857] sm:h-full sm:min-h-[168px] dark:bg-[#1b1915] dark:text-[#a9986f]">
       <Sparkles className="h-6 w-6 opacity-70" aria-hidden />
       <span className="px-3 text-center text-[10px] font-medium leading-tight opacity-80">
         {pendingLabel}
@@ -67,6 +67,15 @@ export function IdeaCard({
   const topTags = ai.slice(0, TAG_CAP);
   const rel = ideaRelatedResourceCount(idea);
   const topRelated = ideaRelatedResources(idea)[0];
+  const visualStatus = ideaCardVisual(idea)?.status;
+  const visualPendingLabel =
+    visualStatus === "generating"
+      ? ui.visualGenerating
+      : visualStatus === "failed"
+        ? ui.visualFailed
+        : visualStatus === "queued"
+          ? ui.visualQueued
+          : ui.visualPending;
 
   return (
     <motion.div
@@ -76,7 +85,7 @@ export function IdeaCard({
       transition={{ duration: 0.18 }}
       whileHover={{ y: -2 }}
       className={cn(
-        "group grid min-h-[176px] cursor-pointer grid-cols-[minmax(0,1fr)_minmax(0,2fr)] overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[border-color,box-shadow] hover:border-border hover:shadow-md",
+        "group grid cursor-pointer grid-cols-1 overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[border-color,box-shadow] hover:border-border hover:shadow-md sm:min-h-[176px] sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]",
         className,
       )}
       role="button"
@@ -89,7 +98,7 @@ export function IdeaCard({
         }
       }}
     >
-      <IdeaVisual idea={idea} pendingLabel={ui.visualPending} />
+      <IdeaVisual idea={idea} pendingLabel={visualPendingLabel} />
       <div className="flex min-w-0 flex-col p-3.5">
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
           <IdeaCategoryBadge category={idea.category} language={language} />

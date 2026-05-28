@@ -26,13 +26,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { Brain, Pencil, Trash2, X } from "lucide-react";
+import { Brain, Loader2, Pencil, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
 import { useIdeasStore } from "@/stores/ideas-store";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy, ideaDestinationLabel } from "@/lib/i18n/ideas-ui";
 import { useUpdateIdea, useDeleteIdea } from "@/hooks/use-ideas";
+import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
 import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
 import { useKnowledgeItemsPickList } from "@/hooks/use-knowledge-items-pick";
@@ -75,6 +76,7 @@ function IdeaDetailInner({
 
   const [editing, setEditing] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [regenVisual, setRegenVisual] = useState(false);
   const [titleDraft, setTitleDraft] = useState(() => idea.title ?? "");
   const [summaryDraft, setSummaryDraft] = useState(() => ideaAiSummary(idea) ?? "");
   const [status, setStatus] = useState<Idea["status"]>(() => idea.status);
@@ -146,6 +148,23 @@ function IdeaDetailInner({
     setAiTags((xs) => xs.filter((t) => t !== tag));
   };
 
+  const handleRegenerateVisual = async () => {
+    if (regenVisual) return;
+    setRegenVisual(true);
+    try {
+      const updated = await fetchIdeaAutoEnrich({
+        ideaId: idea.id,
+        includeVisual: true,
+        forceVisual: true,
+      });
+      upsertIdea(updated);
+    } catch (err) {
+      console.warn("[ideas/detail] regenerate visual failed:", err instanceof Error ? err.message : String(err));
+    } finally {
+      setRegenVisual(false);
+    }
+  };
+
   const badgeCategory = editing ? category : idea.category;
   const badgeStatus = editing ? status : idea.status;
   const badgeSource = editing ? sourceType : idea.source_type;
@@ -157,11 +176,21 @@ function IdeaDetailInner({
     `/brain?focus=idea:${encodeURIComponent(idea.id)}`,
   );
   const suggestionLabels: Record<IdeaStructuredSuggestion["label"], string> = {
+    overview: ui.aiOverviewLabel,
     coreInsight: ui.coreInsightLabel,
     suggestedNextStep: ui.nextStepLabel,
     possibleUse: ui.possibleUseLabel,
     clarifyingQuestion: ui.clarifyingQuestionLabel,
   };
+  const visualStatus = cardVisual?.status;
+  const visualStatusLabel =
+    visualStatus === "generating"
+      ? ui.visualGenerating
+      : visualStatus === "failed"
+        ? ui.visualFailed
+        : visualStatus === "queued"
+          ? ui.visualQueued
+          : ui.visualPending;
 
   return (
     <>
@@ -437,23 +466,48 @@ function IdeaDetailInner({
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.relatedSection}</p>
                   <IdeaRelatedResources idea={idea} language={language} />
                 </div>
-                {cardVisual?.imageUrl ? (
-                  <>
-                    <Separator />
-                    <div>
-                      <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.visualPreviewSection}</p>
-                      <div className="overflow-hidden rounded-lg border border-border/50">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
-                        <img
-                          src={cardVisual.imageUrl}
-                          alt=""
-                          className="aspect-[3/4] w-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
+                <Separator />
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">{ui.visualPreviewSection}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 px-2 text-xs"
+                      onClick={handleRegenerateVisual}
+                      disabled={regenVisual}
+                    >
+                      {regenVisual ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      {ui.regenerateVisual}
+                    </Button>
+                  </div>
+                  {cardVisual?.imageUrl ? (
+                    <div className="overflow-hidden rounded-lg border border-border/50">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
+                      <img
+                        src={cardVisual.imageUrl}
+                        alt=""
+                        className="aspect-[3/4] w-full object-cover"
+                        loading="lazy"
+                      />
                     </div>
-                  </>
-                ) : null}
+                  ) : (
+                    <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 bg-[#f5efe3] text-[#8a7857] dark:bg-[#1b1915] dark:text-[#a9986f]">
+                      {regenVisual || visualStatus === "generating" ? (
+                        <Loader2 className="h-6 w-6 animate-spin opacity-70" aria-hidden />
+                      ) : (
+                        <Sparkles className="h-6 w-6 opacity-70" aria-hidden />
+                      )}
+                      <span className="px-3 text-center text-[11px] font-medium opacity-80">
+                        {regenVisual ? ui.visualGenerating : visualStatusLabel}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

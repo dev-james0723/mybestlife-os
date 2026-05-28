@@ -4,13 +4,18 @@ import { normalizeIdea } from "@/lib/ideas/normalize-idea";
 export async function fetchIdeaAutoEnrich(params: {
   ideaId: string;
   includeVisual?: boolean;
+  /** Regenerate the card visual even when one already exists. */
+  forceVisual?: boolean;
   signal?: AbortSignal;
 }): Promise<Idea> {
   const res = await fetch(`/api/ideas/${encodeURIComponent(params.ideaId)}/auto-enrich`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
-    body: JSON.stringify({ includeVisual: params.includeVisual ?? false }),
+    body: JSON.stringify({
+      includeVisual: params.includeVisual ?? false,
+      forceVisual: params.forceVisual ?? false,
+    }),
     signal: params.signal,
   });
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +68,15 @@ export function AddIdeaModal() {
   const [editorRevision, setEditorRevision] = useState(0);
   const userEditedAiRef = useRef(false);
   const enrichAbortRef = useRef<AbortController | null>(null);
+  /** Latest AI enrichment fields not shown as editable inputs (saved on submit). */
+  const aiFieldsRef = useRef<{
+    overview: string;
+    coreInsight: string;
+    suggestedNextStep: string;
+    aiTags: string[];
+    visualSubject: string;
+    source: "gemini" | "fallback";
+  } | null>(null);
 
   const reset = useCallback(() => {
     enrichAbortRef.current?.abort();
@@ -86,6 +94,7 @@ export function AddIdeaModal() {
     setLinkedKnowledgeIds([]);
     setAiLoading(false);
     userEditedAiRef.current = false;
+    aiFieldsRef.current = null;
     setEditorRevision(0);
     setEditorKey((k) => k + 1);
     editorRef.current?.reset();
@@ -108,26 +117,46 @@ export function AddIdeaModal() {
     const timer = window.setTimeout(async () => {
       const html = editorRef.current?.getHtml() ?? "";
       const plain = stripHtml(html).trim();
-      const overview = ideaOverviewFromContent(html, 2000);
-      if (!userEditedAiRef.current) setSummary(overview);
+      const localOverview = ideaOverviewFromContent(html, 600);
+      // Instant placeholder until the AI summary arrives.
+      if (!userEditedAiRef.current) setSummary(localOverview);
 
       if (plain.length < 12) {
         if (!userEditedAiRef.current) setTitle("");
+        aiFieldsRef.current = null;
         setAiLoading(false);
         return;
       }
       setAiLoading(true);
       try {
-        const { title: t } = await fetchIdeaAiEnrich({
+        const result = await fetchIdeaAiEnrich({
           contentHtml: html,
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
+        aiFieldsRef.current = {
+          overview: result.overview || localOverview,
+          coreInsight: result.coreInsight,
+          suggestedNextStep: result.suggestedNextStep,
+          aiTags: result.aiTags,
+          visualSubject: result.visualSubject,
+          source: result.source,
+        };
         if (!userEditedAiRef.current) {
-          setTitle(t);
+          if (result.title) setTitle(result.title);
+          // Show the real AI overview (summary), not the raw content.
+          setSummary(result.overview || localOverview);
         }
       } catch (e) {
         if ((e as DOMException | undefined)?.name === "AbortError") return;
+        aiFieldsRef.current = {
+          overview: localOverview,
+          coreInsight: "",
+          suggestedNextStep: "",
+          aiTags: [],
+          visualSubject: "",
+          source: "fallback",
+        };
         if (!userEditedAiRef.current) {
           setTitle(fallbackIdeaTitleFromPlain(plain));
         }
@@ -159,14 +188,28 @@ export function AddIdeaModal() {
     const html = editorRef.current?.getHtml() ?? "";
     const text = editorRef.current?.getText().trim() ?? "";
     if (!text && !/<img\b/i.test(html)) return;
-    const overview = ideaOverviewFromContent(html, 2000);
     const plain = stripHtml(html).trim();
+    const ai = aiFieldsRef.current;
+    const overview = ai?.overview || ideaOverviewFromContent(html, 600);
     const resolvedTitle = title.trim() || fallbackIdeaTitleFromPlain(plain) || null;
+    const aiSuggestions =
+      overview || ai?.coreInsight || ai?.suggestedNextStep
+        ? {
+            summary: overview || undefined,
+            coreInsight: ai?.coreInsight || undefined,
+            suggestedNextStep: ai?.suggestedNextStep || undefined,
+            cardVisual: ai?.visualSubject
+              ? { prompt: ai.visualSubject, status: "queued" as const }
+              : undefined,
+            generatedAt: new Date().toISOString(),
+          }
+        : null;
     try {
       const created = await createIdea.mutateAsync({
         content: html.trim() || text,
         title: resolvedTitle,
-        ai_suggestions: overview ? { summary: overview } : null,
+        ai_suggestions: aiSuggestions,
+        ai_tags: ai?.aiTags ?? [],
         status,
         source_type: sourceType,
         capture_kind: captureKind,
@@ -195,15 +238,15 @@ export function AddIdeaModal() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         size="5xl"
-        className="max-h-[min(92dvh,900px)] overflow-y-auto gap-0 p-0 sm:p-0"
+        className="flex max-h-[min(92dvh,900px)] flex-col gap-0 p-0 max-sm:h-[100dvh] max-sm:max-h-[100dvh]"
         showCloseButton
       >
-        <div className="border-b border-border/60 px-5 py-4">
+        <div className="shrink-0 border-b border-border/60 px-4 py-3 sm:px-5 sm:py-4">
           <DialogHeader className="gap-1 text-left">
             <DialogTitle className="text-base">{ui.addModalTitle}</DialogTitle>
           </DialogHeader>
         </div>
-        <div className="grid gap-6 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+        <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{ui.contentLabel}</Label>
@@ -379,7 +422,7 @@ export function AddIdeaModal() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border/60 bg-muted/10 px-5 py-4">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-border/60 bg-muted/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:py-4">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             {ui.cancel}
           </Button>

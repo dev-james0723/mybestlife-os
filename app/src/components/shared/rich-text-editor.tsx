@@ -569,6 +569,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             onPaste={handlePaste}
             className={cn(
               minHeightClass,
+              "max-w-full overflow-x-hidden break-words [overflow-wrap:anywhere]",
               "px-3 py-3 text-sm leading-relaxed text-foreground outline-none",
               "[&_a]:text-blue-600 [&_a]:underline dark:[&_a]:text-blue-400 [&_blockquote]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_h2]:mt-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-2 [&_h3]:text-base [&_h3]:font-medium [&_img]:max-w-full [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-1 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:bg-muted/40 [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-relaxed [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6"
             )}

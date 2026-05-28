@@ -30,6 +30,8 @@ function isMostlyCjk(text: string): boolean {
  */
 export function clampIdeaTitle(raw: string): string {
   const title = raw
+    .replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;|&#\d+;/gi, " ")
+    .replace(/^\s*(?:question|ans|answer)\s*[:：]\s*/i, "")
     .replace(/\s+/g, " ")
     .replace(/["“”'‘’]/gu, "")
     .replace(/[.。!！?？,，、;；:：]+$/u, "")
