@@ -20,6 +20,8 @@ export type WeatherSnapshot = {
   description: string;
   /** Canonical OpenWeather condition main, e.g. "Clouds". */
   main: string;
+  /** OpenWeather numeric condition id (e.g. 803 = broken clouds). */
+  weatherId: number;
   icon: string;
   city: string;
   fetchedAt: number;
@@ -146,7 +148,7 @@ export async function fetchCurrentWeather(
       return { status: "error", reason: "api", message: `HTTP ${res.status}` };
     }
     const data = (await res.json()) as {
-      weather?: Array<{ main?: string; description?: string; icon?: string }>;
+      weather?: Array<{ id?: number; main?: string; description?: string; icon?: string }>;
       main?: { temp?: number };
       name?: string;
     };
@@ -156,6 +158,7 @@ export async function fetchCurrentWeather(
       tempC: Math.round(data.main?.temp ?? 0),
       description: capitalize(w?.description ?? w?.main ?? ""),
       main: w?.main ?? "Clear",
+      weatherId: w?.id ?? 800,
       icon: w?.icon ?? "",
       city: coords.city ?? data.name ?? "",
       fetchedAt: Date.now(),

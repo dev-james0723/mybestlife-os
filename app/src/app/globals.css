@@ -1125,6 +1125,55 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
     inset 0 1px 0 rgba(255, 255, 255, 0.80);
 }
 
+/* Weather badge — live Lottie condition animation behind the label.
+   Theme-agnostic so it works under every data-ui-theme. The scrim keeps the
+   temperature + description readable over the animation. */
+.topbar-weather-badge {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.topbar-weather-badge__anim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.4;
+}
+.topbar-weather-badge__anim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(17, 18, 22, 0.62) 0%,
+    rgba(17, 18, 22, 0.18) 52%,
+    rgba(17, 18, 22, 0.44) 100%
+  );
+}
+.topbar-weather-badge__fg {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+html[data-color-mode="light"] .topbar-weather-badge__anim {
+  opacity: 0.55;
+}
+html[data-color-mode="light"] .topbar-weather-badge__anim::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.66) 0%,
+    rgba(255, 255, 255, 0.22) 52%,
+    rgba(255, 255, 255, 0.48) 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-weather-badge__anim {
+    opacity: 0.3;
+  }
+}
+
 /* Utility pill + buttons + divider */
 html[data-ui-theme="default"] .topbar-pill {
   display: inline-flex;

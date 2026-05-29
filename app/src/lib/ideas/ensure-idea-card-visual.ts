@@ -12,6 +12,10 @@ import { stripHtml } from "@/lib/utils/html";
 import type { Idea, Json } from "@/types/database";
 import type { IdeaAiSuggestions, IdeaCardVisual } from "@/types/idea";
 
+function bytesToDataUrl(bytes: Buffer, mimeType: string): string {
+  return `data:${mimeType};base64,${bytes.toString("base64")}`;
+}
+
 export async function ensureIdeaCardVisual(params: {
   supabase: SupabaseClient;
   userId: string;
@@ -57,36 +61,45 @@ export async function ensureIdeaCardVisual(params: {
         ? "webp"
         : "png";
 
-  const storagePath = `${params.userId}/${params.idea.id}/${randomUUID()}.${ext}`;
-  // Service role avoids storage RLS edge cases; DB update still scoped by user_id.
-  let storageClient: SupabaseClient;
-  try {
-    storageClient = createServiceRoleSupabaseClient();
-  } catch {
-    storageClient = params.supabase;
-  }
-  const { error: uploadError } = await storageClient.storage
-    .from("idea-card-icons")
-    .upload(storagePath, image.imageBytes, {
-      contentType: image.mimeType,
-      upsert: false,
-    });
+  let imageUrl = bytesToDataUrl(image.imageBytes, image.mimeType);
+  let storagePath: string | undefined;
 
-  if (uploadError) {
-    throw new Error(`card_visual_upload: ${uploadError.message}`);
-  }
+  // Prefer Supabase public URL for Gemini PNGs; placeholders can stay inline data URLs.
+  if (image.source === "gemini") {
+    storagePath = `${params.userId}/${params.idea.id}/${randomUUID()}.${ext}`;
+    let storageClient: SupabaseClient;
+    try {
+      storageClient = createServiceRoleSupabaseClient();
+    } catch {
+      storageClient = params.supabase;
+    }
+    const { error: uploadError } = await storageClient.storage
+      .from("idea-card-icons")
+      .upload(storagePath, image.imageBytes, {
+        contentType: image.mimeType,
+        upsert: false,
+      });
 
-  const { data: urlData } = storageClient.storage.from("idea-card-icons").getPublicUrl(storagePath);
+    if (!uploadError) {
+      const { data: urlData } = storageClient.storage
+        .from("idea-card-icons")
+        .getPublicUrl(storagePath);
+      imageUrl = urlData.publicUrl;
+    } else {
+      console.warn("[idea-card-visual] storage upload failed, using data URL:", uploadError.message);
+      storagePath = undefined;
+    }
+  }
 
   const cardVisual: IdeaCardVisual = {
-    imageUrl: urlData.publicUrl,
+    imageUrl,
     storagePath,
     prompt: image.promptUsed,
     model: image.modelUsed,
     palette,
     styleVersion: IDEA_CARD_VISUAL_STYLE_VERSION,
     generatedAt: new Date().toISOString(),
-    error: undefined,
+    error: image.geminiWarning?.slice(0, 500),
   };
 
   const aiSuggestions: IdeaAiSuggestions = {

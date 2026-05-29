@@ -351,15 +351,13 @@ async function maybeGenerateCardVisual(params: {
   existing?: IdeaCardVisual;
 }): Promise<IdeaCardVisual | undefined> {
   const ideaContent = params.ideaPlainContent || params.analysis.summary || params.analysis.title;
-  // Fixed minimalist gradient style; cardVisualPrompt hints mood/motif only.
-  const basePrompt = buildIdeaCardIconPrompt({
+  const prompt = buildIdeaCardIconPrompt({
     ideaContent,
     title: params.analysis.title,
     tags: params.analysis.aiTags,
+    palette: params.analysis.cardVisualPalette,
+    motifHint: params.analysis.cardVisualPrompt,
   });
-  const prompt = params.analysis.cardVisualPrompt
-    ? `${basePrompt}\nSuggested symbols (keep the fixed style above): ${params.analysis.cardVisualPrompt.slice(0, 400)}`
-    : basePrompt;
 
   const base: IdeaCardVisual = {
     ...params.existing,
@@ -382,38 +380,42 @@ async function maybeGenerateCardVisual(params: {
       title: params.analysis.title,
       palette: params.analysis.cardVisualPalette,
     });
-    const ext = image.mimeType.includes("svg")
-      ? "svg"
-      : image.mimeType.includes("jpeg") || image.mimeType.includes("jpg")
-        ? "jpg"
-        : image.mimeType.includes("webp")
-          ? "webp"
-          : "png";
-    const storagePath = `${params.userId}/${params.ideaId}/${randomUUID()}.${ext}`;
-    const { error: uploadError } = await params.supabase.storage
-      .from("idea-card-icons")
-      .upload(storagePath, image.imageBytes, {
-        contentType: image.mimeType,
-        upsert: false,
-      });
-    if (uploadError) {
-      console.error("[ideas/auto-enrich] card icon upload:", uploadError.message);
-      return {
-        ...base,
-        model: image.modelUsed,
-        styleVersion: params.existing?.styleVersion,
-        error: uploadError.message.slice(0, 180),
-      };
+
+    let imageUrl = `data:${image.mimeType};base64,${image.imageBytes.toString("base64")}`;
+    let storagePath: string | undefined;
+
+    if (image.source === "gemini") {
+      const ext = image.mimeType.includes("svg")
+        ? "svg"
+        : image.mimeType.includes("jpeg") || image.mimeType.includes("jpg")
+          ? "jpg"
+          : image.mimeType.includes("webp")
+            ? "webp"
+            : "png";
+      storagePath = `${params.userId}/${params.ideaId}/${randomUUID()}.${ext}`;
+      const { error: uploadError } = await params.supabase.storage
+        .from("idea-card-icons")
+        .upload(storagePath, image.imageBytes, {
+          contentType: image.mimeType,
+          upsert: false,
+        });
+      if (!uploadError) {
+        const { data } = params.supabase.storage.from("idea-card-icons").getPublicUrl(storagePath);
+        imageUrl = data.publicUrl;
+      } else {
+        console.error("[ideas/auto-enrich] card icon upload:", uploadError.message);
+        storagePath = undefined;
+      }
     }
-    const { data } = params.supabase.storage.from("idea-card-icons").getPublicUrl(storagePath);
+
     return {
       ...base,
-      imageUrl: data.publicUrl,
+      imageUrl,
       storagePath,
       model: image.modelUsed,
       prompt: image.promptUsed,
       styleVersion: IDEA_CARD_VISUAL_STYLE_VERSION,
-      error: undefined,
+      error: image.geminiWarning?.slice(0, 500),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -793,8 +795,16 @@ related — choose ONLY from the candidates provided below, using the candidate 
   percentage: semantic closeness 0-100. Include only items >= 45.
   explanation: one SPECIFIC reason naming the shared topic/intent (e.g. "Both target US-market DTC validation"), never generic boilerplate.
 
-cardVisualPrompt — mood + simple motif for a minimalist gradient thumbnail (e.g. "warm dinner glow, table silhouette"; "soft blue-peach sunrise, mountain horizon"). No text/letters.
-cardVisualPalette — 3-5 distinct hex colors for the gradient (must match the idea mood).
+cardVisualPrompt — ONE paragraph describing the dominant minimalist SILHOUETTE a stranger would associate with THIS idea in 2 seconds. Name concrete anchors, not vague mood.
+  REQUIRED: primarySymbol (the main silhouette), optional seasonTimeCue, optional avoidSymbols.
+  If a country/location is explicit, include at least one place-specific visual anchor.
+  For Japan topics, prefer combinations like Mt Fuji / torii / Tokyo tower / red-sun circle (Japanese flag motif) + topic object.
+  GOOD (Japan in August): "Mount Fuji + vermilion torii gate + subtle red-sun circle; warm golden August humid sky; optional shinkansen curve; avoid generic lanterns/fireworks unless matsuri is in the idea."
+  GOOD (Tokyo food trip): "sushi/ramen silhouette foreground + Mt Fuji or torii background + red-sun circle accent."
+  GOOD (dinner party): "warm table glow with single plate silhouette; amber restaurant lighting."
+  BAD: "peaceful gradient with abstract shapes" or "festival lanterns" when the idea never mentions a festival.
+  No text/letters in the image.
+cardVisualPalette — 3-5 distinct hex colors for the gradient (must match the idea mood and season).
 
 Output JSON only, no fences, no preamble.`,
         userText: `IDEA:

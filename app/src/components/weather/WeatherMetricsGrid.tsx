@@ -23,8 +23,10 @@ export function WeatherMetricsGrid({ copy, current }: WeatherMetricsGridProps) {
       <WeatherMetricCard
         icon={Sun}
         label={copy.metricUvIndex}
-        value={current.uvIndex ? String(current.uvIndex) : "—"}
-        trailing={current.uvIndex ? uvLabelToCopy(copy, current.uvLabel) : undefined}
+        value={current.uvIndex != null ? String(current.uvIndex) : "—"}
+        trailing={
+          current.uvIndex != null ? uvLabelToCopy(copy, current.uvLabel) : undefined
+        }
       />
       <WeatherMetricCard
         icon={Droplets}

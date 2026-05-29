@@ -36,7 +36,7 @@ function buildTags(current: CurrentWeather): WeatherImpactTag[] {
   if (current.humidity >= 80) out.push("high-humidity");
   if ((current.visibility ?? 10) < 5) out.push("low-visibility");
   if (current.windSpeed >= 35) out.push("strong-wind");
-  if (current.uvIndex >= 8) out.push("high-uv");
+  if (current.uvIndex != null && current.uvIndex >= 8) out.push("high-uv");
   if (current.temperature <= 5) out.push("cold-snap");
   if (current.temperature >= 33) out.push("heat-wave");
   return out;
@@ -75,7 +75,7 @@ function buildReminders(
       message: `Light jacket — temperatures drop to ${eveningLow}°C later`,
     });
   }
-  if (current.uvIndex >= 7) {
+  if (current.uvIndex != null && current.uvIndex >= 7) {
     out.push({
       iconKey: "sun",
       message: "Apply sunscreen — UV index is high",
@@ -130,7 +130,11 @@ function buildImpact(current: CurrentWeather): WeatherImpactItem[] {
       headline: "Bundle up",
       detail: "Insulated jacket, gloves, and waterproof boots.",
     });
-  } else if (current.conditionCode === "clear-day" && current.uvIndex >= 7) {
+  } else if (
+    current.conditionCode === "clear-day" &&
+    current.uvIndex != null &&
+    current.uvIndex >= 7
+  ) {
     items.push({
       category: "outdoor",
       headline: "High UV",
@@ -177,7 +181,7 @@ function buildBrief(
     const lastRain = rainHours[rainHours.length - 1]!;
     return `${current.condition} expected to persist for the next ${rainHours.length * 3} hours. Visibility may be reduced. Recommend delaying outdoor activities until conditions clear around ${lastRain.hourLabel}.`;
   }
-  if (current.conditionCode === "clear-day" && current.uvIndex >= 7) {
+  if (current.conditionCode === "clear-day" && current.uvIndex != null && current.uvIndex >= 7) {
     return `Clear and sunny with UV index ${current.uvIndex}. Apply sunscreen if heading out for extended periods.`;
   }
   if (current.windSpeed >= 35) {

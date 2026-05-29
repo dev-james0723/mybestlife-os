@@ -18,8 +18,7 @@ import {
 } from "@/lib/weather/openweather-forecast";
 import { fetchUvAndAirQuality } from "@/lib/weather/open-meteo";
 import { resolveCoordsForWeather } from "@/lib/weather/resolve-weather-coords";
-import { fetchUnsplashBackground } from "@/lib/weather/unsplash";
-import { fetchWikimediaBackground } from "@/lib/weather/wikimedia";
+import { fetchWeatherBackground } from "@/lib/weather/fetch-weather-background";
 import {
   getWeatherScene,
   timeOfDayFromDate,
@@ -49,7 +48,7 @@ export function useWeatherPage() {
   const [data, setData] = useState<WeatherPageData>(initialData);
   const [scene, setScene] = useState<WeatherScene | null>(null);
   const [insight, setInsight] = useState<WeatherInsight | null>(null);
-  const [overrideCoords, setOverrideCoords] = useState<WeatherCoords | null>(null);
+  const [overrideLocation, setOverrideLocation] = useState<WeatherLocation | null>(null);
 
   const { user, isLoading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -61,9 +60,9 @@ export function useWeatherPage() {
   const refresh = useCallback(async () => {
     setData((prev) => ({ ...prev, status: "loading" }));
 
-    const coords =
-      overrideCoords ??
-      (await resolveCoordsForWeather(profile ?? null, !!user));
+    const coords = overrideLocation
+      ? { lat: overrideLocation.latitude, lon: overrideLocation.longitude }
+      : await resolveCoordsForWeather(profile ?? null, !!user);
     if (!coords) {
       setData({
         ...initialData,
@@ -90,13 +89,12 @@ export function useWeatherPage() {
     }
 
     const location =
-      overrideCoords?.city
-        ? syntheticLocation(overrideCoords, "manual")
-        : pickBestLocation(
-            geoResult,
-            coords,
-            currentResult.cityName ?? "Current location",
-          );
+      overrideLocation ??
+      pickBestLocation(
+        geoResult,
+        coords,
+        currentResult.cityName ?? "Current location",
+      );
 
     // Patch in the rain chance + high/low from the forecast if available
     // (the current endpoint alone doesn't expose probability of precipitation).
@@ -109,7 +107,7 @@ export function useWeatherPage() {
       high: daily[0]?.high ?? currentResult.current.high,
       low: daily[0]?.low ?? currentResult.current.low,
       // UV + AQI come from Open-Meteo (OpenWeather's free tier omits both).
-      uvIndex: uvAqi.uvIndex ?? currentResult.current.uvIndex,
+      uvIndex: uvAqi.uvIndex,
       uvLabel:
         uvAqi.uvIndex != null
           ? uvLabelFromIndex(uvAqi.uvIndex)
@@ -137,38 +135,26 @@ export function useWeatherPage() {
       backgroundImageUrl: null,
     });
 
-    // Background-photo chain: Unsplash (best, needs key) → Wikipedia
-    // (zero-config, always works for named places) → CSS scene.
-    const unsplash = await fetchUnsplashBackground({
-      city: location?.city,
-      country: location?.country,
-      conditionCode: current.conditionCode,
-      timeOfDay: sceneNow.timeOfDay,
-    });
-    if (unsplash) {
-      setData((prev) => ({
-        ...prev,
-        backgroundImageUrl: unsplash.url,
-        backgroundCredit: unsplash.credit,
-      }));
-      return;
-    }
-
-    const wiki = await fetchWikimediaBackground({
+    // Background-photo chain: Wikipedia (reliable city photos) → Unsplash
+    // (cinematic, needs key) → CSS scene.
+    const background = await fetchWeatherBackground({
       city: location?.city,
       region: location?.region,
       country: location?.country,
       latitude: location?.latitude,
       longitude: location?.longitude,
+      conditionCode: current.conditionCode,
+      timeOfDay: sceneNow.timeOfDay,
     });
-    if (wiki) {
+    if (background) {
       setData((prev) => ({
         ...prev,
-        backgroundImageUrl: wiki.url,
-        backgroundCredit: wiki.credit,
+        backgroundImageUrl: background.url,
+        backgroundCredit: background.credit,
+        backgroundSource: background.source,
       }));
     }
-  }, [overrideCoords, profile, user]);
+  }, [overrideLocation, profile, user]);
 
   // Initial load + re-runs when auth / profile coords / manual override change.
   useEffect(() => {
@@ -182,8 +168,8 @@ export function useWeatherPage() {
     profile?.weather_lat,
     profile?.weather_lon,
     profile?.weather_city,
-    overrideCoords?.lat,
-    overrideCoords?.lon,
+    overrideLocation?.latitude,
+    overrideLocation?.longitude,
     refresh,
   ]);
 
@@ -194,15 +180,9 @@ export function useWeatherPage() {
     refresh,
     /** Override the resolved location (used by manual location search). */
     setSelectedLocation: (location: WeatherLocation | null) => {
-      if (!location) {
-        setOverrideCoords(null);
-        return;
-      }
-      setOverrideCoords({
-        lat: location.latitude,
-        lon: location.longitude,
-        city: location.displayLabel,
-      });
+      setOverrideLocation(
+        location ? { ...location, precision: "manual" } : null,
+      );
     },
   };
 }
@@ -246,20 +226,5 @@ function pickBestLocation(
     longitude: coords.lon,
     precision: "gps",
     displayLabel: fallbackCity || "Current location",
-  };
-}
-
-function syntheticLocation(
-  coords: WeatherCoords,
-  precision: WeatherLocation["precision"],
-): WeatherLocation {
-  return {
-    name: coords.city ?? "Selected location",
-    city: coords.city ?? "Selected location",
-    country: "",
-    latitude: coords.lat,
-    longitude: coords.lon,
-    precision,
-    displayLabel: coords.city ?? "Selected location",
   };
 }

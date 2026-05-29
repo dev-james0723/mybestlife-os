@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, MapPin, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -38,14 +39,45 @@ export function WeatherLocationSearch({
   const [activeIdx, setActiveIdx] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const [menuRect, setMenuRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
-  // Click-outside closes the popover.
+  const syncMenuPosition = () => {
+    const anchor = wrapperRef.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    setMenuRect({
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: rect.width,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuRect(null);
+      return;
+    }
+    syncMenuPosition();
+    window.addEventListener("resize", syncMenuPosition);
+    window.addEventListener("scroll", syncMenuPosition, true);
+    return () => {
+      window.removeEventListener("resize", syncMenuPosition);
+      window.removeEventListener("scroll", syncMenuPosition, true);
+    };
+  }, [open, results.length, query, error]);
+
+  // Click-outside closes the popover (input + portaled list).
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!wrapperRef.current) return;
-      if (!wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (wrapperRef.current?.contains(target)) return;
+      if (listRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
@@ -104,8 +136,10 @@ export function WeatherLocationSearch({
     }
   };
 
+  const showMenu = open && (query.trim().length >= 2 || error);
+
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-md">
+    <div ref={wrapperRef} className="relative z-[60] w-full max-w-md">
       <div className="weather-glass-pill flex h-10 w-full items-center gap-2 px-3">
         <Search className="size-4 opacity-70" aria-hidden />
         <input
@@ -150,54 +184,69 @@ export function WeatherLocationSearch({
         )}
       </div>
 
-      {open && (query.trim().length >= 2 || error) ? (
-        <ul
-          id={`${inputId}-listbox`}
-          role="listbox"
-          className="weather-glass-dark absolute z-30 mt-2 max-h-72 w-full overflow-y-auto py-1 text-sm shadow-xl"
-        >
-          {error && results.length === 0 ? (
-            <li
-              className="px-3 py-2 text-[var(--weather-text-muted)]"
-              role="option"
-              aria-selected={false}
+      {showMenu && menuRect && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="weather-workspace pointer-events-auto"
+              style={{
+                position: "fixed",
+                top: menuRect.top,
+                left: menuRect.left,
+                width: menuRect.width,
+                zIndex: 100,
+              }}
             >
-              {error}
-            </li>
-          ) : null}
-          {results.map((loc, idx) => (
-            <li
-              key={`${loc.latitude}-${loc.longitude}-${idx}`}
-              role="option"
-              aria-selected={idx === activeIdx}
-            >
-              <button
-                type="button"
-                onMouseEnter={() => setActiveIdx(idx)}
-                onClick={() => choose(loc)}
-                className={cn(
-                  "flex w-full items-center justify-between gap-2 px-3 py-2 text-left",
-                  idx === activeIdx
-                    ? "bg-white/10 text-[var(--weather-text-primary)]"
-                    : "text-[var(--weather-text-secondary)] hover:bg-white/5",
-                )}
+              <ul
+                ref={listRef}
+                id={`${inputId}-listbox`}
+                role="listbox"
+                className="weather-glass-dark max-h-72 overflow-y-auto rounded-3xl py-1 text-sm shadow-xl"
               >
-                <span className="flex flex-col">
-                  <span className="font-medium">{loc.displayLabel}</span>
-                  <span className="text-xs text-[var(--weather-text-muted)]">
-                    {loc.latitude.toFixed(3)}, {loc.longitude.toFixed(3)}
-                  </span>
-                </span>
-                {loc.country ? (
-                  <span className="text-[10px] uppercase text-[var(--weather-text-muted)]">
-                    {loc.country}
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+              {error && results.length === 0 ? (
+                <li
+                  className="px-3 py-2 text-[var(--weather-text-muted)]"
+                  role="option"
+                  aria-selected={false}
+                >
+                  {error}
+                </li>
+              ) : null}
+              {results.map((loc, idx) => (
+                <li
+                  key={`${loc.latitude}-${loc.longitude}-${idx}`}
+                  role="option"
+                  aria-selected={idx === activeIdx}
+                >
+                  <button
+                    type="button"
+                    onMouseEnter={() => setActiveIdx(idx)}
+                    onClick={() => choose(loc)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 px-3 py-2 text-left",
+                      idx === activeIdx
+                        ? "bg-white/10 text-[var(--weather-text-primary)]"
+                        : "text-[var(--weather-text-secondary)] hover:bg-white/5",
+                    )}
+                  >
+                    <span className="flex flex-col">
+                      <span className="font-medium">{loc.displayLabel}</span>
+                      <span className="text-xs text-[var(--weather-text-muted)]">
+                        {loc.latitude.toFixed(3)}, {loc.longitude.toFixed(3)}
+                      </span>
+                    </span>
+                    {loc.country ? (
+                      <span className="text-[10px] uppercase text-[var(--weather-text-muted)]">
+                        {loc.country}
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+              </ul>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

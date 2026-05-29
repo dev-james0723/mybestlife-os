@@ -65,51 +65,28 @@ function buildQueryFallbacks(params: {
   timeOfDay: string;
 }): string[] {
   const out: string[] = [];
-  const cond = humanizeCondition(params.conditionCode);
+  const city = params.city?.trim();
+  const country = params.country?.trim();
   const tod = humanizeTimeOfDay(params.timeOfDay);
 
-  if (params.city) {
-    out.push(`${params.city} ${cond} ${tod} skyline`);
-    out.push(`${params.city} ${cond}`);
+  // City-first queries only — mixing weather terms ("cloudy", "rainy")
+  // into the search often returns abstract art instead of skylines.
+  if (city) {
+    if (tod) {
+      out.push(`${city} ${tod} skyline`);
+      out.push(`${city} ${tod} cityscape`);
+    }
+    out.push(`${city} skyline`);
+    out.push(`${city} cityscape`);
+    out.push(`${city} aerial view`);
+    out.push(`${city} landmark`);
+    out.push(`${city} downtown`);
   }
-  if (params.country) {
-    out.push(`${params.country} ${cond} ${tod}`);
+  if (country && country.length > 2) {
+    out.push(`${country} city skyline`);
+    out.push(`${country} capital skyline`);
   }
-  out.push(`${cond} ${tod} city`);
-  out.push(`${cond} weather`);
   return out;
-}
-
-function humanizeCondition(code: string): string {
-  switch (code) {
-    case "clear-day":
-      return "sunny";
-    case "clear-night":
-      return "starry night";
-    case "partly-cloudy-day":
-    case "partly-cloudy-night":
-      return "cloudy";
-    case "cloudy":
-      return "overcast";
-    case "fog":
-      return "foggy";
-    case "light-rain":
-      return "light rain";
-    case "rain":
-      return "rainy";
-    case "heavy-rain":
-      return "heavy rain";
-    case "thunderstorm":
-      return "thunderstorm";
-    case "snow":
-      return "snow";
-    case "sleet":
-      return "sleet";
-    case "wind":
-      return "windy";
-    default:
-      return "weather";
-  }
 }
 
 function humanizeTimeOfDay(t: string): string {

@@ -36,7 +36,7 @@ export type WeatherSummary = {
   nextRainTime?: string;
   humidity: number; // 0..100
   windSpeed: number; // km/h
-  uvIndex: number;
+  uvIndex: number | null;
   alert?: WeatherAlert;
 };
 

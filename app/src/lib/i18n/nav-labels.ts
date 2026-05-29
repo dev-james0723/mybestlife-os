@@ -203,6 +203,17 @@ const item = {
     es: "Clima",
     vi: "Thời tiết",
   },
+  signals: {
+    en: "Signals",
+    "zh-TW": "訊號",
+    "zh-CN": "信号",
+    ja: "シグナル",
+    ko: "시그널",
+    fr: "Signaux",
+    it: "Segnali",
+    es: "Señales",
+    vi: "Tín hiệu",
+  },
   analytics: {
     en: "Analytics",
     "zh-TW": "分析",

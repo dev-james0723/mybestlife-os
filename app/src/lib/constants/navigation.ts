@@ -39,6 +39,7 @@ import {
   Quote,
   Compass,
   CloudSun,
+  Radar,
   type LucideIcon,
 } from "lucide-react";
 
@@ -83,6 +84,7 @@ export const navigationCategories: NavCategory[] = [
       { itemId: "weekly-review", title: "Weekly Review", url: "/weekly-review", icon: CalendarCheck },
       { itemId: "calendar", title: "Calendar", url: "/calendar", icon: CalendarDays },
       { itemId: "weather", title: "Weather", url: "/weather", icon: CloudSun },
+      { itemId: "signals", title: "Signals", url: "/signals", icon: Radar },
       { itemId: "analytics", title: "Analytics", url: "/analytics", icon: BarChart3 },
       { itemId: "finance", title: "Finance", url: "/finance", icon: Wallet },
     ],

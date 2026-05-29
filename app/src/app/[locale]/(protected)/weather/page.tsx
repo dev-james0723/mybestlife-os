@@ -167,15 +167,19 @@ export default function WeatherPage() {
             >
               {copy.photoCredit(data.backgroundCredit.name)}
             </a>
-            {" · "}
-            <a
-              href="https://unsplash.com?utm_source=mybestlife-os&utm_medium=referral"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline-offset-2 hover:underline"
-            >
-              Unsplash
-            </a>
+            {data.backgroundSource === "unsplash" ? (
+              <>
+                {" · "}
+                <a
+                  href="https://unsplash.com?utm_source=mybestlife-os&utm_medium=referral"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-2 hover:underline"
+                >
+                  Unsplash
+                </a>
+              </>
+            ) : null}
           </p>
         ) : null}
       </div>

@@ -47,8 +47,10 @@ function needsTextEnrichment(idea: Idea): boolean {
 function needsCardVisual(idea: Idea): boolean {
   const visual = ideaCardVisual(idea);
   if (!visual?.imageUrl) return true;
-  if (visual.error) return true;
-  return visual.styleVersion !== IDEA_CARD_VISUAL_STYLE_VERSION;
+  if (visual.styleVersion !== IDEA_CARD_VISUAL_STYLE_VERSION) return true;
+  // Billing/quota warnings may sit alongside a placeholder imageUrl — do not loop forever.
+  if (visual.error && !visual.imageUrl) return true;
+  return false;
 }
 
 export function IdeasAutoEnrichmentRunner({ items }: { items: Idea[] }) {

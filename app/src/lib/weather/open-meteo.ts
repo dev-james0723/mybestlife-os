@@ -9,8 +9,10 @@
  *   - Forecast API     → current.uv_index
  *   - Air-Quality API  → current.us_aqi (US EPA 0-500 scale)
  *
- * Returns nulls on any failure; callers keep the OpenWeather data and the
- * UI shows "—" for whatever is missing.
+ * In the browser we prefer the same-origin `/api/weather/supplements` proxy
+ * (ad-blockers often block third-party weather APIs). Returns nulls on any
+ * failure; callers keep the OpenWeather data and the UI shows "—" for
+ * whatever is missing.
  */
 
 const OM_FORECAST = "https://api.open-meteo.com/v1/forecast";
@@ -32,13 +34,28 @@ export type UvAirQuality = {
   aqiCategory: AqiCategory | null;
 };
 
+/** Client entry — same-origin proxy, then direct Open-Meteo fallback. */
 export async function fetchUvAndAirQuality(
   lat: number,
   lon: number,
 ): Promise<UvAirQuality> {
+  if (typeof window !== "undefined") {
+    const proxied = await fetchUvAndAirQualityViaApi(lat, lon);
+    if (proxied.uvIndex != null || proxied.airQualityIndex != null) {
+      return proxied;
+    }
+  }
+  return fetchUvAndAirQualityUpstream(lat, lon);
+}
+
+/** Server / API route — calls Open-Meteo directly. */
+export async function fetchUvAndAirQualityUpstream(
+  lat: number,
+  lon: number,
+): Promise<UvAirQuality> {
   const [uvIndex, aqi] = await Promise.all([
-    fetchUv(lat, lon),
-    fetchAqi(lat, lon),
+    fetchUvUpstream(lat, lon),
+    fetchAqiUpstream(lat, lon),
   ]);
   return {
     uvIndex,
@@ -47,38 +64,80 @@ export async function fetchUvAndAirQuality(
   };
 }
 
-async function fetchUv(lat: number, lon: number): Promise<number | null> {
+async function fetchUvAndAirQualityViaApi(
+  lat: number,
+  lon: number,
+): Promise<UvAirQuality> {
+  try {
+    const url = new URL("/api/weather/supplements", window.location.origin);
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lon));
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    if (!res.ok) {
+      return { uvIndex: null, airQualityIndex: null, aqiCategory: null };
+    }
+    const data = (await res.json()) as UvAirQuality;
+    return {
+      uvIndex: parseUvIndex(data.uvIndex),
+      airQualityIndex: parseAqi(data.airQualityIndex),
+      aqiCategory: data.aqiCategory ?? null,
+    };
+  } catch {
+    return { uvIndex: null, airQualityIndex: null, aqiCategory: null };
+  }
+}
+
+async function fetchUvUpstream(lat: number, lon: number): Promise<number | null> {
   const url = new URL(OM_FORECAST);
   url.searchParams.set("latitude", String(lat));
   url.searchParams.set("longitude", String(lon));
   url.searchParams.set("current", "uv_index");
   url.searchParams.set("timezone", "auto");
   try {
-    const res = await fetch(url.toString(), { cache: "no-store" });
+    const res = await fetch(url.toString(), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
     if (!res.ok) return null;
-    const data = (await res.json()) as { current?: { uv_index?: number } };
-    const uv = data.current?.uv_index;
-    return typeof uv === "number" ? Math.round(uv) : null;
+    const data = (await res.json()) as { current?: { uv_index?: unknown } };
+    return parseUvIndex(data.current?.uv_index);
   } catch {
     return null;
   }
 }
 
-async function fetchAqi(lat: number, lon: number): Promise<number | null> {
+async function fetchAqiUpstream(lat: number, lon: number): Promise<number | null> {
   const url = new URL(OM_AIR_QUALITY);
   url.searchParams.set("latitude", String(lat));
   url.searchParams.set("longitude", String(lon));
   url.searchParams.set("current", "us_aqi");
   url.searchParams.set("timezone", "auto");
   try {
-    const res = await fetch(url.toString(), { cache: "no-store" });
+    const res = await fetch(url.toString(), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
     if (!res.ok) return null;
-    const data = (await res.json()) as { current?: { us_aqi?: number } };
-    const aqi = data.current?.us_aqi;
-    return typeof aqi === "number" ? Math.round(aqi) : null;
+    const data = (await res.json()) as { current?: { us_aqi?: unknown } };
+    return parseAqi(data.current?.us_aqi);
   } catch {
     return null;
   }
+}
+
+/** UV is 0 at night — must not treat 0 as missing. */
+export function parseUvIndex(raw: unknown): number | null {
+  if (raw == null) return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(Math.max(0, n));
+}
+
+function parseAqi(raw: unknown): number | null {
+  if (raw == null) return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(Math.max(0, n));
 }
 
 /** US EPA AQI breakpoints. */

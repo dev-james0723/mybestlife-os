@@ -45,7 +45,7 @@ export async function fetchWikimediaBackground(params: {
   latitude?: number;
   longitude?: number;
 }): Promise<WikimediaPhoto | null> {
-  const queries = [params.city, params.region, params.country].filter(
+  const queries = [params.city, params.region, expandCountryName(params.country)].filter(
     (q): q is string => Boolean(q && q.trim().length > 0),
   );
 
@@ -60,6 +60,34 @@ export async function fetchWikimediaBackground(params: {
   }
 
   return null;
+}
+
+function expandCountryName(codeOrName?: string): string | undefined {
+  if (!codeOrName) return undefined;
+  const trimmed = codeOrName.trim();
+  if (trimmed.length !== 2) return trimmed;
+  const map: Record<string, string> = {
+    TW: "Taiwan",
+    HK: "Hong Kong",
+    JP: "Japan",
+    KR: "South Korea",
+    SG: "Singapore",
+    AU: "Australia",
+    US: "United States",
+    GB: "United Kingdom",
+    CN: "China",
+    DE: "Germany",
+    FR: "France",
+    IT: "Italy",
+    ES: "Spain",
+    CA: "Canada",
+    NZ: "New Zealand",
+    TH: "Thailand",
+    MY: "Malaysia",
+    IN: "India",
+    AE: "United Arab Emirates",
+  };
+  return map[trimmed.toUpperCase()] ?? trimmed;
 }
 
 async function trySummary(title: string): Promise<WikimediaPhoto | null> {

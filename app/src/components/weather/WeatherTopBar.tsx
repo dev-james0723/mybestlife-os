@@ -32,7 +32,7 @@ export function WeatherTopBar({
   refreshing,
 }: WeatherTopBarProps) {
   return (
-    <div className="weather-glass-panel flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="weather-glass-panel relative z-[60] flex flex-col gap-3 overflow-visible px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <WeatherLocationSearch
         copy={copy}
         selectedLabel={selectedLabel}

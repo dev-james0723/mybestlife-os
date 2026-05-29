@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { useWeather } from "@/hooks/use-weather";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
+import { resolveWeatherAnimationKey } from "@/lib/weather/lottie-animation";
+import { WeatherLottie } from "@/components/weather/WeatherLottie";
 
 type Props = {
   className?: string;
@@ -106,11 +108,23 @@ export function WeatherBadge({ className, compact = false }: Props) {
       aria-label={`Weather: ${result.description}, ${result.tempC} degrees Celsius — open Weather page`}
       title={result.city ? `${result.city} • ${result.description}` : result.description}
     >
-      <WeatherGlyph main={result.main} icon={result.icon} />
-      <span className="font-semibold tabular-nums">{result.tempC}°C</span>
-      {!compact ? (
-        <span className="hidden opacity-95 md:inline">{result.description}</span>
-      ) : null}
+      <span className="topbar-weather-badge__anim" aria-hidden>
+        <WeatherLottie
+          mode="background"
+          animationKey={resolveWeatherAnimationKey({
+            weatherId: result.weatherId,
+            icon: result.icon,
+            main: result.main,
+          })}
+        />
+      </span>
+      <span className="topbar-weather-badge__fg">
+        <WeatherGlyph main={result.main} icon={result.icon} />
+        <span className="font-semibold tabular-nums">{result.tempC}°C</span>
+        {!compact ? (
+          <span className="hidden opacity-95 md:inline">{result.description}</span>
+        ) : null}
+      </span>
     </Link>
   );
 }

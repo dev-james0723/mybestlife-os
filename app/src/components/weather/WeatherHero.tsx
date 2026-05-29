@@ -1,28 +1,17 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Cloud,
-  Info,
-  MapPin,
-  Moon,
-  Sparkles,
-  Sun,
-} from "lucide-react";
+import { Info, MapPin, Sparkles, Sun } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { resolveWeatherAnimationKey } from "@/lib/weather/lottie-animation";
+import { WeatherLottie } from "@/components/weather/WeatherLottie";
 import type { WeatherUiCopy } from "@/lib/i18n/weather-ui";
 import type {
   CurrentWeather,
   WeatherInsight,
   WeatherLocation,
   WeatherImpactTag,
-  WeatherConditionCode,
 } from "@/lib/weather/types";
 
 interface WeatherHeroProps {
@@ -81,21 +70,29 @@ export function WeatherHero({
         </header>
 
         {/* Temperature + condition. */}
-        <div className="flex items-end gap-5">
-          <div className="leading-[0.95] text-[var(--weather-text-primary)]">
-            <span className="text-6xl font-semibold tracking-tighter sm:text-7xl">
-              {current.temperature}°C
-            </span>
-          </div>
-          <div className="flex flex-col pb-2">
-            <div className="flex items-center gap-2 text-[var(--weather-accent-lime)]">
-              <ConditionIcon code={current.conditionCode} className="size-7" />
-              <span className="text-lg font-medium">{current.condition}</span>
+        <div className="flex items-center gap-4 sm:gap-5">
+          <WeatherLottie
+            mode="icon"
+            animationKey={resolveWeatherAnimationKey({
+              conditionCode: current.conditionCode,
+            })}
+            className="-ml-2 size-28 shrink-0 sm:size-44"
+          />
+          <div className="flex items-end gap-5">
+            <div className="leading-[0.95] text-[var(--weather-text-primary)]">
+              <span className="text-6xl font-semibold tracking-tighter sm:text-7xl">
+                {current.temperature}°C
+              </span>
             </div>
-            <p className="mt-1 text-sm text-[var(--weather-text-secondary)]">
-              {copy.feelsLike(current.feelsLike)} ·{" "}
-              {copy.highLow(current.high, current.low)}
-            </p>
+            <div className="flex flex-col pb-2">
+              <span className="text-lg font-medium text-[var(--weather-accent-lime)]">
+                {current.condition}
+              </span>
+              <p className="mt-1 text-sm text-[var(--weather-text-secondary)]">
+                {copy.feelsLike(current.feelsLike)} ·{" "}
+                {copy.highLow(current.high, current.low)}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -208,50 +205,59 @@ function CelestialPanel({
           </p>
           <p className="mt-1 flex items-end gap-2">
             <span className="text-3xl font-semibold tabular-nums text-[var(--weather-text-primary)]">
-              {current.uvIndex || "—"}
+              {current.uvIndex != null ? current.uvIndex : "—"}
             </span>
-            <span className="pb-1 text-xs text-[var(--weather-accent-lime)]">
-              {uvLabelToCopy(copy, current.uvLabel)}
-            </span>
+            {current.uvIndex != null ? (
+              <span className="pb-1 text-xs text-[var(--weather-accent-lime)]">
+                {uvLabelToCopy(copy, current.uvLabel)}
+              </span>
+            ) : null}
           </p>
         </div>
-        <UvGauge value={current.uvIndex} />
+        <UvGauge value={current.uvIndex ?? null} />
       </div>
     </aside>
   );
 }
 
-function UvGauge({ value }: { value: number }) {
-  const ratio = Math.max(0, Math.min(1, value / 11));
+function UvGauge({ value }: { value: number | null }) {
+  const ratio = value != null ? Math.max(0, Math.min(1, value / 11)) : 0;
   const dash = 2 * Math.PI * 20;
   const offset = dash - dash * ratio;
+  const display = value != null ? String(value) : "—";
+
   return (
-    <svg
-      className="size-12 -rotate-90"
-      viewBox="0 0 44 44"
-      aria-hidden
+    <div
+      className="relative size-12 shrink-0"
+      role="img"
+      aria-label={value != null ? `UV index ${value}` : "UV index unavailable"}
     >
-      <circle
-        cx="22"
-        cy="22"
-        r="20"
-        fill="none"
-        stroke="rgba(255,255,255,0.15)"
-        strokeWidth="4"
-      />
-      <circle
-        cx="22"
-        cy="22"
-        r="20"
-        fill="none"
-        stroke="var(--weather-accent-lime)"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray={dash}
-        strokeDashoffset={offset}
-        style={{ transition: "stroke-dashoffset 800ms ease-out" }}
-      />
-    </svg>
+      <svg className="size-12 -rotate-90" viewBox="0 0 44 44" aria-hidden>
+        <circle
+          cx="22"
+          cy="22"
+          r="20"
+          fill="none"
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth="4"
+        />
+        <circle
+          cx="22"
+          cy="22"
+          r="20"
+          fill="none"
+          stroke="var(--weather-accent-lime)"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={dash}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 800ms ease-out" }}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tabular-nums text-[var(--weather-text-primary)]">
+        {display}
+      </span>
+    </div>
   );
 }
 
@@ -389,36 +395,3 @@ function shortTip(current: CurrentWeather): string {
   return current.condition;
 }
 
-function ConditionIcon({
-  code,
-  className,
-}: {
-  code: WeatherConditionCode;
-  className?: string;
-}) {
-  switch (code) {
-    case "clear-day":
-      return <Sun className={className} />;
-    case "clear-night":
-      return <Moon className={className} />;
-    case "partly-cloudy-day":
-      return <CloudSun className={className} />;
-    case "partly-cloudy-night":
-      return <Cloud className={className} />;
-    case "cloudy":
-      return <Cloud className={className} />;
-    case "fog":
-      return <CloudFog className={className} />;
-    case "light-rain":
-    case "rain":
-    case "heavy-rain":
-      return <CloudRain className={className} />;
-    case "thunderstorm":
-      return <CloudLightning className={className} />;
-    case "snow":
-    case "sleet":
-      return <CloudSnow className={className} />;
-    default:
-      return <Cloud className={className} />;
-  }
-}

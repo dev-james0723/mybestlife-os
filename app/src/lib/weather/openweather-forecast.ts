@@ -60,9 +60,10 @@ export function mapConditionCode(
   }
   if (weatherId >= 700 && weatherId < 800) return "fog";
   if (weatherId === 800) return isNight ? "clear-night" : "clear-day";
-  if (weatherId === 801 || weatherId === 802)
+  if (weatherId === 801 || weatherId === 802 || weatherId === 803)
     return isNight ? "partly-cloudy-night" : "partly-cloudy-day";
-  if (weatherId === 803 || weatherId === 804) return "cloudy";
+  // 804 = overcast — fully cloudy, no sun peeking through.
+  if (weatherId === 804) return "cloudy";
   return "cloudy";
 }
 
@@ -168,8 +169,8 @@ export async function fetchCurrentWeatherRich(
         windSpeed: windSpeedKmh,
         windDirection: data.wind?.deg != null ? degreesToCardinal(data.wind.deg) : undefined,
         windDegrees: data.wind?.deg,
-        uvIndex: 0, // Not in the free current endpoint; UI surfaces "—" when zero.
-        uvLabel: uvLabelFromIndex(0),
+        uvIndex: null, // Not in the free current endpoint; filled from Open-Meteo.
+        uvLabel: "Low",
         sunrise: data.sys?.sunrise ? new Date(data.sys.sunrise * 1000).toISOString() : undefined,
         sunset: data.sys?.sunset ? new Date(data.sys.sunset * 1000).toISOString() : undefined,
         visibility:

@@ -36,6 +36,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@google/genai": "^1.52.0",
+    "@lottiefiles/dotlottie-react": "^0.19.4",
     "@sparticuz/chromium": "^131.0.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",

@@ -10,7 +10,7 @@ import {
 } from "@/lib/weather/openweather";
 import { resolveCoordsForWeather } from "@/lib/weather/resolve-weather-coords";
 
-const WEATHER_CACHE_STORAGE_KEY = "mylifeos.weather.snapshot.v2";
+const WEATHER_CACHE_STORAGE_KEY = "mylifeos.weather.snapshot.v3";
 /** Keep cached weather for 30 min before refetching. */
 const CACHE_TTL_MS = 30 * 60 * 1000;
 

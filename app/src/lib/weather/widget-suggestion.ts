@@ -37,7 +37,7 @@ function pickPhrase({
   const rainLikely = summary.rainChance >= 60 || summary.conditionCode.includes("rain");
   const stormy = summary.conditionCode === "thunderstorm";
   const hotHumid = summary.temperature >= 30 && summary.humidity >= 70;
-  const highUv = summary.uvIndex >= 7;
+  const highUv = summary.uvIndex != null && summary.uvIndex >= 7;
   const windy = summary.windSpeed >= 35;
 
   // 1. Stormy — highest priority, clearest caution.

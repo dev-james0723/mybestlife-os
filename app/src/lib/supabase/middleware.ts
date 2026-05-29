@@ -92,6 +92,7 @@ export async function updateSession(request: NextRequest) {
     "/relationships",
     "/role-models",
     "/analytics",
+    "/signals",
     "/weekly-review",
     "/business-analyst",
     "/ai-assistant",

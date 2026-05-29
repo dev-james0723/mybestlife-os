@@ -82,7 +82,8 @@ export type CurrentWeather = {
   windSpeed: number; // km/h
   windDirection?: string; // "N" / "NE" / "E" / etc.
   windDegrees?: number;
-  uvIndex: number;
+  /** null when the provider did not return UV data. */
+  uvIndex: number | null;
   uvLabel: "Low" | "Moderate" | "High" | "Very High" | "Extreme";
   sunrise?: string; // ISO
   sunset?: string; // ISO
@@ -151,16 +152,18 @@ export type WeatherPageData = {
   current: CurrentWeather | null;
   hourly: HourlyForecastEntry[];
   daily: DailyForecastEntry[];
-  /** Source of the background image, populated when Unsplash succeeds. */
+  /** Source of the background image, populated when a photo is found. */
   backgroundImageUrl: string | null;
   backgroundCredit?: {
-    /** Photographer name. */
+    /** Photographer or platform name. */
     name: string;
-    /** Photographer profile URL. */
+    /** Profile or platform URL. */
     profileUrl: string;
-    /** Direct Unsplash link to the photo, required for attribution. */
+    /** Direct link to the photo page. */
     photoUrl: string;
   };
+  /** Which provider supplied the background photo. */
+  backgroundSource?: "wikimedia" | "unsplash";
   errorMessage?: string;
 };
 

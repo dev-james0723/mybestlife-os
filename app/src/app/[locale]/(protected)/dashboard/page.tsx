@@ -21,6 +21,7 @@ import { MotivationCard } from "@/components/dashboard/motivation-card";
 import { DailyInspirationCard } from "@/components/dashboard/daily-inspiration-card";
 import { QuoteInspirationCard } from "@/components/dashboard/quote-inspiration-card";
 import { TodayBlock } from "@/components/calendar/today-block";
+import { DashboardSignalsWidget } from "@/components/signals/DashboardSignalsWidget";
 import { DashboardStudyRow } from "@/components/dashboard/dashboard-study-row";
 import { GlassStatCard } from "@/components/dashboard/glass-stat-card";
 import { GlassEntityCard } from "@/components/dashboard/glass-entity-card";
@@ -233,6 +234,8 @@ export default function DashboardPage() {
       </header>
 
       <TodayBlock />
+
+      <DashboardSignalsWidget />
 
       <div className="grid gap-5 xl:grid-cols-2" data-stagger>
         <MotivationCard

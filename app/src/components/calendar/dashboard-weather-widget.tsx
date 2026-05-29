@@ -3,20 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import {
-  ChevronRight,
-  Cloud,
-  CloudFog,
-  CloudLightning,
-  CloudOff,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Moon,
-  RotateCw,
-  Sun,
-  TriangleAlert,
-} from "lucide-react";
+import { ChevronRight, CloudOff, RotateCw, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -25,8 +12,9 @@ import { getWeatherWidgetCopy } from "@/lib/i18n/weather-widget-ui";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { useWeatherSummary } from "@/hooks/weather/use-weather-summary";
 import { buildWeatherSuggestion } from "@/lib/weather/widget-suggestion";
+import { resolveWeatherAnimationKey } from "@/lib/weather/lottie-animation";
+import { WeatherLottie } from "@/components/weather/WeatherLottie";
 import type { WeatherAlert } from "@/lib/weather/widget-summary";
-import type { WeatherConditionCode } from "@/lib/weather/types";
 import type { DayLoad } from "@/lib/calendar/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -130,36 +118,45 @@ export function DashboardWeatherWidget({ load, hasOutdoorEvents, className }: Pr
         className,
       )}
     >
-      {/* Header: temperature + condition/location/feels-like + chevron */}
-      <div className="flex items-start gap-3">
-        <ConditionIcon
-          code={summary.conditionCode}
-          className="mt-0.5 h-7 w-7 shrink-0 text-foreground/80"
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Live condition animation — the visual anchor of the card. */}
+        <WeatherLottie
+          mode="icon"
+          animationKey={resolveWeatherAnimationKey({
+            conditionCode: summary.conditionCode,
+          })}
+          className="-ml-1 size-28 shrink-0 sm:size-44"
         />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
-              {summary.temperature}°C
-            </span>
-            {summary.alert && <AlertPill alert={summary.alert} label={copy.alertTitles[summary.alert.titleKey]} />}
+
+        <div className="min-w-0 flex-1 space-y-2.5">
+          {/* Temperature + condition/location/feels-like + chevron */}
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
+                  {summary.temperature}°C
+                </span>
+                {summary.alert && <AlertPill alert={summary.alert} label={copy.alertTitles[summary.alert.titleKey]} />}
+              </div>
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                {summary.condition} · {summary.location} · {copy.feelsLike(summary.feelsLike)}
+              </p>
+            </div>
+            <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/60" />
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
-            {summary.condition} · {summary.location} · {copy.feelsLike(summary.feelsLike)}
+
+          {/* AI suggestion — the most useful line */}
+          <p className="line-clamp-2 text-sm leading-snug text-foreground/85">
+            {suggestion}
           </p>
+
+          {/* Mini metrics: rain chance, amount, next rain window */}
+          <div className="flex flex-wrap gap-1.5">
+            <MetricPill label={copy.rainLabel} value={`${summary.rainChance}%`} />
+            <MetricPill label={copy.amountLabel} value={`${summary.precipitationMm}mm`} />
+            <MetricPill label={copy.nextLabel} value={nextRainLabel} />
+          </div>
         </div>
-        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/60" />
-      </div>
-
-      {/* AI suggestion — the most useful line */}
-      <p className="mt-2.5 line-clamp-2 text-sm leading-snug text-foreground/85">
-        {suggestion}
-      </p>
-
-      {/* Mini metrics: rain chance, amount, next rain window */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        <MetricPill label={copy.rainLabel} value={`${summary.rainChance}%`} />
-        <MetricPill label={copy.amountLabel} value={`${summary.precipitationMm}mm`} />
-        <MetricPill label={copy.nextLabel} value={nextRainLabel} />
       </div>
     </Link>
   );
@@ -192,35 +189,3 @@ function AlertPill({ alert, label }: { alert: WeatherAlert; label: string }) {
   );
 }
 
-function ConditionIcon({
-  code,
-  className,
-}: {
-  code: WeatherConditionCode;
-  className?: string;
-}) {
-  switch (code) {
-    case "clear-day":
-      return <Sun className={className} />;
-    case "clear-night":
-      return <Moon className={className} />;
-    case "partly-cloudy-day":
-      return <CloudSun className={className} />;
-    case "partly-cloudy-night":
-    case "cloudy":
-      return <Cloud className={className} />;
-    case "fog":
-      return <CloudFog className={className} />;
-    case "light-rain":
-    case "rain":
-    case "heavy-rain":
-      return <CloudRain className={className} />;
-    case "thunderstorm":
-      return <CloudLightning className={className} />;
-    case "snow":
-    case "sleet":
-      return <CloudSnow className={className} />;
-    default:
-      return <Cloud className={className} />;
-  }
-}

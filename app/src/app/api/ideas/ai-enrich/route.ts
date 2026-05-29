@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
+  formatGeminiBillingUserMessage,
+  isGeminiBillingErrorMessage,
+  parseGeminiErrorMessage,
+} from "@/lib/ai/gemini-errors";
+import {
   fetchGeminiPlannerJsonText,
   getGeminiServerApiKey,
 } from "@/lib/ai/gemini-text";
@@ -126,6 +131,12 @@ Rules:
     const message = e instanceof Error ? e.message : String(e);
     console.error("[ideas/ai-enrich]", message);
     const fallback = buildEnrichResponse(plain, "", "");
-    return NextResponse.json({ ...fallback, warning: "gemini_failed" });
+    const fail = parseGeminiErrorMessage(message);
+    const billing = isGeminiBillingErrorMessage(message);
+    return NextResponse.json({
+      ...fallback,
+      warning: billing ? "gemini_billing" : "gemini_failed",
+      geminiMessage: billing ? formatGeminiBillingUserMessage(fail) : undefined,
+    });
   }
 }

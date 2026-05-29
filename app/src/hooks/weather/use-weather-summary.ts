@@ -21,7 +21,7 @@ import {
   type WeatherSummary,
 } from "@/lib/weather/widget-summary";
 
-const SUMMARY_CACHE_KEY = "mylifeos.weather.summary.v1";
+const SUMMARY_CACHE_KEY = "mylifeos.weather.summary.v2";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export type WeatherSummaryState =
@@ -134,7 +134,7 @@ export function useWeatherSummary(): UseWeatherSummaryReturn {
       ...currentResult.current,
       rainChance:
         hourly[0]?.rainChance ?? daily[0]?.rainChance ?? currentResult.current.rainChance,
-      uvIndex: uvAqi.uvIndex ?? currentResult.current.uvIndex,
+      uvIndex: uvAqi.uvIndex,
       uvLabel:
         uvAqi.uvIndex != null
           ? uvLabelFromIndex(uvAqi.uvIndex)
