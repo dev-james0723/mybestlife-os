@@ -26,7 +26,7 @@ import {
   type ReactNode,
 } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Sparkles, PenLine } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,10 @@ import { RelationshipEmptyState } from "@/components/relationship/empty-states";
 import { RelationshipCard } from "@/components/relationship/cards/relationship-card";
 import { RelationshipFilterBar } from "@/components/relationship/filters/relationship-filter-bar";
 import { RelationshipFormModal } from "@/components/relationship/forms/relationship-form-modal";
-import { RelationshipDetailPanel } from "@/components/relationship/panel/relationship-detail-panel";
+import { RelationshipIntelligenceModal } from "@/components/relationship/intelligence/relationship-intelligence-modal";
+import { RelationshipTimingDashboard } from "@/components/relationship/intelligence/relationship-timing-dashboard";
+import { AIRelationshipCreationWizard } from "@/components/relationship/ai/ai-relationship-creation-wizard";
+import { QuickInteractionLogger } from "@/components/relationship/ai/quick-interaction-logger";
 import {
   applyRelationshipFilters,
   sortRelationships,
@@ -50,12 +53,16 @@ import {
   useDeleteRelationship,
   useToggleRelationshipFavorite,
 } from "@/hooks/use-relationships";
+import { useAllRelationshipPromises } from "@/hooks/use-relationship-intelligence";
 import { useProjects } from "@/hooks/use-projects";
+import { useGoals } from "@/hooks/use-goals";
+import { useNotes } from "@/hooks/use-notes";
+import { isPromiseEffectivelyOverdue } from "@/lib/relationships/intelligence";
 import {
   deleteRelationshipPhoto,
   isRelationshipStorageUrl,
 } from "@/lib/relationships/photo-storage";
-import type { Relationship } from "@/types/database";
+import type { Relationship, RelationshipPromise } from "@/types/database";
 import type { RelationshipInsert } from "@/types/relationship";
 
 // ---------------------------------------------------------------------------
@@ -95,6 +102,9 @@ export function RelationshipsView({
     refetch,
   } = useRelationships();
   const { data: projects } = useProjects();
+  const { data: goals } = useGoals();
+  const { data: notes } = useNotes();
+  const { data: promises } = useAllRelationshipPromises();
   const createMutation = useCreateRelationship();
   const updateMutation = useUpdateRelationship();
   const deleteMutation = useDeleteRelationship();
@@ -106,6 +116,24 @@ export function RelationshipsView({
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Relationship | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [loggerOpen, setLoggerOpen] = useState(false);
+  const [loggerPreselectId, setLoggerPreselectId] = useState<string | null>(null);
+
+  // Per-relationship open/overdue promise counts (computed once per change).
+  const promiseCounts = useMemo(() => {
+    const map = new Map<
+      string,
+      { open: number; overdue: number }
+    >();
+    for (const p of (promises ?? []) as RelationshipPromise[]) {
+      const cur = map.get(p.relationship_id) ?? { open: 0, overdue: 0 };
+      if (p.status === "open") cur.open += 1;
+      if (isPromiseEffectivelyOverdue(p)) cur.overdue += 1;
+      map.set(p.relationship_id, cur);
+    }
+    return map;
+  }, [promises]);
 
   // Look up the selected row from the live list (instead of holding a
   // stale snapshot) so the detail panel reflects optimistic updates.
@@ -189,12 +217,28 @@ export function RelationshipsView({
     setFormOpen(true);
   }, [selected]);
 
+  const openLoggerFor = useCallback((id: string | null) => {
+    setLoggerPreselectId(id);
+    setLoggerOpen(true);
+  }, []);
+
   // ---- Render ----
-  const newButton = (
-    <Button onClick={openCreate} size="sm">
-      <Plus className="mr-1.5 h-3.5 w-3.5" />
-      {copy.relNew}
-    </Button>
+  // Three-action hub navigation (spec §3): AI capture is primary.
+  const hubActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button onClick={() => setWizardOpen(true)} size="sm">
+        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+        {copy.hubAddWithAi}
+      </Button>
+      <Button onClick={() => openLoggerFor(null)} size="sm" variant="outline">
+        <PenLine className="mr-1.5 h-3.5 w-3.5" />
+        {copy.hubLogInteraction}
+      </Button>
+      <Button onClick={openCreate} size="sm" variant="ghost">
+        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        {copy.hubAddManually}
+      </Button>
+    </div>
   );
 
   let body: ReactNode;
@@ -210,7 +254,13 @@ export function RelationshipsView({
       />
     );
   } else if ((relationships ?? []).length === 0) {
-    body = <RelationshipEmptyState onAction={openCreate} />;
+    body = (
+      <RelationshipEmptyState
+        onAddWithAi={() => setWizardOpen(true)}
+        onLogInteraction={() => openLoggerFor(null)}
+        onAddManually={openCreate}
+      />
+    );
   } else if (visibleRelationships.length === 0) {
     body = (
       <NoResultsPanel
@@ -244,8 +294,11 @@ export function RelationshipsView({
             >
               <RelationshipCard
                 relationship={r}
+                openPromiseCount={promiseCounts.get(r.id)?.open ?? 0}
+                overduePromiseCount={promiseCounts.get(r.id)?.overdue ?? 0}
                 onClick={() => setSelectedId(r.id)}
                 onToggleFavorite={() => handleToggleFavorite(r)}
+                onLogInteraction={() => openLoggerFor(r.id)}
               />
             </motion.div>
           ))}
@@ -256,8 +309,18 @@ export function RelationshipsView({
 
   const showFilterBar = !isLoading && !isError && (relationships ?? []).length > 0;
 
+  const showDashboard =
+    !isLoading && !isError && (relationships ?? []).length > 0;
+
   const inner = (
     <div className="space-y-5">
+      {showDashboard && (
+        <RelationshipTimingDashboard
+          relationships={relationships ?? []}
+          promises={(promises ?? []) as RelationshipPromise[]}
+          onOpenRelationship={(id) => setSelectedId(id)}
+        />
+      )}
       {showFilterBar && (
         <RelationshipFilterBar
           filters={filters}
@@ -282,14 +345,37 @@ export function RelationshipsView({
         }
       />
 
-      <RelationshipDetailPanel
+      <AIRelationshipCreationWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        projects={projects ?? []}
+        onSave={(payload) => {
+          createMutation.mutate(payload, {
+            onSuccess: () => setWizardOpen(false),
+          });
+        }}
+        isSaving={createMutation.isPending}
+      />
+
+      <QuickInteractionLogger
+        open={loggerOpen}
+        onOpenChange={setLoggerOpen}
+        relationships={relationships ?? []}
+        preselectedId={loggerPreselectId}
+      />
+
+      <RelationshipIntelligenceModal
         relationship={selected}
         projects={projects ?? []}
+        goals={goals ?? []}
+        notes={notes ?? []}
+        promises={(promises ?? []) as RelationshipPromise[]}
         open={selected !== null}
         onClose={() => setSelectedId(null)}
         onEdit={openEditFromDetail}
         onDelete={handleDelete}
         onToggleFavorite={() => selected && handleToggleFavorite(selected)}
+        onLogInteraction={() => selected && openLoggerFor(selected.id)}
       />
     </div>
   );
@@ -297,7 +383,10 @@ export function RelationshipsView({
   if (embedded) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-end">{newButton}</div>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">{copy.hubIntro}</p>
+          <div className="flex justify-end">{hubActions}</div>
+        </div>
         {inner}
       </div>
     );
@@ -306,8 +395,8 @@ export function RelationshipsView({
   return (
     <PageShell
       title={copy.relPageTitle}
-      description={copy.relPageDescription}
-      actions={newButton}
+      description={copy.hubIntro}
+      actions={hubActions}
     >
       {inner}
     </PageShell>

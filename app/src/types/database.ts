@@ -692,6 +692,91 @@ export type Relationship = {
   updated_at: string;
 };
 
+// ---------------------------------------------------------------------------
+// Relationship Intelligence Hub — child tables (see migration
+// 20271001120000_relationship_intelligence_hub). All are user-scoped and
+// cascade-delete with their parent `relationships` row.
+// ---------------------------------------------------------------------------
+
+/** A captured/logged touchpoint with a person. */
+export type RelationshipInteraction = {
+  id: string;
+  user_id: string;
+  relationship_id: string;
+  /** ISO date `YYYY-MM-DD`. */
+  interaction_date: string;
+  /** Slug: meeting | email | message | call | lesson | event | photo_memory | other */
+  interaction_type: string;
+  raw_note: string;
+  summary: string;
+  /** AI-extracted structure kept for audit/replay. */
+  extracted_json: Json | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A tracked commitment ("Promise Keeper"). */
+export type RelationshipPromise = {
+  id: string;
+  user_id: string;
+  relationship_id: string;
+  promise_text: string;
+  /** ISO date `YYYY-MM-DD`. */
+  due_date: string | null;
+  /** Slug: open | done | overdue | cancelled */
+  status: string;
+  source_interaction_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A cached AI intelligence report (one per relationship). */
+export type RelationshipAiReport = {
+  id: string;
+  user_id: string;
+  relationship_id: string;
+  report_json: Json;
+  model_used: string | null;
+  input_hash: string | null;
+  generated_at: string;
+  updated_at: string;
+};
+
+/** A generated follow-up draft — never auto-sent. */
+export type RelationshipMessageDraft = {
+  id: string;
+  user_id: string;
+  relationship_id: string;
+  purpose: string;
+  tone: string;
+  language: string;
+  subject: string | null;
+  body: string;
+  /** Slug: draft | copied | archived */
+  status: string;
+  created_at: string;
+};
+
+/** A memory-layer image (profile / 合照 / business card / screenshot / …). */
+export type RelationshipImage = {
+  id: string;
+  user_id: string;
+  relationship_id: string;
+  image_url: string;
+  /** Slug: profile_photo | shared_photo | event_photo | business_card | screenshot | memory_photo | other */
+  image_type: string;
+  caption: string | null;
+  ai_caption: string | null;
+  /** ISO date `YYYY-MM-DD`. */
+  event_date: string | null;
+  location: string | null;
+  related_project_id: string | null;
+  is_primary: boolean;
+  extracted_json: Json | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type RoleModel = {
   id: string;
   user_id: string;

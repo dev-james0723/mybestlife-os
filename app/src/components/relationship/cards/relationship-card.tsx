@@ -3,23 +3,14 @@
 /**
  * RelationshipCard
  *
- * Gallery card for one relationship in the personal-CRM. Designed to feel
- * warm and personal: photo + name + category, plus a glanceable
- * "last contact" line and a "next action" snippet.
+ * Gallery card for one relationship. Upgraded for the Intelligence Hub with
+ * richer at-a-glance signals: relationship weather, open-promise count, and a
+ * context-health chip, plus a quick "Log interaction" action. The avatar,
+ * name, category/strength chips, last-contact line, and next-action snippet
+ * are preserved from the original CRM card.
  *
- * Layout choices:
- *  - Photo + initials fallback in an Avatar (matches RoleModelCard sizing
- *    so the two galleries feel like siblings).
- *  - Strength chip lives next to the category — both are dense visual
- *    signals; we want them in the same scan-line.
- *  - "Next action" gets its own row with a small chevron-style icon so
- *    it pops as the actionable hook of the card.
- *  - Tags, when present, are clamped to 4 + a "+N" overflow.
- *
- * Microinteractions (mirroring RoleModelCard):
- *  - Entrance fade/slide-up.
- *  - Hover lift on the grid layout.
- *  - Both gated by `useReducedMotion`.
+ * Microinteractions (gated by `useReducedMotion`): entrance fade/slide-up,
+ * hover lift, and a subtle pulse on the weather chip only when urgent (§21).
  */
 
 import { useMemo } from "react";
@@ -27,7 +18,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, ArrowRight, UserRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarClock, ArrowRight, UserRound, Handshake, PenLine } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import {
   formatRelationshipCopy,
@@ -39,27 +31,52 @@ import {
   getStrengthChipClassName,
   getStrengthLabel,
 } from "@/components/relationship/utils/relationship-display";
+import {
+  getWeatherChipClassName,
+  getWeatherLabel,
+} from "@/components/relationship/utils/intelligence-display";
 import { RelationshipFavoriteStar } from "@/components/relationship/cards/relationship-favorite-star";
+import {
+  computeRelationshipWeather,
+  type RelationshipWeather,
+} from "@/lib/relationships/intelligence";
 import { formatRelative } from "@/lib/utils/date";
 import type { Relationship } from "@/types/database";
 
 type Props = {
   relationship: Relationship;
+  /** Open-promise count for this relationship (0 when unknown). */
+  openPromiseCount?: number;
+  overduePromiseCount?: number;
   onClick: () => void;
   onToggleFavorite: () => void;
+  onLogInteraction?: () => void;
 };
 
 export function RelationshipCard({
   relationship,
+  openPromiseCount = 0,
+  overduePromiseCount = 0,
   onClick,
   onToggleFavorite,
+  onLogInteraction,
 }: Props) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getRelationshipUiCopy(language), [language]);
   const reduce = useReducedMotion();
 
+  const weather: RelationshipWeather = useMemo(
+    () =>
+      computeRelationshipWeather({
+        relationship,
+        openPromiseCount,
+        overduePromiseCount,
+      }),
+    [relationship, openPromiseCount, overduePromiseCount],
+  );
+
   const entrance = reduce
-    ? { initial: false }
+    ? { initial: false as const }
     : {
         initial: { opacity: 0, y: 6 },
         animate: { opacity: 1, y: 0 },
@@ -75,11 +92,7 @@ export function RelationshipCard({
     <motion.div
       {...entrance}
       whileHover={reduce ? undefined : { y: -2 }}
-      transition={
-        reduce
-          ? undefined
-          : { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const }
-      }
+      transition={reduce ? undefined : { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const }}
     >
       <Card
         role="button"
@@ -97,15 +110,10 @@ export function RelationshipCard({
           <div className="flex items-start gap-3">
             <Avatar className="h-14 w-14 shrink-0 ring-1 ring-border">
               {relationship.photo_url ? (
-                <AvatarImage
-                  src={relationship.photo_url}
-                  alt={relationship.person_name}
-                />
+                <AvatarImage src={relationship.photo_url} alt={relationship.person_name} />
               ) : null}
               <AvatarFallback className="bg-muted">
-                {initials || (
-                  <UserRound className="h-6 w-6 text-muted-foreground" />
-                )}
+                {initials || <UserRound className="h-6 w-6 text-muted-foreground" />}
               </AvatarFallback>
             </Avatar>
 
@@ -116,10 +124,7 @@ export function RelationshipCard({
                     {relationship.person_name}
                   </h3>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    <Badge
-                      variant="secondary"
-                      className="font-normal text-[10px]"
-                    >
+                    <Badge variant="secondary" className="font-normal text-[10px]">
                       {getCategoryLabel(relationship.category, copy)}
                     </Badge>
                     <Badge
@@ -128,10 +133,7 @@ export function RelationshipCard({
                         relationship.relationship_strength,
                       )}`}
                     >
-                      {getStrengthLabel(
-                        relationship.relationship_strength,
-                        copy,
-                      )}
+                      {getStrengthLabel(relationship.relationship_strength, copy)}
                     </Badge>
                   </div>
                 </div>
@@ -141,24 +143,40 @@ export function RelationshipCard({
                   addLabel={formatRelationshipCopy(copy.relCardFavoriteAddAria, {
                     name: relationship.person_name,
                   })}
-                  removeLabel={formatRelationshipCopy(
-                    copy.relCardFavoriteRemoveAria,
-                    { name: relationship.person_name },
-                  )}
+                  removeLabel={formatRelationshipCopy(copy.relCardFavoriteRemoveAria, {
+                    name: relationship.person_name,
+                  })}
                 />
               </div>
 
-              <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+              {/* Signal row: weather + open promises */}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <Badge
+                  variant="outline"
+                  className={`font-normal text-[10px] ${getWeatherChipClassName(
+                    weather.status,
+                  )} ${weather.urgent && !reduce ? "animate-pulse" : ""}`}
+                >
+                  {getWeatherLabel(weather.status, copy)}
+                </Badge>
+                {openPromiseCount > 0 && (
+                  <Badge variant="outline" className="font-normal text-[10px]">
+                    <Handshake className="mr-1 h-3 w-3" />
+                    {formatRelationshipCopy(copy.cardOpenPromiseCount, {
+                      count: openPromiseCount,
+                    })}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarClock className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">{lastContactText}</span>
               </div>
 
               {relationship.next_action && (
                 <div className="mt-2 flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 text-xs">
-                  <ArrowRight
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
-                    aria-hidden
-                  />
+                  <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
                   <div className="min-w-0">
                     <div className="font-medium text-foreground line-clamp-2 text-pretty">
                       {relationship.next_action}
@@ -177,11 +195,7 @@ export function RelationshipCard({
               {relationship.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {relationship.tags.slice(0, 4).map((t) => (
-                    <Badge
-                      key={t}
-                      variant="outline"
-                      className="font-normal text-[10px] py-0"
-                    >
+                    <Badge key={t} variant="outline" className="font-normal text-[10px] py-0">
                       {t}
                     </Badge>
                   ))}
@@ -190,6 +204,23 @@ export function RelationshipCard({
                       +{relationship.tags.length - 4}
                     </span>
                   )}
+                </div>
+              )}
+
+              {onLogInteraction && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLogInteraction();
+                    }}
+                  >
+                    <PenLine className="mr-1 h-3 w-3" />
+                    {copy.hubLogInteraction}
+                  </Button>
                 </div>
               )}
             </div>
