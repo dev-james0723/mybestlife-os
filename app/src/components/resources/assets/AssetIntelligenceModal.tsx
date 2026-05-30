@@ -50,7 +50,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
-import { formatDate } from "@/lib/utils/date";
 import { useAppStore } from "@/stores/app-store";
 import { getAssetIntelUiCopy } from "@/lib/i18n/asset-intelligence-ui";
 import { getResourcesUiCopy } from "@/lib/i18n/resources-ui";
@@ -73,7 +72,7 @@ import {
 } from "@/hooks/use-asset-media";
 import { computeDocumentHealth } from "@/lib/assets/asset-intelligence-client";
 import { buildAssetInsightContext } from "@/lib/assets/asset-insight-context";
-import { isAssetCategoryKey, type Asset, type AssetCategoryKey } from "@/types/assets";
+import { type Asset, type AssetCategoryKey } from "@/types/assets";
 import {
   ASSET_DOCUMENT_ROLES,
   type AssetDocumentRole,
