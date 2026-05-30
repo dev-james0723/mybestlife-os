@@ -593,6 +593,141 @@ export async function fetchGeminiStructured<T>(params: {
 }
 
 // ============================================================
+// Structured output from multimodal user parts (inline image / PDF)
+// ============================================================
+//
+// Same enforced `responseSchema` contract as {@link fetchGeminiStructured},
+// but the user turn carries arbitrary parts — text plus inline base64 image /
+// PDF bytes. Used by `/api/ai/assets/autofill` to read receipts, warranties,
+// and product photos. Gemini accepts `inlineData` for images and PDFs on the
+// 2.5 family.
+
+export type GeminiInlineDataPart = {
+  inlineData: { mimeType: string; data: string };
+};
+export type GeminiStructuredPart = { text: string } | GeminiInlineDataPart;
+
+async function oneGenerateStructuredFromParts<T>(params: {
+  apiKey: string;
+  model: string;
+  systemInstruction: string;
+  userParts: GeminiStructuredPart[];
+  responseSchema: GeminiResponseSchema;
+  temperature: number;
+  maxOutputTokens: number;
+  timeoutMs: number;
+}): Promise<T> {
+  const {
+    apiKey,
+    model,
+    systemInstruction,
+    userParts,
+    responseSchema,
+    temperature,
+    maxOutputTokens,
+    timeoutMs,
+  } = params;
+  const endpoint = `${GENERATE_CONTENT_BASE}/${encodeURIComponent(model)}:generateContent`;
+  const res = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemInstruction }] },
+      contents: [{ role: "user", parts: userParts }],
+      generationConfig: {
+        temperature,
+        maxOutputTokens,
+        responseMimeType: "application/json",
+        responseSchema,
+      },
+    }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  const rawText = await res.text();
+  if (!res.ok) {
+    throw new Error(`gemini_http_${res.status}: ${rawText.slice(0, 800)}`);
+  }
+
+  let data: unknown;
+  try {
+    data = JSON.parse(rawText) as unknown;
+  } catch {
+    throw new Error("gemini_invalid_json_body");
+  }
+
+  const text = extractGenerateContentText(data);
+  if (!text) throw new Error("gemini_empty_content");
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("gemini_invalid_structured_output");
+  }
+}
+
+/**
+ * Structured JSON generation from multimodal user parts (text + inline
+ * image/PDF bytes). Retries through {@link getGeminiTextFallbackModelList}
+ * (plus optional `fallbackModel`) on model-unavailable / empty / safety
+ * failures, exactly like {@link fetchGeminiStructured}. Validate the result
+ * with Zod at the route boundary.
+ */
+export async function fetchGeminiStructuredFromParts<T>(params: {
+  apiKey: string;
+  model: string;
+  systemInstruction: string;
+  userParts: GeminiStructuredPart[];
+  responseSchema: GeminiResponseSchema;
+  temperature?: number;
+  maxOutputTokens?: number;
+  timeoutMs?: number;
+  fallbackModel?: string;
+}): Promise<{ data: T; modelUsed: string }> {
+  const primary = params.model;
+  const chain = uniqueGeminiModelChain([
+    params.model,
+    ...(params.fallbackModel ? [params.fallbackModel] : []),
+    ...getGeminiTextFallbackModelList(),
+  ]);
+
+  const temperature = params.temperature ?? 0.3;
+  const maxOutputTokens = params.maxOutputTokens ?? 2048;
+  const timeoutMs = params.timeoutMs ?? 60_000;
+
+  let lastError = new Error("gemini_unknown");
+
+  for (let i = 0; i < chain.length; i++) {
+    const model = chain[i]!;
+    try {
+      const data = await oneGenerateStructuredFromParts<T>({
+        apiKey: params.apiKey,
+        model,
+        systemInstruction: params.systemInstruction,
+        userParts: params.userParts,
+        responseSchema: params.responseSchema,
+        temperature,
+        maxOutputTokens,
+        timeoutMs,
+      });
+      if (model !== primary && process.env.NODE_ENV !== "production") {
+        console.warn(
+          `[gemini] structured(parts): used fallback "${model}" (primary "${primary}" failed).`,
+        );
+      }
+      return { data, modelUsed: model };
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+      if (!shouldTryNextTextModel(i, chain.length, lastError.message)) {
+        throw lastError;
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+// ============================================================
 // Grounded research (googleSearch tool, plain text output)
 // ============================================================
 //
