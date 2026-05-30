@@ -25,13 +25,22 @@ type SkillChatRoomProps = {
   skill: MindSkill | null;
   ui: MindCouncilUiCopy;
   locale: AppLocale;
+  /** Optional first-message prefill, e.g. from a "Challenge Me" deep link. */
+  initialPrompt?: string;
 };
 
-export function SkillChatRoom({ open, onOpenChange, skill, ui, locale }: SkillChatRoomProps) {
+export function SkillChatRoom({ open, onOpenChange, skill, ui, locale, initialPrompt }: SkillChatRoomProps) {
   const [messages, setMessages] = useState<MindCouncilChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Seed the composer when opened via a deep link (we prefill rather than
+  // auto-send so the user stays in control of the first message).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed composer from deep-link prompt on open
+    if (open && initialPrompt) setDraft(initialPrompt);
+  }, [open, initialPrompt]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -42,7 +42,11 @@ import { RoleModelEmptyState } from "@/components/relationship/empty-states";
 import { RoleModelCard } from "@/components/relationship/role-model-card";
 import { RoleModelPhoto } from "@/components/relationship/role-model-photo";
 import { RoleModelForm } from "@/components/relationship/role-model-form";
-import { RoleModelDetail } from "@/components/relationship/role-model-detail";
+import { RoleModelIntelligenceModal } from "@/components/relationship/role-models/role-model-intelligence-modal";
+import { RoleModelPatternBanner } from "@/components/relationship/role-models/role-model-pattern-banner";
+import { useRoleModelContextBuilder } from "@/hooks/use-role-model-context-builder";
+import { useRoleModelTalk } from "@/hooks/use-role-model-talk";
+import { useAboutMe } from "@/hooks/use-about-me";
 import {
   deleteRoleModelPhoto,
   isRoleModelStorageUrl,
@@ -87,9 +91,36 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
   const { data: goals } = useGoals();
   const { data: notes } = useNotes();
   const { data: tasks } = useTasks();
+  const { data: aboutMe } = useAboutMe();
   const createRoleModel = useCreateRoleModel();
   const updateRoleModel = useUpdateRoleModel();
   const deleteRoleModel = useDeleteRoleModel();
+
+  // Intelligence Hub: compact Life OS context + "Talk To {name}" routing.
+  const buildContext = useRoleModelContextBuilder();
+  const talk = useRoleModelTalk(buildContext);
+
+  const patternRoster = useMemo(
+    () =>
+      (roleModels ?? []).map((rm) => ({
+        id: rm.id,
+        name: rm.name,
+        category: rm.category,
+        blurb: rm.admiration_blurb,
+      })),
+    [roleModels],
+  );
+  const aboutMeForPattern = useMemo(
+    () =>
+      aboutMe
+        ? {
+            mission: aboutMe.mission,
+            coreValues: aboutMe.core_values,
+            personality: aboutMe.personality_insights,
+          }
+        : null,
+    [aboutMe],
+  );
 
   // Sort options. `favorites_first` is offered only when the user has at
   // least one favorite, otherwise it would be confusing — the option would
@@ -318,6 +349,14 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
 
   const body = (
     <div className="space-y-4">
+      {!isEmptyEntirely && (
+        <RoleModelPatternBanner
+          roster={patternRoster}
+          aboutMe={aboutMeForPattern}
+          onAddRoleModel={() => setShowCreate(true)}
+        />
+      )}
+
       <FilterBar
         search={{
           placeholder: copy.rmSearchPlaceholder,
@@ -396,6 +435,7 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
               roleModel={rm}
               onClick={() => setSelected(rm)}
               onToggleFavorite={() => handleToggleFavorite(rm)}
+              onTalk={() => talk.talk(rm)}
               compact={filters.viewMode === "list"}
             />
           ))}
@@ -450,8 +490,8 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
         }}
       />
 
-      {/* Detail */}
-      <RoleModelDetail
+      {/* Intelligence Modal (replaces the legacy side panel) */}
+      <RoleModelIntelligenceModal
         open={!!selected && !editingFromDetail}
         roleModel={selected}
         projectMap={projectMap}
@@ -463,7 +503,41 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
         onToggleFavorite={
           selected ? () => handleToggleFavorite(selected) : undefined
         }
+        onTalk={(rm, opts) => talk.talk(rm, opts)}
+        buildContext={buildContext}
       />
+
+      {/* Neural Skill generation confirm (when no preset/saved lens exists) */}
+      <AlertDialog
+        open={!!talk.pending}
+        onOpenChange={(v) => {
+          if (!v) talk.cancelGenerate();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Create a Mind Council lens from {talk.pending?.rm.name ?? "this Role Model"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              We&apos;ll distill {talk.pending?.rm.name ?? "them"} into a reusable Neural Skill — an
+              interpretive thinking lens grounded in your Life OS — then open the chat.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={talk.isGenerating}>{copy.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void talk.confirmGenerate();
+              }}
+              disabled={talk.isGenerating}
+            >
+              {talk.isGenerating ? "Generating…" : "Generate Neural Skill"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirm */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

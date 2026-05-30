@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { PageShell } from "@/components/shared/page-shell";
 import { MindCouncilHero } from "@/components/mind-council/MindCouncilHero";
 import { ReadySkillsSection } from "@/components/mind-council/ReadySkillsSection";
@@ -16,6 +17,7 @@ import { useAppStore } from "@/stores/app-store";
 import { getMindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
 import { PRESET_MIND_SKILLS, getFeaturedPresetSkills } from "@/lib/mind-council/preset-skills";
+import { useRoleModelMindSkills } from "@/hooks/use-role-model-neural-skills";
 import type { MindSkill } from "@/lib/mind-council/types";
 import { toast } from "sonner";
 import { PlusCircle } from "lucide-react";
@@ -55,12 +57,23 @@ export function MindCouncilExperience() {
   const [recLoading, setRecLoading] = useState(false);
   const [customSkills, setCustomSkills] = useState<MindSkill[]>([]);
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { skills: roleModelSkills, isLoading: roleModelSkillsLoading } =
+    useRoleModelMindSkills();
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate local lenses after mount (avoids SSR/localStorage mismatch)
     setCustomSkills(loadCustomFromStorage());
   }, []);
 
-  const allSkills = useMemo(() => [...PRESET_MIND_SKILLS, ...customSkills], [customSkills]);
+  // Persistent Role Model Neural Skills join the preset + local custom lenses
+  // so "Talk To {name}" deep links resolve and they appear in the library.
+  const allSkills = useMemo(
+    () => [...PRESET_MIND_SKILLS, ...roleModelSkills, ...customSkills],
+    [roleModelSkills, customSkills],
+  );
 
   const councilMembers = useMemo(
     () => councilIds.map((id) => allSkills.find((s) => s.skillId === id)).filter(Boolean) as MindSkill[],
@@ -156,6 +169,7 @@ export function MindCouncilExperience() {
 
   const [chatSkill, setChatSkill] = useState<MindSkill | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatPrompt, setChatPrompt] = useState<string | undefined>(undefined);
   const [profileSkill, setProfileSkill] = useState<MindSkill | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -171,6 +185,40 @@ export function MindCouncilExperience() {
     setProfileSkill(skill);
     setProfileOpen(true);
   }, []);
+
+  // -------------------------------------------------------------------------
+  // Deep-link support: /mind-council?skill=<id>&mode=chat&prompt=...&source=...
+  // -------------------------------------------------------------------------
+  const handledDeepLink = useRef<string | null>(null);
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- opening chat is a deliberate response to a URL deep link */
+    const skillId = searchParams.get("skill");
+    const mode = searchParams.get("mode");
+    if (!skillId || mode !== "chat") return;
+
+    // De-dupe so we don't re-open on every render while the param lingers.
+    const signature = `${skillId}:${searchParams.get("prompt") ?? ""}`;
+    if (handledDeepLink.current === signature) return;
+
+    // Role-model skills load async; wait for them before declaring "unknown".
+    const target = allSkills.find((s) => s.skillId === skillId);
+    if (!target) {
+      if (skillId.startsWith("custom-") && roleModelSkillsLoading) return;
+      handledDeepLink.current = signature;
+      toast.error("That lens isn't available — opening the library instead.");
+      router.replace(pathname, { scroll: false });
+      return;
+    }
+
+    handledDeepLink.current = signature;
+    const prompt = searchParams.get("prompt");
+    setChatSkill(target);
+    setChatPrompt(prompt ?? undefined);
+    setChatOpen(true);
+    // Strip params so a refresh/close doesn't reopen unexpectedly.
+    router.replace(pathname, { scroll: false });
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [searchParams, allSkills, roleModelSkillsLoading, router, pathname]);
 
   const openCouncil = useCallback(() => {
     if (councilIds.length < 2) {
@@ -273,11 +321,15 @@ export function MindCouncilExperience() {
         open={chatOpen}
         onOpenChange={(v) => {
           setChatOpen(v);
-          if (!v) setChatSkill(null);
+          if (!v) {
+            setChatSkill(null);
+            setChatPrompt(undefined);
+          }
         }}
         skill={chatSkill}
         ui={ui}
         locale={locale}
+        initialPrompt={chatPrompt}
       />
 
       <AdvisorProfilePanel
