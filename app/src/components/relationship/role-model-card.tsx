@@ -25,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RoleModelPhoto } from "@/components/relationship/role-model-photo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, UserRound } from "lucide-react";
+import { Sparkles, UserRound, MessageCircle, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
@@ -35,6 +35,8 @@ type Props = {
   roleModel: RoleModel;
   onClick: () => void;
   onToggleFavorite: () => void;
+  /** Route into the Mind Council "Talk To {name}" lens. */
+  onTalk?: () => void;
   /** Compact list layout instead of grid card. */
   compact?: boolean;
 };
@@ -43,6 +45,7 @@ export function RoleModelCard({
   roleModel,
   onClick,
   onToggleFavorite,
+  onTalk,
   compact = false,
 }: Props) {
   const language = useAppStore((s) => s.language);
@@ -70,6 +73,11 @@ export function RoleModelCard({
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
+
+  const linkedCount =
+    roleModel.linked_project_ids.length +
+    roleModel.linked_goal_ids.length +
+    roleModel.linked_note_ids.length;
 
   if (compact) {
     return (
@@ -105,6 +113,19 @@ export function RoleModelCard({
                   <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5">
                     {subtitle}
                   </p>
+                )}
+                {onTalk && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTalk();
+                    }}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Talk To {roleModel.name}
+                  </button>
                 )}
               </div>
             </div>
@@ -176,6 +197,39 @@ export function RoleModelCard({
                   )}
                 </div>
               )}
+
+              <div className="mt-3 flex items-center gap-2">
+                {onTalk && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 px-3 text-xs text-white hover:from-indigo-500 hover:to-sky-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTalk();
+                    }}
+                  >
+                    <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                    Talk To {roleModel.name}
+                  </Button>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick();
+                  }}
+                  className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Open Intelligence
+                </button>
+                {linkedCount > 0 && (
+                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Link2 className="h-3 w-3" />
+                    {linkedCount}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>

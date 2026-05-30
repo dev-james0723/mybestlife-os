@@ -280,7 +280,10 @@ export type AIInsightKind =
   | "bio_lab_mind_triage"
   | "bio_lab_focus_recommendation"
   | "bio_lab_reset_sequence"
-  | "bio_lab_weekly_insight";
+  | "bio_lab_weekly_insight"
+  // ----- Role Model Intelligence Hub (see app/api/ai/role-model/*) -----
+  | "role_model_analyze"
+  | "role_model_patterns";
 
 export type AIInsight = {
   id: string;
