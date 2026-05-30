@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Sparkles, Users } from "lucide-react";
+import { Plus, Sparkles, Users, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
@@ -10,25 +10,45 @@ type Props = {
   onAction: () => void;
 };
 
+type HubEmptyProps = {
+  onAddWithAi: () => void;
+  onLogInteraction: () => void;
+  onAddManually: () => void;
+};
+
 /**
- * Dedicated empty state for the Relationship sub-tab. Designed to feel warm
- * and directional: it tells the user *what* to do next, not just that nothing
- * exists. Uses only design tokens — no hardcoded colors, spacing, or radii.
+ * AI-first empty state for the Relationship Intelligence Hub. Leads with the
+ * "Add with AI" capture path (spec §26), with logging and manual entry as
+ * supporting actions.
  */
-export function RelationshipEmptyState({ onAction }: Props) {
+export function RelationshipEmptyState({
+  onAddWithAi,
+  onLogInteraction,
+  onAddManually,
+}: HubEmptyProps) {
   const language = useAppStore((s) => s.language);
   const copy = getRelationshipUiCopy(language);
 
   return (
     <EmptyShell
       icon={<Users className="h-9 w-9 text-primary" aria-hidden />}
-      title={copy.relEmptyTitle}
-      description={copy.relEmptyDescNoEntries}
+      title={copy.hubEmptyTitle}
+      description={copy.hubEmptyDescription}
     >
-      <Button onClick={onAction} size="lg">
-        <Plus className="mr-2 h-4 w-4" />
-        {copy.relEmptyAction}
-      </Button>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button onClick={onAddWithAi} size="lg">
+          <Sparkles className="mr-2 h-4 w-4" />
+          {copy.hubAddWithAi}
+        </Button>
+        <Button onClick={onLogInteraction} size="lg" variant="outline">
+          <PenLine className="mr-2 h-4 w-4" />
+          {copy.hubLogInteraction}
+        </Button>
+        <Button onClick={onAddManually} size="lg" variant="ghost">
+          <Plus className="mr-2 h-4 w-4" />
+          {copy.hubAddManually}
+        </Button>
+      </div>
     </EmptyShell>
   );
 }

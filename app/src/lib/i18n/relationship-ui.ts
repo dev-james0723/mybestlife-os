@@ -394,6 +394,158 @@ export type RelationshipUiCopy = {
   relLoading: string;
   relLoadError: string;
   relLoadErrorRetry: string;
+
+  // ---- Relationship Intelligence Hub (AI-first redesign) ----
+  /** Page-level CTAs + intro copy */
+  hubAddWithAi: string;
+  hubLogInteraction: string;
+  hubAddManually: string;
+  hubIntro: string;
+  hubEmptyTitle: string;
+  hubEmptyDescription: string;
+
+  /** AI Creation Wizard */
+  wizardTitle: string;
+  wizardStepInput: string;
+  wizardStepReview: string;
+  wizardChooseMethod: string;
+  wizardMethodPaste: string;
+  wizardMethodDescribe: string;
+  wizardMethodName: string;
+  wizardInputPlaceholder: string;
+  wizardNamePlaceholder: string;
+  wizardExtract: string;
+  wizardExtracting: string;
+  wizardReviewBanner: string;
+  wizardConfidenceHigh: string;
+  wizardConfidenceMedium: string;
+  wizardConfidenceLow: string;
+  wizardConfidenceMissing: string;
+  wizardSave: string;
+  wizardBack: string;
+  wizardError: string;
+  wizardSuggestedActions: string;
+
+  /** Progress steps shown during extraction */
+  wizardProgressReading: string;
+  wizardProgressIdentifying: string;
+  wizardProgressContact: string;
+  wizardProgressCommitments: string;
+  wizardProgressNextAction: string;
+  wizardProgressPreparing: string;
+
+  /** Quick Interaction Logger */
+  loggerTitle: string;
+  loggerSelectPerson: string;
+  loggerNotePlaceholder: string;
+  loggerExtract: string;
+  loggerExtracting: string;
+  loggerReviewTitle: string;
+  loggerWillUpdate: string;
+  loggerApply: string;
+  loggerCancel: string;
+  loggerNoChanges: string;
+  loggerSaved: string;
+  loggerError: string;
+  loggerAlsoCreatePromises: string;
+
+  /** Intelligence modal */
+  modalRefreshInsight: string;
+  modalGenerating: string;
+  modalWhyMatters: string;
+  modalMemoryCapsule: string;
+  modalNextTouchpoint: string;
+  modalPromiseKeeper: string;
+  modalContextHealth: string;
+  modalWeather: string;
+  modalCareWithout: string;
+  modalDontForget: string;
+  modalHiddenConnections: string;
+  modalWhatToRemember: string;
+  modalOpenLoops: string;
+  modalWhatNotToSay: string;
+  modalSharedMemories: string;
+  modalNoInsightYet: string;
+  modalGenerateInsight: string;
+  modalDraftFollowUp: string;
+  modalTiming: string;
+  modalChannel: string;
+
+  /** Promise keeper */
+  promiseOpen: string;
+  promiseDone: string;
+  promiseOverdue: string;
+  promiseCancelled: string;
+  promiseMarkDone: string;
+  promiseReopen: string;
+  promiseAdd: string;
+  promiseAddPlaceholder: string;
+  promiseNone: string;
+  promiseDueOn: string;
+
+  /** Context health factor labels */
+  healthContactInfo: string;
+  healthLastContact: string;
+  healthNextAction: string;
+  healthNextActionDate: string;
+  healthPreferences: string;
+  healthCommitments: string;
+  healthLinkedProject: string;
+  healthTags: string;
+  healthProfilePhoto: string;
+  healthMemoryImage: string;
+  healthRecentInteraction: string;
+  healthMissingLabel: string;
+
+  /** Weather statuses */
+  weatherClear: string;
+  weatherNeedsAttention: string;
+  weatherOpenLoop: string;
+  weatherQuietRecently: string;
+  weatherSensitive: string;
+  weatherMeetingSoon: string;
+  weatherPromisePending: string;
+
+  /** Page dashboard */
+  dashWhoNeedsMe: string;
+  dashWhoNeedsMeEmpty: string;
+  dashPromiseDebt: string;
+  dashPromiseDebtEmpty: string;
+  dashPromiseDebtCount: string;
+  reasonOverduePromise: string;
+  reasonNextActionDue: string;
+  reasonOpenPromise: string;
+  reasonFavoriteQuiet: string;
+
+  /** Card additions */
+  cardOpenIntelligence: string;
+  cardOpenPromiseCount: string;
+  cardContextHealth: string;
+
+  /** Shared memories / images */
+  imagesUpload: string;
+  imagesUploading: string;
+  imagesEmpty: string;
+  imageTypeProfile: string;
+  imageTypeShared: string;
+  imageTypeEvent: string;
+  imageTypeBusinessCard: string;
+  imageTypeScreenshot: string;
+  imageTypeMemory: string;
+  imageTypeOther: string;
+  imageDelete: string;
+
+  /** Draft message */
+  draftTone: string;
+  draftPurpose: string;
+  draftGenerate: string;
+  draftGenerating: string;
+  draftCopy: string;
+  draftCopied: string;
+  draftSave: string;
+  draftNeverSent: string;
+  draftSubject: string;
+  draftCaution: string;
 };
 
 const en: RelationshipUiCopy = {
@@ -706,6 +858,152 @@ const en: RelationshipUiCopy = {
   relLoading: "Loading relationships…",
   relLoadError: "Couldn't load your relationships.",
   relLoadErrorRetry: "Try again",
+
+  // ---- Relationship Intelligence Hub ----
+  hubAddWithAi: "Add with AI",
+  hubLogInteraction: "Log Interaction",
+  hubAddManually: "Add Manually",
+  hubIntro:
+    "Capture people, memories, promises, and follow-ups without filling a long form. Paste a note, describe someone, or log what happened — AI organizes the relationship context for you.",
+  hubEmptyTitle: "Build your Relationship Intelligence Hub",
+  hubEmptyDescription:
+    "Paste a meeting note, describe someone you met, or log what happened. AI will organize the contact, remember commitments, and suggest the next thoughtful follow-up.",
+
+  wizardTitle: "Add Relationship with AI",
+  wizardStepInput: "Capture",
+  wizardStepReview: "Review",
+  wizardChooseMethod:
+    "How do you want to add this person? Paste a memory, describe them, or just give a name — AI fills the boring fields for you.",
+  wizardMethodPaste: "Paste notes / message",
+  wizardMethodDescribe: "Describe in one sentence",
+  wizardMethodName: "Just a name",
+  wizardInputPlaceholder:
+    "e.g. Met Lori Sims on Zoom. She agreed to accept me into her studio. I want to thank her and send a repertoire plan later. She prefers concise emails.",
+  wizardNamePlaceholder: "Person's name",
+  wizardExtract: "Extract with AI",
+  wizardExtracting: "Reading your note…",
+  wizardReviewBanner: "AI-drafted — review and edit before saving. Nothing is saved automatically.",
+  wizardConfidenceHigh: "High confidence",
+  wizardConfidenceMedium: "Medium confidence",
+  wizardConfidenceLow: "Low confidence",
+  wizardConfidenceMissing: "Needs review",
+  wizardSave: "Save relationship",
+  wizardBack: "Back",
+  wizardError: "AI couldn't process that. Try rephrasing or add manually.",
+  wizardSuggestedActions: "Suggested next actions",
+
+  wizardProgressReading: "Reading context…",
+  wizardProgressIdentifying: "Identifying person…",
+  wizardProgressContact: "Extracting contact details…",
+  wizardProgressCommitments: "Finding commitments…",
+  wizardProgressNextAction: "Detecting next action…",
+  wizardProgressPreparing: "Preparing review…",
+
+  loggerTitle: "Log Interaction",
+  loggerSelectPerson: "Who did you interact with?",
+  loggerNotePlaceholder:
+    "e.g. Had coffee with Karen today. She paid for her students. Need to send confirmation tomorrow. She prefers WhatsApp and concise messages.",
+  loggerExtract: "Extract update",
+  loggerExtracting: "Reading your note…",
+  loggerReviewTitle: "Review the update",
+  loggerWillUpdate: "Will update",
+  loggerApply: "Apply update",
+  loggerCancel: "Cancel",
+  loggerNoChanges: "AI didn't find anything to update.",
+  loggerSaved: "Interaction logged",
+  loggerError: "Couldn't process that note.",
+  loggerAlsoCreatePromises: "Also track these as promises",
+
+  modalRefreshInsight: "Refresh insight",
+  modalGenerating: "Thinking about this relationship…",
+  modalWhyMatters: "Why this person matters",
+  modalMemoryCapsule: "Relationship memory capsule",
+  modalNextTouchpoint: "Next best touchpoint",
+  modalPromiseKeeper: "Promise keeper",
+  modalContextHealth: "Context health",
+  modalWeather: "Relationship weather",
+  modalCareWithout: "Care without overdoing it",
+  modalDontForget: "Don't forget",
+  modalHiddenConnections: "Hidden connections",
+  modalWhatToRemember: "What to remember",
+  modalOpenLoops: "Open loops",
+  modalWhatNotToSay: "What not to say",
+  modalSharedMemories: "Shared memories",
+  modalNoInsightYet:
+    "Generate an AI insight to see why this person matters, what to remember, and the next thoughtful touchpoint.",
+  modalGenerateInsight: "Generate insight",
+  modalDraftFollowUp: "Draft follow-up",
+  modalTiming: "Timing",
+  modalChannel: "Channel",
+
+  promiseOpen: "Open",
+  promiseDone: "Done",
+  promiseOverdue: "Overdue",
+  promiseCancelled: "Cancelled",
+  promiseMarkDone: "Mark done",
+  promiseReopen: "Reopen",
+  promiseAdd: "Add promise",
+  promiseAddPlaceholder: "e.g. Send repertoire plan",
+  promiseNone: "No promises tracked yet.",
+  promiseDueOn: "Due {date}",
+
+  healthContactInfo: "Contact info",
+  healthLastContact: "Last contact",
+  healthNextAction: "Next action",
+  healthNextActionDate: "Next action date",
+  healthPreferences: "Communication preferences",
+  healthCommitments: "Tracked commitments",
+  healthLinkedProject: "Linked project",
+  healthTags: "Tags",
+  healthProfilePhoto: "Profile photo",
+  healthMemoryImage: "Shared memory photo",
+  healthRecentInteraction: "Recent interaction",
+  healthMissingLabel: "Missing",
+
+  weatherClear: "Clear",
+  weatherNeedsAttention: "Needs attention",
+  weatherOpenLoop: "Open loop",
+  weatherQuietRecently: "Quiet recently",
+  weatherSensitive: "Sensitive",
+  weatherMeetingSoon: "Meeting soon",
+  weatherPromisePending: "Promise pending",
+
+  dashWhoNeedsMe: "Who may need attention this week",
+  dashWhoNeedsMeEmpty: "No one needs urgent attention — you're on top of things.",
+  dashPromiseDebt: "Open promises",
+  dashPromiseDebtEmpty: "No open promises. Nicely kept.",
+  dashPromiseDebtCount: "You have {count} open promise(s)",
+  reasonOverduePromise: "Overdue promise",
+  reasonNextActionDue: "Next action due",
+  reasonOpenPromise: "Open promise",
+  reasonFavoriteQuiet: "Important but quiet",
+
+  cardOpenIntelligence: "Open intelligence",
+  cardOpenPromiseCount: "{count} open",
+  cardContextHealth: "Context {score}%",
+
+  imagesUpload: "Add image",
+  imagesUploading: "Uploading…",
+  imagesEmpty: "No shared photos or memory images yet.",
+  imageTypeProfile: "Profile photo",
+  imageTypeShared: "Shared photo (合照)",
+  imageTypeEvent: "Event photo",
+  imageTypeBusinessCard: "Business card",
+  imageTypeScreenshot: "Screenshot",
+  imageTypeMemory: "Memory photo",
+  imageTypeOther: "Other",
+  imageDelete: "Remove image",
+
+  draftTone: "Tone",
+  draftPurpose: "Purpose",
+  draftGenerate: "Generate draft",
+  draftGenerating: "Drafting…",
+  draftCopy: "Copy",
+  draftCopied: "Copied",
+  draftSave: "Save draft",
+  draftNeverSent: "Drafts are never sent automatically — copy or save, then send yourself.",
+  draftSubject: "Subject",
+  draftCaution: "Heads up",
 };
 
 const zhTW: DeepPartial<RelationshipUiCopy> = {
