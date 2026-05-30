@@ -177,6 +177,16 @@ export type BucketReflectionPhoto = {
   taken_at?: string | null;
 };
 
+/** Resolved cover used by dream cards and detail hero (same source everywhere). */
+export type BucketDreamImageSourceType = "static" | "api" | "generated";
+
+export type BucketDreamImage = {
+  url: string;
+  alt: string;
+  source?: string;
+  sourceType?: BucketDreamImageSourceType;
+};
+
 // ─── DB row types ─────────────────────────────────────────────────────────────
 
 export type BucketItem = {
@@ -206,6 +216,7 @@ export type BucketItem = {
 
   // Presentation
   category_tags: string[];
+  /** User-provided or API-persisted cover. UI resolves full {@link BucketDreamImage} via `resolveBucketDreamImage`. */
   cover_image_url: string | null;
   quote_inspiration: string | null;
   inspiration_links: BucketInspirationLink[];

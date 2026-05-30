@@ -5,13 +5,17 @@ import type { Locale } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { SignalItem } from "@/lib/signals/types";
+import type { SignalActionKind, SignalItem } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
 import { SignalCard, type SignalCardVariant } from "./SignalCard";
 
 export type SignalCardHandlers = {
   savingId: string | null;
   savedIds: Set<string>;
+  /** Write-in-flight id for Create-Task. */
+  creatingTaskId?: string | null;
+  /** Per-card "is this story tracked?" predicate. */
+  isTracked?: (signalId: string) => boolean;
   onSave: (signal: SignalItem) => void;
   onDismiss: (signal: SignalItem) => void;
   onMore: (signal: SignalItem) => void;
@@ -19,6 +23,9 @@ export type SignalCardHandlers = {
   onOpen: (signal: SignalItem) => void;
   onMuteSource?: (signal: SignalItem) => void;
   onFollowTopic?: (signal: SignalItem) => void;
+  onFeedback?: (signal: SignalItem, kind: SignalActionKind) => void;
+  onTrack?: (signal: SignalItem) => void;
+  onCreateTask?: (signal: SignalItem) => void;
 };
 
 /** Shared card renderer — spreads the handler bundle onto a SignalCard. */
@@ -43,6 +50,8 @@ export function SignalCardWithHandlers({
       variant={variant}
       saving={handlers.savingId === signal.id}
       saved={handlers.savedIds.has(signal.id)}
+      creatingTask={handlers.creatingTaskId === signal.id}
+      tracked={handlers.isTracked?.(signal.id) ?? false}
       onSave={handlers.onSave}
       onDismiss={handlers.onDismiss}
       onMore={handlers.onMore}
@@ -50,6 +59,9 @@ export function SignalCardWithHandlers({
       onOpen={handlers.onOpen}
       onMuteSource={handlers.onMuteSource}
       onFollowTopic={handlers.onFollowTopic}
+      onFeedback={handlers.onFeedback}
+      onTrack={handlers.onTrack}
+      onCreateTask={handlers.onCreateTask}
     />
   );
 }
@@ -104,7 +116,7 @@ export function SignalsSection({
           data-stagger
           className={cn(
             layout === "stack" && "space-y-4",
-            layout === "grid" && "grid gap-3 md:grid-cols-2",
+            layout === "grid" && "grid auto-rows-fr gap-3 md:grid-cols-2",
             layout === "carousel" &&
               "-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]",
           )}
@@ -113,6 +125,7 @@ export function SignalsSection({
             <div
               key={signal.id}
               className={cn(
+                layout === "grid" && "h-full",
                 layout === "carousel" && "w-[78%] shrink-0 snap-start sm:w-[42%] lg:w-[31%]",
               )}
             >

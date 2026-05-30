@@ -5,7 +5,10 @@ import { Newspaper, PlayCircle, LineChart, Radio, Video } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { TOPIC_VISUALS, topicAccentColor } from "@/lib/signals/constants";
-import { resolveDisplayThumbnail } from "@/lib/signals/thumbnails";
+import {
+  getYouTubeThumbnailFallback,
+  resolveDisplayThumbnail,
+} from "@/lib/signals/thumbnails";
 import type { SignalItem, SignalMediaType } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
 
@@ -47,11 +50,19 @@ export function SignalThumbnail({
 }) {
   const thumb = resolveDisplayThumbnail(signal);
   const isReal = !thumb.isFallback && !!thumb.url;
+  const [imgSrc, setImgSrc] = useState(thumb.url ?? "");
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  const youtubeId =
+    signal.mediaType === "video" && signal.videoUrl
+      ? /[?&]v=([^&]+)/.exec(signal.videoUrl)?.[1] ??
+        /youtu\.be\/([^?]+)/.exec(signal.videoUrl)?.[1]
+      : undefined;
+
   // Reset transient state if the underlying image URL changes (view switches).
   useEffect(() => {
+    setImgSrc(thumb.url ?? "");
     setLoaded(false);
     setFailed(false);
   }, [thumb.url]);
@@ -87,12 +98,23 @@ export function SignalThumbnail({
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={thumb.url}
+          src={imgSrc}
           alt={thumb.alt ?? signal.headline}
           loading="lazy"
           decoding="async"
           onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
+          onError={() => {
+            if (
+              youtubeId &&
+              imgSrc.includes("maxresdefault") &&
+              !imgSrc.includes("hqdefault")
+            ) {
+              setImgSrc(getYouTubeThumbnailFallback(youtubeId));
+              setLoaded(false);
+              return;
+            }
+            setFailed(true);
+          }}
           className={cn(
             "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
             loaded ? "opacity-100" : "opacity-0",

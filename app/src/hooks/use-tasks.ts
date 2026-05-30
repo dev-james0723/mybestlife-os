@@ -69,3 +69,41 @@ export function useDeleteTask() {
     },
   });
 }
+
+/** Update many tasks at once (table bulk actions) with a single toast + refetch. */
+export function useBulkUpdateTasks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, data }: { ids: string[]; data: UpdateTaskInput }) => {
+      await Promise.all(ids.map((id) => tasksRepository.update(id, data)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      const ui = getTasksUiCopy(useAppStore.getState().language);
+      toast.success(ui.toastTaskUpdated);
+    },
+    onError: () => {
+      const ui = getTasksUiCopy(useAppStore.getState().language);
+      toast.error(ui.toastTaskUpdateFailed);
+    },
+  });
+}
+
+/** Delete many tasks at once (table bulk delete) with a single toast + refetch. */
+export function useBulkDeleteTasks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => tasksRepository.delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      const ui = getTasksUiCopy(useAppStore.getState().language);
+      toast.success(ui.toastTaskDeleted);
+    },
+    onError: () => {
+      const ui = getTasksUiCopy(useAppStore.getState().language);
+      toast.error(ui.toastTaskDeleteFailed);
+    },
+  });
+}

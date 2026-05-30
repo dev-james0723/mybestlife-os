@@ -11,6 +11,7 @@
     "build": "npm run build --prefix app",
     "capture-site": "node site-capture.js",
     "dev": "npm run dev --prefix app",
+    "dev:tts": "cd services/voxcpm-tts && VOXCPM_API_KEY=${VOXCPM_API_KEY:-dev-secret} .venv/bin/uvicorn main:app --host 127.0.0.1 --port 7860",
     "dev:3100": "npm run dev:3100 --prefix app",
     "dev:app": "npm run dev --prefix app",
     "dev:cursor": "npm run dev:cursor --prefix app",

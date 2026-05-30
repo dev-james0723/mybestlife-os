@@ -94,7 +94,7 @@ export function ClockPill({ className }: { className?: string }) {
       <button
         ref={buttonRef}
         type="button"
-        aria-label={`Clock, timer and stopwatch. Now ${formatHHMM(now)}`}
+        aria-label={`Clock, timer and stopwatch. Now ${mounted ? formatHHMM(now) : "--:--"}`}
         aria-expanded={open}
         data-open={open ? "true" : undefined}
         onClick={() => setOpen((v) => !v)}
@@ -105,7 +105,9 @@ export function ClockPill({ className }: { className?: string }) {
       >
         <Clock className="h-4 w-4 opacity-85" />
         {!isMobile ? (
-          <span className="tabular-nums">{formatHHMM(now)}</span>
+          <span className="tabular-nums" suppressHydrationWarning>
+            {mounted ? formatHHMM(now) : "--:--"}
+          </span>
         ) : null}
       </button>
 

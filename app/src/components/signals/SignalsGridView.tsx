@@ -34,16 +34,17 @@ export function SignalsGridView({
 
   return (
     <div className="space-y-5">
-      <div data-stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div data-stagger className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((signal) => (
-          <SignalCardWithHandlers
-            key={signal.id}
-            signal={signal}
-            copy={copy}
-            dateLocale={dateLocale}
-            variant="feature"
-            handlers={handlers}
-          />
+          <div key={signal.id} className="h-full">
+            <SignalCardWithHandlers
+              signal={signal}
+              copy={copy}
+              dateLocale={dateLocale}
+              variant="feature"
+              handlers={handlers}
+            />
+          </div>
         ))}
       </div>
       {hasMore ? (

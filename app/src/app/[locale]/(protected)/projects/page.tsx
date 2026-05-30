@@ -29,6 +29,7 @@ import {
   CalendarDays,
   Command,
   ChevronDown,
+  type LucideIcon,
 } from "lucide-react";
 import { useProjects, useUpdateProject } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
@@ -430,7 +431,7 @@ export default function ProjectsPage() {
   const viewModeConfig: {
     key: ProjectViewMode;
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
   }[] = [
     { key: "kanban", label: ui.viewKanban, icon: Columns3 },
     { key: "gallery", label: ui.viewGallery, icon: LayoutGrid },

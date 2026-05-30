@@ -16,11 +16,12 @@
  */
 
 import { getSignalsDemoData } from "./demo-data";
+import { prepareSignalDisplayPool } from "./thumbnails";
 import type { SignalItem, SignalsDataSource, SignalsLocalLocation } from "./types";
 
-const CACHE_KEY = "mylifeos.signals.candidates.v1";
+const CACHE_KEY = "mylifeos.signals.candidates.v4";
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h on-demand window (daily regen via date key)
-const FETCH_TIMEOUT_MS = 9000;
+const FETCH_TIMEOUT_MS = 24_000;
 
 export type FetchCandidatesParams = {
   topics: string[];
@@ -86,8 +87,10 @@ function writeCache(key: string, result: CandidatesResult): void {
 }
 
 function demoResult(rotateSeed = 0): CandidatesResult {
+  // Demo seeds use topic abstracts only — filter so we never show placeholder cards.
+  const items = prepareSignalDisplayPool(getSignalsDemoData(rotateSeed));
   return {
-    items: getSignalsDemoData(rotateSeed),
+    items,
     dataSource: "demo",
     generatedAt: new Date().toISOString(),
   };
@@ -126,7 +129,7 @@ export async function fetchSignalCandidates(
       items?: SignalItem[];
       generatedAt?: string;
     };
-    const items = data.items ?? [];
+    const items = prepareSignalDisplayPool(data.items ?? []);
     if (data.status !== "ok" || items.length === 0) {
       const demo = demoResult(params.rotateSeed);
       writeCache(key, demo);

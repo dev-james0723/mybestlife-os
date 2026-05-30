@@ -23,6 +23,8 @@ import {
   getBucketTypeLabel,
 } from "@/lib/bucket-list/presentation";
 import { useLatestFlightQuote } from "@/hooks/use-bucket-list";
+import { useBucketDreamImage } from "@/hooks/use-bucket-dream-image";
+import { DreamCoverBackground } from "./dream-cover-background";
 
 type FeaturedRailProps = {
   item: BucketItem;
@@ -52,6 +54,7 @@ export function BucketFeaturedRail({
 }: FeaturedRailProps) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
+  const dreamImage = useBucketDreamImage(item);
 
   const flight = useLatestFlightQuote(item.id);
   const targetLabel = bucketTargetMonthLabel(item);
@@ -85,17 +88,11 @@ export function BucketFeaturedRail({
       >
         {/* Cover / hero image area */}
         <div className="relative h-40 w-full overflow-hidden">
-          {item.cover_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={item.cover_image_url}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-teal-400/20 to-lime-300/10" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/65" />
+          <DreamCoverBackground
+            image={dreamImage}
+            type={item.type}
+            variant="hero"
+          />
           <div className="absolute right-3 top-3">
             <span
               className={cn(

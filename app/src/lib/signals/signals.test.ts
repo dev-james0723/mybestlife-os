@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_SIGNALS_PREFERENCES } from "./constants";
 import type {
   LifeOsContext,
+  SignalAction,
+  SignalBehavior,
   SignalItem,
   SignalsFilterState,
   SignalsPreferences,
@@ -14,16 +16,29 @@ import {
 } from "./scoring";
 import { canonicalizeUrl, dedupeSignals, normalizeSignalItem } from "./normalize";
 import { deriveRelevance } from "./relevance";
-import { buildSignalNoteInput } from "./brain-adapter";
+import { buildSignalNoteInput, buildSignalTaskInput } from "./brain-adapter";
+import {
+  computeWeeklyReflection,
+  deriveBehavior,
+  hasMeaningfulBehavior,
+  summarizeMemory,
+} from "./behavior";
 import { capWidgetSignals } from "./widget";
 import {
-  dedupeThumbnails,
+  prepareSignalDisplayPool,
   extractThumbnailFromRssItem,
   firstImageInHtml,
   getFallbackThumbnailForTopic,
   getYouTubeThumbnail,
   isRealThumbnail,
 } from "./thumbnails";
+import { pickBestImageFromHtml, upgradeThumbnailUrl } from "./thumbnail-resolution";
+import { signalSourceHostname, signalSourceIconUrl } from "./source-icon-url";
+import { needsArticleEnrichment } from "./article-metadata";
+import {
+  buildDeterministicOverview,
+  isOverviewWorthyText,
+} from "./overview";
 import {
   activeFilterChips,
   applySignalFilters,
@@ -64,6 +79,30 @@ function filter(overrides: Partial<SignalsFilterState> = {}): SignalsFilterState
 
 function prefs(overrides: Partial<SignalsPreferences> = {}): SignalsPreferences {
   return { ...DEFAULT_SIGNALS_PREFERENCES, ...overrides };
+}
+
+const DAY = 86_400_000;
+
+function action(overrides: Partial<SignalAction> = {}): SignalAction {
+  return {
+    signalId: overrides.signalId ?? Math.random().toString(36).slice(2),
+    kind: "save",
+    createdAt: new Date(NOW).toISOString(),
+    ...overrides,
+  };
+}
+
+function behaviorWith(overrides: Partial<SignalBehavior> = {}): SignalBehavior {
+  return {
+    topicAffinity: {},
+    sourceAffinity: {},
+    negativitySensitivity: 0,
+    politicalSensitivity: 0,
+    shallowSensitivity: 0,
+    suppressedIds: [],
+    savedTerms: [],
+    ...overrides,
+  };
 }
 
 function makeSignal(overrides: Partial<SignalItem> = {}): SignalItem {
@@ -203,6 +242,51 @@ describe("brain note + widget cap", () => {
   });
 });
 
+describe("source icon — favicon from publisher domain", () => {
+  it("builds a Google s2 favicon URL from source.domain", () => {
+    const url = signalSourceIconUrl({
+      name: "BBC News",
+      url: "https://bbc.com",
+      domain: "bbc.co.uk",
+    });
+    expect(url).toContain("bbc.co.uk");
+    expect(url).toContain("google.com/s2/favicons");
+  });
+
+  it("parses hostname from source.url when domain is missing", () => {
+    expect(
+      signalSourceHostname({
+        name: "NYT",
+        url: "https://www.nytimes.com/section/world",
+      }),
+    ).toBe("nytimes.com");
+  });
+});
+
+describe("thumbnail resolution — high-res URL upgrades", () => {
+  it("upgrades BBC 240px preset to 976px", () => {
+    const low =
+      "https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/67d2/live/38648570.jpg";
+    expect(upgradeThumbnailUrl(low)).toContain("/ace/standard/976/");
+  });
+
+  it("bumps Guardian width query to 1200", () => {
+    const low =
+      "https://i.guim.co.uk/img/media/abc/master/5758.jpg?width=460&quality=85";
+    const hi = upgradeThumbnailUrl(low);
+    expect(hi).toContain("width=1200");
+  });
+
+  it("picks the largest <img> from description HTML", () => {
+    const html = `
+      <img src="https://i.guim.co.uk/x.jpg?width=140" />
+      <img src="https://i.guim.co.uk/y.jpg?width=700" />
+    `;
+    expect(pickBestImageFromHtml(html)).toContain("width=1200");
+    expect(pickBestImageFromHtml(html)).toContain("y.jpg");
+  });
+});
+
 describe("thumbnails — priority chain & honest fallback (§ no fake thumbnails)", () => {
   it("prefers media:content over every other candidate", () => {
     const t = extractThumbnailFromRssItem({
@@ -256,14 +340,20 @@ describe("thumbnails — priority chain & honest fallback (§ no fake thumbnails
     expect(isRealThumbnail(getYouTubeThumbnail("xyz"))).toBe(true);
   });
 
-  it("dedupes repeated real thumbnails down to a labeled fallback", () => {
+  it("drops items without real thumbnails", () => {
+    const withImg = makeSignal({
+      id: "a",
+      thumbnail: { url: "https://cdn/x.jpg", source: "rss" },
+    });
+    const noImg = makeSignal({ id: "b", thumbnail: { isFallback: true, source: "fallback" } });
+    expect(prepareSignalDisplayPool([withImg, noImg])).toHaveLength(1);
+  });
+
+  it("drops duplicate image URLs instead of showing placeholders", () => {
     const real = { url: "https://cdn/x.jpg", source: "rss" as const };
     const a = makeSignal({ id: "a", thumbnail: { ...real } });
     const b = makeSignal({ id: "b", thumbnail: { ...real } });
-    const out = dedupeThumbnails([a, b]);
-    expect(isRealThumbnail(out[0]?.thumbnail)).toBe(true);
-    expect(isRealThumbnail(out[1]?.thumbnail)).toBe(false);
-    expect(out[1]?.thumbnail?.isFallback).toBe(true);
+    expect(prepareSignalDisplayPool([a, b])).toHaveLength(1);
   });
 });
 
@@ -361,5 +451,175 @@ describe("demo rotation — deterministic but visibly changing (§ refresh)", ()
     const seeds = [0, 1, 2, 3, 4].map((s) => top(s).join(","));
     // At least two distinct Top-3 orderings across five refreshes.
     expect(new Set(seeds).size).toBeGreaterThan(1);
+  });
+});
+
+describe("overview — deterministic fallback", () => {
+  it("uses source snippet when present", () => {
+    const { text, grounded } = buildDeterministicOverview(
+      { summary: "A long enough source description about the policy change in detail.", headline: "Title" },
+      "en",
+    );
+    expect(grounded).toBe(true);
+    expect(text).toContain("policy change");
+  });
+
+  it("falls back to headline when snippet is placeholder", () => {
+    const { text, grounded } = buildDeterministicOverview(
+      {
+        summary: "Summary limited — open the source for detail.",
+        headline: "Taiwan's MediaTek says it supports both TSMC and Intel",
+      },
+      "en",
+    );
+    expect(grounded).toBe(false);
+    expect(text).toContain("MediaTek");
+  });
+
+  it("treats enriched snippets as overview-worthy", () => {
+    expect(isOverviewWorthyText("Summary limited — open the source for detail.")).toBe(false);
+    expect(
+      isOverviewWorthyText(
+        "The chipmaker outlined its dual-foundry strategy in a briefing to investors on Friday.",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("article-metadata — enrichment eligibility", () => {
+  it("flags items missing thumb or real snippet", () => {
+    expect(
+      needsArticleEnrichment({
+        summary: "Summary limited — open the source for detail.",
+        thumbnail: { isFallback: true, source: "fallback" },
+      }),
+    ).toBe(true);
+    expect(
+      needsArticleEnrichment({
+        summary:
+          "A sufficiently long real article description from the publisher page that explains what happened and why it matters to readers today.",
+        thumbnail: { url: "https://cdn.example.com/a.jpg", source: "open_graph" },
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("behavior — deterministic reading-behavior derivation (§11/§17)", () => {
+  it("lifts topic affinity from saves and exposes saved terms", () => {
+    const b = deriveBehavior([action({ kind: "save", topic: "AI" })], NOW);
+    expect(b.topicAffinity["ai"]).toBeGreaterThanOrEqual(0.4);
+    expect(b.savedTerms).toContain("ai");
+    expect(hasMeaningfulBehavior(b)).toBe(true);
+  });
+
+  it("cools a topic from less_like_this", () => {
+    const b = deriveBehavior([action({ kind: "less_like_this", topic: "Sports" })], NOW);
+    expect(b.topicAffinity["sports"]).toBeLessThan(0);
+  });
+
+  it("collects hard suppressions from already_known / not_relevant", () => {
+    const b = deriveBehavior(
+      [
+        action({ kind: "already_known", signalId: "x" }),
+        action({ kind: "not_relevant", signalId: "y", topic: "Crime" }),
+      ],
+      NOW,
+    );
+    expect(b.suppressedIds).toEqual(expect.arrayContaining(["x", "y"]));
+  });
+
+  it("saturates content sensitivities and hard-mutes a source domain", () => {
+    const b = deriveBehavior(
+      [
+        action({ kind: "too_political" }),
+        action({ kind: "too_political" }),
+        action({ kind: "mute_source", domain: "x.io" }),
+      ],
+      NOW,
+    );
+    expect(b.politicalSensitivity).toBeGreaterThan(0);
+    expect(b.sourceAffinity["x.io"]).toBe(-1);
+  });
+
+  it("is empty + not meaningful for no actions", () => {
+    expect(hasMeaningfulBehavior(deriveBehavior([], NOW))).toBe(false);
+    expect(hasMeaningfulBehavior(undefined)).toBe(false);
+  });
+});
+
+describe("behavior → scoring + relevance (consented)", () => {
+  it("a positive topic affinity raises a signal's score", () => {
+    const s = makeSignal({ topic: "AI", headline: "An AI model update" });
+    const behavior = deriveBehavior([action({ kind: "save", topic: "AI" })], NOW);
+    const base = scoreSignal(s, prefs(), emptyCtx(), NOW);
+    const withBehavior = scoreSignal(s, prefs(), emptyCtx({ behavior }), NOW);
+    expect(withBehavior.total).toBeGreaterThan(base.total);
+  });
+
+  it("rankSignals drops behavior-suppressed ids (explicit user command)", () => {
+    const keep = makeSignal({ id: "keep" });
+    const drop = makeSignal({ id: "drop" });
+    const behavior = behaviorWith({ suppressedIds: ["drop"] });
+    const ranked = rankSignals([keep, drop], prefs(), emptyCtx({ behavior }), NOW);
+    const ids = ranked.map((s) => s.id);
+    expect(ids).toContain("keep");
+    expect(ids).not.toContain("drop");
+  });
+
+  it("relevance reports a 'behavior' basis for an actively engaged topic", () => {
+    const s = makeSignal({ topic: "AI", headline: "An AI model update" });
+    const behavior = deriveBehavior(
+      [action({ kind: "save", topic: "AI" }), action({ kind: "more_like_this", topic: "AI" })],
+      NOW,
+    );
+    expect(deriveRelevance(s, prefs(), emptyCtx({ behavior }), "world").basis).toBe("behavior");
+  });
+});
+
+describe("signal memory + weekly reflection (§17/§21)", () => {
+  it("summarizes liked/cooled topics and counts honestly", () => {
+    const mem = summarizeMemory(
+      [
+        action({ kind: "save", topic: "AI" }),
+        action({ kind: "dismiss", topic: "Sports" }),
+        action({ kind: "track", topic: "Finance" }),
+      ],
+      { mutedSources: ["x.io"] },
+      NOW,
+    );
+    expect(mem.totalActions).toBe(3);
+    expect(mem.savedCount).toBe(1);
+    expect(mem.trackedCount).toBe(1);
+    expect(mem.likedTopics.map((t) => t.topic)).toContain("ai");
+    expect(mem.cooledTopics.map((t) => t.topic)).toContain("sports");
+    expect(mem.mutedSources).toEqual(["x.io"]);
+  });
+
+  it("weekly reflection counts only this week's actions", () => {
+    const refl = computeWeeklyReflection(
+      [
+        action({ kind: "save", topic: "AI", createdAt: new Date(NOW - 30 * DAY).toISOString() }),
+        action({ kind: "save", topic: "AI" }),
+        action({ kind: "track", topic: "Finance" }),
+      ],
+      NOW,
+    );
+    expect(refl.saved).toBe(1);
+    expect(refl.tracked).toBe(1);
+    expect(refl.hasActivity).toBe(true);
+    expect(refl.topTopics.some((t) => t.topic === "AI")).toBe(true);
+  });
+});
+
+describe("task write-path — source-grounded, never a placeholder", () => {
+  it("builds a task that keeps provenance + tags", () => {
+    const s = makeSignal({ headline: "Headline", topic: "AI", sourceUrl: "https://reuters.com/a" });
+    const task = buildSignalTaskInput(s);
+    expect(task.title).toContain("Headline");
+    expect(task.source).toBe("signals");
+    expect(task.source_url).toBe(s.sourceUrl);
+    expect(task.tags).toContain("signal");
+    expect(task.tags).toContain("AI");
+    expect(task.priority).toBe("medium");
   });
 });

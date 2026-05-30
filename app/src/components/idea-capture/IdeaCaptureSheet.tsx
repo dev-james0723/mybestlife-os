@@ -1146,12 +1146,9 @@ export function IdeaCaptureSheet() {
   const saving = saveState === "saving";
   const saved = saveState === "saved";
   const canSave = hasDraft(draft) && !saving && !saved;
-  const characterCount = useMemo(() => {
-    void editorRevision;
-    return (
-      editorRef.current?.getText().length ??
-      stripHtml(draft.content).length
-    );
+  const [characterCount, setCharacterCount] = useState(() => stripHtml(draft.content).length);
+  useEffect(() => {
+    setCharacterCount(editorRef.current?.getText().length ?? stripHtml(draft.content).length);
   }, [editorRevision, draft.content]);
 
   return (

@@ -1,6 +1,16 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Note } from "@/types/database";
 
+async function requireUserId(): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) throw new Error("Not authenticated");
+  return user.id;
+}
+
 export type CreateNoteInput = {
   title: string;
   content?: string | null;
@@ -35,10 +45,12 @@ export const notesRepository = {
   },
 
   async create(input: CreateNoteInput): Promise<Note> {
+    const userId = await requireUserId();
     const supabase = createClient();
     const { data, error } = await supabase
       .from("notes")
       .insert({
+        user_id: userId,
         title: input.title,
         content: input.content ?? null,
         category: input.category ?? null,

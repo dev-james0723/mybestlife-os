@@ -13,6 +13,7 @@ import type {
   ProjectMomentumCard,
   ProjectMomentumMap,
   ProjectMomentumState,
+  ProjectMomentumTask,
 } from "./types";
 
 const PROJECT_STATE_LABELS: Record<ProjectMomentumState, string> = {
@@ -50,6 +51,62 @@ function latestActivityISO(project: Project, projectTasks: Task[]): string | nul
 
   if (candidates.length === 0) return null;
   return maxDate(candidates).toISOString();
+}
+
+function priorityRank(priority: Task["priority"]): number {
+  if (priority === "urgent") return 0;
+  if (priority === "high") return 1;
+  if (priority === "medium") return 2;
+  return 3;
+}
+
+function statusRank(status: Task["status"]): number {
+  if (status === "in-progress") return 0;
+  if (status === "todo") return 1;
+  if (status === "done") return 2;
+  return 3;
+}
+
+function buildProjectTaskContext(
+  projectTasks: Task[],
+  range: AnalyticsRange,
+  now: Date,
+): ProjectMomentumTask[] {
+  return projectTasks
+    .map((task) => {
+      const due = parseAnyDate(task.due_date);
+      const completedInRange =
+        task.status === "done" &&
+        isDateInRange(task.completed_at, range.start, range.end);
+      const isOverdue =
+        task.status !== "done" &&
+        task.status !== "cancelled" &&
+        due != null &&
+        !isAfter(due, now);
+
+      return {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.due_date,
+        dueDateLabel: formatShortDate(task.due_date),
+        completedAt: task.completed_at,
+        completedInRange,
+        isOverdue,
+        estimatedBlocks: task.estimated_blocks,
+      } satisfies ProjectMomentumTask;
+    })
+    .sort((a, b) => {
+      if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+      if (a.completedInRange !== b.completedInRange) return a.completedInRange ? -1 : 1;
+      const priorityDelta = priorityRank(a.priority) - priorityRank(b.priority);
+      if (priorityDelta !== 0) return priorityDelta;
+      const statusDelta = statusRank(a.status) - statusRank(b.status);
+      if (statusDelta !== 0) return statusDelta;
+      return (a.dueDate ?? "9999-12-31").localeCompare(b.dueDate ?? "9999-12-31");
+    })
+    .slice(0, 12);
 }
 
 function resolveMomentumState(input: {
@@ -193,6 +250,7 @@ export function computeProjectMomentumMap(params: {
       state,
       stateLabel: PROJECT_STATE_LABELS[state],
       interpretation: "",
+      tasks: buildProjectTaskContext(projectTasks, params.range, now),
     };
     return { ...card, interpretation: projectInterpretation(card) };
   });

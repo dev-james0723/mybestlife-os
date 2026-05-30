@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import type { SignalItem } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
-import { formatRelative } from "./signal-chrome";
+import { formatRelative, SourceIcon } from "./signal-chrome";
 import { SignalThumbnail } from "./SignalThumbnail";
 import { type SignalCardHandlers } from "./SignalsSection";
 import { SignalsCaughtUp } from "./SignalsStates";
@@ -89,7 +89,12 @@ export function SignalsTableView({
                         {signal.headline}
                       </a>
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground">{signal.source.name}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <SourceIcon source={signal.source} size={14} />
+                        {signal.source.name}
+                      </span>
+                    </td>
                     <td className="px-3 py-2 text-muted-foreground">{signal.topic}</td>
                     <td className="px-3 py-2 text-muted-foreground">
                       {signal.region ?? copy.filters.region.global}

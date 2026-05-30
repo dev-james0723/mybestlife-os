@@ -779,12 +779,20 @@ function assertKnowledgeStoragePathForUser(storagePath: string, userId: string):
   if (segments.length < 2) {
     throw new Error("KNOWLEDGE_INVALID_STORAGE_PATH");
   }
+  const uuidSeg =
+    /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+
+  if (
+    segments[0] === "quick-save" &&
+    segments[1] === userId &&
+    segments.length >= 4 &&
+    uuidSeg.test(segments[2]!)
+  ) {
+    return;
+  }
   if (segments[0] !== userId) {
     throw new Error("KNOWLEDGE_FORBIDDEN_STORAGE_PATH");
   }
-
-  const uuidSeg =
-    /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
   // Legacy flat upload: {userId}/{uuid}.ext (optional _thumb before extension)
   if (segments.length === 2) {

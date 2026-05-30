@@ -19,6 +19,7 @@ import type {
 import type { RawSignalItem } from "./providers/types";
 import { normalizeText } from "./matching";
 import { isHttpUrl } from "./thumbnails";
+import { upgradeThumbnailUrl } from "./thumbnail-resolution";
 
 /** Stable, collision-resistant-enough id from a string (djb2 → base36). */
 function hashId(input: string): string {
@@ -104,7 +105,10 @@ export function normalizeSignalItem(
   // labeled topic fallback is applied at render time, not baked into the data.
   let thumbnail: SignalThumbnail | undefined = raw.thumbnail;
   if (!thumbnail && isHttpUrl(raw.thumbnailUrl)) {
-    thumbnail = { url: raw.thumbnailUrl, source: "rss" };
+    thumbnail = { url: upgradeThumbnailUrl(raw.thumbnailUrl), source: "rss" };
+  }
+  if (thumbnail?.url && isHttpUrl(thumbnail.url)) {
+    thumbnail = { ...thumbnail, url: upgradeThumbnailUrl(thumbnail.url) };
   }
 
   return {

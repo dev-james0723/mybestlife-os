@@ -155,7 +155,7 @@ export function bucketTypeBadgeClass(type: BucketType): string {
   }
 }
 
-/** Emoji fallback for covers — shown when no `cover_image_url` is set. */
+/** Emoji fallback when photographic cover fails to load. */
 export function getBucketTypeEmoji(type: BucketType): string {
   switch (type) {
     case "travel":

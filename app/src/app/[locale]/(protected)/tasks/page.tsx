@@ -2,507 +2,87 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { PageShell } from "@/components/shared/page-shell";
-import { FilterBar, type ViewMode } from "@/components/shared/filter-bar";
-import { EntityCard } from "@/components/shared/entity-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { PreTaskRitualModal } from "@/components/tasks/pre-task-ritual-modal";
+import { CheckSquare, Zap, FileEdit, Sparkles, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  CheckSquare,
-  Plus,
-  AlertCircle,
-  CheckCircle,
-  Sparkles,
-  FileEdit,
-  Loader2,
-  Globe,
-  Bell,
-  LayoutGrid,
-  ChevronRight,
-} from "lucide-react";
 import {
   useTasks,
   useCreateTask,
   useUpdateTask,
   useDeleteTask,
+  useBulkUpdateTasks,
+  useBulkDeleteTasks,
 } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
-import { formatDateShort, isOverdue } from "@/lib/utils/date";
-import { cn } from "@/lib/utils";
+import { useGoals } from "@/hooks/use-goals";
+import { useTaskLinks } from "@/hooks/use-task-links";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import type { Task } from "@/types/database";
-import type { CreateTaskInput } from "@/lib/repositories/tasks";
+import {
+  taskSubtasksRepository,
+  type CreateTaskInput,
+} from "@/lib/repositories/tasks";
+import { postTaskAi } from "@/lib/ai/task-ai";
+import { buildLocalTaskDraft, type TaskDraft } from "@/lib/tasks/task-create";
+import type { TaskCreateAiResult } from "@/lib/ai/schemas/tasks";
 import { useAppStore } from "@/stores/app-store";
 import { getPreTaskRitualUiCopy } from "@/lib/i18n/pre-task-ritual-ui";
+import { getTasksUiCopy } from "@/lib/i18n/tasks-ui";
+import { getTasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
 import {
-  getTasksUiCopy,
-  getTaskStatusOptions,
-  getTaskPriorityOptions,
-  getTaskSortOptions,
-  formatAllFilterLabel,
-  buildClarifyingQuestions,
-  buildAiMetadata,
-  applyClarifyingInference,
-  taskStatusLabel,
-  taskPriorityLabel,
-  type ClarifyingQuestion,
-  type TasksUiCopy,
-} from "@/lib/i18n/tasks-ui";
-import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
+  UniversalCreateMenu,
+  type CreateMenuOption,
+} from "@/components/shared/universal-create-menu";
+import {
+  TaskCreateDialog,
+  type TaskCreateMode,
+} from "@/components/tasks/task-create-dialog";
+import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
+import { TaskConnections } from "@/components/tasks/task-connections";
+import { TaskInsightPanel } from "@/components/tasks/task-insight-panel";
+import { TaskOverviewStrip, type OverviewMetricKey } from "@/components/tasks/task-overview-strip";
+import { TaskControlBar, type TaskViewMode } from "@/components/tasks/task-control-bar";
+import { TaskCardView } from "@/components/tasks/task-card-view";
+import { TaskGridView } from "@/components/tasks/task-grid-view";
+import { TaskTableView } from "@/components/tasks/task-table-view";
+import { TaskBoardView } from "@/components/tasks/task-board-view";
+import { TaskAdvancedFilters } from "@/components/tasks/task-advanced-filters";
+import { TaskSavedFilters } from "@/components/tasks/task-saved-filters";
+import {
+  EMPTY_TASK_FILTER,
+  NO_PROJECT_FILTER,
+  collectTaskTags,
+  countActiveFilters,
+  type TaskFilterState,
+} from "@/lib/tasks/task-filters";
+import { collectTaskCategories } from "@/lib/tasks/task-categories";
+import { applyTaskPipeline } from "@/lib/tasks/task-view-model";
+import {
+  defaultDirectionFor,
+  type SortDirection,
+  type TaskSortKey,
+} from "@/lib/tasks/task-sort";
+import {
+  NO_PROJECT_GROUP,
+  UNCATEGORIZED_GROUP,
+  type TaskGroupBy,
+} from "@/lib/tasks/task-grouping";
+import { deadlineColumnToDueDate, type DeadlineColumn } from "@/lib/tasks/task-dates";
+import { computeTaskOverview } from "@/lib/tasks/task-analytics";
 
-const priorityOrder: Record<string, number> = {
-  urgent: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
-};
-
-// ---------------------------------------------------------------------------
-// CreateTaskModal
-// ---------------------------------------------------------------------------
-
-type CreatePhase = "quick" | "clarifying" | "generating" | "full";
-
-interface CreateTaskModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  projects: { id: string; name: string }[] | undefined;
-  onSubmit: (input: CreateTaskInput) => Promise<void>;
-  isPending: boolean;
-  copy: TasksUiCopy;
-}
-
-function CreateTaskModal({
-  open,
-  onOpenChange,
-  projects,
-  onSubmit,
-  isPending,
-  copy,
-}: CreateTaskModalProps) {
-  const statusOptions = useMemo(() => getTaskStatusOptions(copy), [copy]);
-  const priorityOptions = useMemo(() => getTaskPriorityOptions(copy), [copy]);
-
-  const [phase, setPhase] = useState<CreatePhase>("quick");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<Task["priority"]>("medium");
-  const [status, setStatus] = useState<Task["status"]>("todo");
-  const [dueDate, setDueDate] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [notes, setNotes] = useState("");
-  const [estimatedBlocks, setEstimatedBlocks] = useState("");
-
-  const [questions, setQuestions] = useState<ClarifyingQuestion[]>([]);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [customAnswer, setCustomAnswer] = useState("");
-
-  const [aiMeta, setAiMeta] = useState<ReturnType<typeof buildAiMetadata> | null>(null);
-
-  const reset = useCallback(() => {
-    setPhase("quick");
-    setTitle("");
-    setDescription("");
-    setPriority("medium");
-    setStatus("todo");
-    setDueDate("");
-    setProjectId("");
-    setNotes("");
-    setEstimatedBlocks("");
-    setQuestions([]);
-    setCurrentQ(0);
-    setAnswers([]);
-    setCustomAnswer("");
-    setAiMeta(null);
-  }, []);
-
-  useEffect(() => {
-    if (!open) reset();
-  }, [open, reset]);
-
-  const handleCreateWithAi = () => {
-    if (!title.trim()) return;
-    const qs = buildClarifyingQuestions(copy, title.trim());
-    setQuestions(qs);
-    setAnswers(new Array(qs.length).fill(""));
-    setCurrentQ(0);
-    setPhase("clarifying");
-  };
-
-  const handleSelectOption = (optionId: string) => {
-    const next = [...answers];
-    next[currentQ] = optionId;
-    setAnswers(next);
-    advanceQuestion(next);
-  };
-
-  const handleCustomSubmit = () => {
-    if (!customAnswer.trim()) return;
-    const next = [...answers];
-    next[currentQ] = customAnswer.trim();
-    setAnswers(next);
-    setCustomAnswer("");
-    advanceQuestion(next);
-  };
-
-  const advanceQuestion = (updatedAnswers: string[]) => {
-    if (currentQ < questions.length - 1) {
-      setCurrentQ((q) => q + 1);
-    } else {
-      setPhase("generating");
-      setTimeout(() => {
-        const inferred = applyClarifyingInference(questions, updatedAnswers);
-        setEstimatedBlocks(inferred.estimatedBlocks);
-        setPriority(inferred.priority);
-        setDescription(copy.aiDescriptionTemplate(title.trim()));
-        setAiMeta(buildAiMetadata(copy, title.trim()));
-        setPhase("full");
-      }, 1500);
-    }
-  };
-
-  const handleManual = () => {
-    if (!title.trim()) return;
-    setPhase("full");
-  };
-
-  const handleSubmit = async () => {
-    if (!title.trim()) return;
-    await onSubmit({
-      title: title.trim(),
-      description: description || undefined,
-      project_id: projectId || undefined,
-      priority,
-      status,
-      due_date: dueDate || undefined,
-      estimated_blocks: estimatedBlocks ? Number(estimatedBlocks) : undefined,
-    });
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        size={phase === "quick" ? "md" : "2xl"}
-        showCloseButton={phase !== "generating"}
-      >
-        {phase === "quick" && (
-          <>
-            <DialogHeader>
-              <DialogTitle>{copy.createDialogTitleNew}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={copy.createPlaceholderTitle}
-                className="text-lg h-12"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && title.trim()) handleManual();
-                }}
-              />
-              <div className="flex gap-3">
-                <Button
-                  className="flex-1"
-                  variant="outline"
-                  onClick={handleCreateWithAi}
-                  disabled={!title.trim()}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {copy.createWithAi}
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleManual}
-                  disabled={!title.trim()}
-                >
-                  <FileEdit className="h-4 w-4 mr-2" />
-                  {copy.createManually}
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {phase === "clarifying" && questions.length > 0 && (
-          <>
-            <DialogHeader>
-              <DialogTitle>{copy.createDialogTitleQuestions}</DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                {copy.createDialogQuestionProgress(currentQ + 1, questions.length)}
-              </p>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <p className="text-base font-medium">
-                {questions[currentQ].question}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {questions[currentQ].options.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => handleSelectOption(opt.id)}
-                    className={cn(
-                      "rounded-full border px-4 py-2 text-sm transition-colors hover:bg-primary hover:text-primary-foreground hover:border-primary",
-                      answers[currentQ] === opt.id
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={customAnswer}
-                  onChange={(e) => setCustomAnswer(e.target.value)}
-                  placeholder={copy.createCustomAnswerPlaceholder}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCustomSubmit();
-                  }}
-                />
-                <Button
-                  size="sm"
-                  onClick={handleCustomSubmit}
-                  disabled={!customAnswer.trim()}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {phase === "generating" && (
-          <div className="flex flex-col items-center justify-center gap-4 py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">
-              {copy.createGenerating}
-            </p>
-          </div>
-        )}
-
-        {phase === "full" && (
-          <>
-            <DialogHeader>
-              <DialogTitle>
-                {aiMeta ? copy.createTitleAiAssisted : copy.createTitleNewTask}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-2 max-h-[70vh] overflow-y-auto pr-1">
-              <div className="space-y-2">
-                <Label>{copy.labelTitle}</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={copy.placeholderTaskTitle}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{copy.labelDescription}</Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={copy.placeholderDescription}
-                  rows={4}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{copy.labelStatus}</Label>
-                  <Select
-                    value={status}
-                    onValueChange={(v) => {
-                      if (v !== null) setStatus(v as Task["status"]);
-                    }}
-                    itemToStringLabel={(v) =>
-                      statusOptions.find((o) => o.value === v)?.label ?? String(v)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>{copy.labelPriority}</Label>
-                  <Select
-                    value={priority}
-                    onValueChange={(v) => {
-                      if (v !== null) setPriority(v as Task["priority"]);
-                    }}
-                    itemToStringLabel={(v) =>
-                      priorityOptions.find((o) => o.value === v)?.label ?? String(v)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {priorityOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{copy.labelDueDate}</Label>
-                  <DatePickerInput
-                    value={dueDate}
-                    onChange={(v) => setDueDate(v)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{copy.labelEstimatedBlocks}</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={estimatedBlocks}
-                    onChange={(e) => setEstimatedBlocks(e.target.value)}
-                    placeholder={copy.placeholderBlocks}
-                  />
-                </div>
-              </div>
-              {projects && projects.length > 0 && (
-                <div className="space-y-2">
-                  <Label>{copy.labelProject}</Label>
-                  <Select
-                    value={projectId || "none"}
-                    onValueChange={(v) => {
-                      if (v !== null)
-                        setProjectId(v === "none" ? "" : v);
-                    }}
-                    itemToStringLabel={(v) =>
-                      v === "none" || v === null ? copy.noProject : String(v)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={copy.noProject} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{copy.noProject}</SelectItem>
-                      {projects.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>{copy.labelNotes}</Label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={copy.placeholderNotes}
-                  rows={2}
-                />
-              </div>
-
-              {aiMeta && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="space-y-3 pt-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {copy.aiSuggestionsHeading}
-                    </p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-start gap-2">
-                        <Bell className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                        <div>
-                          <span className="font-medium">{copy.aiRemindersLabel}</span>{" "}
-                          {aiMeta.reminders.join(", ")}
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <LayoutGrid className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                        <div>
-                          <span className="font-medium">
-                            {copy.aiBlocksLabel}
-                          </span>{" "}
-                          {aiMeta.suggestedBlocks}
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Globe className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                        <div>
-                          <span className="font-medium">{copy.aiResourcesLabel}</span>
-                          <ul className="mt-1 space-y-0.5">
-                            {aiMeta.webResources.map((r) => (
-                              <li key={r.label}>
-                                <a
-                                  href={r.url}
-                                  className="text-primary underline underline-offset-2 hover:text-primary/80"
-                                >
-                                  {r.label}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {copy.cancel}
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!title.trim() || isPending}
-              >
-                {isPending ? copy.creating : copy.createTask}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
+const VIEW_STORAGE_KEY = "tasks:viewMode";
+const BOARD_GROUP_STORAGE_KEY = "tasks:boardGroupBy";
+const VALID_VIEW_MODES: TaskViewMode[] = ["list", "grid", "table", "kanban"];
+const VALID_GROUP_BYS: TaskGroupBy[] = [
+  "status",
+  "priority",
+  "project",
+  "category",
+  "deadline",
+];
 
 // ---------------------------------------------------------------------------
 // TasksPage
@@ -511,88 +91,260 @@ function CreateTaskModal({
 export default function TasksPage() {
   const language = useAppStore((s) => s.language);
   const ui = useMemo(() => getTasksUiCopy(language), [language]);
+  const centerUi = useMemo(() => getTasksCenterUiCopy(language), [language]);
   const ritualCopy = useMemo(
     () => getPreTaskRitualUiCopy(language),
     [language],
   );
-  const statusOptions = useMemo(() => getTaskStatusOptions(ui), [ui]);
-  const priorityOptions = useMemo(() => getTaskPriorityOptions(ui), [ui]);
-  const sortOptions = useMemo(() => getTaskSortOptions(ui), [ui]);
 
   const { data: tasks, isLoading } = useTasks();
   const { data: projects } = useProjects();
+  const { data: goals } = useGoals();
+  const taskLinks = useTaskLinks(tasks);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const bulkUpdateTasks = useBulkUpdateTasks();
+  const bulkDeleteTasks = useBulkDeleteTasks();
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [filter, setFilter] = useState<TaskFilterState>(EMPTY_TASK_FILTER);
+  const [sortKey, setSortKey] = useState<TaskSortKey>("created_at");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [viewMode, setViewMode] = useState<TaskViewMode>("list");
+  const [boardGroupBy, setBoardGroupBy] = useState<TaskGroupBy>("status");
 
   const [showCreate, setShowCreate] = useState(false);
+  const [createMode, setCreateMode] = useState<TaskCreateMode>("manual");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showRitual, setShowRitual] = useState(false);
 
-  const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
-    let result = [...tasks];
-
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.description?.toLowerCase().includes(q)
-      );
+  // Persist view mode + board grouping across sessions.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored && (VALID_VIEW_MODES as string[]).includes(stored)) {
+      setViewMode(stored as TaskViewMode);
     }
-    if (statusFilter !== "all") {
-      result = result.filter((t) => t.status === statusFilter);
+    const storedGroup = window.localStorage.getItem(BOARD_GROUP_STORAGE_KEY);
+    if (storedGroup && (VALID_GROUP_BYS as string[]).includes(storedGroup)) {
+      setBoardGroupBy(storedGroup as TaskGroupBy);
     }
-    if (priorityFilter !== "all") {
-      result = result.filter((t) => t.priority === priorityFilter);
-    }
-
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case "due_date":
-          if (!a.due_date) return 1;
-          if (!b.due_date) return -1;
-          return (
-            new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
-          );
-        case "priority":
-          return (
-            (priorityOrder[a.priority] ?? 2) -
-            (priorityOrder[b.priority] ?? 2)
-          );
-        case "title":
-          return a.title.localeCompare(b.title);
-        default:
-          return (
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime()
-          );
-      }
-    });
-
-    return result;
-  }, [tasks, search, statusFilter, priorityFilter, sortBy]);
-
-  const handleFilterChange = useCallback((key: string, value: string) => {
-    if (key === "status") setStatusFilter(value);
-    if (key === "priority") setPriorityFilter(value);
   }, []);
 
-  const handleCreate = async (input: CreateTaskInput) => {
-    await createTask.mutateAsync(input);
-  };
+  const handleViewModeChange = useCallback((mode: TaskViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, mode);
+    }
+  }, []);
 
-  const handleUpdate = async (id: string, data: Record<string, unknown>) => {
-    await updateTask.mutateAsync({ id, data });
-  };
+  const handleBoardGroupByChange = useCallback((groupBy: TaskGroupBy) => {
+    setBoardGroupBy(groupBy);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(BOARD_GROUP_STORAGE_KEY, groupBy);
+    }
+  }, []);
+
+  const now = useMemo(() => new Date(), [tasks]);
+
+  const { getLinkFlags } = taskLinks;
+
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
+    return applyTaskPipeline(tasks, filter, {
+      sortKey,
+      sortDirection,
+      ctx: { now, getLinkFlags },
+    });
+  }, [tasks, filter, sortKey, sortDirection, now, getLinkFlags]);
+
+  const overview = useMemo(
+    () => computeTaskOverview(tasks ?? [], now),
+    [tasks, now],
+  );
+
+  const activeFilterCount = useMemo(() => countActiveFilters(filter), [filter]);
+
+  const allTags = useMemo(() => collectTaskTags(tasks ?? []), [tasks]);
+  const allCategories = useMemo(
+    () => collectTaskCategories(tasks ?? []),
+    [tasks],
+  );
+
+  // When a single project is filtered, new tasks inherit it (plan §9).
+  const activeProjectId = useMemo(() => {
+    const p = filter.project;
+    if (!p || p === "all" || p === NO_PROJECT_FILTER) return undefined;
+    return p;
+  }, [filter.project]);
+
+  const activeMetric: OverviewMetricKey | null = useMemo(() => {
+    if (filter.deadline === "overdue") return "overdue";
+    if (filter.deadline === "today") return "due-today";
+    if (filter.status === "in-progress") return "in-progress";
+    if (filter.status === "done") return "completed-week";
+    if (filter.project === NO_PROJECT_FILTER) return "no-project";
+    if (filter.priority === "high") return "high-priority";
+    return null;
+  }, [filter]);
+
+  const patchFilter = useCallback((patch: Partial<TaskFilterState>) => {
+    setFilter((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const handleSortChange = useCallback((key: TaskSortKey) => {
+    setSortKey(key);
+    setSortDirection(defaultDirectionFor(key));
+  }, []);
+
+  const toggleSortDirection = useCallback(() => {
+    setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+  }, []);
+
+  // Table column header: toggle direction when already active, else switch key.
+  const handleColumnSort = useCallback(
+    (key: TaskSortKey) => {
+      if (sortKey === key) {
+        toggleSortDirection();
+      } else {
+        setSortKey(key);
+        setSortDirection(defaultDirectionFor(key));
+      }
+    },
+    [sortKey, toggleSortDirection],
+  );
+
+  const clearFilters = useCallback(() => setFilter(EMPTY_TASK_FILTER), []);
+
+  const applyFilter = useCallback((next: TaskFilterState) => setFilter(next), []);
+
+  const handleOverviewSelect = useCallback(
+    (key: OverviewMetricKey) => {
+      switch (key) {
+        case "total":
+        case "active":
+          clearFilters();
+          break;
+        case "in-progress":
+          patchFilter({
+            status: filter.status === "in-progress" ? "all" : "in-progress",
+          });
+          break;
+        case "completed-week":
+          patchFilter({ status: filter.status === "done" ? "all" : "done" });
+          break;
+        case "due-today":
+          patchFilter({ deadline: filter.deadline === "today" ? "all" : "today" });
+          break;
+        case "overdue":
+          patchFilter({
+            deadline: filter.deadline === "overdue" ? "all" : "overdue",
+          });
+          break;
+        case "high-priority":
+          patchFilter({ priority: filter.priority === "high" ? "all" : "high" });
+          break;
+        case "no-project":
+          patchFilter({
+            project: filter.project === NO_PROJECT_FILTER ? "all" : NO_PROJECT_FILTER,
+          });
+          break;
+      }
+    },
+    [clearFilters, patchFilter, filter],
+  );
+
+  const openCreate = useCallback((mode: TaskCreateMode) => {
+    setCreateMode(mode);
+    setShowCreate(true);
+  }, []);
+
+  const createOptions: CreateMenuOption[] = useMemo(
+    () => [
+      {
+        id: "quick",
+        label: centerUi.createQuickly,
+        icon: Zap,
+        onSelect: () => openCreate("quick"),
+      },
+      {
+        id: "manual",
+        label: ui.createManually,
+        icon: FileEdit,
+        onSelect: () => openCreate("manual"),
+      },
+      {
+        id: "ai",
+        label: ui.createWithAi,
+        icon: Sparkles,
+        onSelect: () => openCreate("ai"),
+      },
+    ],
+    [centerUi, ui, openCreate],
+  );
+
+  const handleCreate = useCallback(
+    async (input: CreateTaskInput, opts?: { subtasks?: string[] }) => {
+      try {
+        const created = await createTask.mutateAsync({
+          ...input,
+          project_id: input.project_id ?? activeProjectId,
+        });
+        setShowCreate(false);
+        const subs = (opts?.subtasks ?? []).map((s) => s.trim()).filter(Boolean);
+        if (created?.id && subs.length > 0) {
+          try {
+            await taskSubtasksRepository.createMany(created.id, subs);
+          } catch {
+            /* subtasks are best-effort; the task itself was created */
+          }
+        }
+      } catch {
+        /* useCreateTask surfaces the error toast */
+      }
+    },
+    [createTask, activeProjectId],
+  );
+
+  // "Create with AI": real endpoint with a local deterministic fallback so the
+  // form always returns a usable draft (offline, no key, or network error).
+  const handleAiGenerate = useCallback(
+    async (prompt: string): Promise<TaskDraft> => {
+      const toDraft = (r: TaskCreateAiResult): TaskDraft => ({
+        title: r.title,
+        description: r.description || undefined,
+        priority: r.priority,
+        status: r.status,
+        due_date: r.dueDate || null,
+        scheduled_date: r.scheduledDate || null,
+        category: r.category || null,
+        estimated_blocks: r.estimatedBlocks || null,
+        tags: r.tags,
+        subtasks: r.subtasks,
+        suggestions: {
+          reminders: r.reminders,
+          suggestedBlocks: r.estimatedBlocks || undefined,
+          webResources: [],
+        },
+      });
+      try {
+        const result = await postTaskAi("create", {
+          locale: language,
+          prompt,
+          projectName: activeProjectId
+            ? projects?.find((p) => p.id === activeProjectId)?.name
+            : undefined,
+        });
+        return toDraft(result);
+      } catch {
+        return buildLocalTaskDraft(prompt, ui);
+      }
+    },
+    [language, activeProjectId, projects, ui],
+  );
 
   const handleDelete = async (id: string) => {
     await deleteTask.mutateAsync(id);
@@ -608,6 +360,72 @@ export default function TasksPage() {
       },
     });
   };
+
+  // Stamp/clear completed_at whenever a status edit crosses the "done" boundary.
+  const withCompletionStamp = (data: Record<string, unknown>) => {
+    if (!("status" in data) || data.status == null) return data;
+    if (data.status === "done") {
+      return { completed_at: new Date().toISOString(), ...data };
+    }
+    return { completed_at: null, ...data };
+  };
+
+  // Inline edits from the table + board (single user action -> single toast).
+  const handleInlineUpdate = useCallback(
+    (id: string, data: Record<string, unknown>) => {
+      updateTask.mutate({ id, data: withCompletionStamp(data) });
+    },
+    [updateTask],
+  );
+
+  const handleBulkUpdate = useCallback(
+    (ids: string[], data: Record<string, unknown>) => {
+      if (ids.length === 0) return;
+      bulkUpdateTasks.mutate({ ids, data: withCompletionStamp(data) });
+    },
+    [bulkUpdateTasks],
+  );
+
+  const handleBulkDelete = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      bulkDeleteTasks.mutate(ids);
+    },
+    [bulkDeleteTasks],
+  );
+
+  // Board drag-drop: translate the destination lane into the right field patch.
+  const handleMoveTask = useCallback(
+    (taskId: string, targetKey: string) => {
+      let patch: Record<string, unknown> | null = null;
+      switch (boardGroupBy) {
+        case "status":
+          patch = { status: targetKey };
+          break;
+        case "priority":
+          patch = { priority: targetKey };
+          break;
+        case "project":
+          patch = {
+            project_id: targetKey === NO_PROJECT_GROUP ? null : targetKey,
+          };
+          break;
+        case "category":
+          patch = {
+            category: targetKey === UNCATEGORIZED_GROUP ? null : targetKey,
+          };
+          break;
+        case "deadline": {
+          const due = deadlineColumnToDueDate(targetKey as DeadlineColumn, now);
+          if (due === undefined) return; // overdue lane is not a valid drop target
+          patch = { due_date: due };
+          break;
+        }
+      }
+      if (patch) handleInlineUpdate(taskId, patch);
+    },
+    [boardGroupBy, now, handleInlineUpdate],
+  );
 
   const openDetail = (task: Task) => {
     setSelectedTask(task);
@@ -625,7 +443,60 @@ export default function TasksPage() {
     }
   };
 
+  const handleAddToPlan = useCallback(
+    async (task: Task) => {
+      try {
+        const res = await taskLinks.addToPlan.mutateAsync({
+          task,
+          planDate: format(new Date(), "yyyy-MM-dd"),
+        });
+        toast.success(
+          res.alreadyLinked
+            ? centerUi.alreadyInPlanToast
+            : centerUi.addedToPlanToast,
+        );
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [taskLinks.addToPlan, centerUi],
+  );
+
+  const handleLinkGoal = useCallback(
+    async (taskId: string, goalId: string) => {
+      try {
+        await taskLinks.linkGoal.mutateAsync({ taskId, goalId });
+        toast.success(centerUi.goalLinkedToast);
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [taskLinks.linkGoal, centerUi],
+  );
+
+  const handleUnlinkGoal = useCallback(
+    async (taskId: string, goalId: string) => {
+      try {
+        await taskLinks.unlinkGoal.mutateAsync({ taskId, goalId });
+        toast.success(centerUi.goalUnlinkedToast);
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [taskLinks.unlinkGoal, centerUi],
+  );
+
   if (isLoading) return <LoadingPage />;
+
+  const viewProps = {
+    tasks: filteredTasks,
+    copy: ui,
+    centerCopy: centerUi,
+    now,
+    onOpenTask: openDetail,
+    onToggleComplete: handleCompleteTask,
+    getLinkFlags,
+  };
 
   return (
     <>
@@ -633,144 +504,163 @@ export default function TasksPage() {
         title={ui.pageTitle}
         description={ui.pageDescription}
         actions={
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {ui.newTask}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowInsights(true)}
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">{centerUi.openInsights}</span>
+            </Button>
+            <UniversalCreateMenu label={ui.newTask} options={createOptions} />
+          </div>
         }
       >
-        <FilterBar
-          search={{
-            placeholder: ui.searchPlaceholder,
-            value: search,
-            onChange: setSearch,
-          }}
-          filters={[
-            {
-              key: "status",
-              label: ui.filterStatus,
-              options: statusOptions,
-              value: statusFilter,
-            },
-            {
-              key: "priority",
-              label: ui.filterPriority,
-              options: priorityOptions,
-              value: priorityFilter,
-            },
-          ]}
-          onFilterChange={handleFilterChange}
-          sort={{ options: sortOptions, value: sortBy, onChange: setSortBy }}
-          viewModes={["list", "grid"]}
-          activeViewMode={viewMode}
-          onViewModeChange={setViewMode}
-          i18n={{
-            searchDefaultPlaceholder: ui.searchPlaceholder,
-            sortPlaceholder: ui.sortPlaceholder,
-            formatAllFilterOption: (filterLabel) => formatAllFilterLabel(ui, filterLabel),
-          }}
-        />
-
-        {filteredTasks.length === 0 ? (
-          <EmptyState
-            icon={CheckSquare}
-            title={ui.emptyTitle}
-            description={
-              tasks?.length === 0 ? ui.emptyDescNew : ui.emptyDescFiltered
-            }
-            action={
-              tasks?.length === 0
-                ? {
-                    label: ui.emptyCreate,
-                    onClick: () => setShowCreate(true),
-                  }
-                : undefined
-            }
+        <div className="space-y-4">
+          <TaskOverviewStrip
+            metrics={overview}
+            copy={centerUi}
+            activeMetric={activeMetric}
+            onSelectMetric={handleOverviewSelect}
           />
-        ) : (
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                : "space-y-3"
-            }
-          >
-            {filteredTasks.map((task) => {
-              const overdue = isOverdue(task.due_date);
-              return (
-                <EntityCard
-                  key={task.id}
-                  title={task.title}
-                  subtitle={task.project?.name ?? undefined}
-                  badges={
-                    <>
-                      <StatusBadge
-                        variant="status"
-                        value={task.status}
-                        label={taskStatusLabel(ui, task.status)}
-                      />
-                      <StatusBadge
-                        variant="priority"
-                        value={task.priority}
-                        label={taskPriorityLabel(ui, task.priority)}
-                      />
-                    </>
-                  }
-                  meta={
-                    task.due_date && (
-                      <span
-                        className={
-                          overdue
-                            ? "text-destructive font-medium flex items-center gap-1"
-                            : ""
-                        }
-                      >
-                        {overdue && <AlertCircle className="h-3 w-3" />}
-                        {formatDateShort(task.due_date)}
-                      </span>
-                    )
-                  }
-                  onClick={() => openDetail(task)}
-                  actions={
-                    task.status !== "done" ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleCompleteTask(task)}
-                        aria-label={ui.completeTaskAria}
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                    ) : undefined
-                  }
-                />
-              );
-            })}
-          </div>
-        )}
+
+          <TaskControlBar
+            copy={ui}
+            centerCopy={centerUi}
+            filter={filter}
+            onFilterChange={patchFilter}
+            projects={projects}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
+            onToggleSortDirection={toggleSortDirection}
+            viewMode={viewMode}
+            viewModes={VALID_VIEW_MODES}
+            onViewModeChange={handleViewModeChange}
+            activeFilterCount={activeFilterCount}
+            onOpenAdvanced={() => setShowAdvanced(true)}
+            onClearAll={clearFilters}
+          />
+
+          <TaskSavedFilters copy={centerUi} filter={filter} onApply={applyFilter} />
+
+          {filteredTasks.length === 0 ? (
+            <EmptyState
+              icon={CheckSquare}
+              title={ui.emptyTitle}
+              description={
+                tasks?.length === 0 ? ui.emptyDescNew : ui.emptyDescFiltered
+              }
+              action={
+                tasks?.length === 0
+                  ? {
+                      label: ui.emptyCreate,
+                      onClick: () => openCreate("manual"),
+                    }
+                  : undefined
+              }
+            />
+          ) : viewMode === "grid" ? (
+            <TaskGridView {...viewProps} />
+          ) : viewMode === "table" ? (
+            <TaskTableView
+              tasks={filteredTasks}
+              copy={ui}
+              centerCopy={centerUi}
+              now={now}
+              projects={projects}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onColumnSort={handleColumnSort}
+              onOpenTask={openDetail}
+              onUpdateTask={handleInlineUpdate}
+              onBulkUpdate={handleBulkUpdate}
+              onBulkDelete={handleBulkDelete}
+              getLinkFlags={getLinkFlags}
+            />
+          ) : viewMode === "kanban" ? (
+            <TaskBoardView
+              tasks={filteredTasks}
+              copy={ui}
+              centerCopy={centerUi}
+              now={now}
+              groupBy={boardGroupBy}
+              onGroupByChange={handleBoardGroupByChange}
+              onOpenTask={openDetail}
+              onMoveTask={handleMoveTask}
+              getLinkFlags={getLinkFlags}
+            />
+          ) : (
+            <TaskCardView {...viewProps} />
+          )}
+        </div>
       </PageShell>
 
-      <CreateTaskModal
+      <TaskCreateDialog
         open={showCreate}
         onOpenChange={setShowCreate}
         projects={projects}
-        onSubmit={handleCreate}
+        defaultProjectId={activeProjectId}
+        onCreate={handleCreate}
         isPending={createTask.isPending}
         copy={ui}
+        centerCopy={centerUi}
+        initialMode={createMode}
+        onAiGenerate={handleAiGenerate}
       />
 
-      <TaskDetailModal
+      <TaskAdvancedFilters
+        open={showAdvanced}
+        onOpenChange={setShowAdvanced}
+        copy={ui}
+        centerCopy={centerUi}
+        filter={filter}
+        onChange={patchFilter}
+        onReset={clearFilters}
+        projects={projects}
+        categories={allCategories}
+        tags={allTags}
+      />
+
+      <TaskInsightPanel
+        open={showInsights}
+        onOpenChange={setShowInsights}
+        tasks={tasks ?? []}
+        locale={language}
+        copy={ui}
+        centerCopy={centerUi}
+      />
+
+      <TaskDetailPanel
         task={selectedTask}
         open={showDetail}
         onOpenChange={setShowDetail}
         projects={projects}
-        onUpdate={handleUpdate}
+        onUpdate={handleInlineUpdate}
         onDelete={handleDelete}
-        isUpdating={updateTask.isPending}
-        isDeleting={deleteTask.isPending}
+        now={now}
         onOpenRitual={handleOpenRitual}
         copy={ui}
+        centerCopy={centerUi}
+        linkFlags={selectedTask ? getLinkFlags(selectedTask.id) : undefined}
+        linkSlot={
+          selectedTask ? (
+            <TaskConnections
+              task={selectedTask}
+              goals={(goals ?? []).map((g) => ({ id: g.id, name: g.name }))}
+              linkedGoalIds={taskLinks.goalsForTask(selectedTask.id)}
+              onAddToPlan={() => handleAddToPlan(selectedTask)}
+              addingToPlan={taskLinks.addToPlan.isPending}
+              onLinkGoal={(goalId) => handleLinkGoal(selectedTask.id, goalId)}
+              onUnlinkGoal={(goalId) =>
+                handleUnlinkGoal(selectedTask.id, goalId)
+              }
+              copy={centerUi}
+            />
+          ) : undefined
+        }
       />
 
       <PreTaskRitualModal

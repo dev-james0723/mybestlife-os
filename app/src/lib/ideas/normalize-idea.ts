@@ -29,7 +29,8 @@ function coerceStatus(v: unknown): Idea["status"] {
 }
 
 function coerceSourceType(v: unknown): Idea["source_type"] {
-  return v === "voice" ? "voice" : "text";
+  if (v === "voice" || v === "share") return v;
+  return "text";
 }
 
 function coerceCaptureKind(v: unknown): CaptureKind {

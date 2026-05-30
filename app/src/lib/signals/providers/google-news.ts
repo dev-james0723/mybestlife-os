@@ -153,7 +153,8 @@ export const googleNewsWorldProvider: SignalProvider = {
   id: "google-news-world",
   label: "Google News (World)",
   sections: ["world", "top3"],
-  live: true,
+  /** Disabled — Google News RSS has no thumbnails; use publisher-feeds instead. */
+  live: false,
   async fetch(req: SignalProviderRequest): Promise<RawSignalItem[]> {
     const xml = await fetchRss(buildUrl(null, req.lang, undefined), req.signal);
     return parseRssItems(xml, { topic: "World affairs", contentType: "global" }, req.limit ?? 8);
@@ -165,7 +166,7 @@ export const googleNewsTopicProvider: SignalProvider = {
   id: "google-news-topic",
   label: "Google News (Topics)",
   sections: ["world", "personal", "top3"],
-  live: true,
+  live: false,
   async fetch(req: SignalProviderRequest): Promise<RawSignalItem[]> {
     const topics = (req.topics ?? []).filter((t) => t && t !== "Local").slice(0, 4);
     if (topics.length === 0) return [];
@@ -185,7 +186,7 @@ export const googleNewsLocalProvider: SignalProvider = {
   id: "google-news-local",
   label: "Google News (Local)",
   sections: ["local"],
-  live: true,
+  live: false,
   async fetch(req: SignalProviderRequest): Promise<RawSignalItem[]> {
     const city = req.location?.city;
     if (!city) return [];

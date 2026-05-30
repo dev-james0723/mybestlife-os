@@ -14,8 +14,8 @@ import {
   AUDIO_SCRIPT_GEMINI_SCHEMA,
   audioScriptResponseSchema,
 } from "@/lib/journal/ai-schemas";
-import { synthesizeJournalAudio } from "@/lib/journal/gemini-media";
 import { audioRequestSchema } from "@/lib/journal/schema";
+import { synthesizeJournalSpeech, type JournalTtsVoice } from "@/lib/ai/tts";
 import { uploadJournalAudio } from "@/lib/journal/storage";
 import { parseBody, requireAuthedContext } from "../_shared";
 
@@ -24,6 +24,10 @@ export const runtime = "nodejs";
 const requestSchema = audioRequestSchema.extend({
   entryId: z.string().uuid(),
 });
+
+function journalVoiceToGender(voice: string): JournalTtsVoice {
+  return voice === "Charon" || voice === "Puck" || voice === "Fenrir" ? "male" : "female";
+}
 
 export async function POST(request: Request) {
   const auth = await requireAuthedContext(request);
@@ -54,10 +58,13 @@ export async function POST(request: Request) {
     const { script, quotes } = audioScriptResponseSchema.parse(rawScript);
 
     // Step 2: TTS the script.
-    const tts = await synthesizeJournalAudio({
-      apiKey,
+    const tts = await synthesizeJournalSpeech({
+      supabase: auth.ctx.supabase,
+      userId: auth.ctx.userId,
       text: script,
-      voice: parsed.data.voice,
+      locale: "en",
+      voice: journalVoiceToGender(parsed.data.voice),
+      speed: parsed.data.speed,
     });
 
     // Step 3: upload the audio to Storage and grab a signed URL.
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
       supabase: auth.ctx.supabase,
       userId: auth.ctx.userId,
       entryId: parsed.data.entryId,
-      bytes: tts.bytes,
+      bytes: tts.audioBytes,
       mimeType: tts.mimeType,
     });
 

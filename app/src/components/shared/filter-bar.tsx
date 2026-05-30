@@ -9,7 +9,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ArrowUpDown, LayoutGrid, List, Columns3, Calendar } from "lucide-react";
+import {
+  Search,
+  ArrowUpDown,
+  LayoutGrid,
+  List,
+  Columns3,
+  Calendar,
+  type LucideIcon,
+} from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
 
@@ -27,7 +35,7 @@ export type FilterConfig = {
 
 export type ViewMode = "grid" | "list" | "table" | "kanban" | "calendar";
 
-const viewModeIcons: Record<ViewMode, React.ElementType> = {
+const viewModeIcons: Record<ViewMode, LucideIcon> = {
   grid: LayoutGrid,
   list: List,
   table: List,

@@ -33,13 +33,14 @@ export const runtime = "nodejs";
 type OverviewCacheEntry = { result: OverviewResult; at: number };
 const CACHE = new Map<string, OverviewCacheEntry>();
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
-const MAX_ITEMS = 6;
+const MAX_ITEMS = 12;
 
 const SYSTEM_INSTRUCTION = `You write SHORT, source-grounded overviews of news items for a calm daily briefing.
 
 ABSOLUTE RULES:
 - Summarize ONLY what is in the provided "snippet" text. Do NOT add facts, numbers, names, dates, or quotes that are not present in the snippet.
-- NEVER summarize from the headline alone. If the snippet is thin or missing, return the exact string "Overview limited — open source for full details." for that item.
+- Prefer the snippet. If the snippet is thin, you may write ONE cautious sentence from the headline and source name only — do not invent facts, numbers, or quotes.
+- If neither snippet nor headline gives enough context, return the exact string "Overview limited — open source for full details." for that item.
 - Use calm, hedged language that matches the source. No hype, no clickbait, no opinions, no recommendations.
 - 1–3 sentences. No preamble.
 
@@ -96,8 +97,10 @@ export async function POST(request: Request) {
     }
     if (isOverviewWorthyText(item.snippet)) {
       pending.push(item);
+    } else if ((item.headline?.trim().length ?? 0) >= 20) {
+      // Thin snippet — still allow a cautious 1-sentence from headline + source context.
+      pending.push(item);
     } else {
-      // Honest: not enough source text to summarize.
       out.push({ id: item.id, overview: limited, grounded: false });
     }
   }

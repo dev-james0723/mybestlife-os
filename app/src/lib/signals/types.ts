@@ -358,12 +358,24 @@ export type LifeOsContext = {
   /** Union of all enabled interest terms, lowercased + deduped. */
   interestTerms: string[];
   location: WeatherLocation | null;
+  /**
+   * Reading-behavior signal derived from the local action log. Present only
+   * when the user consented to behavior learning (`useReadingBehavior`); scoring
+   * treats it as optional so the page works identically without it.
+   */
+  behavior?: SignalBehavior;
 };
 
 // ============================================================
-// User feedback actions (for v2 Signal Memory)
+// User feedback actions + reading behavior (Signal Memory, §17)
 // ============================================================
 
+/**
+ * Every per-card control writes one of these. The first eight existed in MVP;
+ * the rest close the §17 feedback loop. Each maps to a *perceptible* effect
+ * within a day or two (topic affinity, negativity sensitivity, hard suppress)
+ * — never theater (§17 ⚠️).
+ */
 export type SignalActionKind =
   | "save"
   | "dismiss"
@@ -371,13 +383,100 @@ export type SignalActionKind =
   | "less_like_this"
   | "open"
   | "to_brain"
+  | "to_task"
+  | "track"
   | "mute_source"
-  | "follow_topic";
+  | "follow_topic"
+  | "not_relevant"
+  | "too_political"
+  | "too_negative"
+  | "too_shallow"
+  | "already_known";
 
 export type SignalAction = {
   signalId: string;
   kind: SignalActionKind;
+  /** Topic of the signal at action time (drives topic-affinity learning). */
+  topic?: string;
+  /** Source domain at action time (drives source down-weighting). */
+  domain?: string;
   createdAt: string;
+};
+
+/**
+ * Deterministic reading-behavior signal derived from the action log. Applied to
+ * ranking ONLY when the user has consented (`useReadingBehavior`); always logged
+ * locally so Signal Memory + Weekly Reflection work regardless of consent.
+ * No data leaves the OS; nothing here is sent to an LLM.
+ */
+export type SignalBehavior = {
+  /** Lowercased topic → net affinity in [-1, 1] (save/more lift, less/dismiss/not-relevant push down). */
+  topicAffinity: Record<string, number>;
+  /** Lowercased source domain → net affinity in [-1, 0] (mutes/dismissals down-weight). */
+  sourceAffinity: Record<string, number>;
+  /** 0–1: how strongly the user reacts to heavy/negative items (scales the negativity penalty). */
+  negativitySensitivity: number;
+  /** 0–1: sensitivity to political content. */
+  politicalSensitivity: number;
+  /** 0–1: sensitivity to thin/shallow items (lifts source-quality weight). */
+  shallowSensitivity: number;
+  /** Signal ids the user explicitly suppressed (already-known / not-relevant) — hard-hidden. */
+  suppressedIds: string[];
+  /** Interest terms reinforced by saves (positive personal-fit boost). */
+  savedTerms: string[];
+};
+
+/** A "track this developing story" entry (Follow-Up Tracker, §7/§21). */
+export type SignalFollowUpStatus = "watching" | "done" | "dismissed";
+
+export type SignalFollowUp = {
+  signalId: string;
+  headline: string;
+  sourceUrl: string;
+  sourceName: string;
+  topic: string;
+  status: SignalFollowUpStatus;
+  /** Count of times we've seen a fresh, similar item since tracking began. */
+  updateCount: number;
+  createdAt: string;
+  updatedAt: string;
+  /** ISO of the most recent matching item seen during a refresh. */
+  lastSeenAt?: string;
+};
+
+/**
+ * The read model behind the Signal Memory control surface (§7/§17). Purely
+ * derived from prefs + the action log — an inspectable, resettable mirror of
+ * "what the system learned," never a hidden profile (§18).
+ */
+export type SignalMemorySummary = {
+  totalActions: number;
+  /** Topics the user up-weighted, strongest first. */
+  likedTopics: { topic: string; weight: number }[];
+  /** Topics the user down-weighted, strongest first. */
+  cooledTopics: { topic: string; weight: number }[];
+  mutedSources: string[];
+  savedCount: number;
+  dismissedCount: number;
+  trackedCount: number;
+  negativitySensitivity: number;
+  politicalSensitivity: number;
+  shallowSensitivity: number;
+};
+
+/** A calm weekly digest derived from the action log (§21 Weekly Reflection). */
+export type SignalWeeklyReflection = {
+  weekStart: string;
+  saved: number;
+  dismissed: number;
+  tracked: number;
+  opened: number;
+  toBrain: number;
+  toTask: number;
+  /** Topics engaged with most this week (by positive actions). */
+  topTopics: { topic: string; count: number }[];
+  /** Whether there was any activity at all this week. */
+  hasActivity: boolean;
 };
 
 // ============================================================

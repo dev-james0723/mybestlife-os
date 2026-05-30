@@ -31,6 +31,10 @@ CREATE TABLE IF NOT EXISTS profiles (
   block_minutes INT DEFAULT 10 CHECK (block_minutes IN (5, 10, 15, 20, 30)),
   quick_tasks JSONB DEFAULT NULL,
   display_currency TEXT DEFAULT 'USD' CHECK (display_currency ~ '^[A-Z]{3}$'),
+  quick_save_enabled boolean NOT NULL DEFAULT false,
+  quick_save_default_destination text NOT NULL DEFAULT 'review'
+    CHECK (quick_save_default_destination IN ('review', 'knowledge', 'idea')),
+  quick_save_require_review boolean NOT NULL DEFAULT true,
   weather_lat double precision,
   weather_lon double precision,
   weather_city text,
@@ -221,7 +225,7 @@ CREATE TABLE IF NOT EXISTS ideas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
-  source_type TEXT DEFAULT 'text' CHECK (source_type IN ('text', 'voice')),
+  source_type TEXT DEFAULT 'text' CHECK (source_type IN ('text', 'voice', 'share')),
   capture_kind TEXT DEFAULT 'idea' CHECK (capture_kind IN ('idea', 'task', 'note', 'goal')),
   voice_transcript TEXT,
   linked_project_ids UUID[] DEFAULT '{}',
@@ -242,6 +246,23 @@ CREATE TABLE IF NOT EXISTS ideas (
   related_resource_refs JSONB NOT NULL DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS quick_save_captures (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  title text,
+  text text,
+  url text,
+  normalized_url text,
+  file_refs jsonb NOT NULL DEFAULT '[]'::jsonb,
+  status text NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'saved', 'discarded', 'failed')),
+  destination text
+    CHECK (destination IS NULL OR destination IN ('knowledge', 'idea')),
+  error_message text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ============================================================
@@ -789,6 +810,7 @@ BEGIN
     SELECT unnest(ARRAY[
       'projects', 'project_resources', 'tasks', 'goals', 'key_results', 'schedule_templates',
       'daily_plans', 'weekly_reviews', 'notes', 'knowledge_entries', 'ideas',
+      'quick_save_captures',
       'about_me', 'journal_entries', 'grateful_things', 'habits', 'routines',
       'habit_logs', 'sleep_logs', 'exercise_logs', 'nutrition_logs',
       'daily_check_ins', 'symptom_logs', 'medical_info',

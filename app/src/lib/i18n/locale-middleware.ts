@@ -6,7 +6,7 @@ import {
 } from "./locale-slug";
 import { defaultLocalizedPath, stripLeadingLocaleFromPathname } from "./locale-path";
 
-const SKIP_LOCALE_PREFIX = new Set<string>(["callback", "share"]);
+const SKIP_LOCALE_PREFIX = new Set<string>(["callback", "share", "share-target"]);
 
 function firstPathSegment(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);

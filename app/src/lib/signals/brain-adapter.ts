@@ -16,7 +16,18 @@
  */
 
 import { notesRepository, type CreateNoteInput } from "@/lib/repositories/notes";
+import { tasksRepository, type CreateTaskInput } from "@/lib/repositories/tasks";
 import type { SignalItem } from "./types";
+
+/** Map a repository error to a truthful, actionable message (shared by write-paths). */
+function describeWriteError(err: unknown, fallback: string): string {
+  const raw = err instanceof Error ? err.message : "";
+  if (raw === "Not authenticated") return "Sign in to use this action.";
+  if (/row-level security|violates.*policy/i.test(raw)) {
+    return "Permission issue — try signing out and back in.";
+  }
+  return raw || fallback;
+}
 
 export type SaveSignalToBrainResult =
   | { status: "saved"; noteId: string; embedded: boolean }
@@ -84,10 +95,57 @@ export async function saveSignalToBrain(
     }
     return { status: "saved", noteId: note.id, embedded };
   } catch (err) {
+    return { status: "error", message: describeWriteError(err, "Could not save to Brain. Please try again.") };
+  }
+}
+
+// ============================================================
+// Signals → Tasks write-path (MVP-light, §13)
+// ============================================================
+
+export type CreateTaskFromSignalResult =
+  | { status: "created"; taskId: string }
+  | { status: "error"; message: string };
+
+/** Pure builder (unit-testable): turns a signal into a Task insert payload. */
+export function buildSignalTaskInput(signal: SignalItem): CreateTaskInput {
+  const description = [
+    signal.aiOverview || signal.summary,
+    "",
+    `Source: ${signal.source.name} — ${signal.sourceUrl}`,
+    signal.whyItMatters ? `Why it matters: ${signal.whyItMatters}` : null,
+  ]
+    .filter((l): l is string => l !== null)
+    .join("\n");
+
+  return {
+    title: `Follow up: ${signal.headline}`,
+    description,
+    priority: "medium",
+    tags: Array.from(new Set([signal.topic, "signal"])),
+    // First-class provenance (the tasks table already has these columns).
+    source: "signals",
+    source_url: signal.sourceUrl,
+  };
+}
+
+/**
+ * Create a Task from a signal (e.g. "this story needs a follow-up action").
+ * A real insert into the existing `tasks` table — never a fake placeholder.
+ */
+export async function createTaskFromSignal(
+  signal: SignalItem,
+): Promise<CreateTaskFromSignalResult> {
+  if (signal.isDemo) {
     return {
       status: "error",
-      message:
-        err instanceof Error ? err.message : "Could not save to Brain. Please try again.",
+      message: "This is a demo signal — connect a live source before creating a task.",
     };
+  }
+  try {
+    const task = await tasksRepository.create(buildSignalTaskInput(signal));
+    return { status: "created", taskId: task.id };
+  } catch (err) {
+    return { status: "error", message: describeWriteError(err, "Could not create a task. Please try again.") };
   }
 }

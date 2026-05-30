@@ -12,6 +12,7 @@ import {
   Info,
   Moon,
   RotateCcw,
+  Share2,
   Shield,
   SlidersHorizontal,
   Sun,
@@ -54,7 +55,12 @@ import {
 import { ProfileAvatarField } from "@/components/settings/profile-avatar-field";
 import { SocialIntegrationsSection } from "@/components/settings/social-integrations-section";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
-import type { UserProfile, BlockMinutesOption } from "@/types/database";
+import { VoiceSpeechSection } from "@/components/settings/voice-speech-section";
+import type {
+  UserProfile,
+  BlockMinutesOption,
+  QuickSaveDefaultDestination,
+} from "@/types/database";
 import {
   APP_LOCALES,
   LOCALE_FLAG_EMOJI,
@@ -182,6 +188,10 @@ export default function SettingsPage() {
   const [blockMinutes, setBlockMinutes] = useState<BlockMinutesOption>(10);
   const [blockMinutesChanged, setBlockMinutesChanged] = useState(false);
   const [weatherLocationBusy, setWeatherLocationBusy] = useState(false);
+  const [quickSaveEnabled, setQuickSaveEnabled] = useState(false);
+  const [quickSaveDestination, setQuickSaveDestination] =
+    useState<QuickSaveDefaultDestination>("review");
+  const [quickSaveRequireReview, setQuickSaveRequireReview] = useState(true);
 
   useEffect(() => {
     if (!profile) return;
@@ -193,6 +203,9 @@ export default function SettingsPage() {
     setGreetingTone(profile.greeting_tone);
     setBlockMinutes(profile.block_minutes ?? 10);
     setBlockMinutesChanged(false);
+    setQuickSaveEnabled(profile.quick_save_enabled);
+    setQuickSaveDestination(profile.quick_save_default_destination);
+    setQuickSaveRequireReview(profile.quick_save_require_review);
   }, [profile]);
 
   const tzList = useMemo(() => timezoneChoices(profile?.timezone), [profile?.timezone]);
@@ -226,6 +239,14 @@ export default function SettingsPage() {
   const handleRestartOnboarding = async () => {
     await updateProfile.mutateAsync({ onboarding_completed: false });
     window.location.reload();
+  };
+
+  const handleSaveQuickSave = async () => {
+    await updateProfile.mutateAsync({
+      quick_save_enabled: quickSaveEnabled,
+      quick_save_default_destination: quickSaveDestination,
+      quick_save_require_review: quickSaveRequireReview,
+    });
   };
 
   const handleNotifChange = async (
@@ -393,6 +414,7 @@ export default function SettingsPage() {
     >
       <div className="space-y-6 max-w-2xl">
         <ThemeSwitcher />
+        <VoiceSpeechSection />
 
         <Card>
           <CardHeader>
@@ -541,6 +563,97 @@ export default function SettingsPage() {
             <div className="flex justify-end">
               <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? ui.saving : ui.savePreferences}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
+              <div>
+                <CardTitle>快捷儲存 / Quick Save</CardTitle>
+                <CardDescription>
+                  用手機的分享功能，將連結、文字、圖片或檔案快速儲存到 Knowledge Base 或
+                  Idea Capture。
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="font-medium">開啟快捷儲存</p>
+                <p className="text-xs text-muted-foreground">
+                  This enables Quick Save for your account. The phone Share Sheet target appears
+                  only after the PWA is installed.
+                </p>
+              </div>
+              <Checkbox
+                checked={quickSaveEnabled}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === "boolean") setQuickSaveEnabled(checked);
+                }}
+              />
+            </label>
+
+            <FieldRow icon={Share2} label="預設儲存位置 / Default destination">
+              <Select
+                value={quickSaveDestination}
+                onValueChange={(v) => {
+                  if (v === "review" || v === "knowledge" || v === "idea") {
+                    setQuickSaveDestination(v);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full max-w-md">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="review">Ask every time / Review first</SelectItem>
+                  <SelectItem value="knowledge">Knowledge Base</SelectItem>
+                  <SelectItem value="idea">Idea Capture</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="font-medium">每次儲存前先讓我確認</p>
+                <p className="text-xs text-muted-foreground">
+                  When enabled, shared content opens a lightweight review screen before saving.
+                </p>
+              </div>
+              <Checkbox
+                checked={quickSaveRequireReview}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === "boolean") setQuickSaveRequireReview(checked);
+                }}
+              />
+            </label>
+
+            <Separator />
+
+            <div className="space-y-2 rounded-lg border bg-muted/25 p-3 text-sm">
+              <p className="font-medium">Setup instructions</p>
+              <ol className="list-decimal space-y-1 pl-5 text-xs text-muted-foreground">
+                <li>Open My Best Life OS on your phone</li>
+                <li>Add it to Home Screen / Install app</li>
+                <li>
+                  Then use Share → My Best Life OS from apps like X, Instagram, Facebook,
+                  Safari, Chrome, etc.
+                </li>
+              </ol>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={() => void handleSaveQuickSave()}
+                disabled={updateProfile.isPending}
+              >
+                {updateProfile.isPending ? ui.saving : "Save Quick Save"}
               </Button>
             </div>
           </CardContent>

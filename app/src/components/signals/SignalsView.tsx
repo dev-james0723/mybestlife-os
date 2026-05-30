@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { Radar, RotateCw, Settings2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +15,10 @@ import { GlassPanel } from "@/components/ui/glass-panel";
 import { useSignalsPreferences } from "@/hooks/signals/use-signals-preferences";
 import { useLifeOsContext } from "@/hooks/signals/use-life-os-context";
 import { useSignalsPage } from "@/hooks/signals/use-signals-page";
-import { saveSignalToBrain } from "@/lib/signals/brain-adapter";
+import { useSignalMemory } from "@/hooks/signals/use-signal-memory";
+import { useSignalFollowUps } from "@/hooks/signals/use-signal-followups";
+import { createTaskFromSignal, saveSignalToBrain } from "@/lib/signals/brain-adapter";
+import { computeWeeklyReflection, summarizeMemory } from "@/lib/signals/behavior";
 import {
   detectSignalsLocation,
   resolveSignalsLocation,
@@ -25,8 +29,14 @@ import {
   DEFAULT_FILTER_STATE,
   isDefaultFilter,
 } from "@/lib/signals/filters";
-import type { SignalItem, SignalsFilterState, SignalsViewMode } from "@/lib/signals/types";
+import type {
+  SignalActionKind,
+  SignalItem,
+  SignalsFilterState,
+  SignalsViewMode,
+} from "@/lib/signals/types";
 import { SignalsOnboarding } from "./SignalsOnboarding";
+import { SignalsFollowUps } from "./SignalsFollowUps";
 import {
   SignalsSection,
   SignalCardWithHandlers,
@@ -56,7 +66,9 @@ export function SignalsView() {
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
 
   const { prefs, ready, update, reset } = useSignalsPreferences();
-  const ctx = useLifeOsContext(prefs);
+  const memory = useSignalMemory();
+  const followUps = useSignalFollowUps();
+  const ctx = useLifeOsContext(prefs, memory.behavior);
   const enabled = ready && prefs.onboardingCompleted;
   const { data, refreshSources, regenerateTop3, refreshing, regenerating } = useSignalsPage(
     prefs,
@@ -67,16 +79,50 @@ export function SignalsView() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [creatingTaskId, setCreatingTaskId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState<SignalsFilterState>(DEFAULT_FILTER_STATE);
   const [detecting, setDetecting] = useState(false);
   const silentLocateRef = useRef(false);
 
+  const { record } = memory;
+  const { track: trackFollowUp, reconcile: reconcileFollowUps } = followUps;
+
+  // Signal Memory read models for the Settings control surface (§17).
+  const memorySummary = useMemo(
+    () => summarizeMemory(memory.actions, prefs),
+    [memory.actions, prefs],
+  );
+  const weeklyReflection = useMemo(
+    () => computeWeeklyReflection(memory.actions),
+    [memory.actions],
+  );
+
   const setViewMode = useCallback(
     (viewMode: SignalsViewMode) => update({ viewMode }),
     [update],
   );
+
+  // Follow-Up Tracker: count fresh, similar items against watched stories
+  // whenever a new candidate pool arrives (source-grounded, never fabricated).
+  useEffect(() => {
+    if (data.status === "ok" && data.pool.length > 0) reconcileFollowUps(data.pool);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.generatedAt, data.status]);
+
+  // Dashboard deep-link: /signals?focus=<id> scrolls to + briefly highlights it.
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("focus");
+  useEffect(() => {
+    if (!focusId || data.status !== "ok") return;
+    const el = document.querySelector<HTMLElement>(`[data-signal-id="${CSS.escape(focusId)}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("signal-focused");
+    const timer = window.setTimeout(() => el.classList.remove("signal-focused"), 2400);
+    return () => window.clearTimeout(timer);
+  }, [focusId, data.status, data.generatedAt]);
 
   // Silent best-effort location (no prompt) once, if consented and not yet set.
   useEffect(() => {
@@ -109,6 +155,8 @@ export function SignalsView() {
     () => ({
       savingId,
       savedIds,
+      creatingTaskId,
+      isTracked: followUps.isTracked,
       onSave: async (signal: SignalItem) => {
         if (savingId || savedIds.has(signal.id)) return;
         if (signal.isDemo) {
@@ -119,6 +167,7 @@ export function SignalsView() {
         const result = await saveSignalToBrain(signal);
         if (result.status === "saved") {
           setSavedIds((prev) => new Set(prev).add(signal.id));
+          record(signal, "save");
           toast.success(
             result.embedded ? copy.toast.savedToBrain : copy.toast.savedToBrainNoEmbed,
           );
@@ -129,6 +178,7 @@ export function SignalsView() {
       },
       onDismiss: (signal: SignalItem) => {
         setDismissed((prev) => new Set(prev).add(signal.id));
+        record(signal, "dismiss");
         toast(copy.toast.dismissed);
       },
       onMore: (signal: SignalItem) => {
@@ -138,6 +188,7 @@ export function SignalsView() {
             hiddenTopics: prefs.hiddenTopics.filter((t) => t !== signal.topic),
           });
         }
+        record(signal, "more_like_this");
         toast(copy.toast.moreAck);
       },
       onLess: (signal: SignalItem) => {
@@ -148,10 +199,11 @@ export function SignalsView() {
             followedTopics: prefs.followedTopics.filter((t) => t !== signal.topic),
           });
         }
+        record(signal, "less_like_this");
         toast(copy.toast.lessAck);
       },
-      onOpen: () => {
-        // Opening the source is handled by the anchor; behavior learning is v2.
+      onOpen: (signal: SignalItem) => {
+        record(signal, "open");
       },
       onMuteSource: (signal: SignalItem) => {
         const domain = signal.source.domain;
@@ -159,16 +211,61 @@ export function SignalsView() {
           update({ mutedSources: [...prefs.mutedSources, domain] });
         }
         setDismissed((prev) => new Set(prev).add(signal.id));
+        record(signal, "mute_source");
         toast(copy.toast.sourceMuted);
       },
       onFollowTopic: (signal: SignalItem) => {
         if (!prefs.followedTopics.includes(signal.topic)) {
           update({ followedTopics: [...prefs.followedTopics, signal.topic] });
         }
+        record(signal, "follow_topic");
         toast(copy.toast.topicFollowed);
       },
+      onFeedback: (signal: SignalItem, kind: SignalActionKind) => {
+        // "Less of this": hide the card now (perceptible) + log for learning.
+        setDismissed((prev) => new Set(prev).add(signal.id));
+        record(signal, kind);
+        toast(copy.toast.feedbackAck);
+      },
+      onTrack: (signal: SignalItem) => {
+        if (signal.isDemo) {
+          toast.error(copy.toast.demoCannotSave);
+          return;
+        }
+        trackFollowUp(signal);
+        record(signal, "track");
+        toast.success(copy.toast.tracked);
+      },
+      onCreateTask: async (signal: SignalItem) => {
+        if (creatingTaskId) return;
+        if (signal.isDemo) {
+          toast.error(copy.toast.demoCannotSave);
+          return;
+        }
+        setCreatingTaskId(signal.id);
+        const result = await createTaskFromSignal(signal);
+        if (result.status === "created") {
+          record(signal, "to_task");
+          toast.success(copy.toast.taskCreated);
+        } else {
+          toast.error(result.message || copy.toast.taskFailed);
+        }
+        setCreatingTaskId(null);
+      },
     }),
-    [savingId, savedIds, copy, prefs.followedTopics, prefs.hiddenTopics, prefs.mutedSources, update],
+    [
+      savingId,
+      savedIds,
+      creatingTaskId,
+      copy,
+      prefs.followedTopics,
+      prefs.hiddenTopics,
+      prefs.mutedSources,
+      update,
+      record,
+      trackFollowUp,
+      followUps.isTracked,
+    ],
   );
 
   // ── Render gates ──
@@ -468,6 +565,18 @@ export function SignalsView() {
                   }
                 />
 
+                <SignalsFollowUps
+                  followUps={followUps.followUps}
+                  copy={copy}
+                  dateLocale={dateLocale}
+                  onSetStatus={followUps.setStatus}
+                  onRemove={followUps.remove}
+                  onOpen={(id) => {
+                    const item = data.pool.find((s) => s.id === id);
+                    if (item) record(item, "open");
+                  }}
+                />
+
                 <SignalsCaughtUp copy={copy} />
               </div>
             )
@@ -494,6 +603,9 @@ export function SignalsView() {
         prefs={prefs}
         update={update}
         reset={reset}
+        memory={memorySummary}
+        reflection={weeklyReflection}
+        onClearHistory={memory.clearHistory}
       />
     </PageContainer>
   );

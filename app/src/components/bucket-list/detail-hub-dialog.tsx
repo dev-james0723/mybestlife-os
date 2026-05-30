@@ -63,6 +63,8 @@ import {
 } from "@/lib/bucket-list/presentation";
 import { FlightWatchPanel } from "./flight-watch-panel";
 import { ReflectionSheet } from "./reflection-sheet";
+import { useBucketDreamImage } from "@/hooks/use-bucket-dream-image";
+import { DreamCoverBackground } from "./dream-cover-background";
 
 export function DetailHubDialog() {
   const language = useAppStore((s) => s.language);
@@ -89,6 +91,7 @@ export function DetailHubDialog() {
   const [whyDraft, setWhyDraft] = useState("");
 
   const open = Boolean(bucketId);
+  const dreamImage = useBucketDreamImage(bucket.data ?? undefined);
 
   if (!bucket.data) {
     return (
@@ -115,21 +118,18 @@ export function DetailHubDialog() {
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && setSelectedBucketId(null)}>
-        <DialogContent size="3xl" className="max-h-[90vh] overflow-hidden p-0">
+        <DialogContent
+          size="3xl"
+          className="flex max-h-[min(90dvh,920px)] flex-col gap-0 overflow-hidden p-0"
+        >
           {/* Hero */}
-          <div className="relative">
-            <div className="h-36 w-full overflow-hidden">
-              {item.cover_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.cover_image_url}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full bg-gradient-to-br from-emerald-500/40 via-cyan-400/20 to-lime-300/20" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/15 to-black/70" />
+          <div className="relative shrink-0">
+            <div className="relative h-36 w-full overflow-hidden">
+              <DreamCoverBackground
+                image={dreamImage}
+                type={item.type}
+                variant="hero"
+              />
             </div>
             <div className="px-6 pb-4 pt-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -187,7 +187,7 @@ export function DetailHubDialog() {
             </div>
           </div>
 
-          <div className="max-h-[calc(90vh-14rem)] overflow-y-auto px-6 pb-5">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 pb-5">
             <div className="space-y-5">
               {/* Progress */}
               <div className="space-y-1">
@@ -486,22 +486,24 @@ function FactsGrid({ item }: { item: BucketItem }) {
           <Fact label="Trip length" value={item.trip_length_days ? `${item.trip_length_days} days` : "—"} />
         </>
       ) : null}
-      <Fact
-        label="Tags"
-        value={
-          item.category_tags.length ? (
-            <span className="flex flex-wrap gap-1">
-              {item.category_tags.map((tag) => (
-                <Badge key={tag} variant="outline">
-                  {tag}
-                </Badge>
-              ))}
-            </span>
-          ) : (
-            "—"
-          )
-        }
-      />
+      <div className="col-span-2">
+        <Fact
+          label="Tags"
+          value={
+            item.category_tags.length ? (
+              <span className="flex flex-wrap gap-1">
+                {item.category_tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+              </span>
+            ) : (
+              "—"
+            )
+          }
+        />
+      </div>
     </dl>
   );
 }

@@ -1,11 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import type { Locale } from "date-fns";
-import { Sparkles } from "lucide-react";
+import { Link2, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { SignalContentType, SignalItem } from "@/lib/signals/types";
+import { signalSourceIconUrl } from "@/lib/signals/source-icon-url";
+import type {
+  SignalContentType,
+  SignalItem,
+  SignalRelevanceBasis,
+  SignalSource,
+} from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
 
 export function formatRelative(iso: string, locale: Locale): string {
@@ -112,16 +119,100 @@ export function AiOverview({
   );
 }
 
-/** Source initial monogram — avoids external favicon requests; always visible. */
-function SourceMonogram({ name }: { name: string }) {
+/**
+ * Brain → Signals connection indicator (§13 read-path, honest + cheap).
+ *
+ * Surfaces the ALREADY-derived `whyRelevantToUser` (computed deterministically
+ * from the Life OS context — no per-card embedding search, which §13 flags as a
+ * perf trap) as a subtle persistent strip on personally-relevant cards.
+ */
+const CONNECTION_BASES: ReadonlySet<SignalRelevanceBasis> = new Set([
+  "brain_similarity",
+  "project_match",
+  "task_match",
+  "calendar_proximity",
+  "behavior",
+]);
+
+export function ConnectionStrip({
+  signal,
+  className,
+}: {
+  signal: SignalItem;
+  className?: string;
+}) {
+  if (!signal.whyRelevantToUser || !CONNECTION_BASES.has(signal.relevanceBasis)) {
+    return null;
+  }
+  return (
+    <div
+      className={cn(
+        "inline-flex max-w-full items-center gap-1.5 rounded-lg border border-violet-400/25 bg-violet-500/5 px-2.5 py-1 text-[11px] font-medium text-violet-700 dark:text-violet-300",
+        className,
+      )}
+    >
+      <Link2 className="h-3 w-3 shrink-0" aria-hidden />
+      <span className="truncate">{signal.whyRelevantToUser}</span>
+    </div>
+  );
+}
+
+function SourceMonogram({
+  name,
+  size = 16,
+  className,
+}: {
+  name: string;
+  size?: number;
+  className?: string;
+}) {
   const initial = name.trim().charAt(0).toUpperCase() || "·";
+  const px = `${size}px`;
   return (
     <span
       aria-hidden="true"
-      className="flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-muted text-[9px] font-bold text-muted-foreground"
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-[4px] bg-muted font-bold text-muted-foreground",
+        className,
+      )}
+      style={{ width: px, height: px, fontSize: Math.max(9, Math.round(size * 0.56)) }}
     >
       {initial}
     </span>
+  );
+}
+
+/** Publisher mark from domain favicon; falls back to the initial monogram on load error. */
+export function SourceIcon({
+  source,
+  size = 16,
+  className,
+}: {
+  source: SignalSource;
+  size?: number;
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = signalSourceIconUrl(source, size * 2);
+  const px = `${size}px`;
+
+  if (!url || failed) {
+    return <SourceMonogram name={source.name} size={size} className={className} />;
+  }
+
+  return (
+    <img
+      src={url}
+      alt=""
+      width={size}
+      height={size}
+      className={cn("shrink-0 rounded-[4px] border border-border/50 bg-background object-contain", className)}
+      style={{ width: px, height: px }}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -146,7 +237,7 @@ export function SourceLine({
       )}
     >
       <span className="inline-flex items-center gap-1.5 font-medium text-foreground/80">
-        <SourceMonogram name={signal.source.name} />
+        <SourceIcon source={signal.source} size={16} />
         {signal.source.name}
       </span>
       {signal.source.domain && (

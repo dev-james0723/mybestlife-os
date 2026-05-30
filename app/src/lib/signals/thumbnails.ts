@@ -14,7 +14,16 @@
  */
 
 import { topicAccentColor } from "./constants";
+import { pickBestImageFromHtml, upgradeThumbnailUrl } from "./thumbnail-resolution";
 import type { SignalItem, SignalThumbnail } from "./types";
+
+function withResolvedUrl(
+  base: Omit<SignalThumbnail, "url">,
+  url: string,
+  source: SignalThumbnail["source"],
+): SignalThumbnail {
+  return { ...base, url: upgradeThumbnailUrl(url), source };
+}
 
 /** True for a real, fetchable http(s) image URL. */
 export function isHttpUrl(url: string | undefined | null): url is string {
@@ -72,40 +81,45 @@ export function extractThumbnailFromRssItem(
   const base = { alt: c.alt, attribution: c.attribution };
 
   if (isHttpUrl(c.mediaContentUrl)) {
-    return { ...base, url: c.mediaContentUrl, source: "rss" };
+    return withResolvedUrl(base, c.mediaContentUrl, "rss");
   }
   if (isHttpUrl(c.mediaThumbnailUrl)) {
-    return { ...base, url: c.mediaThumbnailUrl, source: "rss" };
+    return withResolvedUrl(base, c.mediaThumbnailUrl, "rss");
   }
   if (isHttpUrl(c.enclosureUrl) && (!c.enclosureType || /^image\//i.test(c.enclosureType))) {
-    return { ...base, url: c.enclosureUrl, source: "rss" };
+    return withResolvedUrl(base, c.enclosureUrl, "rss");
   }
   if (isHttpUrl(c.ogImageUrl)) {
-    return { ...base, url: c.ogImageUrl, source: "open_graph" };
+    return withResolvedUrl(base, c.ogImageUrl, "open_graph");
   }
   if (isHttpUrl(c.twitterImageUrl)) {
-    return { ...base, url: c.twitterImageUrl, source: "open_graph" };
+    return withResolvedUrl(base, c.twitterImageUrl, "open_graph");
   }
   if (c.youtubeVideoId) {
     return getYouTubeThumbnail(c.youtubeVideoId, c.alt);
   }
   if (isHttpUrl(c.publisherImageUrl)) {
-    return { ...base, url: c.publisherImageUrl, source: "publisher" };
+    return withResolvedUrl(base, c.publisherImageUrl, "publisher");
   }
-  const fromHtml = firstImageInHtml(c.descriptionHtml);
+  const fromHtml = pickBestImageFromHtml(c.descriptionHtml) ?? firstImageInHtml(c.descriptionHtml);
   if (fromHtml) {
-    return { ...base, url: fromHtml, source: "rss" };
+    return withResolvedUrl(base, fromHtml, "rss");
   }
   return undefined;
 }
 
-/** Deterministic real YouTube thumbnail (hqdefault — always exists for a valid id). */
+/** YouTube — prefer maxres; UI falls back to hqdefault on load error. */
 export function getYouTubeThumbnail(videoId: string, alt?: string): SignalThumbnail {
+  const id = encodeURIComponent(videoId);
   return {
-    url: `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`,
+    url: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
     source: "youtube",
     alt,
   };
+}
+
+export function getYouTubeThumbnailFallback(videoId: string): string {
+  return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
 }
 
 /**
@@ -123,27 +137,45 @@ export function getFallbackThumbnailForTopic(topic: string): SignalThumbnail {
 
 /** The thumbnail to actually render: the real one, else a labeled topic fallback. */
 export function resolveDisplayThumbnail(signal: SignalItem): SignalThumbnail {
-  if (isRealThumbnail(signal.thumbnail)) return signal.thumbnail as SignalThumbnail;
+  if (isRealThumbnail(signal.thumbnail)) {
+    const t = signal.thumbnail as SignalThumbnail;
+    return { ...t, url: upgradeThumbnailUrl(t.url!) };
+  }
   return getFallbackThumbnailForTopic(signal.topic);
 }
 
 /**
- * Collapse repeated REAL thumbnails across a list so the same image never shows
- * twice (common with publisher logos / shared OG images). The first occurrence
- * keeps the image; later duplicates fall back to their labeled topic abstract.
- * Pure — returns a new array; never mutates inputs.
+ * Keep only signals that have a real, fetchable thumbnail URL (no topic placeholders).
  */
-export function dedupeThumbnails(items: SignalItem[]): SignalItem[] {
+export function onlySignalsWithRealThumbnails(items: SignalItem[]): SignalItem[] {
+  return items.filter((item) => isRealThumbnail(item.thumbnail));
+}
+
+/**
+ * Drop duplicate thumbnail URLs (same lead image reused across stories) instead of
+ * swapping later items to a placeholder — the UI should never show a fallback card.
+ */
+export function dedupeThumbnailUrls(items: SignalItem[]): SignalItem[] {
   const seen = new Set<string>();
-  return items.map((item) => {
-    if (!isRealThumbnail(item.thumbnail)) return item;
-    const url = item.thumbnail!.url!;
-    if (seen.has(url)) {
-      return { ...item, thumbnail: getFallbackThumbnailForTopic(item.topic) };
-    }
+  return items.filter((item) => {
+    if (!isRealThumbnail(item.thumbnail)) return false;
+    const url = upgradeThumbnailUrl(item.thumbnail!.url!);
+    if (seen.has(url)) return false;
     seen.add(url);
-    return item;
+    return true;
   });
+}
+
+/**
+ * Pipeline used before ranking / display: real thumbnails only, unique image URLs.
+ */
+export function prepareSignalDisplayPool(items: SignalItem[]): SignalItem[] {
+  return dedupeThumbnailUrls(onlySignalsWithRealThumbnails(items));
+}
+
+/** @deprecated Use {@link prepareSignalDisplayPool} — no longer injects placeholders on dupes. */
+export function dedupeThumbnails(items: SignalItem[]): SignalItem[] {
+  return prepareSignalDisplayPool(items);
 }
 
 // ============================================================
@@ -219,7 +251,7 @@ export async function extractThumbnailFromOpenGraph(
     const og = readMetaContent(html, "property", "og:image");
     const tw = og ?? readMetaContent(html, "name", "twitter:image");
     const thumb: SignalThumbnail | null = tw
-      ? { url: tw, source: "open_graph" }
+      ? { url: upgradeThumbnailUrl(tw), source: "open_graph" }
       : null;
     OG_CACHE.set(url, { thumb, at: Date.now() });
     return thumb;

@@ -2,7 +2,8 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGeminiServerApiKey } from "@/lib/ai/gemini-text";
-import { isAudioProviderConfigured, synthesizeDocOracleAudio, getDocOracleAudioProvider } from "@/lib/ai/audio-summary";
+import { isAudioProviderConfigured } from "@/lib/ai/audio-summary";
+import { synthesizeAppSpeech } from "@/lib/ai/app-tts";
 import {
   generateDocOracleAudioScriptModelJson,
   parseAudioScriptJson,
@@ -179,11 +180,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ documentId: st
   let voiceName: string | undefined;
 
   try {
-    const out = await synthesizeDocOracleAudio({
+    const out = await synthesizeAppSpeech({
+      supabase,
+      userId: user.id,
       text: ttsText.slice(0, 14_000),
       language: langOut,
       voiceGender: voice_gender,
       format,
+      styleInstruction:
+        format === "two_hosts"
+          ? "Document discussion voice, clear host separation, calm and precise"
+          : "Clear warm documentary narration, calm and precise",
     });
     audioBytes = out.audioBytes;
     mimeType = out.mimeType;
@@ -229,7 +236,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ documentId: st
     user_id: user.id,
     document_id: documentId,
     analysis_id: loaded.ctx.analysisId,
-    provider: getDocOracleAudioProvider(),
+    provider: providerOut,
     voice_gender,
     voice_name: voiceName ?? null,
     format,

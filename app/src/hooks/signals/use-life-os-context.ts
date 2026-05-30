@@ -14,7 +14,7 @@ import {
   customTopicBoostedTerms,
   customTopicInterestTerms,
 } from "@/lib/signals/custom-topics";
-import type { LifeOsContext, SignalsPreferences } from "@/lib/signals/types";
+import type { LifeOsContext, SignalBehavior, SignalsPreferences } from "@/lib/signals/types";
 
 /** Add a phrase as a whole term plus its longer tokens (recall without noise). */
 function pushTerms(set: Set<string>, value: string | null | undefined): void {
@@ -41,7 +41,10 @@ function pushTags(set: Set<string>, tags: string[] | null | undefined): void {
  * are always called (React rule) but their data is gated before it influences
  * anything. Nothing here is sent to an LLM or leaves the OS.
  */
-export function useLifeOsContext(prefs: SignalsPreferences): LifeOsContext {
+export function useLifeOsContext(
+  prefs: SignalsPreferences,
+  behavior?: SignalBehavior,
+): LifeOsContext {
   const { data: tasks } = useTasks();
   const { data: projects } = useProjects();
   const { data: notes } = useNotes();
@@ -50,6 +53,25 @@ export function useLifeOsContext(prefs: SignalsPreferences): LifeOsContext {
   const { data: calendarItems } = useCalendarItems();
 
   return useMemo(() => {
+    // Reading behavior influences ranking ONLY with explicit consent (§11/§18) —
+    // EXCEPT explicit per-item suppressions (already-known / not-relevant), which
+    // are direct user commands on a specific card, not behavioral learning, so
+    // they always apply.
+    const consentedBehavior = prefs.useReadingBehavior ? behavior : undefined;
+    const rankingBehavior: SignalBehavior | undefined =
+      consentedBehavior ??
+      (behavior && behavior.suppressedIds.length > 0
+        ? {
+            topicAffinity: {},
+            sourceAffinity: {},
+            negativitySensitivity: 0,
+            politicalSensitivity: 0,
+            shallowSensitivity: 0,
+            suppressedIds: behavior.suppressedIds,
+            savedTerms: [],
+          }
+        : undefined);
+
     const followedTopics = prefs.followedTopics.map((t) => t.toLowerCase());
 
     const projectSet = new Set<string>();
@@ -111,6 +133,8 @@ export function useLifeOsContext(prefs: SignalsPreferences): LifeOsContext {
       for (const term of s) interest.add(term);
     }
     for (const term of customTopicTerms) interest.add(term);
+    // Saved-topic terms reinforced by behavior also count as interest (consented).
+    for (const term of consentedBehavior?.savedTerms ?? []) interest.add(term);
 
     const location = prefs.localLocation
       ? localLocationToWeatherLocation(prefs.localLocation)
@@ -127,6 +151,7 @@ export function useLifeOsContext(prefs: SignalsPreferences): LifeOsContext {
       boostedTerms,
       interestTerms: [...interest].filter((t) => t.length >= 2),
       location,
+      behavior: rankingBehavior,
     } satisfies LifeOsContext;
   }, [
     prefs.followedTopics,
@@ -136,6 +161,8 @@ export function useLifeOsContext(prefs: SignalsPreferences): LifeOsContext {
     prefs.useCalendar,
     prefs.localLocation,
     prefs.customTopics,
+    prefs.useReadingBehavior,
+    behavior,
     tasks,
     projects,
     notes,

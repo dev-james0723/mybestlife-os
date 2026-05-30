@@ -21,7 +21,9 @@ export async function GET(
   }
 
   const storagePath = path.map((p) => decodeURIComponent(p)).join("/");
-  if (!storagePath.startsWith(`${user.id}/`)) {
+  const allowedUserFile = storagePath.startsWith(`${user.id}/`);
+  const allowedQuickSaveFile = storagePath.startsWith(`quick-save/${user.id}/`);
+  if (!allowedUserFile && !allowedQuickSaveFile) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

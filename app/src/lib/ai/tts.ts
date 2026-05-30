@@ -1,10 +1,12 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getDocOracleAudioProvider,
   isAudioProviderConfigured,
   synthesizeDocOracleAudio,
   type AudioProviderInput,
 } from "@/lib/ai/audio-summary";
+import { synthesizeAppSpeech } from "@/lib/ai/app-tts";
 
 export type JournalTtsVoice = "male" | "female";
 
@@ -12,7 +14,9 @@ export type JournalTtsInput = {
   text: string;
   locale: AppLocale;
   voice?: JournalTtsVoice;
-  /** Accepted for future providers; current Gemini/ElevenLabs paths ignore speed. */
+  supabase?: SupabaseClient;
+  userId?: string;
+  /** Accepted for future provider-level prosody control; current VoxCPM path ignores speed. */
   speed?: number;
 };
 
@@ -40,19 +44,31 @@ export function getJournalTtsProvider(): string {
 export async function synthesizeJournalSpeech(input: JournalTtsInput): Promise<JournalTtsOutput> {
   if (!isJournalTtsConfigured()) {
     throw new Error(
-      "Journal TTS is not configured. Set GEMINI_API_KEY or ELEVENLABS_API_KEY (and DOCORACLE_AUDIO_PROVIDER if needed).",
+      "Journal TTS is not configured. Set VOXCPM_BASE_URL.",
     );
   }
 
   const voiceGender: JournalTtsVoice = input.voice === "female" ? "female" : "male";
   const ttsText = `Say in a warm, calm, conversational voice-note tone (single narrator). Do not read stage directions aloud.\n\n${input.text.trim()}`;
 
-  const out = await synthesizeDocOracleAudio({
-    text: ttsText.slice(0, 14_000),
-    language: localeToTtsLanguage(input.locale),
-    voiceGender,
-    format: "single_host",
-  });
+  const out =
+    input.supabase && input.userId
+      ? await synthesizeAppSpeech({
+          supabase: input.supabase,
+          userId: input.userId,
+          text: ttsText.slice(0, 14_000),
+          language: localeToTtsLanguage(input.locale),
+          voiceGender,
+          format: "single_host",
+          styleInstruction:
+            "Warm, calm, conversational voice-note tone, direct and emotionally aware",
+        })
+      : await synthesizeDocOracleAudio({
+          text: ttsText.slice(0, 14_000),
+          language: localeToTtsLanguage(input.locale),
+          voiceGender,
+          format: "single_host",
+        });
 
   return {
     audioBytes: out.audioBytes,

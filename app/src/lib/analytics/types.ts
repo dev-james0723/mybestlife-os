@@ -112,6 +112,19 @@ export type ProjectMomentumState =
   | "overloaded"
   | "ready_to_finish";
 
+export type ProjectMomentumTask = {
+  id: string;
+  title: string;
+  status: Task["status"];
+  priority: Task["priority"];
+  dueDate: string | null;
+  dueDateLabel: string;
+  completedAt: string | null;
+  completedInRange: boolean;
+  isOverdue: boolean;
+  estimatedBlocks: number | null;
+};
+
 export type ProjectMomentumCard = {
   id: string;
   name: string;
@@ -128,6 +141,7 @@ export type ProjectMomentumCard = {
   state: ProjectMomentumState;
   stateLabel: string;
   interpretation: string;
+  tasks: ProjectMomentumTask[];
 };
 
 export type ProjectMomentumMap = {
@@ -190,6 +204,23 @@ export type AIAnalyticsInsight = {
   confidence: "low" | "medium" | "high";
 };
 
+export type AnalyticsAudioOverview = {
+  title: string;
+  summary: string;
+  transcript: string;
+  actionItems: string[];
+  chapters: Array<{
+    title: string;
+    text: string;
+  }>;
+  audioUrl: string;
+  storagePath: string;
+  provider: string;
+  voiceName?: string;
+  durationSeconds: number;
+  createdAt: string;
+};
+
 export type AnalyticsTotals = {
   completedTasks: number;
   completedTasksPrevious: number;
@@ -226,6 +257,7 @@ export type LifeAnalytics = {
   emotionExecution: EmotionExecution;
   brainHealth: BrainHealth;
   aiInsight: AIAnalyticsInsight;
+  aiContext: AIAnalyticsContext;
 };
 
 export type AIAnalyticsContext = {

@@ -191,6 +191,12 @@ export function IdeasTopControlBar() {
             >
               {ui.sourceLabels.voice}
             </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={activeSourceFilters.includes("share")}
+              onCheckedChange={() => toggleSourceFilter("share")}
+            >
+              {ui.sourceLabels.share}
+            </DropdownMenuCheckboxItem>
             {activeSourceFilters.length > 0 ? (
               <Button variant="ghost" size="sm" className="mx-2 mt-1 h-7 w-[calc(100%-1rem)] text-xs" onClick={() => clearSourceFilters()}>
                 {ui.clearFilters}

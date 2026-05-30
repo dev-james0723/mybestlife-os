@@ -51,6 +51,13 @@ export function derivePersonalRelevance(
   const brainTerm = bestTermMatch(text, ctx.brainTerms);
   if (brainTerm) return { basis: "brain_similarity", term: brainTerm };
 
+  // Learned reading behavior: a topic the user has actively engaged with
+  // (saved/more) recently. Honest and specific — more than a passive follow.
+  const affinity = ctx.behavior?.topicAffinity[signal.topic.toLowerCase()];
+  if (typeof affinity === "number" && affinity >= 0.4) {
+    return { basis: "behavior", term: signal.topic };
+  }
+
   const topicTerm = bestTermMatch(text, ctx.followedTopics);
   if (topicTerm) return { basis: "topic_match", term: topicTerm };
 

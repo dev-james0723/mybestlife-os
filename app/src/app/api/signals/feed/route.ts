@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 // News is shared/public; cache the candidate pool briefly at the platform edge.
 export const revalidate = 900;
 
-const OVERALL_TIMEOUT_MS = 8000;
+const OVERALL_TIMEOUT_MS = 22_000;
 
 /**
  * GET /api/signals/feed
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     topics,
     location: city || region ? { city, region, countryCode } : undefined,
     lang,
-    limit: 30,
+    limit: 48,
     includeVideo,
     includeMarkets,
     customRssFeeds,

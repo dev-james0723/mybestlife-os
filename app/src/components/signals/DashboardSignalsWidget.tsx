@@ -11,7 +11,7 @@ import { getSignalsWidgetCopy } from "@/lib/i18n/signals-widget-ui";
 import { getSignalsUiCopy } from "@/lib/i18n/signals-ui";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { useSignalsSummary } from "@/hooks/signals/use-signals-summary";
-import { formatRelative, TopicChip } from "@/components/signals/signal-chrome";
+import { formatRelative, SourceIcon, TopicChip } from "@/components/signals/signal-chrome";
 import { SignalThumbnail } from "@/components/signals/SignalThumbnail";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -85,20 +85,22 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
   const { items } = state;
 
   return (
-    <Link
-      href={signalsHref}
-      prefetch={false}
-      aria-label={copy.ariaOpen}
+    <div
       className={cn(
         CARD_BASE,
-        "transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        "transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-border",
         className,
       )}
     >
-      <div className="flex items-start gap-2">
+      <Link
+        href={signalsHref}
+        prefetch={false}
+        aria-label={copy.ariaOpen}
+        className="flex items-start gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      >
         <WidgetHeader copy={copy} />
         <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
-      </div>
+      </Link>
 
       {items.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{copy.caughtUp}</p>
@@ -107,35 +109,45 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
           {items.map((signal) => (
             <li
               key={signal.id}
-              className="flex gap-2.5 border-t border-border/40 pt-2.5 first:border-t-0 first:pt-0"
+              className="border-t border-border/40 pt-2.5 first:border-t-0 first:pt-0"
             >
-              <SignalThumbnail
-                signal={signal}
-                copy={uiCopy}
-                rounded="rounded-lg"
-                className="size-12 shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-                  {signal.headline}
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                  <TopicChip label={signal.topic} className="py-0" />
-                  <span className="font-medium text-foreground/70">{signal.source.name}</span>
-                  <span aria-hidden className="opacity-50">·</span>
-                  <span>{formatRelative(signal.publishedAt, dateLocale)}</span>
-                </div>
-                {signal.whyRelevantToUser && (
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/90">
-                    {signal.whyRelevantToUser}
+              {/* Deep-link: focus + highlight this exact card on the page (§9). */}
+              <Link
+                href={`${signalsHref}?focus=${encodeURIComponent(signal.id)}`}
+                prefetch={false}
+                className="-mx-1 flex gap-2.5 rounded-lg px-1 py-0.5 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                <SignalThumbnail
+                  signal={signal}
+                  copy={uiCopy}
+                  rounded="rounded-lg"
+                  className="size-12 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+                    {signal.headline}
                   </p>
-                )}
-              </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                  <TopicChip label={signal.topic} className="py-0" />
+                  <span className="inline-flex items-center gap-1 font-medium text-foreground/70">
+                    <SourceIcon source={signal.source} size={14} />
+                    {signal.source.name}
+                  </span>
+                    <span aria-hidden className="opacity-50">·</span>
+                    <span>{formatRelative(signal.publishedAt, dateLocale)}</span>
+                  </div>
+                  {signal.whyRelevantToUser && (
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/90">
+                      {signal.whyRelevantToUser}
+                    </p>
+                  )}
+                </div>
+              </Link>
             </li>
           ))}
         </ul>
       )}
-    </Link>
+    </div>
   );
 }
 

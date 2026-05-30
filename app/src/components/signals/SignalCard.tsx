@@ -7,8 +7,12 @@ import {
   BookmarkCheck,
   ChevronDown,
   ExternalLink,
+  Eye,
+  EyeOff,
   HelpCircle,
+  ListPlus,
   Loader2,
+  MoreHorizontal,
   PlayCircle,
   ThumbsDown,
   ThumbsUp,
@@ -19,9 +23,25 @@ import {
 import { cn } from "@/lib/utils";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
-import type { SignalItem } from "@/lib/signals/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { SignalActionKind, SignalItem } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
-import { AiOverview, ContentTypeChip, SourceLine, TopicChip } from "./signal-chrome";
+import {
+  AiOverview,
+  ConnectionStrip,
+  ContentTypeChip,
+  SourceIcon,
+  SourceLine,
+  TopicChip,
+} from "./signal-chrome";
 import { SignalThumbnail } from "./SignalThumbnail";
 
 export type SignalCardVariant = "hero" | "feature" | "list" | "compact";
@@ -29,6 +49,10 @@ export type SignalCardVariant = "hero" | "feature" | "list" | "compact";
 export type SignalCardCallbacks = {
   saving?: boolean;
   saved?: boolean;
+  /** Whether this story is in the Follow-Up Tracker. */
+  tracked?: boolean;
+  /** Whether a Create-Task write is in flight for this card. */
+  creatingTask?: boolean;
   onSave: (signal: SignalItem) => void;
   onDismiss: (signal: SignalItem) => void;
   onMore: (signal: SignalItem) => void;
@@ -36,6 +60,12 @@ export type SignalCardCallbacks = {
   onOpen: (signal: SignalItem) => void;
   onMuteSource?: (signal: SignalItem) => void;
   onFollowTopic?: (signal: SignalItem) => void;
+  /** "Less of this" feedback (not relevant / too political / negative / shallow / known). */
+  onFeedback?: (signal: SignalItem, kind: SignalActionKind) => void;
+  /** Track / untrack a developing story (Follow-Up Tracker). */
+  onTrack?: (signal: SignalItem) => void;
+  /** Create a Task from this signal (Signals → Tasks write-path). */
+  onCreateTask?: (signal: SignalItem) => void;
 };
 
 type Props = SignalCardCallbacks & {
@@ -104,16 +134,8 @@ function OpenLink({
   );
 }
 
-function PrimaryActions({
-  signal,
-  copy,
-  saving,
-  saved,
-  onSave,
-  onDismiss,
-  onOpen,
-  compact,
-}: Props & { compact?: boolean }) {
+function PrimaryActions(props: Props & { compact?: boolean }) {
+  const { signal, copy, saving, saved, onSave, onDismiss, onOpen, compact } = props;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <Button
@@ -132,8 +154,76 @@ function PrimaryActions({
           {copy.card.dismiss}
         </Button>
       )}
+      <MoreActionsMenu {...props} />
       <OpenLink signal={signal} copy={copy} onOpen={onOpen} className="ml-auto" />
     </div>
+  );
+}
+
+/**
+ * Overflow menu collecting the write-paths (Create task, Track) and the
+ * "less of this" feedback (§17). Each item maps to a perceptible effect; the
+ * feedback options are routed through `onFeedback` and logged to Signal Memory.
+ */
+function MoreActionsMenu({
+  signal,
+  copy,
+  tracked,
+  creatingTask,
+  onCreateTask,
+  onTrack,
+  onMuteSource,
+  onFeedback,
+}: Props) {
+  const hasFeedback = !!onFeedback;
+  if (!onCreateTask && !onTrack && !onMuteSource && !hasFeedback) return null;
+  const fb = (kind: SignalActionKind) => () => onFeedback?.(signal, kind);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button size="icon-sm" variant="ghost" aria-label={copy.card.moreActions} title={copy.card.moreActions}>
+            {creatingTask ? <Loader2 className="animate-spin" /> : <MoreHorizontal />}
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="min-w-52">
+        {onCreateTask && (
+          <DropdownMenuItem onClick={() => onCreateTask(signal)} disabled={creatingTask}>
+            <ListPlus />
+            {copy.card.createTask}
+          </DropdownMenuItem>
+        )}
+        {onTrack && (
+          <DropdownMenuItem onClick={() => onTrack(signal)}>
+            {tracked ? <EyeOff /> : <Eye />}
+            {tracked ? copy.card.untrack : copy.card.track}
+          </DropdownMenuItem>
+        )}
+        {hasFeedback && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{copy.card.lessOfThis}</DropdownMenuLabel>
+              <DropdownMenuItem onClick={fb("not_relevant")}>{copy.card.notRelevant}</DropdownMenuItem>
+              <DropdownMenuItem onClick={fb("too_political")}>{copy.card.tooPolitical}</DropdownMenuItem>
+              <DropdownMenuItem onClick={fb("too_negative")}>{copy.card.tooNegative}</DropdownMenuItem>
+              <DropdownMenuItem onClick={fb("too_shallow")}>{copy.card.tooShallow}</DropdownMenuItem>
+              <DropdownMenuItem onClick={fb("already_known")}>{copy.card.alreadyKnown}</DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
+        {onMuteSource && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={() => onMuteSource(signal)}>
+              <VolumeX />
+              {copy.card.muteSource}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -142,7 +232,6 @@ function ExpandedExtras({
   copy,
   onMore,
   onLess,
-  onMuteSource,
   onFollowTopic,
 }: Props) {
   const [whyOpen, setWhyOpen] = useState(false);
@@ -164,12 +253,6 @@ function ExpandedExtras({
         <Button size="icon-sm" variant="ghost" onClick={() => onLess(signal)} aria-label={copy.card.lessLikeThis} title={copy.card.lessLikeThis}>
           <ThumbsDown />
         </Button>
-        {onMuteSource && (
-          <Button size="sm" variant="ghost" onClick={() => onMuteSource(signal)} aria-label={copy.card.muteSource} title={copy.card.muteSource}>
-            <VolumeX />
-            {copy.card.muteSource}
-          </Button>
-        )}
         {onFollowTopic && (
           <Button size="sm" variant="ghost" onClick={() => onFollowTopic(signal)} aria-label={copy.card.followTopic} title={copy.card.followTopic}>
             {copy.card.followTopic}
@@ -220,8 +303,12 @@ function FeatureCard(props: Props) {
   const isHero = variant === "hero";
   return (
     <GlassPanel
+      data-signal-id={signal.id}
       variant="default"
-      className="calendar-specular-highlight flex h-full flex-col overflow-hidden p-0"
+      className={cn(
+        "calendar-specular-highlight flex flex-col overflow-hidden p-0 scroll-mt-24 [&.signal-focused]:ring-2 [&.signal-focused]:ring-primary/60",
+        !isHero && "h-full",
+      )}
     >
       <SignalThumbnail
         signal={signal}
@@ -229,7 +316,7 @@ function FeatureCard(props: Props) {
         rounded="rounded-none"
         className={cn("w-full", isHero ? "aspect-[16/9]" : "aspect-[16/10]")}
       />
-      <div className={cn("flex flex-1 flex-col gap-3", isHero ? "p-5 sm:p-6" : "p-4")}>
+      <div className={cn("flex flex-1 flex-col gap-3", isHero ? "p-4 sm:p-5" : "p-4")}>
         <Labels signal={signal} copy={copy} />
         <h3
           className={cn(
@@ -240,8 +327,9 @@ function FeatureCard(props: Props) {
           {signal.headline}
         </h3>
         <SourceLine signal={signal} copy={copy} dateLocale={dateLocale} />
+        <ConnectionStrip signal={signal} />
         <AiOverview signal={signal} copy={copy} clamp={isHero ? undefined : 3} />
-        <div className="mt-auto pt-1">
+        <div className={cn("pt-1", !isHero && "mt-auto")}>
           <PrimaryActions {...props} />
         </div>
         {isHero && <ExpandedExtras {...props} />}
@@ -257,14 +345,19 @@ function ListCard(props: Props) {
   const [expanded, setExpanded] = useState(false);
   const detailsId = useId();
   return (
-    <GlassPanel variant="strong" interactive className="overflow-hidden p-3 sm:p-4">
-      <article aria-label={signal.headline} className="flex gap-3 sm:gap-4">
+    <GlassPanel
+      data-signal-id={signal.id}
+      variant="strong"
+      interactive
+      className="h-full overflow-hidden p-3 scroll-mt-24 sm:p-4 [&.signal-focused]:ring-2 [&.signal-focused]:ring-primary/60"
+    >
+      <article aria-label={signal.headline} className="flex h-full gap-3 sm:gap-4">
         <SignalThumbnail
           signal={signal}
           copy={copy}
-          className="size-20 shrink-0 sm:size-28"
+          className="size-20 shrink-0 sm:size-24"
         />
-        <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex min-w-0 flex-1 flex-col space-y-2">
           <Labels signal={signal} copy={copy} />
           <button
             type="button"
@@ -273,7 +366,7 @@ function ListCard(props: Props) {
             aria-controls={detailsId}
             className="group flex w-full items-start gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
-            <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-foreground sm:text-base">
+            <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug text-foreground sm:text-base">
               {signal.headline}
             </span>
             <ChevronDown
@@ -284,6 +377,7 @@ function ListCard(props: Props) {
             />
           </button>
           <SourceLine signal={signal} copy={copy} dateLocale={dateLocale} />
+          <ConnectionStrip signal={signal} />
           <AiOverview signal={signal} copy={copy} clamp={expanded ? undefined : 2} />
           <div id={detailsId} className="space-y-3">
             <PrimaryActions {...props} />
@@ -298,15 +392,21 @@ function ListCard(props: Props) {
 // ── Compact (dense row) ──
 
 function CompactCard(props: Props) {
-  const { signal, copy, dateLocale, onOpen } = props;
+  const { signal, copy, onOpen } = props;
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-card/50 px-3 py-2 transition-colors hover:bg-muted/30">
+    <div
+      data-signal-id={signal.id}
+      className="flex items-center gap-3 rounded-lg border border-border/40 bg-card/50 px-3 py-2 scroll-mt-24 transition-colors hover:bg-muted/30 [&.signal-focused]:ring-2 [&.signal-focused]:ring-primary/60"
+    >
       <SignalThumbnail signal={signal} copy={copy} rounded="rounded-md" className="size-11 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-1 text-sm font-medium text-foreground">{signal.headline}</p>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
           <TopicChip label={signal.topic} className="py-0" />
-          <span className="font-medium text-foreground/70">{signal.source.name}</span>
+          <span className="inline-flex items-center gap-1 font-medium text-foreground/70">
+            <SourceIcon source={signal.source} size={14} />
+            {signal.source.name}
+          </span>
         </div>
       </div>
       <OpenLink signal={signal} copy={copy} onOpen={onOpen} />

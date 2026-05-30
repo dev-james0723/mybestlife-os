@@ -163,6 +163,7 @@ export function useLifeAnalytics(rangeKey: AnalyticsRangeKey) {
       emotionExecution,
       brainHealth: core.brainHealth,
       aiInsight: buildLocalAIAnalyticsInsight(aiContext),
+      aiContext,
     };
   }, [
     range,

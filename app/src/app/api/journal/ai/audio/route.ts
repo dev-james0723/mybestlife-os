@@ -47,8 +47,7 @@ export async function POST(req: Request) {
   if (!isJournalTtsConfigured()) {
     return NextResponse.json(
       {
-        error:
-          "Journal audio is not configured. Set GEMINI_API_KEY or ELEVENLABS_API_KEY (and DOCORACLE_AUDIO_PROVIDER if needed).",
+        error: "Journal audio is not configured. Set VOXCPM_BASE_URL.",
       },
       { status: 503 },
     );
@@ -212,6 +211,8 @@ Return this exact JSON:
       text: script,
       locale,
       voice,
+      supabase,
+      userId: user.id,
       speed: typeof json.speed === "number" ? json.speed : undefined,
     });
     audioBytes = ttsOut.audioBytes;

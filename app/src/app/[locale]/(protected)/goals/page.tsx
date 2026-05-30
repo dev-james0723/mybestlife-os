@@ -52,6 +52,7 @@ import {
   FileText,
   Loader2,
   Lightbulb,
+  ListChecks,
 } from "lucide-react";
 import {
   useGoals,
@@ -64,6 +65,13 @@ import {
   useDeleteKeyResult,
 } from "@/hooks/use-goals";
 import { useIdeas } from "@/hooks/use-ideas";
+import { useTasks } from "@/hooks/use-tasks";
+import { useQuery } from "@tanstack/react-query";
+import { brainRelationsRepository } from "@/lib/brain/queries";
+import {
+  taskIdsForGoal,
+  computeProjectTaskProgress,
+} from "@/lib/tasks/task-linking";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { formatDate } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
@@ -239,6 +247,21 @@ function GoalDetailModal({
   const linkedIdeas = useMemo(
     () => (ideas ?? []).filter((idea) => idea.linked_goal_ids?.includes(goal.id)),
     [goal.id, ideas],
+  );
+
+  const { data: allTasks } = useTasks();
+  const { data: relations } = useQuery({
+    queryKey: ["brain", "relations"] as const,
+    queryFn: () => brainRelationsRepository.list(),
+    staleTime: 60_000,
+  });
+  const relatedTasks = useMemo(() => {
+    const ids = new Set(taskIdsForGoal(relations ?? [], goal.id));
+    return (allTasks ?? []).filter((t) => ids.has(t.id));
+  }, [relations, allTasks, goal.id]);
+  const taskProgress = useMemo(
+    () => computeProjectTaskProgress(relatedTasks),
+    [relatedTasks],
   );
 
   function enterEditMode() {
@@ -572,6 +595,46 @@ function GoalDetailModal({
                               {idea.title?.trim() || stripHtml(idea.content).slice(0, 80)}
                             </p>
                           </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {relatedTasks.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ListChecks className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="text-sm font-medium">Related tasks</h4>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {taskProgress.done}/{taskProgress.total} ·{" "}
+                          {taskProgress.completionPct}%
+                        </span>
+                      </div>
+                      <Progress value={taskProgress.completionPct} className="h-1.5" />
+                      <div className="space-y-2">
+                        {relatedTasks.slice(0, 8).map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-border/60 p-3 text-sm"
+                          >
+                            <span
+                              className={cn(
+                                "line-clamp-1",
+                                task.status === "done" &&
+                                  "text-muted-foreground line-through",
+                              )}
+                            >
+                              {task.title}
+                            </span>
+                            <Badge variant="secondary" className="shrink-0 text-[10px]">
+                              {task.status}
+                            </Badge>
+                          </div>
                         ))}
                       </div>
                     </div>

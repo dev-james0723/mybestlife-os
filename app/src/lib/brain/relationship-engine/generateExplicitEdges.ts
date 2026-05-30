@@ -274,6 +274,24 @@ export function generateExplicitEdges(input: {
       }
     }
 
+    // daily_plans.tasks[].taskId + free_tasks[].taskId
+    if (node.type === "daily_plan" && Array.isArray(meta.linked_task_ids)) {
+      for (const id of meta.linked_task_ids) {
+        if (typeof id !== "string") continue;
+        pushIfPresent(
+          explicitEdge({
+            userId: input.userId,
+            source: node,
+            targetType: "task",
+            targetSourceId: id,
+            edgeType: "linked_to_task",
+            reason: `Daily plan schedules this task.`,
+            knownIds,
+          }),
+        );
+      }
+    }
+
     // bucket_items.linked_project_id
     if (
       node.type === "bucket_list_item" &&

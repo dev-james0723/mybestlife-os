@@ -101,7 +101,7 @@ export function buildLocalAIAnalyticsInsight(
   }
   if (context.totals.overdueTasks > 0) {
     blindSpots.push(
-      `${context.totals.overdueTasks} overdue task${context.totals.overdueTasks === 1 ? "" : "s"} are creating background pressure.`,
+      `${context.totals.overdueTasks} overdue task${context.totals.overdueTasks === 1 ? " is" : "s are"} creating background pressure.`,
     );
   }
   if (context.projectMomentum.stuckProjects > 0) {

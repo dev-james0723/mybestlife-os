@@ -17,7 +17,7 @@ import {
   isOverviewWorthyText,
   type OverviewResult,
 } from "@/lib/signals/overview";
-import { dedupeThumbnails } from "@/lib/signals/thumbnails";
+import { prepareSignalDisplayPool } from "@/lib/signals/thumbnails";
 import {
   selectDailyTop3Signals,
   selectLocalSignals,
@@ -171,7 +171,7 @@ export function useSignalsPage(
     }
 
     // Dedupe repeated REAL thumbnails up-front so no image shows twice anywhere.
-    const poolItems = dedupeThumbnails(candidates.items);
+    const poolItems = prepareSignalDisplayPool(candidates.items);
 
     const sectionOf = new Map<string, SignalSectionKey>();
     const attach = (item: SignalItem, section: SignalSectionKey): SignalItem => {
@@ -246,18 +246,34 @@ export function useSignalsPage(
     };
   }, [enabled, candidates, prefs, ctx, copy, status, regenSeed, overviewMap, language]);
 
-  // Best-effort AI overviews for the hero items only (cached; never blocks UI).
-  const top3Key = data.top3.map((s) => s.id).join(",");
+  // Best-effort AI overviews for visible cards (cached; never blocks UI).
+  const overviewKey = [
+    ...data.top3,
+    ...data.world.slice(0, 8),
+    ...data.personal.slice(0, 6),
+  ]
+    .map((s) => s.id)
+    .join(",");
   useEffect(() => {
     if (!enabled || data.dataSource === "demo") return;
-    const worthy = data.top3.filter((s) => isOverviewWorthyText(s.summary));
+    const seen = new Set<string>();
+    const candidates = [...data.top3, ...data.world, ...data.personal].filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
+    const worthy = candidates.filter(
+      (s) => isOverviewWorthyText(s.summary) || (s.headline?.trim().length ?? 0) >= 20,
+    );
     if (worthy.length === 0) return;
     let cancelled = false;
     fetchSignalOverviews(
-      worthy.map((s) => ({
+      worthy.slice(0, 12).map((s) => ({
         id: s.id,
         headline: s.headline,
-        snippet: s.summary,
+        snippet: isOverviewWorthyText(s.summary)
+          ? s.summary
+          : `${s.headline}. Source: ${s.source.name}.`,
         topic: s.topic,
         sourceName: s.source.name,
       })),
@@ -270,7 +286,7 @@ export function useSignalsPage(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, top3Key, language, data.dataSource]);
+  }, [enabled, overviewKey, language, data.dataSource]);
 
   return { data, refreshSources, regenerateTop3, refreshing, regenerating };
 }

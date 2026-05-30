@@ -269,6 +269,7 @@ function IdeaDetailInner({
                       <SelectContent>
                         <SelectItem value="text">{ui.sourceLabels.text}</SelectItem>
                         <SelectItem value="voice">{ui.sourceLabels.voice}</SelectItem>
+                        <SelectItem value="share">{ui.sourceLabels.share}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

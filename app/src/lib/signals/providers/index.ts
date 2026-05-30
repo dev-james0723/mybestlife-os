@@ -13,16 +13,17 @@
  * cached rows. Add GDELT + official-alert providers to the registry.
  */
 
+import { enrichSignalItems } from "../article-metadata";
 import { dedupeSignals, normalizeSignalItem } from "../normalize";
+import { onlySignalsWithRealThumbnails } from "../thumbnails";
 import type { SignalItem } from "../types";
 import { gdeltProvider } from "./gdelt";
-import {
-  googleNewsLocalProvider,
-  googleNewsTopicProvider,
-  googleNewsWorldProvider,
-} from "./google-news";
-import { hackerNewsProvider } from "./hacker-news";
 import { marketsProvider } from "./markets";
+import {
+  publisherLocalProvider,
+  publisherTopicProvider,
+  publisherWorldProvider,
+} from "./publisher-feeds";
 import { customRssProvider } from "./rss";
 import { youtubeVideoProvider } from "./youtube";
 import type { SignalProvider, SignalProviderRequest } from "./types";
@@ -32,10 +33,9 @@ import type { SignalProvider, SignalProviderRequest } from "./types";
  * custom RSS) self-gate on request flags so they cost nothing when disabled.
  */
 export const ALL_PROVIDERS: SignalProvider[] = [
-  googleNewsWorldProvider,
-  googleNewsTopicProvider,
-  googleNewsLocalProvider,
-  hackerNewsProvider,
+  publisherWorldProvider,
+  publisherTopicProvider,
+  publisherLocalProvider,
   marketsProvider,
   youtubeVideoProvider,
   customRssProvider,
@@ -84,8 +84,17 @@ export async function aggregateCandidates(
     }
   }
 
+  const deduped = dedupeSignals(normalized);
+  // OG backfill only for stragglers (e.g. Hacker News) — publisher RSS already ships images.
+  const enriched = await enrichSignalItems(deduped, {
+    maxItems: 20,
+    concurrency: 5,
+    signal: req.signal,
+  });
+  const items = onlySignalsWithRealThumbnails(enriched);
+
   return {
-    items: dedupeSignals(normalized),
+    items,
     providersTried,
     providersSucceeded,
     providersFailed,

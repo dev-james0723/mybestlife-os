@@ -11,7 +11,7 @@ import {
 import { customTopicRssFeeds } from "@/lib/signals/custom-topics";
 import { deriveRelevance } from "@/lib/signals/relevance";
 import { selectDailyTop3Signals } from "@/lib/signals/scoring";
-import { dedupeThumbnails } from "@/lib/signals/thumbnails";
+import { prepareSignalDisplayPool } from "@/lib/signals/thumbnails";
 import { capWidgetSignals } from "@/lib/signals/widget";
 import type { SignalItem, SignalsDataSource } from "@/lib/signals/types";
 import { useSignalsPreferences } from "./use-signals-preferences";
@@ -73,7 +73,7 @@ export function useSignalsSummary(): UseSignalsSummaryReturn {
       .then((result) => {
         if (cancelled || !mountedRef.current) return;
         const top3 = capWidgetSignals(
-          selectDailyTop3Signals(dedupeThumbnails(result.items), prefs, ctx),
+          selectDailyTop3Signals(prepareSignalDisplayPool(result.items), prefs, ctx),
         ).map((item) => {
           const { basis, term } = deriveRelevance(item, prefs, ctx, "top3");
           return {

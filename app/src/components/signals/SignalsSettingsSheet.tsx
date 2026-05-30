@@ -25,14 +25,17 @@ import {
   type SignalConsentKey,
 } from "@/lib/signals/constants";
 import type {
+  SignalMemorySummary,
   SignalsFeedIntensity,
   SignalsGallerySpeed,
   SignalsPreferences,
   SignalsTone,
   SignalsViewMode,
+  SignalWeeklyReflection,
 } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
 import { CustomTopicsManager } from "./CustomTopicsManager";
+import { SignalMemoryPanel } from "./SignalMemoryPanel";
 
 const FEED_INTENSITIES: SignalsFeedIntensity[] = ["top3", "light", "balanced", "deep"];
 const TONES: SignalsTone[] = [
@@ -54,6 +57,11 @@ type Props = {
   prefs: SignalsPreferences;
   update: (patch: Partial<SignalsPreferences>) => void;
   reset: () => void;
+  /** Signal Memory read model (inspectable, §17). */
+  memory: SignalMemorySummary;
+  reflection: SignalWeeklyReflection;
+  /** Wipe the local reading history (separate from resetting prefs). */
+  onClearHistory: () => void;
 };
 
 export function SignalsSettingsSheet({
@@ -63,6 +71,9 @@ export function SignalsSettingsSheet({
   prefs,
   update,
   reset,
+  memory,
+  reflection,
+  onClearHistory,
 }: Props) {
   const toggleTopic = (topic: string) => {
     const following = prefs.followedTopics.includes(topic);
@@ -299,6 +310,20 @@ export function SignalsSettingsSheet({
                 ))}
               </ul>
             )}
+          </section>
+
+          {/* Signal Memory — inspectable + resettable control surface (§17) */}
+          <section className="space-y-2 border-t border-border/40 pt-4">
+            <div>
+              <h3 className="text-sm font-medium text-foreground">{copy.memory.title}</h3>
+              <p className="text-xs text-muted-foreground">{copy.memory.subtitle}</p>
+            </div>
+            <SignalMemoryPanel
+              memory={memory}
+              reflection={reflection}
+              copy={copy}
+              onClearHistory={onClearHistory}
+            />
           </section>
 
           {/* Reset */}

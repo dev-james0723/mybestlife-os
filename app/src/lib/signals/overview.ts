@@ -16,7 +16,7 @@ import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { SignalItem } from "./types";
 
 /** Min chars of real source prose before an overview is worth summarizing. */
-export const OVERVIEW_MIN_SNIPPET_CHARS = 120;
+export const OVERVIEW_MIN_SNIPPET_CHARS = 48;
 
 const LIMITED: Record<string, string> = {
   en: "Overview limited — open source for full details.",
@@ -50,13 +50,18 @@ function clamp(text: string, max = 320): string {
  * source snippet when present; otherwise the honest "Overview limited" string.
  */
 export function buildDeterministicOverview(
-  signal: Pick<SignalItem, "summary">,
+  signal: Pick<SignalItem, "summary" | "headline">,
   lang: AppLocale | string,
 ): { text: string; grounded: boolean } {
-  if (isPlaceholderSnippet(signal.summary)) {
-    return { text: overviewLimitedText(lang), grounded: false };
+  if (!isPlaceholderSnippet(signal.summary)) {
+    return { text: clamp(signal.summary), grounded: true };
   }
-  return { text: clamp(signal.summary), grounded: true };
+  // Last resort: headline-only line so cards are never empty (user still opens source).
+  const headline = signal.headline?.trim();
+  if (headline && headline.length >= 16) {
+    return { text: clamp(headline, 220), grounded: false };
+  }
+  return { text: overviewLimitedText(lang), grounded: false };
 }
 
 /** Attach a deterministic overview to a signal (idempotent; never overwrites a richer one). */

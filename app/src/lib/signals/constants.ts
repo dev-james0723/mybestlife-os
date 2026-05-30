@@ -8,6 +8,7 @@
  */
 
 import type {
+  SignalActionKind,
   SignalsGallerySpeed,
   SignalSourceTier,
   SignalsFeedIntensity,
@@ -190,6 +191,47 @@ export const DEFAULT_SIGNALS_PREFERENCES: SignalsPreferences = {
 };
 
 export const SIGNALS_PREFS_STORAGE_KEY = "mylifeos.signals.prefs.v1";
+
+// ============================================================
+// Reading behavior + memory + follow-ups (Signal Memory loop, §17/§21).
+// All local-only (privacy-safe); Supabase migration targets exist
+// (user_signal_actions, signal_followups). Bumping a key only loses local
+// history, never live data.
+// ============================================================
+
+export const SIGNALS_ACTIONS_STORAGE_KEY = "mylifeos.signals.actions.v1";
+export const SIGNALS_FOLLOWUPS_STORAGE_KEY = "mylifeos.signals.followups.v1";
+
+/** Hard cap on the locally retained action log (newest kept). */
+export const SIGNALS_ACTIONS_MAX = 600;
+
+/** Half-life (days) for recency-decaying behavior affinity — recent reactions matter more. */
+export const BEHAVIOR_AFFINITY_HALF_LIFE_DAYS = 14;
+
+/**
+ * Per-action contribution to topic affinity before recency decay. Positive
+ * actions lift a topic; negative ones cool it. Mapped so every §17 control has
+ * a perceptible, honest effect.
+ */
+export const BEHAVIOR_TOPIC_WEIGHTS: Partial<Record<SignalActionKind, number>> = {
+  save: 0.5,
+  to_brain: 0.4,
+  more_like_this: 0.4,
+  follow_topic: 0.35,
+  track: 0.25,
+  to_task: 0.25,
+  open: 0.05,
+  dismiss: -0.3,
+  less_like_this: -0.45,
+  not_relevant: -0.55,
+  already_known: -0.15,
+};
+
+/** Max absolute behavior bonus added to a signal's score (kept small vs. importance). */
+export const BEHAVIOR_SCORE_WEIGHT = 0.18;
+
+/** Saturating sensitivity: n flags → 1 − e^(−n / SCALE). */
+export const BEHAVIOR_SENSITIVITY_SCALE = 2.5;
 
 // ============================================================
 // Auto-rotating gallery — interval per speed (ms). OFF/slow by default (§ calm).

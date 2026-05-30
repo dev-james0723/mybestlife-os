@@ -2,6 +2,7 @@
 
 import type { AnalyticsRangeKey, LifeAnalytics } from "@/lib/analytics/types";
 import { AIInterventionPanel } from "./AIInterventionPanel";
+import { AudioOverviewPanel } from "./AudioOverviewPanel";
 import { BrainHealthPanel } from "./BrainHealthPanel";
 import { EmotionExecutionHeatmap } from "./EmotionExecutionHeatmap";
 import { LifeDomainRadar } from "./LifeDomainRadar";
@@ -40,7 +41,10 @@ export function AnalyticsControlCenter({
         hasData={analytics.momentumWave.hasData}
       />
 
-      <AIInterventionPanel insight={analytics.aiInsight} />
+      <div className="space-y-5">
+        <AudioOverviewPanel metrics={analytics.aiContext} />
+        <AIInterventionPanel insight={analytics.aiInsight} />
+      </div>
 
       <ProjectMomentumMap
         projects={analytics.projectMomentum.projects}

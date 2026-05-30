@@ -30,6 +30,9 @@ export type UpdateProfileInput = Partial<
     | "block_minutes"
     | "quick_tasks"
     | "display_currency"
+    | "quick_save_enabled"
+    | "quick_save_default_destination"
+    | "quick_save_require_review"
   >
 >;
 
@@ -67,6 +70,13 @@ function coerceNumOrNull(v: unknown): number | null {
   return null;
 }
 
+function coerceQuickSaveDefaultDestination(
+  v: unknown,
+): UserProfile["quick_save_default_destination"] {
+  if (v === "knowledge" || v === "idea" || v === "review") return v;
+  return "review";
+}
+
 function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
   const base = row as unknown as UserProfile;
   const raw = row.display_currency;
@@ -80,6 +90,15 @@ function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
     weather_lat: coerceNumOrNull(row.weather_lat),
     weather_lon: coerceNumOrNull(row.weather_lon),
     weather_city,
+    quick_save_enabled:
+      typeof row.quick_save_enabled === "boolean" ? row.quick_save_enabled : false,
+    quick_save_default_destination: coerceQuickSaveDefaultDestination(
+      row.quick_save_default_destination,
+    ),
+    quick_save_require_review:
+      typeof row.quick_save_require_review === "boolean"
+        ? row.quick_save_require_review
+        : true,
   };
 }
 
@@ -215,6 +234,25 @@ export const settingsRepository = {
         isMissingProfilesColumnError(error, "weather_lat")
       ) {
         const { weather_lat: _a, weather_lon: _b, weather_city: _c, ...rest } = payload;
+        payload = rest;
+        continue;
+      }
+
+      if (
+        error &&
+        ("quick_save_enabled" in payload ||
+          "quick_save_default_destination" in payload ||
+          "quick_save_require_review" in payload) &&
+        (isMissingProfilesColumnError(error, "quick_save_enabled") ||
+          isMissingProfilesColumnError(error, "quick_save_default_destination") ||
+          isMissingProfilesColumnError(error, "quick_save_require_review"))
+      ) {
+        const {
+          quick_save_enabled: _a,
+          quick_save_default_destination: _b,
+          quick_save_require_review: _c,
+          ...rest
+        } = payload;
         payload = rest;
         continue;
       }

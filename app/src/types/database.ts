@@ -23,6 +23,8 @@ export type GreetingTone = "friendly" | "motivational" | "minimal" | "poetic";
 export type SidebarWidth = "narrow" | "default" | "wide";
 export type UiCopyMode = "zh-TW" | "en" | "mixed";
 export type CaptureKind = "idea" | "task" | "note" | "goal";
+export type IdeaSourceType = "text" | "voice" | "share";
+export type QuickSaveDefaultDestination = "review" | "knowledge" | "idea";
 
 export type BlockMinutesOption = 5 | 10 | 15 | 20 | 30;
 
@@ -69,6 +71,9 @@ export type UserProfile = {
   quick_tasks: QuickTaskDef[] | null;
   /** ISO 4217 (uppercase). Finance display + FX base. */
   display_currency: string;
+  quick_save_enabled: boolean;
+  quick_save_default_destination: QuickSaveDefaultDestination;
+  quick_save_require_review: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -115,14 +120,18 @@ export type ProjectResource = {
   updated_at: string;
 };
 
+export type TaskStatus = "todo" | "in-progress" | "done" | "cancelled";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type CalendarProvider = "local" | "google";
+
 export type Task = {
   id: string;
   user_id: string;
   project_id: string | null;
   title: string;
   description: string | null;
-  status: "todo" | "in-progress" | "done" | "cancelled";
-  priority: "low" | "medium" | "high" | "urgent";
+  status: TaskStatus;
+  priority: TaskPriority;
   due_date: string | null;
   completed_at: string | null;
   estimated_blocks: number | null;
@@ -130,9 +139,35 @@ export type Task = {
   source: string | null;
   source_url: string | null;
   reminder_date: string | null;
+  /** App-normalized classification; null falls back to a derived category. */
+  category: string | null;
+  /** True when created/expanded by an AI flow. */
+  ai_generated: boolean;
+  /** AI suggestion bag (proposed subtasks, reasoning, model used). */
+  ai_metadata: Json | null;
+  /** Manual / board ordering. Null sorts last. */
+  sort_order: number | null;
+  /** Day the user intends to work on the task (distinct from due_date). */
+  scheduled_date: string | null;
+  /** Linked calendar event id when scheduled. */
+  calendar_event_id: string | null;
+  calendar_provider: CalendarProvider | null;
   created_at: string;
   updated_at: string;
-  project?: Pick<Project, "id" | "name"> | null;
+  project?:
+    | (Pick<Project, "id" | "name"> & Partial<Pick<Project, "status" | "priority">>)
+    | null;
+};
+
+export type TaskSubtask = {
+  id: string;
+  user_id: string;
+  task_id: string;
+  title: string;
+  is_done: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Goal = {
@@ -246,7 +281,7 @@ export type Idea = {
   id: string;
   user_id: string;
   content: string;
-  source_type: "text" | "voice";
+  source_type: IdeaSourceType;
   capture_kind: CaptureKind;
   voice_transcript: string | null;
   linked_project_ids: string[];
@@ -269,6 +304,32 @@ export type Idea = {
   linked_knowledge_item_ids: string[];
   linked_node_ids: string[];
   related_resource_refs: Json[];
+};
+
+export type QuickSaveCaptureStatus = "pending" | "saved" | "discarded" | "failed";
+export type QuickSaveCaptureDestination = "knowledge" | "idea";
+
+export type QuickSaveFileRef = {
+  name: string;
+  mime_type: string | null;
+  size: number;
+  storage_path: string;
+  public_url?: string | null;
+};
+
+export type QuickSaveCapture = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  text: string | null;
+  url: string | null;
+  normalized_url: string | null;
+  file_refs: QuickSaveFileRef[];
+  status: QuickSaveCaptureStatus;
+  destination: QuickSaveCaptureDestination | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type JapaneseStudySession = {
@@ -1119,6 +1180,35 @@ export type UserAIPreferences = {
   version_retention_limit: number;
   /** Phase 3: opt-in to server-side AI content analysis for smart tags. */
   allow_ai_analysis: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TtsVoiceMode = "preset" | "reference_clone";
+export type TtsProvider = "voxcpm";
+export type TtsVoiceProfileStatus = "active" | "archived";
+
+export type UserTtsPreferences = {
+  user_id: string;
+  provider: TtsProvider;
+  voice_mode: TtsVoiceMode;
+  preset_id: string;
+  active_voice_profile_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserTtsVoiceProfile = {
+  id: string;
+  user_id: string;
+  label: string;
+  kind: "reference_clone";
+  reference_storage_path: string;
+  reference_transcript: string | null;
+  consent_confirmed_at: string;
+  sample_duration_seconds: number | null;
+  mime_type: string | null;
+  status: TtsVoiceProfileStatus;
   created_at: string;
   updated_at: string;
 };

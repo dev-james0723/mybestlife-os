@@ -12,6 +12,7 @@
  */
 
 import {
+  BEHAVIOR_SCORE_WEIGHT,
   MAX_NEGATIVE_IN_TOP3,
   BLIND_SPOT_EVERY_N_DAYS,
   RANKING_WEIGHTS,
@@ -62,6 +63,24 @@ const CLICKBAIT_PATTERNS = [
   /\bgoes? viral\b/i,
   /\bwild\b/i,
   /\d+\s+(things|reasons|ways)\b/i,
+];
+
+const POLITICAL_KEYWORDS = [
+  "election",
+  "senate",
+  "congress",
+  "parliament",
+  "president",
+  "minister",
+  "policy",
+  "campaign",
+  "vote",
+  "republican",
+  "democrat",
+  "legislation",
+  "lawmaker",
+  "government",
+  "diplomat",
 ];
 
 function clamp01(value: number): number {
@@ -154,6 +173,59 @@ export function isNegative(signal: SignalItem): boolean {
   return NEGATIVE_KEYWORDS.some((k) => text.includes(k));
 }
 
+export function isPolitical(signal: SignalItem): boolean {
+  const text = `${signal.headline} ${signal.tags.join(" ")} ${signal.topic}`.toLowerCase();
+  return POLITICAL_KEYWORDS.some((k) => text.includes(k));
+}
+
+/**
+ * Reading-behavior bonus in [-1, 1] (§11). Consent-gated upstream: this only
+ * fires when `ctx.behavior` is present. Combines the item's topic affinity, a
+ * positive lift from saved-topic terms, and a negative source affinity (mutes/
+ * dismissals). Deterministic — derived from the local action log, never an LLM.
+ */
+export function computeBehaviorBonus(signal: SignalItem, ctx: LifeOsContext): number {
+  const b = ctx.behavior;
+  if (!b) return 0;
+  let bonus = 0;
+  const topicAff = b.topicAffinity[signal.topic.toLowerCase()];
+  if (typeof topicAff === "number") bonus += topicAff;
+  if (b.savedTerms.length > 0) bonus += 0.5 * overlapScore(searchText(signal), b.savedTerms);
+  const domain = signal.source.domain?.toLowerCase();
+  if (domain) {
+    const srcAff = b.sourceAffinity[domain];
+    if (typeof srcAff === "number") bonus += srcAff;
+  }
+  return Math.max(-1, Math.min(1, bonus));
+}
+
+/**
+ * Personalized content penalty driven by "Too negative / Too political / Too
+ * shallow" feedback. Each is a saturating 0–1 sensitivity that down-ranks the
+ * matching content for *this* user — the item still exists, it just stops
+ * crowding the day (§17: censorship-free, perceptible effect).
+ */
+export function computeBehaviorPenalty(
+  signal: SignalItem,
+  ctx: LifeOsContext,
+  sourceQuality: number,
+): number {
+  const b = ctx.behavior;
+  if (!b) return 0;
+  let penalty = 0;
+  if (b.negativitySensitivity > 0 && isNegative(signal)) {
+    penalty += 0.14 * b.negativitySensitivity;
+  }
+  if (b.politicalSensitivity > 0 && isPolitical(signal)) {
+    penalty += 0.14 * b.politicalSensitivity;
+  }
+  // "Too shallow" → prefer higher-tier sources; down-rank thin/low-tier items.
+  if (b.shallowSensitivity > 0 && sourceQuality < 0.55) {
+    penalty += 0.1 * b.shallowSensitivity;
+  }
+  return Math.min(0.3, penalty);
+}
+
 function resolveWeights(prefs: SignalsPreferences): typeof RANKING_WEIGHTS {
   const override = TONE_WEIGHT_OVERRIDES[prefs.tone];
   if (!override) return RANKING_WEIGHTS;
@@ -177,6 +249,8 @@ export function scoreSignal(
   const noisePenalty = computeNoisePenalty(signal);
 
   const customBoost = computeCustomBoost(signal, ctx);
+  const behaviorBonus = BEHAVIOR_SCORE_WEIGHT * computeBehaviorBonus(signal, ctx);
+  const behaviorPenalty = computeBehaviorPenalty(signal, ctx, sourceQuality);
 
   const total =
     weights.importance * importance +
@@ -184,8 +258,10 @@ export function scoreSignal(
     weights.freshness * freshness +
     weights.sourceQuality * sourceQuality +
     weights.locality * locality +
-    customBoost -
-    noisePenalty;
+    customBoost +
+    behaviorBonus -
+    noisePenalty -
+    behaviorPenalty;
 
   return {
     importance,
@@ -193,8 +269,8 @@ export function scoreSignal(
     freshness,
     sourceQuality,
     locality,
-    noisePenalty,
-    diversityBoost: customBoost,
+    noisePenalty: noisePenalty + behaviorPenalty,
+    diversityBoost: customBoost + behaviorBonus,
     total: Math.max(0, total),
   };
 }
@@ -208,9 +284,13 @@ export function rankSignals(
 ): SignalItem[] {
   const hidden = new Set(prefs.hiddenTopics.map((t) => t.toLowerCase()));
   const muted = new Set(prefs.mutedSources);
+  // Items the user explicitly suppressed (already-known / not-relevant) are
+  // hard-hidden — an explicit per-item action, applied regardless of consent.
+  const suppressed = new Set(ctx.behavior?.suppressedIds ?? []);
   return signals
     .filter((s) => !hidden.has(s.topic.toLowerCase()))
     .filter((s) => !(s.source.domain && muted.has(s.source.domain)))
+    .filter((s) => !suppressed.has(s.id))
     .map((s) => ({ ...s, score: scoreSignal(s, prefs, ctx, now) }))
     .sort((a, b) => (b.score?.total ?? 0) - (a.score?.total ?? 0));
 }

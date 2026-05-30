@@ -28,8 +28,8 @@ const VARIANT: Record<
 };
 
 export function FieldConfidenceBadge({ field, confidence, source }: Props) {
-  if (!confidence) return null;
   const language = useAppStore((s) => s.language);
+  if (!confidence) return null;
   const copy = getVaultUiCopy(language).confidence;
 
   const label = copy.levels[confidence] ?? confidence;

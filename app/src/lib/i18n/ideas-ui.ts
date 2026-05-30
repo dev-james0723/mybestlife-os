@@ -57,7 +57,7 @@ export type IdeasUiCopy = {
   clearAllFilters: string;
   categoryLabels: Record<IdeaCategorySlug, string>;
   statusLabels: Record<"captured" | "reviewed" | "archived", string>;
-  sourceLabels: Record<"text" | "voice", string>;
+  sourceLabels: Record<"text" | "voice" | "share", string>;
   captureKindLabels: Record<"idea" | "task" | "note" | "goal", string>;
   destinationTask: string;
   destinationGraph: string;
@@ -243,6 +243,7 @@ const en: IdeasUiCopy = {
   sourceLabels: {
     text: "Text",
     voice: "Voice",
+    share: "Share",
   },
   captureKindLabels: {
     idea: "Idea",

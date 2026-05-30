@@ -142,6 +142,10 @@ export function dailyPlansToBrainNodes(input: {
           plan_date: p.plan_date,
           start_time: p.start_time,
           end_time: p.end_time,
+          linked_task_ids: [
+            ...(p.tasks ?? []).map((t) => t.taskId),
+            ...(p.free_tasks ?? []).map((t) => t.taskId),
+          ].filter((id): id is string => typeof id === "string" && id.length > 0),
         },
       },
       { sourceModule: "daily_plan" },

@@ -190,10 +190,56 @@ export type SignalsUiCopy = {
     /** Extra interactions. */
     muteSource: string;
     followTopic: string;
+    /** Overflow menu + write-paths + "less of this" feedback (§13/§17). */
+    moreActions: string;
+    createTask: string;
+    track: string;
+    untrack: string;
+    lessOfThis: string;
+    notRelevant: string;
+    tooPolitical: string;
+    tooNegative: string;
+    tooShallow: string;
+    alreadyKnown: string;
   };
 
   /** Honest "why this signal?" reasons, generated from the relevance basis. */
   relevanceReason: Record<SignalRelevanceBasis, (term?: string) => string>;
+
+  /** Follow-Up Tracker (§7/§21). */
+  followUps: {
+    title: string;
+    subtitle: string;
+    trackedCount: (n: number) => string;
+    updates: (n: number) => string;
+    trackedSince: (relative: string) => string;
+    markDone: string;
+    reopen: string;
+    remove: string;
+    statusDone: string;
+  };
+
+  /** Signal Memory control surface + Weekly Reflection (§17/§21). */
+  memory: {
+    title: string;
+    subtitle: string;
+    empty: string;
+    likedTopics: string;
+    cooledTopics: string;
+    sensitivities: string;
+    negativity: string;
+    political: string;
+    shallow: string;
+    level: { off: string; low: string; medium: string; high: string };
+    saved: string;
+    dismissed: string;
+    tracked: string;
+    toBrain: string;
+    weeklyTitle: string;
+    weeklyEmpty: string;
+    weeklyTopTopics: string;
+    clearHistory: string;
+  };
 
   onboarding: {
     skip: string;
@@ -244,6 +290,10 @@ export type SignalsUiCopy = {
     lessAck: string;
     sourceMuted: string;
     topicFollowed: string;
+    feedbackAck: string;
+    tracked: string;
+    taskCreated: string;
+    taskFailed: string;
     locationDetected: (city: string) => string;
     locationDenied: string;
   };
@@ -463,6 +513,16 @@ const en: SignalsUiCopy = {
     imageUnavailable: "Image unavailable",
     muteSource: "Mute source",
     followTopic: "Follow topic",
+    moreActions: "More actions",
+    createTask: "Create task",
+    track: "Track this story",
+    untrack: "Stop tracking",
+    lessOfThis: "Less of this",
+    notRelevant: "Not relevant",
+    tooPolitical: "Too political",
+    tooNegative: "Too negative",
+    tooShallow: "Too shallow",
+    alreadyKnown: "Already know this",
   },
   relevanceReason: {
     topic_match: (term) => `Matches a topic you follow: ${term ?? "your topics"}.`,
@@ -483,6 +543,37 @@ const en: SignalsUiCopy = {
         ? `Outside your usual topics (${term}) — a deliberate broadening signal.`
         : "Outside your usual topics — a deliberate broadening signal.",
     demo: () => "Sample signal — connect a source to personalize.",
+  },
+  followUps: {
+    title: "Following up",
+    subtitle: "Developing stories you're tracking.",
+    trackedCount: (n) => `Tracking ${n} ${n === 1 ? "story" : "stories"}.`,
+    updates: (n) => `Developed ${n}×`,
+    trackedSince: (relative) => `tracking since ${relative}`,
+    markDone: "Mark done",
+    reopen: "Resume tracking",
+    remove: "Remove",
+    statusDone: "Done",
+  },
+  memory: {
+    title: "Signal Memory",
+    subtitle: "What Signals learned from your feedback — yours to inspect and reset.",
+    empty: "No feedback yet — use the card controls and your tuning will appear here.",
+    likedTopics: "More of",
+    cooledTopics: "Less of",
+    sensitivities: "Content sensitivity",
+    negativity: "Negativity",
+    political: "Politics",
+    shallow: "Depth",
+    level: { off: "Off", low: "Low", medium: "Medium", high: "High" },
+    saved: "Saved",
+    dismissed: "Dismissed",
+    tracked: "Tracked",
+    toBrain: "To Brain",
+    weeklyTitle: "This week",
+    weeklyEmpty: "No Signals activity yet this week.",
+    weeklyTopTopics: "Most engaged:",
+    clearHistory: "Clear reading history",
   },
   onboarding: {
     skip: "Skip for now",
@@ -597,6 +688,10 @@ const en: SignalsUiCopy = {
     lessAck: "We'll show less like this.",
     sourceMuted: "Source muted.",
     topicFollowed: "Topic followed.",
+    feedbackAck: "Got it — you'll see less like this.",
+    tracked: "Tracking this story.",
+    taskCreated: "Task created.",
+    taskFailed: "Could not create a task.",
     locationDetected: (city) => `Showing local signals for ${city}.`,
     locationDenied: "Location unavailable — pick a city instead.",
   },
@@ -671,6 +766,16 @@ const zhTW: DeepPartial<SignalsUiCopy> = {
     imageUnavailable: "圖片無法顯示",
     muteSource: "靜音來源",
     followTopic: "追蹤主題",
+    moreActions: "更多操作",
+    createTask: "建立任務",
+    track: "追蹤這則發展",
+    untrack: "停止追蹤",
+    lessOfThis: "少一些這類",
+    notRelevant: "不相關",
+    tooPolitical: "太政治",
+    tooNegative: "太負面",
+    tooShallow: "太淺",
+    alreadyKnown: "我已知道",
   },
   onboarding: {
     skip: "暫時略過",
@@ -833,6 +938,54 @@ const zhTW: DeepPartial<SignalsUiCopy> = {
     mutedBadge: "已靜音",
     save: "儲存",
     cancel: "取消",
+  },
+  followUps: {
+    title: "持續追蹤",
+    subtitle: "你正在關注的發展中故事。",
+    trackedCount: (n) => `正在追蹤 ${n} 則故事。`,
+    updates: (n) => `更新 ${n} 次`,
+    trackedSince: (relative) => `自 ${relative} 起追蹤`,
+    markDone: "標記完成",
+    reopen: "繼續追蹤",
+    remove: "移除",
+    statusDone: "已完成",
+  },
+  memory: {
+    title: "訊號記憶",
+    subtitle: "Signals 從你的回饋中學到的內容 — 可隨時檢視與重設。",
+    empty: "尚無回饋 — 使用卡片上的控制項，你的調整就會顯示在這裡。",
+    likedTopics: "想看更多",
+    cooledTopics: "想看更少",
+    sensitivities: "內容敏感度",
+    negativity: "負面",
+    political: "政治",
+    shallow: "深度",
+    level: { off: "關閉", low: "低", medium: "中", high: "高" },
+    saved: "已儲存",
+    dismissed: "已略過",
+    tracked: "追蹤中",
+    toBrain: "存到 Brain",
+    weeklyTitle: "本週",
+    weeklyEmpty: "本週尚無 Signals 活動。",
+    weeklyTopTopics: "最常關注：",
+    clearHistory: "清除閱讀紀錄",
+  },
+  toast: {
+    savedToBrain: "已存到 Brain。",
+    savedToBrainNoEmbed: "已存到 Brain（索引稍後完成）。",
+    saveFailed: "無法存到 Brain。",
+    demoCannotSave: "這是示範訊號 — 請先連接即時來源再儲存。",
+    dismissed: "已略過。",
+    moreAck: "我們會顯示更多這類內容。",
+    lessAck: "我們會顯示更少這類內容。",
+    sourceMuted: "已靜音來源。",
+    topicFollowed: "已追蹤主題。",
+    feedbackAck: "了解 — 你會看到更少這類內容。",
+    tracked: "已開始追蹤這則故事。",
+    taskCreated: "已建立任務。",
+    taskFailed: "無法建立任務。",
+    locationDetected: (city) => `顯示 ${city} 的在地訊號。`,
+    locationDenied: "無法取得定位 — 請改選城市。",
   },
 };
 
