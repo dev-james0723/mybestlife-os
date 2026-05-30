@@ -24,6 +24,19 @@ export const assetDocumentsKey = (assetId: string) =>
 // Images
 // ---------------------------------------------------------------------------
 
+/** All primary images for the current user, keyed by `asset_id`. */
+export function usePrimaryAssetImages() {
+  return useQuery({
+    queryKey: ["asset-images", "primary-all"] as const,
+    queryFn: async () => {
+      const rows = await assetImagesRepository.listPrimaryForUser();
+      const map = new Map<string, string>();
+      for (const row of rows) map.set(row.asset_id, row.image_url);
+      return map;
+    },
+  });
+}
+
 export function useAssetImages(assetId: string | null) {
   return useQuery({
     queryKey: assetImagesKey(assetId ?? "none"),

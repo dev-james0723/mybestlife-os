@@ -43,6 +43,21 @@ export const assetImagesRepository = {
     return (data ?? []) as AssetImage[];
   },
 
+  /**
+   * All of the current user's primary images in one query, for mapping onto
+   * the asset grid by `asset_id` without an N+1 fan-out. RLS scopes to the
+   * authenticated user.
+   */
+  async listPrimaryForUser(): Promise<AssetImage[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("asset_images")
+      .select("*")
+      .eq("is_primary", true);
+    if (error) throw error;
+    return (data ?? []) as AssetImage[];
+  },
+
   async create(input: CreateAssetImageInput): Promise<AssetImage> {
     const supabase = createClient();
     const { data, error } = await supabase
