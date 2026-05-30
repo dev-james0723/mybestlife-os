@@ -203,8 +203,8 @@ export function AIAssetCreationWizard({
     try {
       const res = await generateImage.mutateAsync({
         assetName: form.name,
-        brand: result?.possible_brand,
-        model: result?.possible_model,
+        brand: result?.possible_brand ?? null,
+        model: result?.possible_model ?? null,
         category_key: form.category_key || null,
         visualStyle: "ultra_realistic_product_photo",
       });

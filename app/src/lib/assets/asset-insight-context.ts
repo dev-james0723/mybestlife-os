@@ -97,7 +97,7 @@ export function buildAssetInsightContext(
       id: a.id,
       title: a.name,
       kind: a.category_key ?? "asset",
-      detail: truncate(a.notes),
+      detail: truncate(a.notes) ?? null,
     }));
 
   const projects: AssetInsightContextItem[] = rankByRelevance(
@@ -109,7 +109,7 @@ export function buildAssetInsightContext(
     id: p.id,
     title: p.name,
     kind: p.status,
-    detail: truncate(p.description),
+    detail: truncate(p.description) ?? null,
   }));
 
   const tasks: AssetInsightContextItem[] = rankByRelevance(
@@ -121,7 +121,7 @@ export function buildAssetInsightContext(
     id: t.id,
     title: t.title,
     kind: t.status,
-    detail: truncate(t.description),
+    detail: truncate(t.description) ?? null,
   }));
 
   const goals: AssetInsightContextItem[] = rankByRelevance(
@@ -133,7 +133,7 @@ export function buildAssetInsightContext(
     id: g.id,
     title: g.name,
     kind: g.status,
-    detail: truncate(g.description),
+    detail: truncate(g.description) ?? null,
   }));
 
   const notes: AssetInsightContextItem[] = rankByRelevance(
@@ -145,7 +145,7 @@ export function buildAssetInsightContext(
     id: n.id,
     title: n.title,
     kind: n.category ?? "note",
-    detail: truncate(n.content),
+    detail: truncate(n.content) ?? null,
   }));
 
   return {

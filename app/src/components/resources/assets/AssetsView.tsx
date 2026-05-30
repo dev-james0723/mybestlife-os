@@ -44,6 +44,8 @@ import {
   Star,
   Link2,
   X,
+  Sparkles,
+  ShoppingBag,
 } from "lucide-react";
 import {
   useAssets,
@@ -53,7 +55,8 @@ import {
   useToggleAssetFavorite,
 } from "@/hooks/use-assets";
 import { useDocuments } from "@/hooks/use-documents";
-import { formatDate, formatDateShort } from "@/lib/utils/date";
+import { usePrimaryAssetImages } from "@/hooks/use-asset-media";
+import { formatDate } from "@/lib/utils/date";
 import type { Document } from "@/types/database";
 import {
   ASSET_CATEGORY_KEYS,
@@ -62,14 +65,20 @@ import {
   type AssetCategoryKey,
 } from "@/types/assets";
 import { getResourcesUiCopy } from "@/lib/i18n/resources-ui";
+import { getAssetIntelUiCopy } from "@/lib/i18n/asset-intelligence-ui";
+import { computeDocumentHealth } from "@/lib/assets/asset-intelligence-client";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
-import { AssetCard } from "./AssetCard";
+import { AssetCard, type AssetCardBadge } from "./AssetCard";
 import { AssetCategoryPill } from "./AssetCategoryPill";
 import { AssetsEmptyState } from "./AssetsEmptyState";
 import { AssetsLoadingSkeleton } from "./AssetsLoadingSkeleton";
 import { DocumentPickerModal } from "./DocumentPickerModal";
+import { AssetIntelligenceModal } from "./AssetIntelligenceModal";
+import { AssetPageIntelligence } from "./AssetPageIntelligence";
+import { PotentialAssetAnalyzer } from "./PotentialAssetAnalyzer";
+import { AIAssetCreationWizard } from "./ai/AIAssetCreationWizard";
 import {
   CategoryFilterChips,
   ALL_CATEGORIES_VALUE,
@@ -128,6 +137,7 @@ const EMPTY_FORM: FormState = {
 export function AssetsView() {
   const { data: assets, isLoading } = useAssets();
   const { data: documents } = useDocuments();
+  const { data: primaryImages } = usePrimaryAssetImages();
   const createAsset = useCreateAsset();
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
@@ -136,6 +146,11 @@ export function AssetsView() {
 
   const language = useAppStore((s) => s.language);
   const copy = getResourcesUiCopy(language);
+  const aiCopy = getAssetIntelUiCopy(language);
+
+  const [showWizard, setShowWizard] = useState(false);
+  const [intelAsset, setIntelAsset] = useState<Asset | null>(null);
+  const [showPotential, setShowPotential] = useState(false);
 
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
@@ -147,6 +162,7 @@ export function AssetsView() {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showDocPicker, setShowDocPicker] = useState(false);
 
@@ -173,6 +189,51 @@ export function AssetsView() {
     for (const d of documents ?? []) map.set(d.id, d);
     return map;
   }, [documents]);
+
+  /**
+   * Lite, field-derived card metadata for the grid — no per-asset media fetch.
+   * Full document health (incl. linked documents/images) is computed in the
+   * Intelligence Modal where that asset's media is loaded.
+   */
+  const buildCardMeta = useCallback(
+    (a: Asset): { healthScore: number; badges: AssetCardBadge[] } => {
+      const health = computeDocumentHealth({
+        asset: a,
+        documentRoles: [],
+        imageTypes: [],
+      });
+      const badges: AssetCardBadge[] = [];
+      const effectiveValue = a.current_value ?? a.value ?? 0;
+      if (effectiveValue >= 1500) {
+        badges.push({
+          key: "high_value",
+          label: aiCopy.page.riskLabels.high_replacement_cost,
+          tone: "info",
+        });
+      }
+      if (
+        (a.category_key === "electronics" ||
+          a.category_key === "vehicle" ||
+          a.category_key === "musical_instrument") &&
+        !a.serial_number
+      ) {
+        badges.push({
+          key: "missing_serial",
+          label: aiCopy.page.riskLabels.missing_serial,
+          tone: "warn",
+        });
+      }
+      if (health.score < 40) {
+        badges.push({
+          key: "low_docs",
+          label: aiCopy.page.riskLabels.high_value_low_docs,
+          tone: "warn",
+        });
+      }
+      return { healthScore: health.score, badges };
+    },
+    [aiCopy.page.riskLabels],
+  );
 
   const filtered = useMemo(() => {
     if (!assets) return [];
@@ -297,10 +358,26 @@ export function AssetsView() {
   };
 
   const handleDelete = async () => {
-    if (!selected) return;
-    await deleteAsset.mutateAsync(selected.id);
+    const target = deleteTarget ?? selected;
+    if (!target) return;
+    await deleteAsset.mutateAsync(target.id);
     setSelected(null);
+    setDeleteTarget(null);
     setShowDeleteConfirm(false);
+  };
+
+  /** Open the edit form (reusing the detail dialog) from the intelligence modal. */
+  const openEditFromIntel = (a: Asset) => {
+    openDetail(a);
+    setIsEditing(true);
+    setIntelAsset(null);
+  };
+
+  /** Open the delete confirmation from the intelligence modal. */
+  const openDeleteFromIntel = (a: Asset) => {
+    setDeleteTarget(a);
+    setShowDeleteConfirm(true);
+    setIntelAsset(null);
   };
 
   const handleSortChange = useCallback((value: string) => {
@@ -349,17 +426,35 @@ export function AssetsView() {
         title={copy.assets.title}
         description={copy.assets.subtitle}
         actions={
-          <Button
-            variant="gradient-pink"
-            size="lg"
-            onClick={() => {
-              resetForm();
-              setShowCreate(true);
-            }}
-          >
-            <Plus className="size-4" />
-            {copy.assets.newAsset}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setShowPotential(true)}
+            >
+              <ShoppingBag className="size-4" />
+              <span className="hidden sm:inline">{aiCopy.cta.analyzePotential}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                resetForm();
+                setShowCreate(true);
+              }}
+            >
+              <Plus className="size-4" />
+              {aiCopy.cta.addManually}
+            </Button>
+            <Button
+              variant="gradient-pink"
+              size="lg"
+              onClick={() => setShowWizard(true)}
+            >
+              <Sparkles className="size-4" />
+              {aiCopy.cta.addWithAi}
+            </Button>
+          </div>
         }
       >
         <div className="flex flex-col gap-3">
@@ -445,21 +540,22 @@ export function AssetsView() {
           </div>
         </div>
 
+        {!isLoading && hasAssets && (
+          <div className="mt-1">
+            <AssetPageIntelligence assets={assets ?? []} />
+          </div>
+        )}
+
         {isLoading ? (
           <AssetsLoadingSkeleton />
         ) : filteredIsEmpty ? (
           <AssetsEmptyState
-            title={copy.assets.emptyTitle}
-            description={copy.assets.emptyDescription}
-            ctaLabel={hasAssets ? undefined : copy.assets.emptyCta}
-            onCtaClick={
-              hasAssets
-                ? undefined
-                : () => {
-                    resetForm();
-                    setShowCreate(true);
-                  }
+            title={hasAssets ? copy.assets.emptyTitle : aiCopy.empty.title}
+            description={
+              hasAssets ? copy.assets.emptyDescription : aiCopy.empty.description
             }
+            ctaLabel={hasAssets ? undefined : aiCopy.cta.addWithAi}
+            onCtaClick={hasAssets ? undefined : () => setShowWizard(true)}
           />
         ) : (
           <motion.div
@@ -484,30 +580,27 @@ export function AssetsView() {
                 : "space-y-3"
             }
           >
-            {filtered.map((a) => (
-              <AssetCard
-                key={a.id}
-                asset={a}
-                categoryLabel={resolveCategoryLabel(a)}
-                fields={[
-                  {
-                    label: "Value",
-                    value: formatMoney(displayAssetValue(a)),
-                  },
-                  { label: "Location", value: a.location },
-                  {
-                    label: "Purchased",
-                    value: a.purchase_date
-                      ? formatDateShort(a.purchase_date)
-                      : null,
-                  },
-                ]}
-                onClick={() => openDetail(a)}
-                onToggleFavorite={() =>
-                  handleFavoriteToggle(a.id, a.is_favorite)
-                }
-              />
-            ))}
+            {filtered.map((a) => {
+              const meta = buildCardMeta(a);
+              return (
+                <AssetCard
+                  key={a.id}
+                  asset={a}
+                  categoryLabel={resolveCategoryLabel(a)}
+                  valueText={formatMoney(displayAssetValue(a))}
+                  imageUrl={primaryImages?.get(a.id) ?? null}
+                  documentHealth={meta.healthScore}
+                  badges={meta.badges}
+                  valueLabel={copy.assetForm.currentValueLabel}
+                  docHealthLabel={aiCopy.modal.snapshotDocHealth}
+                  openLabel={aiCopy.modal.analyze}
+                  onClick={() => setIntelAsset(a)}
+                  onToggleFavorite={() =>
+                    handleFavoriteToggle(a.id, a.is_favorite)
+                  }
+                />
+              );
+            })}
           </motion.div>
         )}
       </PageShell>
@@ -756,7 +849,10 @@ export function AssetsView() {
 
       <AlertDialog
         open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
+        onOpenChange={(open) => {
+          setShowDeleteConfirm(open);
+          if (!open) setDeleteTarget(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -764,7 +860,9 @@ export function AssetsView() {
               {copy.assetForm.deleteConfirmTitle}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {copy.assetForm.deleteConfirmBody(selected?.name ?? "")}
+              {copy.assetForm.deleteConfirmBody(
+                (deleteTarget ?? selected)?.name ?? "",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -778,6 +876,34 @@ export function AssetsView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── AI Asset Creation Wizard ── */}
+      <AIAssetCreationWizard
+        open={showWizard}
+        onOpenChange={setShowWizard}
+        onCreated={(asset) => setIntelAsset(asset)}
+      />
+
+      {/* ── Asset Intelligence Modal ── */}
+      <AssetIntelligenceModal
+        asset={intelAsset}
+        allAssets={assets ?? []}
+        open={!!intelAsset}
+        onOpenChange={(open) => {
+          if (!open) setIntelAsset(null);
+        }}
+        onEdit={openEditFromIntel}
+        onDelete={openDeleteFromIntel}
+        onToggleFavorite={(a) => handleFavoriteToggle(a.id, a.is_favorite)}
+        categoryLabel={intelAsset ? resolveCategoryLabel(intelAsset) : null}
+      />
+
+      {/* ── Potential Asset Analyzer ── */}
+      <PotentialAssetAnalyzer
+        open={showPotential}
+        onOpenChange={setShowPotential}
+        assets={assets ?? []}
+      />
     </>
   );
 }

@@ -455,7 +455,7 @@ export function normalizeReport(
       key: d.key,
       label: d.label,
       score: clamp(Math.round(d.score), 0, 100),
-      explanation: d.explanation,
+      explanation: d.explanation ?? null,
     })),
     documentHealth: {
       score: clamp(Math.round(data.documentHealth.score), 0, 100),
@@ -465,8 +465,13 @@ export function normalizeReport(
       explanation: data.documentHealth.explanation,
     },
     hiddenConnections: data.hiddenConnections.map((c) => ({
-      ...c,
+      title: c.title,
+      sourceType: c.sourceType,
+      sourceId: c.sourceId ?? null,
+      sourceTitle: c.sourceTitle ?? null,
+      explanation: c.explanation,
       confidence: clamp(c.confidence, 0, 1),
+      suggestedAction: c.suggestedAction ?? null,
     })),
     ifDisappearedTomorrow: data.ifDisappearedTomorrow,
     recommendedAction: {
@@ -480,18 +485,28 @@ export function normalizeReport(
       explanation: data.insuranceReadiness.explanation,
       missingProof: data.insuranceReadiness.missingProof,
     },
-    maintenanceSuggestions: data.maintenanceSuggestions,
+    maintenanceSuggestions: data.maintenanceSuggestions.map((m) => ({
+      title: m.title,
+      detail: m.detail,
+      cadence: m.cadence ?? null,
+    })),
     activationPlan: data.activationPlan
       ? {
           title: data.activationPlan.title,
           goal: data.activationPlan.goal,
-          days: data.activationPlan.days
-            .slice(0, 7)
-            .map((d) => ({ ...d, day: clamp(Math.round(d.day), 1, 7) })),
+          days: data.activationPlan.days.slice(0, 7).map((d) => ({
+            day: clamp(Math.round(d.day), 1, 7),
+            action: d.action,
+            reflectionQuestion: d.reflectionQuestion ?? null,
+          })),
         }
-      : undefined,
-    personalMeaningInsight: data.personalMeaningInsight,
-    suggestedNextActions: data.suggestedNextActions,
+      : null,
+    personalMeaningInsight: data.personalMeaningInsight ?? null,
+    suggestedNextActions: data.suggestedNextActions.map((a) => ({
+      label: a.label,
+      detail: a.detail ?? null,
+      kind: a.kind ?? null,
+    })),
     generatedAt: new Date().toISOString(),
     modelUsed,
   };

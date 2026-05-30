@@ -170,7 +170,7 @@ export type AssetDNADimension = {
   key: string;
   label: string;
   score: number;
-  explanation?: string;
+  explanation?: string | null;
 };
 
 export type AssetDocumentHealth = {
@@ -192,18 +192,18 @@ export type HiddenAssetConnection = {
     | "document"
     | "asset"
     | "pattern";
-  sourceId?: string;
-  sourceTitle?: string;
+  sourceId?: string | null;
+  sourceTitle?: string | null;
   explanation: string;
   confidence: number;
-  suggestedAction?: string;
+  suggestedAction?: string | null;
 };
 
 export type AssetActivationPlanDay = {
   day: number;
   action: string;
-  reflectionQuestion?: string;
-  completed?: boolean;
+  reflectionQuestion?: string | null;
+  completed?: boolean | null;
 };
 
 export type AssetActivationPlan = {
@@ -221,14 +221,14 @@ export type AssetInsuranceReadiness = {
 export type AssetMaintenanceSuggestion = {
   title: string;
   detail: string;
-  cadence?: string;
+  cadence?: string | null;
 };
 
 export type AssetSuggestedAction = {
   label: string;
-  detail?: string;
+  detail?: string | null;
   /** Maps to a creatable task/reminder when accepted. */
-  kind?: "task" | "reminder" | "document" | "review";
+  kind?: "task" | "reminder" | "document" | "review" | null;
 };
 
 export type AssetIntelligenceReport = {
@@ -246,11 +246,11 @@ export type AssetIntelligenceReport = {
   };
   insuranceReadiness: AssetInsuranceReadiness;
   maintenanceSuggestions: AssetMaintenanceSuggestion[];
-  activationPlan?: AssetActivationPlan;
-  personalMeaningInsight?: string;
+  activationPlan?: AssetActivationPlan | null;
+  personalMeaningInsight?: string | null;
   suggestedNextActions: AssetSuggestedAction[];
   generatedAt: string;
-  modelUsed?: string;
+  modelUsed?: string | null;
 };
 
 export type AnalyzeAssetResponse = {
@@ -270,7 +270,7 @@ export type AssetInsightContextItem = {
   id: string;
   title: string;
   kind: string;
-  detail?: string;
+  detail?: string | null;
 };
 
 export type AssetInsightContextPayload = {
