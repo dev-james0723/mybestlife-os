@@ -97,6 +97,8 @@ export function useGenerateTripPlan() {
       bucket: BucketItem;
       priorities?: string;
       tripLength?: number;
+      travelStyle?: BucketItem["travel_style"];
+      budgetLevel?: BucketItem["travel_budget_level"];
     }): Promise<{ plan: BucketTripPlan }> => {
       return callBucketAi<{ plan: BucketTripPlan }>(
         "/api/bucket-list/trip-plan",
@@ -106,8 +108,9 @@ export function useGenerateTripPlan() {
           destination_name: input.bucket.destination_name,
           destination_country: input.bucket.destination_country,
           destination_city: input.bucket.destination_city,
-          travel_style: input.bucket.travel_style,
-          travel_budget_level: input.bucket.travel_budget_level,
+          travel_style: input.travelStyle ?? input.bucket.travel_style,
+          travel_budget_level:
+            input.budgetLevel ?? input.bucket.travel_budget_level,
           trip_length_days:
             input.tripLength ?? input.bucket.trip_length_days ?? 5,
           priorities: input.priorities,

@@ -165,3 +165,85 @@ export function readinessStatusFromScore(
   if (readiness.score >= 35) return "exploring";
   return "dreaming";
 }
+
+// ─── Travel readiness ───────────────────────────────────────────────────────────
+
+export type TravelReadinessCategory = "vision" | "logistics" | "booking";
+
+export type TravelReadiness = {
+  score: number; // 0–100
+  visionScore: number; // destination clarity + inspiration
+  logisticsScore: number; // budget, dates, links
+  bookingScore: number; // brief, plan, flights, airports
+  factors: ReadinessFactor[];
+};
+
+/**
+ * Travel-specific readiness over the dream's travel fields + linked work +
+ * research. Pure + deterministic; never calls AI. Used by the Travel Explorer
+ * Console's readiness panel.
+ */
+export function computeTravelReadiness(
+  item: BucketItem,
+  ctx: DreamReadinessContext = {},
+): TravelReadiness {
+  const hasImage = (ctx.imageCount ?? 0) > 0 || Boolean(item.cover_image_url);
+
+  const factors: ReadinessFactor[] = [
+    // Vision
+    {
+      key: "destination_fields",
+      category: "logistics",
+      met: Boolean(item.destination_name || item.destination_city),
+      weight: 1,
+    },
+    { key: "inspiration_image", category: "emotional", met: hasImage, weight: 1 },
+    {
+      key: "why_matters",
+      category: "emotional",
+      met: Boolean(item.why_this_matters?.trim()),
+      weight: 1,
+    },
+    // Logistics
+    { key: "budget_level", category: "logistics", met: Boolean(item.travel_budget_level), weight: 1 },
+    { key: "estimated_cost", category: "logistics", met: item.estimated_cost != null, weight: 1 },
+    {
+      key: "target_month",
+      category: "logistics",
+      met: Boolean(item.target_month || item.target_date),
+      weight: 1,
+    },
+    { key: "trip_length", category: "logistics", met: item.trip_length_days != null, weight: 1 },
+    {
+      key: "savings_linked",
+      category: "logistics",
+      met: Boolean(item.linked_savings_goal_id || item.linked_budget_id),
+      weight: 1,
+    },
+    { key: "project_linked", category: "logistics", met: Boolean(item.linked_project_id), weight: 1 },
+    { key: "tasks_linked", category: "logistics", met: item.linked_task_ids.length > 0, weight: 1 },
+    // Booking
+    { key: "origin_airport", category: "travel", met: Boolean(item.origin_airport), weight: 1 },
+    { key: "destination_airport", category: "travel", met: Boolean(item.destination_airport), weight: 1 },
+    { key: "destination_brief", category: "travel", met: Boolean(item.ai_destination_brief), weight: 1 },
+    { key: "trip_plan", category: "travel", met: Boolean(item.ai_trip_plan), weight: 1 },
+    { key: "flight_watch", category: "travel", met: item.flight_watch_enabled, weight: 1 },
+  ];
+
+  const sum = (list: ReadinessFactor[]) =>
+    list.reduce((acc, f) => acc + (f.met ? f.weight : 0), 0);
+  const total = (list: ReadinessFactor[]) =>
+    list.reduce((acc, f) => acc + f.weight, 0);
+
+  const vision = factors.filter((f) => f.category === "emotional");
+  const logistics = factors.filter((f) => f.category === "logistics");
+  const booking = factors.filter((f) => f.category === "travel");
+
+  return {
+    score: pct(sum(factors), total(factors)),
+    visionScore: pct(sum(vision), total(vision)),
+    logisticsScore: pct(sum(logistics), total(logistics)),
+    bookingScore: pct(sum(booking), total(booking)),
+    factors,
+  };
+}

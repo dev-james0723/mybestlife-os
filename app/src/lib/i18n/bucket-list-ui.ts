@@ -343,6 +343,74 @@ export type BucketListUiCopy = {
   checkBooking: string;
   checkReflection: string;
 
+  // Travel Explorer Console (Phase 5)
+  explorerTab: string;
+  explorerGenerate: string;
+  explorerRefresh: string;
+  destHeroHeading: string;
+  destBestSeason: string;
+  destTarget: string;
+  destTripLength: (days: number) => string;
+  mapHeading: string;
+  mapNeedsAirport: string;
+  mapMissingKey: string;
+  briefHint: string;
+  tripPlanHint: string;
+  notesHeading: string;
+  notesEmpty: string;
+  travelMemoryHeading: string;
+  travelMemoryHint: string;
+  travelMemoryView: string;
+  travelReadinessHeading: string;
+  travelReadyVision: string;
+  travelReadyLogistics: string;
+  travelReadyBooking: string;
+  travelReadyVisionNotBooking: string;
+  travelReadyBookingNotVision: string;
+  travelReadyStrong: string;
+  travelReadyEarly: string;
+  tripBuilderHeading: string;
+  tripBuilderHint: string;
+  tripBuilderLength: string;
+  tripBuilderStyle: string;
+  tripBuilderDays: (days: number) => string;
+  tripBuilderGenerating: string;
+  tripStyleSolo: string;
+  tripStyleCouple: string;
+  tripStyleFriends: string;
+  tripStyleWorkation: string;
+  tripStyleSlow: string;
+  budgetVersionsHeading: string;
+  budgetVersionsHint: string;
+  budgetVersionsDraft: string;
+  budgetTierBudget: string;
+  budgetTierBudgetDesc: string;
+  budgetTierMid: string;
+  budgetTierMidDesc: string;
+  budgetTierPremium: string;
+  budgetTierPremiumDesc: string;
+  budgetTierLuxury: string;
+  budgetTierLuxuryDesc: string;
+  bookingChecklistHeading: string;
+  bookingChecklistHint: string;
+  bookPassportVisa: string;
+  bookFlight: string;
+  bookHotel: string;
+  bookLocalTransport: string;
+  bookWeatherGear: string;
+  bookTickets: string;
+  bookInsurance: string;
+  bookCashCard: string;
+  bookEmergencyInfo: string;
+  bookLanguagePrep: string;
+  bookPacking: string;
+  bookSimEsim: string;
+  bookCreateTasks: (count: number) => string;
+  bookCreatedTasks: (count: number) => string;
+  destImageHeading: string;
+  destImageHint: string;
+  destImageUploadOwn: string;
+
   // Misc
   aiQuotaExhausted: string;
   aiGenericError: string;
@@ -695,6 +763,81 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   checkBooking: "Booking / logistics",
   checkReflection: "Reflection checkpoint",
 
+  explorerTab: "Explorer",
+  explorerGenerate: "Generate",
+  explorerRefresh: "Refresh",
+  destHeroHeading: "Destination",
+  destBestSeason: "Best season",
+  destTarget: "Target",
+  destTripLength: (days) => `${days} days`,
+  mapHeading: "Map",
+  mapNeedsAirport:
+    "Add a destination airport or coordinates to place this on the map.",
+  mapMissingKey: "Add a Google Maps key to see the interactive map.",
+  briefHint:
+    "Grounded AI research — best time to go, where to stay, what to eat, must-do experiences.",
+  tripPlanHint: "A day-by-day itinerary tuned to your travel style and budget.",
+  notesHeading: "Travel notes",
+  notesEmpty: "No travel notes yet. Add them when editing this dream.",
+  travelMemoryHeading: "Travel memory",
+  travelMemoryHint: "This trip is complete — revisit or add a reflection.",
+  travelMemoryView: "Open memories",
+  travelReadinessHeading: "Travel readiness",
+  travelReadyVision: "Vision",
+  travelReadyLogistics: "Logistics",
+  travelReadyBooking: "Booking",
+  travelReadyVisionNotBooking:
+    "The dream is visually and emotionally clear, but booking logistics are still incomplete.",
+  travelReadyBookingNotVision:
+    "The logistics are taking shape — anchor the why and the imagery to keep it alive.",
+  travelReadyStrong: "Clear vision and solid logistics — this trip is close to bookable.",
+  travelReadyEarly: "Still early — give it a destination, a why, and a rough budget.",
+  tripBuilderHeading: "Trip builder",
+  tripBuilderHint: "Draft an itinerary variant — it updates the trip plan below.",
+  tripBuilderLength: "By length",
+  tripBuilderStyle: "By style",
+  tripBuilderDays: (days) => `${days}-day`,
+  tripBuilderGenerating: "Drafting itinerary…",
+  tripStyleSolo: "Solo",
+  tripStyleCouple: "Couple",
+  tripStyleFriends: "Friends",
+  tripStyleWorkation: "Workation",
+  tripStyleSlow: "Slow travel",
+  budgetVersionsHeading: "Budget versions",
+  budgetVersionsHint:
+    "Qualitative styles of trip — not price quotes. Draft a version to see its itinerary.",
+  budgetVersionsDraft: "Draft this version",
+  budgetTierBudget: "Budget",
+  budgetTierBudgetDesc: "Hostels/guesthouses, self-guided, public transport.",
+  budgetTierMid: "Mid-range",
+  budgetTierMidDesc: "Comfortable hotels and a small-group tour.",
+  budgetTierPremium: "Premium",
+  budgetTierPremiumDesc: "Boutique stays and a private guide for key days.",
+  budgetTierLuxury: "Luxury",
+  budgetTierLuxuryDesc: "Curated multi-day experience, private transport.",
+  bookingChecklistHeading: "Booking checklist",
+  bookingChecklistHint:
+    "Tick what applies, then turn the selection into linked tasks.",
+  bookPassportVisa: "Passport / visa",
+  bookFlight: "Flight",
+  bookHotel: "Hotel",
+  bookLocalTransport: "Local transport",
+  bookWeatherGear: "Weather gear",
+  bookTickets: "Tickets",
+  bookInsurance: "Insurance",
+  bookCashCard: "Cash / card",
+  bookEmergencyInfo: "Emergency info",
+  bookLanguagePrep: "Language prep",
+  bookPacking: "Packing",
+  bookSimEsim: "Local SIM / eSIM",
+  bookCreateTasks: (count) =>
+    count > 0 ? `Create ${count} task${count === 1 ? "" : "s"}` : "Create tasks",
+  bookCreatedTasks: (count) =>
+    count === 1 ? "Created 1 task." : `Created ${count} tasks.`,
+  destImageHeading: "Cover image ideas",
+  destImageHint: "Realistic concepts for this destination — generated as AI visuals.",
+  destImageUploadOwn: "Upload your own",
+
   aiQuotaExhausted:
     "Daily AI cap reached. Come back tomorrow or link a paid key.",
   aiGenericError: "AI request failed — try again in a moment.",
@@ -931,6 +1074,72 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   checkSupplies: "用品／資源",
   checkBooking: "預訂／後勤",
   checkReflection: "反思檢查點",
+  explorerTab: "探索",
+  explorerGenerate: "生成",
+  explorerRefresh: "重新整理",
+  destHeroHeading: "目的地",
+  destBestSeason: "最佳季節",
+  destTarget: "目標",
+  destTripLength: (days) => `${days} 天`,
+  mapHeading: "地圖",
+  mapNeedsAirport: "加入目的地機場或座標，即可在地圖上顯示。",
+  mapMissingKey: "加入 Google Maps 金鑰以顯示互動地圖。",
+  briefHint: "有依據的 AI 研究——最佳造訪時間、住宿、美食、必做體驗。",
+  tripPlanHint: "依你的旅行風格與預算量身打造的逐日行程。",
+  notesHeading: "旅行筆記",
+  notesEmpty: "尚無旅行筆記。編輯這個夢想時可以加入。",
+  travelMemoryHeading: "旅行回憶",
+  travelMemoryHint: "這趟旅程已完成——回顧或新增反思。",
+  travelMemoryView: "開啟回憶",
+  travelReadinessHeading: "旅行就緒度",
+  travelReadyVision: "願景",
+  travelReadyLogistics: "後勤",
+  travelReadyBooking: "預訂",
+  travelReadyVisionNotBooking: "這個夢想在視覺與情感上清晰，但預訂後勤仍不完整。",
+  travelReadyBookingNotVision: "後勤逐漸成形——錨定「為什麼」與意象，讓它保持鮮活。",
+  travelReadyStrong: "願景清晰、後勤穩固——這趟旅程接近可預訂。",
+  travelReadyEarly: "還在早期——先給它一個目的地、一個理由與大致預算。",
+  tripBuilderHeading: "行程建構器",
+  tripBuilderHint: "草擬一個行程版本——會更新下方的行程計畫。",
+  tripBuilderLength: "依長度",
+  tripBuilderStyle: "依風格",
+  tripBuilderDays: (days) => `${days} 天`,
+  tripBuilderGenerating: "草擬行程中…",
+  tripStyleSolo: "獨自",
+  tripStyleCouple: "情侶",
+  tripStyleFriends: "朋友",
+  tripStyleWorkation: "工作旅遊",
+  tripStyleSlow: "慢旅行",
+  budgetVersionsHeading: "預算版本",
+  budgetVersionsHint: "旅行的質性風格——非報價。草擬一個版本以查看行程。",
+  budgetVersionsDraft: "草擬此版本",
+  budgetTierBudget: "經濟",
+  budgetTierBudgetDesc: "青年旅館／民宿、自助、大眾運輸。",
+  budgetTierMid: "中階",
+  budgetTierMidDesc: "舒適飯店與小團旅遊。",
+  budgetTierPremium: "高階",
+  budgetTierPremiumDesc: "精品住宿與重點日的私人導遊。",
+  budgetTierLuxury: "奢華",
+  budgetTierLuxuryDesc: "精心策劃的多日體驗、私人交通。",
+  bookingChecklistHeading: "預訂清單",
+  bookingChecklistHint: "勾選適用項目，再把所選轉成連結的任務。",
+  bookPassportVisa: "護照／簽證",
+  bookFlight: "機票",
+  bookHotel: "飯店",
+  bookLocalTransport: "當地交通",
+  bookWeatherGear: "天氣裝備",
+  bookTickets: "門票",
+  bookInsurance: "保險",
+  bookCashCard: "現金／卡",
+  bookEmergencyInfo: "緊急資訊",
+  bookLanguagePrep: "語言準備",
+  bookPacking: "打包",
+  bookSimEsim: "當地 SIM／eSIM",
+  bookCreateTasks: (count) => (count > 0 ? `建立 ${count} 個任務` : "建立任務"),
+  bookCreatedTasks: (count) => `已建立 ${count} 個任務。`,
+  destImageHeading: "封面圖片靈感",
+  destImageHint: "此目的地的寫實概念——以 AI 圖像生成。",
+  destImageUploadOwn: "上傳你自己的",
   aiQuotaExhausted: "今日 AI 額度已用完，明天再試或接上付費金鑰。",
   aiGenericError: "AI 請求失敗，稍後再試。",
 };
