@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 import {
+  bucketDreamAiReportsRepository,
   bucketDreamImagesRepository,
   bucketFlightQuotesRepository,
   bucketIntegrationsRepository,
@@ -43,6 +44,8 @@ export const bucketQueryKeys = {
     ["bucket-list", "reflections", bucketId] as const,
   images: (bucketId: string) =>
     ["bucket-list", "images", bucketId] as const,
+  report: (bucketId: string) =>
+    ["bucket-list", "report", bucketId] as const,
   flightLatest: (bucketId: string) =>
     ["bucket-list", "flight", bucketId, "latest"] as const,
   flightHistory: (bucketId: string) =>
@@ -302,6 +305,21 @@ export function useSetPrimaryDreamImage() {
       toast.success("Cover updated");
     },
     onError: () => toast.error("Could not set that cover"),
+  });
+}
+
+// ─── Dream intelligence report (cached) ─────────────────────────────────────────
+
+export function useDreamReport(bucketId: string | null | undefined) {
+  return useQuery({
+    queryKey: bucketId
+      ? bucketQueryKeys.report(bucketId)
+      : bucketQueryKeys.report("__none"),
+    queryFn: () => {
+      if (!bucketId) return null;
+      return bucketDreamAiReportsRepository.getForBucket(bucketId);
+    },
+    enabled: Boolean(bucketId),
   });
 }
 

@@ -67,6 +67,7 @@ import { ReflectionSheet } from "./reflection-sheet";
 import { useBucketDreamImage } from "@/hooks/use-bucket-dream-image";
 import { DreamCoverBackground } from "./dream-cover-background";
 import { DreamInspirationGallery } from "./images/dream-inspiration-gallery";
+import { DreamIntelligencePanel } from "./intelligence/dream-intelligence-panel";
 
 export function DetailHubDialog() {
   const language = useAppStore((s) => s.language);
@@ -341,6 +342,7 @@ export function DetailHubDialog() {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="intelligence">{copy.intelTab}</TabsTrigger>
                   <TabsTrigger value="visuals">{copy.visualsTab}</TabsTrigger>
                   <TabsTrigger value="integrations">Integrations</TabsTrigger>
                   {item.type === "travel" ? (
@@ -379,6 +381,17 @@ export function DetailHubDialog() {
                       </ul>
                     </section>
                   ) : null}
+                </TabsContent>
+
+                <TabsContent value="intelligence" className="pt-4">
+                  <DreamIntelligencePanel
+                    item={item}
+                    copy={copy}
+                    onActivate={() => openActivate(item.id)}
+                    onReflect={() => openReflection(item.id)}
+                    onReframe={() => reframe.mutate({ bucket: item })}
+                    onNavigateTab={(tab) => setActiveTab(tab)}
+                  />
                 </TabsContent>
 
                 <TabsContent value="visuals" className="pt-4">
@@ -472,6 +485,14 @@ export function DetailHubDialog() {
     </>
   );
 }
+
+/**
+ * The detail hub is the Dream Intelligence Hub — the dialog that surfaces
+ * readiness, why-it-matters, blockers, the smallest version, and the next step
+ * (Intelligence tab) alongside visuals, integrations, travel, and memories.
+ * Exported under both names so callers can use either.
+ */
+export const DreamIntelligenceDialog = DetailHubDialog;
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 

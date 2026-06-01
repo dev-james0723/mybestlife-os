@@ -8,6 +8,7 @@ import { useAppStore } from "@/stores/app-store";
 import type {
   BucketCoverImageStyle,
   BucketDestinationBrief,
+  BucketDreamIntelligenceReport,
   BucketInspirationAnalysis,
   BucketItem,
   BucketReframeResponse,
@@ -236,6 +237,40 @@ export function useAnalyzeInspiration() {
         toast.error("Daily AI cap reached. Try again tomorrow.");
       } else {
         toast.error("Could not analyze that image — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Dream intelligence analysis ────────────────────────────────────────────────
+
+export function useAnalyzeDream() {
+  const qc = useQueryClient();
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      forceRefresh?: boolean;
+    }): Promise<{ report: BucketDreamIntelligenceReport; cached: boolean }> => {
+      return callBucketAi<{
+        report: BucketDreamIntelligenceReport;
+        cached: boolean;
+      }>("/api/bucket-list/analyze-dream", {
+        language,
+        bucketItemId: input.bucketItemId,
+        forceRefresh: input.forceRefresh ?? false,
+      });
+    },
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.report(variables.bucketItemId) });
+      if (!data.cached) toast.success("Dream analysis ready");
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not analyze this dream — please retry.");
       }
     },
   });

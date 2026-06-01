@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type {
+  BucketDreamAiReportRow,
+  BucketDreamReportType,
   BucketDreamImageRecord,
   BucketDreamImageSource,
   BucketDreamImageType,
@@ -566,5 +568,24 @@ export const bucketDreamImagesRepository = {
       })
       .eq("id", image.bucket_item_id);
     if (syncError) throw syncError;
+  },
+};
+
+// ─── Dream AI reports (Intelligence Hub cache) ───────────────────────────────────
+
+export const bucketDreamAiReportsRepository = {
+  async getForBucket(
+    bucketItemId: string,
+    reportType: BucketDreamReportType = "dream_intelligence",
+  ): Promise<BucketDreamAiReportRow | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("bucket_dream_ai_reports")
+      .select("*")
+      .eq("bucket_item_id", bucketItemId)
+      .eq("report_type", reportType)
+      .maybeSingle();
+    if (error) throw error;
+    return (data ?? null) as BucketDreamAiReportRow | null;
   },
 };

@@ -255,6 +255,53 @@ export type BucketListUiCopy = {
   visualsAnalysisUnverified: string;
   visualsAnalysisClose: string;
 
+  // Dream Intelligence Hub (Phase 3)
+  intelTab: string;
+  intelGenerate: string;
+  intelGenerateTitle: string;
+  intelGenerating: string;
+  intelRefresh: string;
+  intelIntro: string;
+  intelDisclaimer: string;
+  readinessHeading: string;
+  readinessEmotionalClear: string;
+  readinessEmotionalForming: string;
+  readinessLogisticsPlanned: string;
+  readinessLogisticsUnderplanned: string;
+  readinessMissing: string;
+  whyMattersDeeplyHeading: string;
+  identityChapterHeading: string;
+  emotionalMeaningHeading: string;
+  whyNowHeading: string;
+  blockersHeading: string;
+  blockersNone: string;
+  blockerSuggested: string;
+  blockerMoney: string;
+  blockerTime: string;
+  blockerClarity: string;
+  blockerCourage: string;
+  blockerLogistics: string;
+  blockerRelationship: string;
+  blockerHealth: string;
+  blockerOther: string;
+  smallestHeading: string;
+  smallestCost: string;
+  smallestTime: string;
+  nextStepHeading: string;
+  nextStepStart: string;
+  actionConfirmNote: string;
+  connectionsHeading: string;
+  connectionsConnectBtn: string;
+  connectionsSuggested: string;
+  connectionsLinkedCount: (count: number) => string;
+  connProjects: string;
+  connTasks: string;
+  connGoals: string;
+  connRelationships: string;
+  connAssets: string;
+  connNotes: string;
+  suggestedActionsHeading: string;
+
   // Misc
   aiQuotaExhausted: string;
   aiGenericError: string;
@@ -511,6 +558,60 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   visualsAnalysisUnverified: "AI interpretation — review before applying.",
   visualsAnalysisClose: "Close",
 
+  intelTab: "Intelligence",
+  intelGenerate: "Analyze this dream",
+  intelGenerateTitle: "Understand this dream",
+  intelGenerating: "Analyzing…",
+  intelRefresh: "Re-analyze",
+  intelIntro:
+    "Get an AI read on why this matters, what's quietly blocking it, the smallest version you could live soon, and your next step.",
+  intelDisclaimer:
+    "AI reflection based on what you've written — hold it next to your own judgment.",
+  readinessHeading: "Dream readiness",
+  readinessEmotionalClear: "emotionally clear",
+  readinessEmotionalForming: "emotionally still forming",
+  readinessLogisticsPlanned: "logistically planned",
+  readinessLogisticsUnderplanned: "logistically underplanned",
+  readinessMissing: "Still missing",
+  whyMattersDeeplyHeading: "Why this matters",
+  identityChapterHeading: "Life chapter",
+  emotionalMeaningHeading: "What it means",
+  whyNowHeading: "Why this may matter now",
+  blockersHeading: "What's in the way",
+  blockersNone:
+    "This dream doesn't seem blocked by desire — it's waiting for a first step.",
+  blockerSuggested: "Try",
+  blockerMoney: "Money",
+  blockerTime: "Time",
+  blockerClarity: "Clarity",
+  blockerCourage: "Courage",
+  blockerLogistics: "Logistics",
+  blockerRelationship: "Relationship",
+  blockerHealth: "Energy",
+  blockerOther: "Other",
+  smallestHeading: "Smallest version you can live soon",
+  smallestCost: "Cost",
+  smallestTime: "Time",
+  nextStepHeading: "Next best step",
+  nextStepStart: "Start this step",
+  actionConfirmNote: "Opens a confirm-first flow — nothing is created automatically.",
+  connectionsHeading: "What to connect",
+  connectionsConnectBtn: "Connect this dream",
+  connectionsSuggested: "Suggested connections",
+  connectionsLinkedCount: (count) =>
+    count === 0
+      ? "Nothing connected yet."
+      : count === 1
+        ? "1 thing connected."
+        : `${count} things connected.`,
+  connProjects: "Projects",
+  connTasks: "Tasks",
+  connGoals: "Goals",
+  connRelationships: "People",
+  connAssets: "Assets",
+  connNotes: "Notes",
+  suggestedActionsHeading: "Suggested next moves",
+
   aiQuotaExhausted:
     "Daily AI cap reached. Come back tomorrow or link a paid key.",
   aiGenericError: "AI request failed — try again in a moment.",
@@ -661,6 +762,53 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   visualsAnalysisApplyUpdates: "套用到夢想",
   visualsAnalysisUnverified: "AI 詮釋——套用前請檢視。",
   visualsAnalysisClose: "關閉",
+  intelTab: "洞察",
+  intelGenerate: "分析這個夢想",
+  intelGenerateTitle: "理解這個夢想",
+  intelGenerating: "分析中…",
+  intelRefresh: "重新分析",
+  intelIntro:
+    "讓 AI 解讀這個夢想為何重要、是什麼悄悄擋住它、你能很快實現的最小版本，以及下一步。",
+  intelDisclaimer: "AI 根據你所寫的內容反思——請與你自己的判斷並陳。",
+  readinessHeading: "夢想就緒度",
+  readinessEmotionalClear: "情感清晰",
+  readinessEmotionalForming: "情感仍在成形",
+  readinessLogisticsPlanned: "規劃完善",
+  readinessLogisticsUnderplanned: "規劃不足",
+  readinessMissing: "仍缺少",
+  whyMattersDeeplyHeading: "為什麼重要",
+  identityChapterHeading: "人生章節",
+  emotionalMeaningHeading: "它的意義",
+  whyNowHeading: "為什麼此刻重要",
+  blockersHeading: "阻礙是什麼",
+  blockersNone: "這個夢想似乎不是被渴望所阻——它在等待第一步。",
+  blockerSuggested: "試試",
+  blockerMoney: "金錢",
+  blockerTime: "時間",
+  blockerClarity: "清晰度",
+  blockerCourage: "勇氣",
+  blockerLogistics: "後勤",
+  blockerRelationship: "關係",
+  blockerHealth: "精力",
+  blockerOther: "其他",
+  smallestHeading: "你能很快實現的最小版本",
+  smallestCost: "花費",
+  smallestTime: "時間",
+  nextStepHeading: "下一個最佳步驟",
+  nextStepStart: "開始這一步",
+  actionConfirmNote: "開啟需確認的流程——不會自動建立任何東西。",
+  connectionsHeading: "要連結什麼",
+  connectionsConnectBtn: "連結這個夢想",
+  connectionsSuggested: "建議的連結",
+  connectionsLinkedCount: (count) =>
+    count === 0 ? "尚未連結任何東西。" : `已連結 ${count} 項。`,
+  connProjects: "專案",
+  connTasks: "任務",
+  connGoals: "目標",
+  connRelationships: "人物",
+  connAssets: "資產",
+  connNotes: "筆記",
+  suggestedActionsHeading: "建議的下一步",
   aiQuotaExhausted: "今日 AI 額度已用完，明天再試或接上付費金鑰。",
   aiGenericError: "AI 請求失敗，稍後再試。",
 };

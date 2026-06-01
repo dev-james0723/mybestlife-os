@@ -581,3 +581,131 @@ export type BucketInspirationAnalysis = {
   confidence: number;
   warnings: string[];
 };
+
+// ─── Dream Intelligence Hub (Phase 3) ───────────────────────────────────────────
+
+export const BUCKET_DREAM_REPORT_TYPES = [
+  "dream_intelligence",
+  "readiness",
+  "blockers",
+  "smallest_version",
+  "identity_meaning",
+] as const;
+export type BucketDreamReportType = (typeof BUCKET_DREAM_REPORT_TYPES)[number];
+
+export const BUCKET_DREAM_READINESS_STATUSES = [
+  "dreaming",
+  "exploring",
+  "ready_to_activate",
+  "blocked",
+  "scheduled",
+  "completed",
+] as const;
+export type BucketDreamReadinessStatus =
+  (typeof BUCKET_DREAM_READINESS_STATUSES)[number];
+
+export const BUCKET_DREAM_BLOCKER_TYPES = [
+  "money",
+  "time",
+  "clarity",
+  "courage",
+  "logistics",
+  "relationship",
+  "health",
+  "other",
+] as const;
+export type BucketDreamBlockerType =
+  (typeof BUCKET_DREAM_BLOCKER_TYPES)[number];
+
+/** Action a suggestion/next-step maps to. Always routed through a confirm-first flow — never auto-executed. */
+export const BUCKET_DREAM_ACTION_TYPES = [
+  "create_task",
+  "create_project",
+  "create_savings_goal",
+  "schedule",
+  "research",
+  "reflect",
+  "generate_brief",
+  "generate_trip_plan",
+  "generate_cover",
+  "upload_image",
+  "reframe",
+] as const;
+export type BucketDreamActionType = (typeof BUCKET_DREAM_ACTION_TYPES)[number];
+
+export type BucketDreamReadiness = {
+  score: number;
+  status: BucketDreamReadinessStatus;
+  explanation: string;
+  missingPieces: string[];
+};
+
+export type BucketDreamBlocker = {
+  title: string;
+  type: BucketDreamBlockerType;
+  explanation: string;
+  suggestedAction: string;
+};
+
+export type BucketDreamSmallestVersion = {
+  title: string;
+  description: string;
+  estimatedCost?: number | null;
+  timeRequired?: string | null;
+};
+
+export type BucketDreamNextStep = {
+  title: string;
+  description: string;
+  actionType?: BucketDreamActionType | null;
+};
+
+export type BucketDreamConnections = {
+  projects: string[];
+  tasks: string[];
+  goals: string[];
+  relationships: string[];
+  assets: string[];
+  notes: string[];
+};
+
+export type BucketDreamSuggestedAction = {
+  label: string;
+  description?: string | null;
+  actionType: BucketDreamActionType;
+};
+
+/**
+ * Cached output of `POST /api/bucket-list/analyze-dream`. Persisted in
+ * `bucket_dream_ai_reports`. Suggestions are previews — never auto-executed.
+ */
+export type BucketDreamIntelligenceReport = {
+  bucketItemId: string;
+
+  whyThisMattersDeeply: string;
+  identityChapter: string;
+  emotionalMeaning: string;
+  whyNow?: string | null;
+
+  dreamReadiness: BucketDreamReadiness;
+  blockers: BucketDreamBlocker[];
+  smallestVersion: BucketDreamSmallestVersion;
+  nextBestStep: BucketDreamNextStep;
+  connections: BucketDreamConnections;
+  suggestedActions: BucketDreamSuggestedAction[];
+
+  generatedAt: string;
+  modelUsed?: string | null;
+};
+
+/** Row in `bucket_dream_ai_reports`. */
+export type BucketDreamAiReportRow = {
+  id: string;
+  user_id: string;
+  bucket_item_id: string;
+  report_type: BucketDreamReportType;
+  report_json: BucketDreamIntelligenceReport;
+  model_used: string | null;
+  generated_at: string;
+  updated_at: string;
+};
