@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 
 import { DreamExtractionProgress } from "../ai/dream-extraction-progress";
@@ -36,6 +37,7 @@ import {
   DreamActivationResult,
   type ActivationCreatedCounts,
 } from "./dream-activation-result";
+import { bucketTabPanel } from "../bucket-motion";
 
 type WizardStep = "mode" | "generating" | "preview" | "result";
 
@@ -80,6 +82,7 @@ export function DreamActivationWizard({
     null,
   );
   const [creating, setCreating] = useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const buildPlan = useActivateDreamPlan();
   const createProject = useCreateProject();
@@ -313,52 +316,62 @@ export function DreamActivationWizard({
   }
 
   if (step === "generating") {
-    return <DreamExtractionProgress copy={copy} />;
+    return (
+      <motion.div key="generating" {...bucketTabPanel(reduceMotion)}>
+        <DreamExtractionProgress copy={copy} />
+      </motion.div>
+    );
   }
 
   if (step === "preview" && plan && selections) {
     return (
-      <DreamActivationPreview
-        plan={plan}
-        selections={selections}
-        nextStatus={next}
-        currentStatus={item.status}
-        copy={copy}
-        creating={creating}
-        onToggleScalar={toggleScalar}
-        onToggleArray={toggleArray}
-        onSelectAll={selectAll}
-        onCreate={handleCreate}
-        onBack={() => setStep("mode")}
-        onCancel={onClose}
-      />
+      <motion.div key="preview" {...bucketTabPanel(reduceMotion)}>
+        <DreamActivationPreview
+          plan={plan}
+          selections={selections}
+          nextStatus={next}
+          currentStatus={item.status}
+          copy={copy}
+          creating={creating}
+          onToggleScalar={toggleScalar}
+          onToggleArray={toggleArray}
+          onSelectAll={selectAll}
+          onCreate={handleCreate}
+          onBack={() => setStep("mode")}
+          onCancel={onClose}
+        />
+      </motion.div>
     );
   }
 
   if (step === "result" && created && checklistCtx) {
     return (
-      <DreamActivationResult
-        item={item}
-        created={created}
-        checklistCtx={checklistCtx}
-        copy={copy}
-        onViewDream={() => {
-          onClose();
-          setSelectedBucketId(item.id);
-        }}
-        onDone={onClose}
-      />
+      <motion.div key="result" {...bucketTabPanel(reduceMotion)}>
+        <DreamActivationResult
+          item={item}
+          created={created}
+          checklistCtx={checklistCtx}
+          copy={copy}
+          onViewDream={() => {
+            onClose();
+            setSelectedBucketId(item.id);
+          }}
+          onDone={onClose}
+        />
+      </motion.div>
     );
   }
 
   return (
-    <DreamActivationModeStep
-      mode={mode}
-      onSelect={setMode}
-      onGenerate={handleGenerate}
-      generating={buildPlan.isPending}
-      copy={copy}
-    />
+    <motion.div key="mode" {...bucketTabPanel(reduceMotion)}>
+      <DreamActivationModeStep
+        mode={mode}
+        onSelect={setMode}
+        onGenerate={handleGenerate}
+        generating={buildPlan.isPending}
+        copy={copy}
+      />
+    </motion.div>
   );
 }
 

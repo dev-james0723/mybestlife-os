@@ -47,8 +47,8 @@ function fromStoredUrl(item: BucketItem): BucketDreamImage | null {
   return {
     url,
     alt: altFromTitle(item.title),
-    // A stored cover may be an AI-generated visual — surface that so cards/hero
-    // can render the mandatory "AI-generated visual" badge.
+    // Preserve generated-image provenance for internal logic without rendering
+    // a user-facing label on the image.
     sourceType: item.cover_image_is_ai ? "generated" : "api",
   };
 }

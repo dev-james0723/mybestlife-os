@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Sparkles,
   Star,
@@ -30,7 +31,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -47,6 +47,8 @@ import { useReframeDream } from "@/hooks/use-bucket-ai";
 import type { BucketItem } from "@/types/bucket-list";
 import {
   bucketStatusBadgeClass,
+  bucketStatusPipClass,
+  bucketProgressClass,
   bucketTypeBadgeClass,
   estimateBucketProgress,
   getBucketStatusLabel,
@@ -63,10 +65,18 @@ import { DreamMemoryTimeline } from "./memory/dream-memory-timeline";
 import { DreamChangedMePanel } from "./memory/dream-changed-me-panel";
 import { DreamBeforeAfterReflection } from "./memory/dream-before-after-reflection";
 import { DreamMemoryPhotoGallery } from "./memory/dream-memory-photo-gallery";
+import {
+  bucketEntrance,
+  bucketProgressTransition,
+  bucketStaggerContainer,
+  bucketStaggerItem,
+  bucketTabPanel,
+} from "./bucket-motion";
 
 export function DetailHubDialog() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const bucketId = useBucketListStore((s) => s.selectedBucketId);
   const setSelectedBucketId = useBucketListStore((s) => s.setSelectedBucketId);
@@ -120,19 +130,22 @@ export function DetailHubDialog() {
           className="flex max-h-[min(90dvh,920px)] flex-col gap-0 overflow-hidden p-0"
         >
           {/* Hero */}
-          <div className="relative shrink-0">
-            <div className="relative h-36 w-full overflow-hidden">
+          <motion.div
+            {...bucketEntrance(reduceMotion, 0, 10)}
+            className="relative shrink-0"
+          >
+            <motion.div
+              className="relative h-36 w-full overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduceMotion ? 0.2 : 0.55 }}
+            >
               <DreamCoverBackground
                 image={dreamImage}
                 type={item.type}
                 variant="hero"
+                interactive
               />
-              {dreamImage?.sourceType === "generated" ? (
-                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-fuchsia-500/90 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-                  <Sparkles className="h-3 w-3" />
-                  {copy.visualsAiBadge}
-                </span>
-              ) : null}
               <Button
                 size="sm"
                 variant="secondary"
@@ -142,8 +155,11 @@ export function DetailHubDialog() {
                 <Images className="h-3.5 w-3.5" />
                 {copy.visualsEditGallery}
               </Button>
-            </div>
-            <div className="px-6 pb-4 pt-4">
+            </motion.div>
+            <motion.div
+              {...bucketEntrance(reduceMotion, 0.04, 8)}
+              className="px-6 pb-4 pt-4"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${bucketTypeBadgeClass(
@@ -153,10 +169,14 @@ export function DetailHubDialog() {
                   {getBucketTypeLabel(item.type, copy)}
                 </span>
                 <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${bucketStatusBadgeClass(
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${bucketStatusBadgeClass(
                     item.status,
                   )}`}
                 >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${bucketStatusPipClass(item.status)}`}
+                    aria-hidden
+                  />
                   {getBucketStatusLabel(item.status, copy)}
                 </span>
                 {targetLabel ? (
@@ -196,22 +216,35 @@ export function DetailHubDialog() {
                   <DialogDescription>{item.description}</DialogDescription>
                 ) : null}
               </DialogHeader>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 pb-5">
             <div className="space-y-5">
               {/* Progress */}
-              <div className="space-y-1">
+              <motion.div
+                {...bucketEntrance(reduceMotion, 0.08, 8)}
+                className="space-y-1"
+              >
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Progress</span>
                   <span className="font-medium text-foreground">{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-1.5" />
-              </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <motion.div
+                    className={`h-full rounded-full ${bucketProgressClass(item.status)}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={bucketProgressTransition(reduceMotion, 0.1)}
+                  />
+                </div>
+              </motion.div>
 
               {/* Why it matters */}
-              <section className="rounded-xl border p-4">
+              <motion.section
+                {...bucketEntrance(reduceMotion, 0.1, 8)}
+                className="rounded-xl border p-4"
+              >
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">
                     {copy.detailWhyMatters}
@@ -270,10 +303,13 @@ export function DetailHubDialog() {
                     to happen.
                   </p>
                 )}
-              </section>
+              </motion.section>
 
               {/* Activate + quick actions */}
-              <section className="flex flex-wrap gap-2">
+              <motion.section
+                {...bucketEntrance(reduceMotion, 0.12, 8)}
+                className="flex flex-wrap gap-2"
+              >
                 <Button
                   size="sm"
                   onClick={() => openActivate(item.id)}
@@ -331,7 +367,7 @@ export function DetailHubDialog() {
                   <Trash2 className="h-4 w-4" />
                   {copy.deleteDream}
                 </Button>
-              </section>
+              </motion.section>
 
               <Separator />
 
@@ -349,96 +385,142 @@ export function DetailHubDialog() {
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4 pt-4">
-                  <FactsGrid item={item} />
+                  <AnimatePresence mode="wait" initial={false}>
+                    {activeTab === "overview" ? (
+                      <motion.div
+                        key="overview"
+                        {...bucketTabPanel(reduceMotion)}
+                        className="space-y-4"
+                      >
+                        <FactsGrid item={item} />
 
-                  {item.ai_reframe_suggestions ? (
-                    <section className="rounded-xl border bg-muted/30 p-4">
-                      <h3 className="mb-2 text-sm font-semibold">
-                        Smaller versions to try first
-                      </h3>
-                      <ul className="space-y-2">
-                        {item.ai_reframe_suggestions.smaller_versions.map(
-                          (v, i) => (
-                            <li
-                              key={`${v.title}-${i}`}
-                              className="rounded-lg border bg-background p-3"
+                        {item.ai_reframe_suggestions ? (
+                          <section className="rounded-xl border bg-muted/30 p-4">
+                            <h3 className="mb-2 text-sm font-semibold">
+                              Smaller versions to try first
+                            </h3>
+                            <motion.ul
+                              variants={bucketStaggerContainer(reduceMotion)}
+                              initial="hidden"
+                              animate="show"
+                              className="space-y-2"
                             >
-                              <p className="text-sm font-semibold">{v.title}</p>
-                              <p className="mt-1 text-[13px] text-muted-foreground">
-                                {v.description}
-                              </p>
-                              {v.estimated_cost ? (
-                                <p className="mt-1 text-[11px] text-muted-foreground">
-                                  ≈ {v.estimated_cost} {v.cost_currency ?? ""}
-                                </p>
-                              ) : null}
-                            </li>
-                          ),
-                        )}
-                      </ul>
-                    </section>
-                  ) : null}
+                              {item.ai_reframe_suggestions.smaller_versions.map(
+                                (v, i) => (
+                                  <motion.li
+                                    key={`${v.title}-${i}`}
+                                    variants={bucketStaggerItem(reduceMotion, 8)}
+                                    className="rounded-lg border bg-background p-3"
+                                  >
+                                    <p className="text-sm font-semibold">{v.title}</p>
+                                    <p className="mt-1 text-[13px] text-muted-foreground">
+                                      {v.description}
+                                    </p>
+                                    {v.estimated_cost ? (
+                                      <p className="mt-1 text-[11px] text-muted-foreground">
+                                        ≈ {v.estimated_cost} {v.cost_currency ?? ""}
+                                      </p>
+                                    ) : null}
+                                  </motion.li>
+                                ),
+                              )}
+                            </motion.ul>
+                          </section>
+                        ) : null}
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </TabsContent>
 
                 <TabsContent value="intelligence" className="pt-4">
-                  <DreamIntelligencePanel
-                    item={item}
-                    copy={copy}
-                    onActivate={() => openActivate(item.id)}
-                    onReflect={() => openReflection(item.id)}
-                    onReframe={() => reframe.mutate({ bucket: item })}
-                    onNavigateTab={(tab) => setActiveTab(tab)}
-                  />
+                  <AnimatePresence mode="wait" initial={false}>
+                    {activeTab === "intelligence" ? (
+                      <motion.div key="intelligence" {...bucketTabPanel(reduceMotion)}>
+                        <DreamIntelligencePanel
+                          item={item}
+                          copy={copy}
+                          onActivate={() => openActivate(item.id)}
+                          onReflect={() => openReflection(item.id)}
+                          onReframe={() => reframe.mutate({ bucket: item })}
+                          onNavigateTab={(tab) => setActiveTab(tab)}
+                        />
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </TabsContent>
 
                 <TabsContent value="visuals" className="pt-4">
-                  <DreamInspirationGallery item={item} copy={copy} />
+                  <AnimatePresence mode="wait" initial={false}>
+                    {activeTab === "visuals" ? (
+                      <motion.div key="visuals" {...bucketTabPanel(reduceMotion)}>
+                        <DreamInspirationGallery item={item} copy={copy} />
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </TabsContent>
 
                 <TabsContent value="integrations" className="space-y-3 pt-4">
-                  <IntegrationList
-                    items={integrations.data ?? []}
-                    onOpenActivate={() => openActivate(item.id)}
-                  />
+                  <AnimatePresence mode="wait" initial={false}>
+                    {activeTab === "integrations" ? (
+                      <motion.div key="integrations" {...bucketTabPanel(reduceMotion)}>
+                        <IntegrationList
+                          items={integrations.data ?? []}
+                          onOpenActivate={() => openActivate(item.id)}
+                        />
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </TabsContent>
 
                 {item.type === "travel" ? (
                   <TabsContent value="travel" className="pt-4">
-                    <TravelExplorerConsole
-                      item={item}
-                      copy={copy}
-                      onNavigateTab={(tab) => setActiveTab(tab)}
-                    />
+                    <AnimatePresence mode="wait" initial={false}>
+                      {activeTab === "travel" ? (
+                        <motion.div key="travel" {...bucketTabPanel(reduceMotion)}>
+                          <TravelExplorerConsole
+                            item={item}
+                            copy={copy}
+                            onNavigateTab={(tab) => setActiveTab(tab)}
+                          />
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
                   </TabsContent>
                 ) : null}
 
                 <TabsContent value="reflect" className="space-y-4 pt-4">
-                  <DreamMemoryTimeline item={item} copy={copy} />
+                  <AnimatePresence mode="wait" initial={false}>
+                    {activeTab === "reflect" ? (
+                      <motion.div key="reflect" {...bucketTabPanel(reduceMotion)} className="space-y-4">
+                        <DreamMemoryTimeline item={item} copy={copy} />
 
-                  {reflections.data?.[0] ? (
-                    <>
-                      <DreamChangedMePanel
-                        reflection={reflections.data[0]}
-                        copy={copy}
-                      />
-                      <DreamBeforeAfterReflection
-                        item={item}
-                        reflection={reflections.data[0]}
-                        copy={copy}
-                      />
-                      <DreamMemoryPhotoGallery
-                        photos={reflections.data.flatMap(
-                          (r) => r.photo_gallery ?? [],
-                        )}
-                        copy={copy}
-                      />
-                    </>
-                  ) : null}
+                        {reflections.data?.[0] ? (
+                          <>
+                            <DreamChangedMePanel
+                              reflection={reflections.data[0]}
+                              copy={copy}
+                            />
+                            <DreamBeforeAfterReflection
+                              item={item}
+                              reflection={reflections.data[0]}
+                              copy={copy}
+                            />
+                            <DreamMemoryPhotoGallery
+                              photos={reflections.data.flatMap(
+                                (r) => r.photo_gallery ?? [],
+                              )}
+                              copy={copy}
+                            />
+                          </>
+                        ) : null}
 
-                  <ReflectionsList
-                    items={reflections.data ?? []}
-                    onWrite={() => openReflection(item.id)}
-                  />
+                        <ReflectionsList
+                          items={reflections.data ?? []}
+                          onWrite={() => openReflection(item.id)}
+                        />
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </TabsContent>
               </Tabs>
             </div>
@@ -461,11 +543,17 @@ export const DreamIntelligenceDialog = DetailHubDialog;
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function FactsGrid({ item }: { item: BucketItem }) {
+  const reduceMotion = useReducedMotion() ?? false;
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border p-4 text-sm">
-      <Fact label="Priority" value={item.priority} />
-      <Fact label="Difficulty" value={item.difficulty} />
-      <Fact label="Time horizon" value={item.time_horizon ?? "—"} />
+    <motion.dl
+      variants={bucketStaggerContainer(reduceMotion)}
+      initial="hidden"
+      animate="show"
+      className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border p-4 text-sm"
+    >
+      <Fact label="Priority" value={item.priority} reduceMotion={reduceMotion} />
+      <Fact label="Difficulty" value={item.difficulty} reduceMotion={reduceMotion} />
+      <Fact label="Time horizon" value={item.time_horizon ?? "—"} reduceMotion={reduceMotion} />
       <Fact
         label="Estimated cost"
         value={
@@ -473,6 +561,7 @@ function FactsGrid({ item }: { item: BucketItem }) {
             ? `${item.estimated_cost.toLocaleString()} ${item.cost_currency}`
             : item.cost_band ?? "—"
         }
+        reduceMotion={reduceMotion}
       />
       {item.type === "travel" ? (
         <>
@@ -481,6 +570,7 @@ function FactsGrid({ item }: { item: BucketItem }) {
             value={[item.destination_city, item.destination_country]
               .filter(Boolean)
               .join(", ") || "—"}
+            reduceMotion={reduceMotion}
           />
           <Fact
             label="Airport route"
@@ -489,12 +579,17 @@ function FactsGrid({ item }: { item: BucketItem }) {
                 ? `${item.origin_airport} → ${item.destination_airport}`
                 : "—"
             }
+            reduceMotion={reduceMotion}
           />
-          <Fact label="Best season" value={item.best_season ?? "—"} />
-          <Fact label="Trip length" value={item.trip_length_days ? `${item.trip_length_days} days` : "—"} />
+          <Fact label="Best season" value={item.best_season ?? "—"} reduceMotion={reduceMotion} />
+          <Fact
+            label="Trip length"
+            value={item.trip_length_days ? `${item.trip_length_days} days` : "—"}
+            reduceMotion={reduceMotion}
+          />
         </>
       ) : null}
-      <div className="col-span-2">
+      <motion.div className="col-span-2" variants={bucketStaggerItem(reduceMotion, 8)}>
         <Fact
           label="Tags"
           value={
@@ -510,20 +605,29 @@ function FactsGrid({ item }: { item: BucketItem }) {
               "—"
             )
           }
+          reduceMotion={reduceMotion}
         />
-      </div>
-    </dl>
+      </motion.div>
+    </motion.dl>
   );
 }
 
-function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+function Fact({
+  label,
+  value,
+  reduceMotion,
+}: {
+  label: string;
+  value: React.ReactNode;
+  reduceMotion: boolean;
+}) {
   return (
-    <div>
+    <motion.div variants={bucketStaggerItem(reduceMotion, 8)}>
       <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </dt>
       <dd className="mt-0.5 text-sm">{value}</dd>
-    </div>
+    </motion.div>
   );
 }
 

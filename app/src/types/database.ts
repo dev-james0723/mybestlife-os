@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
 import type {
   BillingCycle,
   ConfidenceLevel,
@@ -74,6 +75,13 @@ export type UserProfile = {
   quick_save_enabled: boolean;
   quick_save_default_destination: QuickSaveDefaultDestination;
   quick_save_require_review: boolean;
+  os_buddy_pet_id: OSBuddyPetId;
+  os_buddy_name: string;
+  os_buddy_enabled: boolean;
+  os_buddy_position: OSBuddyPosition;
+  os_buddy_onboarding_completed: boolean;
+  os_buddy_interaction_stats: Record<string, unknown>;
+  os_buddy_unlocked_pets: OSBuddyPetId[];
   created_at: string;
   updated_at: string;
 };

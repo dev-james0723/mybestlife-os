@@ -416,6 +416,15 @@ html.focus-mode [data-focus-hideable] {
   display: none;
 }
 
+.os-buddy-sprite-img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ============================================================
    Atmosphere backdrops per theme/mode
    ============================================================ */

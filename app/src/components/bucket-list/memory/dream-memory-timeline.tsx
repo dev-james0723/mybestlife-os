@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import {
   useBucketIntegrations,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/bucket-list/memory-timeline";
 import type { BucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
 import type { BucketItem } from "@/types/bucket-list";
+import { bucketStaggerContainer, bucketStaggerItem } from "../bucket-motion";
 
 function labelFor(
   event: DreamTimelineEvent,
@@ -44,6 +46,7 @@ export function DreamMemoryTimeline({
   item: BucketItem;
   copy: BucketListUiCopy;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const { data: integrations } = useBucketIntegrations(item.id);
   const { data: images } = useDreamImages(item.id);
   const { data: reflections } = useBucketReflections(item.id);
@@ -61,20 +64,37 @@ export function DreamMemoryTimeline({
   if (events.length === 0) return null;
 
   return (
-    <section className="rounded-xl border p-4">
+    <motion.section
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      className="rounded-xl border p-4"
+    >
       <h3 className="mb-3 text-sm font-semibold">{copy.memoryTimelineHeading}</h3>
-      <ol className="space-y-3 border-l pl-4">
+      <motion.ol
+        variants={bucketStaggerContainer(reduceMotion)}
+        initial="hidden"
+        animate="show"
+        className="space-y-3 border-l pl-4"
+      >
         {events.map((event, i) => (
-          <li key={`${event.key}-${i}`} className="relative">
-            <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border border-background bg-lime-400" />
+          <motion.li
+            key={`${event.key}-${i}`}
+            variants={bucketStaggerItem(reduceMotion, 8)}
+            className="relative"
+          >
+            <motion.span
+              className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border border-background bg-lime-400"
+              initial={{ scale: reduceMotion ? 1 : 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: reduceMotion ? 0.15 : 0.35, delay: i * 0.04 }}
+            />
             <p className="text-[13px] font-medium">{labelFor(event, copy)}</p>
             <p className="text-[11px] text-muted-foreground">
               {formatDate(event.dateISO)}
             </p>
-          </li>
+          </motion.li>
         ))}
-      </ol>
-    </section>
+      </motion.ol>
+    </motion.section>
   );
 }
 

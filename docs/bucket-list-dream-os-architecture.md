@@ -1,6 +1,7 @@
 # Bucket List → Dream-to-Reality OS — Architecture
 
-**Phase 0 · Architecture plan only. No application code, UI, or migrations are written in this phase.**
+**Current through Phase 9.** This document is now the living architecture for the
+implemented Bucket List Dream-to-Reality OS, including the Phase 9 QA/hardening pass.
 
 This document describes how we evolve the existing Bucket List feature into a full
 AI-powered **Dream-to-Reality OS**: a system that helps a user capture a dream with
@@ -17,10 +18,51 @@ Companion documents:
 
 - [`bucket-list-dream-os-roadmap.md`](./bucket-list-dream-os-roadmap.md) — phased delivery plan.
 - [`bucket-list-ai-policy.md`](./bucket-list-ai-policy.md) — AI usage, grounding, safety, quotas.
-- [`bucket-list-data-model.md`](./bucket-list-data-model.md) — concrete schema deltas.
+- [`bucket-list-data-model.md`](./bucket-list-data-model.md) — current implemented schema and RLS notes.
 
 Prior context: [`bucket-list-build-summary.md`](./bucket-list-build-summary.md),
 [`bucket-list-build-log.md`](./bucket-list-build-log.md).
+
+---
+
+## Phase 9 Current-State Addendum
+
+The upgraded Bucket List is implemented as an additive Dream-to-Reality layer over
+`bucket_items`. The primary surfaces are:
+
+- **Overview shell:** animated hero, stats, type filters, Dream Pattern Banner, grid/list
+  cards, Featured Rail, Realized strip, empty-state CTAs, settings, and first-visit seeds.
+- **Capture:** manual add sheet plus AI Dream Capture wizard. AI capture returns a draft and
+  never persists until the user reviews and clicks Save.
+- **Visuals:** uploaded images and generated dream visuals are stored in
+  `bucket_dream_images`. Generated visuals are labeled and are added to the gallery for
+  review; they are not auto-applied as the cover unless an explicit caller opts in.
+- **Intelligence Hub:** cached `bucket_dream_ai_reports` reports, readiness scoring,
+  blockers, smallest version, next step, and suggested connections. Opening the hub reads
+  cache first and does not call AI on render.
+- **Activation Engine:** Gemini proposes an activation plan; the preview checkboxes authorize
+  the actual Project / Task / Savings / Note / integration writes. Calendar and knowledge
+  suggestions currently persist as Bucket integration rows/resource links rather than real
+  calendar/knowledge records.
+- **Travel Explorer:** grounded destination brief, grounded trip plan, lazy Google map,
+  readiness, budget versions, booking checklist, image suggestions, and flight watch. All
+  built-in flight prices are estimates; the mock provider now always records
+  `mode = 'exploratory'`.
+- **Memory:** completed-dream reflections save only user-authored reflection/photos plus an
+  AI interpretation of that supplied text. Completed memories are never generated from thin
+  air.
+
+Phase 9 hardening added:
+
+- Seed RPC hardening migration: `seed_bucket_list_starter(uuid)` now runs as
+  `SECURITY INVOKER`, so existing RLS policies enforce `auth.uid() = user_id`.
+- Mock flight estimates no longer populate `latest_live_price`; only a real, non-mock live
+  provider may do that.
+- Travel brief and trip-plan views always display a verification notice.
+- AI cover generation defaults to gallery review instead of applying the generated visual
+  as the active cover.
+- The dream image resolver hook now depends on the full item object, removing a stale memo
+  dependency risk.
 
 ---
 
@@ -251,7 +293,7 @@ bucket-list/page.tsx
    │   ├─ PageIntelligenceBar      (NEW)    — ready / dormant / blocked / emotional rollup
    │   ├─ BucketStatsStrip                  (existing)
    │   ├─ TypeFilterTabs                    (existing, + readiness filter)
-   │   ├─ DreamCard / DreamListRow          (existing, + readiness chip + AI-cover badge)
+   │   ├─ DreamCard / DreamListRow          (existing, + readiness chip + internal cover provenance)
    │   ├─ FeaturedRail                       (existing, + "next best step" CTA)
    │   └─ RealizedStrip                      (existing)
    ├─ travel → ExplorerConsole              (existing)
@@ -268,13 +310,13 @@ Global overlays
 ├─ ActivateDreamModal                        (existing) → wraps:
 │   └─ ActivationPreview            (NEW)    — shows exactly what will be created, per action
 ├─ ReflectionSheet                           (existing)
-└─ DreamCoverPicker                 (NEW)    — choose catalog image / upload / generate (labeled AI)
+└─ DreamCoverPicker                 (NEW)    — choose catalog image / upload / generate
 ```
 
 **New hooks** (TanStack Query, same conventions): `use-dream-capture.ts`,
 `use-dream-cover.ts` (generate/upload), `use-dream-intelligence.ts`,
 `use-dream-assets.ts`. New presentation helpers in `lib/bucket-list/` for readiness labels,
-emotional-weight display, and the AI-cover badge.
+emotional-weight display, and internal cover provenance.
 
 ---
 
@@ -297,8 +339,7 @@ Three sources, one resolver, clear provenance.
 **Resolution priority for a dream's cover:** explicit chosen cover
 (`bucket_dream_assets.is_cover`) → `cover_image_url` → catalog/keyword → type fallback →
 global fallback. `BucketDreamImage.sourceType` (`static | api | generated`) already exists;
-extend it to drive a **mandatory "AI-generated visual" badge** wherever a generated cover
-renders (`dream-cover-background.tsx`, cards, hero, picker). Generated images are decorative
+use it for internal provenance and safety/audit logic. Generated images are decorative
 inspiration — never represented as a real photo of the user's experience.
 
 ---
@@ -445,8 +486,8 @@ These are binding across every layer.
    configured provider's quotes may appear without that label.
 3. **No unverified travel facts as truth.** Grounded AI research is labeled "AI research —
    verify before booking"; ungrounded output is never presented as factual.
-4. **AI images are labeled.** Any generated cover/visual shows an "AI-generated visual"
-   badge and is stored with `is_ai_generated = true`.
+4. **Generated-image provenance is stored.** Generated covers/visuals do not show
+   generated/AI badges in the UI, but they are stored with generated-image provenance.
 5. **Memories are never invented.** Reflections/summaries derive only from user input.
 6. **AI suggestions are dismissable and overridable.** User overrides (e.g. readiness
    state) are sticky and never silently overwritten.
@@ -471,7 +512,7 @@ Detailed in [`bucket-list-dream-os-roadmap.md`](./bucket-list-dream-os-roadmap.m
 - **Phase 2 — AI Dream Capture.** `capture` + `capture-image` routes, `DreamCapturePanel`,
   voice/paste/upload, draft review. Catalog image picker + upload.
 - **Phase 3 — Dream image / cover system.** `cover-image` route + `DreamCoverPicker` +
-  AI-generated badge end to end.
+  internal generated-image provenance end to end.
 - **Phase 4 — Dream Intelligence Hub.** Rule + AI signals, `DreamIntelligenceCard`,
   readiness caching, dismiss/override.
 - **Phase 5 — Page-level intelligence.** `PageIntelligenceBar`, readiness filter, dashboard
@@ -491,7 +532,7 @@ Each phase is independently shippable and preserves all §2 behavior.
 Mirror the existing quality gates (`tsc --noEmit`, scoped ESLint, manual QA) and add:
 
 - **Unit (Vitest, alongside existing `*.test.ts` like `resolve-bucket-dream-image.test.ts`):**
-  readiness rule engine, cover resolution priority + AI badge logic, activation-preview
+  readiness rule engine, cover resolution priority + provenance logic, activation-preview
   builder, capture-draft normalization, quota math.
 - **API route tests:** auth 401, invalid JSON 400, quota 429, Zod-boundary validation,
   grounded `unverified` propagation, that capture/preview routes perform **no** writes.

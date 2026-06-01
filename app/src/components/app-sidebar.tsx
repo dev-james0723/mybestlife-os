@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, useCallback, useMemo, useState, type ComponentType } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { stripLeadingLocaleFromPathname, withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
@@ -48,6 +48,7 @@ import { getSidebarFooterCopy } from "@/lib/i18n/sidebar-ui";
 import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
 import { cn } from "@/lib/utils";
+import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { UiTheme } from "@/types/database";
 
@@ -153,7 +154,7 @@ export function AppSidebar() {
   const { uiTheme } = useTheme();
   const footer = getSidebarFooterCopy(language);
   const tui = getThemeUiCopy(language);
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useSsrSafeReducedMotion();
   // Motion wrappers only engage under the `default` theme. Other themes
   // get the plain Fragment/div fallback so their existing visuals and
   // layout are literally byte-identical to before.

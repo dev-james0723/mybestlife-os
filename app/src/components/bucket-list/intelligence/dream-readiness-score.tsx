@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
-import { Progress } from "@/components/ui/progress";
 import { useDreamImages } from "@/hooks/use-bucket-list";
 import { computeDreamReadiness } from "@/lib/bucket-list/readiness";
 import type { BucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -10,6 +10,7 @@ import type {
   BucketDreamIntelligenceReport,
   BucketItem,
 } from "@/types/bucket-list";
+import { bucketProgressTransition, bucketStaggerItem } from "../bucket-motion";
 
 /**
  * Deterministic, non-judgmental readiness score. Always available (no AI). If
@@ -24,6 +25,7 @@ export function DreamReadinessScore({
   report: BucketDreamIntelligenceReport | null;
   copy: BucketListUiCopy;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const { data: images } = useDreamImages(item.id);
   const readiness = useMemo(
     () =>
@@ -50,14 +52,29 @@ export function DreamReadinessScore({
   const missing = report?.dreamReadiness.missingPieces ?? [];
 
   return (
-    <section className="rounded-xl border p-4">
+    <motion.section
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      className="rounded-xl border p-4"
+    >
       <div className="mb-1 flex items-baseline justify-between">
         <h3 className="text-sm font-semibold">{copy.readinessHeading}</h3>
-        <span className="text-lg font-semibold tabular-nums">
+        <motion.span
+          initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={bucketProgressTransition(reduceMotion, 0.05)}
+          className="text-lg font-semibold tabular-nums"
+        >
           {readiness.score}%
-        </span>
+        </motion.span>
       </div>
-      <Progress value={readiness.score} className="h-2" />
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <motion.div
+          className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-lime-300 to-emerald-300"
+          initial={{ width: 0 }}
+          animate={{ width: `${readiness.score}%` }}
+          transition={bucketProgressTransition(reduceMotion, 0.08)}
+        />
+      </div>
       <p className="mt-2 text-[13px] text-muted-foreground">{summary}</p>
       {report?.dreamReadiness.explanation ? (
         <p className="mt-1 text-[13px] text-foreground/80">
@@ -81,6 +98,6 @@ export function DreamReadinessScore({
           </ul>
         </div>
       ) : null}
-    </section>
+    </motion.section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import { Star, Package, Sparkles, ArrowUpRight } from "lucide-react";
+import { Star, Package, ArrowUpRight } from "lucide-react";
 import { AssetCategoryPill } from "./AssetCategoryPill";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -20,9 +20,9 @@ export type AssetCardProps = {
   categoryLabel: string | null;
   /** Already-formatted display value (currency). */
   valueText: string;
-  /** Primary image URL (uploaded or AI-generated), if any. */
+  /** Primary image URL (uploaded or generated), if any. */
   imageUrl?: string | null;
-  /** Whether the primary image is AI-generated (shows a subtle badge). */
+  /** Whether the primary image is generated. Kept for internal provenance only. */
   imageIsGenerated?: boolean;
   /** Document health 0-100 (lite, field-derived for the grid). */
   documentHealth?: number;
@@ -67,7 +67,6 @@ export function AssetCard({
   categoryLabel,
   valueText,
   imageUrl,
-  imageIsGenerated,
   documentHealth,
   badges = [],
   insightPreview,
@@ -107,12 +106,6 @@ export function AssetCard({
             <div className="flex size-full items-center justify-center">
               <Package className="size-10 text-muted-foreground/40" />
             </div>
-          )}
-
-          {imageUrl && imageIsGenerated && (
-            <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground backdrop-blur">
-              <Sparkles className="size-3" /> AI
-            </span>
           )}
 
           <div className="absolute right-2 top-2">

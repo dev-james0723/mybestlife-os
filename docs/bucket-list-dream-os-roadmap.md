@@ -1,11 +1,53 @@
 # Bucket List → Dream-to-Reality OS — Roadmap
 
-**Phase 0 plan.** Phased delivery for evolving the existing Bucket List into the Dream OS.
-Each phase is independently shippable, additive, and preserves every working feature listed
-in [`bucket-list-dream-os-architecture.md`](./bucket-list-dream-os-architecture.md) §2.
+**Current through Phase 9.** Phased delivery for evolving the existing Bucket List into the
+Dream OS. Each phase is independently shippable, additive, and preserves every working
+feature listed in [`bucket-list-dream-os-architecture.md`](./bucket-list-dream-os-architecture.md) §2.
 
 Companions: [architecture](./bucket-list-dream-os-architecture.md),
-[ai-policy](./bucket-list-ai-policy.md), [data-model](./bucket-list-dream-os-data-model.md).
+[ai-policy](./bucket-list-ai-policy.md), [data-model](./bucket-list-data-model.md).
+
+---
+
+## Phase Status
+
+| Phase | Status | Notes |
+| --- | --- | --- |
+| 0 | Complete | Architecture docs established. |
+| 1 | Complete | Core Bucket List schema, RLS, seed RPC, settings, flight quote cache. |
+| 2 | Complete | AI Dream Capture draft flow and review/save UX. |
+| 3 | Complete | Dream image gallery, uploads, generated visuals, internal provenance. |
+| 4 | Complete | Per-dream Intelligence Hub with cached reports. |
+| 5 | Complete | Page-level intelligence surfaces: pattern banner, stats, cards, featured rail. |
+| 6 | Complete | Activation Engine with AI plan preview and confirmed writes. |
+| 7 | Complete | Travel Explorer Console, grounded brief/plan, map, flight estimate UX. |
+| 8 | Complete | Motion polish, cinematic cards, gallery/detail/timeline animations, reduced motion. |
+| 9 | Complete in this pass | QA/hardening, safety fixes, docs, and test checklist. |
+
+## Phase 9 QA/Hardened Decisions
+
+- **No silent AI persistence:** AI capture and image analysis remain review-first. Generated
+  visuals now land in the gallery for review instead of automatically becoming the cover.
+- **No fake live travel prices:** the built-in mock provider always records exploratory
+  estimates, and the UI no longer presents mock data as a price drop or booking action.
+- **No RLS bypass:** the first-visit seed RPC now runs as invoker and relies on the table
+  policies already scoped to `auth.uid() = user_id`.
+- **No invented memories:** memory routes remain suggestion-only and reflection saves require
+  user-authored reflection/change text.
+- **Performance:** AI work is mutation-driven, Dream Intelligence reports are cached, Google
+  Maps is dynamically imported, and the image gallery/card system uses resolved URLs rather
+  than repeated AI calls.
+
+## Next Phase Candidates
+
+- Add a real flight provider adapter behind `FlightWatchProvider`; only that adapter may emit
+  `mode = 'live'`.
+- Convert calendar placeholders and resource links into optional real Calendar/Knowledge
+  writes with a second explicit confirmation step.
+- Add focused route/unit tests for the Phase 9 safety contracts: seed RPC invoker migration,
+  mock quote mode, generated-cover default, and travel verification notices.
+- Add a backfill/cleanup migration only if production data contains old mock quotes stored
+  in `bucket_items.latest_live_price`.
 
 ---
 
@@ -17,7 +59,8 @@ Companions: [architecture](./bucket-list-dream-os-architecture.md),
 - Do **not** create fake buttons — ship a control only when its capability is real.
 - Do **not** auto-create projects/tasks/budgets/calendar events without confirmation.
 - Do **not** fake live flight prices; do **not** present AI travel research as verified.
-- Generated images are labeled AI; memories are never invented.
+- Generated-image provenance is stored internally; visible image badges are not shown.
+  Memories are never invented.
 - Quality gates per phase: `tsc --noEmit` clean, scoped ESLint clean, EN+zh-TW strings,
   unit/route tests for new code, no regression to the cross-module SDK consumers.
 
@@ -74,11 +117,12 @@ nothing is saved until they confirm.
 - Route `cover-image` (`generateGeminiInlineImage` → upload to `bucket-dream-images` →
   `bucket_dream_assets` row with `is_ai_generated=true`).
 - `DreamCoverPicker`: catalog/keyword (existing resolver) · upload · generate.
-- `dream-cover-background.tsx` + cards/hero render the **"AI-generated visual"** badge
-  whenever `cover_image_is_ai`/asset `is_ai_generated`.
+- `dream-cover-background.tsx` + cards/hero preserve generated-image provenance via
+  `cover_image_is_ai`/asset `is_ai_generated` without rendering generated/AI badges.
 - Cover resolution priority wired (architecture §7).
 
-**Exit:** every cover surface shows correct provenance; AI covers are always labeled.
+**Exit:** every cover surface preserves provenance internally; generated covers are not
+labeled in the UI.
 
 ---
 

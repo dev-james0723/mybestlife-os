@@ -71,9 +71,12 @@ export function TravelGoogleMapInner({
   const mapReadyRef = useRef(false);
   const refreshPlaneHeadingsRef = useRef<(() => void) | null>(null);
   const onMarkerClickRef = useRef(onMarkerClick);
-  onMarkerClickRef.current = onMarkerClick;
 
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick;
+  }, [onMarkerClick]);
 
   useEffect(() => {
     let cancelled = false;

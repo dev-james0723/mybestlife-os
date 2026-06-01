@@ -2,6 +2,7 @@
 
 import { Footprints, Leaf, Loader2, Rocket, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import type { BucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -9,6 +10,11 @@ import {
   BUCKET_ACTIVATION_MODES,
   type BucketActivationMode,
 } from "@/types/bucket-list";
+import {
+  bucketHoverLift,
+  bucketStaggerContainer,
+  bucketStaggerItem,
+} from "../bucket-motion";
 
 const MODE_ICON: Record<BucketActivationMode, LucideIcon> = {
   gentle: Leaf,
@@ -48,16 +54,24 @@ export function DreamActivationModeStep({
   generating: boolean;
   copy: BucketListUiCopy;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{copy.activateModeHeading}</p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <motion.div
+        variants={bucketStaggerContainer(reduceMotion)}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+      >
         {BUCKET_ACTIVATION_MODES.map((m) => {
           const Icon = MODE_ICON[m];
           const active = m === mode;
           return (
-            <button
+            <motion.button
               key={m}
+              variants={bucketStaggerItem(reduceMotion, 8)}
+              whileHover={bucketHoverLift(reduceMotion)}
               type="button"
               onClick={() => onSelect(m)}
               className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
@@ -77,10 +91,10 @@ export function DreamActivationModeStep({
                   {modeDesc(m, copy)}
                 </span>
               </span>
-            </button>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
       <div className="flex justify-end">
         <Button
           className="bg-lime-400 text-black hover:bg-lime-300"

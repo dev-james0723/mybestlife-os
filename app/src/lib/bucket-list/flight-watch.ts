@@ -17,8 +17,8 @@
  *
  * The heuristic below uses great-circle distance to generate believable
  * seed prices. Months in the "high season" for a destination get a +25%
- * uplift. This is intentionally coarse; the goal is a useful placeholder,
- * not a real quote.
+ * uplift. This is intentionally coarse; the goal is a useful estimate, not a
+ * real quote. The mock provider must never report `mode: "live"`.
  */
 
 import type {
@@ -200,13 +200,9 @@ export class MockFlightWatchProvider implements FlightWatchProvider {
     const fastest = roundPrice(basePrice * 1.35 * travelStyleBump);
     const direct = km > 2000 ? roundPrice(basePrice * 1.2 * travelStyleBump) : cheapest;
 
-    const modeIsExact = Boolean(
-      input.depart_date && input.depart_date.length === 10,
-    );
-
     return {
       provider: "mock",
-      mode: modeIsExact ? "live" : "exploratory",
+      mode: "exploratory",
       origin_airport: input.origin_airport,
       destination_airport: input.destination_airport,
       depart_date: input.depart_date ?? null,
@@ -218,7 +214,14 @@ export class MockFlightWatchProvider implements FlightWatchProvider {
       cheapest_deeplink: null,
       notes:
         "Built-in estimate — connect a real flight provider for live pricing.",
-      raw: { km, season, travel_style: input.travel_style ?? null },
+      raw: {
+        km,
+        season,
+        travel_style: input.travel_style ?? null,
+        requested_exact_date: Boolean(
+          input.depart_date && input.depart_date.length === 10,
+        ),
+      },
     };
   }
 }

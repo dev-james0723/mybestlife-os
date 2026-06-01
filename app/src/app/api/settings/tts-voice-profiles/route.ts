@@ -20,6 +20,41 @@ const ACCEPTED_AUDIO_TYPES = new Set([
   "audio/ogg",
 ]);
 
+const TTS_SCHEMA_MISSING_DETAIL =
+  "Missing tts tables. Apply the VoxCPM TTS migration in app/supabase/migrations and reload Settings.";
+
+function isMissingTtsSchemaError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const message = String((error as { message?: unknown }).message ?? "").toLowerCase();
+  const details = String((error as { details?: unknown }).details ?? "").toLowerCase();
+  const combined = `${message} ${details}`;
+  return (
+    combined.includes("user_tts_preferences") ||
+    combined.includes("user_tts_voice_profiles")
+  ) && (
+    combined.includes("schema cache") ||
+    combined.includes("relation") ||
+    combined.includes("does not exist") ||
+    combined.includes("could not find")
+  );
+}
+
+function mimeTypeFromFileName(fileName: string): string {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".m4a")) return "audio/x-m4a";
+  if (lower.endsWith(".mp4")) return "audio/mp4";
+  if (lower.endsWith(".webm")) return "audio/webm";
+  if (lower.endsWith(".ogg")) return "audio/ogg";
+  return "audio/wav";
+}
+
+function normalizeMimeType(rawMimeType: string, fileName: string): string {
+  const base = rawMimeType.split(";")[0]?.trim().toLowerCase();
+  if (base) return base;
+  return mimeTypeFromFileName(fileName);
+}
+
 function extFromMime(mimeType: string): string {
   if (mimeType.includes("mpeg") || mimeType.includes("mp3")) return "mp3";
   if (mimeType.includes("mp4") || mimeType.includes("m4a")) return "m4a";
@@ -52,11 +87,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "reference_audio_required" }, { status: 400 });
   }
   if (file.size <= 0 || file.size > MAX_REFERENCE_BYTES) {
-    return NextResponse.json({ error: "reference_audio_size_invalid" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "reference_audio_size_invalid",
+        detail: `File size must be between 1 byte and ${MAX_REFERENCE_BYTES} bytes.`,
+      },
+      { status: 400 },
+    );
   }
-  const mimeType = file.type || "audio/wav";
+  const mimeType = normalizeMimeType(file.type || "", file.name || "");
   if (!ACCEPTED_AUDIO_TYPES.has(mimeType)) {
-    return NextResponse.json({ error: "reference_audio_type_invalid" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "reference_audio_type_invalid",
+        detail: `Unsupported audio type: ${file.type || "unknown"}`,
+      },
+      { status: 400 },
+    );
   }
 
   const profileId = randomUUID();
@@ -94,6 +141,15 @@ export async function POST(request: Request) {
     .single();
   if (insertError) {
     await supabase.storage.from("knowledge-files").remove([storagePath]);
+    if (isMissingTtsSchemaError(insertError)) {
+      return NextResponse.json(
+        {
+          error: "tts_schema_missing",
+          detail: TTS_SCHEMA_MISSING_DETAIL,
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       { error: "voice_profile_save_failed", detail: insertError.message },
       { status: 502 },
@@ -113,6 +169,16 @@ export async function POST(request: Request) {
       { onConflict: "user_id" },
     );
   if (prefError) {
+    if (isMissingTtsSchemaError(prefError)) {
+      return NextResponse.json(
+        {
+          error: "tts_schema_missing",
+          detail: TTS_SCHEMA_MISSING_DETAIL,
+          profile,
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       {
         error: "voice_profile_saved_preferences_failed",
@@ -123,6 +189,29 @@ export async function POST(request: Request) {
     );
   }
 
-  const settings = await loadAppTtsSettings({ supabase, userId: user.id });
+  let settings;
+  try {
+    settings = await loadAppTtsSettings({ supabase, userId: user.id });
+  } catch (error) {
+    if (isMissingTtsSchemaError(error)) {
+      return NextResponse.json(
+        {
+          error: "tts_schema_missing",
+          detail: TTS_SCHEMA_MISSING_DETAIL,
+          profile,
+        },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json(
+      {
+        error: "voice_profile_saved_settings_load_failed",
+        detail: error instanceof Error ? error.message : String(error),
+        profile,
+      },
+      { status: 502 },
+    );
+  }
+
   return NextResponse.json({ profile, settings });
 }

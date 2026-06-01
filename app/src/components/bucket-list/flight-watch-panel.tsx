@@ -76,11 +76,13 @@ export function FlightWatchPanel({ item }: { item: BucketItem }) {
         raw_payload: quote.raw,
       });
 
+      const isLiveQuote = quote.mode === "live" && quote.provider !== "mock";
+
       await updateBucket.mutateAsync({
         id: item.id,
         data: {
-          latest_live_price: quote.cheapest_price,
-          latest_live_price_currency: quote.currency,
+          latest_live_price: isLiveQuote ? quote.cheapest_price : null,
+          latest_live_price_currency: isLiveQuote ? quote.currency : null,
           last_price_check_time: new Date().toISOString(),
           exploratory_price_min:
             item.exploratory_price_min ?? band?.min ?? null,

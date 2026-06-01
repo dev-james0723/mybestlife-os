@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { BucketDreamImage, BucketType } from "@/types/bucket-list";
 
@@ -33,6 +34,7 @@ export function DreamCoverBackground({
   interactive = false,
 }: DreamCoverBackgroundProps) {
   const [failed, setFailed] = useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
     setFailed(false);
@@ -42,19 +44,20 @@ export function DreamCoverBackground({
 
   const gradientOverlay =
     variant === "hero"
-      ? "bg-gradient-to-b from-black/25 via-black/35 to-black/75"
+      ? "bg-gradient-to-b from-black/20 via-black/38 to-black/78"
       : variant === "thumb"
-        ? "bg-gradient-to-b from-black/15 via-black/30 to-black/70"
-        : "bg-gradient-to-b from-black/20 via-black/40 to-black/85";
+        ? "bg-gradient-to-b from-black/12 via-black/32 to-black/78"
+        : "bg-gradient-to-b from-black/12 via-black/45 to-black/90";
 
   return (
-    <div
+    <motion.div
       className={cn(
         "pointer-events-none absolute inset-0 overflow-hidden",
-        interactive &&
-          "transition-transform duration-500 ease-out group-hover:scale-[1.03] group-hover:brightness-110",
         className,
       )}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: [0.16, 1, 0.3, 1] }}
       aria-hidden
     >
       {showPhoto ? (
@@ -62,21 +65,33 @@ export function DreamCoverBackground({
         <img
           src={image!.url}
           alt={image!.alt}
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover object-center",
+            interactive &&
+              !reduceMotion &&
+              "scale-[1.02] transition-[filter,transform] duration-700 ease-out group-hover:-translate-y-1 group-hover:scale-[1.08] group-hover:blur-[0.5px] group-hover:brightness-110",
+          )}
           loading="lazy"
           decoding="async"
           onError={() => setFailed(true)}
         />
       ) : (
         <div
-          className={cn("absolute inset-0 bg-gradient-to-br", TYPE_GRADIENT[type])}
+          className={cn(
+            "absolute inset-0 bg-gradient-to-br",
+            TYPE_GRADIENT[type],
+            interactive &&
+              !reduceMotion &&
+              "transition-transform duration-700 ease-out group-hover:scale-[1.04]",
+          )}
         />
       )}
       <div className={cn("absolute inset-0", gradientOverlay)} />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-black/10" />
       {/* Subtle vignette for card readability */}
       {variant === "card" ? (
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
       ) : null}
-    </div>
+    </motion.div>
   );
 }

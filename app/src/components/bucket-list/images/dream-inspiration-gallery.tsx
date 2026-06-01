@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Check,
   Loader2,
   Pencil,
-  Sparkles,
   Star,
   Trash2,
   Wand2,
@@ -31,15 +31,17 @@ import type {
 import { DreamImageUploader } from "./dream-image-uploader";
 import { DreamCoverSelector } from "./dream-cover-selector";
 import { DreamImageAnalysisReview } from "./dream-image-analysis-review";
-
-function isGenerated(image: BucketDreamImageRecord): boolean {
-  return image.source_type === "generated" || image.image_type === "generated_visual";
-}
+import {
+  bucketEntrance,
+  bucketHoverLift,
+  bucketStaggerContainer,
+  bucketStaggerItem,
+} from "../bucket-motion";
 
 /**
  * Full dream visuals panel: cover controls + inspiration gallery. Each image
- * can be set as the cover, captioned, AI-analyzed, or removed. AI-generated
- * visuals are always labeled.
+ * can be set as the cover, captioned, analyzed, or removed. Generated-image
+ * provenance remains internal.
  */
 export function DreamInspirationGallery({
   item,
@@ -48,6 +50,7 @@ export function DreamInspirationGallery({
   item: BucketItem;
   copy: BucketListUiCopy;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const { data: images, isLoading } = useDreamImages(item.id);
   const [analysisFor, setAnalysisFor] = useState<{
     imageId: string;
@@ -58,9 +61,14 @@ export function DreamInspirationGallery({
   const hasVisual = list.length > 0 || Boolean(item.cover_image_url);
 
   return (
-    <div className="space-y-5">
+    <motion.div
+      variants={bucketStaggerContainer(reduceMotion)}
+      initial="hidden"
+      animate="show"
+      className="space-y-5"
+    >
       {/* Cover controls */}
-      <section className="rounded-xl border p-4">
+      <motion.section variants={bucketStaggerItem(reduceMotion, 10)} className="rounded-xl border p-4">
         <h3 className="mb-3 text-sm font-semibold">{copy.visualsCoverHeading}</h3>
         {!hasVisual ? (
           <div className="mb-3 rounded-lg border border-dashed bg-muted/20 px-4 py-5 text-center">
@@ -71,10 +79,10 @@ export function DreamInspirationGallery({
           </div>
         ) : null}
         <DreamCoverSelector item={item} copy={copy} />
-      </section>
+      </motion.section>
 
       {/* Inspiration gallery */}
-      <section className="rounded-xl border p-4">
+      <motion.section variants={bucketStaggerItem(reduceMotion, 10)} className="rounded-xl border p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold">{copy.visualsGalleryHeading}</h3>
           <DreamImageUploader
@@ -94,7 +102,12 @@ export function DreamInspirationGallery({
             {copy.visualsGalleryEmpty}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <motion.div
+            variants={bucketStaggerContainer(reduceMotion)}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+          >
             {list.map((image) => (
               <GalleryImageCard
                 key={image.id}
@@ -108,11 +121,11 @@ export function DreamInspirationGallery({
                 onCloseAnalysis={() => setAnalysisFor(null)}
               />
             ))}
-          </div>
+          </motion.div>
         )}
 
         {analysisFor ? (
-          <div className="mt-3">
+          <motion.div className="mt-3" {...bucketEntrance(reduceMotion, 0, 8)}>
             <DreamImageAnalysisReview
               analysis={analysisFor.result}
               imageId={analysisFor.imageId}
@@ -120,10 +133,10 @@ export function DreamInspirationGallery({
               copy={copy}
               onClose={() => setAnalysisFor(null)}
             />
-          </div>
+          </motion.div>
         ) : null}
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
@@ -146,6 +159,7 @@ function GalleryImageCard({
   const remove = useDeleteDreamImage();
   const updateImage = useUpdateDreamImage();
   const analyze = useAnalyzeInspiration();
+  const reduceMotion = useReducedMotion() ?? false;
 
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionDraft, setCaptionDraft] = useState(image.caption ?? "");
@@ -167,21 +181,23 @@ function GalleryImageCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border">
+    <motion.div
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      whileHover={bucketHoverLift(reduceMotion)}
+      className="group overflow-hidden rounded-lg border"
+    >
       <div className="relative aspect-video">
         {/* eslint-disable-next-line @next/next/no-img-element -- user/AI image from our public bucket */}
         <img
           src={image.image_url}
           alt={image.caption ?? "Dream inspiration"}
-          className="h-full w-full object-cover"
+          className={
+            reduceMotion
+              ? "h-full w-full object-cover"
+              : "h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          }
           loading="lazy"
         />
-        {isGenerated(image) ? (
-          <Badge className="absolute left-1.5 top-1.5 bg-fuchsia-500/90 px-1.5 py-0 text-[9px] text-white">
-            <Sparkles className="mr-0.5 h-2.5 w-2.5" />
-            {copy.visualsAiBadge}
-          </Badge>
-        ) : null}
         {image.is_primary ? (
           <Badge className="absolute right-1.5 top-1.5 bg-lime-400/90 px-1.5 py-0 text-[9px] text-black">
             {copy.visualsIsCover}
@@ -271,6 +287,6 @@ function GalleryImageCard({
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

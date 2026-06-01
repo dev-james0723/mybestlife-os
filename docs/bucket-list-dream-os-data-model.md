@@ -1,8 +1,18 @@
 # Bucket List → Dream-to-Reality OS — Data Model
 
-**Phase 0 plan. No migration is written yet** — this is the agreed schema delta the Phase 1
-migration will implement. It is intentionally **additive** and reuses existing conventions so
-nothing currently working breaks.
+**Historical planning document.** The implemented Phase 9 schema is now documented in
+[`bucket-list-data-model.md`](./bucket-list-data-model.md). This file is kept as the original
+Dream OS schema planning record.
+
+Key implementation differences from this plan:
+
+- The shipped image gallery table is `bucket_dream_images`, not `bucket_dream_assets`.
+- The shipped cached intelligence table is `bucket_dream_ai_reports`.
+- AI cover generation now defaults to gallery review before cover application.
+- The first-visit seed RPC is hardened by
+  `app/supabase/migrations/20271018000000_bucket_seed_rpc_hardening.sql`.
+
+The rest of this document remains useful for rationale and future schema candidates.
 
 See [`bucket-list-dream-os-architecture.md`](./bucket-list-dream-os-architecture.md) for the
 product context and [`bucket-list-ai-policy.md`](./bucket-list-ai-policy.md) for AI specifics.
@@ -48,7 +58,7 @@ All nullable or defaulted, so existing rows and code are unaffected.
 | `capture_source` | `text default 'manual'` `CHECK (capture_source IN ('manual','text_ai','image_ai','voice_ai'))` | How the dream was captured. Provenance for §8 of architecture. |
 | `voice_transcript` | `text` | Optional raw transcript when captured by voice. |
 | `cover_image_source` | `text default 'catalog'` `CHECK (cover_image_source IN ('catalog','upload','generated','external'))` | Drives the cover provenance. |
-| `cover_image_is_ai` | `boolean not null default false` | Forces the "AI-generated visual" badge. Mirrors `asset_images.image_type='generated_product_image'` intent. |
+| `cover_image_is_ai` | `boolean not null default false` | Stores generated-image provenance internally. Mirrors `asset_images.image_type='generated_product_image'` intent. |
 | `emotional_weight` | `smallint` `CHECK (emotional_weight BETWEEN 0 AND 100)` | User and/or AI signal of how much this dream matters. Powers "emotionally important". |
 | `readiness_state` | `text` `CHECK (readiness_state IN ('ready','dormant','blocked','emotionally_important'))` | AI/rule-derived, **user-overridable**. Null = not yet computed. |
 | `readiness_reason` | `text` | One-line explanation for the state (explainability). |
@@ -73,7 +83,7 @@ New index: `idx_bucket_items_user_readiness (user_id, readiness_state)` (partial
 
 ## 2 · `bucket_dream_assets` — new table (inspiration + covers)
 
-Stores uploaded inspiration images, pasted screenshots, and AI-generated covers. Modeled on
+Stores uploaded inspiration images, pasted screenshots, and generated covers. Modeled on
 `asset_images`.
 
 ```text
@@ -103,7 +113,7 @@ Constraints / indexes:
   — at most one chosen cover per dream (mirrors the asset "one primary" pattern).
 - RLS: four policies on `auth.uid() = user_id`.
 
-**Safety:** `is_ai_generated` is the source of truth for the mandatory AI-visual badge; the
+**Safety:** `is_ai_generated` is the source of truth for internal generated-image provenance; the
 generation route always sets it true. `caption` is user-authored only.
 
 ---

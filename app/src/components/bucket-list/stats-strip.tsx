@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -13,6 +14,12 @@ import {
   estimateBucketProgress,
   getBucketTypeLabel,
 } from "@/lib/bucket-list/presentation";
+import {
+  bucketEntrance,
+  bucketHoverLift,
+  bucketStaggerContainer,
+  bucketStaggerItem,
+} from "./bucket-motion";
 
 type StatsStripProps = {
   items: BucketItem[] | undefined;
@@ -26,31 +33,52 @@ type StatsStripProps = {
 export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const stats = useBucketStats(items);
   const highlights = useBucketHighlights(items);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+    <motion.section
+      {...bucketEntrance(reduceMotion, 0.06, 12)}
+      className="rounded-2xl border border-white/10 bg-slate-950/85 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+    >
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
         {copy.masterProgress}
       </p>
 
-      <div className="mt-3 grid grid-cols-5 gap-4">
-        <StatCell value={stats.total} label={copy.statTotal} />
+      <motion.div
+        variants={bucketStaggerContainer(reduceMotion)}
+        initial="hidden"
+        animate="show"
+        className="mt-3 grid grid-cols-5 gap-4"
+      >
+        <StatCell value={stats.total} label={copy.statTotal} reduceMotion={reduceMotion} />
         <StatCell
           value={stats.completed}
           label={copy.statCompleted}
           tone="success"
+          reduceMotion={reduceMotion}
         />
-        <StatCell value={stats.active} label={copy.statActive} tone="active" />
-        <StatCell value={stats.funded} label={copy.statFunded} tone="warm" />
+        <StatCell
+          value={stats.active}
+          label={copy.statActive}
+          tone="active"
+          reduceMotion={reduceMotion}
+        />
+        <StatCell
+          value={stats.funded}
+          label={copy.statFunded}
+          tone="warm"
+          reduceMotion={reduceMotion}
+        />
         <StatCell
           value={stats.dreaming}
           label={copy.statDreaming}
           tone="muted"
+          reduceMotion={reduceMotion}
         />
-      </div>
+      </motion.div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <SpotlightTile
@@ -58,15 +86,17 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
           copy={copy}
           item={highlights.closestToReality}
           onClick={onOpenItem}
+          reduceMotion={reduceMotion}
         />
         <SpotlightTile
           kind="push"
           copy={copy}
           item={highlights.pushThisWeek}
           onClick={onOpenItem}
+          reduceMotion={reduceMotion}
         />
       </div>
-    </div>
+    </motion.section>
   );
 }
 
@@ -74,10 +104,12 @@ function StatCell({
   value,
   label,
   tone = "default",
+  reduceMotion,
 }: {
   value: number;
   label: string;
   tone?: "default" | "success" | "active" | "warm" | "muted";
+  reduceMotion: boolean;
 }) {
   const toneClass = {
     default: "text-white",
@@ -87,7 +119,7 @@ function StatCell({
     muted: "text-white/70",
   }[tone];
   return (
-    <div>
+    <motion.div variants={bucketStaggerItem(reduceMotion, 8)}>
       <div
         className={cn(
           "text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl",
@@ -99,7 +131,7 @@ function StatCell({
       <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
         {label}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -108,11 +140,13 @@ function SpotlightTile({
   item,
   copy,
   onClick,
+  reduceMotion,
 }: {
   kind: "closest" | "push";
   item: BucketItem | null;
   copy: ReturnType<typeof getBucketListUiCopy>;
   onClick: (bucketId: string) => void;
+  reduceMotion: boolean;
 }) {
   if (!item) {
     return (
@@ -130,10 +164,11 @@ function SpotlightTile({
   const monthsOut = bucketMonthsOut(item);
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={() => onClick(item.id)}
-      className="group/spotlight relative block w-full rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition-all hover:-translate-y-0.5 hover:border-white/10 hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70"
+      whileHover={bucketHoverLift(reduceMotion)}
+      className="group/spotlight relative block w-full rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition-all hover:border-white/10 hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70"
     >
       <div className="mb-1 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
         <span>{kind === "closest" ? "✈" : "⚡"}</span>
@@ -187,7 +222,7 @@ function SpotlightTile({
           )}
         </p>
       ) : null}
-    </button>
+    </motion.button>
   );
 }
 

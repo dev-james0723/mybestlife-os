@@ -218,7 +218,7 @@ export type BucketItem = {
   category_tags: string[];
   /** User-provided or API-persisted cover. UI resolves full {@link BucketDreamImage} via `resolveBucketDreamImage`. */
   cover_image_url: string | null;
-  /** True when the current cover is an AI-generated visual (drives the "AI-generated visual" badge). */
+  /** True when the current cover was generated; kept as internal image provenance. */
   cover_image_is_ai: boolean;
   quote_inspiration: string | null;
   inspiration_links: BucketInspirationLink[];

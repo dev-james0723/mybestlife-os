@@ -412,7 +412,7 @@ export type UploadDreamImageInput = {
   caption?: string | null;
 };
 
-/** True when an image represents an AI-generated visual (drives the cover badge). */
+/** True when an image represents a generated visual; stored as internal provenance. */
 function isGeneratedImage(image: {
   source_type: BucketDreamImageSource;
   image_type: BucketDreamImageType;
@@ -543,7 +543,7 @@ export const bucketDreamImagesRepository = {
   /**
    * Set an image as the dream's primary cover. Unsets any other primary,
    * marks this row primary, and syncs `bucket_items.cover_image_url` +
-   * `cover_image_is_ai` so the card and detail hero share one source.
+   * `cover_image_is_ai` so the card and detail hero share one provenance source.
    */
   async setPrimary(image: BucketDreamImageRecord): Promise<void> {
     const supabase = createClient();

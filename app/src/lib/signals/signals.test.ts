@@ -447,6 +447,7 @@ describe("demo rotation — deterministic but visibly changing (§ refresh)", ()
       selectDailyTop3Signals(getSignalsDemoData(seed), prefs(), emptyCtx(), {
         now: NOW,
         date: new Date(NOW),
+        regenSeed: seed,
       }).map((s) => s.id);
     const seeds = [0, 1, 2, 3, 4].map((s) => top(s).join(","));
     // At least two distinct Top-3 orderings across five refreshes.

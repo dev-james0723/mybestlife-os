@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, Footprints } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import type { BucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -8,6 +9,7 @@ import type {
   BucketDreamActionType,
   BucketDreamNextStep,
 } from "@/types/bucket-list";
+import { bucketStaggerItem } from "../bucket-motion";
 
 /** One clear next step. Acting on it opens a confirm-first flow — never auto-runs. */
 export function DreamNextStepPanel({
@@ -19,8 +21,12 @@ export function DreamNextStepPanel({
   copy: BucketListUiCopy;
   onRunAction: (actionType: BucketDreamActionType | null) => void;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   return (
-    <section className="rounded-xl border border-lime-400/40 bg-lime-400/5 p-4">
+    <motion.section
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      className="rounded-xl border border-lime-400/40 bg-lime-400/5 p-4"
+    >
       <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
         <Footprints className="h-4 w-4 text-lime-600" />
         {copy.nextStepHeading}
@@ -40,6 +46,6 @@ export function DreamNextStepPanel({
           {copy.actionConfirmNote}
         </span>
       </div>
-    </section>
+    </motion.section>
   );
 }

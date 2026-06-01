@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { BookHeart, Loader2, MapPin, Plane, Sparkles } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,11 @@ import { TripBuilderPanel } from "./trip-builder-panel";
 import { BudgetVersionsPanel } from "./budget-versions-panel";
 import { TravelBookingChecklist } from "./travel-booking-checklist";
 import { DestinationImageSuggestions } from "./destination-image-suggestions";
+import {
+  bucketEntrance,
+  bucketStaggerContainer,
+  bucketStaggerItem,
+} from "../bucket-motion";
 
 /**
  * Travel Explorer Console — the single place to dream, research, map, plan,
@@ -41,6 +47,7 @@ export function TravelExplorerConsole({
   copy: BucketListUiCopy;
   onNavigateTab: (tab: "visuals" | "reflect") => void;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const generateBrief = useGenerateDestinationBrief();
   const generatePlan = useGenerateTripPlan();
 
@@ -84,9 +91,14 @@ export function TravelExplorerConsole({
     item.destination_city ?? item.destination_name ?? item.destination_country;
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      variants={bucketStaggerContainer(reduceMotion)}
+      initial="hidden"
+      animate="show"
+      className="space-y-4"
+    >
       {/* Destination hero summary */}
-      <section className="rounded-xl border p-4">
+      <motion.section variants={bucketStaggerItem(reduceMotion, 10)} className="rounded-xl border p-4">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold">
           <MapPin className="h-4 w-4 text-cyan-500" />
           {copy.destHeroHeading}
@@ -105,35 +117,44 @@ export function TravelExplorerConsole({
           />
           <Fact label={copy.fieldTravelBudget} value={item.travel_budget_level ?? "—"} />
         </div>
-      </section>
+      </motion.section>
 
-      <TravelReadinessPanel item={item} copy={copy} />
+      <motion.div variants={bucketStaggerItem(reduceMotion, 10)}>
+        <TravelReadinessPanel item={item} copy={copy} />
+      </motion.div>
 
       {/* Map */}
-      <section className="rounded-xl border p-4">
+      <motion.section
+        variants={bucketStaggerItem(reduceMotion, 10)}
+        className="rounded-xl border p-4"
+      >
         <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
           <MapPin className="h-4 w-4 text-emerald-500" />
           {copy.mapHeading}
         </h3>
         {marker ? (
           <div className="overflow-hidden rounded-xl">
-            <TravelGoogleMap
-              markers={[marker]}
-              routes={routes}
-              onMarkerClick={() => {}}
-              missingKeyMessage={copy.mapMissingKey}
-            />
+            <motion.div {...bucketEntrance(reduceMotion, 0, 8)}>
+              <TravelGoogleMap
+                markers={[marker]}
+                routes={routes}
+                onMarkerClick={() => {}}
+                missingKeyMessage={copy.mapMissingKey}
+              />
+            </motion.div>
           </div>
         ) : (
           <p className="text-[13px] text-muted-foreground">{copy.mapNeedsAirport}</p>
         )}
-      </section>
+      </motion.section>
 
       {/* Flight watch (already labeled exploratory / mock) */}
-      <FlightWatchPanel item={item} />
+      <motion.div variants={bucketStaggerItem(reduceMotion, 10)}>
+        <FlightWatchPanel item={item} />
+      </motion.div>
 
       {/* Destination brief — Best time, food/stay/transport, must-do wishlist */}
-      <section className="rounded-xl border p-4">
+      <motion.section variants={bucketStaggerItem(reduceMotion, 10)} className="rounded-xl border p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">{copy.detailAiDestinationBrief}</h3>
           <Button
@@ -155,12 +176,14 @@ export function TravelExplorerConsole({
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">{copy.briefHint}</p>
         )}
-      </section>
+      </motion.section>
 
       {/* Trip builder + the resulting plan */}
-      <TripBuilderPanel item={item} copy={copy} />
+      <motion.div variants={bucketStaggerItem(reduceMotion, 10)}>
+        <TripBuilderPanel item={item} copy={copy} />
+      </motion.div>
 
-      <section className="rounded-xl border p-4">
+      <motion.section variants={bucketStaggerItem(reduceMotion, 10)} className="rounded-xl border p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">{copy.detailAiTripPlan}</h3>
           <Button
@@ -182,20 +205,26 @@ export function TravelExplorerConsole({
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">{copy.tripPlanHint}</p>
         )}
-      </section>
+      </motion.section>
 
-      <BudgetVersionsPanel item={item} copy={copy} />
+      <motion.div variants={bucketStaggerItem(reduceMotion, 10)}>
+        <BudgetVersionsPanel item={item} copy={copy} />
+      </motion.div>
 
-      <TravelBookingChecklist item={item} copy={copy} />
+      <motion.div variants={bucketStaggerItem(reduceMotion, 10)}>
+        <TravelBookingChecklist item={item} copy={copy} />
+      </motion.div>
 
-      <DestinationImageSuggestions
-        item={item}
-        copy={copy}
-        onUploadOwn={() => onNavigateTab("visuals")}
-      />
+      <motion.div variants={bucketStaggerItem(reduceMotion, 10)}>
+        <DestinationImageSuggestions
+          item={item}
+          copy={copy}
+          onUploadOwn={() => onNavigateTab("visuals")}
+        />
+      </motion.div>
 
       {/* Travel notes */}
-      <section className="rounded-xl border p-4">
+      <motion.section variants={bucketStaggerItem(reduceMotion, 10)} className="rounded-xl border p-4">
         <h3 className="text-sm font-semibold">{copy.notesHeading}</h3>
         {item.notes?.trim() ? (
           <p className="mt-1 whitespace-pre-wrap text-[13px] text-muted-foreground">
@@ -204,11 +233,14 @@ export function TravelExplorerConsole({
         ) : (
           <p className="mt-1 text-[13px] text-muted-foreground">{copy.notesEmpty}</p>
         )}
-      </section>
+      </motion.section>
 
       {/* Travel memory (after completion) */}
       {item.status === "completed" ? (
-        <section className="rounded-xl border border-pink-400/30 bg-pink-400/5 p-4">
+        <motion.section
+          variants={bucketStaggerItem(reduceMotion, 10)}
+          className="rounded-xl border border-pink-400/30 bg-pink-400/5 p-4"
+        >
           <h3 className="flex items-center gap-1.5 text-sm font-semibold">
             <BookHeart className="h-4 w-4 text-pink-500" />
             {copy.travelMemoryHeading}
@@ -222,9 +254,9 @@ export function TravelExplorerConsole({
           >
             {copy.travelMemoryView}
           </Button>
-        </section>
+        </motion.section>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
 

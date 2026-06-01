@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
+  ArrowUpRight,
   Plane,
   Sparkles,
   Trophy,
@@ -22,15 +24,25 @@ import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
 import type { BucketItem, BucketType } from "@/types/bucket-list";
 import {
   bucketStatusBadgeClass,
+  bucketStatusCardClass,
+  bucketStatusPipClass,
+  bucketProgressClass,
+  estimateBucketProgress,
   getBucketDifficultyLabel,
   getBucketStatusLabel,
   getBucketTypeLabel,
 } from "@/lib/bucket-list/presentation";
 import { useBucketDreamImage } from "@/hooks/use-bucket-dream-image";
 import { DreamCoverBackground } from "./dream-cover-background";
+import {
+  bucketHoverLift,
+  bucketProgressTransition,
+  bucketStaggerItem,
+} from "./bucket-motion";
 
 type DreamCardProps = {
   item: BucketItem;
+  index?: number;
   onClick?: () => void;
 };
 
@@ -43,10 +55,12 @@ const TYPE_ICONS: Record<BucketType, LucideIcon> = {
   lifestyle: Sunrise,
 };
 
-export function DreamCard({ item, onClick }: DreamCardProps) {
+export function DreamCard({ item, index = 0, onClick }: DreamCardProps) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
   const image = useBucketDreamImage(item);
+  const reduceMotion = useReducedMotion() ?? false;
+  const progress = estimateBucketProgress(item);
 
   const TypeIcon =
     item.category_tags.includes("language") || /japanese|日本/i.test(item.title)
@@ -56,7 +70,9 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
   const costGlyph = item.cost_band ?? "";
 
   return (
-    <article
+    <motion.article
+      variants={bucketStaggerItem(reduceMotion, 18)}
+      whileHover={bucketHoverLift(reduceMotion)}
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -69,7 +85,8 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
       className={cn(
         "group relative flex h-full min-h-[220px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 p-4 text-left transition-all duration-200 ease-out",
         "shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]",
-        "hover:-translate-y-0.5 hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70",
+        "hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70",
+        bucketStatusCardClass(item.status),
       )}
       aria-label={item.title}
     >
@@ -80,27 +97,27 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
         interactive
       />
 
-      {image?.sourceType === "generated" ? (
-        <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-fuchsia-500/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
-          <Sparkles className="h-2.5 w-2.5" />
-          {copy.visualsAiBadge}
-        </span>
-      ) : null}
-
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="inline-flex items-center gap-1.5 rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80 backdrop-blur-sm">
             <TypeIcon className="h-3.5 w-3.5 text-white/90" />
             <span>{getBucketTypeLabel(item.type, copy)}</span>
           </div>
-          <span
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: reduceMotion ? 0 : 0.16 + index * 0.02 }}
             className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] shadow-sm backdrop-blur-sm",
+              "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] shadow-sm backdrop-blur-sm",
               bucketStatusBadgeClass(item.status),
             )}
           >
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full", bucketStatusPipClass(item.status))}
+              aria-hidden
+            />
             {getBucketStatusLabel(item.status, copy)}
-          </span>
+          </motion.span>
         </div>
 
         <h3 className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
@@ -119,7 +136,19 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
 
         <div className="flex-1" />
 
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-black/30 px-2 py-1.5 backdrop-blur-sm">
+        <div
+          className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.14]"
+          aria-hidden
+        >
+          <motion.div
+            className={cn("h-full rounded-full", bucketProgressClass(item.status))}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={bucketProgressTransition(reduceMotion, 0.12 + index * 0.03)}
+          />
+        </div>
+
+        <div className="mt-2 flex items-center justify-between rounded-lg bg-black/32 px-2 py-1.5 backdrop-blur-sm">
           <div className="flex items-center gap-3 text-[12px] text-white/70">
             {costGlyph ? (
               <span className="inline-flex items-center gap-1">
@@ -141,6 +170,10 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
           </div>
 
           <div className="flex items-center gap-1 text-white/55">
+            <span className="mr-1 hidden translate-y-1 items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/75 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 md:inline-flex">
+              Open
+              <ArrowUpRight className="h-3 w-3" />
+            </span>
             {item.linked_project_id ? (
               <span
                 className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/10"
@@ -170,12 +203,18 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
       </div>
 
       {item.is_featured ? (
-        <div
+        <motion.div
           aria-hidden
           className="pointer-events-none absolute -bottom-12 left-1/2 z-0 h-32 w-56 -translate-x-1/2 rounded-full bg-lime-300/20 blur-3xl"
+          animate={
+            reduceMotion
+              ? { opacity: 0.45 }
+              : { opacity: [0.28, 0.55, 0.28], scale: [0.96, 1.04, 0.96] }
+          }
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
         />
       ) : null}
-    </article>
+    </motion.article>
   );
 }
 

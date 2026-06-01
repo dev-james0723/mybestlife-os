@@ -39,8 +39,8 @@ function styleLabel(style: BucketCoverImageStyle, copy: BucketListUiCopy): strin
 
 /**
  * Cover controls: generate an AI dream visual (style-aware), upload a cover, or
- * revert to the auto-resolved catalog image. Generating / uploading sets the
- * dream's primary cover so the card and detail hero share one source.
+ * revert to the auto-resolved catalog image. Generated visuals are added to the
+ * gallery for review before the user chooses one as the primary cover.
  */
 export function DreamCoverSelector({
   item,
@@ -98,7 +98,7 @@ export function DreamCoverSelector({
               type: item.type,
               destination,
               style,
-              setAsCover: true,
+              setAsCover: false,
             })
           }
         >

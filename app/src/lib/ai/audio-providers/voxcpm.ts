@@ -38,7 +38,7 @@ export function formatVoxCpmFetchError(error: unknown): string {
     lower.includes("enotfound") ||
     lower.includes("network")
   ) {
-    return "VoxCPM TTS sidecar is not reachable. Start it with: npm run dev:tts";
+    return "VoxCPM TTS sidecar is not reachable. Start services/voxcpm-tts and verify VOXCPM_BASE_URL.";
   }
   if (lower.includes("abort") || lower.includes("timeout")) {
     return "VoxCPM TTS timed out. The first run loads the model and can take several minutes.";

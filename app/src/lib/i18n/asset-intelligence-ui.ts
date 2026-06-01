@@ -127,24 +127,24 @@ export type AssetIntelUiCopy = {
 
 const english: AssetIntelUiCopy = {
   cta: {
-    addWithAi: "Add Asset with AI",
+    addWithAi: "Add asset with Xiaoba",
     addManually: "Add Manually",
     analyzePotential: "Thinking of buying?",
   },
   empty: {
     title: "Build your Asset Intelligence Hub",
     description:
-      "Upload a receipt, product photo, or warranty document. AI will extract the details, create the asset record, and help you protect, use, and optimize what you own.",
+      "Upload a receipt, product photo, or warranty document. Xiaoba will review the details, create the asset record, and help you protect, use, and optimize what you own.",
   },
   wizard: {
-    title: "Add asset with AI",
+    title: "Add asset with Xiaoba",
     stepInput: "Input",
     stepReview: "Review",
     stepVisual: "Visual",
     stepActions: "Next steps",
     chooseMethodTitle: "How do you want to add this asset?",
     chooseMethodSubtitle:
-      "Drop a receipt, photo, warranty, or just type what it is. AI will fill the boring fields for you.",
+      "Drop a receipt, photo, warranty, or just type what it is. Xiaoba will help fill the boring fields for you.",
     methodReceipt: "Upload receipt / invoice",
     methodPhoto: "Upload product photo",
     methodWarranty: "Upload warranty / insurance",
@@ -154,7 +154,7 @@ const english: AssetIntelUiCopy = {
     dropzoneHint: "Drop a file here or tap to upload (image or PDF)",
     textPlaceholder: "e.g. MacBook Pro 14-inch M4 Pro, bought Jan 2026 for $2,499",
     namePlaceholder: "e.g. Sony A7 IV camera",
-    extractCta: "Extract with AI",
+    extractCta: "Ask Xiaoba to review details",
     extracting: "Reading…",
     extractStages: [
       "Reading document…",
@@ -180,7 +180,7 @@ const english: AssetIntelUiCopy = {
     generating: "Generating…",
     useIcon: "Use minimal icon",
     skipVisual: "Skip for now",
-    aiVisualLabel: "AI-generated visual",
+    aiVisualLabel: "Visual",
     notProofOfOwnership: "Not proof of ownership",
     nextActionsTitle: "Suggested next steps",
     saveCta: "Create asset",
@@ -274,30 +274,30 @@ const english: AssetIntelUiCopy = {
 const overrides: Partial<Record<AppLocale, DeepPartial<AssetIntelUiCopy>>> = {
   "zh-TW": {
     cta: {
-      addWithAi: "用 AI 新增資產",
+      addWithAi: "使用 Xiaoba 新增資產",
       addManually: "手動新增",
       analyzePotential: "考慮要買東西？",
     },
     empty: {
       title: "打造你的資產智慧中心",
       description:
-        "上傳收據、產品照片或保固文件，AI 會擷取細節、建立資產紀錄，並協助你保護、運用與優化你擁有的物品。",
+        "上傳收據、產品照片或保固文件，Xiaoba 會先檢查細節、建立資產紀錄，並協助你保護、運用與優化你擁有的物品。",
     },
     wizard: {
-      title: "用 AI 新增資產",
+      title: "使用 Xiaoba 新增資產",
       chooseMethodTitle: "你想怎麼新增這項資產？",
       chooseMethodSubtitle:
-        "丟一張收據、照片、保固，或直接輸入它是什麼，AI 會幫你填好繁瑣的欄位。",
+        "丟一張收據、照片、保固，或直接輸入它是什麼，Xiaoba 會幫你填好繁瑣的欄位。",
       methodReceipt: "上傳收據／發票",
       methodPhoto: "上傳產品照片",
       methodWarranty: "上傳保固／保險",
       methodName: "輸入產品名稱",
       methodDescribe: "用一句話描述",
       methodGenerate: "先產生產品圖片",
-      extractCta: "用 AI 擷取",
+      extractCta: "請 Xiaoba 幫你檢查細節",
       reviewTitle: "檢視 AI 擷取的內容",
       saveCta: "建立資產",
-      aiVisualLabel: "AI 生成的圖片",
+      aiVisualLabel: "圖片",
       notProofOfOwnership: "非所有權證明",
     },
     modal: {

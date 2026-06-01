@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { LifeOsLogo } from "@/components/branding/life-os-logo";
 import { useAppStore } from "@/stores/app-store";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,6 +16,7 @@ import { WeatherBadge } from "@/components/topbar/weather-badge";
 import { UtilityPill } from "@/components/topbar/utility-pill";
 import { ClockPill } from "@/components/topbar/clock-pill";
 import { APP_TOPBAR_DESKTOP_ROW_GUTTER_X } from "@/lib/layout-shell";
+import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 
 /** Matches `h-14` — flow spacer / clip shell use the same height token. */
 export const APP_TOPBAR_LAYOUT_HEIGHT_CLASS = "h-14";
@@ -74,7 +75,7 @@ function EnterStagger({
   enabled: boolean;
   children: React.ReactNode;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useSsrSafeReducedMotion();
   if (!enabled || reduce) return <>{children}</>;
   return (
     <motion.div
@@ -98,7 +99,7 @@ function EnterItem({
   enabled: boolean;
   children: React.ReactNode;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useSsrSafeReducedMotion();
   if (!enabled || reduce) return <>{children}</>;
   return (
     <motion.div
@@ -187,7 +188,7 @@ function TopbarInnerRow() {
 export function AppTopbar({ slideHidden = false }: AppTopbarProps) {
   const isMobile = useIsMobile();
   const scrolled = useScrolled(20);
-  const reduce = useReducedMotion();
+  const reduce = useSsrSafeReducedMotion();
   const { uiTheme } = useTheme();
   const isGlass = uiTheme === "default";
 

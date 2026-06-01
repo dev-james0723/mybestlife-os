@@ -70,6 +70,9 @@ import {
 } from "@/lib/projects/project-ai-notify";
 import { CreatePlannerTaskAiDialog } from "@/components/daily-planner/create-planner-task-ai-dialog";
 import { cn } from "@/lib/utils";
+import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { getOSBuddyActionLabel } from "@/lib/os-buddy/os-buddy-action-labels";
+import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
 
 const RESOURCE_CATEGORIES: ProjectResourceCategory[] = [
   "website",
@@ -194,8 +197,39 @@ export function CreateProjectModal({
   const { data: existingNotes } = useNotes();
   const { data: existingIdeas } = useIdeas();
   const language = useAppStore((s) => s.language);
+  const { name: buddyName } = useOSBuddy();
   const ui = getProjectsUiCopy(language);
   const plannerUi = getDailyPlannerUiCopy(language);
+  const buddyActionCopy = useMemo(
+    () => ({
+      fillProject: getOSBuddyActionLabel({
+        action: "fillProject",
+        buddyName,
+        locale: language,
+      }),
+      createThumbnail: getOSBuddyActionLabel({
+        action: "createThumbnail",
+        buddyName,
+        locale: language,
+      }),
+      projectDraft: getOSBuddyActionLabel({
+        action: "projectDraft",
+        buddyName,
+        locale: language,
+      }),
+      projectSettingUp: getOSBuddyActionLabel({
+        action: "projectSettingUp",
+        buddyName,
+        locale: language,
+      }),
+      projectSetupDone: getOSBuddyActionLabel({
+        action: "projectSetupDone",
+        buddyName,
+        locale: language,
+      }),
+    }),
+    [buddyName, language],
+  );
 
   const statusOptions = useMemo(
     () =>
@@ -485,12 +519,13 @@ export function CreateProjectModal({
     };
   }, [name, existingProjects, existingTasks, existingNotes, existingIdeas]);
 
-  // "Fill project data with AI" click handler
+  // Ask the selected OS Buddy to set up project metadata
   const handleFillWithAi = useCallback(async () => {
     if (!name.trim()) return;
     requestNotificationPermission();
     setAiLoading(true);
-    toast.info(ui.aiSettingUp);
+    toast.info(buddyActionCopy.projectSettingUp);
+    emitOSBuddyEvent({ type: "project:generate:start" });
 
     try {
       const res = await fetch("/api/projects/generate-metadata", {
@@ -508,18 +543,20 @@ export function CreateProjectModal({
       }
 
       await notifyProjectAiComplete(name);
-      toast.success(ui.projectAiReady);
+      emitOSBuddyEvent({ type: "project:generate:success" });
+      toast.success(buddyActionCopy.projectSetupDone);
     } catch {
+      emitOSBuddyEvent({ type: "project:generate:error" });
       toast.error(ui.toastProjectAiGenerateFailed);
     } finally {
       setAiLoading(false);
     }
   }, [
+    buddyActionCopy.projectSettingUp,
+    buddyActionCopy.projectSetupDone,
     name,
     language,
     applyAiData,
-    ui.aiSettingUp,
-    ui.projectAiReady,
     ui.toastProjectAiGenerateFailed,
   ]);
 
@@ -730,7 +767,7 @@ export function CreateProjectModal({
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              {ui.fillWithAi}
+              {buddyActionCopy.fillProject}
             </Button>
           )}
 
@@ -755,7 +792,7 @@ export function CreateProjectModal({
               <div className="flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 <span className="text-sm font-medium">
-                  {ui.aiGeneratedMetadata}
+                  {buddyActionCopy.projectDraft}
                 </span>
               </div>
               <Skeleton className="h-4 w-3/4" />
@@ -769,7 +806,7 @@ export function CreateProjectModal({
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                {ui.aiGeneratedMetadata}
+                {buddyActionCopy.projectDraft}
               </h3>
               <Button
                 variant="ghost"
@@ -1057,7 +1094,7 @@ export function CreateProjectModal({
                   ) : (
                     <RefreshCw className="mr-1 h-3 w-3" />
                   )}
-                  {ui.regenerate}
+                  {buddyActionCopy.createThumbnail}
                 </Button>
               </div>
               <div className="overflow-hidden rounded-lg border bg-muted/30">
@@ -1070,7 +1107,9 @@ export function CreateProjectModal({
                   />
                 ) : (
                   <div className="flex h-40 items-center justify-center text-xs text-muted-foreground">
-                    {thumbnailLoading ? ui.aiSettingUp : ui.aiGeneratedMetadata}
+                    {thumbnailLoading
+                      ? buddyActionCopy.projectSettingUp
+                      : buddyActionCopy.projectDraft}
                   </div>
                 )}
               </div>

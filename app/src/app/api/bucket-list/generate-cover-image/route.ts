@@ -5,8 +5,8 @@
  * stores it in the public `bucket-dream-images` bucket, and records it in
  * `bucket_dream_images` (image_type 'generated_visual', source_type 'generated').
  *
- * The generated image is an AI-generated VISUAL, not a real photo — the UI must
- * label it accordingly (driven by `cover_image_is_ai` / source_type).
+ * The generated image is a visual concept, not a real photo. Provenance is
+ * stored internally via `cover_image_is_ai` / source_type.
  *
  * Request body:
  *   { bucketItemId, title, type, destination?, style?, setAsCover?, locale? }
@@ -101,7 +101,9 @@ export async function POST(request: Request) {
   ).includes(bodyJson.style as string)
     ? (bodyJson.style as BucketCoverImageStyle)
     : "realistic_travel";
-  const setAsCover = bodyJson.setAsCover !== false;
+  // Phase 9 safety: generated visuals are saved to the gallery for review by
+  // default. The caller must explicitly ask to apply one as the cover.
+  const setAsCover = bodyJson.setAsCover === true;
 
   if (!bucketItemId || !title) {
     return NextResponse.json(

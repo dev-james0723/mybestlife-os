@@ -1,12 +1,39 @@
 # Bucket List → Dream-to-Reality OS — AI Policy
 
-**Phase 0 plan.** This document defines how AI is used, grounded, quota'd, and kept safe
-across the Dream OS. It binds every AI route and component. It is grounded in the app's
-actual AI stack (`app/src/lib/ai/gemini-text.ts`, `gemini-image-generate.ts`,
-`lib/ai/bucket-list/bucket-ai.ts`) and the four existing bucket-list routes.
+**Current through Phase 9.** This document defines how AI is used, grounded, quota'd, and
+kept safe across the Dream OS. It binds every AI route and component. It is grounded in the
+app's actual AI stack (`app/src/lib/ai/gemini-text.ts`, image-generation helpers,
+`lib/ai/bucket-list/bucket-ai.ts`) and the implemented bucket-list routes.
 
 Companion: [`bucket-list-dream-os-architecture.md`](./bucket-list-dream-os-architecture.md),
-[`bucket-list-dream-os-data-model.md`](./bucket-list-dream-os-data-model.md).
+[`bucket-list-data-model.md`](./bucket-list-data-model.md).
+
+---
+
+## Phase 9 Binding Updates
+
+- **AI capture:** `/api/bucket-list/autofill` returns only an editable draft. The
+  `AIDreamCaptureWizard` persists a dream only after the user reviews the draft and clicks
+  Save.
+- **AI image analysis:** `/api/bucket-list/analyze-inspiration` returns caption/update
+  suggestions. The review panel has separate Apply buttons; suggestions are not written on
+  receipt.
+- **Generated dream visuals:** `/api/bucket-list/generate-cover-image` writes the generated
+  visual to `bucket_dream_images` with `image_type = 'generated_visual'` and
+  `source_type = 'generated'`, but defaults to `setAsCover = false`. The user reviews it in
+  the gallery before choosing it as cover.
+- **Dream Intelligence:** `/api/bucket-list/analyze-dream` serves cached
+  `bucket_dream_ai_reports` unless `forceRefresh` is explicitly requested.
+- **Activation:** `/api/bucket-list/activate-dream` returns suggestions only. The client
+  writes selected Project/Task/Savings/Note/integration records only after preview
+  confirmation.
+- **Travel:** `/api/bucket-list/destination-brief` and `/api/bucket-list/trip-plan` use the
+  two-call grounded pattern. Their UI always shows an "AI research — verify before booking"
+  notice, with stronger copy when `unverified` is true.
+- **Flights:** `MockFlightWatchProvider` always emits `mode = 'exploratory'`; mock estimates
+  never populate `bucket_items.latest_live_price`.
+- **RLS:** no Bucket AI route uses the Supabase service-role client. The seed RPC now runs as
+  invoker, so table RLS remains the authority.
 
 ---
 
@@ -96,16 +123,18 @@ if abuse risk appears. Quota-exhausted returns HTTP 429 with a typed body and th
 
 These map 1:1 to the architecture safety rules (§14) and are enforceable in code:
 
-1. **AI images are always labeled.** Any generated cover renders an "AI-generated visual"
-   badge. `bucket_dream_assets.is_ai_generated = true` and `bucket_items.cover_image_is_ai`
-   drive it. Generated visuals are inspiration, never a photo of the user's real experience.
+1. **Generated-image provenance is internal.** Generated covers and thumbnails do not show
+   "AI-generated" badges in the UI. `bucket_dream_images.source_type = 'generated'`,
+   `bucket_dream_images.image_type = 'generated_visual'`, and
+   `bucket_items.cover_image_is_ai` still preserve provenance for safety and audits.
+   Generated visuals are inspiration, never a photo of the user's real experience.
 2. **No fake live flight prices.** The mock provider's output is labeled "Estimated — not a
    live fare". Only a real, configured `FlightWatchProvider` may show a price without the
    estimate label. `bucket_flight_quotes.mode` (`exploratory` vs `live`) and `provider`
    distinguish them.
 3. **Travel research is AI research, not verified truth.** Grounded briefs/plans carry the
-   existing `unverified` flag and render with "AI research — verify before booking". Never
-   present ungrounded output as factual destination/price information.
+   existing `unverified` flag and always render with "AI research — verify before booking".
+   Never present ungrounded output as factual destination/price information.
 4. **Memories are never invented.** `reflection-summary` paraphrases only the user's supplied
    reflection text. The model is instructed (system prompt) to add no events, places, dates,
    or feelings the user did not state. Captions on memory photos are user-authored only.

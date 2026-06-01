@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Info } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +13,7 @@ import type {
 } from "@/types/bucket-list";
 
 import { DreamActionPreviewCard } from "./dream-action-preview-card";
+import { bucketStaggerContainer, bucketStaggerItem } from "../bucket-motion";
 
 export type ActivationArrayKey = "tasks" | "calendar" | "notes" | "knowledge";
 export type ActivationScalarKey = "project" | "savings" | "advanceStatus";
@@ -53,6 +55,7 @@ export function DreamActivationPreview({
   onBack: () => void;
   onCancel: () => void;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const anySelected =
     (plan.suggestedProject ? selections.project : false) ||
     (plan.suggestedSavingsGoal ? selections.savings : false) ||
@@ -63,9 +66,14 @@ export function DreamActivationPreview({
 
   return (
     <div className="space-y-4">
-      <p className="rounded-lg bg-muted/40 px-3 py-2 text-[13px] text-muted-foreground">
+      <motion.p
+        variants={bucketStaggerItem(reduceMotion, 8)}
+        initial="hidden"
+        animate="show"
+        className="rounded-lg bg-muted/40 px-3 py-2 text-[13px] text-muted-foreground"
+      >
         {plan.activationSummary}
-      </p>
+      </motion.p>
 
       <div className="flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground">{copy.activateReviewNote}</p>
@@ -79,7 +87,12 @@ export function DreamActivationPreview({
         </div>
       </div>
 
-      <div className="max-h-[42vh] space-y-4 overflow-y-auto pr-1">
+      <motion.div
+        variants={bucketStaggerContainer(reduceMotion)}
+        initial="hidden"
+        animate="show"
+        className="max-h-[42vh] space-y-4 overflow-y-auto pr-1"
+      >
         {plan.suggestedProject ? (
           <Group title={copy.groupProject}>
             <DreamActionPreviewCard
@@ -164,7 +177,7 @@ export function DreamActivationPreview({
             ))}
           </Group>
         ) : null}
-      </div>
+      </motion.div>
 
       {plan.warnings.length > 0 ? (
         <ul className="space-y-0.5">
@@ -221,13 +234,14 @@ export function DreamActivationPreview({
 }
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion() ?? false;
   return (
-    <section className="space-y-1.5">
+    <motion.section variants={bucketStaggerItem(reduceMotion, 8)} className="space-y-1.5">
       <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h4>
       <div className="space-y-1.5">{children}</div>
-    </section>
+    </motion.section>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Link2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import type {
   BucketDreamConnections,
   BucketItem,
 } from "@/types/bucket-list";
+import { bucketStaggerItem } from "../bucket-motion";
 
 /**
  * Shows what's already connected + AI-suggested connections, and offers a
@@ -26,6 +28,7 @@ export function DreamConnectionsPanel({
   copy: BucketListUiCopy;
   onConnect: () => void;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const groups: { label: string; items: string[] }[] = [
     { label: copy.connProjects, items: connections.projects },
     { label: copy.connTasks, items: connections.tasks },
@@ -42,7 +45,10 @@ export function DreamConnectionsPanel({
     (item.linked_budget_id ? 1 : 0);
 
   return (
-    <section className="rounded-xl border p-4">
+    <motion.section
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      className="rounded-xl border p-4"
+    >
       <div className="mb-2 flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold">
           <Link2 className="h-4 w-4 text-indigo-500" />
@@ -75,6 +81,6 @@ export function DreamConnectionsPanel({
           <p className="text-[11px] text-muted-foreground">{copy.actionConfirmNote}</p>
         </div>
       ) : null}
-    </section>
+    </motion.section>
   );
 }

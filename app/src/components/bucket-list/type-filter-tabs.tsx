@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LayoutGrid, List } from "lucide-react";
 
@@ -12,10 +13,12 @@ import {
   type BucketViewMode,
 } from "@/stores/bucket-list-store";
 import { getBucketTypeLabel } from "@/lib/bucket-list/presentation";
+import { bucketEntrance } from "./bucket-motion";
 
 export function BucketTypeFilterTabs() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const filters = useBucketListStore((s) => s.filters);
   const setTypes = useBucketListStore((s) => s.setTypes);
@@ -35,47 +38,63 @@ export function BucketTypeFilterTabs() {
   ];
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <div
-        role="tablist"
-        aria-label={copy.filterTravel}
-        className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/[0.02] p-1 text-sm"
-      >
-        {tabs.map((tab) => {
-          const active = tab.id === activeType;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={active}
-              type="button"
-              onClick={() => {
-                if (tab.id === "all") {
-                  setTypes([]);
-                } else if (active) {
-                  // Clicking the active tab clears it back to "all".
-                  setTypes([]);
-                } else {
-                  setTypes([tab.id]);
-                  // single-select semantics — but we also support multi-select
-                  // via toggleType callers elsewhere.
-                  void toggleType;
-                }
-              }}
-              className={cn(
-                "rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] transition-colors",
-                active
-                  ? "bg-lime-400/15 text-lime-300 shadow-[inset_0_0_0_1px_rgba(200,229,58,0.35)]"
-                  : "text-white/55 hover:bg-white/5 hover:text-white/85",
-              )}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+    <motion.div
+      {...bucketEntrance(reduceMotion, 0.08, 8)}
+      className="flex w-full min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="relative w-[calc(100vw-2rem)] min-w-0 max-w-[calc(100vw-2rem)] sm:w-auto sm:max-w-full">
+        <div
+          role="tablist"
+          aria-label={copy.filterTravel}
+          className="flex w-full snap-x gap-1 overflow-x-auto rounded-[1.35rem] border border-white/10 bg-slate-950/80 p-1 pr-8 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.18)] [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:max-w-full sm:pr-1 [&::-webkit-scrollbar]:hidden"
+        >
+          {tabs.map((tab) => {
+            const active = tab.id === activeType;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={active}
+                type="button"
+                onClick={() => {
+                  if (tab.id === "all") {
+                    setTypes([]);
+                  } else if (active) {
+                    // Clicking the active tab clears it back to "all".
+                    setTypes([]);
+                  } else {
+                    setTypes([tab.id]);
+                    // single-select semantics — but we also support multi-select
+                    // via toggleType callers elsewhere.
+                    void toggleType;
+                  }
+                }}
+                className={cn(
+                  "relative h-8 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors sm:px-3.5 sm:text-xs",
+                  active
+                    ? "text-lime-200"
+                    : "text-white/55 hover:bg-white/5 hover:text-white/85",
+                )}
+              >
+                {active ? (
+                  <motion.span
+                    layoutId={reduceMotion ? undefined : "bucket-type-active-pill"}
+                    className="absolute inset-0 rounded-full bg-lime-400/15 shadow-[inset_0_0_0_1px_rgba(200,229,58,0.35)]"
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  />
+                ) : null}
+                <span className="relative whitespace-nowrap">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-1 right-1 w-8 rounded-r-[1.1rem] bg-gradient-to-l from-slate-950/95 to-transparent sm:hidden"
+        />
       </div>
 
-      <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.02] p-1">
+      <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/80 p-1 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
         <ViewModeButton
           mode="grid"
           active={viewMode === "grid"}
@@ -91,7 +110,7 @@ export function BucketTypeFilterTabs() {
           label="List"
         />
       </div>
-    </div>
+    </motion.div>
   );
 }
 

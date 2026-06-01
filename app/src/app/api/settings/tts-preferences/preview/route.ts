@@ -12,6 +12,21 @@ const requestSchema = z.object({
   language: z.enum(["en", "zh-Hant", "auto"]).optional().default("auto"),
 });
 
+function isMissingTtsSchemaError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    (lower.includes("user_tts_preferences") ||
+      lower.includes("user_tts_voice_profiles")) &&
+    (lower.includes("schema cache") ||
+      lower.includes("relation") ||
+      lower.includes("does not exist") ||
+      lower.includes("could not find"))
+  );
+}
+
+const TTS_SCHEMA_MISSING_DETAIL =
+  "Missing tts tables. Apply the VoxCPM TTS migration in app/supabase/migrations and reload Settings.";
+
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
   const {
@@ -59,6 +74,15 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (isMissingTtsSchemaError(message)) {
+      return NextResponse.json(
+        {
+          error: "tts_schema_missing",
+          detail: TTS_SCHEMA_MISSING_DETAIL,
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       { error: "tts_preview_failed", detail: message.slice(0, 300) },
       { status: 502 },

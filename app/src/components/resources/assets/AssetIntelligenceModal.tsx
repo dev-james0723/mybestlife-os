@@ -253,11 +253,6 @@ export function AssetIntelligenceModal({
                   <Package className="size-16 text-muted-foreground/30" />
                 </div>
               )}
-              {primaryImage?.image_type === "generated_product_image" && (
-                <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-[10px] font-medium text-muted-foreground backdrop-blur">
-                  <Sparkles className="size-3" /> {getAssetIntelUiCopy(language).wizard.aiVisualLabel}
-                </span>
-              )}
             </div>
 
             <div className="flex flex-col gap-3 p-5">

@@ -1,9 +1,11 @@
 "use client";
 
 import { Leaf } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import type { BucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
 import type { BucketDreamSmallestVersion } from "@/types/bucket-list";
+import { bucketStaggerItem } from "../bucket-motion";
 
 /** The smallest livable version of the dream the user could start soon. */
 export function DreamSmallVersions({
@@ -13,8 +15,12 @@ export function DreamSmallVersions({
   smallestVersion: BucketDreamSmallestVersion;
   copy: BucketListUiCopy;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   return (
-    <section className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 p-4">
+    <motion.section
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 p-4"
+    >
       <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
         <Leaf className="h-4 w-4 text-emerald-500" />
         {copy.smallestHeading}
@@ -37,6 +43,6 @@ export function DreamSmallVersions({
           ) : null}
         </div>
       ) : null}
-    </section>
+    </motion.section>
   );
 }

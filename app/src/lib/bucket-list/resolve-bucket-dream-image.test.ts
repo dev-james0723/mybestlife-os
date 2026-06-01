@@ -83,7 +83,7 @@ describe("resolveBucketDreamImage", () => {
     expect(image.sourceType).toBe("api");
   });
 
-  it("labels an AI-generated cover with sourceType 'generated'", () => {
+  it("tracks a generated cover with sourceType 'generated'", () => {
     const item = baseItem({
       title: "See the Northern Lights in Iceland",
       cover_image_url: "https://example.com/generated.png",

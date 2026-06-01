@@ -7,7 +7,7 @@
 --
 -- RLS: auth.uid() = user_id on every row. Storage: per-user folder isolation.
 
--- ── 1. Flag so a card can label an AI-generated cover without an extra query ──
+-- ── 1. Flag so cover provenance is available without an extra query ──
 ALTER TABLE public.bucket_items
   ADD COLUMN IF NOT EXISTS cover_image_is_ai boolean NOT NULL DEFAULT false;
 

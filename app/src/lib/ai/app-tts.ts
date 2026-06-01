@@ -135,15 +135,23 @@ export async function synthesizeAppSpeech(
   }
 
   const preset = getTtsPreset(settings.preferences.preset_id);
-  const useReference =
+  let useReference =
     settings.preferences.voice_mode === "reference_clone" &&
     settings.activeVoiceProfile != null;
-  const referenceAudio = useReference
-    ? await downloadReferenceAudio({
+  let referenceAudio: AudioProviderInput["referenceAudio"] = null;
+  if (useReference) {
+    try {
+      referenceAudio = await downloadReferenceAudio({
         supabase: input.supabase,
         profile: settings.activeVoiceProfile!,
-      })
-    : null;
+      });
+    } catch (error) {
+      // Keep generation available by falling back to preset voice when reference audio is missing.
+      console.warn("[tts] reference voice unavailable, fallback to preset", error);
+      useReference = false;
+      referenceAudio = null;
+    }
+  }
 
   const out = await synthesizeDocOracleAudio({
     text: input.text,

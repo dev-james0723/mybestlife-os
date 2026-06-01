@@ -71,8 +71,21 @@ export type BucketListUiCopy = {
   emptyAllTitle: string;
   emptyAllDescription: string;
   emptyAllAction: string;
+  emptyFutureTitle: string;
+  emptyFutureDescription: string;
+  uploadInspiration: string;
   emptyFilteredTitle: string;
   emptyFilteredDescription: string;
+
+  // Deterministic page insight
+  patternBannerEyebrow: string;
+  patternBannerTitle: (typeLabel: string) => string;
+  patternBannerDescription: (
+    count: number,
+    total: number,
+    active: number,
+    completed: number,
+  ) => string;
 
   // Detail page
   detailWhyMatters: string;
@@ -519,9 +532,18 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   emptyAllDescription:
     "Capture the first life-experience you want to make real. It doesn't need a plan yet.",
   emptyAllAction: "Add a dream",
+  emptyFutureTitle: "Your future is allowed to begin as a sentence.",
+  emptyFutureDescription:
+    "Write one dream, upload one image, or let AI help you find the shape of it.",
+  uploadInspiration: "Upload Inspiration",
   emptyFilteredTitle: "No dreams match these filters",
   emptyFilteredDescription:
     "Try clearing a filter or widening your time horizon.",
+
+  patternBannerEyebrow: "Dream pattern",
+  patternBannerTitle: (typeLabel) => `${typeLabel} is your strongest signal`,
+  patternBannerDescription: (count, total, active, completed) =>
+    `${count} of ${total} dreams point this way. ${active} are already moving; ${completed} have become memories.`,
 
   detailWhyMatters: "Why this matters",
   detailActivate: "Activate this dream",
@@ -666,7 +688,7 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   aiNeedsInput: "Add a dream or upload an image first.",
 
   visualsTab: "Visuals",
-  visualsAiBadge: "AI-generated visual",
+  visualsAiBadge: "Visual",
   visualsEditGallery: "Cover & gallery",
   visualsCoverHeading: "Cover image",
   visualsGalleryHeading: "Inspiration gallery",
@@ -695,7 +717,7 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   visualsCaptionSave: "Save caption",
   visualsAnalyze: "Analyze with AI",
   visualsImageTooLarge: "That image is too large (max 10MB).",
-  visualsAnalysisTitle: "AI image analysis",
+  visualsAnalysisTitle: "Image analysis",
   visualsAnalysisCaption: "Suggested caption",
   visualsAnalysisHints: "What the AI sees",
   visualsAnalysisApplyCaption: "Use this caption",
@@ -872,7 +894,7 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   bookCreatedTasks: (count) =>
     count === 1 ? "Created 1 task." : `Created ${count} tasks.`,
   destImageHeading: "Cover image ideas",
-  destImageHint: "Realistic concepts for this destination — generated as AI visuals.",
+  destImageHint: "Realistic visual concepts for this destination.",
   destImageUploadOwn: "Upload your own",
 
   memoryCaptureTitle: "Capture the memory",
@@ -1028,7 +1050,7 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   aiInvalidImage: "請選擇圖片檔案。",
   aiNeedsInput: "請先輸入夢想或上傳圖片。",
   visualsTab: "視覺",
-  visualsAiBadge: "AI 生成圖像",
+  visualsAiBadge: "圖像",
   visualsEditGallery: "封面與圖庫",
   visualsCoverHeading: "封面圖片",
   visualsGalleryHeading: "靈感圖庫",
@@ -1056,7 +1078,7 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   visualsCaptionSave: "儲存說明",
   visualsAnalyze: "用 AI 分析",
   visualsImageTooLarge: "圖片太大（最大 10MB）。",
-  visualsAnalysisTitle: "AI 圖像分析",
+  visualsAnalysisTitle: "圖像分析",
   visualsAnalysisCaption: "建議說明",
   visualsAnalysisHints: "AI 看到的內容",
   visualsAnalysisApplyCaption: "使用此說明",
@@ -1214,7 +1236,7 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   bookCreateTasks: (count) => (count > 0 ? `建立 ${count} 個任務` : "建立任務"),
   bookCreatedTasks: (count) => `已建立 ${count} 個任務。`,
   destImageHeading: "封面圖片靈感",
-  destImageHint: "此目的地的寫實概念——以 AI 圖像生成。",
+  destImageHint: "此目的地的寫實視覺概念。",
   destImageUploadOwn: "上傳你自己的",
   memoryCaptureTitle: "捕捉回憶",
   memoryCaptureDescription: "完成的夢想值得成為回憶。這裡的一切都不是必填。",

@@ -116,25 +116,99 @@ export function formatCostBand(band: BucketCostBand): string {
 /** Tailwind classes scoped for the glassy status badge. */
 export function bucketStatusBadgeClass(status: BucketStatus): string {
   switch (status) {
-    case "active":
-      return "bg-lime-400/20 text-lime-400 border-lime-400/40";
-    case "booked":
-    case "scheduled":
-    case "funded":
-      return "bg-emerald-400/15 text-emerald-300 border-emerald-400/30";
-    case "planning":
-    case "exploring":
-      return "bg-amber-400/15 text-amber-300 border-amber-400/30";
     case "dreaming":
-      return "bg-sky-400/15 text-sky-300 border-sky-400/30";
+      return "bg-sky-400/15 text-sky-200 border-sky-300/35 shadow-[0_0_18px_rgba(125,211,252,0.12)]";
+    case "exploring":
+      return "bg-cyan-400/15 text-cyan-100 border-cyan-300/35 shadow-[0_0_18px_rgba(45,212,191,0.12)]";
+    case "planning":
+      return "bg-amber-400/15 text-amber-200 border-amber-300/40 shadow-[0_0_18px_rgba(251,191,36,0.10)]";
+    case "active":
+      return "bg-lime-400/20 text-lime-300 border-lime-300/45 shadow-[0_0_20px_rgba(190,242,100,0.16)]";
+    case "funded":
+      return "bg-yellow-400/15 text-yellow-200 border-yellow-300/40 shadow-[0_0_18px_rgba(250,204,21,0.14)]";
+    case "scheduled":
+    case "booked":
+      return "bg-emerald-400/15 text-emerald-200 border-emerald-300/40 shadow-[0_0_18px_rgba(52,211,153,0.12)]";
     case "completed":
-      return "bg-fuchsia-400/15 text-fuchsia-300 border-fuchsia-400/30";
+      return "bg-rose-400/15 text-rose-200 border-rose-300/35 shadow-[0_0_18px_rgba(251,113,133,0.12)]";
     case "paused":
-      return "bg-white/5 text-white/60 border-white/15";
+      return "bg-white/5 text-white/60 border-white/15 grayscale";
     case "archived":
       return "bg-white/5 text-white/40 border-white/10";
     default:
       return "bg-white/10 text-white/80 border-white/20";
+  }
+}
+
+export function bucketStatusCardClass(status: BucketStatus): string {
+  switch (status) {
+    case "dreaming":
+      return "border-sky-300/15 shadow-[0_10px_34px_rgba(14,165,233,0.11),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "exploring":
+      return "border-cyan-300/15 shadow-[0_10px_34px_rgba(20,184,166,0.11),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "planning":
+      return "border-amber-300/18 shadow-[0_10px_34px_rgba(245,158,11,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "active":
+      return "border-lime-300/18 shadow-[0_10px_34px_rgba(132,204,22,0.13),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "funded":
+      return "border-yellow-300/20 shadow-[0_10px_34px_rgba(250,204,21,0.12),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "scheduled":
+    case "booked":
+      return "border-emerald-300/18 shadow-[0_10px_34px_rgba(16,185,129,0.12),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "completed":
+      return "border-rose-300/18 shadow-[0_10px_34px_rgba(244,63,94,0.11),inset_0_1px_0_rgba(255,255,255,0.06)]";
+    case "paused":
+      return "border-white/10 shadow-[0_8px_26px_rgba(0,0,0,0.26),inset_0_1px_0_rgba(255,255,255,0.04)] opacity-90";
+    case "archived":
+      return "border-white/5 shadow-[0_8px_22px_rgba(0,0,0,0.22)] opacity-75";
+  }
+}
+
+export function bucketStatusPipClass(status: BucketStatus): string {
+  switch (status) {
+    case "dreaming":
+      return "bg-sky-200 shadow-[0_0_10px_rgba(125,211,252,0.65)]";
+    case "exploring":
+      return "bg-cyan-200 shadow-[0_0_10px_rgba(103,232,249,0.6)]";
+    case "planning":
+      return "bg-amber-200 shadow-[0_0_10px_rgba(253,230,138,0.55)]";
+    case "active":
+      return "bg-lime-300 shadow-[0_0_10px_rgba(190,242,100,0.65)]";
+    case "funded":
+      return "bg-yellow-200 shadow-[0_0_10px_rgba(254,240,138,0.65)]";
+    case "scheduled":
+    case "booked":
+      return "bg-emerald-200 shadow-[0_0_10px_rgba(110,231,183,0.58)]";
+    case "completed":
+      return "bg-rose-200 shadow-[0_0_10px_rgba(254,205,211,0.55)]";
+    case "paused":
+      return "bg-white/45";
+    case "archived":
+      return "bg-white/25";
+  }
+}
+
+export function bucketProgressClass(status: BucketStatus): string {
+  switch (status) {
+    case "dreaming":
+      return "bg-sky-300";
+    case "exploring":
+      return "bg-cyan-300";
+    case "planning":
+      return "bg-amber-300";
+    case "active":
+      return "bg-lime-300";
+    case "funded":
+      return "bg-yellow-300";
+    case "scheduled":
+    case "booked":
+      return "bg-emerald-300";
+    case "completed":
+      return "bg-rose-300";
+    case "paused":
+      return "bg-white/45";
+    case "archived":
+      return "bg-white/25";
   }
 }
 

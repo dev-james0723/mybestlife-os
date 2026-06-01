@@ -45,7 +45,7 @@ function conceptsFor(item: BucketItem): string[] {
 
 /**
  * Suggests realistic cover-image concepts for a travel dream and generates them
- * via the Phase 2 cover system (always labeled as an AI-generated visual).
+ * via the cover system. Generated-image provenance is stored internally.
  */
 export function DestinationImageSuggestions({
   item,

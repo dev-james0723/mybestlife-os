@@ -56,6 +56,7 @@ import { ProfileAvatarField } from "@/components/settings/profile-avatar-field";
 import { SocialIntegrationsSection } from "@/components/settings/social-integrations-section";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { VoiceSpeechSection } from "@/components/settings/voice-speech-section";
+import { OSBuddySettingsSection } from "@/components/settings/os-buddy-settings-section";
 import type {
   UserProfile,
   BlockMinutesOption,
@@ -415,6 +416,7 @@ export default function SettingsPage() {
       <div className="space-y-6 max-w-2xl">
         <ThemeSwitcher />
         <VoiceSpeechSection />
+        <OSBuddySettingsSection />
 
         <Card>
           <CardHeader>

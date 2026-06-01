@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   MapPin,
   FolderOpen,
@@ -25,6 +26,12 @@ import {
 import { useLatestFlightQuote } from "@/hooks/use-bucket-list";
 import { useBucketDreamImage } from "@/hooks/use-bucket-dream-image";
 import { DreamCoverBackground } from "./dream-cover-background";
+import {
+  bucketEntrance,
+  bucketHoverLift,
+  bucketStaggerContainer,
+  bucketStaggerItem,
+} from "./bucket-motion";
 
 type FeaturedRailProps = {
   item: BucketItem;
@@ -55,6 +62,7 @@ export function BucketFeaturedRail({
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
   const dreamImage = useBucketDreamImage(item);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const flight = useLatestFlightQuote(item.id);
   const targetLabel = bucketTargetMonthLabel(item);
@@ -78,20 +86,34 @@ export function BucketFeaturedRail({
       currency: item.cost_currency ?? "USD",
     });
   }, [item]);
+  const isLiveFlightQuote =
+    flight.data?.mode === "live" && flight.data.provider !== "mock";
+  const flightCurrency =
+    flight.data?.currency ?? priceBand?.currency ?? item.cost_currency ?? "USD";
 
   return (
-    <aside className="flex flex-col gap-4">
-      <div
+    <motion.aside
+      {...bucketEntrance(reduceMotion, 0.1, 14)}
+      className="flex flex-col gap-4"
+    >
+      <motion.div
+        whileHover={bucketHoverLift(reduceMotion)}
         className={cn(
-          "overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl",
+          "overflow-hidden rounded-2xl border border-white/10 bg-slate-950/85 shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl",
         )}
       >
         {/* Cover / hero image area */}
-        <div className="relative h-40 w-full overflow-hidden">
+        <motion.div
+          className="relative h-40 w-full overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reduceMotion ? 0.2 : 0.55 }}
+        >
           <DreamCoverBackground
             image={dreamImage}
             type={item.type}
             variant="hero"
+            interactive
           />
           <div className="absolute right-3 top-3">
             <span
@@ -103,7 +125,7 @@ export function BucketFeaturedRail({
               {getBucketTypeLabel(item.type, copy)}
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Title + target */}
         <button
@@ -123,32 +145,43 @@ export function BucketFeaturedRail({
         </button>
 
         {/* Action wells — matches screenshot "Project Linked / Generate Tasks / Budget Linked" */}
-        <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+        <motion.div
+          variants={bucketStaggerContainer(reduceMotion)}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-3 gap-2 px-4 pb-4"
+        >
           <ActionWell
             label="PROJECT LINKED"
             icon={<FolderOpen className="h-4 w-4" />}
             active={Boolean(item.linked_project_id)}
             onClick={onActivate}
+            reduceMotion={reduceMotion}
           />
           <ActionWell
             label="GENERATE TASKS"
             icon={<Sparkles className="h-4 w-4" />}
             accent
             onClick={onActivate}
+            reduceMotion={reduceMotion}
           />
           <ActionWell
             label="BUDGET LINKED"
             icon={<Wallet className="h-4 w-4" />}
             active={Boolean(item.linked_savings_goal_id || item.linked_budget_id)}
             onClick={onActivate}
+            reduceMotion={reduceMotion}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Travel logistics (travel only) */}
       {item.type === "travel" ? (
         <>
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+          <motion.section
+            {...bucketEntrance(reduceMotion, 0.14, 10)}
+            className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+          >
             <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
               {copy.detailTravelLogistics}
             </h3>
@@ -168,15 +201,19 @@ export function BucketFeaturedRail({
                 </p>
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+          <motion.section
+            {...bucketEntrance(reduceMotion, 0.18, 10)}
+            className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+          >
             <div className="mb-2 flex items-center justify-between">
               <h3 className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65">
                 <Plane className="h-3.5 w-3.5 text-white/60" />
                 {copy.detailFlightWatch}
               </h3>
-              {flight.data?.cheapest_price != null &&
+              {isLiveFlightQuote &&
+              flight.data?.cheapest_price != null &&
               item.exploratory_price_max != null &&
               flight.data.cheapest_price <= item.exploratory_price_max * 0.9 ? (
                 <span className="rounded-full bg-lime-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-lime-300">
@@ -188,13 +225,17 @@ export function BucketFeaturedRail({
               <div>
                 <p className="text-2xl font-semibold tracking-tight text-white">
                   {flight.data?.cheapest_price != null
-                    ? `$${flight.data.cheapest_price}`
+                    ? formatMoney(flight.data.cheapest_price, flightCurrency)
                     : priceBand
-                      ? `$${priceBand.min}–${priceBand.max}`
+                      ? `${formatMoney(priceBand.min, flightCurrency)}–${formatMoney(
+                          priceBand.max,
+                          flightCurrency,
+                        )}`
                       : "—"}
                 </p>
                 <p className="text-[11px] text-white/55">
                   Round trip from {item.origin_airport ?? "—"}
+                  {flight.data?.provider === "mock" ? ` · ${copy.flightProviderMock}` : ""}
                 </p>
               </div>
               <Button
@@ -203,15 +244,18 @@ export function BucketFeaturedRail({
                 disabled={refreshing}
                 className="bg-white/10 text-white hover:bg-white/15"
               >
-                {refreshing ? "Refreshing…" : copy.flightBookNow}
+                {refreshing ? "Refreshing..." : copy.flightRefresh}
               </Button>
             </div>
-          </section>
+          </motion.section>
         </>
       ) : null}
 
       {/* Intelligence */}
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+      <motion.section
+        {...bucketEntrance(reduceMotion, 0.22, 10)}
+        className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+      >
         <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
           Intelligence
         </h3>
@@ -240,8 +284,8 @@ export function BucketFeaturedRail({
             />
           ) : null}
         </div>
-      </section>
-    </aside>
+      </motion.section>
+    </motion.aside>
   );
 }
 
@@ -251,15 +295,19 @@ function ActionWell({
   active,
   accent,
   onClick,
+  reduceMotion,
 }: {
   label: string;
   icon: React.ReactNode;
   active?: boolean;
   accent?: boolean;
   onClick: () => void;
+  reduceMotion: boolean;
 }) {
   return (
-    <button
+    <motion.button
+      variants={bucketStaggerItem(reduceMotion, 8)}
+      whileHover={bucketHoverLift(reduceMotion)}
       type="button"
       onClick={onClick}
       className={cn(
@@ -282,7 +330,7 @@ function ActionWell({
         {icon}
       </span>
       <span>{label}</span>
-    </button>
+    </motion.button>
   );
 }
 
@@ -324,4 +372,16 @@ function IntelRow({
       </span>
     </button>
   );
+}
+
+function formatMoney(n: number, currency = "USD"): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(n);
+  } catch {
+    return `${currency} ${n.toLocaleString()}`;
+  }
 }

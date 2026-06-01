@@ -11,17 +11,5 @@ export function useBucketDreamImage(item: BucketItem | null | undefined): Bucket
   return useMemo(() => {
     if (!item) return null;
     return resolveBucketDreamImage(item);
-  }, [
-    item?.id,
-    item?.cover_image_url,
-    item?.cover_image_is_ai,
-    item?.title,
-    item?.type,
-    item?.description,
-    item?.why_this_matters,
-    item?.destination_name,
-    item?.destination_city,
-    item?.destination_country,
-    item?.category_tags,
-  ]);
+  }, [item]);
 }

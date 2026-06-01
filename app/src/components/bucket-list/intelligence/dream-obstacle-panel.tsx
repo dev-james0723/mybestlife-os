@@ -12,12 +12,14 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import type { BucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
 import type {
   BucketDreamBlocker,
   BucketDreamBlockerType,
 } from "@/types/bucket-list";
+import { bucketStaggerContainer, bucketStaggerItem } from "../bucket-motion";
 
 const BLOCKER_ICON: Record<BucketDreamBlockerType, LucideIcon> = {
   money: Banknote,
@@ -58,8 +60,12 @@ export function DreamObstaclePanel({
   blockers: BucketDreamBlocker[];
   copy: BucketListUiCopy;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   return (
-    <section className="rounded-xl border p-4">
+    <motion.section
+      variants={bucketStaggerItem(reduceMotion, 10)}
+      className="rounded-xl border p-4"
+    >
       <h3 className="mb-3 text-sm font-semibold">{copy.blockersHeading}</h3>
       {blockers.length === 0 ? (
         <p className="flex items-start gap-2 text-[13px] text-muted-foreground">
@@ -67,11 +73,20 @@ export function DreamObstaclePanel({
           {copy.blockersNone}
         </p>
       ) : (
-        <ul className="space-y-2">
+        <motion.ul
+          variants={bucketStaggerContainer(reduceMotion)}
+          initial="hidden"
+          animate="show"
+          className="space-y-2"
+        >
           {blockers.map((b, i) => {
             const Icon = BLOCKER_ICON[b.type];
             return (
-              <li key={`${b.title}-${i}`} className="rounded-lg border bg-muted/20 p-3">
+              <motion.li
+                key={`${b.title}-${i}`}
+                variants={bucketStaggerItem(reduceMotion, 8)}
+                className="rounded-lg border bg-muted/20 p-3"
+              >
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4 text-amber-500" />
                   <span className="text-sm font-semibold">{b.title}</span>
@@ -86,11 +101,11 @@ export function DreamObstaclePanel({
                   </span>{" "}
                   {b.suggestedAction}
                 </p>
-              </li>
+              </motion.li>
             );
           })}
-        </ul>
+        </motion.ul>
       )}
-    </section>
+    </motion.section>
   );
 }

@@ -70,6 +70,8 @@ import { computeDocumentHealth } from "@/lib/assets/asset-intelligence-client";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
+import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { getOSBuddyActionLabel } from "@/lib/os-buddy/os-buddy-action-labels";
 import { AssetCard, type AssetCardBadge } from "./AssetCard";
 import { AssetCategoryPill } from "./AssetCategoryPill";
 import { AssetsEmptyState } from "./AssetsEmptyState";
@@ -145,8 +147,28 @@ export function AssetsView() {
   const prefersReducedMotion = useReducedMotion();
 
   const language = useAppStore((s) => s.language);
+  const { name: buddyName } = useOSBuddy();
   const copy = getResourcesUiCopy(language);
   const aiCopy = getAssetIntelUiCopy(language);
+  const buddyAssetCopy = useMemo(
+    () => ({
+      addAsset: getOSBuddyActionLabel({
+        action: "addAsset",
+        buddyName,
+        locale: language,
+      }),
+      reviewDetails: getOSBuddyActionLabel({
+        action: "assetReviewDetails",
+        buddyName,
+        locale: language,
+      }),
+      emptyDescription:
+        language === "zh-TW"
+          ? `上傳收據、產品照片或保固文件。${buddyName} 會先幫你檢查細節、建立資產記錄，並協助你保護與優化你擁有的資產。`
+          : `Upload a receipt, product photo, or warranty document. ${buddyName} will review the details, create the asset record, and help you protect and optimize what you own.`,
+    }),
+    [buddyName, language],
+  );
 
   const [showWizard, setShowWizard] = useState(false);
   const [intelAsset, setIntelAsset] = useState<Asset | null>(null);
@@ -452,7 +474,7 @@ export function AssetsView() {
               onClick={() => setShowWizard(true)}
             >
               <Sparkles className="size-4" />
-              {aiCopy.cta.addWithAi}
+              {buddyAssetCopy.addAsset}
             </Button>
           </div>
         }
@@ -552,9 +574,9 @@ export function AssetsView() {
           <AssetsEmptyState
             title={hasAssets ? copy.assets.emptyTitle : aiCopy.empty.title}
             description={
-              hasAssets ? copy.assets.emptyDescription : aiCopy.empty.description
+              hasAssets ? copy.assets.emptyDescription : buddyAssetCopy.emptyDescription
             }
-            ctaLabel={hasAssets ? undefined : aiCopy.cta.addWithAi}
+            ctaLabel={hasAssets ? undefined : buddyAssetCopy.addAsset}
             onCtaClick={hasAssets ? undefined : () => setShowWizard(true)}
           />
         ) : (

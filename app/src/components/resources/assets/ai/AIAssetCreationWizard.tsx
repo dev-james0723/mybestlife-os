@@ -12,7 +12,7 @@
  * carries a confidence chip.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Dialog,
@@ -54,6 +54,9 @@ import { getResourcesUiCopy } from "@/lib/i18n/resources-ui";
 import { useCreateAsset } from "@/hooks/use-assets";
 import { useAssetAutofill, useGenerateAssetImage } from "@/hooks/use-asset-ai";
 import { useCreateAssetImage } from "@/hooks/use-asset-media";
+import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { getOSBuddyActionLabel } from "@/lib/os-buddy/os-buddy-action-labels";
+import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
 import {
   ASSET_CATEGORY_KEYS,
   isAssetCategoryKey,
@@ -120,8 +123,24 @@ export function AIAssetCreationWizard({
   onCreated,
 }: AIAssetCreationWizardProps) {
   const language = useAppStore((s) => s.language);
+  const { name: buddyName } = useOSBuddy();
   const t = getAssetIntelUiCopy(language).wizard;
   const resources = getResourcesUiCopy(language);
+  const buddyCopy = useMemo(
+    () => ({
+      addAsset: getOSBuddyActionLabel({
+        action: "addAsset",
+        buddyName,
+        locale: language,
+      }),
+      reviewDetails: getOSBuddyActionLabel({
+        action: "assetReviewDetails",
+        buddyName,
+        locale: language,
+      }),
+    }),
+    [buddyName, language],
+  );
   const prefersReduced = useReducedMotion();
 
   const createAsset = useCreateAsset();
@@ -170,6 +189,7 @@ export function AIAssetCreationWizard({
   const runExtraction = useCallback(async () => {
     setError(null);
     setStep("extracting");
+    emitOSBuddyEvent({ type: "asset:extract:start" });
     try {
       const res = await autofill.mutateAsync({
         text: text.trim() || undefined,
@@ -191,7 +211,9 @@ export function AIAssetCreationWizard({
         warranty_expiration_date: r.warranty_expiration_date ?? "",
       });
       setStep("review");
+      emitOSBuddyEvent({ type: "asset:extract:success" });
     } catch {
+      emitOSBuddyEvent({ type: "asset:extract:error" });
       setError(t.errorGeneric);
       setStep("input");
     }
@@ -200,6 +222,7 @@ export function AIAssetCreationWizard({
   const handleGenerateImage = useCallback(async () => {
     if (!form) return;
     setError(null);
+    emitOSBuddyEvent({ type: "asset:visual:start" });
     try {
       const res = await generateImage.mutateAsync({
         assetName: form.name,
@@ -212,7 +235,9 @@ export function AIAssetCreationWizard({
       setGeneratedStoragePath(res.storagePath);
       setGeneratedModel(res.modelUsed);
       setVisualChoice("generated");
+      emitOSBuddyEvent({ type: "asset:visual:success" });
     } catch {
+      emitOSBuddyEvent({ type: "asset:visual:error" });
       setError(t.errorGeneric);
     }
   }, [form, generateImage, result, t.errorGeneric]);
@@ -295,7 +320,7 @@ export function AIAssetCreationWizard({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="size-5 text-[var(--accent-pink)]" />
-            {t.title}
+            {buddyCopy.addAsset}
           </DialogTitle>
         </DialogHeader>
 
@@ -334,6 +359,7 @@ export function AIAssetCreationWizard({
                   onSubmit={runExtraction}
                   onBack={() => setStep("method")}
                   error={error}
+                  extractCtaLabel={buddyCopy.reviewDetails}
                 />
               )}
 
@@ -488,6 +514,7 @@ function InputStep({
   onSubmit,
   onBack,
   error,
+  extractCtaLabel,
 }: {
   t: WizardCopy;
   method: InputMethod | null;
@@ -501,6 +528,7 @@ function InputStep({
   onSubmit: () => void;
   onBack: () => void;
   error: string | null;
+  extractCtaLabel?: string;
 }) {
   const [dragOver, setDragOver] = useState(false);
   const wantsUpload =
@@ -606,7 +634,7 @@ function InputStep({
           disabled={!canSubmit}
         >
           <Sparkles className="size-4" />
-          {t.extractCta}
+          {extractCtaLabel || t.extractCta}
         </Button>
       </div>
     </div>
@@ -904,12 +932,9 @@ function VisualStep({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={generatedImageUrl}
-                alt="generated"
+                alt="Asset visual"
                 className="h-28 w-full rounded-md object-cover"
               />
-              <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground backdrop-blur">
-                <Sparkles className="size-2.5" /> {t.aiVisualLabel}
-              </span>
             </div>
           ) : (
             <div className="flex h-28 w-full items-center justify-center rounded-md bg-muted">
@@ -933,9 +958,7 @@ function VisualStep({
         </VisualOption>
       </div>
 
-      <p className="text-[11px] text-muted-foreground">
-        {t.aiVisualLabel} · {t.notProofOfOwnership}
-      </p>
+      <p className="text-[11px] text-muted-foreground">{t.notProofOfOwnership}</p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

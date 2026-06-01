@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { ensureError } from "@/lib/utils/ensure-error";
 import type { NotificationPreferences, UserProfile } from "@/types/database";
+import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
 
 export type UpdateProfileInput = Partial<
   Pick<
@@ -33,6 +34,13 @@ export type UpdateProfileInput = Partial<
     | "quick_save_enabled"
     | "quick_save_default_destination"
     | "quick_save_require_review"
+    | "os_buddy_pet_id"
+    | "os_buddy_name"
+    | "os_buddy_enabled"
+    | "os_buddy_position"
+    | "os_buddy_onboarding_completed"
+    | "os_buddy_interaction_stats"
+    | "os_buddy_unlocked_pets"
   >
 >;
 
@@ -77,6 +85,43 @@ function coerceQuickSaveDefaultDestination(
   return "review";
 }
 
+function coerceOSBuddyPetId(v: unknown): OSBuddyPetId {
+  return v === "doge" ? "doge" : "xiaoba";
+}
+
+function coerceOSBuddyPosition(v: unknown): OSBuddyPosition {
+  if (!v || typeof v !== "object") {
+    return { x: null, y: null, anchor: "bottom-right" };
+  }
+  const row = v as Record<string, unknown>;
+  const x = typeof row.x === "number" && Number.isFinite(row.x) ? row.x : null;
+  const y = typeof row.y === "number" && Number.isFinite(row.y) ? row.y : null;
+  const anchor =
+    row.anchor === "bottom-right" ||
+    row.anchor === "bottom-left" ||
+    row.anchor === "top-right" ||
+    row.anchor === "top-left" ||
+    row.anchor === "custom"
+      ? row.anchor
+      : "bottom-right";
+  return { x, y, anchor };
+}
+
+function coerceOSBuddyInteractionStats(v: unknown): Record<string, unknown> {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return {};
+  return v as Record<string, unknown>;
+}
+
+function coerceOSBuddyUnlockedPets(v: unknown): OSBuddyPetId[] {
+  if (!Array.isArray(v)) return ["xiaoba", "doge"];
+  const cleaned = v
+    .map((item) => coerceOSBuddyPetId(item))
+    .filter((item, idx, list) => list.indexOf(item) === idx);
+  if (!cleaned.includes("xiaoba")) cleaned.unshift("xiaoba");
+  if (!cleaned.includes("doge")) cleaned.push("doge");
+  return cleaned;
+}
+
 function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
   const base = row as unknown as UserProfile;
   const raw = row.display_currency;
@@ -99,6 +144,20 @@ function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
       typeof row.quick_save_require_review === "boolean"
         ? row.quick_save_require_review
         : true,
+    os_buddy_pet_id: coerceOSBuddyPetId(row.os_buddy_pet_id),
+    os_buddy_name:
+      typeof row.os_buddy_name === "string" && row.os_buddy_name.trim()
+        ? row.os_buddy_name.trim()
+        : "Xiaoba",
+    os_buddy_enabled:
+      typeof row.os_buddy_enabled === "boolean" ? row.os_buddy_enabled : true,
+    os_buddy_position: coerceOSBuddyPosition(row.os_buddy_position),
+    os_buddy_onboarding_completed:
+      typeof row.os_buddy_onboarding_completed === "boolean"
+        ? row.os_buddy_onboarding_completed
+        : false,
+    os_buddy_interaction_stats: coerceOSBuddyInteractionStats(row.os_buddy_interaction_stats),
+    os_buddy_unlocked_pets: coerceOSBuddyUnlockedPets(row.os_buddy_unlocked_pets),
   };
 }
 
@@ -185,6 +244,18 @@ export const settingsRepository = {
       ...(input.display_currency !== undefined
         ? { display_currency: input.display_currency.trim().toUpperCase() }
         : {}),
+      ...(input.os_buddy_pet_id !== undefined
+        ? { os_buddy_pet_id: coerceOSBuddyPetId(input.os_buddy_pet_id) }
+        : {}),
+      ...(input.os_buddy_name !== undefined
+        ? { os_buddy_name: input.os_buddy_name.trim() || "Xiaoba" }
+        : {}),
+      ...(input.os_buddy_position !== undefined
+        ? { os_buddy_position: coerceOSBuddyPosition(input.os_buddy_position) }
+        : {}),
+      ...(input.os_buddy_unlocked_pets !== undefined
+        ? { os_buddy_unlocked_pets: coerceOSBuddyUnlockedPets(input.os_buddy_unlocked_pets) }
+        : {}),
     };
 
     let payload = omitUndefinedKeys({
@@ -251,6 +322,37 @@ export const settingsRepository = {
           quick_save_enabled: _a,
           quick_save_default_destination: _b,
           quick_save_require_review: _c,
+          ...rest
+        } = payload;
+        payload = rest;
+        continue;
+      }
+
+      if (
+        error &&
+        ("os_buddy_pet_id" in payload ||
+          "os_buddy_name" in payload ||
+          "os_buddy_enabled" in payload ||
+          "os_buddy_position" in payload ||
+          "os_buddy_onboarding_completed" in payload ||
+          "os_buddy_interaction_stats" in payload ||
+          "os_buddy_unlocked_pets" in payload) &&
+        (isMissingProfilesColumnError(error, "os_buddy_pet_id") ||
+          isMissingProfilesColumnError(error, "os_buddy_name") ||
+          isMissingProfilesColumnError(error, "os_buddy_enabled") ||
+          isMissingProfilesColumnError(error, "os_buddy_position") ||
+          isMissingProfilesColumnError(error, "os_buddy_onboarding_completed") ||
+          isMissingProfilesColumnError(error, "os_buddy_interaction_stats") ||
+          isMissingProfilesColumnError(error, "os_buddy_unlocked_pets"))
+      ) {
+        const {
+          os_buddy_pet_id: _a,
+          os_buddy_name: _b,
+          os_buddy_enabled: _c,
+          os_buddy_position: _d,
+          os_buddy_onboarding_completed: _e,
+          os_buddy_interaction_stats: _f,
+          os_buddy_unlocked_pets: _g,
           ...rest
         } = payload;
         payload = rest;
