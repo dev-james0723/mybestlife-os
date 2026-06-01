@@ -219,6 +219,8 @@ export type CreateBucketReflectionInput = {
   ai_summary?: string | null;
   photo_gallery?: BucketReflection["photo_gallery"];
   mood?: BucketReflection["mood"] | null;
+  changed_me?: string | null;
+  ai_memory?: BucketReflection["ai_memory"] | null;
 };
 
 export const bucketReflectionsRepository = {

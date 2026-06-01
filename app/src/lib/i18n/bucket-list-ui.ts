@@ -411,6 +411,43 @@ export type BucketListUiCopy = {
   destImageHint: string;
   destImageUploadOwn: string;
 
+  // Realized dreams & memory (Phase 7)
+  memoryCaptureTitle: string;
+  memoryCaptureDescription: string;
+  memoryChangedLabel: string;
+  memoryChangedPlaceholder: string;
+  memoryGenerate: string;
+  memoryGenerating: string;
+  memorySave: string;
+  memorySkip: string;
+  memoryUploadPhoto: string;
+  memoryPreviewTitle: string;
+  memoryWhatHappened: string;
+  memoryWhyMattered: string;
+  memoryWhatChanged: string;
+  memoryWhatLearned: string;
+  memoryLifeChapter: string;
+  memoryWhatUnlocked: string;
+  memoryInterpretNote: string;
+  memoryPhotosHeading: string;
+  memoryTimelineHeading: string;
+  tlCreated: string;
+  tlVisualized: string;
+  tlActivated: string;
+  tlProjectLinked: string;
+  tlTasksAdded: (count: number) => string;
+  tlSavingsStarted: string;
+  tlCalendarAdded: string;
+  tlResearched: string;
+  tlTripPlanned: string;
+  tlCompleted: string;
+  tlReflected: string;
+  tlBecameMemory: string;
+  changedMeHeading: string;
+  beforeAfterHeading: string;
+  beforeLabel: string;
+  afterLabel: string;
+
   // Misc
   aiQuotaExhausted: string;
   aiGenericError: string;
@@ -838,6 +875,45 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   destImageHint: "Realistic concepts for this destination — generated as AI visuals.",
   destImageUploadOwn: "Upload your own",
 
+  memoryCaptureTitle: "Capture the memory",
+  memoryCaptureDescription:
+    "A completed dream deserves to become a memory. Nothing here is required.",
+  memoryChangedLabel: "What changed in you?",
+  memoryChangedPlaceholder: "Who are you now that this is done?",
+  memoryGenerate: "Shape this memory with AI",
+  memoryGenerating: "Shaping…",
+  memorySave: "Save as life memory",
+  memorySkip: "Skip for now",
+  memoryUploadPhoto: "Upload photo",
+  memoryPreviewTitle: "Your memory",
+  memoryWhatHappened: "What happened",
+  memoryWhyMattered: "Why it mattered",
+  memoryWhatChanged: "What changed",
+  memoryWhatLearned: "What you learned",
+  memoryLifeChapter: "Life chapter",
+  memoryWhatUnlocked: "What it unlocked",
+  memoryInterpretNote:
+    "An interpretation of your words — this may suggest, not prove.",
+  memoryPhotosHeading: "Memory photos",
+  memoryTimelineHeading: "Dream timeline",
+  tlCreated: "Dream created",
+  tlVisualized: "Dream visualized",
+  tlActivated: "Dream activated",
+  tlProjectLinked: "Project linked",
+  tlTasksAdded: (count) =>
+    count === 1 ? "First task added" : `${count} tasks added`,
+  tlSavingsStarted: "Savings goal started",
+  tlCalendarAdded: "Added to calendar",
+  tlResearched: "Destination researched",
+  tlTripPlanned: "Trip planned",
+  tlCompleted: "Dream completed",
+  tlReflected: "Reflected",
+  tlBecameMemory: "Became a memory",
+  changedMeHeading: "What this dream changed",
+  beforeAfterHeading: "Before & after",
+  beforeLabel: "Before",
+  afterLabel: "After",
+
   aiQuotaExhausted:
     "Daily AI cap reached. Come back tomorrow or link a paid key.",
   aiGenericError: "AI request failed — try again in a moment.",
@@ -1140,6 +1216,41 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   destImageHeading: "封面圖片靈感",
   destImageHint: "此目的地的寫實概念——以 AI 圖像生成。",
   destImageUploadOwn: "上傳你自己的",
+  memoryCaptureTitle: "捕捉回憶",
+  memoryCaptureDescription: "完成的夢想值得成為回憶。這裡的一切都不是必填。",
+  memoryChangedLabel: "你有什麼改變？",
+  memoryChangedPlaceholder: "完成這件事後，你成為了怎樣的人？",
+  memoryGenerate: "用 AI 塑造這段回憶",
+  memoryGenerating: "塑造中…",
+  memorySave: "儲存為人生回憶",
+  memorySkip: "先略過",
+  memoryUploadPhoto: "上傳照片",
+  memoryPreviewTitle: "你的回憶",
+  memoryWhatHappened: "發生了什麼",
+  memoryWhyMattered: "為何重要",
+  memoryWhatChanged: "改變了什麼",
+  memoryWhatLearned: "你學到了什麼",
+  memoryLifeChapter: "人生章節",
+  memoryWhatUnlocked: "它開啟了什麼",
+  memoryInterpretNote: "這是對你話語的詮釋——這可能暗示，而非證明。",
+  memoryPhotosHeading: "回憶照片",
+  memoryTimelineHeading: "夢想時間軸",
+  tlCreated: "建立夢想",
+  tlVisualized: "夢想視覺化",
+  tlActivated: "啟動夢想",
+  tlProjectLinked: "連結專案",
+  tlTasksAdded: (count) => (count === 1 ? "新增第一個任務" : `新增 ${count} 個任務`),
+  tlSavingsStarted: "開始儲蓄目標",
+  tlCalendarAdded: "加入行事曆",
+  tlResearched: "研究目的地",
+  tlTripPlanned: "規劃行程",
+  tlCompleted: "完成夢想",
+  tlReflected: "已反思",
+  tlBecameMemory: "成為回憶",
+  changedMeHeading: "這個夢想改變了什麼",
+  beforeAfterHeading: "之前與之後",
+  beforeLabel: "之前",
+  afterLabel: "之後",
   aiQuotaExhausted: "今日 AI 額度已用完，明天再試或接上付費金鑰。",
   aiGenericError: "AI 請求失敗，稍後再試。",
 };

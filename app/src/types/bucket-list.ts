@@ -290,9 +290,26 @@ export type BucketReflection = {
   ai_summary: string | null;
   photo_gallery: BucketReflectionPhoto[];
   mood: BucketReflectionMood | null;
+  changed_me: string | null;
+  ai_memory: BucketDreamMemory | null;
   reflected_on: string;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * Structured AI memory for a completed dream. An interpretation of the user's
+ * OWN reflection + the dream's recorded details — never invented events. The
+ * UI frames it with "this may suggest…", never "this proves".
+ */
+export type BucketDreamMemory = {
+  summary: string;
+  whatHappened: string;
+  whyItMattered: string;
+  whatChanged: string;
+  whatLearned: string;
+  lifeChapter: string;
+  whatUnlocked: string;
 };
 
 export type BucketFlightQuote = {

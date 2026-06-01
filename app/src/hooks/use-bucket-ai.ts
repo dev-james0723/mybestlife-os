@@ -11,6 +11,7 @@ import type {
   BucketDestinationBrief,
   BucketDreamActivationPlan,
   BucketDreamIntelligenceReport,
+  BucketDreamMemory,
   BucketInspirationAnalysis,
   BucketItem,
   BucketReframeResponse,
@@ -306,6 +307,40 @@ export function useActivateDreamPlan() {
         toast.error("Daily AI cap reached. Try again tomorrow.");
       } else {
         toast.error("Could not build an activation plan — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Memory reflection (structured life memory) ──────────────────────────────────
+
+export function useMemoryReflection() {
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      reflectionText: string;
+      mood?: string | null;
+      changedMe?: string | null;
+    }): Promise<BucketDreamMemory> => {
+      const json = await callBucketAi<{ memory: BucketDreamMemory }>(
+        "/api/bucket-list/memory-reflection",
+        {
+          language,
+          bucketItemId: input.bucketItemId,
+          reflectionText: input.reflectionText,
+          mood: input.mood ?? null,
+          changedMe: input.changedMe ?? null,
+        },
+      );
+      return json.memory;
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not shape that memory — please retry.");
       }
     },
   });

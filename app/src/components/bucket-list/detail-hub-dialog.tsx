@@ -59,6 +59,10 @@ import { DreamCoverBackground } from "./dream-cover-background";
 import { DreamInspirationGallery } from "./images/dream-inspiration-gallery";
 import { DreamIntelligencePanel } from "./intelligence/dream-intelligence-panel";
 import { TravelExplorerConsole } from "./travel/travel-explorer-console";
+import { DreamMemoryTimeline } from "./memory/dream-memory-timeline";
+import { DreamChangedMePanel } from "./memory/dream-changed-me-panel";
+import { DreamBeforeAfterReflection } from "./memory/dream-before-after-reflection";
+import { DreamMemoryPhotoGallery } from "./memory/dream-memory-photo-gallery";
 
 export function DetailHubDialog() {
   const language = useAppStore((s) => s.language);
@@ -282,7 +286,11 @@ export function DetailHubDialog() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => markCompleted.mutate(item.id)}
+                    onClick={async () => {
+                      await markCompleted.mutateAsync(item.id);
+                      // Invite the user to capture the memory right away.
+                      openReflection(item.id);
+                    }}
                   >
                     <BookHeart className="h-4 w-4" />
                     {copy.detailRealize}
@@ -404,7 +412,29 @@ export function DetailHubDialog() {
                   </TabsContent>
                 ) : null}
 
-                <TabsContent value="reflect" className="space-y-3 pt-4">
+                <TabsContent value="reflect" className="space-y-4 pt-4">
+                  <DreamMemoryTimeline item={item} copy={copy} />
+
+                  {reflections.data?.[0] ? (
+                    <>
+                      <DreamChangedMePanel
+                        reflection={reflections.data[0]}
+                        copy={copy}
+                      />
+                      <DreamBeforeAfterReflection
+                        item={item}
+                        reflection={reflections.data[0]}
+                        copy={copy}
+                      />
+                      <DreamMemoryPhotoGallery
+                        photos={reflections.data.flatMap(
+                          (r) => r.photo_gallery ?? [],
+                        )}
+                        copy={copy}
+                      />
+                    </>
+                  ) : null}
+
                   <ReflectionsList
                     items={reflections.data ?? []}
                     onWrite={() => openReflection(item.id)}
