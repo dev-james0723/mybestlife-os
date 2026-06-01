@@ -6,7 +6,6 @@ import {
   Sparkles,
   Zap,
   CalendarCheck,
-  StickyNote,
   Target,
   CalendarClock,
   Brain,
@@ -214,6 +213,7 @@ export const navigationCategories: NavCategory[] = [
         icon: FileText,
         searchParams: { tab: "documents" },
       },
+      { itemId: "software-vault", title: "Software Vault", url: "/vault", icon: Package },
     ],
   },
   {
@@ -221,12 +221,10 @@ export const navigationCategories: NavCategory[] = [
     title: "Knowledge",
     icon: Library,
     items: [
-      { itemId: "notes", title: "Notes", url: "/notes", icon: StickyNote },
       { itemId: "knowledge-base", title: "Knowledge Base", url: "/knowledge-base", icon: Brain },
       { itemId: "ai-knowledge", title: "AI Knowledge", url: "/ai-knowledge", icon: Sparkles },
       { itemId: "mind-council", title: "Mind Council", url: "/mind-council", icon: Users2 },
       { itemId: "ideas", title: "Idea Capture", url: "/ideas", icon: Lightbulb },
-      { itemId: "software-vault", title: "Software Vault", url: "/vault", icon: Package },
     ],
   },
   {

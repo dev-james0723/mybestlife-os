@@ -73,7 +73,6 @@ export async function updateSession(request: NextRequest) {
     "/projects",
     "/daily-planner",
     "/goals",
-    "/notes",
     "/knowledge-base",
     "/ideas",
     "/japanese-study",

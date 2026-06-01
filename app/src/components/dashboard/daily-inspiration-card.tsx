@@ -1,13 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { ExternalLink, Loader2, RefreshCw, Sparkles, Star } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GlassTintPanel } from "@/components/dashboard/glass-tint-panel";
-import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { INSPIRATION_VIDEOS, inspirationById, type InspirationVideo } from "@/lib/constants/inspiration-videos";
 
 type DailyInspirationCopy = {
@@ -29,7 +27,6 @@ function pickRandomVideo(currentId: string | null): InspirationVideo {
 }
 
 export function DailyInspirationCard({ copy }: DailyInspirationCardProps) {
-  const notesHref = useLocalizedPath("/notes");
   const defaultVideo = useMemo(() => inspirationById("q13xr9KBABE") ?? INSPIRATION_VIDEOS[0]!, []);
   const [video, setVideo] = useState<InspirationVideo>(defaultVideo);
   const [loading, setLoading] = useState(false);
@@ -96,13 +93,6 @@ export function DailyInspirationCard({ copy }: DailyInspirationCardProps) {
               {copy.markWatched}
             </label>
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href={notesHref}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-              >
-                <Star className="h-4 w-4" />
-                {copy.saveNotes}
-              </Link>
               <Button
                 type="button"
                 variant="outline"

@@ -79,7 +79,6 @@ export function RoleModelDetail({
   // page where the user can locate the entity by name.
   const projectsHref = useLocalizedPath("/projects");
   const goalsHref = useLocalizedPath("/goals");
-  const notesHref = useLocalizedPath("/notes");
 
   // Keyboard shortcuts while the detail is open: E → edit, F → favorite.
   // Esc-to-close is already handled by Radix's Dialog primitive inside the
@@ -354,20 +353,6 @@ export function RoleModelDetail({
                   href={goalsHref}
                   openAriaTemplate={copy.rmLinkedOpenInAria}
                   areaLabel={copy.rmSectionGoals}
-                />
-              </Section>
-            )}
-            {roleModel.linked_note_ids.length > 0 && (
-              <Section
-                title={copy.rmSectionNotes}
-                count={roleModel.linked_note_ids.length}
-              >
-                <LinkedEntityRow
-                  ids={roleModel.linked_note_ids}
-                  resolve={(id) => noteMap.get(id) ?? id}
-                  href={notesHref}
-                  openAriaTemplate={copy.rmLinkedOpenInAria}
-                  areaLabel={copy.rmSectionNotes}
                 />
               </Section>
             )}

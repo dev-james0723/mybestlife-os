@@ -16,7 +16,6 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { MotivationCard } from "@/components/dashboard/motivation-card";
 import { DailyInspirationCard } from "@/components/dashboard/daily-inspiration-card";
 import { QuoteInspirationCard } from "@/components/dashboard/quote-inspiration-card";
@@ -28,7 +27,6 @@ import { GlassEntityCard } from "@/components/dashboard/glass-entity-card";
 import { GlassTintPanel } from "@/components/dashboard/glass-tint-panel";
 import {
   AlertCircle,
-  FileText,
   Flame,
   FolderKanban,
   Gift,
@@ -37,7 +35,6 @@ import {
 } from "lucide-react";
 import { useTasks } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
-import { useNotes } from "@/hooks/use-notes";
 import { useGratefulThings } from "@/hooks/use-grateful-things";
 import { useJapaneseStudySessions } from "@/hooks/use-japanese-study";
 import { useProfile } from "@/hooks/use-settings";
@@ -49,7 +46,7 @@ import { getGreeting } from "@/lib/greeting";
 import { formatDateShort, isOverdue, isUpcoming } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 import { PROTECTED_DESKTOP_GUTTER_NEG_X } from "@/lib/layout-shell";
-import type { GratefulThing, JapaneseStudySession, Note, Task } from "@/types/database";
+import type { GratefulThing, JapaneseStudySession, Task } from "@/types/database";
 
 function todayKey() {
   return format(new Date(), "yyyy-MM-dd");
@@ -72,25 +69,16 @@ function studyStreakFromDates(sessionDates: string[]): number {
   return streak;
 }
 
-function stripNotePreview(content: string | null, max = 140): string {
-  if (!content) return "";
-  const plain = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  if (plain.length <= max) return plain;
-  return `${plain.slice(0, max)}…`;
-}
-
 export default function DashboardPage() {
   const { language } = useAppStore();
   const hrefGrateful = useLocalizedPath("/grateful-things");
   const hrefTasks = useLocalizedPath("/tasks");
   const hrefJapanese = useLocalizedPath("/japanese-study");
-  const hrefNotes = useLocalizedPath("/notes");
   const hrefAiAssistant = useLocalizedPath("/ai-assistant");
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
   const { data: tasks, isLoading: tasksLoading } = useTasks();
   const { data: projects, isLoading: projectsLoading } = useProjects();
-  const { data: notes, isLoading: notesLoading } = useNotes();
   const { data: gratefulThings, isLoading: gratefulLoading } = useGratefulThings();
   const { data: studySessions, isLoading: studyLoading } = useJapaneseStudySessions();
 
@@ -164,10 +152,6 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [studySessions]);
 
-  const favoriteNotes = useMemo(() => {
-    return (notes ?? []).filter((n) => n.is_favorite).slice(0, 4);
-  }, [notes]);
-
   const summaryText = useMemo(() => {
     const urgentTitles = urgentTasks.slice(0, 2).map((t) => t.title);
     return buildDashboardSummary(language, {
@@ -192,7 +176,7 @@ export default function DashboardPage() {
     window.setTimeout(() => setRefreshSpin(false), 600);
   };
 
-  const isLoading = tasksLoading || projectsLoading || notesLoading || gratefulLoading || studyLoading;
+  const isLoading = tasksLoading || projectsLoading || gratefulLoading || studyLoading;
 
   if (isLoading) {
     return <LoadingPage />;
@@ -304,7 +288,6 @@ export default function DashboardPage() {
         />
         <GlassStatCard iconTone="dashboard" title={copy.statUrgent} value={urgentTasks.length} icon={AlertCircle} />
         <GlassStatCard iconTone="dashboard" title={copy.statStreak} value={copy.days(studyStreak)} icon={Flame} />
-        <GlassStatCard iconTone="dashboard" title={copy.statNotes} value={notes?.length ?? 0} icon={FileText} />
       </div>
 
       <section className="space-y-3">
@@ -371,38 +354,6 @@ export default function DashboardPage() {
             <div className="space-y-2.5">
               {recentSessions.map((session: JapaneseStudySession) => (
                 <DashboardStudyRow key={session.id} session={session} locale={locale} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">{copy.favoriteNotes}</h2>
-            <Link href={hrefNotes} className="text-sm font-semibold text-primary hover:underline">
-              {copy.viewAll}
-            </Link>
-          </div>
-          {favoriteNotes.length === 0 ? (
-            <EmptyState icon={FileText} title={copy.noFavorites} description="" />
-          ) : (
-            <div className="space-y-3" data-stagger>
-              {favoriteNotes.map((note: Note) => (
-                <GlassEntityCard
-                  key={note.id}
-                  title={note.title}
-                  subtitle={note.category ?? undefined}
-                  badges={
-                    <Badge
-                      variant="secondary"
-                      className="border-0 bg-pink-500/15 font-medium text-pink-800 dark:bg-pink-500/20 dark:text-pink-100"
-                    >
-                      ★
-                    </Badge>
-                  }
-                >
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{stripNotePreview(note.content)}</p>
-                </GlassEntityCard>
               ))}
             </div>
           )}

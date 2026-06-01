@@ -804,7 +804,6 @@ export default function DailyPlannerPage() {
     return new Map(list.map((k) => [k.id, k]));
   }, [knowledgePickData]);
   const ideasLibraryHref = useLocalizedPath("/ideas");
-  const notesLibraryHref = useLocalizedPath("/notes");
   const knowledgeLibraryHref = useLocalizedPath("/knowledge-base");
   const { data: templates = [] } = useScheduleTemplates();
   const createTemplate = useCreateScheduleTemplate();
@@ -2287,28 +2286,14 @@ export default function DailyPlannerPage() {
                           {notesList.map((id) => {
                             const note = notesById.get(id);
                             const label = smartLinkNoteDisplayLabel(note, notesPending, copy);
-                            const href = note
-                              ? `${notesLibraryHref}?note=${encodeURIComponent(id)}`
-                              : undefined;
-                            const badge = (
-                              <Badge
-                                variant="outline"
-                                className="max-w-[min(100%,280px)] border-violet-400/50 text-xs font-normal"
-                              >
-                                <span className="truncate">{label}</span>
-                              </Badge>
-                            );
-                            return href ? (
-                              <Link
-                                key={id}
-                                href={href}
-                                className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                {badge}
-                              </Link>
-                            ) : (
+                            return (
                               <span key={id} className="inline-flex max-w-full min-w-0">
-                                {badge}
+                                <Badge
+                                  variant="outline"
+                                  className="max-w-[min(100%,280px)] border-violet-400/50 text-xs font-normal"
+                                >
+                                  <span className="truncate">{label}</span>
+                                </Badge>
                               </span>
                             );
                           })}
