@@ -6,10 +6,17 @@ import { toast } from "sonner";
 import { bucketQueryKeys } from "@/hooks/use-bucket-list";
 import { useAppStore } from "@/stores/app-store";
 import type {
+  BucketActivationMode,
+  BucketCoverImageStyle,
   BucketDestinationBrief,
+  BucketDreamActivationPlan,
+  BucketDreamIntelligenceReport,
+  BucketDreamMemory,
+  BucketInspirationAnalysis,
   BucketItem,
   BucketReframeResponse,
   BucketTripPlan,
+  BucketType,
 } from "@/types/bucket-list";
 
 type AiErrorPayload = {
@@ -91,6 +98,8 @@ export function useGenerateTripPlan() {
       bucket: BucketItem;
       priorities?: string;
       tripLength?: number;
+      travelStyle?: BucketItem["travel_style"];
+      budgetLevel?: BucketItem["travel_budget_level"];
     }): Promise<{ plan: BucketTripPlan }> => {
       return callBucketAi<{ plan: BucketTripPlan }>(
         "/api/bucket-list/trip-plan",
@@ -100,8 +109,9 @@ export function useGenerateTripPlan() {
           destination_name: input.bucket.destination_name,
           destination_country: input.bucket.destination_country,
           destination_city: input.bucket.destination_city,
-          travel_style: input.bucket.travel_style,
-          travel_budget_level: input.bucket.travel_budget_level,
+          travel_style: input.travelStyle ?? input.bucket.travel_style,
+          travel_budget_level:
+            input.budgetLevel ?? input.bucket.travel_budget_level,
           trip_length_days:
             input.tripLength ?? input.bucket.trip_length_days ?? 5,
           priorities: input.priorities,
@@ -156,6 +166,182 @@ export function useReframeDream() {
     },
     onError: () => {
       toast.error("Could not reframe dream.");
+    },
+  });
+}
+
+// ─── Cover image generation ─────────────────────────────────────────────────────
+
+export function useGenerateCoverImage() {
+  const qc = useQueryClient();
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      title: string;
+      type: BucketType;
+      destination?: string | null;
+      style?: BucketCoverImageStyle;
+      setAsCover?: boolean;
+    }): Promise<{ imageUrl: string; prompt: string; modelUsed: string }> => {
+      return callBucketAi<{ imageUrl: string; prompt: string; modelUsed: string }>(
+        "/api/bucket-list/generate-cover-image",
+        {
+          language,
+          bucketItemId: input.bucketItemId,
+          title: input.title,
+          type: input.type,
+          destination: input.destination ?? undefined,
+          style: input.style,
+          setAsCover: input.setAsCover ?? true,
+        },
+      );
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.images(variables.bucketItemId) });
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.item(variables.bucketItemId) });
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.items() });
+      toast.success("AI dream visual generated");
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else if (msg === "image_generation_unavailable") {
+        toast.error("Image generation isn't configured on the server.");
+      } else {
+        toast.error("Could not generate a visual — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Inspiration image analysis ─────────────────────────────────────────────────
+
+export function useAnalyzeInspiration() {
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      imageUrl: string;
+      bucketItemId?: string;
+      userNote?: string;
+    }): Promise<BucketInspirationAnalysis> => {
+      const json = await callBucketAi<{ analysis: BucketInspirationAnalysis }>(
+        "/api/bucket-list/analyze-inspiration",
+        {
+          language,
+          imageUrl: input.imageUrl,
+          bucketItemId: input.bucketItemId,
+          userNote: input.userNote,
+        },
+      );
+      return json.analysis;
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not analyze that image — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Dream intelligence analysis ────────────────────────────────────────────────
+
+export function useAnalyzeDream() {
+  const qc = useQueryClient();
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      forceRefresh?: boolean;
+    }): Promise<{ report: BucketDreamIntelligenceReport; cached: boolean }> => {
+      return callBucketAi<{
+        report: BucketDreamIntelligenceReport;
+        cached: boolean;
+      }>("/api/bucket-list/analyze-dream", {
+        language,
+        bucketItemId: input.bucketItemId,
+        forceRefresh: input.forceRefresh ?? false,
+      });
+    },
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.report(variables.bucketItemId) });
+      if (!data.cached) toast.success("Dream analysis ready");
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not analyze this dream — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Dream activation plan ───────────────────────────────────────────────────────
+
+export function useActivateDreamPlan() {
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      activationMode: BucketActivationMode;
+    }): Promise<BucketDreamActivationPlan> => {
+      const json = await callBucketAi<{ plan: BucketDreamActivationPlan }>(
+        "/api/bucket-list/activate-dream",
+        {
+          language,
+          bucketItemId: input.bucketItemId,
+          activationMode: input.activationMode,
+        },
+      );
+      return json.plan;
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not build an activation plan — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Memory reflection (structured life memory) ──────────────────────────────────
+
+export function useMemoryReflection() {
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      reflectionText: string;
+      mood?: string | null;
+      changedMe?: string | null;
+    }): Promise<BucketDreamMemory> => {
+      const json = await callBucketAi<{ memory: BucketDreamMemory }>(
+        "/api/bucket-list/memory-reflection",
+        {
+          language,
+          bucketItemId: input.bucketItemId,
+          reflectionText: input.reflectionText,
+          mood: input.mood ?? null,
+          changedMe: input.changedMe ?? null,
+        },
+      );
+      return json.memory;
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not shape that memory — please retry.");
+      }
     },
   });
 }

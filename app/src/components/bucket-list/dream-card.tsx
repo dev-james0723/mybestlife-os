@@ -80,6 +80,13 @@ export function DreamCard({ item, onClick }: DreamCardProps) {
         interactive
       />
 
+      {image?.sourceType === "generated" ? (
+        <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-fuchsia-500/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+          <Sparkles className="h-2.5 w-2.5" />
+          {copy.visualsAiBadge}
+        </span>
+      ) : null}
+
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="inline-flex items-center gap-1.5 rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80 backdrop-blur-sm">

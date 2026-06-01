@@ -218,6 +218,8 @@ export type BucketItem = {
   category_tags: string[];
   /** User-provided or API-persisted cover. UI resolves full {@link BucketDreamImage} via `resolveBucketDreamImage`. */
   cover_image_url: string | null;
+  /** True when the current cover is an AI-generated visual (drives the "AI-generated visual" badge). */
+  cover_image_is_ai: boolean;
   quote_inspiration: string | null;
   inspiration_links: BucketInspirationLink[];
   notes: string | null;
@@ -288,9 +290,26 @@ export type BucketReflection = {
   ai_summary: string | null;
   photo_gallery: BucketReflectionPhoto[];
   mood: BucketReflectionMood | null;
+  changed_me: string | null;
+  ai_memory: BucketDreamMemory | null;
   reflected_on: string;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * Structured AI memory for a completed dream. An interpretation of the user's
+ * OWN reflection + the dream's recorded details — never invented events. The
+ * UI frames it with "this may suggest…", never "this proves".
+ */
+export type BucketDreamMemory = {
+  summary: string;
+  whatHappened: string;
+  whyItMattered: string;
+  whatChanged: string;
+  whatLearned: string;
+  lifeChapter: string;
+  whatUnlocked: string;
 };
 
 export type BucketFlightQuote = {
@@ -378,6 +397,7 @@ export type UpdateBucketItemInput = Partial<CreateBucketItemInput> & {
   archived_at?: string | null;
   completed_at?: string | null;
   is_featured?: boolean;
+  cover_image_is_ai?: boolean;
   latest_live_price?: number | null;
   latest_live_price_currency?: string | null;
   last_price_check_time?: string | null;
@@ -431,4 +451,337 @@ export type BucketHighlights = {
   pushThisWeek: BucketItem | null;
   latestCompletion: BucketItem | null;
   travelDeal: BucketItem | null;
+};
+
+// ─── AI dream capture (autofill) ───────────────────────────────────────────────
+
+/** Per-field confidence the AI attaches to an autofilled dream draft. */
+export const BUCKET_FIELD_CONFIDENCE_LEVELS = [
+  "high",
+  "medium",
+  "low",
+  "missing",
+] as const;
+export type BucketFieldConfidence =
+  (typeof BUCKET_FIELD_CONFIDENCE_LEVELS)[number];
+
+/** Lightweight existing-dream context passed to the autofill route for de-duplication hints. */
+export type BucketItemSummary = {
+  id: string;
+  title: string;
+  type: BucketType;
+  status: BucketStatus;
+};
+
+export type BucketDreamAutofillTravel = {
+  destination_name?: string | null;
+  destination_country?: string | null;
+  destination_city?: string | null;
+  destination_airport?: string | null;
+  origin_airport?: string | null;
+  best_season?: string | null;
+  travel_budget_level?: BucketTravelBudgetLevel | null;
+  travel_style?: BucketTravelStyle | null;
+  trip_length_days?: number | null;
+  flight_watch_enabled?: boolean;
+};
+
+/**
+ * Structured dream draft produced by `POST /api/bucket-list/autofill`.
+ *
+ * This is an *editable suggestion* — never persisted automatically. The user
+ * reviews and confirms before a {@link CreateBucketItemInput} is created.
+ */
+export type BucketDreamAutofillResult = {
+  title: string;
+  description?: string | null;
+  why_this_matters?: string | null;
+
+  type: BucketType;
+  status: BucketStatus;
+  priority: BucketPriority;
+  difficulty: BucketDifficulty;
+  time_horizon?: BucketTimeHorizon | null;
+
+  estimated_cost?: number | null;
+  cost_currency?: string;
+  cost_band?: BucketCostBand | null;
+
+  target_date?: string | null;
+  target_month?: string | null;
+
+  category_tags: string[];
+  quote_inspiration?: string | null;
+  notes?: string | null;
+
+  travel?: BucketDreamAutofillTravel | null;
+
+  /** 0–1 overall confidence in the extraction. */
+  confidence: number;
+  field_confidence: Record<string, BucketFieldConfidence>;
+  missing_fields: string[];
+  /** Up to a few focused questions / next steps the user might want. */
+  suggested_next_actions: string[];
+  warnings: string[];
+};
+
+// ─── Dream images & inspiration (Phase 2) ───────────────────────────────────────
+
+export const BUCKET_DREAM_IMAGE_TYPES = [
+  "cover",
+  "inspiration",
+  "generated_visual",
+  "screenshot",
+  "travel_photo",
+  "memory_photo",
+  "article_image",
+  "other",
+] as const;
+export type BucketDreamImageType = (typeof BUCKET_DREAM_IMAGE_TYPES)[number];
+
+export const BUCKET_DREAM_IMAGE_SOURCE_TYPES = [
+  "uploaded",
+  "generated",
+  "static_catalog",
+  "external_url",
+  "api",
+] as const;
+export type BucketDreamImageSource =
+  (typeof BUCKET_DREAM_IMAGE_SOURCE_TYPES)[number];
+
+/** A row in the `bucket_dream_images` gallery (distinct from the resolved {@link BucketDreamImage}). */
+export type BucketDreamImageRecord = {
+  id: string;
+  user_id: string;
+  bucket_item_id: string;
+  image_url: string;
+  image_type: BucketDreamImageType;
+  caption: string | null;
+  ai_caption: string | null;
+  source_type: BucketDreamImageSource;
+  source_url: string | null;
+  prompt: string | null;
+  model_used: string | null;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Styles offered by the AI cover generator. */
+export const BUCKET_COVER_IMAGE_STYLES = [
+  "realistic_travel",
+  "cinematic",
+  "dreamy",
+  "minimal_editorial",
+  "luxury_magazine",
+] as const;
+export type BucketCoverImageStyle = (typeof BUCKET_COVER_IMAGE_STYLES)[number];
+
+/** Hints the inspiration analyzer extracts from an image. */
+export type BucketInspirationHints = {
+  destination?: string | null;
+  activity?: string | null;
+  mood?: string | null;
+  season?: string | null;
+  style?: string | null;
+  tags?: string[];
+};
+
+/**
+ * Result of `POST /api/bucket-list/analyze-inspiration`. Suggestions only —
+ * the user reviews before any bucket update is applied.
+ */
+export type BucketInspirationAnalysis = {
+  suggestedCaption: string;
+  extractedDreamHints: BucketInspirationHints;
+  suggestedBucketUpdates?: Partial<CreateBucketItemInput> | null;
+  confidence: number;
+  warnings: string[];
+};
+
+// ─── Dream Intelligence Hub (Phase 3) ───────────────────────────────────────────
+
+export const BUCKET_DREAM_REPORT_TYPES = [
+  "dream_intelligence",
+  "readiness",
+  "blockers",
+  "smallest_version",
+  "identity_meaning",
+] as const;
+export type BucketDreamReportType = (typeof BUCKET_DREAM_REPORT_TYPES)[number];
+
+export const BUCKET_DREAM_READINESS_STATUSES = [
+  "dreaming",
+  "exploring",
+  "ready_to_activate",
+  "blocked",
+  "scheduled",
+  "completed",
+] as const;
+export type BucketDreamReadinessStatus =
+  (typeof BUCKET_DREAM_READINESS_STATUSES)[number];
+
+export const BUCKET_DREAM_BLOCKER_TYPES = [
+  "money",
+  "time",
+  "clarity",
+  "courage",
+  "logistics",
+  "relationship",
+  "health",
+  "other",
+] as const;
+export type BucketDreamBlockerType =
+  (typeof BUCKET_DREAM_BLOCKER_TYPES)[number];
+
+/** Action a suggestion/next-step maps to. Always routed through a confirm-first flow — never auto-executed. */
+export const BUCKET_DREAM_ACTION_TYPES = [
+  "create_task",
+  "create_project",
+  "create_savings_goal",
+  "schedule",
+  "research",
+  "reflect",
+  "generate_brief",
+  "generate_trip_plan",
+  "generate_cover",
+  "upload_image",
+  "reframe",
+] as const;
+export type BucketDreamActionType = (typeof BUCKET_DREAM_ACTION_TYPES)[number];
+
+export type BucketDreamReadiness = {
+  score: number;
+  status: BucketDreamReadinessStatus;
+  explanation: string;
+  missingPieces: string[];
+};
+
+export type BucketDreamBlocker = {
+  title: string;
+  type: BucketDreamBlockerType;
+  explanation: string;
+  suggestedAction: string;
+};
+
+export type BucketDreamSmallestVersion = {
+  title: string;
+  description: string;
+  estimatedCost?: number | null;
+  timeRequired?: string | null;
+};
+
+export type BucketDreamNextStep = {
+  title: string;
+  description: string;
+  actionType?: BucketDreamActionType | null;
+};
+
+export type BucketDreamConnections = {
+  projects: string[];
+  tasks: string[];
+  goals: string[];
+  relationships: string[];
+  assets: string[];
+  notes: string[];
+};
+
+export type BucketDreamSuggestedAction = {
+  label: string;
+  description?: string | null;
+  actionType: BucketDreamActionType;
+};
+
+/**
+ * Cached output of `POST /api/bucket-list/analyze-dream`. Persisted in
+ * `bucket_dream_ai_reports`. Suggestions are previews — never auto-executed.
+ */
+export type BucketDreamIntelligenceReport = {
+  bucketItemId: string;
+
+  whyThisMattersDeeply: string;
+  identityChapter: string;
+  emotionalMeaning: string;
+  whyNow?: string | null;
+
+  dreamReadiness: BucketDreamReadiness;
+  blockers: BucketDreamBlocker[];
+  smallestVersion: BucketDreamSmallestVersion;
+  nextBestStep: BucketDreamNextStep;
+  connections: BucketDreamConnections;
+  suggestedActions: BucketDreamSuggestedAction[];
+
+  generatedAt: string;
+  modelUsed?: string | null;
+};
+
+/** Row in `bucket_dream_ai_reports`. */
+export type BucketDreamAiReportRow = {
+  id: string;
+  user_id: string;
+  bucket_item_id: string;
+  report_type: BucketDreamReportType;
+  report_json: BucketDreamIntelligenceReport;
+  model_used: string | null;
+  generated_at: string;
+  updated_at: string;
+};
+
+// ─── Dream Activation Engine (Phase 4) ──────────────────────────────────────────
+
+export const BUCKET_ACTIVATION_MODES = [
+  "gentle",
+  "practical",
+  "ambitious",
+  "minimal",
+] as const;
+export type BucketActivationMode = (typeof BUCKET_ACTIVATION_MODES)[number];
+
+export type BucketActivationProject = {
+  name: string;
+  description: string;
+  status?: string | null;
+};
+
+export type BucketActivationTask = {
+  title: string;
+  description?: string | null;
+  dueDate?: string | null;
+  priority?: string | null;
+};
+
+export type BucketActivationSavingsGoal = {
+  name: string;
+  targetAmount: number;
+  currency: string;
+  targetDate?: string | null;
+};
+
+export type BucketActivationCalendarItem = {
+  title: string;
+  date?: string | null;
+  notes?: string | null;
+};
+
+export type BucketActivationNote = {
+  title: string;
+  content: string;
+};
+
+export type BucketActivationKnowledgeResource = {
+  title: string;
+  url?: string | null;
+  notes?: string | null;
+};
+
+/** Structured plan produced by `POST /api/bucket-list/activate-dream`. Suggestions only — nothing is written until the user confirms. */
+export type BucketDreamActivationPlan = {
+  activationSummary: string;
+  suggestedProject?: BucketActivationProject | null;
+  suggestedTasks: BucketActivationTask[];
+  suggestedSavingsGoal?: BucketActivationSavingsGoal | null;
+  suggestedCalendarPlaceholders: BucketActivationCalendarItem[];
+  suggestedNotes: BucketActivationNote[];
+  suggestedKnowledgeResources: BucketActivationKnowledgeResource[];
+  warnings: string[];
 };

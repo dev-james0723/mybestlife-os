@@ -11,6 +11,7 @@ function cacheKey(item: BucketItem): string {
   return [
     item.id,
     item.cover_image_url ?? "",
+    item.cover_image_is_ai ? "ai" : "",
     item.title,
     item.type,
     item.destination_name ?? "",
@@ -46,7 +47,9 @@ function fromStoredUrl(item: BucketItem): BucketDreamImage | null {
   return {
     url,
     alt: altFromTitle(item.title),
-    sourceType: "api",
+    // A stored cover may be an AI-generated visual — surface that so cards/hero
+    // can render the mandatory "AI-generated visual" badge.
+    sourceType: item.cover_image_is_ai ? "generated" : "api",
   };
 }
 

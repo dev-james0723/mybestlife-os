@@ -39,6 +39,11 @@ type BucketListStore = {
 
   addSheetPreset: Partial<{ type: BucketType; title: string }> | null;
 
+  // AI dream capture wizard
+  aiWizardOpen: boolean;
+  openAiWizard: () => void;
+  closeAiWizard: () => void;
+
   activateModalBucketId: string | null;
   openActivateModal: (bucketId: string) => void;
   closeActivateModal: () => void;
@@ -101,6 +106,10 @@ export const useBucketListStore = create<BucketListStore>((set, get) => ({
     set({ addSheetOpen: true, addSheetPreset: preset ?? null }),
   closeAddSheet: () =>
     set({ addSheetOpen: false, addSheetPreset: null }),
+
+  aiWizardOpen: false,
+  openAiWizard: () => set({ aiWizardOpen: true }),
+  closeAiWizard: () => set({ aiWizardOpen: false }),
 
   activateModalBucketId: null,
   openActivateModal: (bucketId) => set({ activateModalBucketId: bucketId }),

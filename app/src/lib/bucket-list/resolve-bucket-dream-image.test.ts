@@ -25,6 +25,7 @@ function baseItem(overrides: Partial<BucketItem> = {}): BucketItem {
     target_month: null,
     category_tags: [],
     cover_image_url: null,
+    cover_image_is_ai: false,
     quote_inspiration: null,
     inspiration_links: [],
     notes: null,
@@ -80,6 +81,17 @@ describe("resolveBucketDreamImage", () => {
     const image = resolveBucketDreamImage(item);
     expect(image.url).toBe("https://example.com/custom.jpg");
     expect(image.sourceType).toBe("api");
+  });
+
+  it("labels an AI-generated cover with sourceType 'generated'", () => {
+    const item = baseItem({
+      title: "See the Northern Lights in Iceland",
+      cover_image_url: "https://example.com/generated.png",
+      cover_image_is_ai: true,
+    });
+    const image = resolveBucketDreamImage(item);
+    expect(image.url).toBe("https://example.com/generated.png");
+    expect(image.sourceType).toBe("generated");
   });
 
   it("matches Iceland / aurora for Northern Lights seed title", () => {
