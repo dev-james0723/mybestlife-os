@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { BucketWorkspaceTabs } from "@/components/bucket-list/bucket-workspace-tabs";
 import { AddDreamSheet } from "@/components/bucket-list/add-dream-sheet";
+import { AIDreamCaptureWizard } from "@/components/bucket-list/ai/ai-dream-capture-wizard";
 import { DetailHubDialog } from "@/components/bucket-list/detail-hub-dialog";
 import { ActivateDreamModal } from "@/components/bucket-list/activate-dream-modal";
 
@@ -16,6 +17,7 @@ export default function BucketListPage() {
         <BucketWorkspaceTabs />
       </Suspense>
       <AddDreamSheet />
+      <AIDreamCaptureWizard />
       <DetailHubDialog />
       <ActivateDreamModal />
     </>

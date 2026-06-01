@@ -172,6 +172,50 @@ export type BucketListUiCopy = {
   reflectGenerateSummary: string;
   reflectSave: string;
 
+  // AI dream capture wizard
+  aiNewDream: string;
+  aiNewDreamAria: string;
+  addManually: string;
+  aiWizardTitle: string;
+  aiWizardDescription: string;
+  aiDisclaimer: string;
+  aiInputTextLabel: string;
+  aiInputTextPlaceholder: string;
+  aiInputImageLabel: string;
+  aiInputImageHint: string;
+  aiInputImageChange: string;
+  aiInputImageRemove: string;
+  aiExamplesLabel: string;
+  aiExtractButton: string;
+  aiExtractingTitle: string;
+  aiExtractingSubtitle: string;
+  aiReviewTitle: string;
+  aiReviewSubtitle: string;
+  aiConfidenceHigh: string;
+  aiConfidenceMedium: string;
+  aiConfidenceLow: string;
+  aiConfidenceMissing: string;
+  aiAiDrafted: string;
+  aiClarifyTitle: string;
+  aiQuestionWhen: string;
+  aiQuestionBudget: string;
+  aiQuestionWhy: string;
+  aiQuestionCost: string;
+  aiQuestionDestination: string;
+  aiSaveDream: string;
+  aiStartOver: string;
+  aiSavedTitle: string;
+  aiSavedSubtitle: string;
+  aiSuggestionsLabel: string;
+  aiNextOpenDetails: string;
+  aiNextActivate: string;
+  aiNextViewMap: string;
+  aiNextAddAnother: string;
+  aiNextDone: string;
+  aiImageTooLarge: string;
+  aiInvalidImage: string;
+  aiNeedsInput: string;
+
   // Misc
   aiQuotaExhausted: string;
   aiGenericError: string;
@@ -343,6 +387,52 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   reflectGenerateSummary: "Generate summary",
   reflectSave: "Save memory",
 
+  aiNewDream: "Add Dream with AI",
+  aiNewDreamAria: "Capture a new dream with AI",
+  addManually: "Add manually",
+  aiWizardTitle: "Capture a dream with AI",
+  aiWizardDescription:
+    "Tell me a dream, paste a messy idea, or upload inspiration — I'll draft the details for you to review.",
+  aiDisclaimer: "AI drafts are suggestions. Review and edit before saving.",
+  aiInputTextLabel: "Describe your dream",
+  aiInputTextPlaceholder:
+    "e.g. I want to see the Northern Lights in Iceland",
+  aiInputImageLabel: "Or upload inspiration",
+  aiInputImageHint: "A photo, screenshot, or travel/article image (max 8MB)",
+  aiInputImageChange: "Change image",
+  aiInputImageRemove: "Remove",
+  aiExamplesLabel: "Need a spark? Try one:",
+  aiExtractButton: "Draft with AI",
+  aiExtractingTitle: "Reading your dream…",
+  aiExtractingSubtitle: "Extracting the details. This takes a few seconds.",
+  aiReviewTitle: "Review your dream",
+  aiReviewSubtitle:
+    "Edit anything before saving. Nothing is saved until you confirm.",
+  aiConfidenceHigh: "High confidence",
+  aiConfidenceMedium: "Medium confidence",
+  aiConfidenceLow: "Low confidence",
+  aiConfidenceMissing: "Needs review",
+  aiAiDrafted: "AI drafted",
+  aiClarifyTitle: "A few quick questions",
+  aiQuestionWhen: "When do you imagine this happening?",
+  aiQuestionBudget: "Is this a budget, mid-range, premium, or luxury version?",
+  aiQuestionWhy: "What would make the smallest version feel real?",
+  aiQuestionCost: "Roughly how much might this cost?",
+  aiQuestionDestination: "Where would this take place?",
+  aiSaveDream: "Save dream",
+  aiStartOver: "Start over",
+  aiSavedTitle: "Dream saved",
+  aiSavedSubtitle: "What would you like to do next?",
+  aiSuggestionsLabel: "AI suggestions",
+  aiNextOpenDetails: "Open dream details",
+  aiNextActivate: "Activate into projects & tasks",
+  aiNextViewMap: "View on travel map",
+  aiNextAddAnother: "Capture another dream",
+  aiNextDone: "Done",
+  aiImageTooLarge: "That image is too large (max 8MB).",
+  aiInvalidImage: "Please choose an image file.",
+  aiNeedsInput: "Add a dream or upload an image first.",
+
   aiQuotaExhausted:
     "Daily AI cap reached. Come back tomorrow or link a paid key.",
   aiGenericError: "AI request failed — try again in a moment.",
@@ -413,6 +503,49 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   flightBookNow: "立即預訂",
   flightPriceDropped: "價格下跌",
   reflectSave: "儲存記憶",
+  aiNewDream: "用 AI 新增夢想",
+  aiNewDreamAria: "用 AI 捕捉新的夢想",
+  addManually: "手動新增",
+  aiWizardTitle: "用 AI 捕捉夢想",
+  aiWizardDescription:
+    "說出一個夢想、貼上零散的想法，或上傳靈感圖片——我會替你草擬細節讓你檢視。",
+  aiDisclaimer: "AI 草稿只是建議，儲存前請檢視與修改。",
+  aiInputTextLabel: "描述你的夢想",
+  aiInputTextPlaceholder: "例如：我想在冰島看極光",
+  aiInputImageLabel: "或上傳靈感圖片",
+  aiInputImageHint: "照片、截圖或旅遊／文章圖片（最大 8MB）",
+  aiInputImageChange: "更換圖片",
+  aiInputImageRemove: "移除",
+  aiExamplesLabel: "需要靈感？試試看：",
+  aiExtractButton: "用 AI 草擬",
+  aiExtractingTitle: "正在解讀你的夢想…",
+  aiExtractingSubtitle: "正在擷取細節，需要幾秒鐘。",
+  aiReviewTitle: "檢視你的夢想",
+  aiReviewSubtitle: "儲存前可以修改任何欄位。在你確認前不會儲存。",
+  aiConfidenceHigh: "高信心",
+  aiConfidenceMedium: "中等信心",
+  aiConfidenceLow: "低信心",
+  aiConfidenceMissing: "需要檢視",
+  aiAiDrafted: "AI 草擬",
+  aiClarifyTitle: "幾個小問題",
+  aiQuestionWhen: "你想像這會在什麼時候發生？",
+  aiQuestionBudget: "這是經濟、中階、高階還是豪華版本？",
+  aiQuestionWhy: "怎樣的最小版本會讓它感覺真實？",
+  aiQuestionCost: "大約需要多少花費？",
+  aiQuestionDestination: "這會在哪裡發生？",
+  aiSaveDream: "儲存夢想",
+  aiStartOver: "重新開始",
+  aiSavedTitle: "夢想已儲存",
+  aiSavedSubtitle: "接下來想做什麼？",
+  aiSuggestionsLabel: "AI 建議",
+  aiNextOpenDetails: "開啟夢想詳情",
+  aiNextActivate: "啟動為專案與任務",
+  aiNextViewMap: "在旅行地圖上檢視",
+  aiNextAddAnother: "再捕捉一個夢想",
+  aiNextDone: "完成",
+  aiImageTooLarge: "圖片太大（最大 8MB）。",
+  aiInvalidImage: "請選擇圖片檔案。",
+  aiNeedsInput: "請先輸入夢想或上傳圖片。",
   aiQuotaExhausted: "今日 AI 額度已用完，明天再試或接上付費金鑰。",
   aiGenericError: "AI 請求失敗，稍後再試。",
 };

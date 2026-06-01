@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Compass, Plus, Settings2 } from "lucide-react";
+import { Compass, Plus, Settings2, Sparkles } from "lucide-react";
 
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -39,6 +39,7 @@ export function BucketListShell() {
   const viewMode = useBucketListStore((s) => s.viewMode);
   const setSelectedBucketId = useBucketListStore((s) => s.setSelectedBucketId);
   const openAddSheet = useBucketListStore((s) => s.openAddSheet);
+  const openAiWizard = useBucketListStore((s) => s.openAiWizard);
   const openActivateModal = useBucketListStore((s) => s.openActivateModal);
 
   const filtered = useMemo(() => {
@@ -119,12 +120,21 @@ export function BucketListShell() {
             }
           />
           <Button
+            variant="outline"
             size="sm"
             onClick={() => openAddSheet()}
-            className="bg-lime-400 text-black hover:bg-lime-300 focus-visible:ring-lime-300/50"
           >
             <Plus className="h-4 w-4" />
-            {copy.newDream}
+            {copy.addManually}
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => openAiWizard()}
+            aria-label={copy.aiNewDreamAria}
+            className="bg-lime-400 text-black hover:bg-lime-300 focus-visible:ring-lime-300/50"
+          >
+            <Sparkles className="h-4 w-4" />
+            {copy.aiNewDream}
           </Button>
         </div>
       }
@@ -146,8 +156,8 @@ export function BucketListShell() {
                 title={copy.emptyAllTitle}
                 description={copy.emptyAllDescription}
                 action={{
-                  label: copy.emptyAllAction,
-                  onClick: () => openAddSheet(),
+                  label: copy.aiNewDream,
+                  onClick: () => openAiWizard(),
                 }}
               />
             ) : (

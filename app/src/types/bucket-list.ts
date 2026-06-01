@@ -432,3 +432,75 @@ export type BucketHighlights = {
   latestCompletion: BucketItem | null;
   travelDeal: BucketItem | null;
 };
+
+// ─── AI dream capture (autofill) ───────────────────────────────────────────────
+
+/** Per-field confidence the AI attaches to an autofilled dream draft. */
+export const BUCKET_FIELD_CONFIDENCE_LEVELS = [
+  "high",
+  "medium",
+  "low",
+  "missing",
+] as const;
+export type BucketFieldConfidence =
+  (typeof BUCKET_FIELD_CONFIDENCE_LEVELS)[number];
+
+/** Lightweight existing-dream context passed to the autofill route for de-duplication hints. */
+export type BucketItemSummary = {
+  id: string;
+  title: string;
+  type: BucketType;
+  status: BucketStatus;
+};
+
+export type BucketDreamAutofillTravel = {
+  destination_name?: string | null;
+  destination_country?: string | null;
+  destination_city?: string | null;
+  destination_airport?: string | null;
+  origin_airport?: string | null;
+  best_season?: string | null;
+  travel_budget_level?: BucketTravelBudgetLevel | null;
+  travel_style?: BucketTravelStyle | null;
+  trip_length_days?: number | null;
+  flight_watch_enabled?: boolean;
+};
+
+/**
+ * Structured dream draft produced by `POST /api/bucket-list/autofill`.
+ *
+ * This is an *editable suggestion* — never persisted automatically. The user
+ * reviews and confirms before a {@link CreateBucketItemInput} is created.
+ */
+export type BucketDreamAutofillResult = {
+  title: string;
+  description?: string | null;
+  why_this_matters?: string | null;
+
+  type: BucketType;
+  status: BucketStatus;
+  priority: BucketPriority;
+  difficulty: BucketDifficulty;
+  time_horizon?: BucketTimeHorizon | null;
+
+  estimated_cost?: number | null;
+  cost_currency?: string;
+  cost_band?: BucketCostBand | null;
+
+  target_date?: string | null;
+  target_month?: string | null;
+
+  category_tags: string[];
+  quote_inspiration?: string | null;
+  notes?: string | null;
+
+  travel?: BucketDreamAutofillTravel | null;
+
+  /** 0–1 overall confidence in the extraction. */
+  confidence: number;
+  field_confidence: Record<string, BucketFieldConfidence>;
+  missing_fields: string[];
+  /** Up to a few focused questions / next steps the user might want. */
+  suggested_next_actions: string[];
+  warnings: string[];
+};
