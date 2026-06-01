@@ -15,6 +15,7 @@ import {
   Wallet,
   ListChecks,
   BookHeart,
+  Images,
   Loader2,
 } from "lucide-react";
 
@@ -65,6 +66,7 @@ import { FlightWatchPanel } from "./flight-watch-panel";
 import { ReflectionSheet } from "./reflection-sheet";
 import { useBucketDreamImage } from "@/hooks/use-bucket-dream-image";
 import { DreamCoverBackground } from "./dream-cover-background";
+import { DreamInspirationGallery } from "./images/dream-inspiration-gallery";
 
 export function DetailHubDialog() {
   const language = useAppStore((s) => s.language);
@@ -89,6 +91,7 @@ export function DetailHubDialog() {
 
   const [editingWhy, setEditingWhy] = useState(false);
   const [whyDraft, setWhyDraft] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
 
   const open = Boolean(bucketId);
   const dreamImage = useBucketDreamImage(bucket.data ?? undefined);
@@ -130,6 +133,21 @@ export function DetailHubDialog() {
                 type={item.type}
                 variant="hero"
               />
+              {dreamImage?.sourceType === "generated" ? (
+                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-fuchsia-500/90 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                  <Sparkles className="h-3 w-3" />
+                  {copy.visualsAiBadge}
+                </span>
+              ) : null}
+              <Button
+                size="sm"
+                variant="secondary"
+                className="absolute bottom-3 right-3 z-10 h-7 gap-1 bg-black/40 text-white backdrop-blur-sm hover:bg-black/55"
+                onClick={() => setActiveTab("visuals")}
+              >
+                <Images className="h-3.5 w-3.5" />
+                {copy.visualsEditGallery}
+              </Button>
             </div>
             <div className="px-6 pb-4 pt-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -319,10 +337,11 @@ export function DetailHubDialog() {
 
               <Separator />
 
-              {/* Tabs: Overview / Integrations / Travel / Reflect */}
-              <Tabs defaultValue="overview">
+              {/* Tabs: Overview / Visuals / Integrations / Travel / Reflect */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="visuals">{copy.visualsTab}</TabsTrigger>
                   <TabsTrigger value="integrations">Integrations</TabsTrigger>
                   {item.type === "travel" ? (
                     <TabsTrigger value="travel">Travel</TabsTrigger>
@@ -360,6 +379,10 @@ export function DetailHubDialog() {
                       </ul>
                     </section>
                   ) : null}
+                </TabsContent>
+
+                <TabsContent value="visuals" className="pt-4">
+                  <DreamInspirationGallery item={item} copy={copy} />
                 </TabsContent>
 
                 <TabsContent value="integrations" className="space-y-3 pt-4">

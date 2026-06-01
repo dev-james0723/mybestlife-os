@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 import {
+  bucketDreamImagesRepository,
   bucketFlightQuotesRepository,
   bucketIntegrationsRepository,
   bucketItemsRepository,
@@ -16,10 +17,13 @@ import {
   bucketSettingsRepository,
   runBucketListSeed,
   type CreateBucketReflectionInput,
+  type CreateDreamImageInput,
   type RecordFlightQuoteInput,
+  type UploadDreamImageInput,
   type UpsertIntegrationInput,
 } from "@/lib/repositories/bucket-list";
 import type {
+  BucketDreamImageRecord,
   BucketHighlights,
   BucketItem,
   BucketStats,
@@ -37,6 +41,8 @@ export const bucketQueryKeys = {
     ["bucket-list", "integrations", bucketId] as const,
   reflections: (bucketId: string) =>
     ["bucket-list", "reflections", bucketId] as const,
+  images: (bucketId: string) =>
+    ["bucket-list", "images", bucketId] as const,
   flightLatest: (bucketId: string) =>
     ["bucket-list", "flight", bucketId, "latest"] as const,
   flightHistory: (bucketId: string) =>
@@ -206,6 +212,96 @@ export function useCreateBucketReflection() {
       });
       toast.success("Reflection saved");
     },
+  });
+}
+
+// ─── Dream images (gallery) ─────────────────────────────────────────────────────
+
+export function useDreamImages(bucketId: string | null | undefined) {
+  return useQuery({
+    queryKey: bucketId
+      ? bucketQueryKeys.images(bucketId)
+      : bucketQueryKeys.images("__none"),
+    queryFn: () => {
+      if (!bucketId) return [];
+      return bucketDreamImagesRepository.listForBucket(bucketId);
+    },
+    enabled: Boolean(bucketId),
+  });
+}
+
+/** Invalidate the image gallery plus the item/items so a synced cover repaints. */
+function invalidateImagesAndItem(
+  qc: ReturnType<typeof useQueryClient>,
+  bucketItemId: string,
+) {
+  qc.invalidateQueries({ queryKey: bucketQueryKeys.images(bucketItemId) });
+  qc.invalidateQueries({ queryKey: bucketQueryKeys.item(bucketItemId) });
+  qc.invalidateQueries({ queryKey: bucketQueryKeys.items() });
+}
+
+export function useUploadDreamImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UploadDreamImageInput) =>
+      bucketDreamImagesRepository.upload(input),
+    onSuccess: (data) => {
+      invalidateImagesAndItem(qc, data.bucket_item_id);
+      toast.success("Image added");
+    },
+    onError: () => toast.error("Could not upload that image"),
+  });
+}
+
+export function useCreateDreamImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateDreamImageInput) =>
+      bucketDreamImagesRepository.create(input),
+    onSuccess: (data) => invalidateImagesAndItem(qc, data.bucket_item_id),
+    onError: () => toast.error("Could not add that image"),
+  });
+}
+
+export function useUpdateDreamImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      bucketItemId: string;
+      data: Parameters<typeof bucketDreamImagesRepository.update>[1];
+    }) => bucketDreamImagesRepository.update(id, data),
+    onSuccess: (_data, variables) =>
+      invalidateImagesAndItem(qc, variables.bucketItemId),
+  });
+}
+
+export function useDeleteDreamImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (image: BucketDreamImageRecord) =>
+      bucketDreamImagesRepository.remove(image),
+    onSuccess: (_data, image) => {
+      invalidateImagesAndItem(qc, image.bucket_item_id);
+      toast.success("Image removed");
+    },
+    onError: () => toast.error("Could not remove that image"),
+  });
+}
+
+export function useSetPrimaryDreamImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (image: BucketDreamImageRecord) =>
+      bucketDreamImagesRepository.setPrimary(image),
+    onSuccess: (_data, image) => {
+      invalidateImagesAndItem(qc, image.bucket_item_id);
+      toast.success("Cover updated");
+    },
+    onError: () => toast.error("Could not set that cover"),
   });
 }
 

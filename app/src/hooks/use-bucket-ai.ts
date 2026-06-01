@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { bucketQueryKeys } from "@/hooks/use-bucket-list";
 import { useAppStore } from "@/stores/app-store";
 import type {
+  BucketCoverImageStyle,
   BucketDestinationBrief,
+  BucketInspirationAnalysis,
   BucketItem,
   BucketReframeResponse,
   BucketTripPlan,
+  BucketType,
 } from "@/types/bucket-list";
 
 type AiErrorPayload = {
@@ -156,6 +159,84 @@ export function useReframeDream() {
     },
     onError: () => {
       toast.error("Could not reframe dream.");
+    },
+  });
+}
+
+// ─── Cover image generation ─────────────────────────────────────────────────────
+
+export function useGenerateCoverImage() {
+  const qc = useQueryClient();
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      title: string;
+      type: BucketType;
+      destination?: string | null;
+      style?: BucketCoverImageStyle;
+      setAsCover?: boolean;
+    }): Promise<{ imageUrl: string; prompt: string; modelUsed: string }> => {
+      return callBucketAi<{ imageUrl: string; prompt: string; modelUsed: string }>(
+        "/api/bucket-list/generate-cover-image",
+        {
+          language,
+          bucketItemId: input.bucketItemId,
+          title: input.title,
+          type: input.type,
+          destination: input.destination ?? undefined,
+          style: input.style,
+          setAsCover: input.setAsCover ?? true,
+        },
+      );
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.images(variables.bucketItemId) });
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.item(variables.bucketItemId) });
+      qc.invalidateQueries({ queryKey: bucketQueryKeys.items() });
+      toast.success("AI dream visual generated");
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else if (msg === "image_generation_unavailable") {
+        toast.error("Image generation isn't configured on the server.");
+      } else {
+        toast.error("Could not generate a visual — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Inspiration image analysis ─────────────────────────────────────────────────
+
+export function useAnalyzeInspiration() {
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      imageUrl: string;
+      bucketItemId?: string;
+      userNote?: string;
+    }): Promise<BucketInspirationAnalysis> => {
+      const json = await callBucketAi<{ analysis: BucketInspirationAnalysis }>(
+        "/api/bucket-list/analyze-inspiration",
+        {
+          language,
+          imageUrl: input.imageUrl,
+          bucketItemId: input.bucketItemId,
+          userNote: input.userNote,
+        },
+      );
+      return json.analysis;
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not analyze that image — please retry.");
+      }
     },
   });
 }

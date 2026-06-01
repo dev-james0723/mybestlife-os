@@ -216,6 +216,45 @@ export type BucketListUiCopy = {
   aiInvalidImage: string;
   aiNeedsInput: string;
 
+  // Dream visuals / images (Phase 2)
+  visualsTab: string;
+  visualsAiBadge: string;
+  visualsEditGallery: string;
+  visualsCoverHeading: string;
+  visualsGalleryHeading: string;
+  visualsGalleryEmpty: string;
+  visualsEmptyTitle: string;
+  visualsEmptyDescription: string;
+  visualsGenerate: string;
+  visualsGenerating: string;
+  visualsUpload: string;
+  visualsUploadCover: string;
+  visualsUploading: string;
+  visualsUsingCatalog: string;
+  visualsRevertCatalog: string;
+  visualsStyleLabel: string;
+  styleRealisticTravel: string;
+  styleCinematic: string;
+  styleDreamy: string;
+  styleMinimalEditorial: string;
+  styleLuxuryMagazine: string;
+  visualsSetCover: string;
+  visualsIsCover: string;
+  visualsRemove: string;
+  visualsAddCaption: string;
+  visualsCaptionPlaceholder: string;
+  visualsCaptionSave: string;
+  visualsAnalyze: string;
+  visualsImageTooLarge: string;
+  visualsAnalysisTitle: string;
+  visualsAnalysisCaption: string;
+  visualsAnalysisHints: string;
+  visualsAnalysisApplyCaption: string;
+  visualsAnalysisSuggestedUpdates: string;
+  visualsAnalysisApplyUpdates: string;
+  visualsAnalysisUnverified: string;
+  visualsAnalysisClose: string;
+
   // Misc
   aiQuotaExhausted: string;
   aiGenericError: string;
@@ -433,6 +472,45 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   aiInvalidImage: "Please choose an image file.",
   aiNeedsInput: "Add a dream or upload an image first.",
 
+  visualsTab: "Visuals",
+  visualsAiBadge: "AI-generated visual",
+  visualsEditGallery: "Cover & gallery",
+  visualsCoverHeading: "Cover image",
+  visualsGalleryHeading: "Inspiration gallery",
+  visualsGalleryEmpty: "No inspiration images yet. Upload a few to make this dream vivid.",
+  visualsEmptyTitle: "No visual yet",
+  visualsEmptyDescription:
+    "Add a realistic cover so this dream feels real on your board.",
+  visualsGenerate: "Generate a visual",
+  visualsGenerating: "Generating…",
+  visualsUpload: "Upload image",
+  visualsUploadCover: "Upload cover",
+  visualsUploading: "Uploading…",
+  visualsUsingCatalog: "Using auto catalog image",
+  visualsRevertCatalog: "Revert to auto image",
+  visualsStyleLabel: "Style",
+  styleRealisticTravel: "Realistic travel",
+  styleCinematic: "Cinematic",
+  styleDreamy: "Dreamy",
+  styleMinimalEditorial: "Minimal editorial",
+  styleLuxuryMagazine: "Luxury magazine",
+  visualsSetCover: "Set as cover",
+  visualsIsCover: "Cover",
+  visualsRemove: "Remove",
+  visualsAddCaption: "Add caption",
+  visualsCaptionPlaceholder: "Add a caption…",
+  visualsCaptionSave: "Save caption",
+  visualsAnalyze: "Analyze with AI",
+  visualsImageTooLarge: "That image is too large (max 10MB).",
+  visualsAnalysisTitle: "AI image analysis",
+  visualsAnalysisCaption: "Suggested caption",
+  visualsAnalysisHints: "What the AI sees",
+  visualsAnalysisApplyCaption: "Use this caption",
+  visualsAnalysisSuggestedUpdates: "Suggested dream updates",
+  visualsAnalysisApplyUpdates: "Apply to dream",
+  visualsAnalysisUnverified: "AI interpretation — review before applying.",
+  visualsAnalysisClose: "Close",
+
   aiQuotaExhausted:
     "Daily AI cap reached. Come back tomorrow or link a paid key.",
   aiGenericError: "AI request failed — try again in a moment.",
@@ -546,6 +624,43 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   aiImageTooLarge: "圖片太大（最大 8MB）。",
   aiInvalidImage: "請選擇圖片檔案。",
   aiNeedsInput: "請先輸入夢想或上傳圖片。",
+  visualsTab: "視覺",
+  visualsAiBadge: "AI 生成圖像",
+  visualsEditGallery: "封面與圖庫",
+  visualsCoverHeading: "封面圖片",
+  visualsGalleryHeading: "靈感圖庫",
+  visualsGalleryEmpty: "還沒有靈感圖片。上傳幾張讓這個夢想更鮮明。",
+  visualsEmptyTitle: "尚無視覺",
+  visualsEmptyDescription: "加上真實的封面，讓這個夢想在你的清單上更真實。",
+  visualsGenerate: "生成視覺",
+  visualsGenerating: "生成中…",
+  visualsUpload: "上傳圖片",
+  visualsUploadCover: "上傳封面",
+  visualsUploading: "上傳中…",
+  visualsUsingCatalog: "使用自動圖庫圖片",
+  visualsRevertCatalog: "還原為自動圖片",
+  visualsStyleLabel: "風格",
+  styleRealisticTravel: "寫實旅行",
+  styleCinematic: "電影感",
+  styleDreamy: "夢幻",
+  styleMinimalEditorial: "極簡編輯",
+  styleLuxuryMagazine: "奢華雜誌",
+  visualsSetCover: "設為封面",
+  visualsIsCover: "封面",
+  visualsRemove: "移除",
+  visualsAddCaption: "加入說明",
+  visualsCaptionPlaceholder: "加入說明…",
+  visualsCaptionSave: "儲存說明",
+  visualsAnalyze: "用 AI 分析",
+  visualsImageTooLarge: "圖片太大（最大 10MB）。",
+  visualsAnalysisTitle: "AI 圖像分析",
+  visualsAnalysisCaption: "建議說明",
+  visualsAnalysisHints: "AI 看到的內容",
+  visualsAnalysisApplyCaption: "使用此說明",
+  visualsAnalysisSuggestedUpdates: "建議的夢想更新",
+  visualsAnalysisApplyUpdates: "套用到夢想",
+  visualsAnalysisUnverified: "AI 詮釋——套用前請檢視。",
+  visualsAnalysisClose: "關閉",
   aiQuotaExhausted: "今日 AI 額度已用完，明天再試或接上付費金鑰。",
   aiGenericError: "AI 請求失敗，稍後再試。",
 };

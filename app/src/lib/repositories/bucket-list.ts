@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/client";
 import type {
+  BucketDreamImageRecord,
+  BucketDreamImageSource,
+  BucketDreamImageType,
   BucketFlightQuote,
   BucketFlightProvider,
   BucketIntegrationKind,
@@ -10,6 +13,8 @@ import type {
   CreateBucketItemInput,
   UpdateBucketItemInput,
 } from "@/types/bucket-list";
+
+export const BUCKET_DREAM_IMAGE_BUCKET = "bucket-dream-images";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -378,5 +383,188 @@ export const bucketSettingsRepository = {
       .eq("user_id", userId)
       .eq("is_seed", true);
     return bucketSettingsRepository.update({ seeds_cleared: true });
+  },
+};
+
+// ─── Dream images (gallery) ─────────────────────────────────────────────────────
+
+export type CreateDreamImageInput = {
+  bucket_item_id: string;
+  image_url: string;
+  image_type?: BucketDreamImageType;
+  source_type?: BucketDreamImageSource;
+  caption?: string | null;
+  ai_caption?: string | null;
+  source_url?: string | null;
+  prompt?: string | null;
+  model_used?: string | null;
+  is_primary?: boolean;
+};
+
+export type UploadDreamImageInput = {
+  bucket_item_id: string;
+  file: File;
+  image_type?: BucketDreamImageType;
+  caption?: string | null;
+};
+
+/** True when an image represents an AI-generated visual (drives the cover badge). */
+function isGeneratedImage(image: {
+  source_type: BucketDreamImageSource;
+  image_type: BucketDreamImageType;
+}): boolean {
+  return image.source_type === "generated" || image.image_type === "generated_visual";
+}
+
+/** Best-effort extraction of the storage object path from a public URL in our bucket. */
+function dreamImageStoragePath(url: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET_DREAM_IMAGE_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.slice(idx + marker.length);
+}
+
+export const bucketDreamImagesRepository = {
+  async listForBucket(bucketItemId: string): Promise<BucketDreamImageRecord[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("bucket_dream_images")
+      .select("*")
+      .eq("bucket_item_id", bucketItemId)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as BucketDreamImageRecord[];
+  },
+
+  async create(input: CreateDreamImageInput): Promise<BucketDreamImageRecord> {
+    const userId = await requireUserId();
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("bucket_dream_images")
+      .insert({
+        user_id: userId,
+        bucket_item_id: input.bucket_item_id,
+        image_url: input.image_url,
+        image_type: input.image_type ?? "inspiration",
+        source_type: input.source_type ?? "uploaded",
+        caption: input.caption ?? null,
+        ai_caption: input.ai_caption ?? null,
+        source_url: input.source_url ?? null,
+        prompt: input.prompt ?? null,
+        model_used: input.model_used ?? null,
+        is_primary: input.is_primary ?? false,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as BucketDreamImageRecord;
+  },
+
+  /** Client-side upload to the public dream-images bucket, then record the row. */
+  async upload(input: UploadDreamImageInput): Promise<BucketDreamImageRecord> {
+    const userId = await requireUserId();
+    const supabase = createClient();
+
+    const ext =
+      input.file.type === "image/png"
+        ? "png"
+        : input.file.type === "image/webp"
+          ? "webp"
+          : input.file.type === "image/gif"
+            ? "gif"
+            : "jpg";
+    const storagePath = `${userId}/${input.bucket_item_id}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET_DREAM_IMAGE_BUCKET)
+      .upload(storagePath, input.file, {
+        contentType: input.file.type || "image/jpeg",
+        upsert: false,
+        cacheControl: "31536000, immutable",
+      });
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_DREAM_IMAGE_BUCKET)
+      .getPublicUrl(storagePath);
+
+    return bucketDreamImagesRepository.create({
+      bucket_item_id: input.bucket_item_id,
+      image_url: urlData.publicUrl,
+      image_type: input.image_type ?? "inspiration",
+      source_type: "uploaded",
+      caption: input.caption ?? null,
+    });
+  },
+
+  async update(
+    id: string,
+    input: Partial<Pick<BucketDreamImageRecord, "caption" | "ai_caption" | "image_type">>,
+  ): Promise<BucketDreamImageRecord> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("bucket_dream_images")
+      .update(input)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as BucketDreamImageRecord;
+  },
+
+  async remove(image: BucketDreamImageRecord): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("bucket_dream_images")
+      .delete()
+      .eq("id", image.id);
+    if (error) throw error;
+
+    // Best-effort: remove the underlying storage object if we own it.
+    const path = dreamImageStoragePath(image.image_url);
+    if (path) {
+      await supabase.storage.from(BUCKET_DREAM_IMAGE_BUCKET).remove([path]);
+    }
+
+    // If the removed image was the cover, fall back to the catalog resolver.
+    if (image.is_primary) {
+      await supabase
+        .from("bucket_items")
+        .update({ cover_image_url: null, cover_image_is_ai: false })
+        .eq("id", image.bucket_item_id);
+    }
+  },
+
+  /**
+   * Set an image as the dream's primary cover. Unsets any other primary,
+   * marks this row primary, and syncs `bucket_items.cover_image_url` +
+   * `cover_image_is_ai` so the card and detail hero share one source.
+   */
+  async setPrimary(image: BucketDreamImageRecord): Promise<void> {
+    const supabase = createClient();
+
+    // Clear existing primary first (one-primary unique index).
+    const { error: clearError } = await supabase
+      .from("bucket_dream_images")
+      .update({ is_primary: false })
+      .eq("bucket_item_id", image.bucket_item_id)
+      .eq("is_primary", true);
+    if (clearError) throw clearError;
+
+    const { error: setError } = await supabase
+      .from("bucket_dream_images")
+      .update({ is_primary: true })
+      .eq("id", image.id);
+    if (setError) throw setError;
+
+    const { error: syncError } = await supabase
+      .from("bucket_items")
+      .update({
+        cover_image_url: image.image_url,
+        cover_image_is_ai: isGeneratedImage(image),
+      })
+      .eq("id", image.bucket_item_id);
+    if (syncError) throw syncError;
   },
 };

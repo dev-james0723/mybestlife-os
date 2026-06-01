@@ -218,6 +218,8 @@ export type BucketItem = {
   category_tags: string[];
   /** User-provided or API-persisted cover. UI resolves full {@link BucketDreamImage} via `resolveBucketDreamImage`. */
   cover_image_url: string | null;
+  /** True when the current cover is an AI-generated visual (drives the "AI-generated visual" badge). */
+  cover_image_is_ai: boolean;
   quote_inspiration: string | null;
   inspiration_links: BucketInspirationLink[];
   notes: string | null;
@@ -378,6 +380,7 @@ export type UpdateBucketItemInput = Partial<CreateBucketItemInput> & {
   archived_at?: string | null;
   completed_at?: string | null;
   is_featured?: boolean;
+  cover_image_is_ai?: boolean;
   latest_live_price?: number | null;
   latest_live_price_currency?: string | null;
   last_price_check_time?: string | null;
@@ -502,5 +505,79 @@ export type BucketDreamAutofillResult = {
   missing_fields: string[];
   /** Up to a few focused questions / next steps the user might want. */
   suggested_next_actions: string[];
+  warnings: string[];
+};
+
+// ─── Dream images & inspiration (Phase 2) ───────────────────────────────────────
+
+export const BUCKET_DREAM_IMAGE_TYPES = [
+  "cover",
+  "inspiration",
+  "generated_visual",
+  "screenshot",
+  "travel_photo",
+  "memory_photo",
+  "article_image",
+  "other",
+] as const;
+export type BucketDreamImageType = (typeof BUCKET_DREAM_IMAGE_TYPES)[number];
+
+export const BUCKET_DREAM_IMAGE_SOURCE_TYPES = [
+  "uploaded",
+  "generated",
+  "static_catalog",
+  "external_url",
+  "api",
+] as const;
+export type BucketDreamImageSource =
+  (typeof BUCKET_DREAM_IMAGE_SOURCE_TYPES)[number];
+
+/** A row in the `bucket_dream_images` gallery (distinct from the resolved {@link BucketDreamImage}). */
+export type BucketDreamImageRecord = {
+  id: string;
+  user_id: string;
+  bucket_item_id: string;
+  image_url: string;
+  image_type: BucketDreamImageType;
+  caption: string | null;
+  ai_caption: string | null;
+  source_type: BucketDreamImageSource;
+  source_url: string | null;
+  prompt: string | null;
+  model_used: string | null;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Styles offered by the AI cover generator. */
+export const BUCKET_COVER_IMAGE_STYLES = [
+  "realistic_travel",
+  "cinematic",
+  "dreamy",
+  "minimal_editorial",
+  "luxury_magazine",
+] as const;
+export type BucketCoverImageStyle = (typeof BUCKET_COVER_IMAGE_STYLES)[number];
+
+/** Hints the inspiration analyzer extracts from an image. */
+export type BucketInspirationHints = {
+  destination?: string | null;
+  activity?: string | null;
+  mood?: string | null;
+  season?: string | null;
+  style?: string | null;
+  tags?: string[];
+};
+
+/**
+ * Result of `POST /api/bucket-list/analyze-inspiration`. Suggestions only —
+ * the user reviews before any bucket update is applied.
+ */
+export type BucketInspirationAnalysis = {
+  suggestedCaption: string;
+  extractedDreamHints: BucketInspirationHints;
+  suggestedBucketUpdates?: Partial<CreateBucketItemInput> | null;
+  confidence: number;
   warnings: string[];
 };

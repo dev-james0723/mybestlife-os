@@ -14,6 +14,7 @@ export function useBucketDreamImage(item: BucketItem | null | undefined): Bucket
   }, [
     item?.id,
     item?.cover_image_url,
+    item?.cover_image_is_ai,
     item?.title,
     item?.type,
     item?.description,
