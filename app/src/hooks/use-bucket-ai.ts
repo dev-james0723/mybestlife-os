@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { bucketQueryKeys } from "@/hooks/use-bucket-list";
 import { useAppStore } from "@/stores/app-store";
 import type {
+  BucketActivationMode,
   BucketCoverImageStyle,
   BucketDestinationBrief,
+  BucketDreamActivationPlan,
   BucketDreamIntelligenceReport,
   BucketInspirationAnalysis,
   BucketItem,
@@ -271,6 +273,36 @@ export function useAnalyzeDream() {
         toast.error("Daily AI cap reached. Try again tomorrow.");
       } else {
         toast.error("Could not analyze this dream — please retry.");
+      }
+    },
+  });
+}
+
+// ─── Dream activation plan ───────────────────────────────────────────────────────
+
+export function useActivateDreamPlan() {
+  const language = useAppStore((s) => s.language);
+  return useMutation({
+    mutationFn: async (input: {
+      bucketItemId: string;
+      activationMode: BucketActivationMode;
+    }): Promise<BucketDreamActivationPlan> => {
+      const json = await callBucketAi<{ plan: BucketDreamActivationPlan }>(
+        "/api/bucket-list/activate-dream",
+        {
+          language,
+          bucketItemId: input.bucketItemId,
+          activationMode: input.activationMode,
+        },
+      );
+      return json.plan;
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "quota_exceeded") {
+        toast.error("Daily AI cap reached. Try again tomorrow.");
+      } else {
+        toast.error("Could not build an activation plan — please retry.");
       }
     },
   });

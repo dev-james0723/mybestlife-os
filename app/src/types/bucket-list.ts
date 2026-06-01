@@ -709,3 +709,62 @@ export type BucketDreamAiReportRow = {
   generated_at: string;
   updated_at: string;
 };
+
+// ─── Dream Activation Engine (Phase 4) ──────────────────────────────────────────
+
+export const BUCKET_ACTIVATION_MODES = [
+  "gentle",
+  "practical",
+  "ambitious",
+  "minimal",
+] as const;
+export type BucketActivationMode = (typeof BUCKET_ACTIVATION_MODES)[number];
+
+export type BucketActivationProject = {
+  name: string;
+  description: string;
+  status?: string | null;
+};
+
+export type BucketActivationTask = {
+  title: string;
+  description?: string | null;
+  dueDate?: string | null;
+  priority?: string | null;
+};
+
+export type BucketActivationSavingsGoal = {
+  name: string;
+  targetAmount: number;
+  currency: string;
+  targetDate?: string | null;
+};
+
+export type BucketActivationCalendarItem = {
+  title: string;
+  date?: string | null;
+  notes?: string | null;
+};
+
+export type BucketActivationNote = {
+  title: string;
+  content: string;
+};
+
+export type BucketActivationKnowledgeResource = {
+  title: string;
+  url?: string | null;
+  notes?: string | null;
+};
+
+/** Structured plan produced by `POST /api/bucket-list/activate-dream`. Suggestions only — nothing is written until the user confirms. */
+export type BucketDreamActivationPlan = {
+  activationSummary: string;
+  suggestedProject?: BucketActivationProject | null;
+  suggestedTasks: BucketActivationTask[];
+  suggestedSavingsGoal?: BucketActivationSavingsGoal | null;
+  suggestedCalendarPlaceholders: BucketActivationCalendarItem[];
+  suggestedNotes: BucketActivationNote[];
+  suggestedKnowledgeResources: BucketActivationKnowledgeResource[];
+  warnings: string[];
+};

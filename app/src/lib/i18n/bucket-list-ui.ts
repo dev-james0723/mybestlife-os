@@ -302,6 +302,47 @@ export type BucketListUiCopy = {
   connNotes: string;
   suggestedActionsHeading: string;
 
+  // Dream Activation Engine (Phase 4)
+  activateEngineTitle: string;
+  activateEngineDescription: string;
+  activateModeHeading: string;
+  modeGentle: string;
+  modePractical: string;
+  modeAmbitious: string;
+  modeMinimal: string;
+  modeGentleDesc: string;
+  modePracticalDesc: string;
+  modeAmbitiousDesc: string;
+  modeMinimalDesc: string;
+  activateGenerate: string;
+  activateGenerating: string;
+  activateReviewNote: string;
+  activateSelectAll: string;
+  activateSelectNone: string;
+  groupProject: string;
+  groupTasks: string;
+  groupSavings: string;
+  groupCalendar: string;
+  groupNotes: string;
+  groupKnowledge: string;
+  activateAdvanceStatus: (from: string, to: string) => string;
+  activateNoSilentNote: string;
+  activateBack: string;
+  activateCreating: string;
+  activateCreateSelected: string;
+  activateResultTitle: string;
+  activateResultSummary: (count: number) => string;
+  activateResultView: string;
+  checklistHeading: string;
+  checkFirstAction: string;
+  checkResearch: string;
+  checkBudget: string;
+  checkSchedule: string;
+  checkPeople: string;
+  checkSupplies: string;
+  checkBooking: string;
+  checkReflection: string;
+
   // Misc
   aiQuotaExhausted: string;
   aiGenericError: string;
@@ -612,6 +653,48 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   connNotes: "Notes",
   suggestedActionsHeading: "Suggested next moves",
 
+  activateEngineTitle: "Activate This Dream",
+  activateEngineDescription:
+    "Turn this dream into real structures — you review and confirm before anything is created.",
+  activateModeHeading: "How do you want to activate this?",
+  modeGentle: "Gentle",
+  modePractical: "Practical",
+  modeAmbitious: "Ambitious",
+  modeMinimal: "Minimal",
+  modeGentleDesc: "Small steps, low pressure.",
+  modePracticalDesc: "Concrete planning, tasks, logistics.",
+  modeAmbitiousDesc: "A fuller project plan and timeline.",
+  modeMinimalDesc: "One tiny next action only.",
+  activateGenerate: "Build activation plan",
+  activateGenerating: "Building plan…",
+  activateReviewNote: "Pick what to create. Nothing is written until you confirm.",
+  activateSelectAll: "Select all",
+  activateSelectNone: "Select none",
+  groupProject: "Project",
+  groupTasks: "Tasks",
+  groupSavings: "Savings",
+  groupCalendar: "Calendar",
+  groupNotes: "Notes",
+  groupKnowledge: "Resources",
+  activateAdvanceStatus: (from, to) => `Advance status: ${from} → ${to}`,
+  activateNoSilentNote: "Only the items you select will be created.",
+  activateBack: "Back",
+  activateCreating: "Creating…",
+  activateCreateSelected: "Create selected",
+  activateResultTitle: "Dream activated",
+  activateResultSummary: (count) =>
+    count === 1 ? "Created 1 item." : `Created ${count} items.`,
+  activateResultView: "View dream",
+  checklistHeading: "Activation checklist",
+  checkFirstAction: "First action",
+  checkResearch: "Research",
+  checkBudget: "Budget",
+  checkSchedule: "Schedule",
+  checkPeople: "People involved",
+  checkSupplies: "Supplies / resources",
+  checkBooking: "Booking / logistics",
+  checkReflection: "Reflection checkpoint",
+
   aiQuotaExhausted:
     "Daily AI cap reached. Come back tomorrow or link a paid key.",
   aiGenericError: "AI request failed — try again in a moment.",
@@ -809,6 +892,45 @@ const BUCKET_LIST_UI_ZH_TW: Partial<BucketListUiCopy> = {
   connAssets: "資產",
   connNotes: "筆記",
   suggestedActionsHeading: "建議的下一步",
+  activateEngineTitle: "啟動這個夢想",
+  activateEngineDescription: "把夢想變成真實的結構——在建立任何東西前，你都會先檢視並確認。",
+  activateModeHeading: "你想怎麼啟動？",
+  modeGentle: "溫和",
+  modePractical: "務實",
+  modeAmbitious: "進取",
+  modeMinimal: "極簡",
+  modeGentleDesc: "小步驟，低壓力。",
+  modePracticalDesc: "具體規劃、任務、後勤。",
+  modeAmbitiousDesc: "更完整的專案計畫與時間軸。",
+  modeMinimalDesc: "只有一個微小的下一步。",
+  activateGenerate: "建立啟動計畫",
+  activateGenerating: "建立計畫中…",
+  activateReviewNote: "選擇要建立的項目。在你確認前不會寫入任何東西。",
+  activateSelectAll: "全選",
+  activateSelectNone: "全不選",
+  groupProject: "專案",
+  groupTasks: "任務",
+  groupSavings: "儲蓄",
+  groupCalendar: "行事曆",
+  groupNotes: "筆記",
+  groupKnowledge: "資源",
+  activateAdvanceStatus: (from, to) => `推進狀態：${from} → ${to}`,
+  activateNoSilentNote: "只會建立你所選的項目。",
+  activateBack: "返回",
+  activateCreating: "建立中…",
+  activateCreateSelected: "建立所選",
+  activateResultTitle: "夢想已啟動",
+  activateResultSummary: (count) => `已建立 ${count} 個項目。`,
+  activateResultView: "查看夢想",
+  checklistHeading: "啟動檢查清單",
+  checkFirstAction: "第一步行動",
+  checkResearch: "研究",
+  checkBudget: "預算",
+  checkSchedule: "排程",
+  checkPeople: "相關的人",
+  checkSupplies: "用品／資源",
+  checkBooking: "預訂／後勤",
+  checkReflection: "反思檢查點",
   aiQuotaExhausted: "今日 AI 額度已用完，明天再試或接上付費金鑰。",
   aiGenericError: "AI 請求失敗，稍後再試。",
 };
