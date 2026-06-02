@@ -15,13 +15,13 @@ import { useOSBuddyCompanion } from "@/hooks/use-os-buddy-companion";
 import { useOSBuddyContextHints } from "@/hooks/use-os-buddy-context-hints";
 import { useOSBuddyTimeMood } from "@/hooks/use-os-buddy-time-mood";
 import { useUserIdleForOSBuddy } from "@/hooks/use-user-idle-for-os-buddy";
-import { useOSBuddyStore } from "@/stores/os-buddy-store";
+import { useOSBuddyStore, type OSBuddyMiniGame } from "@/stores/os-buddy-store";
 import { OSBuddySprite } from "./OSBuddySprite";
 import { OSBuddyBubble } from "./OSBuddyBubble";
 import { OSBuddyMenu } from "./OSBuddyMenu";
 import { OSBuddyPetPicker } from "./OSBuddyPetPicker";
 import { OSBuddyFocusBadge } from "./OSBuddyFocusBadge";
-import { OSBuddyMiniGameModal } from "./games/OSBuddyMiniGameModal";
+import { OSBuddyGameOverlayHost } from "./games/OSBuddyGameOverlayHost";
 import {
   OSBuddyPlayBallOverlay,
   type OSBuddyPlayBallCatchSignal,
@@ -562,12 +562,6 @@ export function OSBuddyDock() {
   }, []);
 
   useEffect(() => {
-    if (pathnameRef.current === pathname) return;
-    pathnameRef.current = pathname;
-    interruptFreeRoam("route-change");
-  }, [interruptFreeRoam, pathname]);
-
-  useEffect(() => {
     dockPointRef.current = dockPoint;
   }, [dockPoint]);
 
@@ -659,6 +653,21 @@ export function OSBuddyDock() {
       playBallChaseFrameRef.current = null;
     }
   }, []);
+
+  const resetPlayBallRuntime = useCallback(() => {
+    cancelPlayBallChaseFrame();
+    playBallTargetRef.current = null;
+    playBallChaseStateRef.current = null;
+    setPlayBallCatchSignal(null);
+  }, [cancelPlayBallChaseFrame]);
+
+  useEffect(() => {
+    if (pathnameRef.current === pathname) return;
+    pathnameRef.current = pathname;
+    interruptFreeRoam("route-change");
+    resetPlayBallRuntime();
+    closeMiniGame();
+  }, [closeMiniGame, interruptFreeRoam, pathname, resetPlayBallRuntime]);
 
   const getWalkTargetPoint = useCallback(
     (clientX: number, clientY: number, pointerType: string) =>
@@ -923,6 +932,7 @@ export function OSBuddyDock() {
       setDragging(false, null);
       setMenuOpen(false);
       setPetPickerOpen(false);
+      resetPlayBallRuntime();
       closeMiniGame();
       clearBubble();
       setReturningHome(false);
@@ -942,6 +952,7 @@ export function OSBuddyDock() {
       closeMiniGame,
       getWalkTargetPoint,
       locale,
+      resetPlayBallRuntime,
       resolveRestingTarget,
       setDragging,
       setMenuOpen,
@@ -969,6 +980,7 @@ export function OSBuddyDock() {
 
     setMenuOpen(false);
     setPetPickerOpen(false);
+    resetPlayBallRuntime();
     closeMiniGame();
     setWalkModeActive(false);
     setReturningHome(true);
@@ -977,6 +989,7 @@ export function OSBuddyDock() {
     clearLongPressTimer,
     clearSingleClickTimer,
     closeMiniGame,
+    resetPlayBallRuntime,
     resolveRestingTarget,
     setMenuOpen,
     setPetPickerOpen,
@@ -1002,10 +1015,7 @@ export function OSBuddyDock() {
 
   const closePlayBallGame = useCallback(() => {
     if (!isPlayBallOpen) return;
-    cancelPlayBallChaseFrame();
-    playBallTargetRef.current = null;
-    playBallChaseStateRef.current = null;
-    setPlayBallCatchSignal(null);
+    resetPlayBallRuntime();
     closeMiniGame();
     restingTargetRef.current = resolveRestingTarget();
     setWalkModeActive(false);
@@ -1017,10 +1027,10 @@ export function OSBuddyDock() {
       kind: "game",
     });
   }, [
-    cancelPlayBallChaseFrame,
     closeMiniGame,
     isPlayBallOpen,
     locale,
+    resetPlayBallRuntime,
     resolveRestingTarget,
     setMood,
     setReturningHome,
@@ -1067,6 +1077,47 @@ export function OSBuddyDock() {
     showBubble,
     startReturnHome,
   ]);
+
+  const openOverlayMiniGame = useCallback(
+    (game: OSBuddyMiniGame) => {
+      if (game === "play-ball") {
+        togglePlayBallGame();
+        return;
+      }
+
+      clearSingleClickTimer();
+      lastTapRef.current = null;
+      interruptFreeRoam("mini-game-open");
+      setMenuOpen(false);
+      setPetPickerOpen(false);
+      clearBubble();
+      resetPlayBallRuntime();
+      openMiniGame(game);
+      setMood(game === "clean-desk" ? "reading" : game === "focus-tap" ? "focused" : "playful");
+      emitOSBuddyEvent({ type: "game:start", game });
+    },
+    [
+      clearBubble,
+      clearSingleClickTimer,
+      interruptFreeRoam,
+      openMiniGame,
+      resetPlayBallRuntime,
+      setMenuOpen,
+      setMood,
+      setPetPickerOpen,
+      togglePlayBallGame,
+    ],
+  );
+
+  const handleMiniGameComplete = useCallback(
+    (game: OSBuddyMiniGame, score: number) => {
+      void incrementOSBuddyStat("gamesPlayed");
+      void addOSBuddyBadge("first-game");
+      emitOSBuddyEvent({ type: "game:complete", game, score });
+      closeMiniGame();
+    },
+    [closeMiniGame],
+  );
 
   const trackPlayBall = useCallback((event: OSBuddyPlayBallEvent) => {
     if (playBallChaseStateRef.current?.id !== event.id) return;
@@ -1608,6 +1659,7 @@ export function OSBuddyDock() {
       clearBubble();
       setMenuOpen(false);
       setPetPickerOpen(false);
+      resetPlayBallRuntime();
       closeMiniGame();
     }
   };
@@ -1637,15 +1689,7 @@ export function OSBuddyDock() {
             vertical={bubbleVertical}
             onDismiss={clearBubble}
             onCtaClick={(cta) => {
-              if (cta.game === "play-ball") {
-                togglePlayBallGame();
-                return;
-              }
-
-              interruptFreeRoam("mini-game-open");
-              openMiniGame(cta.game);
-              clearBubble();
-              emitOSBuddyEvent({ type: "game:start", game: cta.game });
+              openOverlayMiniGame(cta.game);
             }}
           />
         ) : null}
@@ -1707,14 +1751,7 @@ export function OSBuddyDock() {
           void resetPosition();
         }}
         onOpenGame={(game) => {
-          if (game === "play-ball") {
-            togglePlayBallGame();
-            return;
-          }
-
-          interruptFreeRoam("mini-game-open");
-          openMiniGame(game);
-          emitOSBuddyEvent({ type: "game:start", game });
+          openOverlayMiniGame(game);
         }}
         onHide={() => {
           void setEnabled(false);
@@ -1739,21 +1776,14 @@ export function OSBuddyDock() {
         }}
       />
 
-      <OSBuddyMiniGameModal
-        open={isMiniGameOpen && activeMiniGame !== "play-ball"}
-        onOpenChange={(open) => {
-          if (!open) closeMiniGame();
-        }}
-        game={activeMiniGame}
+      <OSBuddyGameOverlayHost
+        open={isMiniGameOpen}
+        activeGame={activeMiniGame}
         locale={locale}
         petId={petId}
         buddyName={name}
-        onComplete={(game, score) => {
-          void incrementOSBuddyStat("gamesPlayed");
-          void addOSBuddyBadge("first-game");
-          emitOSBuddyEvent({ type: "game:complete", game, score });
-          closeMiniGame();
-        }}
+        onClose={closeMiniGame}
+        onComplete={handleMiniGameComplete}
       />
 
       <OSBuddyPlayBallOverlay

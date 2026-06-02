@@ -10,7 +10,21 @@ export const OS_BUDDY_COMPANION_KINDS = [
 
 export type OSBuddyCompanionKind = (typeof OS_BUDDY_COMPANION_KINDS)[number];
 
-export type OSBuddyMiniGame = "pixel-catch" | "focus-tap" | "clean-desk" | "play-ball";
+export const OS_BUDDY_MINI_GAMES = [
+  "food-catch",
+  "focus-tap",
+  "clean-desk",
+  "play-ball",
+] as const;
+
+export type OSBuddyMiniGame = (typeof OS_BUDDY_MINI_GAMES)[number];
+export type OSBuddyMiniGameInput = OSBuddyMiniGame | "pixel-catch";
+
+export function normalizeOSBuddyMiniGame(value: unknown): OSBuddyMiniGame | null {
+  if (value === "pixel-catch" || value === "food-catch") return "food-catch";
+  if (value === "focus-tap" || value === "clean-desk" || value === "play-ball") return value;
+  return null;
+}
 
 export type OSBuddyCompanionSource = "ai" | "local" | "fallback";
 
@@ -218,12 +232,12 @@ function gameLabel(game: OSBuddyMiniGame, locale: string): string {
     if (game === "play-ball") return "和小夥伴玩球";
     if (game === "clean-desk") return "整理桌面";
     if (game === "focus-tap") return "玩 Focus Tap";
-    return "玩 Pixel Catch";
+    return "玩 Play Food Catch";
   }
   if (game === "play-ball") return "Play Ball";
   if (game === "clean-desk") return "Clean the Desk";
   if (game === "focus-tap") return "Play Focus Tap";
-  return "Play Pixel Catch";
+  return "Play Food Catch";
 }
 
 function formatMinutesUntil(minutes: number | null, locale: string): string {
@@ -330,7 +344,7 @@ function complimentMessage(context: OSBuddyCompactContext, random: number): stri
 
 function gameMessage(context: OSBuddyCompactContext, random: number): OSBuddyCompanionResponse {
   const zh = isZh(context.locale);
-  const game = pickOne(context.games, random) ?? "pixel-catch";
+  const game = pickOne(context.games, random) ?? "food-catch";
   const label = gameLabel(game, context.locale);
   return {
     kind: "game",
@@ -389,15 +403,12 @@ export function normalizeOSBuddyCompanionResponse(
       : fallback.source;
 
   const responseCta = response?.cta;
-  const validGame =
-    responseCta?.game === "pixel-catch" ||
-    responseCta?.game === "focus-tap" ||
-    responseCta?.game === "clean-desk";
+  const normalizedGame = normalizeOSBuddyMiniGame(responseCta?.game);
 
-  const cta = responseCta && validGame
+  const cta = responseCta && normalizedGame
     ? {
         label: compactOSBuddyText(responseCta.label, 40) || fallback.cta?.label || "Play",
-        game: responseCta.game,
+        game: normalizedGame,
       }
     : fallback.cta ?? null;
 

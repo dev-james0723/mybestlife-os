@@ -187,11 +187,11 @@ export function OSBuddyMenu({
           variant="ghost"
           className="w-full justify-start"
           onClick={() => {
-            onOpenGame("pixel-catch");
+            onOpenGame("food-catch");
             onClose();
           }}
         >
-          {zh ? "玩 Pixel Catch" : "Play Pixel Catch"}
+          {zh ? "玩 Play Food Catch" : "Play Food Catch"}
         </Button>
 
         <Button

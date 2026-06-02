@@ -1,9 +1,16 @@
 import { z } from "zod";
 import type { GeminiResponseSchema } from "@/lib/ai/gemini-text";
-import { OS_BUDDY_COMPANION_KINDS } from "./os-buddy-companion";
+import {
+  OS_BUDDY_COMPANION_KINDS,
+  OS_BUDDY_MINI_GAMES,
+  normalizeOSBuddyMiniGame,
+} from "./os-buddy-companion";
 
 const CompanionKindSchema = z.enum(OS_BUDDY_COMPANION_KINDS);
-const MiniGameSchema = z.enum(["pixel-catch", "focus-tap", "clean-desk", "play-ball"]);
+const MiniGameSchema = z.enum(OS_BUDDY_MINI_GAMES);
+const MiniGameInputSchema = z
+  .enum(["food-catch", "pixel-catch", "focus-tap", "clean-desk", "play-ball"])
+  .transform((value) => normalizeOSBuddyMiniGame(value) ?? "food-catch");
 
 const CompactScheduleItemSchema = z.object({
   title: z.string().max(120),
@@ -66,7 +73,7 @@ export const OSBuddyCompanionResponseSchema = z.object({
   cta: z
     .object({
       label: z.string().trim().min(1).max(40),
-      game: MiniGameSchema,
+      game: MiniGameInputSchema,
     })
     .nullable()
     .optional(),
@@ -81,7 +88,7 @@ export const OS_BUDDY_COMPANION_GEMINI_SCHEMA: GeminiResponseSchema = {
       type: "object",
       properties: {
         label: { type: "string" },
-        game: { type: "string", enum: ["pixel-catch", "focus-tap", "clean-desk", "play-ball"] },
+        game: { type: "string", enum: OS_BUDDY_MINI_GAMES },
       },
     },
   },

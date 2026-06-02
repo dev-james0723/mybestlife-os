@@ -270,7 +270,7 @@ export function handleOSBuddyReaction(params: {
       return;
 
     case "game:start":
-      setMood("playful");
+      setMood(event.game === "clean-desk" ? "reading" : event.game === "focus-tap" ? "focused" : "playful");
       return;
     case "game:complete":
       temporarilySetMood("celebrating", 1_700);

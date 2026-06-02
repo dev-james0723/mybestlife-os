@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildLocalOSBuddyCompanionResponse,
+  normalizeOSBuddyMiniGame,
   selectOSBuddyCompanionKind,
   type OSBuddyCompactContext,
 } from "./os-buddy-companion";
@@ -48,7 +49,7 @@ function baseContext(overrides: ContextOverrides = {}): OSBuddyCompactContext {
       ideas: ["Tiny companion pet UX"],
       gratefulThings: ["A good cup of tea"],
     },
-    games: ["pixel-catch", "focus-tap", "clean-desk"],
+    games: ["food-catch", "focus-tap", "clean-desk"],
   };
 
   return {
@@ -176,7 +177,7 @@ describe("buildLocalOSBuddyCompanionResponse", () => {
     });
 
     expect(response.kind).toBe("game");
-    expect(response.cta).toEqual({ label: "Play Pixel Catch", game: "pixel-catch" });
+    expect(response.cta).toEqual({ label: "Play Food Catch", game: "food-catch" });
   });
 
   it("compliments from compact memory snippets", () => {
@@ -188,5 +189,12 @@ describe("buildLocalOSBuddyCompanionResponse", () => {
 
     expect(response.kind).toBe("compliment");
     expect(response.message).toContain("gratitude");
+  });
+});
+
+describe("normalizeOSBuddyMiniGame", () => {
+  it("maps legacy pixel-catch input to food-catch", () => {
+    expect(normalizeOSBuddyMiniGame("pixel-catch")).toBe("food-catch");
+    expect(normalizeOSBuddyMiniGame("food-catch")).toBe("food-catch");
   });
 });

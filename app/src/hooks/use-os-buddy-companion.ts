@@ -14,6 +14,7 @@ import {
   isOSBuddyLocalOnlyKind,
   nextOSBuddyRecentKinds,
   normalizeOSBuddyCompanionResponse,
+  OS_BUDDY_MINI_GAMES,
   selectOSBuddyCompanionKind,
   type OSBuddyCompactContext,
   type OSBuddyCompanionKind,
@@ -25,7 +26,7 @@ import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { Idea, JournalEntry } from "@/types/database";
 import type { Quote } from "@/types/quote";
 
-const OS_BUDDY_GAMES: OSBuddyMiniGame[] = ["pixel-catch", "focus-tap", "clean-desk", "play-ball"];
+const OS_BUDDY_GAMES: OSBuddyMiniGame[] = [...OS_BUDDY_MINI_GAMES];
 
 function itemPriority(item: CalendarItem): string | null {
   if ("priority" in item && typeof item.priority === "string") return item.priority;
