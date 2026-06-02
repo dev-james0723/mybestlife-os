@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -72,6 +73,8 @@ import {
   bucketTabPanel,
 } from "./bucket-motion";
 import {
+  bucketControlSize,
+  bucketDialogSurface,
   bucketGlassControl,
   bucketPrimaryControl,
   bucketSheen,
@@ -101,13 +104,22 @@ export function DetailHubDialog() {
   const [editingWhy, setEditingWhy] = useState(false);
   const [whyDraft, setWhyDraft] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [confirmDeleteFor, setConfirmDeleteFor] = useState<string | null>(null);
 
   const open = Boolean(bucketId);
   const dreamImage = useBucketDreamImage(bucket.data ?? undefined);
 
   if (!bucket.data) {
     return (
-      <Dialog open={open} onOpenChange={(v) => !v && setSelectedBucketId(null)}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) {
+            setConfirmDeleteFor(null);
+            setSelectedBucketId(null);
+          }
+        }}
+      >
         <DialogContent size="3xl">
           <DialogHeader>
             <DialogTitle>Loading…</DialogTitle>
@@ -134,7 +146,10 @@ export function DetailHubDialog() {
       <Dialog open={open} onOpenChange={(v) => !v && setSelectedBucketId(null)}>
         <DialogContent
           size="3xl"
-          className="flex max-h-[min(90dvh,920px)] flex-col gap-0 overflow-hidden rounded-2xl border border-white/12 bg-slate-950/92 p-0 text-white shadow-[0_24px_80px_rgba(2,8,23,0.44),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl backdrop-saturate-150"
+          className={cn(
+            "z-[140] flex max-h-[calc(100dvh-1rem)] max-w-[calc(100vw-1rem)] flex-col gap-0 overflow-hidden rounded-[1.4rem] p-0 sm:max-h-[min(90dvh,920px)] sm:max-w-3xl",
+            bucketDialogSurface,
+          )}
         >
           {/* Hero */}
           <motion.div
@@ -157,7 +172,7 @@ export function DetailHubDialog() {
               <Button
                 size="sm"
                 variant="secondary"
-                className={`absolute bottom-3 right-3 z-10 h-7 gap-1 ${bucketGlassControl}`}
+                className={`absolute bottom-3 right-3 z-10 h-8 gap-1 ${bucketGlassControl}`}
                 onClick={() => setActiveTab("visuals")}
               >
                 <Images className="h-3.5 w-3.5" />
@@ -166,7 +181,7 @@ export function DetailHubDialog() {
             </motion.div>
             <motion.div
               {...bucketEntrance(reduceMotion, 0.04, 8)}
-              className="px-6 pb-4 pt-4"
+              className="px-4 pb-4 pt-4 sm:px-6"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
@@ -232,7 +247,7 @@ export function DetailHubDialog() {
             </motion.div>
           </motion.div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 pb-5">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
             <div className="space-y-5">
               {/* Progress */}
               <motion.div
@@ -324,12 +339,12 @@ export function DetailHubDialog() {
               {/* Activate + quick actions */}
               <motion.section
                 {...bucketEntrance(reduceMotion, 0.12, 8)}
-                className="flex flex-wrap gap-2"
+                className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap"
               >
                 <Button
                   size="sm"
                   onClick={() => openActivate(item.id)}
-                  className={bucketPrimaryControl}
+                  className={cn(bucketPrimaryControl, bucketControlSize, "w-full sm:w-auto")}
                 >
                   <Sparkles className="h-4 w-4" />
                   {copy.detailActivate}
@@ -338,7 +353,7 @@ export function DetailHubDialog() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className={bucketGlassControl}
+                    className={cn(bucketGlassControl, bucketControlSize, "w-full sm:w-auto")}
                     onClick={async () => {
                       await markCompleted.mutateAsync(item.id);
                       // Invite the user to capture the memory right away.
@@ -352,7 +367,7 @@ export function DetailHubDialog() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className={bucketGlassControl}
+                    className={cn(bucketGlassControl, bucketControlSize, "w-full sm:w-auto")}
                     onClick={() => openReflection(item.id)}
                   >
                     <BookHeart className="h-4 w-4" />
@@ -362,7 +377,7 @@ export function DetailHubDialog() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className={bucketGlassControl}
+                  className={cn(bucketGlassControl, bucketControlSize, "w-full sm:w-auto")}
                   disabled={reframe.isPending}
                   onClick={() => reframe.mutate({ bucket: item })}
                 >
@@ -373,35 +388,82 @@ export function DetailHubDialog() {
                 <Button
                   size="sm"
                   variant="destructive"
-                  className="active:translate-y-px"
-                  onClick={() => {
-                    if (
-                      typeof window !== "undefined" &&
-                      window.confirm(`Delete "${item.title}"?`)
-                    ) {
-                      deleteBucket.mutate(item.id);
-                      setSelectedBucketId(null);
-                    }
-                  }}
+                  className={cn(bucketControlSize, "w-full active:translate-y-px sm:w-auto")}
+                  onClick={() => setConfirmDeleteFor(item.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                   {copy.deleteDream}
                 </Button>
               </motion.section>
 
+              <AnimatePresence initial={false}>
+                {confirmDeleteFor === item.id ? (
+                  <motion.section
+                    role="alertdialog"
+                    aria-labelledby="bucket-delete-confirm-title"
+                    aria-describedby="bucket-delete-confirm-description"
+                    initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="rounded-2xl border border-red-400/20 bg-red-950/28 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                  >
+                    <h3
+                      id="bucket-delete-confirm-title"
+                      className="text-sm font-semibold text-red-100"
+                    >
+                      Remove this dream?
+                    </h3>
+                    <p
+                      id="bucket-delete-confirm-description"
+                      className="mt-1 text-sm leading-6 text-red-100/68"
+                    >
+                      This removes the dream from your bucket list. Keep it if
+                      you may want the context later.
+                    </p>
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className={cn(bucketGlassControl, bucketControlSize)}
+                        onClick={() => setConfirmDeleteFor(null)}
+                      >
+                        Keep dream
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        className={bucketControlSize}
+                        disabled={deleteBucket.isPending}
+                        onClick={() => {
+                          deleteBucket.mutate(item.id);
+                          setConfirmDeleteFor(null);
+                          setSelectedBucketId(null);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deleteBucket.isPending ? "Removing" : copy.deleteDream}
+                      </Button>
+                    </div>
+                  </motion.section>
+                ) : null}
+              </AnimatePresence>
+
               <Separator />
 
               {/* Tabs: Overview / Visuals / Integrations / Travel / Reflect */}
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className={`${bucketGlassControl} ${bucketSheen} max-w-full justify-start overflow-x-auto rounded-full bg-white/[0.055] p-1`}>
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="intelligence">{copy.intelTab}</TabsTrigger>
-                  <TabsTrigger value="visuals">{copy.visualsTab}</TabsTrigger>
-                  <TabsTrigger value="integrations">Integrations</TabsTrigger>
+                <TabsList className={`${bucketGlassControl} ${bucketSheen} max-w-full justify-start overflow-x-auto rounded-full bg-white/[0.055] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}>
+                  <TabsTrigger value="overview" className="h-7 px-3">Overview</TabsTrigger>
+                  <TabsTrigger value="intelligence" className="h-7 px-3">{copy.intelTab}</TabsTrigger>
+                  <TabsTrigger value="visuals" className="h-7 px-3">{copy.visualsTab}</TabsTrigger>
+                  <TabsTrigger value="integrations" className="h-7 px-3">Integrations</TabsTrigger>
                   {item.type === "travel" ? (
-                    <TabsTrigger value="travel">{copy.explorerTab}</TabsTrigger>
+                    <TabsTrigger value="travel" className="h-7 px-3">{copy.explorerTab}</TabsTrigger>
                   ) : null}
-                  <TabsTrigger value="reflect">Memories</TabsTrigger>
+                  <TabsTrigger value="reflect" className="h-7 px-3">Memories</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4 pt-4">

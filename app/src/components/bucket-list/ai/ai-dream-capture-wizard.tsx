@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -31,6 +32,12 @@ import {
   type DreamDraftForm,
 } from "./dream-autofill-review";
 import { DreamNextActionsStep } from "./dream-next-actions-step";
+import {
+  bucketControlSize,
+  bucketDialogSurface,
+  bucketGlassControl,
+  bucketPrimaryControl,
+} from "../bucket-glass";
 
 type WizardStep = "input" | "extracting" | "review" | "saved";
 
@@ -136,8 +143,14 @@ export function AIDreamCaptureWizard() {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
-      <DialogContent size="2xl" className="flex max-h-[min(90dvh,880px)] flex-col gap-0 p-0">
-        <DialogHeader className="border-b px-6 py-4">
+      <DialogContent
+        size="2xl"
+        className={cn(
+          "z-[140] flex max-h-[calc(100dvh-1rem)] max-w-[calc(100vw-1rem)] flex-col gap-0 overflow-hidden rounded-[1.4rem] p-0 sm:max-h-[min(90dvh,880px)]",
+          bucketDialogSurface,
+        )}
+      >
+        <DialogHeader className="border-b border-white/10 px-4 py-4 sm:px-6">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-lime-500" />
             {copy.aiWizardTitle}
@@ -151,7 +164,7 @@ export function AIDreamCaptureWizard() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           {step === "input" ? (
             <DreamInputMethodStep
               text={text}
@@ -194,13 +207,18 @@ export function AIDreamCaptureWizard() {
         </div>
 
         {step === "input" ? (
-          <DialogFooter className="border-t px-6 py-3">
-            <Button variant="ghost" size="sm" onClick={close}>
+          <DialogFooter className="border-t border-white/10 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:py-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={close}
+              className={cn(bucketGlassControl, bucketControlSize)}
+            >
               {copy.cancel}
             </Button>
             <Button
               size="sm"
-              className="bg-lime-400 text-black hover:bg-lime-300"
+              className={cn(bucketPrimaryControl, bucketControlSize)}
               onClick={handleExtract}
               disabled={!canExtract}
             >
@@ -211,18 +229,19 @@ export function AIDreamCaptureWizard() {
         ) : null}
 
         {step === "review" ? (
-          <DialogFooter className="border-t px-6 py-3">
+          <DialogFooter className="border-t border-white/10 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:py-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setStep("input")}
               disabled={createBucket.isPending}
+              className={cn(bucketGlassControl, bucketControlSize)}
             >
               {copy.aiStartOver}
             </Button>
             <Button
               size="sm"
-              className="bg-lime-400 text-black hover:bg-lime-300"
+              className={cn(bucketPrimaryControl, bucketControlSize)}
               onClick={handleSave}
               disabled={!form?.title.trim() || createBucket.isPending}
             >

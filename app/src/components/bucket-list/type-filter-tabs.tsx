@@ -14,7 +14,11 @@ import {
 } from "@/stores/bucket-list-store";
 import { getBucketTypeLabel } from "@/lib/bucket-list/presentation";
 import { bucketEntrance } from "./bucket-motion";
-import { bucketGlassControl, bucketSheen } from "./bucket-glass";
+import {
+  bucketGlassControl,
+  bucketSegmentedShell,
+  bucketSheen,
+} from "./bucket-glass";
 
 export function BucketTypeFilterTabs() {
   const language = useAppStore((s) => s.language);
@@ -41,14 +45,15 @@ export function BucketTypeFilterTabs() {
   return (
     <motion.div
       {...bucketEntrance(reduceMotion, 0.08, 8)}
-      className="flex w-full min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between"
+      className="flex w-full min-w-0 max-w-full items-center gap-2 overflow-hidden pr-16 sm:pr-0"
     >
-      <div className="relative w-[calc(100vw-2rem)] min-w-0 max-w-[calc(100vw-2rem)] sm:w-auto sm:max-w-full">
+      <div className="relative min-w-0 flex-1 overflow-hidden">
         <div
           role="tablist"
           aria-label={copy.filterTravel}
           className={cn(
-            "flex w-full snap-x gap-1 overflow-x-auto rounded-[1.35rem] p-1 pr-8 text-sm [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:max-w-full sm:pr-1 [&::-webkit-scrollbar]:hidden",
+            "flex min-w-0 max-w-full snap-x overflow-x-auto pr-8 text-sm [-ms-overflow-style:none] [scrollbar-width:none] sm:pr-1 [&::-webkit-scrollbar]:hidden",
+            bucketSegmentedShell,
             bucketGlassControl,
             bucketSheen,
           )}
@@ -75,7 +80,7 @@ export function BucketTypeFilterTabs() {
                   }
                 }}
                 className={cn(
-                  "relative h-8 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.06em] transition-[color,transform] sm:px-3.5 sm:text-xs active:translate-y-px",
+                  "relative h-9 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.06em] transition-[color,transform] sm:px-3.5 sm:text-xs active:translate-y-px",
                   active
                     ? "text-lime-950 dark:text-lime-100"
                     : "text-slate-500 hover:text-slate-950 dark:text-white/55 dark:hover:text-white/85",
@@ -99,7 +104,7 @@ export function BucketTypeFilterTabs() {
         />
       </div>
 
-      <div className={cn("relative flex items-center gap-1 rounded-full p-1", bucketGlassControl, bucketSheen)}>
+      <div className={cn("relative flex shrink-0 items-center gap-1 rounded-[1.2rem] p-1", bucketGlassControl, bucketSheen)}>
         <ViewModeButton
           mode="grid"
           active={viewMode === "grid"}
@@ -142,7 +147,7 @@ function ViewModeButton({
       aria-pressed={active}
       aria-label={`${label} view`}
       className={cn(
-        "relative isolate inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full transition-[color,transform] active:translate-y-px",
+        "relative isolate inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-[color,transform] active:translate-y-px",
         active
           ? "text-slate-950"
           : "text-slate-500 hover:text-slate-950 dark:text-white/50 dark:hover:text-white/80",

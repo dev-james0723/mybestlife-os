@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 import {
   useBucketSettings,
@@ -21,6 +22,7 @@ import {
 } from "@/hooks/use-bucket-list";
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
+import { bucketControlSize, bucketGlassControl } from "./bucket-glass";
 
 /**
  * Popover that surfaces settings affecting the bucket list experience:
@@ -39,11 +41,14 @@ export function BucketSettingsPopover({ trigger }: { trigger: ReactElement }) {
   return (
     <Popover>
       <PopoverTrigger render={trigger} />
-      <PopoverContent className="w-80">
+      <PopoverContent
+        align="start"
+        className="w-[calc(100vw-2rem)] sm:w-80"
+      >
         <PopoverHeader>
           <PopoverTitle>{copy.settingsAction}</PopoverTitle>
           <PopoverDescription>
-            Tune defaults used by new dreams and flight watch.
+            Defaults for new dreams and flight watch.
           </PopoverDescription>
         </PopoverHeader>
 
@@ -98,7 +103,7 @@ export function BucketSettingsPopover({ trigger }: { trigger: ReactElement }) {
             <Button
               size="sm"
               variant="outline"
-              className="w-full justify-start"
+              className={cn(bucketGlassControl, bucketControlSize, "w-full justify-start")}
               disabled={clearSeeds.isPending || Boolean(settings?.seeds_cleared)}
               onClick={() => clearSeeds.mutate()}
             >

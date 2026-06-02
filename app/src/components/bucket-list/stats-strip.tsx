@@ -43,7 +43,7 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
   return (
     <motion.section
       {...bucketEntrance(reduceMotion, 0.06, 12)}
-      className={`${bucketGlassPanel} ${bucketSheen} p-5`}
+      className={`${bucketGlassPanel} ${bucketSheen} min-w-0 max-w-full p-4 sm:p-5`}
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
         {copy.masterProgress}
@@ -53,7 +53,7 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
         variants={bucketStaggerContainer(reduceMotion)}
         initial="hidden"
         animate="show"
-        className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4"
+        className="mt-3 grid grid-cols-5 gap-2 sm:gap-4"
       >
         <StatCell value={stats.total} label={copy.statTotal} reduceMotion={reduceMotion} />
         <StatCell
@@ -82,7 +82,7 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
         />
       </motion.div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-2.5 md:grid-cols-2 md:gap-3">
         <SpotlightTile
           kind="closest"
           copy={copy}
@@ -124,13 +124,13 @@ function StatCell({
     <motion.div variants={bucketStaggerItem(reduceMotion, 8)}>
       <div
         className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl",
+          "text-xl font-semibold tabular-nums tracking-tight sm:text-3xl",
           toneClass,
         )}
       >
         {value}
       </div>
-      <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
+      <div className="mt-0.5 truncate text-[8px] font-semibold uppercase tracking-[0.06em] text-white/50 sm:text-[10px] sm:tracking-[0.12em]">
         {label}
       </div>
     </motion.div>

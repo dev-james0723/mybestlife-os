@@ -17,6 +17,7 @@ import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
+import { cn } from "@/lib/utils";
 
 import { useBucketItems } from "@/hooks/use-bucket-list";
 import { useBucketListStore } from "@/stores/bucket-list-store";
@@ -37,8 +38,10 @@ import {
   bucketTabPanel,
 } from "./bucket-motion";
 import {
+  bucketControlSize,
   bucketGlassControl,
   bucketGlassPanel,
+  bucketIconControlSize,
   bucketPrimaryControl,
   bucketSheen,
 } from "./bucket-glass";
@@ -190,10 +193,10 @@ export function BucketListShell() {
     >
       <motion.div
         {...bucketEntrance(reduceMotion, 0.04, 14)}
-        className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]"
+        className="grid min-w-0 gap-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-0 lg:grid-cols-[minmax(0,1fr)_360px]"
       >
         {/* Left column */}
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           <BucketStatsStrip
             items={items}
             onOpenItem={setSelectedBucketId}
@@ -269,7 +272,7 @@ export function BucketListShell() {
         </div>
 
         {/* Right rail */}
-        <div className="lg:sticky lg:top-20 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-20 lg:self-start">
           {featured ? (
             <BucketFeaturedRail
               item={featured}
@@ -305,14 +308,14 @@ function BucketShellActions({
   return (
     <motion.div
       {...bucketEntrance(reduceMotion, 0.02, 8)}
-      className="flex items-center gap-2"
+      className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1.15fr)] items-center gap-2 sm:flex sm:w-auto"
     >
       {disabled ? (
         <Button
           variant="outline"
           size="sm"
           aria-label={copy.settingsAction}
-          className={bucketGlassControl}
+          className={cn(bucketGlassControl, bucketIconControlSize)}
           disabled
         >
           <Settings2 className="h-4 w-4" />
@@ -324,7 +327,7 @@ function BucketShellActions({
               variant="outline"
               size="sm"
               aria-label={copy.settingsAction}
-              className={bucketGlassControl}
+              className={cn(bucketGlassControl, bucketIconControlSize)}
             >
               <Settings2 className="h-4 w-4" />
             </Button>
@@ -335,21 +338,21 @@ function BucketShellActions({
         variant="outline"
         size="sm"
         onClick={onManual}
-        className={bucketGlassControl}
+        className={cn(bucketGlassControl, bucketControlSize, "min-w-0")}
         disabled={disabled}
       >
         <Plus className="h-4 w-4" />
-        {copy.addManually}
+        <span className="truncate">{copy.addManually}</span>
       </Button>
       <Button
         size="sm"
         onClick={onAi}
         aria-label={copy.aiNewDreamAria}
-        className={bucketPrimaryControl}
+        className={cn(bucketPrimaryControl, bucketControlSize, "min-w-0")}
         disabled={disabled}
       >
         <Sparkles className="h-4 w-4" />
-        {copy.aiNewDream}
+        <span className="truncate">{copy.aiNewDream}</span>
       </Button>
     </motion.div>
   );

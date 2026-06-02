@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -59,8 +60,10 @@ import {
 } from "@/lib/bucket-list/presentation";
 import { airportCoords } from "@/lib/bucket-list/flight-watch";
 import {
+  bucketControlSize,
   bucketGlassControl,
   bucketPrimaryControl,
+  bucketSheetSurface,
   bucketSheen,
 } from "./bucket-glass";
 
@@ -227,9 +230,13 @@ export function AddDreamSheet() {
     <Sheet open={open} onOpenChange={(v) => !v && closeSheet()}>
       <SheetContent
         side="right"
-        className="flex w-full max-w-xl flex-col gap-0 border-white/10 bg-slate-950/95 p-0 text-white shadow-[0_24px_80px_rgba(2,8,23,0.42)] backdrop-blur-2xl sm:max-w-xl"
+        className={cn(
+          "z-[140] flex max-w-xl flex-col gap-0 p-0 sm:max-w-xl",
+          "data-[side=right]:w-full sm:data-[side=right]:w-[min(100vw,36rem)]",
+          bucketSheetSurface,
+        )}
       >
-        <SheetHeader className="border-b border-white/10 px-6 py-4">
+        <SheetHeader className="border-b border-white/10 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 sm:pt-4">
           <SheetTitle>{copy.addSheetTitle}</SheetTitle>
           <SheetDescription>
             {mode === "quick"
@@ -268,7 +275,7 @@ export function AddDreamSheet() {
           </div>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="space-y-4">
             <div className="space-y-1">
               <Label>{copy.fieldTitle}</Label>
@@ -280,7 +287,7 @@ export function AddDreamSheet() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>{copy.fieldType}</Label>
                 <Select
@@ -345,7 +352,7 @@ export function AddDreamSheet() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label>{copy.fieldDifficulty}</Label>
                     <Select
@@ -391,8 +398,8 @@ export function AddDreamSheet() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1 col-span-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="space-y-1 sm:col-span-2">
                     <Label>{copy.fieldEstimatedCost}</Label>
                     <Input
                       type="number"
@@ -425,7 +432,7 @@ export function AddDreamSheet() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label>{copy.fieldTargetMonth}</Label>
                     <Input
@@ -476,7 +483,7 @@ export function AddDreamSheet() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
                         <Label>{copy.fieldDestinationName}</Label>
                         <Input
@@ -499,7 +506,7 @@ export function AddDreamSheet() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
                         <Label>{copy.fieldDestinationAirport}</Label>
                         <Input
@@ -528,7 +535,7 @@ export function AddDreamSheet() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div className="space-y-1">
                         <Label>{copy.fieldBestSeason}</Label>
                         <Input
@@ -587,7 +594,7 @@ export function AddDreamSheet() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
                         <Label>{copy.fieldTripLength}</Label>
                         <Input
@@ -620,10 +627,10 @@ export function AddDreamSheet() {
           </div>
         </div>
 
-        <SheetFooter className="border-t border-white/10 bg-white/[0.035] px-6 py-3">
+        <SheetFooter className="grid grid-cols-1 border-t border-white/10 bg-white/[0.035] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:flex sm:flex-row sm:px-6 sm:py-3">
           <SheetClose
             render={
-              <Button variant="ghost" size="sm" className={bucketGlassControl}>
+              <Button variant="ghost" size="sm" className={cn(bucketGlassControl, bucketControlSize, "w-full sm:w-auto")}>
                 {copy.cancel}
               </Button>
             }
@@ -631,7 +638,7 @@ export function AddDreamSheet() {
           <Button
             variant="outline"
             size="sm"
-            className={bucketGlassControl}
+            className={cn(bucketGlassControl, bucketControlSize, "w-full sm:w-auto")}
             onClick={() => handleSave(false)}
             disabled={!form.title.trim() || createBucket.isPending}
           >
@@ -642,7 +649,7 @@ export function AddDreamSheet() {
           </Button>
           <Button
             size="sm"
-            className={bucketPrimaryControl}
+            className={cn(bucketPrimaryControl, bucketControlSize, "w-full sm:w-auto")}
             onClick={() => handleSave(true)}
             disabled={!form.title.trim() || createBucket.isPending}
           >

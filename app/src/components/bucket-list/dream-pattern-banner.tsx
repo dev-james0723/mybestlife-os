@@ -60,7 +60,7 @@ export function DreamPatternBanner({ items, copy }: DreamPatternBannerProps) {
   return (
     <motion.section
       {...bucketEntrance(reduceMotion, 0.08, 12)}
-      className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.22)] backdrop-blur-xl"
+      className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/85 p-4 pr-20 shadow-[0_8px_32px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:pr-4"
       aria-label={copy.patternBannerEyebrow}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(190,242,100,0.12),transparent_28%),radial-gradient(circle_at_85%_15%,rgba(45,212,191,0.10),transparent_32%)]" />

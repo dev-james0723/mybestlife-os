@@ -23,6 +23,7 @@ import {
   tickRouteDashAnimation,
   type FlightRouteRuntime,
 } from "./travel-flight-route-layer";
+import { TravelMapFallback } from "./travel-map-fallback";
 
 export type TravelMapMarker = {
   id: string;
@@ -80,6 +81,7 @@ export function TravelGoogleMapInner({
 
   useEffect(() => {
     let cancelled = false;
+    const flightRoutes = flightRoutesRef.current;
 
     void (async () => {
       setLoadError(null);
@@ -137,13 +139,13 @@ export function TravelGoogleMapInner({
         markersRef,
         onMarkerClickRef,
       );
-      syncFlightRoutes(L, map, routes, flightRoutesRef.current);
+      syncFlightRoutes(L, map, routes, flightRoutes);
       fitMapToData(L, map, markers, routes);
       mapReadyRef.current = true;
 
       const refreshHeadings = () => {
         if (!leafletRef.current || !mapRef.current) return;
-        rebuildAllScreenArcCaches(mapRef.current, flightRoutesRef.current);
+        rebuildAllScreenArcCaches(mapRef.current, flightRoutes);
       };
       refreshPlaneHeadingsRef.current = refreshHeadings;
       map.on("zoom move", refreshHeadings);
@@ -159,7 +161,7 @@ export function TravelGoogleMapInner({
       }
       refreshPlaneHeadingsRef.current = null;
       clearDestinationMarkers(markersRef);
-      clearFlightRoutes(mapRef.current, flightRoutesRef.current);
+      clearFlightRoutes(mapRef.current, flightRoutes);
       tileLayerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
@@ -206,27 +208,24 @@ export function TravelGoogleMapInner({
 
   if (loadError) {
     return (
-      <div
-        className={cn(
-          "flex h-[560px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-amber-400/30 bg-slate-950/80 px-6 text-center",
-          className,
-        )}
-      >
-        <p className="text-sm font-medium text-amber-200/90">Map could not load</p>
-        <p className="max-w-md text-sm text-white/55">{loadError}</p>
-        <p className="max-w-md text-xs text-white/40">
-          In Google Cloud Console, enable{" "}
-          <strong className="font-medium text-white/60">Map Tiles API</strong> for
-          this project (same key as the Travel Explorer globe).
-        </p>
-      </div>
+      <TravelMapFallback
+        markers={markers}
+        routes={routes}
+        onMarkerClick={onMarkerClick}
+        title="Map layer paused"
+        message={
+          loadError ||
+          "The live map layer is unavailable. Your mapped dreams are still shown here."
+        }
+        className={className}
+      />
     );
   }
 
   return (
     <div
       ref={containerRef}
-      className={cn("travel-google-map h-[560px] w-full", className)}
+      className={cn("travel-google-map h-[min(58dvh,560px)] min-h-[420px] w-full", className)}
       role="application"
       aria-label="Travel dreams map"
     />

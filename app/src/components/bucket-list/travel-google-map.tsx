@@ -1,12 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { MapPin } from "lucide-react";
 
 import type {
   TravelMapMarker,
   TravelMapRoute,
 } from "./travel-google-map-inner";
+import { TravelMapFallback } from "./travel-map-fallback";
 
 const TravelGoogleMapInner = dynamic(
   () =>
@@ -14,9 +14,13 @@ const TravelGoogleMapInner = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[560px] w-full items-center justify-center rounded-2xl bg-slate-950/80 text-sm text-white/50">
-        Loading map…
-      </div>
+      <TravelMapFallback
+        markers={[]}
+        routes={[]}
+        title="Loading travel map"
+        message="Preparing your travel layer."
+        loading
+      />
     ),
   },
 );
@@ -33,6 +37,7 @@ type TravelGoogleMapProps = {
   routes: TravelMapRoute[];
   onMarkerClick: (id: string) => void;
   missingKeyMessage: string;
+  className?: string;
 };
 
 export function TravelGoogleMap({
@@ -40,15 +45,19 @@ export function TravelGoogleMap({
   routes,
   onMarkerClick,
   missingKeyMessage,
+  className,
 }: TravelGoogleMapProps) {
   const apiKey = resolveGoogleMapsApiKey();
 
   if (!apiKey) {
     return (
-      <div className="flex h-[560px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-slate-950/60 px-6 text-center">
-        <MapPin className="h-8 w-8 text-white/35" aria-hidden />
-        <p className="max-w-md text-sm text-white/60">{missingKeyMessage}</p>
-      </div>
+      <TravelMapFallback
+        markers={markers}
+        routes={routes}
+        onMarkerClick={onMarkerClick}
+        message={missingKeyMessage}
+        className={className}
+      />
     );
   }
 
@@ -58,6 +67,7 @@ export function TravelGoogleMap({
       markers={markers}
       routes={routes}
       onMarkerClick={onMarkerClick}
+      className={className}
     />
   );
 }

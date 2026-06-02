@@ -12,7 +12,11 @@ import { getTravelExplorerUiCopy } from "@/lib/i18n/travel-explorer-ui";
 import { BucketListShell } from "./list-shell";
 import { ExplorerConsole } from "./explorer/explorer-console";
 import { BucketTravelMap } from "./travel-map";
-import { bucketGlassControl, bucketSheen } from "./bucket-glass";
+import {
+  bucketGlassControl,
+  bucketSegmentedShell,
+  bucketSheen,
+} from "./bucket-glass";
 import { bucketTabPanel, bucketWorkspaceTransition } from "./bucket-motion";
 
 /**
@@ -61,7 +65,8 @@ export function BucketWorkspaceTabs() {
         role="tablist"
         aria-label="Bucket List views"
         className={cn(
-          "relative inline-flex items-center gap-1 rounded-full p-1",
+          "w-full sm:w-auto",
+          bucketSegmentedShell,
           bucketGlassControl,
           bucketSheen,
         )}
@@ -77,7 +82,7 @@ export function BucketWorkspaceTabs() {
               aria-selected={selected}
               onClick={() => setTab(tab)}
               className={cn(
-                "relative isolate inline-flex h-8 items-center gap-1.5 overflow-hidden rounded-full px-3.5 text-sm font-medium transition-colors",
+                "relative isolate inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-full px-3 text-sm font-semibold transition-colors sm:flex-none sm:px-3.5",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 active:translate-y-px",
                 selected
                   ? "text-slate-950"
