@@ -99,6 +99,8 @@ async def _save_upload(upload: UploadFile | None) -> str | None:
 @app.on_event("startup")
 def preload_model_in_background() -> None:
     """Load weights on boot so /health stays responsive and first /synthesize is faster."""
+    if os.environ.get("VOXCPM_PRELOAD_ON_STARTUP", "false").lower() != "true":
+        return
 
     def _runner() -> None:
         try:
