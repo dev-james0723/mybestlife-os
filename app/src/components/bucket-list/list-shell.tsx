@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Compass, ImagePlus, Plus, Settings2, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  Compass,
+  ImagePlus,
+  Plus,
+  RefreshCw,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { useAppStore } from "@/stores/app-store";
@@ -9,7 +17,6 @@ import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingPage } from "@/components/shared/loading-state";
 
 import { useBucketItems } from "@/hooks/use-bucket-list";
 import { useBucketListStore } from "@/stores/bucket-list-store";
@@ -29,6 +36,12 @@ import {
   bucketStaggerContainer,
   bucketTabPanel,
 } from "./bucket-motion";
+import {
+  bucketGlassControl,
+  bucketGlassPanel,
+  bucketPrimaryControl,
+  bucketSheen,
+} from "./bucket-glass";
 
 /**
  * Top-level overview shell for the Bucket List page. Responsible for
@@ -42,7 +55,13 @@ export function BucketListShell() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
 
-  const { data: items, isLoading } = useBucketItems();
+  const {
+    data: items,
+    isError,
+    isFetching,
+    isLoading,
+    refetch,
+  } = useBucketItems();
   const filters = useBucketListStore((s) => s.filters);
   const viewMode = useBucketListStore((s) => s.viewMode);
   const setSelectedBucketId = useBucketListStore((s) => s.setSelectedBucketId);
@@ -112,42 +131,61 @@ export function BucketListShell() {
     return active ?? items[0] ?? null;
   }, [items]);
 
-  if (isLoading) return <LoadingPage />;
+  if (isLoading) {
+    return (
+      <PageShell
+        title={copy.pageTitle}
+        description={copy.pageDescription}
+        actions={
+          <BucketShellActions
+            copy={copy}
+            reduceMotion={reduceMotion}
+            onManual={() => openAddSheet()}
+            onAi={() => openAiWizard()}
+            disabled
+          />
+        }
+      >
+        <BucketListLoadingState />
+      </PageShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageShell
+        title={copy.pageTitle}
+        description={copy.pageDescription}
+        actions={
+          <BucketShellActions
+            copy={copy}
+            reduceMotion={reduceMotion}
+            onManual={() => openAddSheet()}
+            onAi={() => openAiWizard()}
+          />
+        }
+      >
+        <BucketListErrorState
+          isRetrying={isFetching}
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell
       title={copy.pageTitle}
       description={copy.pageDescription}
       actions={
-        <motion.div
-          {...bucketEntrance(reduceMotion, 0.02, 8)}
-          className="flex items-center gap-2"
-        >
-          <BucketSettingsPopover
-            trigger={
-              <Button variant="outline" size="sm" aria-label={copy.settingsAction}>
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            }
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openAddSheet()}
-          >
-            <Plus className="h-4 w-4" />
-            {copy.addManually}
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => openAiWizard()}
-            aria-label={copy.aiNewDreamAria}
-            className="bg-lime-400 text-black hover:bg-lime-300 focus-visible:ring-lime-300/50"
-          >
-            <Sparkles className="h-4 w-4" />
-            {copy.aiNewDream}
-          </Button>
-        </motion.div>
+        <BucketShellActions
+          copy={copy}
+          reduceMotion={reduceMotion}
+          onManual={() => openAddSheet()}
+          onAi={() => openAiWizard()}
+        />
       }
     >
       <motion.div
@@ -251,6 +289,185 @@ export function BucketListShell() {
   );
 }
 
+function BucketShellActions({
+  copy,
+  disabled = false,
+  onAi,
+  onManual,
+  reduceMotion,
+}: {
+  copy: ReturnType<typeof getBucketListUiCopy>;
+  disabled?: boolean;
+  onAi: () => void;
+  onManual: () => void;
+  reduceMotion: boolean;
+}) {
+  return (
+    <motion.div
+      {...bucketEntrance(reduceMotion, 0.02, 8)}
+      className="flex items-center gap-2"
+    >
+      {disabled ? (
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={copy.settingsAction}
+          className={bucketGlassControl}
+          disabled
+        >
+          <Settings2 className="h-4 w-4" />
+        </Button>
+      ) : (
+        <BucketSettingsPopover
+          trigger={
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={copy.settingsAction}
+              className={bucketGlassControl}
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+          }
+        />
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onManual}
+        className={bucketGlassControl}
+        disabled={disabled}
+      >
+        <Plus className="h-4 w-4" />
+        {copy.addManually}
+      </Button>
+      <Button
+        size="sm"
+        onClick={onAi}
+        aria-label={copy.aiNewDreamAria}
+        className={bucketPrimaryControl}
+        disabled={disabled}
+      >
+        <Sparkles className="h-4 w-4" />
+        {copy.aiNewDream}
+      </Button>
+    </motion.div>
+  );
+}
+
+function BucketListLoadingState() {
+  const shimmer =
+    "motion-safe:animate-pulse rounded-full bg-white/70 dark:bg-white/[0.09]";
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex flex-col gap-5">
+        <div className={`${bucketGlassPanel} ${bucketSheen} p-5`}>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+                Loading dreams
+              </p>
+              <div className="mt-3 h-8 w-36 rounded-lg bg-white/12 motion-safe:animate-pulse" />
+            </div>
+            <div className="grid h-11 w-11 place-items-center rounded-2xl border border-lime-300/20 bg-lime-300/10 text-lime-200">
+              <Compass className="h-5 w-5" aria-hidden />
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="h-6 w-8 rounded-md bg-white/14 motion-safe:animate-pulse" />
+                <div className="h-2 w-14 rounded-full bg-white/10 motion-safe:animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-xl border border-white/8 bg-white/[0.035] p-3"
+              >
+                <div className="h-2.5 w-32 rounded-full bg-white/12 motion-safe:animate-pulse" />
+                <div className="mt-3 h-4 w-44 max-w-full rounded-full bg-white/10 motion-safe:animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative flex max-w-full gap-2 overflow-hidden rounded-[1.35rem] border border-slate-300/55 bg-white/72 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl dark:border-white/12 dark:bg-white/[0.055]">
+          <div className="h-8 w-14 rounded-full bg-lime-300/70" />
+          <div className={`h-8 w-24 ${shimmer}`} />
+          <div className={`h-8 w-32 ${shimmer}`} />
+          <div className={`h-8 w-28 ${shimmer}`} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className={`${bucketGlassPanel} min-h-32 p-4`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="h-11 w-11 rounded-xl bg-white/12 motion-safe:animate-pulse" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-3.5 w-3/4 rounded-full bg-white/12 motion-safe:animate-pulse" />
+                  <div className="h-3 w-1/2 rounded-full bg-white/10 motion-safe:animate-pulse" />
+                </div>
+              </div>
+              <div className="mt-5 h-2.5 w-2/3 rounded-full bg-white/10 motion-safe:animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={`${bucketGlassPanel} ${bucketSheen} p-6 text-center lg:sticky lg:top-20 lg:self-start`}>
+        <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-lime-300/20 bg-lime-300/10 text-lime-200">
+          <Compass className="h-7 w-7" aria-hidden />
+        </div>
+        <div className="mx-auto h-5 w-36 rounded-full bg-white/14 motion-safe:animate-pulse" />
+        <div className="mx-auto mt-3 h-3 w-56 max-w-full rounded-full bg-white/10 motion-safe:animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function BucketListErrorState({
+  isRetrying,
+  onRetry,
+}: {
+  isRetrying: boolean;
+  onRetry: () => void;
+}) {
+  return (
+    <div className={`${bucketGlassPanel} ${bucketSheen} px-5 py-12 text-center`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.12),transparent_34%)]" />
+      <div className="relative mx-auto flex max-w-md flex-col items-center">
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/25 bg-amber-300/10 text-amber-200">
+          <AlertTriangle className="h-7 w-7" aria-hidden />
+        </div>
+        <h3 className="text-lg font-semibold tracking-tight text-white">
+          Could not load dreams
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-white/62">
+          The page is available, but the bucket data request did not finish.
+        </p>
+        <Button
+          type="button"
+          onClick={onRetry}
+          className={`mt-6 ${bucketPrimaryControl}`}
+          disabled={isRetrying}
+        >
+          <RefreshCw className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`} />
+          Retry
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function BucketDreamEmptyState({
   copy,
   onAi,
@@ -263,10 +480,10 @@ function BucketDreamEmptyState({
   onManual: () => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-14 text-center shadow-[0_12px_42px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(190,242,100,0.14),transparent_30%),radial-gradient(circle_at_15%_70%,rgba(34,211,238,0.10),transparent_32%)]" />
+    <div className={`${bucketGlassPanel} ${bucketSheen} px-4 py-14 text-center`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(190,242,100,0.11),transparent_34%),radial-gradient(circle_at_15%_70%,rgba(148,163,184,0.10),transparent_34%)]" />
       <div className="relative mx-auto flex max-w-xl flex-col items-center">
-        <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-lime-300/25 bg-lime-300/10 text-lime-200 shadow-[0_0_30px_rgba(190,242,100,0.16)]">
+        <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-lime-300/20 bg-lime-300/10 text-lime-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
           <Compass className="h-8 w-8" aria-hidden />
         </div>
         <h3 className="text-xl font-semibold tracking-tight text-white">
@@ -279,16 +496,16 @@ function BucketDreamEmptyState({
           <Button
             type="button"
             onClick={onAi}
-            className="bg-lime-400 text-black hover:bg-lime-300"
+            className={bucketPrimaryControl}
           >
             <Sparkles className="h-4 w-4" />
             {copy.aiNewDream}
           </Button>
-          <Button type="button" variant="outline" onClick={onUpload}>
+          <Button type="button" variant="outline" onClick={onUpload} className={bucketGlassControl}>
             <ImagePlus className="h-4 w-4" />
             {copy.uploadInspiration}
           </Button>
-          <Button type="button" variant="outline" onClick={onManual}>
+          <Button type="button" variant="outline" onClick={onManual} className={bucketGlassControl}>
             <Plus className="h-4 w-4" />
             {copy.addManually}
           </Button>

@@ -23,6 +23,7 @@ import {
   bucketProgressTransition,
   bucketStaggerItem,
 } from "./bucket-motion";
+import { bucketFrostedPanel, bucketSheen } from "./bucket-glass";
 
 export function DreamListRow({
   item,
@@ -41,13 +42,17 @@ export function DreamListRow({
 
   return (
     <motion.button
+      layout
       variants={bucketStaggerItem(reduceMotion, 10)}
       whileHover={bucketHoverLift(reduceMotion)}
+      whileTap={reduceMotion ? undefined : { scale: 0.99 }}
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative flex w-full items-center gap-4 overflow-hidden rounded-xl border border-white/10 bg-slate-950/75 px-3 py-2.5 text-left transition-colors",
+        "group flex w-full items-center gap-4 px-3 py-2.5 text-left transition-colors",
         "hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70",
+        bucketFrostedPanel,
+        bucketSheen,
         bucketStatusCardClass(item.status),
       )}
     >
@@ -57,6 +62,7 @@ export function DreamListRow({
           type={item.type}
           variant="thumb"
           interactive
+          layoutId={reduceMotion ? undefined : `bucket-dream-cover-${item.id}`}
         />
       </div>
 
@@ -83,9 +89,12 @@ export function DreamListRow({
             {getBucketTypeLabel(item.type, copy)}
           </span>
         </div>
-        <h3 className="mt-1 truncate text-sm font-semibold text-white drop-shadow-sm">
+        <motion.h3
+          layoutId={reduceMotion ? undefined : `bucket-dream-title-${item.id}`}
+          className="mt-1 truncate text-sm font-semibold text-white drop-shadow-sm"
+        >
           {item.title}
-        </h3>
+        </motion.h3>
         {item.why_this_matters ? (
           <p className="mt-0.5 truncate text-[11px] italic text-white/65">
             &ldquo;{item.why_this_matters}&rdquo;

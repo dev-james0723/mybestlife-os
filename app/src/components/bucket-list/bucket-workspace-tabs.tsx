@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LayoutGrid, Plane, Map as MapIcon } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -11,6 +12,8 @@ import { getTravelExplorerUiCopy } from "@/lib/i18n/travel-explorer-ui";
 import { BucketListShell } from "./list-shell";
 import { ExplorerConsole } from "./explorer/explorer-console";
 import { BucketTravelMap } from "./travel-map";
+import { bucketGlassControl, bucketSheen } from "./bucket-glass";
+import { bucketTabPanel, bucketWorkspaceTransition } from "./bucket-motion";
 
 /**
  * In-page workspace tab switcher for Bucket List: Overview (the existing
@@ -27,6 +30,7 @@ const ICONS = { overview: LayoutGrid, travel: Plane, map: MapIcon } as const;
 export function BucketWorkspaceTabs() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getTravelExplorerUiCopy(language), [language]);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const router = useRouter();
   const pathname = usePathname();
@@ -46,7 +50,9 @@ export function BucketWorkspaceTabs() {
     if (tab === "overview") params.delete("tab");
     else params.set("tab", tab);
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    bucketWorkspaceTransition(() => {
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }, reduceMotion);
   };
 
   return (
@@ -54,7 +60,11 @@ export function BucketWorkspaceTabs() {
       <div
         role="tablist"
         aria-label="Bucket List views"
-        className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 p-1"
+        className={cn(
+          "relative inline-flex items-center gap-1 rounded-full p-1",
+          bucketGlassControl,
+          bucketSheen,
+        )}
       >
         {TABS.map((tab) => {
           const Icon = ICONS[tab];
@@ -67,23 +77,34 @@ export function BucketWorkspaceTabs() {
               aria-selected={selected}
               onClick={() => setTab(tab)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                "relative isolate inline-flex h-8 items-center gap-1.5 overflow-hidden rounded-full px-3.5 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 active:translate-y-px",
                 selected
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "text-slate-950"
+                  : "text-slate-500 hover:text-slate-950 dark:text-white/58 dark:hover:text-white",
               )}
             >
-              <Icon className="h-4 w-4" />
-              {labels[tab]}
+              {selected ? (
+                <motion.span
+                  layoutId={reduceMotion ? undefined : "bucket-workspace-active-pill"}
+                  className="absolute inset-0 -z-10 rounded-full bg-lime-300 shadow-[0_8px_22px_rgba(190,242,100,0.18),inset_0_1px_0_rgba(255,255,255,0.45)]"
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                />
+              ) : null}
+              <Icon className="relative h-4 w-4" />
+              <span className="relative">{labels[tab]}</span>
             </button>
           );
         })}
       </div>
 
-      {active === "overview" && <BucketListShell />}
-      {active === "travel" && <ExplorerConsole />}
-      {active === "map" && <BucketTravelMap />}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={active} {...bucketTabPanel(reduceMotion)}>
+          {active === "overview" && <BucketListShell />}
+          {active === "travel" && <ExplorerConsole />}
+          {active === "map" && <BucketTravelMap />}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

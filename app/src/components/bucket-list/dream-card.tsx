@@ -39,6 +39,7 @@ import {
   bucketProgressTransition,
   bucketStaggerItem,
 } from "./bucket-motion";
+import { bucketFrostedPanel, bucketSheen } from "./bucket-glass";
 
 type DreamCardProps = {
   item: BucketItem;
@@ -71,8 +72,10 @@ export function DreamCard({ item, index = 0, onClick }: DreamCardProps) {
 
   return (
     <motion.article
+      layout
       variants={bucketStaggerItem(reduceMotion, 18)}
       whileHover={bucketHoverLift(reduceMotion)}
+      whileTap={reduceMotion ? undefined : { scale: 0.985 }}
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -83,9 +86,10 @@ export function DreamCard({ item, index = 0, onClick }: DreamCardProps) {
         }
       }}
       className={cn(
-        "group relative flex h-full min-h-[220px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 p-4 text-left transition-all duration-200 ease-out",
-        "shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]",
+        "group flex h-full min-h-[220px] cursor-pointer flex-col p-4 text-left transition-all duration-200 ease-out",
         "hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70",
+        bucketFrostedPanel,
+        bucketSheen,
         bucketStatusCardClass(item.status),
       )}
       aria-label={item.title}
@@ -95,6 +99,7 @@ export function DreamCard({ item, index = 0, onClick }: DreamCardProps) {
         type={item.type}
         variant="card"
         interactive
+        layoutId={reduceMotion ? undefined : `bucket-dream-cover-${item.id}`}
       />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
@@ -120,9 +125,12 @@ export function DreamCard({ item, index = 0, onClick }: DreamCardProps) {
           </motion.span>
         </div>
 
-        <h3 className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+        <motion.h3
+          layoutId={reduceMotion ? undefined : `bucket-dream-title-${item.id}`}
+          className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+        >
           {item.title}
-        </h3>
+        </motion.h3>
 
         {item.why_this_matters ? (
           <p className="mt-2 line-clamp-3 text-[13px] italic text-white/75 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
@@ -219,10 +227,8 @@ export function DreamCard({ item, index = 0, onClick }: DreamCardProps) {
 }
 
 function DifficultyGlyph({ type }: { type: BucketType }) {
-  const label = type === "travel" ? "✈" : type === "growth" ? "▲" : "◆";
+  const Icon = type === "travel" ? Plane : type === "growth" ? Sparkles : Trophy;
   return (
-    <span className="text-[11px] text-white/55" aria-hidden>
-      {label}
-    </span>
+    <Icon className="h-3.5 w-3.5 text-white/55" aria-hidden />
   );
 }

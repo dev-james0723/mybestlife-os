@@ -78,3 +78,26 @@ export function bucketProgressTransition(
     ? { ...REDUCED_MOTION_FADE, delay: Math.min(delay, 0.05) }
     : { duration: 0.85, delay, ease: EASE_OUT_EXPO };
 }
+
+export function bucketWorkspaceTransition(
+  update: () => void,
+  reduceMotion: boolean,
+) {
+  if (typeof document === "undefined" || reduceMotion) {
+    update();
+    return;
+  }
+
+  const startViewTransition = (
+    document as Document & {
+      startViewTransition?: (callback: () => void) => unknown;
+    }
+  ).startViewTransition;
+
+  if (typeof startViewTransition !== "function") {
+    update();
+    return;
+  }
+
+  startViewTransition.call(document, update);
+}

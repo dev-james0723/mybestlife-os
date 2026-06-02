@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { BucketDreamImage, BucketType } from "@/types/bucket-list";
@@ -11,6 +11,7 @@ type DreamCoverBackgroundProps = {
   variant?: "card" | "hero" | "thumb";
   className?: string;
   interactive?: boolean;
+  layoutId?: string;
 };
 
 const TYPE_GRADIENT: Record<BucketType, string> = {
@@ -32,15 +33,12 @@ export function DreamCoverBackground({
   variant = "card",
   className,
   interactive = false,
+  layoutId,
 }: DreamCoverBackgroundProps) {
-  const [failed, setFailed] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const reduceMotion = useReducedMotion() ?? false;
-
-  useEffect(() => {
-    setFailed(false);
-  }, [image?.url]);
-
-  const showPhoto = Boolean(image?.url) && !failed;
+  const imageUrl = image?.url ?? null;
+  const showPhoto = Boolean(imageUrl) && failedUrl !== imageUrl;
 
   const gradientOverlay =
     variant === "hero"
@@ -51,6 +49,7 @@ export function DreamCoverBackground({
 
   return (
     <motion.div
+      layoutId={layoutId}
       className={cn(
         "pointer-events-none absolute inset-0 overflow-hidden",
         className,
@@ -73,7 +72,7 @@ export function DreamCoverBackground({
           )}
           loading="lazy"
           decoding="async"
-          onError={() => setFailed(true)}
+          onError={() => setFailedUrl(imageUrl)}
         />
       ) : (
         <div

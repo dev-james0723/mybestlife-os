@@ -469,25 +469,25 @@ export type BucketListUiCopy = {
 export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   pageTitle: "Bucket List",
   pageDescription:
-    "Curate, fund, and execute your most significant life experiences.",
+    "Plan the life experiences you actually want to make real.",
   newDream: "New Dream",
   newDreamAria: "Capture a new dream",
   settingsAction: "Settings",
   clearSeedsAction: "Clear seed dreams",
   viewMap: "Travel map",
 
-  statTotal: "Total Dreams",
+  statTotal: "Total",
   statCompleted: "Completed",
   statActive: "Active",
   statFunded: "Funded",
   statDreaming: "Dreaming",
-  masterProgress: "Master Progress",
+  masterProgress: "Progress",
 
   closestToReality: "Closest to reality",
   pushThisWeek: "Push this week",
   latestCompletion: "Latest realized dream",
   travelDeal: "Best travel opportunity",
-  noHighlight: "No active dreams yet",
+  noHighlight: "No active dreams",
   blockedOn: (stage) => `Blocked on: ${stage}`,
   percentFundedShort: (pct) => `${pct}% Funded`,
   monthsOut: (months) =>
@@ -530,12 +530,12 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
 
   emptyAllTitle: "Your bucket list is empty",
   emptyAllDescription:
-    "Capture the first life-experience you want to make real. It doesn't need a plan yet.",
-  emptyAllAction: "Add a dream",
-  emptyFutureTitle: "Your future is allowed to begin as a sentence.",
+    "Capture one experience first. The plan can come later.",
+  emptyAllAction: "Add first dream",
+  emptyFutureTitle: "Start with one sentence.",
   emptyFutureDescription:
-    "Write one dream, upload one image, or let AI help you find the shape of it.",
-  uploadInspiration: "Upload Inspiration",
+    "Write a dream, upload inspiration, or let AI sketch the first version.",
+  uploadInspiration: "Upload inspiration",
   emptyFilteredTitle: "No dreams match these filters",
   emptyFilteredDescription:
     "Try clearing a filter or widening your time horizon.",
@@ -641,9 +641,9 @@ export const BUCKET_LIST_UI_EN: BucketListUiCopy = {
   reflectGenerateSummary: "Generate summary",
   reflectSave: "Save memory",
 
-  aiNewDream: "Add Dream with AI",
+  aiNewDream: "AI capture",
   aiNewDreamAria: "Capture a new dream with AI",
-  addManually: "Add manually",
+  addManually: "Manual",
   aiWizardTitle: "Capture a dream with AI",
   aiWizardDescription:
     "Tell me a dream, paste a messy idea, or upload inspiration — I'll draft the details for you to review.",

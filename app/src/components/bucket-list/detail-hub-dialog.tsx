@@ -16,7 +16,6 @@ import {
   ListChecks,
   BookHeart,
   Images,
-  Loader2,
 } from "lucide-react";
 
 import {
@@ -72,6 +71,12 @@ import {
   bucketStaggerItem,
   bucketTabPanel,
 } from "./bucket-motion";
+import {
+  bucketGlassControl,
+  bucketPrimaryControl,
+  bucketSheen,
+  bucketSolidPanel,
+} from "./bucket-glass";
 
 export function DetailHubDialog() {
   const language = useAppStore((s) => s.language);
@@ -110,8 +115,10 @@ export function DetailHubDialog() {
               Fetching dream details from your library.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="space-y-3 py-4" aria-busy="true">
+            <div className="h-28 animate-pulse rounded-xl bg-muted/50" />
+            <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted" />
+            <div className="h-4 w-1/2 animate-pulse rounded-full bg-muted" />
           </div>
         </DialogContent>
       </Dialog>
@@ -127,7 +134,7 @@ export function DetailHubDialog() {
       <Dialog open={open} onOpenChange={(v) => !v && setSelectedBucketId(null)}>
         <DialogContent
           size="3xl"
-          className="flex max-h-[min(90dvh,920px)] flex-col gap-0 overflow-hidden p-0"
+          className="flex max-h-[min(90dvh,920px)] flex-col gap-0 overflow-hidden rounded-2xl border border-white/12 bg-slate-950/92 p-0 text-white shadow-[0_24px_80px_rgba(2,8,23,0.44),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl backdrop-saturate-150"
         >
           {/* Hero */}
           <motion.div
@@ -145,11 +152,12 @@ export function DetailHubDialog() {
                 type={item.type}
                 variant="hero"
                 interactive
+                layoutId={reduceMotion ? undefined : `bucket-dream-cover-${item.id}`}
               />
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute bottom-3 right-3 z-10 h-7 gap-1 bg-black/40 text-white backdrop-blur-sm hover:bg-black/55"
+                className={`absolute bottom-3 right-3 z-10 h-7 gap-1 ${bucketGlassControl}`}
                 onClick={() => setActiveTab("visuals")}
               >
                 <Images className="h-3.5 w-3.5" />
@@ -194,7 +202,7 @@ export function DetailHubDialog() {
                 <Button
                   size="icon-sm"
                   variant={item.is_featured ? "default" : "ghost"}
-                  className={item.is_featured ? "ml-auto bg-lime-400 text-black hover:bg-lime-300" : "ml-auto"}
+                  className={item.is_featured ? `ml-auto ${bucketPrimaryControl}` : `ml-auto ${bucketGlassControl}`}
                   onClick={() =>
                     updateBucket.mutate({
                       id: item.id,
@@ -210,7 +218,12 @@ export function DetailHubDialog() {
               </div>
               <DialogHeader className="mt-2">
                 <DialogTitle className="text-2xl font-semibold leading-tight">
-                  {item.title}
+                  <motion.span
+                    layoutId={reduceMotion ? undefined : `bucket-dream-title-${item.id}`}
+                    className="block"
+                  >
+                    {item.title}
+                  </motion.span>
                 </DialogTitle>
                 {item.description ? (
                   <DialogDescription>{item.description}</DialogDescription>
@@ -243,7 +256,7 @@ export function DetailHubDialog() {
               {/* Why it matters */}
               <motion.section
                 {...bucketEntrance(reduceMotion, 0.1, 8)}
-                className="rounded-xl border p-4"
+                className={`${bucketSolidPanel} p-4`}
               >
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">
@@ -253,6 +266,7 @@ export function DetailHubDialog() {
                     <Button
                       size="icon-sm"
                       variant="ghost"
+                      className={bucketGlassControl}
                       onClick={() => {
                         setWhyDraft(item.why_this_matters ?? "");
                         setEditingWhy(true);
@@ -274,12 +288,14 @@ export function DetailHubDialog() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        className={bucketGlassControl}
                         onClick={() => setEditingWhy(false)}
                       >
                         {copy.cancel}
                       </Button>
                       <Button
                         size="sm"
+                        className={bucketPrimaryControl}
                         onClick={async () => {
                           await updateBucket.mutateAsync({
                             id: item.id,
@@ -313,7 +329,7 @@ export function DetailHubDialog() {
                 <Button
                   size="sm"
                   onClick={() => openActivate(item.id)}
-                  className="bg-lime-400 text-black hover:bg-lime-300"
+                  className={bucketPrimaryControl}
                 >
                   <Sparkles className="h-4 w-4" />
                   {copy.detailActivate}
@@ -322,6 +338,7 @@ export function DetailHubDialog() {
                   <Button
                     size="sm"
                     variant="outline"
+                    className={bucketGlassControl}
                     onClick={async () => {
                       await markCompleted.mutateAsync(item.id);
                       // Invite the user to capture the memory right away.
@@ -335,6 +352,7 @@ export function DetailHubDialog() {
                   <Button
                     size="sm"
                     variant="outline"
+                    className={bucketGlassControl}
                     onClick={() => openReflection(item.id)}
                   >
                     <BookHeart className="h-4 w-4" />
@@ -344,6 +362,7 @@ export function DetailHubDialog() {
                 <Button
                   size="sm"
                   variant="outline"
+                  className={bucketGlassControl}
                   disabled={reframe.isPending}
                   onClick={() => reframe.mutate({ bucket: item })}
                 >
@@ -354,6 +373,7 @@ export function DetailHubDialog() {
                 <Button
                   size="sm"
                   variant="destructive"
+                  className="active:translate-y-px"
                   onClick={() => {
                     if (
                       typeof window !== "undefined" &&
@@ -373,7 +393,7 @@ export function DetailHubDialog() {
 
               {/* Tabs: Overview / Visuals / Integrations / Travel / Reflect */}
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
+                <TabsList className={`${bucketGlassControl} ${bucketSheen} max-w-full justify-start overflow-x-auto rounded-full bg-white/[0.055] p-1`}>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="intelligence">{copy.intelTab}</TabsTrigger>
                   <TabsTrigger value="visuals">{copy.visualsTab}</TabsTrigger>
@@ -395,7 +415,7 @@ export function DetailHubDialog() {
                         <FactsGrid item={item} />
 
                         {item.ai_reframe_suggestions ? (
-                          <section className="rounded-xl border bg-muted/30 p-4">
+                          <section className={`${bucketSolidPanel} p-4`}>
                             <h3 className="mb-2 text-sm font-semibold">
                               Smaller versions to try first
                             </h3>
@@ -410,7 +430,7 @@ export function DetailHubDialog() {
                                   <motion.li
                                     key={`${v.title}-${i}`}
                                     variants={bucketStaggerItem(reduceMotion, 8)}
-                                    className="rounded-lg border bg-background p-3"
+                                    className="rounded-lg border border-white/8 bg-white/[0.035] p-3"
                                   >
                                     <p className="text-sm font-semibold">{v.title}</p>
                                     <p className="mt-1 text-[13px] text-muted-foreground">
@@ -549,7 +569,7 @@ function FactsGrid({ item }: { item: BucketItem }) {
       variants={bucketStaggerContainer(reduceMotion)}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border p-4 text-sm"
+      className={`${bucketSolidPanel} grid grid-cols-2 gap-x-4 gap-y-3 p-4 text-sm`}
     >
       <Fact label="Priority" value={item.priority} reduceMotion={reduceMotion} />
       <Fact label="Difficulty" value={item.difficulty} reduceMotion={reduceMotion} />
@@ -596,7 +616,7 @@ function FactsGrid({ item }: { item: BucketItem }) {
             item.category_tags.length ? (
               <span className="flex flex-wrap gap-1">
                 {item.category_tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
+        <Badge key={tag} variant="outline" className="border-white/12 bg-white/[0.04] text-white/78">
                     {tag}
                   </Badge>
                 ))}
@@ -640,13 +660,13 @@ function IntegrationList({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed p-6 text-center">
+      <div className={`${bucketSolidPanel} p-6 text-center`}>
         <p className="text-sm font-medium">Nothing connected yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Use &ldquo;Activate this dream&rdquo; to wire up projects, tasks,
           budgets, and more.
         </p>
-        <Button size="sm" className="mt-3" onClick={onOpenActivate}>
+        <Button size="sm" className={`mt-3 ${bucketPrimaryControl}`} onClick={onOpenActivate}>
           Activate this dream
         </Button>
       </div>
@@ -657,9 +677,9 @@ function IntegrationList({
       {items.map((integration) => (
         <li
           key={integration.id}
-          className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2"
+          className="flex items-center gap-3 rounded-lg border border-white/8 bg-white/[0.035] px-3 py-2"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-background text-muted-foreground">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-white/[0.055] text-white/62">
             {iconForKind(integration.kind)}
           </span>
           <div className="flex-1 min-w-0">
@@ -715,13 +735,13 @@ function ReflectionsList({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed p-6 text-center">
+      <div className={`${bucketSolidPanel} p-6 text-center`}>
         <p className="text-sm font-medium">No reflections yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
           When you complete this dream, write a few words so it becomes a
           memory.
         </p>
-        <Button size="sm" className="mt-3" onClick={onWrite}>
+        <Button size="sm" className={`mt-3 ${bucketPrimaryControl}`} onClick={onWrite}>
           Write a reflection
         </Button>
       </div>
@@ -730,7 +750,7 @@ function ReflectionsList({
   return (
     <ul className="space-y-3">
       {items.map((r) => (
-        <li key={r.id} className="rounded-xl border p-4">
+        <li key={r.id} className={`${bucketSolidPanel} p-4`}>
           <div className="flex items-center justify-between">
             <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
               {new Date(r.reflected_on).toLocaleDateString()}

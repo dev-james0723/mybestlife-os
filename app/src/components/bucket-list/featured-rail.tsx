@@ -32,6 +32,12 @@ import {
   bucketStaggerContainer,
   bucketStaggerItem,
 } from "./bucket-motion";
+import {
+  bucketFrostedPanel,
+  bucketGlassControl,
+  bucketGlassPanel,
+  bucketSheen,
+} from "./bucket-glass";
 
 type FeaturedRailProps = {
   item: BucketItem;
@@ -99,7 +105,8 @@ export function BucketFeaturedRail({
       <motion.div
         whileHover={bucketHoverLift(reduceMotion)}
         className={cn(
-          "overflow-hidden rounded-2xl border border-white/10 bg-slate-950/85 shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl",
+          bucketGlassPanel,
+          bucketSheen,
         )}
       >
         {/* Cover / hero image area */}
@@ -152,21 +159,21 @@ export function BucketFeaturedRail({
           className="grid grid-cols-3 gap-2 px-4 pb-4"
         >
           <ActionWell
-            label="PROJECT LINKED"
+            label="Project"
             icon={<FolderOpen className="h-4 w-4" />}
             active={Boolean(item.linked_project_id)}
             onClick={onActivate}
             reduceMotion={reduceMotion}
           />
           <ActionWell
-            label="GENERATE TASKS"
+            label="Tasks"
             icon={<Sparkles className="h-4 w-4" />}
             accent
             onClick={onActivate}
             reduceMotion={reduceMotion}
           />
           <ActionWell
-            label="BUDGET LINKED"
+            label="Budget"
             icon={<Wallet className="h-4 w-4" />}
             active={Boolean(item.linked_savings_goal_id || item.linked_budget_id)}
             onClick={onActivate}
@@ -180,7 +187,7 @@ export function BucketFeaturedRail({
         <>
           <motion.section
             {...bucketEntrance(reduceMotion, 0.14, 10)}
-            className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+            className={`${bucketFrostedPanel} p-4`}
           >
             <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
               {copy.detailTravelLogistics}
@@ -205,7 +212,7 @@ export function BucketFeaturedRail({
 
           <motion.section
             {...bucketEntrance(reduceMotion, 0.18, 10)}
-            className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+            className={`${bucketFrostedPanel} p-4`}
           >
             <div className="mb-2 flex items-center justify-between">
               <h3 className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65">
@@ -242,7 +249,7 @@ export function BucketFeaturedRail({
                 size="sm"
                 onClick={onRefreshFlights}
                 disabled={refreshing}
-                className="bg-white/10 text-white hover:bg-white/15"
+                className={bucketGlassControl}
               >
                 {refreshing ? "Refreshing..." : copy.flightRefresh}
               </Button>
@@ -254,7 +261,7 @@ export function BucketFeaturedRail({
       {/* Intelligence */}
       <motion.section
         {...bucketEntrance(reduceMotion, 0.22, 10)}
-        className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+        className={`${bucketFrostedPanel} p-4`}
       >
         <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
           Intelligence
@@ -308,10 +315,11 @@ function ActionWell({
     <motion.button
       variants={bucketStaggerItem(reduceMotion, 8)}
       whileHover={bucketHoverLift(reduceMotion)}
+      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
       type="button"
       onClick={onClick}
       className={cn(
-        "group/well flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors",
+        "group/well flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60",
         accent
           ? "border-lime-400/40 bg-lime-400/15 text-lime-300 hover:bg-lime-400/25"
           : active

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import {
   Sheet,
@@ -57,6 +58,11 @@ import {
   getBucketTypeLabel,
 } from "@/lib/bucket-list/presentation";
 import { airportCoords } from "@/lib/bucket-list/flight-watch";
+import {
+  bucketGlassControl,
+  bucketPrimaryControl,
+  bucketSheen,
+} from "./bucket-glass";
 
 const DEFAULT_FORM: FormState = {
   title: "",
@@ -117,6 +123,7 @@ type FormState = {
 export function AddDreamSheet() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getBucketListUiCopy(language), [language]);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const open = useBucketListStore((s) => s.addSheetOpen);
   const closeSheet = useBucketListStore((s) => s.closeAddSheet);
@@ -220,29 +227,43 @@ export function AddDreamSheet() {
     <Sheet open={open} onOpenChange={(v) => !v && closeSheet()}>
       <SheetContent
         side="right"
-        className="flex w-full max-w-xl flex-col gap-0 p-0 sm:max-w-xl"
+        className="flex w-full max-w-xl flex-col gap-0 border-white/10 bg-slate-950/95 p-0 text-white shadow-[0_24px_80px_rgba(2,8,23,0.42)] backdrop-blur-2xl sm:max-w-xl"
       >
-        <SheetHeader className="border-b px-6 py-4">
+        <SheetHeader className="border-b border-white/10 px-6 py-4">
           <SheetTitle>{copy.addSheetTitle}</SheetTitle>
           <SheetDescription>
             {mode === "quick"
-              ? "Capture the essence first — you can activate this dream into full execution later."
-              : "Full detail capture — describe the dream and its travel context."}
+              ? "Save the idea now. Add execution later."
+              : "Add enough context to plan it."}
           </SheetDescription>
-          <div className="mt-2 flex gap-1 rounded-full border border-border bg-muted/40 p-1 text-xs">
+          <div className={`relative mt-2 flex gap-1 rounded-full p-1 text-xs ${bucketGlassControl} ${bucketSheen}`}>
             <button
               type="button"
               onClick={() => setMode("quick")}
-              className={`flex-1 rounded-full px-3 py-1 transition-colors ${mode === "quick" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              className={`relative isolate flex-1 overflow-hidden rounded-full px-3 py-1.5 font-medium transition-colors active:translate-y-px ${mode === "quick" ? "text-slate-950" : "text-white/58 hover:text-white"}`}
             >
-              Quick capture
+              {mode === "quick" ? (
+                <motion.span
+                  layoutId={reduceMotion ? undefined : "bucket-add-mode-pill"}
+                  className="absolute inset-0 -z-10 rounded-full bg-lime-300"
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                />
+              ) : null}
+              Quick
             </button>
             <button
               type="button"
               onClick={() => setMode("detailed")}
-              className={`flex-1 rounded-full px-3 py-1 transition-colors ${mode === "detailed" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              className={`relative isolate flex-1 overflow-hidden rounded-full px-3 py-1.5 font-medium transition-colors active:translate-y-px ${mode === "detailed" ? "text-slate-950" : "text-white/58 hover:text-white"}`}
             >
-              Full detail
+              {mode === "detailed" ? (
+                <motion.span
+                  layoutId={reduceMotion ? undefined : "bucket-add-mode-pill"}
+                  className="absolute inset-0 -z-10 rounded-full bg-lime-300"
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                />
+              ) : null}
+              Detailed
             </button>
           </div>
         </SheetHeader>
@@ -599,10 +620,10 @@ export function AddDreamSheet() {
           </div>
         </div>
 
-        <SheetFooter className="border-t px-6 py-3">
+        <SheetFooter className="border-t border-white/10 bg-white/[0.035] px-6 py-3">
           <SheetClose
             render={
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className={bucketGlassControl}>
                 {copy.cancel}
               </Button>
             }
@@ -610,6 +631,7 @@ export function AddDreamSheet() {
           <Button
             variant="outline"
             size="sm"
+            className={bucketGlassControl}
             onClick={() => handleSave(false)}
             disabled={!form.title.trim() || createBucket.isPending}
           >
@@ -620,7 +642,7 @@ export function AddDreamSheet() {
           </Button>
           <Button
             size="sm"
-            className="bg-lime-400 text-black hover:bg-lime-300"
+            className={bucketPrimaryControl}
             onClick={() => handleSave(true)}
             disabled={!form.title.trim() || createBucket.isPending}
           >

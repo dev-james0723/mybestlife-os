@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { Plane, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getBucketListUiCopy } from "@/lib/i18n/bucket-list-ui";
@@ -20,6 +21,7 @@ import {
   bucketStaggerContainer,
   bucketStaggerItem,
 } from "./bucket-motion";
+import { bucketGlassPanel, bucketSheen } from "./bucket-glass";
 
 type StatsStripProps = {
   items: BucketItem[] | undefined;
@@ -41,7 +43,7 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
   return (
     <motion.section
       {...bucketEntrance(reduceMotion, 0.06, 12)}
-      className="rounded-2xl border border-white/10 bg-slate-950/85 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+      className={`${bucketGlassPanel} ${bucketSheen} p-5`}
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
         {copy.masterProgress}
@@ -51,7 +53,7 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
         variants={bucketStaggerContainer(reduceMotion)}
         initial="hidden"
         animate="show"
-        className="mt-3 grid grid-cols-5 gap-4"
+        className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4"
       >
         <StatCell value={stats.total} label={copy.statTotal} reduceMotion={reduceMotion} />
         <StatCell
@@ -152,7 +154,11 @@ function SpotlightTile({
     return (
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm text-white/50">
         <div className="mb-1 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
-          {kind === "closest" ? "✈" : "⚡"}
+          {kind === "closest" ? (
+            <Plane className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <Zap className="h-3.5 w-3.5" aria-hidden />
+          )}
           {kind === "closest" ? copy.closestToReality : copy.pushThisWeek}
         </div>
         <p>{copy.noHighlight}</p>
@@ -171,7 +177,11 @@ function SpotlightTile({
       className="group/spotlight relative block w-full rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition-all hover:border-white/10 hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70"
     >
       <div className="mb-1 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
-        <span>{kind === "closest" ? "✈" : "⚡"}</span>
+        {kind === "closest" ? (
+          <Plane className="h-3.5 w-3.5" aria-hidden />
+        ) : (
+          <Zap className="h-3.5 w-3.5" aria-hidden />
+        )}
         <span>
           {kind === "closest" ? copy.closestToReality : copy.pushThisWeek}
         </span>

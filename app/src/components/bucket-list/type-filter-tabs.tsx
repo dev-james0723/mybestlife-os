@@ -14,6 +14,7 @@ import {
 } from "@/stores/bucket-list-store";
 import { getBucketTypeLabel } from "@/lib/bucket-list/presentation";
 import { bucketEntrance } from "./bucket-motion";
+import { bucketGlassControl, bucketSheen } from "./bucket-glass";
 
 export function BucketTypeFilterTabs() {
   const language = useAppStore((s) => s.language);
@@ -46,7 +47,11 @@ export function BucketTypeFilterTabs() {
         <div
           role="tablist"
           aria-label={copy.filterTravel}
-          className="flex w-full snap-x gap-1 overflow-x-auto rounded-[1.35rem] border border-white/10 bg-slate-950/80 p-1 pr-8 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.18)] [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:max-w-full sm:pr-1 [&::-webkit-scrollbar]:hidden"
+          className={cn(
+            "flex w-full snap-x gap-1 overflow-x-auto rounded-[1.35rem] p-1 pr-8 text-sm [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:max-w-full sm:pr-1 [&::-webkit-scrollbar]:hidden",
+            bucketGlassControl,
+            bucketSheen,
+          )}
         >
           {tabs.map((tab) => {
             const active = tab.id === activeType;
@@ -70,16 +75,16 @@ export function BucketTypeFilterTabs() {
                   }
                 }}
                 className={cn(
-                  "relative h-8 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors sm:px-3.5 sm:text-xs",
+                  "relative h-8 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.06em] transition-[color,transform] sm:px-3.5 sm:text-xs active:translate-y-px",
                   active
-                    ? "text-lime-200"
-                    : "text-white/55 hover:bg-white/5 hover:text-white/85",
+                    ? "text-lime-950 dark:text-lime-100"
+                    : "text-slate-500 hover:text-slate-950 dark:text-white/55 dark:hover:text-white/85",
                 )}
               >
                 {active ? (
                   <motion.span
                     layoutId={reduceMotion ? undefined : "bucket-type-active-pill"}
-                    className="absolute inset-0 rounded-full bg-lime-400/15 shadow-[inset_0_0_0_1px_rgba(200,229,58,0.35)]"
+                    className="absolute inset-0 rounded-full bg-lime-300/16 shadow-[inset_0_0_0_1px_rgba(200,229,58,0.32),inset_0_1px_0_rgba(255,255,255,0.13)]"
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                   />
                 ) : null}
@@ -90,17 +95,18 @@ export function BucketTypeFilterTabs() {
         </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-1 right-1 w-8 rounded-r-[1.1rem] bg-gradient-to-l from-slate-950/95 to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-1 right-1 w-8 rounded-r-[1.1rem] bg-gradient-to-l from-white/95 to-transparent sm:hidden dark:from-slate-950/95"
         />
       </div>
 
-      <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/80 p-1 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+      <div className={cn("relative flex items-center gap-1 rounded-full p-1", bucketGlassControl, bucketSheen)}>
         <ViewModeButton
           mode="grid"
           active={viewMode === "grid"}
           onClick={() => setViewMode("grid")}
           icon={<LayoutGrid className="h-4 w-4" />}
           label="Grid"
+          reduceMotion={reduceMotion}
         />
         <ViewModeButton
           mode="list"
@@ -108,6 +114,7 @@ export function BucketTypeFilterTabs() {
           onClick={() => setViewMode("list")}
           icon={<List className="h-4 w-4" />}
           label="List"
+          reduceMotion={reduceMotion}
         />
       </div>
     </motion.div>
@@ -119,12 +126,14 @@ function ViewModeButton({
   onClick,
   icon,
   label,
+  reduceMotion,
 }: {
   mode: BucketViewMode;
   active: boolean;
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
+  reduceMotion: boolean;
 }) {
   return (
     <button
@@ -133,13 +142,20 @@ function ViewModeButton({
       aria-pressed={active}
       aria-label={`${label} view`}
       className={cn(
-        "inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+        "relative isolate inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full transition-[color,transform] active:translate-y-px",
         active
-          ? "bg-white/10 text-white"
-          : "text-white/50 hover:bg-white/5 hover:text-white/80",
+          ? "text-slate-950"
+          : "text-slate-500 hover:text-slate-950 dark:text-white/50 dark:hover:text-white/80",
       )}
     >
-      {icon}
+      {active ? (
+        <motion.span
+          layoutId={reduceMotion ? undefined : "bucket-view-mode-active-pill"}
+          className="absolute inset-0 -z-10 rounded-full bg-lime-300"
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        />
+      ) : null}
+      <span className="relative">{icon}</span>
     </button>
   );
 }
