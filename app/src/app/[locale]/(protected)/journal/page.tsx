@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { PageShell } from "@/components/shared/page-shell";
-import { Button } from "@/components/ui/button";
+import { OSControl } from "@/components/ui/os-primitives";
 import {
   Card,
   CardContent,
@@ -186,7 +186,7 @@ export default function JournalPage() {
       title={copy.pageTitle}
       description={copy.pageSubtitle}
       actions={
-        <Button
+        <OSControl
           render={
             <Link
               href="/grateful-things"
@@ -200,11 +200,10 @@ export default function JournalPage() {
               }}
             />
           }
-          variant="outline"
           size="sm"
         >
           {copy.navGrateful}
-        </Button>
+        </OSControl>
       }
     >
       <div className="space-y-6">

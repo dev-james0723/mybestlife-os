@@ -12,8 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OSControl, OSIconControl, OSSegmentedControl } from "@/components/ui/os-primitives";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { FinanceSegmentedTab, FinanceSegmentedTabsList } from "@/components/finance/FinanceSegmentedTabs";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CategoryFormModal } from "@/components/finance/CategoryFormModal";
 import { useDeleteFinanceCategory } from "@/hooks/use-finance";
@@ -83,7 +81,7 @@ function CategoryList({
             <p className={cn(typography.body, "min-w-0 flex-1 truncate")}>{c.name}</p>
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={<Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" />}
+                render={<OSIconControl osSize="compact" size="icon-sm" className="shrink-0" />}
                 aria-label={copy.actionsMenuAria}
               >
                 <MoreHorizontal className="h-4 w-4" aria-hidden />
@@ -150,15 +148,15 @@ export function CategoriesSection({ copy, language, categories, isLoading, isErr
       <CardHeader>
         <CardTitle className={typography.heading}>{copy.categoriesSectionTitle}</CardTitle>
         <CardAction>
-          <Button
+          <OSControl
             type="button"
-            variant="outline"
             size="sm"
-            className="h-9 shrink-0 px-3 text-sm font-medium"
+            osSize="compact"
+            className="shrink-0 px-3 text-sm font-medium"
             onClick={openAdd}
           >
             {copy.categoriesAddButton}
-          </Button>
+          </OSControl>
         </CardAction>
       </CardHeader>
       <CardContent>
@@ -179,18 +177,19 @@ export function CategoriesSection({ copy, language, categories, isLoading, isErr
             action={{ label: copy.categoriesAddButton, onClick: openAdd }}
           />
         ) : (
-          <Tabs
-            value={tab}
-            onValueChange={(v) => {
-              if (v === "income" || v === "expense") setTab(v);
-            }}
-            className="w-full"
-          >
-            <FinanceSegmentedTabsList className="mb-3 sm:w-auto">
-              <FinanceSegmentedTab value="income">{copy.categoriesIncomeTab}</FinanceSegmentedTab>
-              <FinanceSegmentedTab value="expense">{copy.categoriesExpenseTab}</FinanceSegmentedTab>
-            </FinanceSegmentedTabsList>
-            <TabsContent value="income">
+          <div className="w-full">
+            <OSSegmentedControl
+              items={[
+                { id: "income" as const, label: copy.categoriesIncomeTab },
+                { id: "expense" as const, label: copy.categoriesExpenseTab },
+              ]}
+              value={tab}
+              onValueChange={setTab}
+              ariaLabel={copy.categoriesSectionTitle}
+              className="mb-3 w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none"
+              layoutId="finance-category-type-active-pill"
+            />
+            {tab === "income" ? (
               <CategoryList
                 items={income}
                 copy={copy}
@@ -201,8 +200,7 @@ export function CategoriesSection({ copy, language, categories, isLoading, isErr
                 onEdit={openEdit}
                 onRequestDelete={setDeleteTarget}
               />
-            </TabsContent>
-            <TabsContent value="expense">
+            ) : (
               <CategoryList
                 items={expense}
                 copy={copy}
@@ -213,8 +211,8 @@ export function CategoriesSection({ copy, language, categories, isLoading, isErr
                 onEdit={openEdit}
                 onRequestDelete={setDeleteTarget}
               />
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         )}
       </CardContent>
 

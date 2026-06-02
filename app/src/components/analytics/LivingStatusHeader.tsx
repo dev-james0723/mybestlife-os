@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { RefreshCw, Sparkles } from "lucide-react";
 
 import { GlassTintPanel } from "@/components/dashboard/glass-tint-panel";
-import { Button } from "@/components/ui/button";
+import { OSControl } from "@/components/ui/os-primitives";
 import type { AnalyticsRangeKey, LifeAnalytics } from "@/lib/analytics/types";
 import { LifePulseCards } from "./LifePulseCards";
 import { TimeLensControl } from "./TimeLensControl";
@@ -66,16 +66,15 @@ export function LivingStatusHeader({
               </span>
               <span className="hidden sm:inline">·</span>
               <span>Updated {updatedLabel}</span>
-              <Button
+              <OSControl
                 type="button"
-                size="sm"
-                variant="outline"
-                className="ml-0 gap-1 bg-background/45 lg:ml-2"
+                osSize="compact"
+                className="ml-0 gap-1 lg:ml-2"
                 title="AI refresh will use the analytics insight API when connected."
               >
                 <RefreshCw className="size-3.5" />
                 Refresh insight
-              </Button>
+              </OSControl>
             </div>
           </div>
         </div>

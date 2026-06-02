@@ -245,7 +245,6 @@ describe("brain note + widget cap", () => {
 describe("source icon — favicon from publisher domain", () => {
   it("builds a Google s2 favicon URL from source.domain", () => {
     const url = signalSourceIconUrl({
-      name: "BBC News",
       url: "https://bbc.com",
       domain: "bbc.co.uk",
     });
@@ -256,7 +255,6 @@ describe("source icon — favicon from publisher domain", () => {
   it("parses hostname from source.url when domain is missing", () => {
     expect(
       signalSourceHostname({
-        name: "NYT",
         url: "https://www.nytimes.com/section/world",
       }),
     ).toBe("nytimes.com");

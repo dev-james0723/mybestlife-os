@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { PreTaskRitualModal } from "@/components/tasks/pre-task-ritual-modal";
 import { CheckSquare, Zap, FileEdit, Sparkles, BarChart3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   useTasks,
   useCreateTask,
@@ -504,18 +504,24 @@ export default function TasksPage() {
         title={ui.pageTitle}
         description={ui.pageDescription}
         actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+          <>
+            <OSControl
               onClick={() => setShowInsights(true)}
             >
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{centerUi.openInsights}</span>
-            </Button>
-            <UniversalCreateMenu label={ui.newTask} options={createOptions} />
-          </div>
+            </OSControl>
+            <UniversalCreateMenu
+              label={ui.newTask}
+              options={createOptions}
+              trigger={
+                <OSPrimaryAction>
+                  <CheckSquare className="h-4 w-4" />
+                  {ui.newTask}
+                </OSPrimaryAction>
+              }
+            />
+          </>
         }
       >
         <div className="space-y-4">

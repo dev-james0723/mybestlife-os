@@ -1,5 +1,11 @@
 import { create } from "zustand";
 import type {
+  OSBuddyAirControlGesture,
+  OSBuddyAirControlPoint,
+  OSBuddyAirControlStatus,
+  OSBuddyAirControlStopReason,
+} from "@/lib/os-buddy/os-buddy-air-control-types";
+import type {
   OSBuddyCompanionCta,
   OSBuddyCompanionKind,
   OSBuddyMiniGame,
@@ -52,6 +58,11 @@ interface OSBuddyRuntimeState {
   dragDirection: "left" | "right" | null;
   isWalkModeActive: boolean;
   isReturningHome: boolean;
+  isAirControlActive: boolean;
+  airControlStatus: OSBuddyAirControlStatus;
+  airControlGesture: OSBuddyAirControlGesture | null;
+  airControlTarget: OSBuddyAirControlPoint | null;
+  airControlLastSeenAt: number | null;
   isFreeRoaming: boolean;
   freeRoamStartedAt: number | null;
   freeRoamUntil: number | null;
@@ -98,6 +109,12 @@ interface OSBuddyRuntimeState {
   setDragging: (dragging: boolean, direction?: "left" | "right" | null) => void;
   setWalkModeActive: (active: boolean) => void;
   setReturningHome: (returning: boolean) => void;
+  startAirControl: () => void;
+  stopAirControl: (reason?: OSBuddyAirControlStopReason) => void;
+  setAirControlTarget: (point: OSBuddyAirControlPoint | null) => void;
+  setAirControlGesture: (gesture: OSBuddyAirControlGesture | null) => void;
+  setAirControlStatus: (status: OSBuddyAirControlStatus) => void;
+  markAirControlHandSeen: (seenAt?: number) => void;
   startFreeRoam: (params: {
     until: number;
     initialPosition?: { x: number; y: number } | null;
@@ -131,6 +148,11 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   dragDirection: null,
   isWalkModeActive: false,
   isReturningHome: false,
+  isAirControlActive: false,
+  airControlStatus: "idle",
+  airControlGesture: null,
+  airControlTarget: null,
+  airControlLastSeenAt: null,
   isFreeRoaming: false,
   freeRoamStartedAt: null,
   freeRoamUntil: null,
@@ -231,6 +253,39 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   setWalkModeActive: (active) => set({ isWalkModeActive: active }),
 
   setReturningHome: (returning) => set({ isReturningHome: returning }),
+
+  startAirControl: () =>
+    set({
+      isAirControlActive: true,
+      airControlStatus: "requesting-permission",
+      airControlGesture: null,
+      airControlTarget: null,
+      airControlLastSeenAt: null,
+    }),
+
+  stopAirControl: () =>
+    set({
+      isAirControlActive: false,
+      airControlStatus: "idle",
+      airControlGesture: null,
+      airControlTarget: null,
+      airControlLastSeenAt: null,
+    }),
+
+  setAirControlTarget: (point) =>
+    set({
+      airControlTarget: point ? { x: point.x, y: point.y } : null,
+      airControlLastSeenAt: point ? Date.now() : get().airControlLastSeenAt,
+    }),
+
+  setAirControlGesture: (gesture) => set({ airControlGesture: gesture }),
+
+  setAirControlStatus: (status) => set({ airControlStatus: status }),
+
+  markAirControlHandSeen: (seenAt = Date.now()) =>
+    set({
+      airControlLastSeenAt: seenAt,
+    }),
 
   setDragging: (dragging, direction = null) => {
     set((state) => {

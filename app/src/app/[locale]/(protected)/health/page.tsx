@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
-import { Button } from "@/components/ui/button";
+import { OSIconControl } from "@/components/ui/os-primitives";
 import { HealthHero } from "@/components/health/HealthHero";
 import { PillarCard } from "@/components/health/PillarCard";
 import { PillarLogModal } from "@/components/health/PillarLogModal";
@@ -131,26 +131,24 @@ export default function HealthPage() {
       description={ui.pageDescription}
       actions={
         <div className="flex items-center gap-1">
-          <Button
+          <OSIconControl
             size="icon-sm"
-            variant="ghost"
             aria-label={ui.previousDay}
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
           >
             <ChevronLeft className="h-4 w-4" />
-          </Button>
+          </OSIconControl>
           <span className="text-xs font-medium tabular-nums text-muted-foreground">
             {isToday ? new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) : dateKey}
           </span>
-          <Button
+          <OSIconControl
             size="icon-sm"
-            variant="ghost"
             aria-label={ui.nextDay}
             disabled={isToday}
             onClick={() => setSelectedDate((d) => addDays(d, 1))}
           >
             <ChevronRight className="h-4 w-4" />
-          </Button>
+          </OSIconControl>
         </div>
       }
     >

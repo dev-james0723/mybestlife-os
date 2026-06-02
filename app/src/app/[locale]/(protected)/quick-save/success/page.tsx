@@ -6,7 +6,14 @@ import { DEFAULT_LOCALE_SLUG, normalizeLocaleSlug } from "@/lib/i18n/locale-slug
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { PageShell } from "@/components/shared/page-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  osControlSizeClassName,
+  osFrostedPanelClassName,
+  osGlassControlClassName,
+  osPrimaryControlClassName,
+  osSheenClassName,
+} from "@/components/ui/os-glass";
+import { cn } from "@/lib/utils";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -37,26 +44,40 @@ export default async function QuickSaveSuccessPage({ params, searchParams }: Pag
 
   return (
     <PageShell title="Quick Save" description="Your shared content has been saved.">
-      <Card className="max-w-xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>
+      <div
+        className={cn(
+          osFrostedPanelClassName,
+          osSheenClassName,
+          "max-w-xl space-y-5 p-5 text-center sm:p-6",
+        )}
+      >
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/72 text-lime-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/10 dark:bg-white/[0.06] dark:text-lime-200">
+          <CheckCircle2 className="h-6 w-6" />
+        </div>
+        <div className="space-y-1.5">
+          <h2 className="font-heading text-base font-semibold leading-snug text-foreground">
+            {title}
+          </h2>
+          <p className="text-sm leading-6 text-muted-foreground">
             You can open it now or return to your dashboard.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
-          <Button render={<Link href={openHref} />}>Open item</Button>
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button
+            render={<Link href={openHref} />}
+            className={cn(osPrimaryControlClassName, osControlSizeClassName)}
+          >
+            Open item
+          </Button>
           <Button
             variant="outline"
             render={<Link href={withLocalePrefix(slug, "/dashboard")} />}
+            className={cn(osGlassControlClassName, osControlSizeClassName)}
           >
             Back to Dashboard
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </PageShell>
   );
 }

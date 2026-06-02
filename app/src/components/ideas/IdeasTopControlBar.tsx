@@ -8,6 +8,7 @@ import {
 } from "@/stores/ideas-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -103,9 +104,9 @@ export function IdeasTopControlBar() {
   );
 
   const viewOptions = [
-    { key: "gallery" as const, label: ui.viewLabels.gallery, icon: LayoutGrid },
-    { key: "board" as const, label: ui.viewLabels.board, icon: Columns3 },
-    { key: "table" as const, label: ui.viewLabels.table, icon: Table },
+    { id: "gallery" as const, label: ui.viewLabels.gallery, icon: LayoutGrid },
+    { id: "board" as const, label: ui.viewLabels.board, icon: Columns3 },
+    { id: "table" as const, label: ui.viewLabels.table, icon: Table },
   ];
 
   return (
@@ -136,28 +137,17 @@ export function IdeasTopControlBar() {
             </SelectContent>
           </Select>
 
-          <div className="flex w-full items-center rounded-lg border border-border/60 bg-background/80 p-0.5 sm:w-auto">
-            {viewOptions.map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-8 flex-1 gap-1.5 px-2 text-xs sm:flex-initial",
-                  currentView === key
-                    ? "bg-muted font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground",
-                )}
-                onClick={() => setView(key)}
-                aria-label={common.switchToView(label)}
-                aria-pressed={currentView === key}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden sm:inline">{label}</span>
-              </Button>
-            ))}
-          </div>
+          <OSSegmentedControl
+            items={viewOptions.map((item) => ({
+              ...item,
+              ariaLabel: common.switchToView(item.label),
+            }))}
+            value={currentView}
+            onValueChange={setView}
+            ariaLabel="Ideas view"
+            labelMode="desktop"
+            layoutId="ideas-view-switcher-active"
+          />
         </div>
       </div>
 

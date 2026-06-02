@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import {
   Bell,
   CalendarDays,
@@ -34,7 +34,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSPrimaryAction,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -72,7 +77,6 @@ import { getSettingsUiCopy } from "@/lib/i18n/settings-ui";
 import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
-import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/constants/app-meta";
 import { settingsRepository } from "@/lib/repositories/settings";
 import { requestDeviceGeolocation } from "@/lib/weather/openweather";
@@ -181,7 +185,6 @@ export default function SettingsPage() {
   const tui = useMemo(() => getThemeUiCopy(locale), [locale]);
 
   const [language, setLanguage] = useState<UserProfile["language"]>("en");
-  const [theme, setTheme] = useState<UserProfile["theme"]>("light");
   const [timezone, setTimezone] = useState(PROFILE_TIMEZONE_AUTO);
   const [motto, setMotto] = useState("");
   const [fontSizePref, setFontSizePref] = useState<UserProfile["font_size_pref"]>("medium");
@@ -196,17 +199,18 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!profile) return;
-    setLanguage(profile.language);
-    setTheme(profile.theme);
-    setTimezone(profile.timezone?.trim() || PROFILE_TIMEZONE_AUTO);
-    setMotto(profile.motto ?? "");
-    setFontSizePref(profile.font_size_pref);
-    setGreetingTone(profile.greeting_tone);
-    setBlockMinutes(profile.block_minutes ?? 10);
-    setBlockMinutesChanged(false);
-    setQuickSaveEnabled(profile.quick_save_enabled);
-    setQuickSaveDestination(profile.quick_save_default_destination);
-    setQuickSaveRequireReview(profile.quick_save_require_review);
+    startTransition(() => {
+      setLanguage(profile.language);
+      setTimezone(profile.timezone?.trim() || PROFILE_TIMEZONE_AUTO);
+      setMotto(profile.motto ?? "");
+      setFontSizePref(profile.font_size_pref);
+      setGreetingTone(profile.greeting_tone);
+      setBlockMinutes(profile.block_minutes ?? 10);
+      setBlockMinutesChanged(false);
+      setQuickSaveEnabled(profile.quick_save_enabled);
+      setQuickSaveDestination(profile.quick_save_default_destination);
+      setQuickSaveRequireReview(profile.quick_save_require_review);
+    });
   }, [profile]);
 
   const tzList = useMemo(() => timezoneChoices(profile?.timezone), [profile?.timezone]);
@@ -218,6 +222,32 @@ export default function SettingsPage() {
         { value: "dark" as const, label: tui.nightMode, icon: Moon },
       ] as const,
     [tui.dayMode, tui.nightMode]
+  );
+  const colorModeItems = useMemo(
+    () =>
+      colorModeOptions.map(({ value, label, icon }) => ({
+        id: value,
+        label,
+        icon,
+      })),
+    [colorModeOptions],
+  );
+  const blockMinuteItems = useMemo(
+    () =>
+      ([5, 10, 15, 20, 30] as const).map((mins) => ({
+        id: String(mins),
+        label: `${mins} ${ui.blockMinutesUnit}`,
+      })),
+    [ui.blockMinutesUnit],
+  );
+  const fontSizeItems = useMemo(
+    () =>
+      [
+        { id: "small" as const, label: tui.fontSizeSmall },
+        { id: "medium" as const, label: tui.fontSizeMedium },
+        { id: "large" as const, label: tui.fontSizeLarge },
+      ],
+    [tui.fontSizeSmall, tui.fontSizeMedium, tui.fontSizeLarge],
   );
 
   const handleSaveProfile = async () => {
@@ -386,7 +416,7 @@ export default function SettingsPage() {
               <CardDescription>{ui.settingsLoadErrorDescription}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
+              <OSControl
                 type="button"
                 variant="secondary"
                 onClick={() => {
@@ -395,7 +425,7 @@ export default function SettingsPage() {
                 }}
               >
                 {ui.settingsRetry}
-              </Button>
+              </OSControl>
             </CardContent>
           </Card>
         </div>
@@ -468,20 +498,14 @@ export default function SettingsPage() {
             </FieldRow>
 
             <FieldRow icon={Sun} label={tui.dayNightMode}>
-              <div className="flex gap-2">
-                {colorModeOptions.map(({ value, label, icon: ModeIcon }) => (
-                  <Button
-                    key={value}
-                    variant={colorMode === value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setColorMode(value)}
-                    className="gap-2"
-                  >
-                    <ModeIcon className="h-4 w-4" />
-                    {label}
-                  </Button>
-                ))}
-              </div>
+              <OSSegmentedControl
+                items={colorModeItems}
+                value={colorMode}
+                onValueChange={setColorMode}
+                ariaLabel={tui.dayNightMode}
+                className="w-full max-w-md [&>button]:flex-1"
+                layoutId="settings-color-mode-active-pill"
+              />
             </FieldRow>
 
             <FieldRow icon={Clock} label={ui.timezoneLabel}>
@@ -520,40 +544,33 @@ export default function SettingsPage() {
                     {formatPinnedWeatherLocation(profile) || ui.weatherLocationNotSet}
                   </span>
                 </p>
-                <Button
+                <OSControl
                   type="button"
-                  variant="outline"
                   size="sm"
+                  osSize="compact"
                   className="shrink-0"
                   disabled={weatherLocationBusy}
                   onClick={() => void handleWeatherLocationFromDevice()}
                 >
                   {weatherLocationBusy ? ui.weatherLocationSaving : ui.weatherLocationUseDevice}
-                </Button>
+                </OSControl>
               </div>
             </FieldRow>
 
             <Separator />
             <FieldRow icon={Clock} label={ui.blockMinutesLabel}>
-              <div className="flex flex-wrap gap-2">
-                {([5, 10, 15, 20, 30] as const).map((mins) => (
-                  <Button
-                    key={mins}
-                    variant={blockMinutes === mins ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      if (mins !== (profile?.block_minutes ?? 10)) {
-                        setBlockMinutesChanged(true);
-                      } else {
-                        setBlockMinutesChanged(false);
-                      }
-                      setBlockMinutes(mins);
-                    }}
-                  >
-                    {mins} {ui.blockMinutesUnit}
-                  </Button>
-                ))}
-              </div>
+              <OSSegmentedControl
+                items={blockMinuteItems}
+                value={String(blockMinutes)}
+                onValueChange={(value) => {
+                  const mins = Number(value) as BlockMinutesOption;
+                  setBlockMinutesChanged(mins !== (profile?.block_minutes ?? 10));
+                  setBlockMinutes(mins);
+                }}
+                ariaLabel={ui.blockMinutesLabel}
+                className="w-full max-w-md [&>button]:flex-1"
+                layoutId="settings-block-minutes-active-pill"
+              />
               {blockMinutesChanged && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                   {ui.blockMinutesNextDayWarning}
@@ -563,9 +580,9 @@ export default function SettingsPage() {
 
             <Separator />
             <div className="flex justify-end">
-              <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+              <OSPrimaryAction onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? ui.saving : ui.savePreferences}
-              </Button>
+              </OSPrimaryAction>
             </div>
           </CardContent>
         </Card>
@@ -650,13 +667,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button
+              <OSPrimaryAction
                 type="button"
                 onClick={() => void handleSaveQuickSave()}
                 disabled={updateProfile.isPending}
               >
                 {updateProfile.isPending ? ui.saving : "Save Quick Save"}
-              </Button>
+              </OSPrimaryAction>
             </div>
           </CardContent>
         </Card>
@@ -756,22 +773,21 @@ export default function SettingsPage() {
             <div className="flex flex-wrap items-center gap-2">
               {gcalStatus?.connected ? (
                 <>
-                  <Button
+                  <OSControl
                     type="button"
                     variant="secondary"
                     disabled
                     className="cursor-default opacity-90"
                   >
                     {ui.googleCalendarConnectedButton}
-                  </Button>
-                  <Button
+                  </OSControl>
+                  <OSControl
                     type="button"
-                    variant="outline"
                     disabled={googleCalendarBusy}
                     onClick={() => handleGoogleCalendarConnect({ switchAccount: true })}
                   >
                     {ui.googleCalendarSwitchAccount}
-                  </Button>
+                  </OSControl>
                   <Button
                     type="button"
                     variant="destructive"
@@ -782,45 +798,37 @@ export default function SettingsPage() {
                   </Button>
                 </>
               ) : (
-                <Button
+                <OSPrimaryAction
                   type="button"
                   onClick={() => handleGoogleCalendarConnect()}
                   disabled={googleCalendarBusy}
                 >
                   {googleCalendarBusy ? ui.googleCalendarConnecting : ui.googleCalendarConnect}
-                </Button>
+                </OSPrimaryAction>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {gcalStatus?.connected ? (
                 <>
-                  <Button
+                  <OSControl
                     type="button"
-                    variant="outline"
                     disabled={googleCalendarBusy}
                     onClick={() => void handleGoogleCalendarSyncNow()}
                   >
                     {ui.googleCalendarSyncNow}
-                  </Button>
-                  <Button
+                  </OSControl>
+                  <OSControl
                     type="button"
-                    variant="outline"
                     disabled={googleCalendarBusy}
                     onClick={() => void handleGoogleCalendarTogglePause()}
                   >
                     {gcalStatus.syncEnabled ? ui.googleCalendarPauseSync : ui.googleCalendarResumeSync}
-                  </Button>
+                  </OSControl>
                 </>
               ) : null}
-              <Link
-                href={dailyPlannerHref}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "default" }),
-                  "inline-flex no-underline",
-                )}
-              >
+              <OSControl render={<Link href={dailyPlannerHref} />} className="inline-flex no-underline">
                 {ui.googleCalendarGoPlanner}
-              </Link>
+              </OSControl>
             </div>
             <div className="space-y-2 rounded-lg border bg-muted/25 p-3 text-xs text-muted-foreground">
               <p className="font-medium text-foreground">{ui.googleCalendarSetupTitle}</p>
@@ -855,22 +863,14 @@ export default function SettingsPage() {
             </FieldRow>
 
             <FieldRow icon={Type} label={tui.fontSizeLabel}>
-              <div className="flex gap-2">
-                {([
-                  { value: "small" as const, label: tui.fontSizeSmall },
-                  { value: "medium" as const, label: tui.fontSizeMedium },
-                  { value: "large" as const, label: tui.fontSizeLarge },
-                ]).map(({ value, label }) => (
-                  <Button
-                    key={value}
-                    variant={fontSizePref === value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFontSizePref(value)}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
+              <OSSegmentedControl
+                items={fontSizeItems}
+                value={fontSizePref}
+                onValueChange={setFontSizePref}
+                ariaLabel={tui.fontSizeLabel}
+                className="w-full max-w-md [&>button]:flex-1"
+                layoutId="settings-font-size-active-pill"
+              />
             </FieldRow>
 
             <FieldRow icon={Type} label={tui.greetingToneLabel}>
@@ -901,8 +901,7 @@ export default function SettingsPage() {
 
             <Separator />
             <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
+              <OSControl
                 size="sm"
                 className="gap-2 text-muted-foreground"
                 onClick={() => void handleRestartOnboarding()}
@@ -910,10 +909,10 @@ export default function SettingsPage() {
               >
                 <RotateCcw className="h-4 w-4" />
                 {tui.restartOnboarding}
-              </Button>
-              <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+              </OSControl>
+              <OSPrimaryAction onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? ui.saving : ui.savePreferences}
-              </Button>
+              </OSPrimaryAction>
             </div>
           </CardContent>
         </Card>

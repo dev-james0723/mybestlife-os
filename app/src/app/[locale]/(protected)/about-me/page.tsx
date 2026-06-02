@@ -4,9 +4,12 @@ import { useEffect, useRef, type ChangeEvent, type RefObject } from "react";
 import { Camera, UserRound } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  OSFrostedPanel,
+  OSPrimaryAction,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import {
   RichTextEditor,
   type RichTextEditorHandle,
@@ -116,12 +119,16 @@ export default function AboutMePage() {
       description={ui.pageDescription}
     >
       <div className="space-y-6 max-w-3xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>{ui.profileImageTitle}</CardTitle>
-            <CardDescription>{ui.profileImageDescription}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <OSFrostedPanel className="space-y-4 p-4 sm:p-5">
+          <div className="space-y-1.5">
+            <h2 className="font-heading text-base font-semibold leading-snug text-foreground">
+              {ui.profileImageTitle}
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {ui.profileImageDescription}
+            </p>
+          </div>
+          <div className="space-y-4">
             <input
               ref={fileInputRef}
               type="file"
@@ -156,16 +163,18 @@ export default function AboutMePage() {
               </button>
               <p className="text-sm text-muted-foreground">{ui.profileImageFileHint}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </OSFrostedPanel>
 
         {sections.map((s) => (
-          <Card key={s.key}>
-            <CardHeader>
-              <CardTitle>{s.title}</CardTitle>
-              <CardDescription>{s.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <OSSolidPanel key={s.key} className="space-y-4 p-4 sm:p-5">
+            <div className="space-y-1.5">
+              <h2 className="font-heading text-base font-semibold leading-snug text-foreground">
+                {s.title}
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground">{s.description}</p>
+            </div>
+            <div className="space-y-4">
               {s.multiline ? (
                 <RichTextEditor
                   ref={
@@ -182,11 +191,16 @@ export default function AboutMePage() {
                   minHeightClass="min-h-[160px]"
                 />
               ) : null}
-              <Button onClick={() => saveSection(s.key)} disabled={upsert.isPending}>
+              <OSPrimaryAction
+                type="button"
+                className="w-full sm:w-fit"
+                onClick={() => saveSection(s.key)}
+                disabled={upsert.isPending}
+              >
                 {upsert.isPending ? ui.saving : ui.saveSection(s.title)}
-              </Button>
-            </CardContent>
-          </Card>
+              </OSPrimaryAction>
+            </div>
+          </OSSolidPanel>
         ))}
       </div>
     </PageShell>

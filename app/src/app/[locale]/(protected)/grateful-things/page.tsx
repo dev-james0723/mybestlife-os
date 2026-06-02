@@ -15,12 +15,17 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import {
   Dialog,
-  DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSDialogSurface,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -101,7 +106,7 @@ function GratefulThingDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
+      <OSDialogSurface size="2xl" className="max-h-[85vh] overflow-y-auto">
         {isEditing ? (
           <>
             <DialogHeader>
@@ -152,12 +157,12 @@ function GratefulThingDetailModal({
               </label>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={onCancelEdit}>
+              <OSControl onClick={onCancelEdit}>
                 {copy.cancel}
-              </Button>
-              <Button onClick={() => void onSave()} disabled={isSaving}>
+              </OSControl>
+              <OSPrimaryAction onClick={() => void onSave()} disabled={isSaving}>
                 {isSaving ? copy.saving : copy.save}
-              </Button>
+              </OSPrimaryAction>
             </DialogFooter>
           </>
         ) : (
@@ -166,9 +171,9 @@ function GratefulThingDetailModal({
               <div className="flex items-start justify-between gap-4 pr-8">
                 <DialogTitle>{copy.detailViewTitle}</DialogTitle>
                 <div className="flex shrink-0 gap-1">
-                  <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label={copy.editEntryAria}>
+                  <OSIconControl osSize="compact" size="icon-sm" onClick={onEdit} aria-label={copy.editEntryAria}>
                     <Pencil className="h-4 w-4" />
-                  </Button>
+                  </OSIconControl>
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -197,6 +202,7 @@ function GratefulThingDetailModal({
                 ) : null}
               </div>
               {entry.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={entry.photo_url}
                   alt=""
@@ -211,7 +217,7 @@ function GratefulThingDetailModal({
             </div>
           </>
         )}
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }
@@ -311,10 +317,10 @@ export default function GratefulThingsPage() {
         title={copy.pageTitle}
         description={copy.pageDescription}
         actions={
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <OSPrimaryAction onClick={() => setShowCreate(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
             {copy.newEntry}
-          </Button>
+          </OSPrimaryAction>
         }
       >
         <FilterBar

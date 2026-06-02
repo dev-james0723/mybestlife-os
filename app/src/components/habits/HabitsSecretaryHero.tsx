@@ -5,8 +5,8 @@ import type { HabitsUiCopy } from "@/lib/i18n/habits-ui";
 import type { Habit, RoutineWithSteps } from "@/lib/habits/types";
 import type { SecretaryBriefResponse } from "@/lib/ai/schemas/habits/secretary";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 
 export interface HabitsSecretaryHeroProps {
   copy: HabitsUiCopy;
@@ -67,16 +67,16 @@ export function HabitsSecretaryHero({
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" className="h-9" onClick={onPlan}>
+            <OSPrimaryAction type="button" osSize="compact" className="gap-1.5" onClick={onPlan}>
               <Wand2 className="size-4" />
               {copy.secretaryPrimaryCta}
-            </Button>
-            <Button type="button" variant="secondary" className="h-9" onClick={onManual}>
+            </OSPrimaryAction>
+            <OSControl type="button" osSize="compact" onClick={onManual}>
               {copy.secretaryManualCta}
-            </Button>
-            <Button type="button" variant="ghost" className="h-9" onClick={onReview}>
+            </OSControl>
+            <OSControl type="button" osSize="compact" onClick={onReview}>
               {copy.secretaryReviewCta}
-            </Button>
+            </OSControl>
           </div>
         </div>
 

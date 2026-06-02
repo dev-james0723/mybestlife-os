@@ -15,6 +15,7 @@ import { WeatherSmartReminders } from "@/components/weather/WeatherSmartReminder
 import { WeatherTopBar } from "@/components/weather/WeatherTopBar";
 import { WeatherTrendChart } from "@/components/weather/WeatherTrendChart";
 
+import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import { useWeatherPage } from "@/hooks/weather/use-weather-page";
 import { getWeatherUiCopy } from "@/lib/i18n/weather-ui";
 import { useAppStore } from "@/stores/app-store";
@@ -210,15 +211,13 @@ function ErrorPanel({
         {errorTitle}
       </h2>
       <p className="text-sm text-[var(--weather-text-secondary)]">{message}</p>
-      <button
+      <OSPrimaryAction
         type="button"
         onClick={retry}
-        className="weather-glass-pill"
-        data-accent="lime"
+        osSize="compact"
       >
         {retryLabel}
-      </button>
+      </OSPrimaryAction>
     </div>
   );
 }
-

@@ -4,8 +4,8 @@ import { Lightbulb, Link2, RefreshCw } from "lucide-react";
 import type { CrossPageSuggestionsResponse, CrossPageHabitSuggestion } from "@/lib/ai/schemas/habits/secretary";
 import type { HabitsUiCopy } from "@/lib/i18n/habits-ui";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { OSIconControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 
 export interface CrossPageHabitSuggestionsProps {
   copy: HabitsUiCopy;
@@ -47,16 +47,16 @@ export function CrossPageHabitSuggestions({
             {copy.aiArchitectDescription}
           </p>
         </div>
-        <Button
+        <OSIconControl
           type="button"
+          osSize="compact"
           size="icon-sm"
-          variant="ghost"
           aria-label={copy.insightRefresh}
           disabled={refreshing}
           onClick={onRefresh}
         >
           <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} />
-        </Button>
+        </OSIconControl>
       </div>
 
       {loading && (
@@ -104,15 +104,16 @@ export function CrossPageHabitSuggestions({
                 {suggestion.sourceTitle}
               </Badge>
             </div>
-            <Button
+            <OSPrimaryAction
               type="button"
               size="sm"
+              osSize="compact"
               className="mt-3 w-full"
               disabled={creating}
               onClick={() => onCreate(suggestion)}
             >
               {copy.aiCreateSuggestion}
-            </Button>
+            </OSPrimaryAction>
           </article>
         ))}
       </div>

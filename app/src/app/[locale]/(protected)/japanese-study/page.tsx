@@ -4,18 +4,22 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar, type ViewMode } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
-import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSDialogSurface,
+  OSEmptyState,
+  OSPrimaryAction,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -216,42 +220,36 @@ export default function JapaneseStudyPage() {
         title="Japanese Study"
         description="Log sessions and watch your consistency grow"
         actions={
-          <Button onClick={openCreateJp}>
+          <OSPrimaryAction onClick={openCreateJp}>
             <Plus className="h-4 w-4 mr-2" />
             Log session
-          </Button>
+          </OSPrimaryAction>
         }
       >
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total sessions</CardTitle>
+          <OSSolidPanel className="space-y-2 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-muted-foreground">Total sessions</p>
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold tabular-nums">{stats.total}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total hours</CardTitle>
+            </div>
+            <p className="text-2xl font-semibold tabular-nums">{stats.total}</p>
+          </OSSolidPanel>
+          <OSSolidPanel className="space-y-2 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-muted-foreground">Total hours</p>
               <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold tabular-nums">{totalHoursDisplay}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg. duration</CardTitle>
+            </div>
+            <p className="text-2xl font-semibold tabular-nums">{totalHoursDisplay}</p>
+          </OSSolidPanel>
+          <OSSolidPanel className="space-y-2 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-muted-foreground">Avg. duration</p>
               <Timer className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold tabular-nums">
-                {stats.total === 0 ? "—" : `${stats.avgMinutes} min`}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-2xl font-semibold tabular-nums">
+              {stats.total === 0 ? "—" : `${stats.avgMinutes} min`}
+            </p>
+          </OSSolidPanel>
         </div>
 
         <FilterBar
@@ -263,7 +261,7 @@ export default function JapaneseStudyPage() {
         />
 
         {filtered.length === 0 ? (
-          <EmptyState
+          <OSEmptyState
             icon={BookOpen}
             title="No sessions found"
             description={
@@ -273,7 +271,12 @@ export default function JapaneseStudyPage() {
             }
             action={
               sessions?.length === 0
-                ? { label: "Log session", onClick: openCreateJp }
+                ? (
+                    <OSPrimaryAction onClick={openCreateJp}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Log session
+                    </OSPrimaryAction>
+                  )
                 : undefined
             }
           />
@@ -304,7 +307,7 @@ export default function JapaneseStudyPage() {
 
       {/* ── Create Study Session Modal ── */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent size="xl" className="max-h-[85vh] overflow-y-auto">
+        <OSDialogSurface size="xl" className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Log study session</DialogTitle>
           </DialogHeader>
@@ -369,10 +372,10 @@ export default function JapaneseStudyPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>
+            <OSControl onClick={() => setShowCreate(false)}>
               Cancel
-            </Button>
-            <Button
+            </OSControl>
+            <OSPrimaryAction
               onClick={handleCreate}
               disabled={
                 createSession.isPending ||
@@ -382,14 +385,14 @@ export default function JapaneseStudyPage() {
               }
             >
               {createSession.isPending ? "Saving…" : "Save"}
-            </Button>
+            </OSPrimaryAction>
           </DialogFooter>
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
 
       {/* ── Study Session Detail Modal ── */}
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) { setSelected(null); setIsEditing(false); } }}>
-        <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
+        <OSDialogSurface size="2xl" className="max-h-[85vh] overflow-y-auto">
           {selected && (
             isEditing ? (
               <>
@@ -465,10 +468,10 @@ export default function JapaneseStudyPage() {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  <OSControl onClick={() => setIsEditing(false)}>
                     Cancel
-                  </Button>
-                  <Button
+                  </OSControl>
+                  <OSPrimaryAction
                     onClick={handleUpdate}
                     disabled={
                       updateSession.isPending ||
@@ -477,7 +480,7 @@ export default function JapaneseStudyPage() {
                     }
                   >
                     {updateSession.isPending ? "Saving…" : "Save changes"}
-                  </Button>
+                  </OSPrimaryAction>
                 </DialogFooter>
               </>
             ) : (
@@ -507,18 +510,18 @@ export default function JapaneseStudyPage() {
                   {(selected.content?.trim() || /<img\b/i.test(selected.content ?? "")) && (
                     <section>
                       <p className="text-sm font-medium text-muted-foreground mb-2">Content</p>
-                      <div className="rounded-lg border bg-muted/30 p-4">
+                      <OSSolidPanel className="rounded-xl p-4">
                         <RichTextReadOnly value={selected.content} empty="" />
-                      </div>
+                      </OSSolidPanel>
                     </section>
                   )}
 
                   {selected.notes && (
                     <section>
                       <p className="text-sm font-medium text-muted-foreground mb-2">Notes</p>
-                      <div className="rounded-lg border bg-muted/30 p-4">
+                      <OSSolidPanel className="rounded-xl p-4">
                         <p className="text-sm whitespace-pre-wrap">{selected.notes}</p>
-                      </div>
+                      </OSSolidPanel>
                     </section>
                   )}
 
@@ -529,15 +532,15 @@ export default function JapaneseStudyPage() {
                 </div>
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsEditing(true)}>
+                  <OSControl onClick={() => setIsEditing(true)}>
                     <Pencil className="h-4 w-4 mr-2" />
                     Edit
-                  </Button>
+                  </OSControl>
                 </DialogFooter>
               </>
             )
           )}
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
 
       {/* ── Delete Confirmation ── */}

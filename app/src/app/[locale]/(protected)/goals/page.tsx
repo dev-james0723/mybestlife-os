@@ -9,6 +9,11 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Label } from "@/components/ui/label";
@@ -132,10 +137,10 @@ function KeyResultsFormSection({
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <Label className="text-base font-medium">Key Results</Label>
-          <Button type="button" variant="outline" size="sm" onClick={onAdd}>
+          <OSControl type="button" onClick={onAdd}>
             <Plus className="h-4 w-4 mr-1" />
             Add
-          </Button>
+          </OSControl>
         </div>
         {drafts.length === 0 && (
           <p className="text-sm text-muted-foreground">{emptyMessage}</p>
@@ -150,14 +155,12 @@ function KeyResultsFormSection({
                   onChange={(e) => onUpdate(kr._tempId, "name", e.target.value)}
                   placeholder="Key result title"
                 />
-                <Button
+                <OSIconControl
                   type="button"
-                  variant="ghost"
-                  size="icon-sm"
                   onClick={() => onRemove(kr._tempId)}
                 >
                   <X className="h-4 w-4" />
-                </Button>
+                </OSIconControl>
               </div>
               <div
                 className={cn(
@@ -463,10 +466,10 @@ function GoalDetailModal({
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
-                <Button variant="outline" onClick={cancelEdit}>
+                <OSControl onClick={cancelEdit}>
                   Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={saving || !editForm.name.trim()}>
+                </OSControl>
+                <OSPrimaryAction onClick={handleSave} disabled={saving || !editForm.name.trim()}>
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -475,7 +478,7 @@ function GoalDetailModal({
                   ) : (
                     "Save Changes"
                   )}
-                </Button>
+                </OSPrimaryAction>
               </DialogFooter>
             </>
           ) : (
@@ -839,10 +842,10 @@ function CreateGoalModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <OSControl onClick={() => onOpenChange(false)}>
             Cancel
-          </Button>
-          <Button onClick={handleCreate} disabled={!form.name.trim() || saving}>
+          </OSControl>
+          <OSPrimaryAction onClick={handleCreate} disabled={!form.name.trim() || saving}>
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -851,7 +854,7 @@ function CreateGoalModal({
             ) : (
               "Create Goal"
             )}
-          </Button>
+          </OSPrimaryAction>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -894,10 +897,10 @@ export default function GoalsPage() {
         title="Goals"
         description="Set and track your goals and key results"
         actions={
-          <Button onClick={() => setShowCreate(true)}>
+          <OSPrimaryAction onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Goal
-          </Button>
+          </OSPrimaryAction>
         }
       >
         <FilterBar

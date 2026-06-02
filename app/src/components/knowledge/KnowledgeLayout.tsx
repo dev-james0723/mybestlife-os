@@ -17,8 +17,8 @@ import { KnowledgeDetailSheet } from "./KnowledgeDetailSheet";
 import { AddKnowledgeModal } from "./AddKnowledgeModal";
 import { PageShell } from "@/components/shared/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { OSControl, OSIconControl } from "@/components/ui/os-primitives";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Sparkles } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
@@ -264,19 +264,18 @@ export function KnowledgeLayout({
       description={ui.pageDescription}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
+          <OSIconControl
             size="icon-sm"
             className="lg:hidden shrink-0"
             onClick={toggleMobileSidebar}
             aria-label={ui.openKnowledgeMenu}
           >
             <Menu className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => openAIPanel()} className="gap-1.5">
+          </OSIconControl>
+          <OSControl size="sm" onClick={() => openAIPanel()} className="gap-1.5">
             <Sparkles className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">{ui.askAi}</span>
-          </Button>
+          </OSControl>
           <KnowledgePageActions />
         </div>
       }

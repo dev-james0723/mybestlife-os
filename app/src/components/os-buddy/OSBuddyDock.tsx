@@ -18,6 +18,7 @@ import { useUserIdleForOSBuddy } from "@/hooks/use-user-idle-for-os-buddy";
 import { useOSBuddyStore, type OSBuddyMiniGame } from "@/stores/os-buddy-store";
 import { OSBuddySprite } from "./OSBuddySprite";
 import { OSBuddyBubble } from "./OSBuddyBubble";
+import { OSBuddyAirControlOverlay } from "./OSBuddyAirControlOverlay";
 import { OSBuddyMenu } from "./OSBuddyMenu";
 import { OSBuddyPetPicker } from "./OSBuddyPetPicker";
 import { OSBuddyFocusBadge } from "./OSBuddyFocusBadge";
@@ -38,7 +39,12 @@ import {
   addOSBuddyBadge,
   incrementOSBuddyStat,
 } from "@/lib/os-buddy/os-buddy-stats";
+import {
+  resolveOSBuddyTapSequence,
+  type OSBuddyTapSequence,
+} from "@/lib/os-buddy/os-buddy-tap-resolver";
 import { cn } from "@/lib/utils";
+import type { OSBuddyAirControlCommand } from "@/lib/os-buddy/os-buddy-air-control-types";
 import type { OSBuddyMood, OSBuddyPosition } from "@/types/os-buddy";
 
 const DRAG_THRESHOLD_PX = 6;
@@ -59,6 +65,7 @@ const WALK_MOUSE_OFFSET = { x: 40, y: 32 };
 const WALK_TOUCH_OFFSET = { x: 48, y: -88 };
 const WALK_EXIT_DOUBLE_TAP_MAX_DISTANCE_PX = 64;
 const TRIPLE_TAP_GRACE_MS = 360;
+const QUAD_TAP_GRACE_MS = 360;
 const BUDDY_SCALE_STEP = 0.16;
 const BUDDY_MAX_SCALE_CAP = 12;
 const PLAY_BALL_CATCH_SPEED_PX = 38;
@@ -421,8 +428,11 @@ export function OSBuddyDock() {
   const isDragging = useOSBuddyStore((s) => s.isDragging);
   const isWalkModeActive = useOSBuddyStore((s) => s.isWalkModeActive);
   const isReturningHome = useOSBuddyStore((s) => s.isReturningHome);
+  const isAirControlActive = useOSBuddyStore((s) => s.isAirControlActive);
   const setWalkModeActive = useOSBuddyStore((s) => s.setWalkModeActive);
   const setReturningHome = useOSBuddyStore((s) => s.setReturningHome);
+  const startAirControl = useOSBuddyStore((s) => s.startAirControl);
+  const stopAirControl = useOSBuddyStore((s) => s.stopAirControl);
   const temporarilySetMood = useOSBuddyStore((s) => s.temporarilySetMood);
   const registerClickBurst = useOSBuddyStore((s) => s.registerClickBurst);
   const resetClickBurst = useOSBuddyStore((s) => s.resetClickBurst);
@@ -507,6 +517,7 @@ export function OSBuddyDock() {
     isDragging ||
     isWalkModeActive ||
     isReturningHome ||
+    isAirControlActive ||
     focusSession != null ||
     isBirthdayMode ||
     FREE_ROAM_BLOCKING_MOODS.has(mood);
@@ -525,13 +536,7 @@ export function OSBuddyDock() {
   const dragSessionRef = useRef<DragSession | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggeredRef = useRef(false);
-  const lastTapRef = useRef<{
-    at: number;
-    x: number;
-    y: number;
-    count: number;
-    pointerType: string;
-  } | null>(null);
+  const lastTapRef = useRef<OSBuddyTapSequence | null>(null);
   const lastWalkExitTapRef = useRef<{ at: number; x: number; y: number } | null>(null);
   const singleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pinchScaleRef = useRef<{ distance: number; scale: number } | null>(null);
@@ -665,9 +670,10 @@ export function OSBuddyDock() {
     if (pathnameRef.current === pathname) return;
     pathnameRef.current = pathname;
     interruptFreeRoam("route-change");
+    stopAirControl("route-change");
     resetPlayBallRuntime();
     closeMiniGame();
-  }, [closeMiniGame, interruptFreeRoam, pathname, resetPlayBallRuntime]);
+  }, [closeMiniGame, interruptFreeRoam, pathname, resetPlayBallRuntime, stopAirControl]);
 
   const getWalkTargetPoint = useCallback(
     (clientX: number, clientY: number, pointerType: string) =>
@@ -730,13 +736,20 @@ export function OSBuddyDock() {
       if (secretModeTimerRef.current) clearTimeout(secretModeTimerRef.current);
       cancelWalkAnimationFrame();
       cancelPlayBallChaseFrame();
+      stopAirControl("unmount");
     };
   }, [
     cancelPlayBallChaseFrame,
     cancelWalkAnimationFrame,
     clearLongPressTimer,
     clearSingleClickTimer,
+    stopAirControl,
   ]);
+
+  useEffect(() => {
+    if (enabled || !isAirControlActive) return;
+    stopAirControl("buddy-hidden");
+  }, [enabled, isAirControlActive, stopAirControl]);
 
   useEffect(() => {
     if (!mounted || !enabled) return;
@@ -1109,6 +1122,189 @@ export function OSBuddyDock() {
     ],
   );
 
+  const pauseAirControlWalk = useCallback(
+    (nextMood: "idle" | "playful" = "playful") => {
+      activeWalkPointerIdRef.current = null;
+      walkPointerRef.current = null;
+      walkTargetRef.current = null;
+      walkDirectionRef.current = null;
+      cancelWalkAnimationFrame();
+      setDragging(false, null);
+      setWalkModeActive(false);
+      setReturningHome(false);
+      setMood(nextMood);
+    },
+    [
+      cancelWalkAnimationFrame,
+      setDragging,
+      setMood,
+      setReturningHome,
+      setWalkModeActive,
+    ],
+  );
+
+  const setAirControlWalkTarget = useCallback(
+    (target: DockPoint, pointer?: DockPoint) => {
+      if (viewport.width <= 0 || viewport.height <= 0) return;
+
+      activeWalkPointerIdRef.current = null;
+      if (pointer) {
+        walkPointerRef.current = { x: pointer.x, y: pointer.y, pointerType: "air" };
+        walkTargetRef.current = getWalkTargetPoint(pointer.x, pointer.y, "air");
+      } else {
+        walkPointerRef.current = null;
+        walkTargetRef.current = clampDockPoint(target, viewport, buddyBox);
+      }
+
+      const state = useOSBuddyStore.getState();
+      if (state.isWalkModeActive && !state.isReturningHome) return;
+
+      walkDirectionRef.current = null;
+      restingTargetRef.current = resolveRestingTarget();
+      setDragging(false, null);
+      setMenuOpen(false);
+      setPetPickerOpen(false);
+      setReturningHome(false);
+      setWalkModeActive(true);
+      setMood("playful");
+      emitOSBuddyEvent({ type: "buddy:walk:start" });
+    },
+    [
+      buddyBox,
+      getWalkTargetPoint,
+      resolveRestingTarget,
+      setDragging,
+      setMenuOpen,
+      setMood,
+      setPetPickerOpen,
+      setReturningHome,
+      setWalkModeActive,
+      viewport,
+    ],
+  );
+
+  const activateAirControl = useCallback(() => {
+    clearSingleClickTimer();
+    clearLongPressTimer();
+    lastTapRef.current = null;
+    activeWalkPointerIdRef.current = null;
+    walkPointerRef.current = null;
+    walkTargetRef.current = null;
+    walkDirectionRef.current = null;
+
+    interruptFreeRoam("user-click");
+    resetPlayBallRuntime();
+    closeMiniGame();
+    setMenuOpen(false);
+    setPetPickerOpen(false);
+    setDragging(false, null);
+    setReturningHome(false);
+    setWalkModeActive(false);
+    setMood("playful");
+    startAirControl();
+  }, [
+    clearLongPressTimer,
+    clearSingleClickTimer,
+    closeMiniGame,
+    interruptFreeRoam,
+    resetPlayBallRuntime,
+    setDragging,
+    setMenuOpen,
+    setMood,
+    setPetPickerOpen,
+    setReturningHome,
+    setWalkModeActive,
+    startAirControl,
+  ]);
+
+  const handleAirControlCommand = useCallback(
+    (command: OSBuddyAirControlCommand) => {
+      switch (command.type) {
+        case "follow":
+          setAirControlWalkTarget(command.point, command.point);
+          return;
+        case "pause":
+          pauseAirControlWalk("playful");
+          showBubble(locale === "zh-TW" ? "我停喺呢度。" : "I'll stay here.", "user-triggered", {
+            force: true,
+            durationMs: 1_600,
+          });
+          return;
+        case "hold":
+          pauseAirControlWalk("playful");
+          showBubble(locale === "zh-TW" ? "握拳，我先停低。" : "Fist held. I'll freeze.", "user-triggered", {
+            force: true,
+            durationMs: 1_200,
+          });
+          return;
+        case "exit":
+          pauseAirControlWalk("idle");
+          stopAirControl(command.gesture === "Closed_Fist" ? "closed-fist" : "user-exit");
+          showBubble(
+            locale === "zh-TW" ? "隔空操控已關閉。" : "Air Control is off.",
+            "system",
+            {
+              force: true,
+              durationMs: 1_600,
+            },
+          );
+          return;
+        case "select":
+          void triggerClickReaction();
+          return;
+        case "play-ball":
+          pauseAirControlWalk("playful");
+          togglePlayBallGame();
+          return;
+        case "celebrate":
+          temporarilySetMood("celebrating", 1_900);
+          showBubble(locale === "zh-TW" ? "收到！" : "Nice.", "success", {
+            force: true,
+            durationMs: 1_500,
+          });
+          return;
+        case "dash-left":
+        case "dash-right": {
+          const x =
+            command.type === "dash-left"
+              ? VIEWPORT_EDGE_GAP
+              : viewport.width - buddyBox.width - VIEWPORT_EDGE_GAP;
+          setAirControlWalkTarget({
+            x,
+            y: dockPointRef.current.y,
+          });
+          temporarilySetMood(command.type === "dash-left" ? "dragging-left" : "dragging-right", 700);
+          return;
+        }
+        case "lost-hand":
+          pauseAirControlWalk("playful");
+          showBubble(
+            locale === "zh-TW" ? "我暫時睇唔到隻手，先停一停。" : "I lost your hand, so I'll pause.",
+            "system",
+            {
+              force: true,
+              durationMs: 2_000,
+            },
+          );
+          return;
+        default:
+          return;
+      }
+    },
+    [
+      buddyBox.width,
+      locale,
+      pauseAirControlWalk,
+      setAirControlWalkTarget,
+      showBubble,
+      stopAirControl,
+      temporarilySetMood,
+      togglePlayBallGame,
+      triggerClickReaction,
+      viewport.width,
+    ],
+  );
+
   const handleMiniGameComplete = useCallback(
     (game: OSBuddyMiniGame, score: number) => {
       void incrementOSBuddyStat("gamesPlayed");
@@ -1247,40 +1443,48 @@ export function OSBuddyDock() {
     (clientX: number, clientY: number, pointerType: string) => {
       interruptFreeRoam("user-click");
       const now = Date.now();
-      const previousTap = lastTapRef.current;
-      const continuesTapSequence =
-        previousTap != null &&
-        now - previousTap.at <= DOUBLE_TAP_MS &&
-        Math.hypot(clientX - previousTap.x, clientY - previousTap.y) <= DOUBLE_TAP_MAX_DISTANCE_PX;
-      const nextCount = continuesTapSequence ? previousTap.count + 1 : 1;
 
       clearSingleClickTimer();
 
-      if (nextCount >= 3) {
-        clearSingleClickTimer();
+      const resolution = resolveOSBuddyTapSequence({
+        previous: lastTapRef.current,
+        tap: { at: now, x: clientX, y: clientY, pointerType },
+        options: {
+          tapWindowMs: DOUBLE_TAP_MS,
+          maxDistancePx: DOUBLE_TAP_MAX_DISTANCE_PX,
+          tripleTapGraceMs: TRIPLE_TAP_GRACE_MS,
+          quadTapGraceMs: QUAD_TAP_GRACE_MS,
+        },
+      });
+
+      if (resolution.kind === "trigger") {
         lastTapRef.current = null;
-        togglePlayBallGame();
+        activateAirControl();
         return;
       }
 
-      lastTapRef.current = { at: now, x: clientX, y: clientY, count: nextCount, pointerType };
-
-      if (nextCount === 2) {
-        singleClickTimerRef.current = setTimeout(() => {
-          const tap = lastTapRef.current;
-          lastTapRef.current = null;
-          if (!tap) return;
-          toggleWalkMode(tap.x, tap.y, tap.pointerType);
-        }, TRIPLE_TAP_GRACE_MS);
-        return;
-      }
+      lastTapRef.current = resolution.sequence;
 
       singleClickTimerRef.current = setTimeout(() => {
+        const tap = lastTapRef.current;
         lastTapRef.current = null;
-        void triggerClickReaction();
-      }, DOUBLE_TAP_MS);
+        if (!tap) return;
+
+        if (resolution.action === "single") {
+          void triggerClickReaction();
+          return;
+        }
+
+        if (resolution.action === "double") {
+          toggleWalkMode(tap.x, tap.y, tap.pointerType);
+          return;
+        }
+
+        togglePlayBallGame();
+      }, resolution.delayMs);
     },
     [
+      activateAirControl,
       clearSingleClickTimer,
       interruptFreeRoam,
       togglePlayBallGame,
@@ -1291,6 +1495,7 @@ export function OSBuddyDock() {
 
   useEffect(() => {
     if (!isWalkModeActive) return;
+    if (isAirControlActive) return;
 
     const shouldReturnHomeFromWalkTap = (event: PointerEvent) => {
       const now = Date.now();
@@ -1350,7 +1555,7 @@ export function OSBuddyDock() {
       window.removeEventListener("pointerup", releaseWalkPointer);
       window.removeEventListener("pointercancel", releaseWalkPointer);
     };
-  }, [getWalkTargetPoint, isWalkModeActive, startReturnHome]);
+  }, [getWalkTargetPoint, isAirControlActive, isWalkModeActive, startReturnHome]);
 
   useEffect(() => {
     if ((!isWalkModeActive && !isReturningHome) || viewport.width <= 0 || viewport.height <= 0) {
@@ -1457,6 +1662,23 @@ export function OSBuddyDock() {
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0) return;
     if (viewport.width <= 0 || viewport.height <= 0) return;
+
+    if (isAirControlActive) {
+      event.preventDefault();
+      clearSingleClickTimer();
+      lastTapRef.current = null;
+      pauseAirControlWalk("idle");
+      stopAirControl("user-exit");
+      showBubble(
+        locale === "zh-TW" ? "隔空操控已關閉。" : "Air Control is off.",
+        "system",
+        {
+          force: true,
+          durationMs: 1_600,
+        },
+      );
+      return;
+    }
 
     const isWalkingOrReturning = isWalkModeActive || isReturningHome;
 
@@ -1655,6 +1877,10 @@ export function OSBuddyDock() {
 
     if (event.key === "Escape") {
       event.preventDefault();
+      if (isAirControlActive) {
+        pauseAirControlWalk("idle");
+        stopAirControl("user-exit");
+      }
       interruptFreeRoam("keyboard");
       clearBubble();
       setMenuOpen(false);
@@ -1679,7 +1905,8 @@ export function OSBuddyDock() {
         style={{
           left: dockPoint.x,
           top: dockPoint.y,
-          pointerEvents: isWalkModeActive || isReturningHome ? "none" : undefined,
+          pointerEvents:
+            (isWalkModeActive && !isAirControlActive) || isReturningHome ? "none" : undefined,
         }}
       >
         {bubble ? (
@@ -1722,7 +1949,13 @@ export function OSBuddyDock() {
             name={name}
             mood={mood}
             animationSrc={animationSrc}
-            isDragging={isDragging || isWalkModeActive || isReturningHome || isFreeRoaming}
+            isDragging={
+              isDragging ||
+              isWalkModeActive ||
+              isReturningHome ||
+              isFreeRoaming ||
+              isAirControlActive
+            }
             isBirthdayMode={isBirthdayMode}
           />
           {focusSession && mood === "focused" ? (
@@ -1733,6 +1966,13 @@ export function OSBuddyDock() {
           ) : null}
         </button>
       </div>
+
+      <OSBuddyAirControlOverlay
+        active={isAirControlActive}
+        locale={locale}
+        viewport={viewport}
+        onCommand={handleAirControlCommand}
+      />
 
       <OSBuddyMenu
         key={isMenuOpen ? "os-buddy-menu-open" : "os-buddy-menu-closed"}

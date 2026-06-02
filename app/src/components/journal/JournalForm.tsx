@@ -12,7 +12,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   Collapsible,
   CollapsibleContent,
@@ -638,11 +638,11 @@ function SaveBar({
       </span>
 
       {saved && (
-        <Button type="button" variant="outline" onClick={onReset}>
+        <OSControl type="button" onClick={onReset}>
           {copy.startNewEntryButton}
-        </Button>
+        </OSControl>
       )}
-      <Button
+      <OSPrimaryAction
         type="button"
         onClick={onSave}
         disabled={saving || saved}
@@ -663,7 +663,7 @@ function SaveBar({
         ) : (
           copy.saveButton
         )}
-      </Button>
+      </OSPrimaryAction>
     </div>
   );
 }

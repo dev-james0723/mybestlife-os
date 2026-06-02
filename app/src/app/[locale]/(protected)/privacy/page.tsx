@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { PageShell } from "@/components/shared/page-shell";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { OSControl, OSSolidPanel } from "@/components/ui/os-primitives";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
 import { useAppStore } from "@/stores/app-store";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
@@ -19,7 +18,7 @@ export default function PrivacyPolicyPage() {
       title={ui.title}
       description={ui.description(brand)}
     >
-      <div className="max-w-2xl space-y-8 text-sm leading-relaxed">
+      <OSSolidPanel className="max-w-3xl space-y-8 p-5 text-sm leading-relaxed sm:p-6">
         <p className="text-muted-foreground">
           {ui.intro}
         </p>
@@ -76,10 +75,10 @@ export default function PrivacyPolicyPage() {
           <p className="text-xs text-muted-foreground">{ui.lastUpdated}</p>
         </section>
 
-        <Link href={settingsHref} className={cn(buttonVariants({ variant: "outline" }), "w-fit")}>
+        <OSControl render={<Link href={settingsHref} />} className="w-fit no-underline">
           {ui.backToSettings}
-        </Link>
-      </div>
+        </OSControl>
+      </OSSolidPanel>
     </PageShell>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { useQuoteLibraryStore, type QuoteLibraryTab } from "@/stores/quote-library-store";
 import { getQuoteLibraryUiCopy } from "@/lib/i18n/quote-library-ui";
@@ -14,24 +14,16 @@ export function LibraryTabs() {
   const setTab = useQuoteLibraryStore((s) => s.setTab);
 
   return (
-    <Tabs
+    <OSSegmentedControl
+      items={[
+        { id: "all", label: copy.tabAll, icon: QuoteIcon },
+        { id: "collections", label: copy.tabCollections, icon: FolderHeart },
+        { id: "wisdom", label: copy.tabWisdom, icon: Sparkles },
+      ]}
       value={tab}
-      onValueChange={(next) => next && setTab(next as QuoteLibraryTab)}
-    >
-      <TabsList variant="line" className="w-full justify-start overflow-x-auto">
-        <TabsTrigger value="all">
-          <QuoteIcon className="size-4" aria-hidden />
-          <span>{copy.tabAll}</span>
-        </TabsTrigger>
-        <TabsTrigger value="collections">
-          <FolderHeart className="size-4" aria-hidden />
-          <span>{copy.tabCollections}</span>
-        </TabsTrigger>
-        <TabsTrigger value="wisdom">
-          <Sparkles className="size-4" aria-hidden />
-          <span>{copy.tabWisdom}</span>
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+      onValueChange={(next: QuoteLibraryTab) => setTab(next)}
+      ariaLabel={copy.pageTitle}
+      layoutId="quote-library-tab-pill"
+    />
   );
 }

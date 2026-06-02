@@ -14,7 +14,8 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { OSDialogSurface } from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
 import {
@@ -116,7 +117,7 @@ export function AiKnowledgeCommandPalette({
         if (!v) setQuery("");
       }}
     >
-      <DialogContent
+      <OSDialogSurface
         className="p-0 overflow-hidden max-w-xl"
         showCloseButton={false}
       >
@@ -225,7 +226,7 @@ export function AiKnowledgeCommandPalette({
             )}
           </Command.List>
         </Command>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }

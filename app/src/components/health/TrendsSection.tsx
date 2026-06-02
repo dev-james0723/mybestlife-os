@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { HealthCard } from "./primitives/HealthCard";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import {
   useHealthDailyLogsRange,
   useHealthMetricsRange,
@@ -64,6 +64,13 @@ export function TrendsSection({ className }: Props) {
   const hrv = useHealthMetricsRange("hrv", fromISO, toISO);
   const steps = useHealthMetricsRange("steps", fromISO, toISO);
 
+  const rangeOptions = [
+    { id: "7d" as const, label: ui.trends.range7d },
+    { id: "30d" as const, label: ui.trends.range30d },
+    { id: "90d" as const, label: ui.trends.range90d },
+    { id: "1y" as const, label: ui.trends.range1y },
+  ];
+
   const chartData = useMemo(() => {
     const bucketedHrv = new Map(bucketByDay(hrv.data ?? []).map((b) => [b.date, b.value]));
     const bucketedSteps = new Map(bucketByDay(steps.data ?? []).map((b) => [b.date, b.value]));
@@ -94,16 +101,16 @@ export function TrendsSection({ className }: Props) {
 
   return (
     <section className={className} aria-label={ui.trends.sectionTitle}>
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">{ui.trends.sectionTitle}</h2>
-        <Tabs value={range} onValueChange={(v) => setRange(v as Range)}>
-          <TabsList>
-            <TabsTrigger value="7d">{ui.trends.range7d}</TabsTrigger>
-            <TabsTrigger value="30d">{ui.trends.range30d}</TabsTrigger>
-            <TabsTrigger value="90d">{ui.trends.range90d}</TabsTrigger>
-            <TabsTrigger value="1y">{ui.trends.range1y}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <OSSegmentedControl
+          items={rangeOptions}
+          value={range}
+          onValueChange={setRange}
+          ariaLabel={ui.trends.sectionTitle}
+          className="w-full sm:w-auto"
+          layoutId="health-trends-range-active-pill"
+        />
       </div>
       <HealthCard>
         <div className="h-64 w-full">

@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { cn } from "@/lib/utils";
+import {
+  OSStatusRail,
+  type OSStatusRailItem,
+} from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
 import {
@@ -16,6 +19,10 @@ interface TopCategoryRailProps {
   activeTopCategory: PromptTopCategory | null;
   onSelect: (top: PromptTopCategory | null) => void;
 }
+
+const ALL_CATEGORIES = "__all__";
+
+type TopCategoryRailId = PromptTopCategory | typeof ALL_CATEGORIES;
 
 /**
  * Horizontally scrollable strip of the 12 curated top-level categories.
@@ -38,78 +45,42 @@ export function TopCategoryRail({
     return map;
   }, [prompts]);
 
-  return (
-    <div className="relative -mx-1">
-      <div
-        className="flex items-center gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="tablist"
-        aria-label="Top category filter"
-      >
-        <CategoryChip
-          label={ui.filters.allCategories}
-          count={prompts.length}
-          active={activeTopCategory === null}
-          onClick={() => onSelect(null)}
-        />
-        {PROMPT_TOP_CATEGORIES.map((top) => {
-          const count = counts.get(top) ?? 0;
-          return (
-            <CategoryChip
-              key={top}
-              label={ui.topCategoryLabels[top]}
-              count={count}
-              active={activeTopCategory === top}
-              onClick={() => onSelect(activeTopCategory === top ? null : top)}
-              disabled={count === 0 && activeTopCategory !== top}
-            />
-          );
-        })}
-      </div>
-    </div>
+  const items = useMemo<Array<OSStatusRailItem<TopCategoryRailId>>>(
+    () => [
+      {
+        id: ALL_CATEGORIES,
+        label: ui.filters.allCategories,
+        count: prompts.length,
+      },
+      ...PROMPT_TOP_CATEGORIES.map((top) => {
+        const count = counts.get(top) ?? 0;
+        return {
+          id: top,
+          label: ui.topCategoryLabels[top],
+          count,
+          disabled: count === 0 && activeTopCategory !== top,
+        };
+      }),
+    ],
+    [activeTopCategory, counts, prompts.length, ui.filters.allCategories, ui.topCategoryLabels],
   );
-}
 
-interface CategoryChipProps {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-  disabled?: boolean;
-}
+  const value: TopCategoryRailId = activeTopCategory ?? ALL_CATEGORIES;
 
-function CategoryChip({
-  label,
-  count,
-  active,
-  onClick,
-  disabled,
-}: CategoryChipProps) {
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-        active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
-        disabled && "opacity-40 cursor-not-allowed hover:bg-background hover:text-muted-foreground",
-      )}
-    >
-      <span>{label}</span>
-      <span
-        className={cn(
-          "rounded-full px-1.5 text-[10px] leading-4",
-          active
-            ? "bg-primary-foreground/20 text-primary-foreground"
-            : "bg-muted text-muted-foreground",
-        )}
-      >
-        {count}
-      </span>
-    </button>
+    <OSStatusRail
+      items={items}
+      value={value}
+      onValueChange={(next) => {
+        if (next === ALL_CATEGORIES || next === activeTopCategory) {
+          onSelect(null);
+          return;
+        }
+        onSelect(next);
+      }}
+      ariaLabel={ui.filters.allCategories}
+      allowReselect
+      layoutId="ai-knowledge-category-active-pill"
+    />
   );
 }

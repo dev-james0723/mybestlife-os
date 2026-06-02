@@ -6,7 +6,14 @@ import { DEFAULT_LOCALE_SLUG, normalizeLocaleSlug } from "@/lib/i18n/locale-slug
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { PageShell } from "@/components/shared/page-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  osControlSizeClassName,
+  osFrostedPanelClassName,
+  osGlassControlClassName,
+  osPrimaryControlClassName,
+  osSheenClassName,
+} from "@/components/ui/os-glass";
+import { cn } from "@/lib/utils";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -42,43 +49,46 @@ export default async function QuickSaveSetupPage({ params, searchParams }: PageP
   return (
     <PageShell title="快捷儲存 / Quick Save" description={messageForReason(reason)}>
       <div className="max-w-2xl space-y-4">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Share2 className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <CardTitle>Share Sheet setup</CardTitle>
-                <CardDescription>
-                  The OS share target appears only after the PWA is installed.
-                </CardDescription>
-              </div>
+        <div className={cn(osFrostedPanelClassName, osSheenClassName, "space-y-5 p-4 sm:p-5")}>
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white/72 text-lime-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/10 dark:bg-white/[0.06] dark:text-lime-200">
+              <Share2 className="h-5 w-5" aria-hidden />
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-              <li>Open My Best Life OS on your phone.</li>
-              <li>Add it to Home Screen / Install app.</li>
-              <li>
-                Use Share → My Best Life OS from apps like X, Instagram, Facebook,
-                Safari, Chrome, etc.
-              </li>
-            </ol>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Button render={<Link href={withLocalePrefix(slug, "/settings")} />} className="gap-2">
-                <Settings className="h-4 w-4" />
-                Open Settings
-              </Button>
-              <Button
-                variant="outline"
-                render={<Link href={withLocalePrefix(slug, "/dashboard")} />}
-                className="gap-2"
-              >
-                <Smartphone className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
+            <div className="min-w-0 space-y-1">
+              <h2 className="font-heading text-base font-semibold leading-snug text-foreground">
+                Share Sheet setup
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                The OS share target appears only after the PWA is installed.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+            <li>Open My Best Life OS on your phone.</li>
+            <li>Add it to Home Screen / Install app.</li>
+            <li>
+              Use Share → My Best Life OS from apps like X, Instagram, Facebook,
+              Safari, Chrome, etc.
+            </li>
+          </ol>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              render={<Link href={withLocalePrefix(slug, "/settings")} />}
+              className={cn(osPrimaryControlClassName, osControlSizeClassName, "gap-2")}
+            >
+              <Settings className="h-4 w-4" />
+              Open Settings
+            </Button>
+            <Button
+              variant="outline"
+              render={<Link href={withLocalePrefix(slug, "/dashboard")} />}
+              className={cn(osGlassControlClassName, osControlSizeClassName, "gap-2")}
+            >
+              <Smartphone className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
       </div>
     </PageShell>
   );

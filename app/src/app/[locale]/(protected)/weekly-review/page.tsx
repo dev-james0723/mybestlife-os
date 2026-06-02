@@ -5,10 +5,15 @@ import { format } from "date-fns";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
-import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  OSControl,
+  OSDialogSurface,
+  OSEmptyState,
+  OSPrimaryAction,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +25,6 @@ import { RichTextReadOnly } from "@/components/shared/rich-text-read-only";
 import { stripHtml } from "@/lib/utils/html";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -164,10 +168,10 @@ export default function WeeklyReviewPage() {
         title="Weekly Review"
         description="Reflect, learn, and set focus for the week ahead"
         actions={
-          <Button onClick={openCreateWeekly}>
+          <OSPrimaryAction onClick={openCreateWeekly}>
             <Plus className="h-4 w-4 mr-2" />
             New review
-          </Button>
+          </OSPrimaryAction>
         }
       >
         <FilterBar
@@ -179,7 +183,7 @@ export default function WeeklyReviewPage() {
         />
 
         {filtered.length === 0 ? (
-          <EmptyState
+          <OSEmptyState
             icon={CalendarCheck}
             title="No weekly reviews"
             description={
@@ -189,7 +193,12 @@ export default function WeeklyReviewPage() {
             }
             action={
               reviews?.length === 0
-                ? { label: "Create review", onClick: openCreateWeekly }
+                ? (
+                    <OSPrimaryAction onClick={openCreateWeekly}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create review
+                    </OSPrimaryAction>
+                  )
                 : undefined
             }
           />
@@ -210,7 +219,7 @@ export default function WeeklyReviewPage() {
 
       {/* ── Create Weekly Review Modal ── */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
+        <OSDialogSurface size="2xl" className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New weekly review</DialogTitle>
           </DialogHeader>
@@ -280,19 +289,19 @@ export default function WeeklyReviewPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>
+            <OSControl onClick={() => setShowCreate(false)}>
               Cancel
-            </Button>
-            <Button onClick={handleCreate} disabled={createReview.isPending}>
+            </OSControl>
+            <OSPrimaryAction onClick={handleCreate} disabled={createReview.isPending}>
               {createReview.isPending ? "Saving…" : "Save review"}
-            </Button>
+            </OSPrimaryAction>
           </DialogFooter>
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
 
       {/* ── Weekly Review Detail Modal ── */}
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) { setSelected(null); setIsEditing(false); } }}>
-        <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
+        <OSDialogSurface size="2xl" className="max-h-[85vh] overflow-y-auto">
           {selected && (
             isEditing ? (
               <>
@@ -374,12 +383,12 @@ export default function WeeklyReviewPage() {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  <OSControl onClick={() => setIsEditing(false)}>
                     Cancel
-                  </Button>
-                  <Button onClick={handleUpdate} disabled={updateReview.isPending}>
+                  </OSControl>
+                  <OSPrimaryAction onClick={handleUpdate} disabled={updateReview.isPending}>
                     {updateReview.isPending ? "Saving…" : "Save changes"}
-                  </Button>
+                  </OSPrimaryAction>
                 </DialogFooter>
               </>
             ) : (
@@ -402,9 +411,9 @@ export default function WeeklyReviewPage() {
                       <CalendarCheck className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm font-semibold">Overall Reflection</p>
                     </div>
-                    <div className="rounded-lg border bg-muted/30 p-4">
+                    <OSSolidPanel className="rounded-xl p-4">
                       <RichTextReadOnly value={selected.content} />
-                    </div>
+                    </OSSolidPanel>
                   </section>
 
                   <Separator />
@@ -414,9 +423,9 @@ export default function WeeklyReviewPage() {
                       <Sparkles className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm font-semibold">Highlights</p>
                     </div>
-                    <div className="rounded-lg border bg-muted/30 p-4">
+                    <OSSolidPanel className="rounded-xl p-4">
                       <RichTextReadOnly value={selected.highlights} />
-                    </div>
+                    </OSSolidPanel>
                   </section>
 
                   <Separator />
@@ -426,9 +435,9 @@ export default function WeeklyReviewPage() {
                       <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm font-semibold">Challenges</p>
                     </div>
-                    <div className="rounded-lg border bg-muted/30 p-4">
+                    <OSSolidPanel className="rounded-xl p-4">
                       <RichTextReadOnly value={selected.challenges} />
-                    </div>
+                    </OSSolidPanel>
                   </section>
 
                   <Separator />
@@ -438,9 +447,9 @@ export default function WeeklyReviewPage() {
                       <Target className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm font-semibold">Next Week Focus</p>
                     </div>
-                    <div className="rounded-lg border bg-muted/30 p-4">
+                    <OSSolidPanel className="rounded-xl p-4">
                       <RichTextReadOnly value={selected.next_week_focus} />
-                    </div>
+                    </OSSolidPanel>
                   </section>
 
                   <Separator />
@@ -450,15 +459,15 @@ export default function WeeklyReviewPage() {
                 </div>
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsEditing(true)}>
+                  <OSControl onClick={() => setIsEditing(true)}>
                     <Pencil className="h-4 w-4 mr-2" />
                     Edit
-                  </Button>
+                  </OSControl>
                 </DialogFooter>
               </>
             )
           )}
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
 
       {/* ── Delete Confirmation ── */}

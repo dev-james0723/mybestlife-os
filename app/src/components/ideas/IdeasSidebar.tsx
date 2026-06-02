@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useIdeasStore, type IdeasRelatedScopeFilter } from "@/stores/ideas-store";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet } from "@/components/ui/sheet";
+import { OSBottomSheet, OSIconControl } from "@/components/ui/os-primitives";
+import { osFrostedPanelClassName, osSheenClassName } from "@/components/ui/os-glass";
 import { Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -190,16 +191,14 @@ export function IdeasSidebar() {
                   : { opacity: 0, x: -8, transition: { duration: 0.16, ease: [0.4, 0, 0.2, 1] } }
               }
             >
-              <Button
+              <OSIconControl
                 type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 rounded-lg border-border/70 bg-muted/25 shadow-sm"
+                osSize="compact"
                 onClick={() => setCollapsedDesktop(false)}
                 aria-label={ui.expandDirectory}
               >
                 <PanelLeftOpen className="h-4 w-4" />
-              </Button>
+              </OSIconControl>
             </motion.div>
           )}
         </AnimatePresence>
@@ -212,7 +211,9 @@ export function IdeasSidebar() {
         >
           <motion.aside
             className={cn(
-              "box-border flex h-full min-h-0 w-[220px] max-w-[220px] flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/25 shadow-sm",
+              osFrostedPanelClassName,
+              osSheenClassName,
+              "box-border flex h-full min-h-0 w-[220px] max-w-[220px] flex-col",
               !isOpen && "pointer-events-none",
             )}
             style={{ willChange: "transform" }}
@@ -222,16 +223,15 @@ export function IdeasSidebar() {
           >
             <div className="flex shrink-0 items-center gap-1 border-b border-border/50 px-2 py-2.5 pl-3 pr-1.5">
               <h2 className="min-w-0 flex-1 truncate text-sm font-medium">{ui.sidebarTitle}</h2>
-              <Button
+              <OSIconControl
                 type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                osSize="compact"
+                className="shrink-0"
                 onClick={() => setCollapsedDesktop(true)}
                 aria-label={ui.collapseDirectory}
               >
                 <PanelLeftClose className="h-4 w-4" />
-              </Button>
+              </OSIconControl>
             </div>
             <ScrollArea className="min-h-0 min-w-0 flex-1">
               <SidebarBody showTitle={false} />
@@ -241,17 +241,17 @@ export function IdeasSidebar() {
       </div>
 
       <Sheet open={isMobileSidebarOpen} onOpenChange={(open) => !open && closeMobileSidebar()}>
-        <SheetContent side="left" showCloseButton={false} className="flex w-[260px] flex-col gap-0 overflow-hidden p-0">
+        <OSBottomSheet side="left" showCloseButton={false} className="flex w-[260px] flex-col gap-0 overflow-hidden p-0">
           <div className="flex shrink-0 items-center justify-between border-b p-4">
             <h2 className="text-sm font-medium">{ui.sidebarTitle}</h2>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={closeMobileSidebar}>
+            <OSIconControl osSize="compact" onClick={closeMobileSidebar}>
               <X className="h-4 w-4" />
-            </Button>
+            </OSIconControl>
           </div>
           <ScrollArea className="min-h-0 flex-1">
             <SidebarBody showTitle={false} />
           </ScrollArea>
-        </SheetContent>
+        </OSBottomSheet>
       </Sheet>
     </>
   );
@@ -262,8 +262,8 @@ export function IdeasSidebarMobileMenuButton() {
   const ui = getIdeasUiCopy(language);
   const toggleMobileSidebar = useIdeasStore((s) => s.toggleMobileSidebar);
   return (
-    <Button variant="outline" size="icon-sm" className="lg:hidden shrink-0" onClick={toggleMobileSidebar} aria-label={ui.openMenu}>
+    <OSIconControl osSize="compact" className="shrink-0 lg:hidden" onClick={toggleMobileSidebar} aria-label={ui.openMenu}>
       <Menu className="h-4 w-4" />
-    </Button>
+    </OSIconControl>
   );
 }

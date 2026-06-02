@@ -78,6 +78,11 @@ import type {
 import { PageShell } from "@/components/shared/page-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -1595,28 +1600,23 @@ export default function DailyPlannerPage() {
       title={copy.pageTitle}
       description={copy.pageDescription}
       actions={
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
+        <>
+          <OSControl
             render={<Link href={calendarAiPlanHref} />}
           >
             <Sparkles className="h-4 w-4" />
             {calendarCopy.backToAIPlan}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </OSControl>
+          <OSControl
             onClick={handleGetAiSuggestions}
             disabled={aiLoading}
           >
             <Sparkles className="h-4 w-4 mr-1.5" />
             {aiLoading ? copy.aiThinking : copy.aiSuggestions}
-          </Button>
+          </OSControl>
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="outline" size="sm" />}
+              render={<OSControl />}
             >
               <FileText className="h-4 w-4 mr-1.5" />
               {copy.templates}
@@ -1641,7 +1641,7 @@ export default function DailyPlannerPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </>
       }
     >
       <div className="space-y-6 pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4rem))] md:pb-0">
@@ -1651,15 +1651,13 @@ export default function DailyPlannerPage() {
           {/* Date navigation + actions */}
           <div className="flex flex-col gap-3">
             <div className="flex min-w-0 items-stretch gap-2">
-              <Button
-                variant="outline"
-                size="icon-sm"
+              <OSIconControl
                 className="shrink-0"
                 aria-label={copy.ariaPreviousDay}
                 onClick={() => setSelectedDate((d) => subDays(d, 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
-              </Button>
+              </OSIconControl>
 
               <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg border border-border/70 bg-muted/25 px-2 py-2.5 text-center">
                 <span className="hidden text-sm font-semibold leading-snug sm:inline">
@@ -1670,15 +1668,13 @@ export default function DailyPlannerPage() {
                 </span>
               </div>
 
-              <Button
-                variant="outline"
-                size="icon-sm"
+              <OSIconControl
                 className="shrink-0"
                 aria-label={copy.ariaNextDay}
                 onClick={() => setSelectedDate((d) => addDays(d, 1))}
               >
                 <ChevronRight className="h-4 w-4" />
-              </Button>
+              </OSIconControl>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
@@ -1687,14 +1683,12 @@ export default function DailyPlannerPage() {
                   selectedDate={selectedDate}
                   onSelect={(d) => setSelectedDate(d)}
                 />
-                <Button
-                  variant="secondary"
-                  size="sm"
+                <OSControl
                   className="shrink-0"
                   onClick={() => setSelectedDate(new Date())}
                 >
                   {copy.today}
-                </Button>
+                </OSControl>
                 <PlanningModeToggle
                   value={mode}
                   onChange={handleModeChange}
@@ -1704,9 +1698,8 @@ export default function DailyPlannerPage() {
                 />
               </div>
             <div className="flex flex-col items-stretch gap-1 sm:items-end">
-              <Button
-                size="sm"
-                className="relative h-9 w-full shrink-0 gap-2 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700 sm:w-auto"
+              <OSPrimaryAction
+                className="relative w-full shrink-0 gap-2 sm:w-auto"
                 onClick={() => void handleCalendarSyncNow()}
                 disabled={plannerGcalPushSpinning}
               >
@@ -1720,7 +1713,7 @@ export default function DailyPlannerPage() {
                     ? copy.googleCalendarSyncingNowButton
                     : copy.googleCalendarSyncNowButton}
                 </span>
-              </Button>
+              </OSPrimaryAction>
               {lastGcalStamp ? (
                 <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right tabular-nums">
                   {copy.googleCalendarLastUpdatedLabel(lastGcalStamp)}

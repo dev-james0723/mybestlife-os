@@ -3,7 +3,8 @@
 import { useCallback, useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { AssetsView } from "@/components/resources/assets/AssetsView";
 import { DocumentsView } from "@/components/resources/documents/DocumentsView";
 import { useAppStore } from "@/stores/app-store";
@@ -50,14 +51,22 @@ export function ResourcesTabs() {
 
   const assetsLabel = getThemedItemLabel("assets", uiTheme, language);
   const documentsLabel = getThemedItemLabel("documents", uiTheme, language);
+  const tabItems = [
+    { id: "assets" as const, label: assetsLabel },
+    { id: "documents" as const, label: documentsLabel },
+  ];
   const prefersReduced = useReducedMotion();
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList variant="line" className="mb-4 border-b border-border">
-        <TabsTrigger value="assets">{assetsLabel}</TabsTrigger>
-        <TabsTrigger value="documents">{documentsLabel}</TabsTrigger>
-      </TabsList>
+      <OSSegmentedControl
+        items={tabItems}
+        value={activeTab}
+        onValueChange={handleTabChange}
+        ariaLabel={`${assetsLabel} / ${documentsLabel}`}
+        className="mb-4 w-full max-w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none"
+        layoutId="resources-tab-active-pill"
+      />
 
       {/*
        * Base UI unmounts the inactive panel, so a simple fade-in on the

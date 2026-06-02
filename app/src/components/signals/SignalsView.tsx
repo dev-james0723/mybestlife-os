@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getDateFnsLocale } from "@/lib/i18n/date-locale";
 import { getSignalsUiCopy } from "@/lib/i18n/signals-ui";
-import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { OSActionRow, OSControl, OSIconControl } from "@/components/ui/os-primitives";
 import { useSignalsPreferences } from "@/hooks/signals/use-signals-preferences";
 import { useLifeOsContext } from "@/hooks/signals/use-life-os-context";
 import { useSignalsPage } from "@/hooks/signals/use-signals-page";
@@ -361,11 +361,10 @@ export function SignalsView() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <OSActionRow className="sm:justify-start">
             <SignalsViewSwitcher value={viewMode} onChange={setViewMode} copy={copy} />
-            <Button
-              variant="outline"
-              size="sm"
+            <OSControl
+              osSize="compact"
               onClick={regenerateTop3}
               disabled={regenerating || data.status !== "ok"}
               aria-label={copy.header.regenerateTop3}
@@ -373,10 +372,9 @@ export function SignalsView() {
             >
               <Wand2 className={cn(regenerating && "animate-pulse")} />
               <span className="hidden md:inline">{copy.header.regenerateTop3}</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </OSControl>
+            <OSControl
+              osSize="compact"
               onClick={refreshSources}
               disabled={refreshing}
               aria-label={copy.header.refreshSources}
@@ -386,16 +384,15 @@ export function SignalsView() {
               <span className="hidden md:inline">
                 {refreshing ? copy.header.refreshing : copy.header.refreshSources}
               </span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            </OSControl>
+            <OSIconControl
+              osSize="compact"
               onClick={() => setSettingsOpen(true)}
               aria-label={copy.header.settings}
             >
               <Settings2 />
-            </Button>
-          </div>
+            </OSIconControl>
+          </OSActionRow>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">

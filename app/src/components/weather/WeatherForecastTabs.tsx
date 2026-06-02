@@ -12,6 +12,7 @@ import {
   Sun,
 } from "lucide-react";
 
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import type {
   DailyForecastConfidence,
@@ -36,12 +37,12 @@ export function WeatherForecastTabs({
 }: WeatherForecastTabsProps) {
   const [tab, setTab] = useState<TabKey>("today");
 
-  const tabs = useMemo<{ key: TabKey; label: string }[]>(
+  const tabs = useMemo<{ id: TabKey; label: string }[]>(
     () => [
-      { key: "today", label: copy.forecastToday },
-      { key: "7d", label: copy.forecast7Days },
-      { key: "10d", label: copy.forecast10Days },
-      { key: "15d", label: copy.forecast15Days },
+      { id: "today", label: copy.forecastToday },
+      { id: "7d", label: copy.forecast7Days },
+      { id: "10d", label: copy.forecast10Days },
+      { id: "15d", label: copy.forecast15Days },
     ],
     [copy],
   );
@@ -63,35 +64,14 @@ export function WeatherForecastTabs({
         >
           Forecast
         </h3>
-        <nav
-          role="tablist"
-          aria-label="Forecast horizon"
-          className="flex items-center gap-1 overflow-x-auto pb-1"
-        >
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              role="tab"
-              type="button"
-              aria-selected={tab === t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "relative whitespace-nowrap px-3 py-2 text-sm transition-colors",
-                tab === t.key
-                  ? "font-semibold text-[var(--weather-accent-lime)]"
-                  : "text-[var(--weather-text-secondary)] hover:text-[var(--weather-text-primary)]",
-              )}
-            >
-              {t.label}
-              {tab === t.key ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-[var(--weather-accent-lime)]"
-                />
-              ) : null}
-            </button>
-          ))}
-        </nav>
+        <OSSegmentedControl
+          items={tabs}
+          value={tab}
+          onValueChange={setTab}
+          ariaLabel="Forecast horizon"
+          className="w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none"
+          layoutId="weather-forecast-horizon-active-pill"
+        />
       </header>
 
       {tab === "today" ? (

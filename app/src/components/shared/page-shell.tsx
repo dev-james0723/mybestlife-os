@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { OSPageHeader } from "@/components/ui/os-primitives";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getThemedCategoryLabel, getThemedItemLabel } from "@/lib/theme-labels";
@@ -41,15 +42,7 @@ export function PageShell({ title, description, actions, preHeader, children }: 
   return (
     <div className="space-y-8 sm:space-y-10">
       {preHeader}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{displayTitle}</h1>
-          {description && (
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
-          )}
-        </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
-      </div>
+      <OSPageHeader title={displayTitle} description={description} actions={actions} />
       {children}
     </div>
   );

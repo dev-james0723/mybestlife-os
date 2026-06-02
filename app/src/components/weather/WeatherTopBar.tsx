@@ -2,6 +2,7 @@
 
 import { Loader2, RefreshCw } from "lucide-react";
 
+import { OSControl } from "@/components/ui/os-primitives";
 import type { WeatherUiCopy } from "@/lib/i18n/weather-ui";
 import type { WeatherLocation } from "@/lib/weather/types";
 
@@ -40,12 +41,13 @@ export function WeatherTopBar({
         onClear={onClear}
         onUseMyLocation={onUseMyLocation}
       />
-      <button
+      <OSControl
         type="button"
+        osSize="compact"
         onClick={onRefresh}
         disabled={refreshing}
         aria-label={copy.retry}
-        className="weather-glass-pill self-end text-xs"
+        className="self-end gap-1.5 text-xs"
       >
         {refreshing ? (
           <Loader2 className="size-3.5 animate-spin" aria-hidden />
@@ -53,7 +55,7 @@ export function WeatherTopBar({
           <RefreshCw className="size-3.5" aria-hidden />
         )}
         <span>{copy.retry}</span>
-      </button>
+      </OSControl>
     </div>
   );
 }

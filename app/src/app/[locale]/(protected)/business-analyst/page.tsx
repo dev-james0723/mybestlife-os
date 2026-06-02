@@ -1,7 +1,7 @@
 "use client";
 
 import { PageShell } from "@/components/shared/page-shell";
-import { EmptyState } from "@/components/shared/empty-state";
+import { OSEmptyState } from "@/components/ui/os-primitives";
 import { TrendingUp } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getMiscUiCopy } from "@/lib/i18n/misc-ui";
@@ -11,7 +11,7 @@ export default function BusinessAnalystPage() {
   const ui = getMiscUiCopy(language).stubs;
   return (
     <PageShell title={ui.businessAnalyst.title} description={ui.businessAnalyst.description}>
-      <EmptyState
+      <OSEmptyState
         icon={TrendingUp}
         title={ui.comingSoonTitle}
         description={ui.underDevelopmentDescription}

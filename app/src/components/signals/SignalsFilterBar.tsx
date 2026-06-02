@@ -3,7 +3,7 @@
 import { SlidersHorizontal, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { OSControl, OSStatusRail } from "@/components/ui/os-primitives";
 import {
   activeFilterChips,
   countActiveFilters,
@@ -19,6 +19,7 @@ import type {
   SignalSourceFacet,
   SignalsFilterState,
   SignalTimeFacet,
+  SignalTypeFacet,
 } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
 
@@ -68,40 +69,25 @@ export function SignalsFilterBar({
   const activeCount = countActiveFilters(filter);
   const chips = activeFilterChips(filter);
   const hasActive = !isDefaultFilter(filter);
+  const typeItems = TYPE_FACET_ORDER.map((type) => ({
+    id: type,
+    label: copy.filters.type[type],
+  }));
 
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-2">
-        <div
-          className="-mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label={copy.filters.groups.type}
-        >
-          {TYPE_FACET_ORDER.map((type) => {
-            const active = filter.type === type;
-            return (
-              <button
-                key={type}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onChange({ ...filter, type })}
-                className={cn(
-                  "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  active
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border/60 bg-card/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-                )}
-              >
-                {copy.filters.type[type]}
-              </button>
-            );
-          })}
-        </div>
+        <OSStatusRail<SignalTypeFacet>
+          items={typeItems}
+          value={filter.type}
+          onValueChange={(type) => onChange({ ...filter, type })}
+          ariaLabel={copy.filters.groups.type}
+          className="flex-1"
+          layoutId="signals-type-filter-active"
+        />
 
-        <Button
-          variant="outline"
-          size="sm"
+        <OSControl
+          osSize="compact"
           onClick={onOpenDrawer}
           aria-label={copy.filters.button}
           className="shrink-0"
@@ -113,7 +99,7 @@ export function SignalsFilterBar({
               {activeCount}
             </span>
           )}
-        </Button>
+        </OSControl>
       </div>
 
       {chips.length > 0 && (

@@ -4,7 +4,7 @@ import { LayoutList, Plus } from "lucide-react";
 import type { RoutineWithSteps } from "@/lib/habits/types";
 import type { HabitsUiCopy } from "@/lib/i18n/habits-ui";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { Button } from "@/components/ui/button";
+import { OSIconControl } from "@/components/ui/os-primitives";
 import { RoutineCard } from "./RoutineCard";
 
 export interface RoutineStudioProps {
@@ -36,9 +36,9 @@ export function RoutineStudio({
             {copy.routineStudioDescription}
           </p>
         </div>
-        <Button type="button" size="icon-sm" variant="secondary" aria-label={copy.actionsAddRoutine} onClick={onCreate}>
+        <OSIconControl type="button" osSize="compact" size="icon-sm" aria-label={copy.actionsAddRoutine} onClick={onCreate}>
           <Plus className="size-4" />
-        </Button>
+        </OSIconControl>
       </div>
 
       {visible.length === 0 ? (

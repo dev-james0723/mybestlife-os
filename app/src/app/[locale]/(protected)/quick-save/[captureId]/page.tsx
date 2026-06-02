@@ -8,8 +8,15 @@ import { getQuickSaveCaptureForUser } from "@/lib/quick-save/server";
 import { knowledgeFilesProxyUrlFromStoragePath } from "@/lib/knowledge/storage-thumbnail-url";
 import { PageShell } from "@/components/shared/page-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  osControlSizeClassName,
+  osFrostedPanelClassName,
+  osGlassControlClassName,
+  osPrimaryControlClassName,
+  osSheenClassName,
+  osSolidPanelClassName,
+} from "@/components/ui/os-glass";
 import { cn } from "@/lib/utils";
 import {
   discardQuickSaveAction,
@@ -48,16 +55,17 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
   if (!capture) {
     return (
       <PageShell title="Quick Save" description="This shared item could not be found.">
-        <Card className="max-w-xl">
-          <CardContent className="space-y-4 p-6">
-            <p className="text-sm text-muted-foreground">
-              It may have already been saved, discarded, or created under another account.
-            </p>
-            <Button render={<Link href={withLocalePrefix(slug, "/dashboard")} />}>
-              Back to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+        <div className={cn(osSolidPanelClassName, "max-w-xl space-y-4 p-5 sm:p-6")}>
+          <p className="text-sm leading-6 text-muted-foreground">
+            It may have already been saved, discarded, or created under another account.
+          </p>
+          <Button
+            render={<Link href={withLocalePrefix(slug, "/dashboard")} />}
+            className={cn(osPrimaryControlClassName, osControlSizeClassName)}
+          >
+            Back to Dashboard
+          </Button>
+        </div>
       </PageShell>
     );
   }
@@ -75,7 +83,11 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
       actions={
         <Link
           href={withLocalePrefix(slug, "/dashboard")}
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-2")}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            osGlassControlClassName,
+            "h-9 rounded-xl gap-2",
+          )}
         >
           <ArrowLeft className="h-4 w-4" />
           Dashboard
@@ -83,18 +95,24 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
       }
     >
       <div className="grid max-w-3xl gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
+        <div
+          className={cn(
+            osFrostedPanelClassName,
+            osSheenClassName,
+            "space-y-5 p-4 sm:p-5",
+          )}
+        >
+          <div className="space-y-1.5">
+            <h2 className="font-heading text-lg font-semibold leading-snug text-foreground">
               {capture.title || capture.normalized_url || "Shared content"}
-            </CardTitle>
-            <CardDescription>
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground">
               {capture.status === "failed"
                 ? "The previous save attempt failed. You can try again."
                 : "Review the content before saving."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
+          </div>
+          <div className="space-y-4">
             {capture.error_message ? (
               <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
                 {capture.error_message}
@@ -118,7 +136,7 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
             {capture.text ? (
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase text-muted-foreground">Text</p>
-                <div className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-6">
+                <div className={cn(osSolidPanelClassName, "max-h-64 overflow-auto whitespace-pre-wrap rounded-xl p-3 text-sm leading-6")}>
                   {capture.text}
                 </div>
               </div>
@@ -131,7 +149,7 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
                   {capture.file_refs.map((file) => {
                     const src = knowledgeFilesProxyUrlFromStoragePath(file.storage_path);
                     return (
-                      <div key={file.storage_path} className="overflow-hidden rounded-lg border">
+                      <div key={file.storage_path} className={cn(osSolidPanelClassName, "overflow-hidden rounded-xl")}>
                         {isImageRef(file.mime_type, file.name) ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -163,7 +181,7 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
               <form action={saveQuickSaveKnowledgeAction.bind(null, slug, capture.id)}>
                 <Button
                   type="submit"
-                  className="h-12 w-full justify-center gap-2"
+                  className={cn(osPrimaryControlClassName, "h-12 w-full justify-center gap-2 rounded-xl")}
                   disabled={!canAct || !canSaveKnowledge}
                 >
                   <BookOpen className="h-4 w-4" />
@@ -174,7 +192,7 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
                 <Button
                   type="submit"
                   variant="secondary"
-                  className="h-12 w-full justify-center gap-2"
+                  className={cn(osGlassControlClassName, "h-12 w-full justify-center gap-2 rounded-xl")}
                   disabled={!canAct || !canSaveIdea}
                 >
                   <Lightbulb className="h-4 w-4" />
@@ -194,8 +212,8 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
                 Discard
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </PageShell>
   );

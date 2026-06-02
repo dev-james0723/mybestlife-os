@@ -1,14 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import {
   useKnowledgeStore,
+  type KnowledgeView,
   type KnowledgeQuickFilter,
   type KnowledgeSortKey,
 } from "@/stores/knowledge-store";
 import { CONTENT_TYPES, typeColors } from "@/types/knowledge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSPrimaryAction,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -95,7 +100,9 @@ export function KnowledgeTopControlBar() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    setLocalQuery(searchQuery);
+    startTransition(() => {
+      setLocalQuery(searchQuery);
+    });
   }, [searchQuery]);
 
   const handleChange = useCallback(
@@ -111,14 +118,35 @@ export function KnowledgeTopControlBar() {
 
   const isQuestion = looksLikeQuestion(localQuery);
 
-  const viewOptions = [
-    { key: "gallery" as const, label: ui.viewLabels.gallery, icon: LayoutGrid },
-    { key: "board" as const, label: ui.viewLabels.board, icon: Columns3 },
-    { key: "table" as const, label: ui.viewLabels.table, icon: Table },
+  const viewOptions: Array<{
+    id: KnowledgeView;
+    label: string;
+    icon: typeof LayoutGrid;
+    ariaLabel: string;
+  }> = [
     {
-      key: "constellation" as const,
+      id: "gallery",
+      label: ui.viewLabels.gallery,
+      icon: LayoutGrid,
+      ariaLabel: common.switchToView(ui.viewLabels.gallery),
+    },
+    {
+      id: "board",
+      label: ui.viewLabels.board,
+      icon: Columns3,
+      ariaLabel: common.switchToView(ui.viewLabels.board),
+    },
+    {
+      id: "table",
+      label: ui.viewLabels.table,
+      icon: Table,
+      ariaLabel: common.switchToView(ui.viewLabels.table),
+    },
+    {
+      id: "constellation",
       label: ui.viewLabels.constellation,
       icon: Sparkles,
+      ariaLabel: common.switchToView(ui.viewLabels.constellation),
     },
   ];
 
@@ -135,15 +163,15 @@ export function KnowledgeTopControlBar() {
             aria-label={ui.searchKnowledgeBase}
           />
           {isQuestion && localQuery.trim() ? (
-            <Button
-              variant="secondary"
+            <OSPrimaryAction
               size="sm"
-              className="absolute right-1 top-1/2 h-7 -translate-y-1/2 gap-1 text-xs shadow-none"
+              osSize="compact"
+              className="absolute right-1 top-1/2 -translate-y-1/2 gap-1 shadow-none"
               onClick={() => openAIPanel(localQuery)}
             >
               <Sparkles className="h-3 w-3" />
               {ui.askAi}
-            </Button>
+            </OSPrimaryAction>
           ) : null}
         </div>
 
@@ -161,28 +189,15 @@ export function KnowledgeTopControlBar() {
             </SelectContent>
           </Select>
 
-          <div className="flex w-full items-center rounded-lg border border-border/60 bg-background/80 p-0.5 sm:w-auto">
-            {viewOptions.map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-8 flex-1 gap-1.5 px-2 text-xs sm:flex-initial",
-                  currentView === key
-                    ? "bg-muted font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground",
-                )}
-                onClick={() => setView(key)}
-                aria-label={common.switchToView(label)}
-                aria-pressed={currentView === key}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden sm:inline">{label}</span>
-              </Button>
-            ))}
-          </div>
+          <OSSegmentedControl
+            items={viewOptions}
+            value={currentView}
+            onValueChange={setView}
+            ariaLabel={ui.pageTitle}
+            className="sm:w-auto"
+            labelMode="desktop"
+            layoutId="knowledge-view-active-pill"
+          />
         </div>
       </div>
 
@@ -190,10 +205,10 @@ export function KnowledgeTopControlBar() {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button
-                variant="outline"
+              <OSControl
                 size="sm"
-                className="h-8 w-full justify-between border-border/60 bg-background/80 text-xs font-normal sm:w-[200px]"
+                osSize="compact"
+                className="w-full justify-between border-border/60 bg-background/80 font-normal sm:w-[200px]"
               />
             }
           >
@@ -243,13 +258,14 @@ export function KnowledgeTopControlBar() {
             const label =
               ui.quickFilters[id as keyof typeof ui.quickFilters] ?? id;
             return (
-              <Button
+              <OSControl
                 key={id}
                 type="button"
                 variant={isActive ? "secondary" : "outline"}
                 size="sm"
+                osSize="compact"
                 className={cn(
-                  "h-7 gap-1 rounded-full border px-2.5 text-[11px] font-normal",
+                  "gap-1 rounded-full border px-2.5 text-[11px] font-normal",
                   isActive
                     ? "border-transparent bg-foreground/10"
                     : "border-border/60 bg-background/60 text-muted-foreground hover:text-foreground",
@@ -259,7 +275,7 @@ export function KnowledgeTopControlBar() {
               >
                 <Icon className="h-3 w-3 shrink-0" />
                 <span className="hidden sm:inline">{label}</span>
-              </Button>
+              </OSControl>
             );
           })}
         </div>

@@ -3,8 +3,7 @@
 import { useMemo } from "react";
 import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs } from "@/components/ui/tabs";
-import { FinanceSegmentedTab, FinanceSegmentedTabsList } from "@/components/finance/FinanceSegmentedTabs";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { Skeleton } from "@/components/ui/skeleton";
 import { convertAmountToFxBase } from "@/lib/finance/convert-to-display";
 import { formatFinanceCurrency } from "@/lib/finance/format-finance-currency";
@@ -82,6 +81,10 @@ export function FinancialOverviewCard({
 
   const loading = accountsLoading || transactionsLoading;
   const error = accountsError || transactionsError;
+  const lensItems = [
+    { id: "month" as const, label: copy.overviewLensMonth },
+    { id: "year" as const, label: copy.overviewLensYear },
+  ];
 
   return (
     <Card className="overflow-hidden ring-1 ring-foreground/10">
@@ -90,18 +93,14 @@ export function FinancialOverviewCard({
           <CardTitle className={typography.heading}>{copy.overviewSectionTitle}</CardTitle>
           <p className={cn(typography.caption, "mt-1 max-w-prose")}>{copy.overviewSubtitle}</p>
         </div>
-        <Tabs
+        <OSSegmentedControl
+          items={lensItems}
           value={overviewLens}
-          onValueChange={(v) => {
-            if (v === "month" || v === "year") onOverviewLensChange(v);
-          }}
-          className="w-full shrink-0 sm:w-auto"
-        >
-          <FinanceSegmentedTabsList>
-            <FinanceSegmentedTab value="month">{copy.overviewLensMonth}</FinanceSegmentedTab>
-            <FinanceSegmentedTab value="year">{copy.overviewLensYear}</FinanceSegmentedTab>
-          </FinanceSegmentedTabsList>
-        </Tabs>
+          onValueChange={onOverviewLensChange}
+          ariaLabel={copy.overviewSectionTitle}
+          className="w-full shrink-0 sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none"
+          layoutId="finance-overview-lens-active-pill"
+        />
       </CardHeader>
       <CardContent className="space-y-4">
         {!fxReady && !loading && (

@@ -14,7 +14,11 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSPrimaryAction,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +43,6 @@ import {
   type LibraryPrompt,
   type PromptFolder,
 } from "@/types/prompt";
-import { cn } from "@/lib/utils";
 import { AiKnowledgeFilterBar } from "@/components/ai-knowledge/AiKnowledgeFilterBar";
 import { TopCategoryRail } from "@/components/ai-knowledge/TopCategoryRail";
 import { PromptCard, PromptListRow } from "@/components/ai-knowledge/PromptCard";
@@ -482,58 +485,46 @@ export default function AiKnowledgePage() {
         title={ui.pageTitle}
         description={ui.pageDescription}
         actions={
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={openPalette}
-            aria-label={ui.header.commandPaletteHint}
-          >
-            <Search className="h-4 w-4" />
-            {ui.header.commandPaletteShortcut}
-          </Button>
-          {isPromptTab && !selectionMode && (
-            <Button
-              variant="outline"
+          <>
+            <OSControl
               size="sm"
               className="gap-2"
-              onClick={() => setSelectionMode(true, "manage")}
+              onClick={openPalette}
+              aria-label={ui.header.commandPaletteHint}
             >
-              <ListChecks className="h-4 w-4" />
-              {ui.selection.select}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            className="gap-2"
-            onClick={() => openCreatePromptModal("pick")}
-          >
-            <Plus className="h-4 w-4" />
-            {ui.header.createPrompt}
-          </Button>
-        </>
-      }
-    >
+              <Search className="h-4 w-4" />
+              {ui.header.commandPaletteShortcut}
+            </OSControl>
+            {isPromptTab && !selectionMode && (
+              <OSControl
+                size="sm"
+                className="gap-2"
+                onClick={() => setSelectionMode(true, "manage")}
+              >
+                <ListChecks className="h-4 w-4" />
+                {ui.selection.select}
+              </OSControl>
+            )}
+            <OSPrimaryAction
+              size="sm"
+              className="gap-2"
+              onClick={() => openCreatePromptModal("pick")}
+            >
+              <Plus className="h-4 w-4" />
+              {ui.header.createPrompt}
+            </OSPrimaryAction>
+          </>
+        }
+      >
       <div className="space-y-5">
-        <div className="flex items-center gap-2 border-b overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "px-3 py-2 text-sm font-medium transition-colors -mb-px border-b-2 shrink-0",
-                activeTab === tab.id
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-              aria-pressed={activeTab === tab.id}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <OSSegmentedControl
+          items={tabs}
+          value={activeTab}
+          onValueChange={setActiveTab}
+          ariaLabel={ui.pageTitle}
+          className="max-w-full"
+          layoutId="ai-knowledge-tab-active-pill"
+        />
 
         {isPromptTab && (
           <>

@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSDialogSurface,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { Label } from "@/components/ui/label";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -310,29 +315,29 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-      <DialogContent
+      <OSDialogSurface
         showCloseButton={false}
         className={cn(
-          "flex max-h-[min(90vh,760px)] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-popover p-0 text-popover-foreground shadow-lg sm:max-w-xl"
+          "flex max-h-[min(90vh,760px)] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-xl"
         )}
       >
-        <DialogHeader className="relative shrink-0 border-b border-border bg-popover px-6 pb-4 pt-6 text-center">
-          <DialogTitle className="font-sans text-lg font-semibold tracking-tight text-foreground">
+        <DialogHeader className="relative shrink-0 border-b border-white/10 bg-slate-950/35 px-6 pb-4 pt-6 text-center">
+          <DialogTitle className="font-sans text-lg font-semibold tracking-tight text-white">
             {copy.createDialogTitle}
           </DialogTitle>
-          <Button
+          <OSIconControl
             type="button"
-            variant="ghost"
             size="icon-sm"
-            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            osSize="compact"
+            className="absolute top-4 right-4"
             onClick={() => handleDialogOpenChange(false)}
             aria-label={copy.createCloseAria}
           >
             <span className="text-lg leading-none">×</span>
-          </Button>
+          </OSIconControl>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-popover px-6 py-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-950/30 px-6 py-5">
           <RichTextEditor
             ref={editorRef}
             onChange={handleEditorChange}
@@ -341,14 +346,12 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
           />
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <button
+            <OSPrimaryAction
               type="button"
+              osSize="compact"
               disabled={aiPhotoPending}
               onClick={handleGeneratePhotoAi}
-              className={cn(
-                "flex h-10 items-center justify-center gap-2 rounded-xl text-sm font-medium text-white transition",
-                "bg-[#7c3aed] hover:bg-[#6d28d9] disabled:opacity-60 dark:bg-violet-600 dark:hover:bg-violet-500"
-              )}
+              className="gap-2"
             >
               {aiPhotoPending ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -356,15 +359,13 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
                 <ImagePlus className="size-4 shrink-0" />
               )}
               {copy.generatePhotoAi}
-            </button>
-            <button
+            </OSPrimaryAction>
+            <OSControl
               type="button"
+              osSize="compact"
               disabled={aiEnhancePending}
               onClick={handleEnhanceAi}
-              className={cn(
-                "flex h-10 items-center justify-center gap-2 rounded-xl text-sm font-medium text-white transition",
-                "bg-[#0d9488] hover:bg-[#0f766e] disabled:opacity-60 dark:bg-teal-600 dark:hover:bg-teal-500"
-              )}
+              className="gap-2"
             >
               {aiEnhancePending ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -372,7 +373,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
                 <PenLine className="size-4 shrink-0" />
               )}
               {copy.enhanceAi}
-            </button>
+            </OSControl>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -449,10 +450,10 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
                   <Trash2 className="size-4 shrink-0 text-destructive" aria-hidden />
                   {copy.removePhoto}
                 </Button>
-                <Button
+                <OSControl
                   type="button"
-                  variant="outline"
                   size="sm"
+                  osSize="compact"
                   className="gap-2 rounded-lg"
                   disabled={aiPhotoPending}
                   onClick={() => void handleGeneratePhotoAi()}
@@ -463,7 +464,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
                     <RefreshCw className="size-4 shrink-0" aria-hidden />
                   )}
                   {copy.regeneratePhoto}
-                </Button>
+                </OSControl>
               </div>
             ) : null}
           </div>
@@ -474,28 +475,23 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
           </label>
         </div>
 
-        <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-6 py-4">
-          <Button
+        <div className="flex shrink-0 justify-end gap-2 border-t border-white/10 bg-slate-950/42 px-6 py-4">
+          <OSControl
             type="button"
-            variant="outline"
             className="rounded-lg"
             onClick={() => handleDialogOpenChange(false)}
           >
             {copy.cancel}
-          </Button>
-          <Button
+          </OSControl>
+          <OSPrimaryAction
             type="button"
             disabled={!canSave || isSaving}
             onClick={handleSave}
-            className={cn(
-              "rounded-lg border-0 text-white",
-              "bg-[#f4a7c1] hover:bg-[#e895b0] dark:bg-pink-600 dark:hover:bg-pink-500"
-            )}
           >
             {isSaving ? copy.saving : copy.saveEntry}
-          </Button>
+          </OSPrimaryAction>
         </div>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }

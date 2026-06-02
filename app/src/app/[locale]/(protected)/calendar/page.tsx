@@ -11,9 +11,9 @@ import {
   Sun,
 } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getCalendarUiCopy } from "@/lib/i18n/calendar-ui";
-import { cn } from "@/lib/utils";
 import { TodayTab } from "@/components/calendar/tabs/today-tab";
 import { AgendaTab } from "@/components/calendar/tabs/agenda-tab";
 import { WeekTab } from "@/components/calendar/tabs/week-tab";
@@ -64,48 +64,15 @@ function CalendarPageInner() {
   return (
     <PageShell title={copy.pageTitle} description={copy.pageDescription}>
       <div data-calendar-surface className="space-y-5">
-        {/* Tab strip — lime underline + animated layoutId highlight */}
-        <div
-          className="relative flex flex-wrap items-center gap-1 rounded-full border border-border/60 bg-card/40 p-1 backdrop-blur-sm sm:w-fit"
-          role="tablist"
-          aria-label={copy.pageTitle}
-        >
-          {tabDefs.map((tab) => {
-            const active = tab.id === activeTab;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                aria-controls={`calendar-tabpanel-${tab.id}`}
-                id={`calendar-tab-${tab.id}`}
-                onClick={() => setTab(tab.id)}
-                className={cn(
-                  "relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--calendar-lime)]/70",
-                  active
-                    ? "text-[#0d0d0d]"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="calendar-tab-pill"
-                    className="absolute inset-0 -z-10 rounded-full bg-[var(--calendar-lime)] shadow-[0_0_20px_var(--calendar-lime-glow)]"
-                    transition={{
-                      duration: prefersReduced ? 0 : 0.22,
-                      ease: [0.4, 0, 0.2, 1],
-                    }}
-                  />
-                )}
-                <Icon className="h-3.5 w-3.5" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <OSSegmentedControl
+          items={tabDefs}
+          value={activeTab}
+          onValueChange={setTab}
+          ariaLabel={copy.pageTitle}
+          getPanelId={(tab) => `calendar-tabpanel-${tab}`}
+          getTabId={(tab) => `calendar-tab-${tab}`}
+          layoutId="calendar-tab-pill"
+        />
 
         {/* Tab content — crossfade on change */}
         <AnimatePresence mode="wait">

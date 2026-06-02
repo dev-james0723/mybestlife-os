@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
@@ -73,8 +73,7 @@ export function RelationshipShell() {
   }, [rawTab, searchParams, router, containerHref]);
 
   const handleValueChange = useCallback(
-    (value: string | null) => {
-      if (!isRelationshipSubTab(value)) return;
+    (value: RelationshipSubTab) => {
       if (value === activeTab) return;
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", value);
@@ -101,35 +100,18 @@ export function RelationshipShell() {
 
   return (
     <PageShell title={themedTitle} description={themedDescription}>
-      {/* Sub-tab nav: matches the canonical "line" tab pattern used elsewhere
-          (see VaultSoftwareModeTabs). The outer scroll container guarantees
-          long translated labels never break layout — they scroll horizontally
-          with no visible scrollbar. Soft border doubles as a section divider. */}
-      <div className="border-b border-border/60">
-        <div className="-mx-2 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <Tabs
-            value={activeTab}
-            onValueChange={handleValueChange}
-            className="w-full min-w-0"
-          >
-            <TabsList
-              variant="line"
-              aria-label={copy.tabsAriaLabel}
-              className="-mb-px h-auto min-w-fit flex-nowrap justify-start gap-1 bg-transparent p-0"
-            >
-              {RELATIONSHIP_SUB_TABS.map((id) => (
-                <TabsTrigger
-                  key={id}
-                  value={id}
-                  className="shrink-0 px-3 py-2 text-sm sm:text-base"
-                >
-                  {tabLabels[id]}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
+      <OSSegmentedControl
+        items={RELATIONSHIP_SUB_TABS.map((id) => ({
+          id,
+          label: tabLabels[id],
+        }))}
+        value={activeTab}
+        onValueChange={handleValueChange}
+        ariaLabel={copy.tabsAriaLabel}
+        getPanelId={(id) => `relationship-panel-${id}`}
+        getTabId={(id) => `relationship-tab-${id}`}
+        layoutId="relationship-subtab-pill"
+      />
 
       <div className="mt-6">
         <AnimatePresence mode="wait" initial={false}>
@@ -141,6 +123,7 @@ export function RelationshipShell() {
             transition={prefersReducedMotion ? PANEL_TRANSITION_REDUCED : PANEL_TRANSITION}
             role="tabpanel"
             id={`relationship-panel-${activeTab}`}
+            aria-labelledby={`relationship-tab-${activeTab}`}
           >
             {activeTab === "relationship" ? <RelationshipTabPanel /> : null}
             {activeTab === "role-model" ? <RoleModelTabPanel /> : null}

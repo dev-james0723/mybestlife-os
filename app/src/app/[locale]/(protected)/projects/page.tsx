@@ -5,9 +5,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  OSControl,
+  OSPrimaryAction,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -446,29 +450,26 @@ export default function ProjectsPage() {
         title={ui.pageTitle}
         description={ui.pageDescription}
         actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+          <>
+            <OSControl
               className="hidden sm:inline-flex"
               onClick={() => router.push(dailyPlannerHref)}
             >
               <CalendarDays className="mr-1.5 h-4 w-4" />
               {ui.dailyPlanner}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </OSControl>
+            <OSControl
+              aria-label={ui.commandPaletteHint}
               className="hidden sm:inline-flex"
               onClick={() => setCommandPaletteOpen(true)}
             >
               <Command className="mr-1.5 h-3.5 w-3.5" />
-              <span className="text-xs text-muted-foreground">⌘K</span>
-            </Button>
+              <span className="text-xs opacity-70">⌘K</span>
+            </OSControl>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <Button variant="outline" size="sm" className="hidden sm:inline-flex" />
+                  <OSControl className="hidden sm:inline-flex" />
                 }
               >
                 {ui.fromTemplate}
@@ -502,8 +503,7 @@ export default function ProjectsPage() {
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              size="sm"
+            <OSPrimaryAction
               onClick={() => {
                 setCreatePreset(null);
                 setShowCreate(true);
@@ -512,8 +512,8 @@ export default function ProjectsPage() {
             >
               <Plus className="mr-1.5 h-4 w-4" />
               {ui.newProject}
-            </Button>
-          </div>
+            </OSPrimaryAction>
+          </>
         }
       >
         {/* Insight Strip */}
@@ -638,27 +638,20 @@ export default function ProjectsPage() {
             </SelectContent>
           </Select>
 
-          {/* View mode switcher */}
-          <div className="flex items-center border rounded-lg p-1 ml-auto">
-            {viewModeConfig.map((v) => {
-              const Icon = v.icon;
-              return (
-                <Button
-                  key={v.key}
-                  variant={viewMode === v.key ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8 w-8 p-0 sm:w-auto sm:px-2.5"
-                  onClick={() => setViewMode(v.key)}
-                  aria-label={v.label}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-1.5 text-xs">
-                    {v.label}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
+          <OSSegmentedControl
+            items={viewModeConfig.map((v) => ({
+              id: v.key,
+              label: v.label,
+              icon: v.icon,
+              ariaLabel: v.label,
+            }))}
+            value={viewMode}
+            onValueChange={setViewMode}
+            ariaLabel={`${ui.pageTitle} view`}
+            className="sm:ml-auto"
+            labelMode="desktop"
+            layoutId="projects-view-mode-pill"
+          />
         </div>
 
         {/* Views */}

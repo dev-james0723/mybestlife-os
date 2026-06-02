@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Plus, type LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,10 +46,10 @@ export function UniversalCreateMenu({
       <DropdownMenuTrigger
         render={
           trigger ?? (
-            <Button>
+            <OSPrimaryAction>
               <Plus className="h-4 w-4" />
               {label}
-            </Button>
+            </OSPrimaryAction>
           )
         }
       />

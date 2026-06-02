@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { buttonVariants } from "@/components/ui/button";
+import { OSPageHeader, OSPrimaryAction } from "@/components/ui/os-primitives";
 import { MotivationCard } from "@/components/dashboard/motivation-card";
 import { DailyInspirationCard } from "@/components/dashboard/daily-inspiration-card";
 import { QuoteInspirationCard } from "@/components/dashboard/quote-inspiration-card";
@@ -231,23 +232,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2 sm:space-y-2.5">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {getGreeting(language, profile?.greeting_tone ?? "friendly", profile?.full_name)}
-          </h1>
-          {profile?.motto && (
-            <p className="text-sm italic text-muted-foreground">{profile.motto}</p>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground sm:text-right">
-          <span className="font-medium text-foreground/90">
-            {format(clock, "EEEE, MMMM d, yyyy", { locale })}
-          </span>
-          <span className="mx-2 text-muted-foreground/80">•</span>
-          <span className="tabular-nums">{format(clock, "HH:mm:ss")}</span>
-        </p>
-      </header>
+      <OSPageHeader
+        title={getGreeting(language, profile?.greeting_tone ?? "friendly", profile?.full_name)}
+        description={profile?.motto ?? undefined}
+        actions={
+          <p className="text-sm text-muted-foreground sm:text-right">
+            <span className="font-medium text-foreground/90">
+              {format(clock, "EEEE, MMMM d, yyyy", { locale })}
+            </span>
+            <span className="mx-2 text-muted-foreground/80">•</span>
+            <span className="tabular-nums">{format(clock, "HH:mm:ss")}</span>
+          </p>
+        }
+      />
 
       <section
         aria-label={copy.title}
@@ -409,17 +406,17 @@ export default function DashboardPage() {
         />
       </div>
 
-      <Link
-        href={hrefAiAssistant}
+      <OSPrimaryAction
+        render={<Link href={hrefAiAssistant} />}
+        size="icon-lg"
         className={cn(
-          "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg",
-          "bg-pink-500 text-white transition-colors hover:bg-pink-600",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+          "fixed right-6 z-40 h-14 min-h-14 w-14 rounded-full p-0",
+          "bottom-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))]"
         )}
         aria-label={copy.openAiAssistantAria}
       >
         <Gift className="h-7 w-7" />
-      </Link>
+      </OSPrimaryAction>
     </div>
   );
 }

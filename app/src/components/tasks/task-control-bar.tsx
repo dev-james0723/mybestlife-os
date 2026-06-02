@@ -13,8 +13,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  OSControl,
+  OSIconControl,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -137,6 +141,12 @@ export function TaskControlBar({
     ...getTaskSortOptions(copy),
     { value: "updated_at", label: centerCopy.sortUpdatedAt },
   ];
+  const viewLabels: Record<TaskViewMode, string> = {
+    list: centerCopy.viewList,
+    grid: centerCopy.viewGrid,
+    table: centerCopy.viewTable,
+    kanban: centerCopy.viewBoard,
+  };
 
   const showClear = activeFilterCount > 0 || filter.search.trim().length > 0;
 
@@ -182,9 +192,7 @@ export function TaskControlBar({
           placeholder={centerCopy.sortLabel}
           width="w-[140px]"
         />
-        <Button
-          variant="outline"
-          size="icon-sm"
+        <OSIconControl
           onClick={onToggleSortDirection}
           aria-label={centerCopy.toggleSortDirection}
         >
@@ -193,11 +201,11 @@ export function TaskControlBar({
           ) : (
             <ArrowDown className="h-4 w-4" />
           )}
-        </Button>
+        </OSIconControl>
       </div>
 
       {onOpenAdvanced && (
-        <Button variant="outline" size="sm" onClick={onOpenAdvanced}>
+        <OSControl onClick={onOpenAdvanced}>
           <SlidersHorizontal className="h-4 w-4" />
           {centerCopy.advancedFilters}
           {activeFilterCount > 0 && (
@@ -205,33 +213,31 @@ export function TaskControlBar({
               {activeFilterCount}
             </Badge>
           )}
-        </Button>
+        </OSControl>
       )}
 
       {showClear && onClearAll && (
-        <Button variant="ghost" size="sm" onClick={onClearAll}>
+        <OSControl onClick={onClearAll}>
           <X className="h-4 w-4" />
           {centerCopy.clearAll}
-        </Button>
+        </OSControl>
       )}
 
       {viewModes.length > 1 && (
-        <div className="ml-auto flex items-center rounded-lg border p-1">
-          {viewModes.map((mode) => {
-            const Icon = VIEW_ICONS[mode];
-            return (
-              <Button
-                key={mode}
-                variant={viewMode === mode ? "secondary" : "ghost"}
-                size="icon-sm"
-                onClick={() => onViewModeChange(mode)}
-                aria-label={mode}
-              >
-                <Icon className="h-4 w-4" />
-              </Button>
-            );
-          })}
-        </div>
+        <OSSegmentedControl
+          items={viewModes.map((mode) => ({
+            id: mode,
+            label: viewLabels[mode],
+            icon: VIEW_ICONS[mode],
+            ariaLabel: viewLabels[mode],
+          }))}
+          value={viewMode}
+          onValueChange={onViewModeChange}
+          ariaLabel={`${copy.pageTitle} view`}
+          className="sm:ml-auto"
+          labelMode="sr-only"
+          layoutId="tasks-view-mode-pill"
+        />
       )}
     </div>
   );

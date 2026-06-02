@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { LayoutGrid, List, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { OSControl, OSSegmentedControl } from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
 import {
@@ -82,6 +81,21 @@ export function AiKnowledgeFilterBar({
     activeTopCategory !== null ||
     activeSubCategorySlug !== null ||
     activeTag !== null;
+
+  const layoutOptions = [
+    {
+      id: "grid" as const,
+      label: ui.filters.layoutGrid,
+      icon: LayoutGrid,
+      ariaLabel: ui.filters.layoutGrid,
+    },
+    {
+      id: "list" as const,
+      label: ui.filters.layoutList,
+      icon: List,
+      ariaLabel: ui.filters.layoutList,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
@@ -170,47 +184,25 @@ export function AiKnowledgeFilterBar({
       )}
 
       {hasActiveFilters && (
-        <Button
-          variant="ghost"
+        <OSControl
           size="sm"
           onClick={onClear}
           className="gap-1.5"
         >
           <X className="h-3.5 w-3.5" />
           {ui.filters.clearFilters}
-        </Button>
+        </OSControl>
       )}
 
-      <div className="sm:ml-auto flex items-center gap-0.5 rounded-lg border p-0.5">
-        <button
-          type="button"
-          onClick={() => onLayoutChange("grid")}
-          aria-label={ui.filters.layoutGrid}
-          aria-pressed={layout === "grid"}
-          className={cn(
-            "rounded-md p-1.5 text-muted-foreground transition-colors",
-            layout === "grid"
-              ? "bg-muted text-foreground"
-              : "hover:text-foreground",
-          )}
-        >
-          <LayoutGrid className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onLayoutChange("list")}
-          aria-label={ui.filters.layoutList}
-          aria-pressed={layout === "list"}
-          className={cn(
-            "rounded-md p-1.5 text-muted-foreground transition-colors",
-            layout === "list"
-              ? "bg-muted text-foreground"
-              : "hover:text-foreground",
-          )}
-        >
-          <List className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      <OSSegmentedControl
+        items={layoutOptions}
+        value={layout}
+        onValueChange={onLayoutChange}
+        ariaLabel={`${ui.filters.layoutGrid} / ${ui.filters.layoutList}`}
+        className="sm:ml-auto sm:w-auto"
+        labelMode="sr-only"
+        layoutId="ai-knowledge-layout-active-pill"
+      />
     </div>
   );
 }
