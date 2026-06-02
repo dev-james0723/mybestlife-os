@@ -26,6 +26,9 @@ export type OSBuddyEvent =
   | { type: "buddy:drag:start" }
   | { type: "buddy:drag:end" }
   | { type: "buddy:longpress" }
+  | { type: "buddy:walk:start" }
+  | { type: "buddy:walk:return" }
+  | { type: "buddy:walk:end" }
   | { type: "game:start"; game: OSBuddyMiniGame }
   | { type: "game:complete"; game: OSBuddyMiniGame; score?: number };
 

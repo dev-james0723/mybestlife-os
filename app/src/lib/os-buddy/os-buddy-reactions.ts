@@ -2,6 +2,10 @@ import type { AppLocale } from "@/lib/i18n/app-locale";
 import { addOSBuddyEventListener, type OSBuddyEvent } from "./os-buddy-events";
 import type { OSBuddyMood } from "@/types/os-buddy";
 import type { OSBuddyBubbleType } from "@/stores/os-buddy-store";
+import type {
+  OSBuddyCompanionCta,
+  OSBuddyCompanionKind,
+} from "@/lib/os-buddy/os-buddy-companion";
 
 type ReactionHandlers = {
   setMood: (mood: OSBuddyMood) => void;
@@ -9,7 +13,13 @@ type ReactionHandlers = {
   showBubble: (
     message: string,
     type?: OSBuddyBubbleType,
-    options?: { durationMs?: number; force?: boolean; unsolicited?: boolean },
+    options?: {
+      durationMs?: number;
+      force?: boolean;
+      unsolicited?: boolean;
+      kind?: OSBuddyCompanionKind;
+      cta?: OSBuddyCompanionCta | null;
+    },
   ) => void;
 };
 
@@ -130,6 +140,14 @@ function applyReaction(
       return;
     case "buddy:longpress":
       temporarilySetMood("playful", 1200);
+      return;
+    case "buddy:walk:start":
+      setMood("playful");
+      return;
+    case "buddy:walk:return":
+      return;
+    case "buddy:walk:end":
+      setMood("idle");
       return;
     case "game:start":
       setMood("focused");

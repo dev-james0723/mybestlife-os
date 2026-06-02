@@ -425,6 +425,165 @@ html.focus-mode [data-focus-hideable] {
   user-select: none;
 }
 
+.os-buddy-pixel-bubble {
+  --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 92%, white 8%);
+  --os-buddy-bubble-ink: var(--popover-foreground);
+  --os-buddy-bubble-border: color-mix(in oklch, var(--foreground) 82%, black 18%);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  min-width: 132px;
+  max-width: min(238px, calc(100vw - 28px));
+  margin-bottom: 12px;
+  padding: 10px 12px 9px;
+  color: var(--os-buddy-bubble-ink);
+  background:
+    linear-gradient(135deg, color-mix(in oklch, white 18%, transparent), transparent 42%),
+    var(--os-buddy-bubble-bg);
+  border: 2px solid var(--os-buddy-bubble-border);
+  border-radius: 7px;
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--os-buddy-bubble-bg) 76%, var(--os-buddy-bubble-border)),
+    4px 4px 0 var(--os-buddy-bubble-border),
+    0 12px 24px color-mix(in oklch, black 22%, transparent);
+  image-rendering: pixelated;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  animation:
+    os-buddy-bubble-pop 340ms cubic-bezier(0.16, 1.24, 0.3, 1) both,
+    os-buddy-bubble-wobble 3.4s ease-in-out 420ms infinite;
+}
+
+.os-buddy-pixel-bubble::before,
+.os-buddy-pixel-bubble::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 7px);
+  pointer-events: none;
+}
+
+.os-buddy-pixel-bubble::before {
+  bottom: -12px;
+  width: 16px;
+  height: 12px;
+  background: var(--os-buddy-bubble-border);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.os-buddy-pixel-bubble::after {
+  bottom: -7px;
+  left: calc(50% - 5px);
+  width: 12px;
+  height: 8px;
+  background: var(--os-buddy-bubble-bg);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.os-buddy-pixel-bubble[data-kind="game"] {
+  --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 84%, #facc15 16%);
+}
+
+.os-buddy-pixel-bubble[data-kind="weather"] {
+  --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 86%, #38bdf8 14%);
+}
+
+.os-buddy-pixel-bubble[data-kind="compliment"] {
+  --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 86%, #fb7185 14%);
+}
+
+.os-buddy-pixel-bubble-text {
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.os-buddy-pixel-bubble-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  margin-top: 7px;
+  padding: 3px 8px;
+  color: var(--os-buddy-bubble-ink);
+  background: color-mix(in oklch, var(--os-buddy-bubble-bg) 74%, white 26%);
+  border: 2px solid var(--os-buddy-bubble-border);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 var(--os-buddy-bubble-border);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+
+.os-buddy-pixel-bubble-cta:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--os-buddy-bubble-border);
+}
+
+.os-buddy-pixel-bubble-cta:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--os-buddy-bubble-border);
+}
+
+.os-buddy-pixel-bubble-cta:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@keyframes os-buddy-bubble-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.86);
+  }
+  58% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) scale(1.045);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes os-buddy-bubble-wobble {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-50%) translateY(-1px) rotate(-0.8deg);
+  }
+  52% {
+    transform: translateX(-50%) translateY(0.5px) rotate(0.65deg);
+  }
+  76% {
+    transform: translateX(-50%) translateY(-0.5px) rotate(-0.35deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-buddy-pixel-bubble {
+    animation: none !important;
+    transition: none !important;
+    transform: translateX(-50%);
+  }
+
+  .os-buddy-pixel-bubble-cta {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .os-buddy-pixel-bubble-cta:hover,
+  .os-buddy-pixel-bubble-cta:active {
+    transform: none;
+  }
+}
+
 /* ============================================================
    Atmosphere backdrops per theme/mode
    ============================================================ */

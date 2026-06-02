@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import type {
+  OSBuddyCompanionCta,
+  OSBuddyCompanionKind,
+  OSBuddyMiniGame,
+} from "@/lib/os-buddy/os-buddy-companion";
 import type { OSBuddyMood } from "@/types/os-buddy";
 
 const UNSOLICITED_BUBBLE_COOLDOWN_MS = 20_000;
@@ -13,10 +18,7 @@ export type OSBuddyBubbleType =
   | "error"
   | "game";
 
-export type OSBuddyMiniGame =
-  | "pixel-catch"
-  | "focus-tap"
-  | "clean-desk";
+export type { OSBuddyMiniGame };
 
 interface OSBuddyRuntimeState {
   mood: OSBuddyMood;
@@ -25,12 +27,16 @@ interface OSBuddyRuntimeState {
   bubble: {
     message: string;
     type: OSBuddyBubbleType;
+    kind?: OSBuddyCompanionKind;
+    cta?: OSBuddyCompanionCta | null;
     createdAt: number;
   } | null;
 
   isMenuOpen: boolean;
   isDragging: boolean;
   dragDirection: "left" | "right" | null;
+  isWalkModeActive: boolean;
+  isReturningHome: boolean;
 
   isPetPickerOpen: boolean;
   isMiniGameOpen: boolean;
@@ -50,6 +56,8 @@ interface OSBuddyRuntimeState {
       durationMs?: number;
       force?: boolean;
       unsolicited?: boolean;
+      kind?: OSBuddyCompanionKind;
+      cta?: OSBuddyCompanionCta | null;
     },
   ) => void;
 
@@ -57,6 +65,8 @@ interface OSBuddyRuntimeState {
 
   setMenuOpen: (open: boolean) => void;
   setDragging: (dragging: boolean, direction?: "left" | "right" | null) => void;
+  setWalkModeActive: (active: boolean) => void;
+  setReturningHome: (returning: boolean) => void;
 
   setPetPickerOpen: (open: boolean) => void;
 
@@ -79,6 +89,8 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   isMenuOpen: false,
   isDragging: false,
   dragDirection: null,
+  isWalkModeActive: false,
+  isReturningHome: false,
 
   isPetPickerOpen: false,
   isMiniGameOpen: false,
@@ -138,7 +150,13 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
     }
 
     set((state) => ({
-      bubble: { message, type, createdAt: now },
+      bubble: {
+        message,
+        type,
+        kind: options?.kind,
+        cta: options?.cta ?? null,
+        createdAt: now,
+      },
       lastUnsolicitedBubbleAt: unsolicited ? now : state.lastUnsolicitedBubbleAt,
     }));
 
@@ -159,6 +177,10 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   },
 
   setMenuOpen: (open) => set({ isMenuOpen: open }),
+
+  setWalkModeActive: (active) => set({ isWalkModeActive: active }),
+
+  setReturningHome: (returning) => set({ isReturningHome: returning }),
 
   setDragging: (dragging, direction = null) => {
     set((state) => {
