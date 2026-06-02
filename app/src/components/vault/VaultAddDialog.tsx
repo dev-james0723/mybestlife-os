@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Loader2, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, ArrowRight, Search } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
@@ -26,9 +26,11 @@ import {
 import { AppCandidatePickerModal } from "@/components/vault/AppCandidatePickerModal";
 import { PlanPickerSteps } from "@/components/vault/PlanPickerSteps";
 import { VaultReviewStep } from "@/components/vault/VaultReviewStep";
+import { SoftwareProductResearchDialog } from "@/components/vault/SoftwareProductResearchDialog";
 import { useCreateSoftwareVaultEntry } from "@/hooks/use-software-vault";
 import { toast } from "sonner";
 import type { AppCandidate, ConfidenceLevel, FieldSource, PricingPlan, SoftwareAlternative } from "@/types/vault-smart-autofill";
+import type { ShouldAddResponse } from "@/lib/vault/intelligence-schemas";
 import {
   applyPlanSelection,
   applySubscribeChoice,
@@ -75,10 +77,12 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
   const [needsConfirmation, setNeedsConfirmation] = useState<string[]>([]);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
   const [alternativeOptions, setAlternativeOptions] = useState<SoftwareAlternative[]>([]);
+  const [shouldAddResult, setShouldAddResult] = useState<ShouldAddResponse | null>(null);
   const [metadata, setMetadata] = useState<VaultFormMetadata>({});
   const [candidates, setCandidates] = useState<AppCandidate[]>([]);
   const [, setSelectedCandidate] = useState<AppCandidate | null>(null);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
+  const [researchOpen, setResearchOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [subscribeChoice, setSubscribeChoice] = useState<SubscribeChoice | null>(null);
@@ -96,10 +100,12 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
     setNeedsConfirmation([]);
     setPricingPlans([]);
     setAlternativeOptions([]);
+    setShouldAddResult(null);
     setMetadata({});
     setCandidates([]);
     setSelectedCandidate(null);
     setShowCandidateModal(false);
+    setResearchOpen(false);
     setIsFetching(false);
     setIsIdentifying(false);
     setSubscribeChoice(null);
@@ -159,6 +165,70 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
     }
   };
 
+  const runShouldAdd = async () => {
+    if (!query.trim()) return;
+    setIsFetching(true);
+    setShouldAddResult(null);
+    try {
+      const res = await fetch("/api/vault/should-add", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+      if (res.status === 429) {
+        toast.error(copy.add.errors.rateLimited);
+        return;
+      }
+      if (!res.ok) {
+        toast.error(copy.add.errors.notFound);
+        return;
+      }
+      const data = (await res.json()) as ShouldAddResponse;
+      setShouldAddResult(data);
+      const safePatch = sanitizeVaultFormPatch(data.fields_to_save_if_user_confirms ?? {});
+      setForm(() => ({
+        ...EMPTY_FORM,
+        ...safePatch,
+        app_name: safePatch.app_name || query.trim(),
+      }));
+      const generated = Object.keys(safePatch).filter((key) => {
+        const value = safePatch[key as keyof VaultFormState];
+        return value != null && String(value).trim() !== "";
+      });
+      setAiFields(new Set(generated));
+      setFieldConfidence(
+        Object.fromEntries(generated.map((key) => [key, "medium" as ConfidenceLevel])),
+      );
+      setFieldSources(
+        generated.map((field) => ({
+          field,
+          source_type: "llm_inference",
+          fetched_at: data.generatedAt,
+          confidence: "medium",
+        })),
+      );
+      setNeedsConfirmation([]);
+      setPricingPlans([]);
+      setAlternativeOptions([]);
+      setMetadata({
+        field_sources: generated.map((field) => ({
+          field,
+          source_type: "llm_inference",
+          fetched_at: data.generatedAt,
+          confidence: "medium",
+        })),
+        field_confidence: Object.fromEntries(
+          generated.map((key) => [key, "medium" as ConfidenceLevel]),
+        ),
+      });
+      setStage("review");
+    } catch {
+      toast.error(copy.add.errors.notFound);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   const runAutofill = async (candidate: AppCandidate | null) => {
     setIsFetching(true);
     setShowCandidateModal(false);
@@ -184,6 +254,7 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
         return;
       }
       const data = (await res.json()) as AutofillResult;
+      setShouldAddResult(null);
       const safePatch = sanitizeVaultFormPatch(data.fields ?? {});
       setForm(() => ({ ...EMPTY_FORM, ...safePatch }));
       setAiFields(new Set(data.ai_generated_fields));
@@ -347,6 +418,18 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
                   )}
                   {busy ? copy.add.fetching : copy.add.fetchCta}
                 </Button>
+                <Button type="button" variant="secondary" onClick={() => void runShouldAdd()} disabled={busy || !query.trim()}>
+                  {busy ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Should I add this?
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setResearchOpen(true)} disabled={busy || !query.trim()}>
+                  <Search className="mr-2 h-4 w-4" />
+                  Research before adding
+                </Button>
                 <Button type="button" variant="ghost" onClick={handleManualEntry} disabled={busy}>
                   {copy.add.manualEntry}
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -379,6 +462,7 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
               fieldConfidence={fieldConfidence}
               fieldSources={fieldSources}
               needsConfirmation={needsConfirmation}
+              shouldAddResult={shouldAddResult}
               onEdit={() => setStage("form")}
               onDeposit={handleSave}
               onBack={() =>
@@ -432,6 +516,12 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
           setShowCandidateModal(false);
           setStage("prompt");
         }}
+      />
+      <SoftwareProductResearchDialog
+        open={researchOpen}
+        onOpenChange={setResearchOpen}
+        initialProductName={query}
+        onApplied={() => handleOpenChange(false)}
       />
     </>
   );

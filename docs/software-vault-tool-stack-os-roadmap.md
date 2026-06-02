@@ -16,18 +16,27 @@ Companions:
 
 | Phase | Status | Scope |
 | --- | --- | --- |
-| 0 | Complete when docs are accepted | Architecture only. No app code, migrations, UI, or placeholder components. |
-| 1 | Not started | AI Tool Capture / Smart Add Upgrade. |
-| 1.5 | Not started | Product Research Agent. |
-| 2 | Not started | Tool Intelligence Modal. |
-| 3 | Not started | Stack Doctor + Overlap Intelligence. |
-| 4 | Not started | Project-to-Stack Builder. |
-| 5 | Not started | Subscription / Cost Optimization. |
-| 6 | Not started | Workflow Recipes. |
-| 7 | Not started | Tool Usage + Default Tool System. |
-| 8 | Not started | Page-Level Software Vault Intelligence. |
-| 9 | Not started | Dynamic Visual Polish. |
-| 10 | Not started | QA / Hardening. |
+| 0 | Complete | Architecture only. No app code, migrations, UI, or placeholder components. |
+| 1 | Complete | AI Tool Capture / Smart Add Upgrade. |
+| 1.5 | Complete | Product Research Agent. |
+| 2 | Complete | Tool Intelligence Modal. |
+| 3 | Complete | Stack Doctor + Overlap Intelligence. |
+| 4 | Complete | Project-to-Stack Builder. |
+| 5 | Complete | Subscription / Cost Optimization. |
+| 6 | Complete | Workflow Recipes. |
+| 7 | Complete | Tool Usage + Default Tool System. |
+| 8 | Complete | Page-Level Software Vault Intelligence. |
+| 9 | Complete | Dynamic Visual Polish. |
+| 10 | Complete | QA / Hardening. |
+
+Implementation update, 2026-06-02:
+
+- Smart Add now has a review-first `should-add` path for tool names, URLs, pricing URLs, GitHub URLs, workflow needs, and questions.
+- Product Research Agent is available from add/detail flows, supports source-backed report sections, and can save/apply confirmed fields.
+- Tool Intelligence is embedded in the detail modal and the vault page command center.
+- Stack Doctor, project stack builder, subscription audit, workflow recipe generation, default tool recommendations, usage recording, and page health summaries are backed by deterministic helpers and authenticated API routes.
+- Persistence is additive through the Software Vault Tool Stack OS migration: research reports, brand assets, stack blueprints/items, workflow recipes/steps, tool links, subscription reviews, overlap groups, default rules, usage events, and manual illustration prompts.
+- QA status: lint passes with existing warnings, tests pass, and production build passes.
 
 ---
 

@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,12 +12,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Pencil, Trash2, ExternalLink, Star, Sparkles } from "lucide-react";
+import { Activity, Pencil, Trash2, ExternalLink, Star, Sparkles, Search } from "lucide-react";
 import type { SoftwareVaultEntry } from "@/types/database";
 import { formatDate, formatRelative } from "@/lib/utils/date";
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
 import { useToggleDefaultStack } from "@/hooks/use-software-vault";
+import { SoftwareProductResearchDialog } from "@/components/vault/SoftwareProductResearchDialog";
 
 function costLabel(entry: SoftwareVaultEntry): string {
   if (entry.cost_type === "Free") return "Free";
@@ -47,6 +50,9 @@ export function VaultDetailModal({
   const language = useAppStore((s) => s.language);
   const copy = getVaultUiCopy(language);
   const toggleDefault = useToggleDefaultStack();
+  const queryClient = useQueryClient();
+  const [researchOpen, setResearchOpen] = useState(false);
+  const [recordingUse, setRecordingUse] = useState(false);
 
   const relatedApps = useMemo(() => {
     if (!entry) return [];
@@ -61,6 +67,29 @@ export function VaultDetailModal({
   }, [entry, entries]);
 
   const aiFields = useMemo(() => new Set(entry?.ai_generated_fields ?? []), [entry]);
+
+  const recordUse = async () => {
+    if (!entry) return;
+    setRecordingUse(true);
+    try {
+      const res = await fetch("/api/vault/usage/record", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          entryId: entry.id,
+          eventType: "used",
+          contextType: "vault",
+        }),
+      });
+      if (!res.ok) throw new Error("record_failed");
+      await queryClient.invalidateQueries({ queryKey: ["software-vault"] });
+      toast.success("Usage recorded.");
+    } catch {
+      toast.error("Could not record usage.");
+    } finally {
+      setRecordingUse(false);
+    }
+  };
 
   const fieldBlock = (label: string, key: string, value: string | null | undefined) =>
     value ? (
@@ -118,6 +147,9 @@ export function VaultDetailModal({
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setResearchOpen(true)} aria-label="Research product">
+                    <Search className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={onEdit} aria-label={copy.detail.edit}>
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -145,11 +177,25 @@ export function VaultDetailModal({
                 <Star className={`mr-1.5 h-3.5 w-3.5 ${entry.is_default_stack ? "fill-current" : ""}`} />
                 {entry.is_default_stack ? copy.detail.removeFromDefaultStack : copy.detail.addToDefaultStack}
               </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void recordUse()}
+                disabled={recordingUse}
+              >
+                <Activity className="mr-1.5 h-3.5 w-3.5" />
+                Record use
+              </Button>
             </div>
 
             {entry.summary && (
               <p className="text-sm text-muted-foreground">{entry.summary}</p>
             )}
+
+            <Separator />
+
+            <ToolIntelligenceSnapshot entry={entry} relatedApps={relatedApps} />
 
             <Separator />
 
@@ -220,9 +266,97 @@ export function VaultDetailModal({
               </span>
               <span className="opacity-70">{formatDate(entry.created_at)}</span>
             </div>
+
+            <SoftwareProductResearchDialog
+              open={researchOpen}
+              onOpenChange={setResearchOpen}
+              initialProductName={entry.app_name}
+              initialTargetUrl={entry.website_url}
+              existingVaultEntryId={entry.id}
+            />
           </div>
         )}
       </DialogContent>
     </Dialog>
   );
 }
+
+function ToolIntelligenceSnapshot({
+  entry,
+  relatedApps,
+}: {
+  entry: SoftwareVaultEntry;
+  relatedApps: SoftwareVaultEntry[];
+}) {
+  const activePaid =
+    entry.status === "Active" && (entry.cost_type === "Subscription" || entry.cost_type === "Paid");
+  const nextAction =
+    entry.status === "Wishlist"
+      ? "Research fit before adding it to the active stack."
+      : activePaid && !entry.is_default_stack
+        ? "Review whether this paid tool has a clear project, recipe, or default role."
+        : entry.biggest_downside
+          ? "Keep using it, but revisit the documented downside during the next stack audit."
+          : "Add a clearer role, downside, or workflow note so future stack reviews have evidence.";
+
+  const cards = [
+    {
+      title: "Role in my life",
+      value:
+        entry.default_tool_for ??
+        entry.why_i_use_it ??
+        "No explicit role saved yet.",
+    },
+    {
+      title: "Workflow fit",
+      value:
+        entry.use_cases ??
+        entry.best_feature ??
+        "Workflow fit is unknown until a use case is saved.",
+    },
+    {
+      title: "Overlap signal",
+      value:
+        relatedApps.length > 0
+          ? `Related to ${relatedApps.map((app) => app.app_name).slice(0, 3).join(", ")}.`
+          : "No obvious same-category/default-job overlap in the current vault.",
+    },
+    {
+      title: "Keep / review",
+      value: activePaid
+        ? entry.is_default_stack
+          ? "Paid but part of the default stack; review ROI, not removal."
+          : "Paid and not in the default stack; review dependency before renewing."
+        : "No active paid subscription pressure detected from saved fields.",
+    },
+    {
+      title: "Alternative",
+      value: entry.best_alternative ?? "No alternative saved yet.",
+    },
+    {
+      title: "Next action",
+      value: nextAction,
+    },
+  ];
+
+  return (
+    <section className="space-y-3" aria-label="Tool intelligence">
+      <div className="flex items-center gap-2">
+        <Sparkles className="size-4 text-primary" aria-hidden />
+        <h3 className="text-sm font-semibold">Tool Intelligence</h3>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {cards.map((card) => (
+          <div key={card.title} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {card.title}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed">{card.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export const ToolIntelligenceModal = VaultDetailModal;

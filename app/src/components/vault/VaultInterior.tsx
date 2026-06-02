@@ -37,6 +37,7 @@ import { VaultRecommendedStacksPanel } from "@/components/vault/VaultRecommended
 import { VaultBuildMyStackPanel } from "@/components/vault/VaultBuildMyStackPanel";
 import { VaultComparePanel } from "@/components/vault/VaultComparePanel";
 import { VaultOverlapInsightsCard } from "@/components/vault/VaultOverlapInsightsCard";
+import { VaultIntelligenceCommandCenter } from "@/components/vault/VaultIntelligenceCommandCenter";
 
 export function VaultInterior() {
   const { uiTheme } = useTheme();
@@ -126,6 +127,12 @@ export function VaultInterior() {
 
         {softwareMode === "my-vault" ? (
           <>
+            <VaultIntelligenceCommandCenter
+              entries={entryList}
+              onOpenSmartAdd={() => setAddDialogOpen(true)}
+              onSelectEntry={selectEntry}
+            />
+
             <VaultFilterBar entries={entryList} />
 
             {entryList.length > 0 ? (

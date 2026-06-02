@@ -9,12 +9,14 @@ import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
 import type { VaultFormState } from "@/components/vault/VaultEntryForm";
 import type { ConfidenceLevel, FieldSource } from "@/types/vault-smart-autofill";
 import { Loader2 } from "lucide-react";
+import type { ShouldAddResponse } from "@/lib/vault/intelligence-schemas";
 
 type Props = {
   form: VaultFormState;
   fieldConfidence: Record<string, ConfidenceLevel>;
   fieldSources: FieldSource[];
   needsConfirmation: string[];
+  shouldAddResult?: ShouldAddResponse | null;
   onEdit: () => void;
   onDeposit: () => void;
   onBack: () => void;
@@ -52,6 +54,7 @@ export function VaultReviewStep({
   fieldConfidence,
   fieldSources,
   needsConfirmation,
+  shouldAddResult,
   onEdit,
   onDeposit,
   onBack,
@@ -103,6 +106,58 @@ export function VaultReviewStep({
 
   return (
     <>
+      {shouldAddResult ? (
+        <Card className="border-primary/25 bg-primary/5">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">Should-I-Add review</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pb-4 pt-0 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-primary/30 bg-background px-2.5 py-1 text-xs font-medium uppercase tracking-wide text-primary">
+                {shouldAddResult.recommendation.replace(/_/g, " ")}
+              </span>
+              {shouldAddResult.suggested_trial_period ? (
+                <span className="text-xs text-muted-foreground">
+                  Trial: {shouldAddResult.suggested_trial_period}
+                </span>
+              ) : null}
+            </div>
+            <p className="leading-relaxed">{shouldAddResult.reason}</p>
+            {shouldAddResult.overlap_with_existing_tools.length > 0 ? (
+              <div>
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Overlap warnings</p>
+                <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                  {shouldAddResult.overlap_with_existing_tools.slice(0, 4).map((item) => (
+                    <li key={`${item.app_name}-${item.reason}`}>
+                      <span className="font-medium text-foreground/80">{item.app_name}:</span>{" "}
+                      {item.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {shouldAddResult.project_relevance.length > 0 ? (
+              <div>
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Project relevance</p>
+                <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                  {shouldAddResult.project_relevance.slice(0, 4).map((item) => (
+                    <li key={`${item.target_type}-${item.label}`}>
+                      <span className="font-medium text-foreground/80">{item.label}:</span>{" "}
+                      {item.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {shouldAddResult.cost_warning ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
+                {shouldAddResult.cost_warning}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {blocked ? (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {review.needsConfirmation(needsConfirmation.length)}

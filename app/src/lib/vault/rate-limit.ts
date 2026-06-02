@@ -50,7 +50,7 @@ export async function consumeVaultAutofillQuota(params: {
     await params.supabase.from("vault_autofill_rate_limit").insert({
       user_id: params.userId,
       window_start: windowStart,
-      count: 1,
+      count: cost,
     });
   }
 
