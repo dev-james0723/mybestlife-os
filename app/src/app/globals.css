@@ -425,18 +425,66 @@ html.focus-mode [data-focus-hideable] {
   user-select: none;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .os-buddy-dock--free-roaming .os-buddy-sprite {
+    animation: os-buddy-free-roam-bounce 1.15s ease-in-out infinite;
+  }
+}
+
+@keyframes os-buddy-free-roam-bounce {
+  0%,
+  100% {
+    filter: none;
+  }
+  50% {
+    filter: drop-shadow(0 2px 0 color-mix(in oklch, var(--foreground) 18%, transparent));
+  }
+}
+
+.os-buddy-sprite-fallback {
+  display: inline-flex;
+  aspect-ratio: 1;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid color-mix(in oklch, var(--foreground) 78%, black 22%);
+  border-radius: 7px;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--popover) 88%, white 12%), var(--popover));
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--popover) 76%, var(--foreground)),
+    4px 4px 0 color-mix(in oklch, var(--foreground) 78%, black 22%);
+  font-size: clamp(2rem, 58%, 3.25rem);
+  line-height: 1;
+  image-rendering: pixelated;
+}
+
+.os-buddy-sprite--birthday {
+  position: relative;
+}
+
+.os-buddy-sprite--birthday::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 16px color-mix(in oklch, var(--primary) 24%, transparent);
+  pointer-events: none;
+}
+
 .os-buddy-pixel-bubble {
   --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 92%, white 8%);
   --os-buddy-bubble-ink: var(--popover-foreground);
   --os-buddy-bubble-border: color-mix(in oklch, var(--foreground) 82%, black 18%);
+  --os-buddy-bubble-x: 0;
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  z-index: 2;
+  z-index: 46;
   width: max-content;
   min-width: 132px;
   max-width: min(238px, calc(100vw - 28px));
-  margin-bottom: 12px;
   padding: 10px 12px 9px;
   color: var(--os-buddy-bubble-ink);
   background:
@@ -449,22 +497,61 @@ html.focus-mode [data-focus-hideable] {
     4px 4px 0 var(--os-buddy-bubble-border),
     0 12px 24px color-mix(in oklch, black 22%, transparent);
   image-rendering: pixelated;
-  transform: translateX(-50%);
+  pointer-events: auto;
+  transform: translateX(var(--os-buddy-bubble-x));
   transform-origin: 50% 100%;
   animation:
     os-buddy-bubble-pop 340ms cubic-bezier(0.16, 1.24, 0.3, 1) both,
     os-buddy-bubble-wobble 3.4s ease-in-out 420ms infinite;
 }
 
+.os-buddy-pixel-bubble[data-vertical="above"] {
+  bottom: 100%;
+  margin-bottom: 12px;
+}
+
+.os-buddy-pixel-bubble[data-vertical="below"] {
+  top: 100%;
+  margin-top: 12px;
+  transform-origin: 50% 0%;
+}
+
+.os-buddy-pixel-bubble[data-horizontal="left"] {
+  right: 0;
+}
+
+.os-buddy-pixel-bubble[data-horizontal="right"] {
+  left: 0;
+}
+
+.os-buddy-pixel-bubble[data-horizontal="center"] {
+  left: 50%;
+  --os-buddy-bubble-x: -50%;
+}
+
 .os-buddy-pixel-bubble::before,
 .os-buddy-pixel-bubble::after {
   content: "";
   position: absolute;
-  left: calc(50% - 7px);
   pointer-events: none;
 }
 
-.os-buddy-pixel-bubble::before {
+.os-buddy-pixel-bubble[data-horizontal="left"]::before,
+.os-buddy-pixel-bubble[data-horizontal="left"]::after {
+  right: 24px;
+}
+
+.os-buddy-pixel-bubble[data-horizontal="right"]::before,
+.os-buddy-pixel-bubble[data-horizontal="right"]::after {
+  left: 24px;
+}
+
+.os-buddy-pixel-bubble[data-horizontal="center"]::before,
+.os-buddy-pixel-bubble[data-horizontal="center"]::after {
+  left: calc(50% - 7px);
+}
+
+.os-buddy-pixel-bubble[data-vertical="above"]::before {
   bottom: -12px;
   width: 16px;
   height: 12px;
@@ -472,13 +559,38 @@ html.focus-mode [data-focus-hideable] {
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
-.os-buddy-pixel-bubble::after {
+.os-buddy-pixel-bubble[data-vertical="above"]::after {
   bottom: -7px;
-  left: calc(50% - 5px);
   width: 12px;
   height: 8px;
   background: var(--os-buddy-bubble-bg);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.os-buddy-pixel-bubble[data-vertical="below"]::before {
+  top: -12px;
+  width: 16px;
+  height: 12px;
+  background: var(--os-buddy-bubble-border);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.os-buddy-pixel-bubble[data-vertical="below"]::after {
+  top: -7px;
+  width: 12px;
+  height: 8px;
+  background: var(--os-buddy-bubble-bg);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.os-buddy-pixel-bubble[data-horizontal="left"][data-vertical="above"]::after,
+.os-buddy-pixel-bubble[data-horizontal="left"][data-vertical="below"]::after {
+  right: 26px;
+}
+
+.os-buddy-pixel-bubble[data-horizontal="right"][data-vertical="above"]::after,
+.os-buddy-pixel-bubble[data-horizontal="right"][data-vertical="below"]::after {
+  left: 26px;
 }
 
 .os-buddy-pixel-bubble[data-kind="game"] {
@@ -493,12 +605,40 @@ html.focus-mode [data-focus-hideable] {
   --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 86%, #fb7185 14%);
 }
 
+.os-buddy-pixel-bubble[data-kind="birthday"] {
+  --os-buddy-bubble-bg: color-mix(in oklch, var(--popover) 84%, #f59e0b 16%);
+}
+
 .os-buddy-pixel-bubble-text {
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1.45;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-wrap: balance;
+}
+
+.os-buddy-pixel-bubble-close {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--os-buddy-bubble-ink);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.os-buddy-pixel-bubble:hover .os-buddy-pixel-bubble-close,
+.os-buddy-pixel-bubble:focus-within .os-buddy-pixel-bubble-close {
+  opacity: 0.72;
+}
+
+.os-buddy-pixel-bubble-close:hover {
+  opacity: 1;
 }
 
 .os-buddy-pixel-bubble-cta {
@@ -538,31 +678,61 @@ html.focus-mode [data-focus-hideable] {
 @keyframes os-buddy-bubble-pop {
   0% {
     opacity: 0;
-    transform: translateX(-50%) translateY(8px) scale(0.86);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(8px) scale(0.86);
   }
   58% {
     opacity: 1;
-    transform: translateX(-50%) translateY(-2px) scale(1.045);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(-2px) scale(1.045);
   }
   100% {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(0) scale(1);
   }
 }
 
 @keyframes os-buddy-bubble-wobble {
   0%,
   100% {
-    transform: translateX(-50%) translateY(0) rotate(0deg);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(0) rotate(0deg);
   }
   25% {
-    transform: translateX(-50%) translateY(-1px) rotate(-0.8deg);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(-1px) rotate(-0.8deg);
   }
   52% {
-    transform: translateX(-50%) translateY(0.5px) rotate(0.65deg);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(0.5px) rotate(0.65deg);
   }
   76% {
-    transform: translateX(-50%) translateY(-0.5px) rotate(-0.35deg);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(-0.5px) rotate(-0.35deg);
+  }
+}
+
+.os-buddy--secret {
+  filter: saturate(1.18) contrast(1.05);
+}
+
+.os-buddy--secret::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 2px solid color-mix(in oklch, #facc15 72%, var(--ring));
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--popover) 65%, transparent),
+    0 0 22px color-mix(in oklch, #facc15 38%, transparent);
+  pointer-events: none;
+  animation: os-buddy-secret-pulse 820ms steps(2, end) infinite;
+}
+
+@keyframes os-buddy-secret-pulse {
+  50% {
+    opacity: 0.52;
+    transform: scale(1.04);
+  }
+}
+
+@media (max-width: 640px) {
+  .os-buddy-pixel-bubble {
+    max-width: min(190px, calc(100vw - 28px));
   }
 }
 
@@ -570,10 +740,12 @@ html.focus-mode [data-focus-hideable] {
   .os-buddy-pixel-bubble {
     animation: none !important;
     transition: none !important;
-    transform: translateX(-50%);
+    transform: translateX(var(--os-buddy-bubble-x));
   }
 
-  .os-buddy-pixel-bubble-cta {
+  .os-buddy-pixel-bubble-cta,
+  .os-buddy-pixel-bubble-close,
+  .os-buddy--secret::after {
     animation: none !important;
     transition: none !important;
   }

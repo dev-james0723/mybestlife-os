@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
+import type { OSBuddyBirthdayProfile } from "@/lib/os-buddy/os-buddy-birthday";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { OSBuddyMiniGame } from "@/stores/os-buddy-store";
+import { OSBuddyBirthdaySettings } from "./OSBuddyBirthdaySettings";
 
 type OSBuddyMenuProps = {
   open: boolean;
@@ -18,6 +21,8 @@ type OSBuddyMenuProps = {
   onResetPosition: () => void;
   onOpenGame: (game: OSBuddyMiniGame) => void;
   onHide: () => void;
+  birthdayProfile: OSBuddyBirthdayProfile;
+  onSaveBirthdayProfile: (profile: OSBuddyBirthdayProfile) => Promise<void> | void;
 };
 
 export function OSBuddyMenu({
@@ -32,15 +37,14 @@ export function OSBuddyMenu({
   onResetPosition,
   onOpenGame,
   onHide,
+  birthdayProfile,
+  onSaveBirthdayProfile,
 }: OSBuddyMenuProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [birthdayPanelOpen, setBirthdayPanelOpen] = useState(false);
   const [nameInput, setNameInput] = useState(currentName);
   const zh = locale === "zh-TW";
-
-  useEffect(() => {
-    setNameInput(currentName);
-  }, [currentName]);
 
   useEffect(() => {
     if (!open) return;
@@ -69,7 +73,7 @@ export function OSBuddyMenu({
       ref={rootRef}
       role="menu"
       aria-label={zh ? "OS Buddy 選單" : "OS Buddy menu"}
-      className="fixed z-[130] w-[250px] rounded-xl border bg-popover p-2 shadow-xl"
+      className="fixed z-[46] max-h-[min(560px,calc(100vh-24px))] w-[270px] overflow-y-auto rounded-xl border bg-popover p-2 shadow-xl"
       style={{ left: x, top: y }}
     >
       <div className="space-y-1">
@@ -82,7 +86,7 @@ export function OSBuddyMenu({
             onClose();
           }}
         >
-          {zh ? "更換小夥伴" : "Change pet"}
+          {zh ? "更換 OS Buddy" : "Change Buddy"}
         </Button>
 
         {renaming ? (
@@ -117,9 +121,40 @@ export function OSBuddyMenu({
             type="button"
             variant="ghost"
             className="w-full justify-start"
-            onClick={() => setRenaming(true)}
+            onClick={() => {
+              setBirthdayPanelOpen(false);
+              setRenaming(true);
+            }}
           >
-            {zh ? "重新命名" : "Rename buddy"}
+            {zh ? "重新命名" : "Rename Buddy"}
+          </Button>
+        )}
+
+        {birthdayPanelOpen ? (
+          <OSBuddyBirthdaySettings
+            locale={locale}
+            value={birthdayProfile}
+            onCancel={() => setBirthdayPanelOpen(false)}
+            onSave={async (nextProfile) => {
+              await onSaveBirthdayProfile(nextProfile);
+              emitOSBuddyEvent({
+                type: nextProfile.enabled ? "birthday:set" : "birthday:clear",
+              });
+              setBirthdayPanelOpen(false);
+              onClose();
+            }}
+          />
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => {
+              setRenaming(false);
+              setBirthdayPanelOpen(true);
+            }}
+          >
+            {zh ? "生日模式" : "Birthday Mode"}
           </Button>
         )}
 
@@ -133,6 +168,18 @@ export function OSBuddyMenu({
           }}
         >
           {zh ? "重設位置" : "Reset position"}
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full justify-start"
+          onClick={() => {
+            onOpenGame("play-ball");
+            onClose();
+          }}
+        >
+          {zh ? "和小夥伴玩球" : "Play Ball"}
         </Button>
 
         <Button

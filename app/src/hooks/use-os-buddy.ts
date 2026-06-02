@@ -30,7 +30,7 @@ const INTERACTION_STATS_STORAGE_KEY = "mblos:os-buddy-interaction-stats";
 const DEFAULT_POSITION: OSBuddyPosition = {
   x: null,
   y: null,
-  anchor: "bottom-right",
+  anchor: "bottom-left",
 };
 
 const DEFAULT_UNLOCKED_PETS: OSBuddyPetId[] = ["xiaoba", "doge"];
@@ -62,7 +62,7 @@ function normalizePosition(value: unknown): OSBuddyPosition {
     row.anchor === "top-right" ||
     row.anchor === "custom"
       ? row.anchor
-      : "bottom-right";
+      : "bottom-left";
 
   return { x, y, anchor };
 }

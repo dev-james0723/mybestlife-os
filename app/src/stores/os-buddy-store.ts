@@ -16,9 +16,24 @@ export type OSBuddyBubbleType =
   | "context"
   | "success"
   | "error"
-  | "game";
+  | "game"
+  | "birthday";
 
 export type { OSBuddyMiniGame };
+
+export type OSBuddyRoamInterruptReason =
+  | "user-click"
+  | "user-drag"
+  | "keyboard"
+  | "scroll"
+  | "route-change"
+  | "focus-start"
+  | "smart-action"
+  | "menu-open"
+  | "mini-game-open"
+  | "visibility-hidden"
+  | "reduced-motion"
+  | "session-ended";
 
 interface OSBuddyRuntimeState {
   mood: OSBuddyMood;
@@ -37,10 +52,26 @@ interface OSBuddyRuntimeState {
   dragDirection: "left" | "right" | null;
   isWalkModeActive: boolean;
   isReturningHome: boolean;
+  isFreeRoaming: boolean;
+  freeRoamStartedAt: number | null;
+  freeRoamUntil: number | null;
+  freeRoamLastEndedAt: number | null;
+  freeRoamSessionTimestamps: number[];
+  freeRoamRuntimePosition: {
+    x: number;
+    y: number;
+  } | null;
 
   isPetPickerOpen: boolean;
   isMiniGameOpen: boolean;
   activeMiniGame: OSBuddyMiniGame | null;
+  focusSession: {
+    startedAt: number;
+    durationMinutes: number | null;
+  } | null;
+  isBirthdayMode: boolean;
+  birthdayModeUntil: number | null;
+  birthdayQuietUntil: number | null;
 
   lastUnsolicitedBubbleAt: number | null;
   clickBurstCount: number;
@@ -67,11 +98,19 @@ interface OSBuddyRuntimeState {
   setDragging: (dragging: boolean, direction?: "left" | "right" | null) => void;
   setWalkModeActive: (active: boolean) => void;
   setReturningHome: (returning: boolean) => void;
+  startFreeRoam: (params: {
+    until: number;
+    initialPosition?: { x: number; y: number } | null;
+  }) => void;
+  updateFreeRoamPosition: (position: { x: number; y: number }) => void;
+  stopFreeRoam: (reason?: OSBuddyRoamInterruptReason) => void;
 
   setPetPickerOpen: (open: boolean) => void;
 
   openMiniGame: (game: OSBuddyMiniGame) => void;
   closeMiniGame: () => void;
+  setFocusSession: (session: { durationMinutes?: number | null } | null) => void;
+  setBirthdayMode: (active: boolean, durationMs?: number) => void;
 
   registerClickBurst: () => number;
   resetClickBurst: () => void;
@@ -79,6 +118,7 @@ interface OSBuddyRuntimeState {
 
 let moodResetTimer: ReturnType<typeof setTimeout> | null = null;
 let bubbleClearTimer: ReturnType<typeof setTimeout> | null = null;
+let birthdayModeTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   mood: "idle",
@@ -91,10 +131,20 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   dragDirection: null,
   isWalkModeActive: false,
   isReturningHome: false,
+  isFreeRoaming: false,
+  freeRoamStartedAt: null,
+  freeRoamUntil: null,
+  freeRoamLastEndedAt: null,
+  freeRoamSessionTimestamps: [],
+  freeRoamRuntimePosition: null,
 
   isPetPickerOpen: false,
   isMiniGameOpen: false,
   activeMiniGame: null,
+  focusSession: null,
+  isBirthdayMode: false,
+  birthdayModeUntil: null,
+  birthdayQuietUntil: null,
 
   lastUnsolicitedBubbleAt: null,
   clickBurstCount: 0,
@@ -203,6 +253,46 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
     });
   },
 
+  startFreeRoam: ({ until, initialPosition }) => {
+    const now = Date.now();
+    set((state) => ({
+      isFreeRoaming: true,
+      freeRoamStartedAt: now,
+      freeRoamUntil: until,
+      freeRoamRuntimePosition: initialPosition ?? state.freeRoamRuntimePosition,
+      freeRoamSessionTimestamps: [...state.freeRoamSessionTimestamps, now].filter(
+        (timestamp) => now - timestamp < 60 * 60_000,
+      ),
+      previousMood: state.mood,
+      mood: state.mood === "sleepy" || state.mood === "idle" ? "playful" : state.mood,
+    }));
+  },
+
+  updateFreeRoamPosition: (position) => {
+    set((state) => {
+      if (!state.isFreeRoaming && !state.freeRoamRuntimePosition) return state;
+      return {
+        freeRoamRuntimePosition: {
+          x: position.x,
+          y: position.y,
+        },
+      };
+    });
+  },
+
+  stopFreeRoam: () => {
+    const now = Date.now();
+    set((state) => ({
+      isFreeRoaming: false,
+      freeRoamStartedAt: null,
+      freeRoamUntil: null,
+      freeRoamLastEndedAt: state.isFreeRoaming ? now : state.freeRoamLastEndedAt,
+      freeRoamRuntimePosition: null,
+      previousMood: state.mood,
+      mood: state.mood === "playful" ? "idle" : state.mood,
+    }));
+  },
+
   setPetPickerOpen: (open) => set({ isPetPickerOpen: open }),
 
   openMiniGame: (game) =>
@@ -216,6 +306,43 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       isMiniGameOpen: false,
       activeMiniGame: null,
     }),
+
+  setFocusSession: (session) =>
+    set({
+      focusSession: session
+        ? {
+            startedAt: Date.now(),
+            durationMinutes: session.durationMinutes ?? null,
+          }
+        : null,
+    }),
+
+  setBirthdayMode: (active, durationMs = 12_000) => {
+    if (birthdayModeTimer) {
+      clearTimeout(birthdayModeTimer);
+      birthdayModeTimer = null;
+    }
+
+    if (!active) {
+      set({ isBirthdayMode: false, birthdayModeUntil: null });
+      return;
+    }
+
+    const now = Date.now();
+    const birthdayModeUntil = now + durationMs;
+    set({
+      isBirthdayMode: true,
+      birthdayModeUntil,
+      birthdayQuietUntil: now + 30_000,
+    });
+
+    birthdayModeTimer = setTimeout(() => {
+      set((state) => {
+        if (state.birthdayModeUntil !== birthdayModeUntil) return state;
+        return { isBirthdayMode: false, birthdayModeUntil: null };
+      });
+    }, durationMs);
+  },
 
   registerClickBurst: () => {
     const now = Date.now();

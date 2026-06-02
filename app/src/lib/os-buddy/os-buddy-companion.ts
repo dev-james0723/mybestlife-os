@@ -10,7 +10,7 @@ export const OS_BUDDY_COMPANION_KINDS = [
 
 export type OSBuddyCompanionKind = (typeof OS_BUDDY_COMPANION_KINDS)[number];
 
-export type OSBuddyMiniGame = "pixel-catch" | "focus-tap" | "clean-desk";
+export type OSBuddyMiniGame = "pixel-catch" | "focus-tap" | "clean-desk" | "play-ball";
 
 export type OSBuddyCompanionSource = "ai" | "local" | "fallback";
 
@@ -215,10 +215,12 @@ function pickOne<T>(items: T[], random: number): T | null {
 
 function gameLabel(game: OSBuddyMiniGame, locale: string): string {
   if (isZh(locale)) {
+    if (game === "play-ball") return "和小夥伴玩球";
     if (game === "clean-desk") return "整理桌面";
     if (game === "focus-tap") return "玩 Focus Tap";
     return "玩 Pixel Catch";
   }
+  if (game === "play-ball") return "Play Ball";
   if (game === "clean-desk") return "Clean the Desk";
   if (game === "focus-tap") return "Play Focus Tap";
   return "Play Pixel Catch";

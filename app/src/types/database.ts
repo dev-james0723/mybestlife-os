@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type { OSBuddyFreeRoamIntensity } from "@/lib/os-buddy/os-buddy-free-roam";
 import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
 import type {
   BillingCycle,
@@ -82,6 +83,19 @@ export type UserProfile = {
   os_buddy_onboarding_completed: boolean;
   os_buddy_interaction_stats: Record<string, unknown>;
   os_buddy_unlocked_pets: OSBuddyPetId[];
+  os_buddy_birthday_enabled: boolean;
+  os_buddy_birthday_month: number | null;
+  os_buddy_birthday_day: number | null;
+  os_buddy_birthday_year: number | null;
+  os_buddy_birthday_show_age: boolean;
+  os_buddy_birthday_reminder_enabled: boolean;
+  os_buddy_birthday_timezone: string | null;
+  os_buddy_birthday_last_celebrated_on: string | null;
+  os_buddy_birthday_last_reminder_on: string | null;
+  os_buddy_free_roam_enabled?: boolean;
+  os_buddy_free_roam_intensity?: OSBuddyFreeRoamIntensity | null;
+  os_buddy_free_roam_return_home?: boolean;
+  os_buddy_free_roam_near_home_only?: boolean;
   created_at: string;
   updated_at: string;
 };

@@ -2,6 +2,11 @@ import { createClient } from "@/lib/supabase/client";
 import { ensureError } from "@/lib/utils/ensure-error";
 import type { NotificationPreferences, UserProfile } from "@/types/database";
 import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
+import type { OSBuddyFreeRoamIntensity } from "@/lib/os-buddy/os-buddy-free-roam";
+import {
+  validateOSBuddyBirthdayProfile,
+  type OSBuddyBirthdayProfile,
+} from "@/lib/os-buddy/os-buddy-birthday";
 
 export type UpdateProfileInput = Partial<
   Pick<
@@ -41,6 +46,19 @@ export type UpdateProfileInput = Partial<
     | "os_buddy_onboarding_completed"
     | "os_buddy_interaction_stats"
     | "os_buddy_unlocked_pets"
+    | "os_buddy_birthday_enabled"
+    | "os_buddy_birthday_month"
+    | "os_buddy_birthday_day"
+    | "os_buddy_birthday_year"
+    | "os_buddy_birthday_show_age"
+    | "os_buddy_birthday_reminder_enabled"
+    | "os_buddy_birthday_timezone"
+    | "os_buddy_birthday_last_celebrated_on"
+    | "os_buddy_birthday_last_reminder_on"
+    | "os_buddy_free_roam_enabled"
+    | "os_buddy_free_roam_intensity"
+    | "os_buddy_free_roam_return_home"
+    | "os_buddy_free_roam_near_home_only"
   >
 >;
 
@@ -49,6 +67,23 @@ const AVATAR_OBJECT_PATH = "avatar";
 
 const ACCEPTED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const OS_BUDDY_BIRTHDAY_PROFILE_COLUMNS = [
+  "os_buddy_birthday_enabled",
+  "os_buddy_birthday_month",
+  "os_buddy_birthday_day",
+  "os_buddy_birthday_year",
+  "os_buddy_birthday_show_age",
+  "os_buddy_birthday_reminder_enabled",
+  "os_buddy_birthday_timezone",
+  "os_buddy_birthday_last_celebrated_on",
+  "os_buddy_birthday_last_reminder_on",
+] as const;
+const OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS = [
+  "os_buddy_free_roam_enabled",
+  "os_buddy_free_roam_intensity",
+  "os_buddy_free_roam_return_home",
+  "os_buddy_free_roam_near_home_only",
+] as const;
 
 export type UpdateNotificationPreferencesInput = Partial<
   Pick<NotificationPreferences, "task_reminders" | "daily_summary" | "study_streak_reminders">
@@ -64,6 +99,18 @@ function omitUndefinedKeys<V extends Record<string, unknown>>(obj: V): Record<st
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
+function omitKeys(
+  obj: Record<string, unknown>,
+  keys: readonly string[],
+): Record<string, unknown> {
+  const drop = new Set(keys);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (!drop.has(k)) out[k] = v;
   }
   return out;
 }
@@ -91,7 +138,7 @@ function coerceOSBuddyPetId(v: unknown): OSBuddyPetId {
 
 function coerceOSBuddyPosition(v: unknown): OSBuddyPosition {
   if (!v || typeof v !== "object") {
-    return { x: null, y: null, anchor: "bottom-right" };
+    return { x: null, y: null, anchor: "bottom-left" };
   }
   const row = v as Record<string, unknown>;
   const x = typeof row.x === "number" && Number.isFinite(row.x) ? row.x : null;
@@ -103,7 +150,7 @@ function coerceOSBuddyPosition(v: unknown): OSBuddyPosition {
     row.anchor === "top-left" ||
     row.anchor === "custom"
       ? row.anchor
-      : "bottom-right";
+      : "bottom-left";
   return { x, y, anchor };
 }
 
@@ -122,13 +169,51 @@ function coerceOSBuddyUnlockedPets(v: unknown): OSBuddyPetId[] {
   return cleaned;
 }
 
+function coerceOSBuddyFreeRoamIntensity(v: unknown): OSBuddyFreeRoamIntensity {
+  if (v === "subtle" || v === "lively") return v;
+  return "balanced";
+}
+
+function coerceOSBuddyBirthdayProfile(row: Record<string, unknown>): OSBuddyBirthdayProfile {
+  return validateOSBuddyBirthdayProfile({
+    enabled: row.os_buddy_birthday_enabled as boolean | undefined,
+    month: row.os_buddy_birthday_month as number | null,
+    day: row.os_buddy_birthday_day as number | null,
+    year: row.os_buddy_birthday_year as number | null,
+    showAge: row.os_buddy_birthday_show_age as boolean | undefined,
+    reminderEnabled: row.os_buddy_birthday_reminder_enabled as boolean | undefined,
+    timezone: row.os_buddy_birthday_timezone as string | null,
+    lastCelebratedOn: row.os_buddy_birthday_last_celebrated_on as string | null,
+    lastReminderOn: row.os_buddy_birthday_last_reminder_on as string | null,
+  });
+}
+
 function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
   const base = row as unknown as UserProfile;
+  const birthday = coerceOSBuddyBirthdayProfile(row);
   const raw = row.display_currency;
   const display_currency =
     typeof raw === "string" && /^[A-Za-z]{3}$/.test(raw) ? raw.toUpperCase() : "USD";
   const weather_city =
     typeof row.weather_city === "string" && row.weather_city.trim() ? row.weather_city.trim() : null;
+  const freeRoamFields = {
+    ...(typeof row.os_buddy_free_roam_enabled === "boolean"
+      ? { os_buddy_free_roam_enabled: row.os_buddy_free_roam_enabled }
+      : {}),
+    ...(typeof row.os_buddy_free_roam_intensity === "string"
+      ? {
+          os_buddy_free_roam_intensity: coerceOSBuddyFreeRoamIntensity(
+            row.os_buddy_free_roam_intensity,
+          ),
+        }
+      : {}),
+    ...(typeof row.os_buddy_free_roam_return_home === "boolean"
+      ? { os_buddy_free_roam_return_home: row.os_buddy_free_roam_return_home }
+      : {}),
+    ...(typeof row.os_buddy_free_roam_near_home_only === "boolean"
+      ? { os_buddy_free_roam_near_home_only: row.os_buddy_free_roam_near_home_only }
+      : {}),
+  };
   return {
     ...base,
     display_currency,
@@ -158,6 +243,16 @@ function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
         : false,
     os_buddy_interaction_stats: coerceOSBuddyInteractionStats(row.os_buddy_interaction_stats),
     os_buddy_unlocked_pets: coerceOSBuddyUnlockedPets(row.os_buddy_unlocked_pets),
+    os_buddy_birthday_enabled: birthday.enabled,
+    os_buddy_birthday_month: birthday.month,
+    os_buddy_birthday_day: birthday.day,
+    os_buddy_birthday_year: birthday.year ?? null,
+    os_buddy_birthday_show_age: Boolean(birthday.showAge),
+    os_buddy_birthday_reminder_enabled: birthday.reminderEnabled !== false,
+    os_buddy_birthday_timezone: birthday.timezone ?? null,
+    os_buddy_birthday_last_celebrated_on: birthday.lastCelebratedOn ?? null,
+    os_buddy_birthday_last_reminder_on: birthday.lastReminderOn ?? null,
+    ...freeRoamFields,
   };
 }
 
@@ -255,6 +350,13 @@ export const settingsRepository = {
         : {}),
       ...(input.os_buddy_unlocked_pets !== undefined
         ? { os_buddy_unlocked_pets: coerceOSBuddyUnlockedPets(input.os_buddy_unlocked_pets) }
+        : {}),
+      ...(input.os_buddy_free_roam_intensity !== undefined
+        ? {
+            os_buddy_free_roam_intensity: coerceOSBuddyFreeRoamIntensity(
+              input.os_buddy_free_roam_intensity,
+            ),
+          }
         : {}),
     };
 
@@ -356,6 +458,42 @@ export const settingsRepository = {
           ...rest
         } = payload;
         payload = rest;
+        continue;
+      }
+
+      if (
+        error &&
+        ("os_buddy_birthday_enabled" in payload ||
+          "os_buddy_birthday_month" in payload ||
+          "os_buddy_birthday_day" in payload ||
+          "os_buddy_birthday_year" in payload ||
+          "os_buddy_birthday_show_age" in payload ||
+          "os_buddy_birthday_reminder_enabled" in payload ||
+          "os_buddy_birthday_timezone" in payload ||
+          "os_buddy_birthday_last_celebrated_on" in payload ||
+          "os_buddy_birthday_last_reminder_on" in payload) &&
+        (isMissingProfilesColumnError(error, "os_buddy_birthday_enabled") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_month") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_day") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_year") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_show_age") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_reminder_enabled") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_timezone") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_last_celebrated_on") ||
+          isMissingProfilesColumnError(error, "os_buddy_birthday_last_reminder_on"))
+      ) {
+        payload = omitKeys(payload, OS_BUDDY_BIRTHDAY_PROFILE_COLUMNS);
+        continue;
+      }
+
+      if (
+        error &&
+        OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS.some((column) => column in payload) &&
+        OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS.some((column) =>
+          isMissingProfilesColumnError(error, column),
+        )
+      ) {
+        payload = omitKeys(payload, OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS);
         continue;
       }
 

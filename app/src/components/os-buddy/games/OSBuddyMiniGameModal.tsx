@@ -36,14 +36,20 @@ export function OSBuddyMiniGameModal({
   const zh = locale === "zh-TW";
 
   const title =
-    game === "pixel-catch"
+    game === "play-ball"
+      ? "Play Ball"
+      : game === "pixel-catch"
       ? "Pixel Catch"
       : game === "focus-tap"
         ? "Focus Tap"
         : "Clean the Desk";
 
   const description =
-    game === "pixel-catch"
+    game === "play-ball"
+      ? zh
+        ? "和小夥伴玩球。"
+        : "Play ball with your buddy."
+      : game === "pixel-catch"
       ? zh
         ? "接住掉落的星星。"
         : "Catch the falling stars."

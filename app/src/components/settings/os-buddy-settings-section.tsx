@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/select";
 import { useAppStore } from "@/stores/app-store";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { useOSBuddyFreeRoamSettings } from "@/hooks/use-os-buddy-free-roam-settings";
 import type { OSBuddyPetId } from "@/types/os-buddy";
+import { OSBuddyBehaviorSettings } from "@/components/os-buddy/OSBuddyBehaviorSettings";
 import { OSBuddySprite } from "@/components/os-buddy/OSBuddySprite";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
 
@@ -37,6 +39,10 @@ export function OSBuddySettingsSection() {
     resetPosition,
     setEnabled,
   } = useOSBuddy();
+  const {
+    settings: freeRoamSettings,
+    saveSettings: saveFreeRoamSettings,
+  } = useOSBuddyFreeRoamSettings();
 
   const [draftEnabled, setDraftEnabled] = useState(enabled);
   const [draftPetId, setDraftPetId] = useState<OSBuddyPetId>(petId);
@@ -141,6 +147,12 @@ export function OSBuddySettingsSection() {
             />
           </div>
         </div>
+
+        <OSBuddyBehaviorSettings
+          locale={locale}
+          value={freeRoamSettings}
+          onSave={saveFreeRoamSettings}
+        />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button

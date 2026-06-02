@@ -1,26 +1,51 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { useOSBuddyFreeRoam } from "@/hooks/use-os-buddy-free-roam";
+import { useOSBuddyFreeRoamSettings } from "@/hooks/use-os-buddy-free-roam-settings";
+import {
+  useOSBuddyBirthday,
+  useOSBuddyBirthdayProfile,
+} from "@/hooks/use-os-buddy-birthday";
 import { useOSBuddyCompanion } from "@/hooks/use-os-buddy-companion";
+import { useOSBuddyContextHints } from "@/hooks/use-os-buddy-context-hints";
+import { useOSBuddyTimeMood } from "@/hooks/use-os-buddy-time-mood";
+import { useUserIdleForOSBuddy } from "@/hooks/use-user-idle-for-os-buddy";
 import { useOSBuddyStore } from "@/stores/os-buddy-store";
 import { OSBuddySprite } from "./OSBuddySprite";
 import { OSBuddyBubble } from "./OSBuddyBubble";
 import { OSBuddyMenu } from "./OSBuddyMenu";
 import { OSBuddyPetPicker } from "./OSBuddyPetPicker";
+import { OSBuddyFocusBadge } from "./OSBuddyFocusBadge";
 import { OSBuddyMiniGameModal } from "./games/OSBuddyMiniGameModal";
+import {
+  OSBuddyPlayBallOverlay,
+  type OSBuddyPlayBallOutcome,
+} from "./games/OSBuddyPlayBallOverlay";
 import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
 import { registerOSBuddyReactions } from "@/lib/os-buddy/os-buddy-reactions";
-import type { OSBuddyPosition } from "@/types/os-buddy";
+import {
+  getOSBuddyBirthdayTodayKey,
+  isOSBuddyBirthdayToday,
+} from "@/lib/os-buddy/os-buddy-birthday";
+import {
+  addOSBuddyBadge,
+  incrementOSBuddyStat,
+} from "@/lib/os-buddy/os-buddy-stats";
+import { cn } from "@/lib/utils";
+import type { OSBuddyMood, OSBuddyPosition } from "@/types/os-buddy";
 
 const DRAG_THRESHOLD_PX = 6;
 const DOUBLE_TAP_MS = 320;
 const DOUBLE_TAP_MAX_DISTANCE_PX = 24;
 const LONG_PRESS_MS = 600;
 const VIEWPORT_EDGE_GAP = 12;
-const MENU_WIDTH = 250;
-const MENU_HEIGHT = 330;
+const MENU_WIDTH = 270;
+const MENU_HEIGHT = 560;
 const WALK_FOLLOW_LERP = 0.18;
 const WALK_IDLE_DISTANCE_PX = 6;
 const WALK_DIRECTION_THRESHOLD_PX = 0.55;
@@ -30,8 +55,22 @@ const WALK_MOUSE_CLEARANCE_PX = 24;
 const WALK_TOUCH_CLEARANCE_PX = 56;
 const WALK_MOUSE_OFFSET = { x: 40, y: 32 };
 const WALK_TOUCH_OFFSET = { x: 48, y: -88 };
-const WALK_EXIT_HALO_PX = 28;
-const WALK_TOUCH_EXIT_HALO_PX = 44;
+const WALK_EXIT_DOUBLE_TAP_MAX_DISTANCE_PX = 64;
+const TRIPLE_TAP_GRACE_MS = 360;
+const BUDDY_SCALE_STEP = 0.16;
+const BUDDY_MAX_SCALE_CAP = 12;
+const BIRTHDAY_EASTER_EGG_STORAGE_KEY = "mblos:os-buddy-birthday-easter-eggs";
+const BIRTHDAY_EASTER_EGG_WINDOW_MS = 5_000;
+const BIRTHDAY_EASTER_EGG_EXTENSION_MS = 8_000;
+const FREE_ROAM_BLOCKING_MOODS = new Set<OSBuddyMood>([
+  "thinking",
+  "creating",
+  "reading",
+  "focused",
+  "success",
+  "error",
+  "celebrating",
+]);
 
 type DockPoint = { x: number; y: number };
 type WalkDirection = "left" | "right" | "idle";
@@ -45,6 +84,39 @@ type DragSession = {
   lastDockX: number;
   isDragging: boolean;
 };
+
+function getBirthdayEasterEggMap(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(BIRTHDAY_EASTER_EGG_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, boolean>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function hasBirthdayEasterEggTriggered(dateKey: string) {
+  return getBirthdayEasterEggMap()[dateKey] === true;
+}
+
+function markBirthdayEasterEggTriggered(dateKey: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      BIRTHDAY_EASTER_EGG_STORAGE_KEY,
+      JSON.stringify({
+        ...getBirthdayEasterEggMap(),
+        [dateKey]: true,
+      }),
+    );
+  } catch {
+    // Easter egg state is non-critical.
+  }
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -79,15 +151,15 @@ function resolveAnchorPosition(
   const rightX = viewport.width - buddyBox.width - 24;
 
   switch (position.anchor) {
-    case "bottom-left":
-      return clampDockPoint({ x: leftX, y: bottomY }, viewport, buddyBox);
     case "top-left":
       return clampDockPoint({ x: leftX, y: topY }, viewport, buddyBox);
     case "top-right":
       return clampDockPoint({ x: rightX, y: topY }, viewport, buddyBox);
     case "bottom-right":
-    default:
       return clampDockPoint({ x: rightX, y: bottomY }, viewport, buddyBox);
+    case "bottom-left":
+    default:
+      return clampDockPoint({ x: leftX, y: bottomY }, viewport, buddyBox);
   }
 }
 
@@ -189,8 +261,48 @@ function isPointNearDockBox(params: {
   );
 }
 
+function distanceBetweenTouches(touches: TouchList) {
+  if (touches.length < 2) return 0;
+  const first = touches[0];
+  const second = touches[1];
+  if (!first || !second) return 0;
+  return Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tagName = target.tagName.toLowerCase();
+  return tagName === "input" || tagName === "textarea" || tagName === "select";
+}
+
+function pickPlayBallLine(
+  locale: string,
+  kind: "start" | OSBuddyPlayBallOutcome,
+) {
+  const lines =
+    locale === "zh-TW"
+      ? {
+          start: ["太好了，一起玩球！", "耶，來玩一下！", "我準備好了，丟過來！"],
+          caught: ["接到了！再來一次。", "我抓到啦！", "這球不錯。"],
+          missed: ["哎呀，差一點！", "糟糕，沒接住。", "再給我一次機會。"],
+        }
+      : {
+          start: [
+            "Hooray, let's play together!",
+            "Yes. Toss it my way.",
+            "I am ready. Throw the ball!",
+          ],
+          caught: ["Oh, I got it!", "Caught it. Nice throw.", "That one was mine."],
+          missed: ["Oh no!", "I almost had it.", "That one got away."],
+        };
+  const pool = lines[kind];
+  return pool[Math.floor(Math.random() * pool.length)] ?? pool[0];
+}
+
 export function OSBuddyDock() {
   const locale = useAppStore((s) => s.language);
+  const pathname = usePathname();
 
   const {
     enabled,
@@ -205,9 +317,11 @@ export function OSBuddyDock() {
     resetPosition,
     renameBuddy,
     changePet,
-    incrementInteraction,
     setEnabled,
   } = useOSBuddy();
+  const {
+    settings: freeRoamSettings,
+  } = useOSBuddyFreeRoamSettings();
 
   const bubble = useOSBuddyStore((s) => s.bubble);
   const clearBubble = useOSBuddyStore((s) => s.clearBubble);
@@ -228,24 +342,59 @@ export function OSBuddyDock() {
   const activeMiniGame = useOSBuddyStore((s) => s.activeMiniGame);
   const openMiniGame = useOSBuddyStore((s) => s.openMiniGame);
   const closeMiniGame = useOSBuddyStore((s) => s.closeMiniGame);
+  const focusSession = useOSBuddyStore((s) => s.focusSession);
+  const setFocusSession = useOSBuddyStore((s) => s.setFocusSession);
+  const isBirthdayMode = useOSBuddyStore((s) => s.isBirthdayMode);
+  const setBirthdayMode = useOSBuddyStore((s) => s.setBirthdayMode);
+  const isFreeRoaming = useOSBuddyStore((s) => s.isFreeRoaming);
+  const { profile: birthdayProfile, saveProfile: saveBirthdayProfile } =
+    useOSBuddyBirthdayProfile();
   const { getCompanionLine } = useOSBuddyCompanion({ locale, buddyName: name });
+  const isPlayBallOpen = isMiniGameOpen && activeMiniGame === "play-ball";
 
   const [mounted, setMounted] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [activePosition, setActivePosition] = useState<OSBuddyPosition>({
     x: null,
     y: null,
-    anchor: "bottom-right",
+    anchor: "bottom-left",
   });
   const [dockPoint, setDockPoint] = useState<DockPoint>({ x: 0, y: 0 });
   const [menuPoint, setMenuPoint] = useState<DockPoint>({ x: 0, y: 0 });
+  const [buddyScale, setBuddyScale] = useState(1);
+  const [secretModeActive, setSecretModeActive] = useState(false);
 
-  const buddyBox = useMemo(
+  useOSBuddyBirthday({
+    enabled: mounted && enabled,
+    locale,
+    profile: birthdayProfile,
+    saveProfile: saveBirthdayProfile,
+  });
+
+  const baseBuddyBox = useMemo(
     () => ({
       width: viewport.width > 0 && viewport.width < 640 ? 58 : 74,
       height: viewport.width > 0 && viewport.width < 640 ? 64 : 82,
     }),
     [viewport.width],
+  );
+  const maxBuddyScale = useMemo(() => {
+    if (viewport.width <= 0 || viewport.height <= 0) return 1;
+    return Math.max(
+      1,
+      Math.min(
+        BUDDY_MAX_SCALE_CAP,
+        (viewport.width - VIEWPORT_EDGE_GAP * 2) / baseBuddyBox.width,
+        (viewport.height - VIEWPORT_EDGE_GAP * 2) / baseBuddyBox.height,
+      ),
+    );
+  }, [baseBuddyBox.height, baseBuddyBox.width, viewport.height, viewport.width]);
+  const buddyBox = useMemo(
+    () => ({
+      width: baseBuddyBox.width * buddyScale,
+      height: baseBuddyBox.height * buddyScale,
+    }),
+    [baseBuddyBox.height, baseBuddyBox.width, buddyScale],
   );
   const restingPosition = useMemo<OSBuddyPosition>(
     () => ({
@@ -255,28 +404,82 @@ export function OSBuddyDock() {
     }),
     [storedPosition.anchor, storedPosition.x, storedPosition.y],
   );
+  const resolvedHomePosition = useMemo<DockPoint | null>(() => {
+    if (!mounted || viewport.width <= 0 || viewport.height <= 0) return null;
+    return resolveAnchorPosition(restingPosition, viewport, buddyBox);
+  }, [buddyBox, mounted, restingPosition, viewport]);
+  const isFreeRoamBlocked =
+    isMenuOpen ||
+    isPetPickerOpen ||
+    isMiniGameOpen ||
+    isDragging ||
+    isWalkModeActive ||
+    isReturningHome ||
+    focusSession != null ||
+    isBirthdayMode ||
+    FREE_ROAM_BLOCKING_MOODS.has(mood);
+  const { runtimePosition: freeRoamRuntimePosition, interruptFreeRoam } =
+    useOSBuddyFreeRoam({
+      enabled: mounted && enabled && freeRoamSettings.enabled,
+      intensity: freeRoamSettings.intensity,
+      returnHomeAfterRoam: freeRoamSettings.returnHomeAfterRoam,
+      roamNearHomeOnly: freeRoamSettings.roamNearHomeOnly,
+      buddyWidth: buddyBox.width,
+      buddyHeight: buddyBox.height,
+      homePosition: resolvedHomePosition,
+      isBlocked: isFreeRoamBlocked,
+    });
 
   const dragSessionRef = useRef<DragSession | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggeredRef = useRef(false);
-  const lastTapRef = useRef<{ at: number; x: number; y: number } | null>(null);
+  const lastTapRef = useRef<{
+    at: number;
+    x: number;
+    y: number;
+    count: number;
+    pointerType: string;
+  } | null>(null);
   const lastWalkExitTapRef = useRef<{ at: number; x: number; y: number } | null>(null);
   const singleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pinchScaleRef = useRef<{ distance: number; scale: number } | null>(null);
   const activeWalkPointerIdRef = useRef<number | null>(null);
   const walkPointerRef = useRef<{ x: number; y: number; pointerType: string } | null>(null);
   const walkAnimationFrameRef = useRef<number | null>(null);
+  const playBallChaseFrameRef = useRef<number | null>(null);
   const walkDirectionRef = useRef<WalkDirection | null>(null);
   const walkTargetRef = useRef<DockPoint | null>(null);
   const restingTargetRef = useRef<DockPoint | null>(null);
   const dockPointRef = useRef<DockPoint>({ x: 0, y: 0 });
+  const secretModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const birthdayClickBurstRef = useRef<{
+    dateKey: string | null;
+    startedAt: number;
+    count: number;
+  }>({
+    dateKey: null,
+    startedAt: 0,
+    count: 0,
+  });
+  const pathnameRef = useRef(pathname);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (pathnameRef.current === pathname) return;
+    pathnameRef.current = pathname;
+    interruptFreeRoam("route-change");
+  }, [interruptFreeRoam, pathname]);
+
+  useEffect(() => {
     dockPointRef.current = dockPoint;
   }, [dockPoint]);
+
+  useEffect(() => {
+    setBuddyScale((current) => clamp(current, 1, maxBuddyScale));
+  }, [maxBuddyScale]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -296,12 +499,26 @@ export function OSBuddyDock() {
 
   useEffect(() => {
     if (!mounted || viewport.width <= 0 || viewport.height <= 0) return;
-    if (dragSessionRef.current?.isDragging) return;
+    if (dragSessionRef.current) return;
     if (isWalkModeActive || isReturningHome) return;
+
+    if (freeRoamRuntimePosition) {
+      const next = clampDockPoint(freeRoamRuntimePosition, viewport, buddyBox);
+      setDockPoint(next);
+      return;
+    }
 
     const next = resolveAnchorPosition(activePosition, viewport, buddyBox);
     setDockPoint(next);
-  }, [activePosition, buddyBox, isReturningHome, isWalkModeActive, mounted, viewport]);
+  }, [
+    activePosition,
+    buddyBox,
+    freeRoamRuntimePosition,
+    isReturningHome,
+    isWalkModeActive,
+    mounted,
+    viewport,
+  ]);
 
   useEffect(() => {
     return registerOSBuddyReactions({
@@ -311,49 +528,15 @@ export function OSBuddyDock() {
         setMood,
         temporarilySetMood,
         showBubble,
+        openMiniGame,
+        setFocusSession,
       },
     });
-  }, [locale, name, setMood, showBubble, temporarilySetMood]);
+  }, [locale, name, openMiniGame, setFocusSession, setMood, showBubble, temporarilySetMood]);
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    let idle = false;
-    let idleTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const markActive = () => {
-      if (idle) {
-        idle = false;
-        emitOSBuddyEvent({ type: "user:return" });
-      }
-
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        idle = true;
-        emitOSBuddyEvent({ type: "user:idle" });
-      }, 60_000);
-    };
-
-    markActive();
-
-    const activityEvents: Array<keyof WindowEventMap> = [
-      "pointerdown",
-      "pointermove",
-      "keydown",
-      "scroll",
-    ];
-
-    activityEvents.forEach((eventName) => {
-      window.addEventListener(eventName, markActive, { passive: true });
-    });
-
-    return () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      activityEvents.forEach((eventName) => {
-        window.removeEventListener(eventName, markActive);
-      });
-    };
-  }, [mounted]);
+  useUserIdleForOSBuddy(mounted && enabled);
+  useOSBuddyContextHints({ enabled: mounted && enabled, buddyName: name, locale });
+  useOSBuddyTimeMood({ enabled: mounted && enabled, locale });
 
   const clearLongPressTimer = useCallback(() => {
     if (longPressTimerRef.current) {
@@ -373,6 +556,13 @@ export function OSBuddyDock() {
     if (walkAnimationFrameRef.current != null) {
       window.cancelAnimationFrame(walkAnimationFrameRef.current);
       walkAnimationFrameRef.current = null;
+    }
+  }, []);
+
+  const cancelPlayBallChaseFrame = useCallback(() => {
+    if (playBallChaseFrameRef.current != null) {
+      window.cancelAnimationFrame(playBallChaseFrameRef.current);
+      playBallChaseFrameRef.current = null;
     }
   }, []);
 
@@ -413,46 +603,196 @@ export function OSBuddyDock() {
     [setMood],
   );
 
+  const setClampedBuddyScale = useCallback(
+    (nextScale: number | ((current: number) => number)) => {
+      setBuddyScale((current) => {
+        const resolved = typeof nextScale === "function" ? nextScale(current) : nextScale;
+        return clamp(resolved, 1, maxBuddyScale);
+      });
+    },
+    [maxBuddyScale],
+  );
+
+  const adjustBuddyScale = useCallback(
+    (delta: number) => {
+      setClampedBuddyScale((current) => current + delta);
+    },
+    [setClampedBuddyScale],
+  );
+
   useEffect(() => {
     return () => {
       clearLongPressTimer();
       clearSingleClickTimer();
+      if (secretModeTimerRef.current) clearTimeout(secretModeTimerRef.current);
       cancelWalkAnimationFrame();
+      cancelPlayBallChaseFrame();
     };
-  }, [cancelWalkAnimationFrame, clearLongPressTimer, clearSingleClickTimer]);
+  }, [
+    cancelPlayBallChaseFrame,
+    cancelWalkAnimationFrame,
+    clearLongPressTimer,
+    clearSingleClickTimer,
+  ]);
+
+  useEffect(() => {
+    if (!mounted || !enabled) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
+
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        adjustBuddyScale(BUDDY_SCALE_STEP);
+        return;
+      }
+
+      if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        adjustBuddyScale(-BUDDY_SCALE_STEP);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [adjustBuddyScale, enabled, mounted]);
+
+  useEffect(() => {
+    if (!mounted || !enabled) return;
+
+    const touchIsNearBuddy = (touch: Touch) =>
+      isPointNearDockBox({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        dockPoint: dockPointRef.current,
+        buddyBox,
+        padding: 24,
+      });
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length < 2) return;
+      const first = event.touches[0];
+      const second = event.touches[1];
+      if (!first || !second) return;
+      if (!touchIsNearBuddy(first) && !touchIsNearBuddy(second)) return;
+
+      const distance = distanceBetweenTouches(event.touches);
+      if (distance < 12) return;
+      pinchScaleRef.current = { distance, scale: buddyScale };
+      event.preventDefault();
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const pinch = pinchScaleRef.current;
+      if (!pinch || event.touches.length < 2) return;
+
+      const distance = distanceBetweenTouches(event.touches);
+      if (distance < 12) return;
+      setClampedBuddyScale(pinch.scale * (distance / pinch.distance));
+      event.preventDefault();
+    };
+
+    const onTouchEnd = () => {
+      pinchScaleRef.current = null;
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: false });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [buddyBox, buddyScale, enabled, mounted, setClampedBuddyScale]);
 
   const openMenu = useCallback(
     (x: number, y: number) => {
+      interruptFreeRoam("menu-open");
       const clampedX = clamp(x, VIEWPORT_EDGE_GAP, Math.max(VIEWPORT_EDGE_GAP, viewport.width - MENU_WIDTH - VIEWPORT_EDGE_GAP));
       const clampedY = clamp(y, VIEWPORT_EDGE_GAP, Math.max(VIEWPORT_EDGE_GAP, viewport.height - MENU_HEIGHT - VIEWPORT_EDGE_GAP));
       setMenuPoint({ x: clampedX, y: clampedY });
       setMenuOpen(true);
     },
-    [setMenuOpen, viewport.height, viewport.width],
+    [interruptFreeRoam, setMenuOpen, viewport.height, viewport.width],
   );
 
+  const maybeTriggerBirthdayEasterEgg = useCallback(() => {
+    if (!birthdayProfile.enabled) return false;
+    if (!isOSBuddyBirthdayToday({ profile: birthdayProfile })) return false;
+
+    const dateKey = getOSBuddyBirthdayTodayKey({ profile: birthdayProfile });
+    if (hasBirthdayEasterEggTriggered(dateKey)) return false;
+
+    const now = Date.now();
+    const currentBurst = birthdayClickBurstRef.current;
+    const burstExpired =
+      currentBurst.dateKey !== dateKey ||
+      now - currentBurst.startedAt > BIRTHDAY_EASTER_EGG_WINDOW_MS;
+    const nextBurst = {
+      dateKey,
+      startedAt: burstExpired ? now : currentBurst.startedAt,
+      count: burstExpired ? 1 : currentBurst.count + 1,
+    };
+
+    birthdayClickBurstRef.current = nextBurst;
+    if (nextBurst.count < 3) return false;
+
+    markBirthdayEasterEggTriggered(dateKey);
+    birthdayClickBurstRef.current = { dateKey, startedAt: now, count: 0 };
+    resetClickBurst();
+
+    const currentBirthdayModeUntil = useOSBuddyStore.getState().birthdayModeUntil;
+    const remainingBirthdayModeMs =
+      currentBirthdayModeUntil == null ? 0 : Math.max(0, currentBirthdayModeUntil - now);
+    setBirthdayMode(true, remainingBirthdayModeMs + BIRTHDAY_EASTER_EGG_EXTENSION_MS);
+    temporarilySetMood("celebrating", 2_200);
+    showBubble(
+      locale === "zh-TW" ? "生日像素加成。" : "Birthday pixel boost.",
+      "birthday",
+      {
+        force: true,
+        durationMs: 2_400,
+      },
+    );
+    return true;
+  }, [
+    birthdayProfile,
+    locale,
+    resetClickBurst,
+    setBirthdayMode,
+    showBubble,
+    temporarilySetMood,
+  ]);
+
   const triggerClickReaction = useCallback(async () => {
+    void incrementOSBuddyStat("clicks");
+
+    if (maybeTriggerBirthdayEasterEgg()) return;
+
     emitOSBuddyEvent({ type: "buddy:clicked" });
-    void incrementInteraction("click");
 
     const burstCount = registerClickBurst();
     if (burstCount >= 7) {
       resetClickBurst();
-      temporarilySetMood("celebrating", 1800);
+      temporarilySetMood("celebrating", 8_000);
       showBubble(
         locale === "zh-TW" ? "隱藏像素模式解鎖。" : "Secret pixel mode unlocked.",
         "game",
-        { force: true, durationMs: 2800 },
+        { force: true, durationMs: 3_200 },
       );
+      setSecretModeActive(true);
+      void addOSBuddyBadge("secret-pixel-mode");
+      if (secretModeTimerRef.current) clearTimeout(secretModeTimerRef.current);
+      secretModeTimerRef.current = setTimeout(() => {
+        setSecretModeActive(false);
+        secretModeTimerRef.current = null;
+      }, 8_000);
       return;
     }
-
-    temporarilySetMood("thinking", 900);
-    showBubble(locale === "zh-TW" ? "我看看今天..." : "Let me peek at today...", "user-triggered", {
-      force: true,
-      durationMs: 1800,
-      kind: "fallback",
-    });
 
     const line = await getCompanionLine();
     temporarilySetMood(line.kind === "game" ? "playful" : "success", 1300);
@@ -464,8 +804,8 @@ export function OSBuddyDock() {
     });
   }, [
     getCompanionLine,
-    incrementInteraction,
     locale,
+    maybeTriggerBirthdayEasterEgg,
     registerClickBurst,
     resetClickBurst,
     showBubble,
@@ -566,30 +906,174 @@ export function OSBuddyDock() {
     [isReturningHome, isWalkModeActive, startReturnHome, startWalkMode],
   );
 
+  const closePlayBallGame = useCallback(() => {
+    if (!isPlayBallOpen) return;
+    cancelPlayBallChaseFrame();
+    closeMiniGame();
+    restingTargetRef.current = resolveRestingTarget();
+    setWalkModeActive(false);
+    setReturningHome(true);
+    setMood("idle");
+    showBubble(locale === "zh-TW" ? "先休息一下。" : "Let's pause for now.", "game", {
+      force: true,
+      durationMs: 1800,
+      kind: "game",
+    });
+  }, [
+    cancelPlayBallChaseFrame,
+    closeMiniGame,
+    isPlayBallOpen,
+    locale,
+    resolveRestingTarget,
+    setMood,
+    setReturningHome,
+    setWalkModeActive,
+    showBubble,
+  ]);
+
+  const togglePlayBallGame = useCallback(() => {
+    clearSingleClickTimer();
+    lastTapRef.current = null;
+
+    if (isPlayBallOpen) {
+      closePlayBallGame();
+      return;
+    }
+
+    if (isWalkModeActive) {
+      startReturnHome();
+    }
+
+    interruptFreeRoam("mini-game-open");
+    setMenuOpen(false);
+    setPetPickerOpen(false);
+    openMiniGame("play-ball");
+    setMood("playful");
+    emitOSBuddyEvent({ type: "game:start", game: "play-ball" });
+    showBubble(pickPlayBallLine(locale, "start"), "game", {
+      force: true,
+      durationMs: 2400,
+      kind: "game",
+    });
+  }, [
+    clearSingleClickTimer,
+    closePlayBallGame,
+    interruptFreeRoam,
+    isPlayBallOpen,
+    isWalkModeActive,
+    locale,
+    openMiniGame,
+    setMenuOpen,
+    setMood,
+    setPetPickerOpen,
+    showBubble,
+    startReturnHome,
+  ]);
+
+  const chasePlayBall = useCallback(
+    (target: DockPoint, outcome: OSBuddyPlayBallOutcome) => {
+      cancelPlayBallChaseFrame();
+
+      const targetPoint = clampDockPoint(
+        {
+          x: target.x - buddyBox.width / 2,
+          y: target.y - buddyBox.height / 2,
+        },
+        viewport,
+        buddyBox,
+      );
+
+      const tick = () => {
+        const current = dockPointRef.current;
+        const dx = targetPoint.x - current.x;
+        const dy = targetPoint.y - current.y;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance <= RETURN_HOME_SNAP_PX) {
+          dockPointRef.current = targetPoint;
+          setDockPoint(targetPoint);
+          setMood(outcome === "caught" ? "success" : "error");
+          showBubble(pickPlayBallLine(locale, outcome), "game", {
+            force: true,
+            durationMs: 2600,
+            kind: "game",
+          });
+          playBallChaseFrameRef.current = null;
+          return;
+        }
+
+        const nextPoint = clampDockPoint(
+          {
+            x: current.x + (dx / distance) * Math.min(RETURN_HOME_SPEED_PX, distance),
+            y: current.y + (dy / distance) * Math.min(RETURN_HOME_SPEED_PX, distance),
+          },
+          viewport,
+          buddyBox,
+        );
+
+        dockPointRef.current = nextPoint;
+        setDockPoint(nextPoint);
+        applyWalkMood(nextPoint.x < current.x ? "left" : "right", "playful");
+        playBallChaseFrameRef.current = window.requestAnimationFrame(tick);
+      };
+
+      playBallChaseFrameRef.current = window.requestAnimationFrame(tick);
+    },
+    [
+      applyWalkMood,
+      buddyBox,
+      cancelPlayBallChaseFrame,
+      locale,
+      setMood,
+      showBubble,
+      viewport,
+    ],
+  );
+
   const handleTap = useCallback(
     (clientX: number, clientY: number, pointerType: string) => {
+      interruptFreeRoam("user-click");
       const now = Date.now();
       const previousTap = lastTapRef.current;
-      const isDoubleTap =
+      const continuesTapSequence =
         previousTap != null &&
         now - previousTap.at <= DOUBLE_TAP_MS &&
         Math.hypot(clientX - previousTap.x, clientY - previousTap.y) <= DOUBLE_TAP_MAX_DISTANCE_PX;
+      const nextCount = continuesTapSequence ? previousTap.count + 1 : 1;
 
-      if (isDoubleTap) {
+      clearSingleClickTimer();
+
+      if (nextCount >= 3) {
         clearSingleClickTimer();
         lastTapRef.current = null;
-        toggleWalkMode(clientX, clientY, pointerType);
+        togglePlayBallGame();
         return;
       }
 
-      clearSingleClickTimer();
-      lastTapRef.current = { at: now, x: clientX, y: clientY };
+      lastTapRef.current = { at: now, x: clientX, y: clientY, count: nextCount, pointerType };
+
+      if (nextCount === 2) {
+        singleClickTimerRef.current = setTimeout(() => {
+          const tap = lastTapRef.current;
+          lastTapRef.current = null;
+          if (!tap) return;
+          toggleWalkMode(tap.x, tap.y, tap.pointerType);
+        }, TRIPLE_TAP_GRACE_MS);
+        return;
+      }
+
       singleClickTimerRef.current = setTimeout(() => {
         lastTapRef.current = null;
         void triggerClickReaction();
       }, DOUBLE_TAP_MS);
     },
-    [clearSingleClickTimer, toggleWalkMode, triggerClickReaction],
+    [
+      clearSingleClickTimer,
+      interruptFreeRoam,
+      togglePlayBallGame,
+      toggleWalkMode,
+      triggerClickReaction,
+    ],
   );
 
   useEffect(() => {
@@ -598,27 +1082,11 @@ export function OSBuddyDock() {
     const shouldReturnHomeFromWalkTap = (event: PointerEvent) => {
       const now = Date.now();
       const previousTap = lastWalkExitTapRef.current;
-      const exitPadding =
-        event.pointerType === "touch" ? WALK_TOUCH_EXIT_HALO_PX : WALK_EXIT_HALO_PX;
-      const isNearBuddy = isPointNearDockBox({
-        clientX: event.clientX,
-        clientY: event.clientY,
-        dockPoint: dockPointRef.current,
-        buddyBox,
-        padding: exitPadding,
-      });
-
-      if (!isNearBuddy) {
-        lastWalkExitTapRef.current = null;
-        return false;
-      }
-
-      const maxTapDistance =
-        event.pointerType === "touch" ? WALK_TOUCH_EXIT_HALO_PX : DOUBLE_TAP_MAX_DISTANCE_PX;
       const isDoubleTap =
         previousTap != null &&
         now - previousTap.at <= DOUBLE_TAP_MS &&
-        Math.hypot(event.clientX - previousTap.x, event.clientY - previousTap.y) <= maxTapDistance;
+        Math.hypot(event.clientX - previousTap.x, event.clientY - previousTap.y) <=
+          WALK_EXIT_DOUBLE_TAP_MAX_DISTANCE_PX;
 
       lastWalkExitTapRef.current = isDoubleTap
         ? null
@@ -669,7 +1137,7 @@ export function OSBuddyDock() {
       window.removeEventListener("pointerup", releaseWalkPointer);
       window.removeEventListener("pointercancel", releaseWalkPointer);
     };
-  }, [buddyBox, getWalkTargetPoint, isWalkModeActive, startReturnHome]);
+  }, [getWalkTargetPoint, isWalkModeActive, startReturnHome]);
 
   useEffect(() => {
     if ((!isWalkModeActive && !isReturningHome) || viewport.width <= 0 || viewport.height <= 0) {
@@ -779,6 +1247,7 @@ export function OSBuddyDock() {
 
     const isWalkingOrReturning = isWalkModeActive || isReturningHome;
 
+    interruptFreeRoam("user-drag");
     setMenuOpen(false);
     clearLongPressTimer();
     longPressTriggeredRef.current = false;
@@ -886,6 +1355,7 @@ export function OSBuddyDock() {
     if (wasDragging) {
       setDragging(false, null);
       emitOSBuddyEvent({ type: "buddy:drag:end" });
+      void incrementOSBuddyStat("drags");
       if (isWalkModeActive || isReturningHome) return;
 
       const finalPosition: OSBuddyPosition = {
@@ -906,6 +1376,7 @@ export function OSBuddyDock() {
   const moveByKeyboard = async (dx: number, dy: number) => {
     if (isWalkModeActive || isReturningHome) return;
 
+    interruptFreeRoam("keyboard");
     const nextPoint = clampDockPoint(
       {
         x: dockPoint.x + dx,
@@ -933,6 +1404,7 @@ export function OSBuddyDock() {
 
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
+      interruptFreeRoam("user-click");
       void triggerClickReaction();
       return;
     }
@@ -963,12 +1435,14 @@ export function OSBuddyDock() {
 
     if (event.key.toLowerCase() === "m") {
       event.preventDefault();
+      interruptFreeRoam("menu-open");
       openMenu(dockPoint.x + buddyBox.width + 12, dockPoint.y - 8);
       return;
     }
 
     if (event.key === "Escape") {
       event.preventDefault();
+      interruptFreeRoam("keyboard");
       clearBubble();
       setMenuOpen(false);
       setPetPickerOpen(false);
@@ -978,10 +1452,16 @@ export function OSBuddyDock() {
 
   if (!mounted || !enabled) return null;
 
+  const bubbleHorizontal = dockPoint.x > viewport.width / 2 ? "left" : "right";
+  const bubbleVertical = dockPoint.y < 136 ? "below" : "above";
+
   return (
     <>
       <div
-        className="fixed z-[120]"
+        className={cn(
+          "os-buddy-dock fixed z-[45]",
+          isFreeRoaming && "os-buddy-dock--free-roaming",
+        )}
         style={{
           left: dockPoint.x,
           top: dockPoint.y,
@@ -991,7 +1471,16 @@ export function OSBuddyDock() {
         {bubble ? (
           <OSBuddyBubble
             bubble={bubble}
+            horizontal={bubbleHorizontal}
+            vertical={bubbleVertical}
+            onDismiss={clearBubble}
             onCtaClick={(cta) => {
+              if (cta.game === "play-ball") {
+                togglePlayBallGame();
+                return;
+              }
+
+              interruptFreeRoam("mini-game-open");
               openMiniGame(cta.game);
               clearBubble();
               emitOSBuddyEvent({ type: "game:start", game: cta.game });
@@ -1001,7 +1490,14 @@ export function OSBuddyDock() {
 
         <button
           type="button"
-          className="relative rounded-full p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/60 touch-none"
+          className={cn(
+            "relative rounded-full p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/60 touch-none",
+            secretModeActive && "os-buddy--secret",
+          )}
+          style={{
+            transform: `scale(${buddyScale})`,
+            transformOrigin: "top left",
+          }}
           aria-label={`${name}, your OS Buddy`}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -1020,12 +1516,20 @@ export function OSBuddyDock() {
             name={name}
             mood={mood}
             animationSrc={animationSrc}
-            isDragging={isDragging || isWalkModeActive || isReturningHome}
+            isDragging={isDragging || isWalkModeActive || isReturningHome || isFreeRoaming}
+            isBirthdayMode={isBirthdayMode}
           />
+          {focusSession && mood === "focused" ? (
+            <OSBuddyFocusBadge
+              startedAt={focusSession.startedAt}
+              durationMinutes={focusSession.durationMinutes}
+            />
+          ) : null}
         </button>
       </div>
 
       <OSBuddyMenu
+        key={isMenuOpen ? "os-buddy-menu-open" : "os-buddy-menu-closed"}
         open={isMenuOpen}
         x={menuPoint.x}
         y={menuPoint.y}
@@ -1037,16 +1541,29 @@ export function OSBuddyDock() {
           void renameBuddy(nextName);
         }}
         onResetPosition={() => {
-          setActivePosition({ x: null, y: null, anchor: "bottom-right" });
+          setActivePosition({ x: null, y: null, anchor: "bottom-left" });
           void resetPosition();
         }}
         onOpenGame={(game) => {
+          if (game === "play-ball") {
+            togglePlayBallGame();
+            return;
+          }
+
+          interruptFreeRoam("mini-game-open");
           openMiniGame(game);
           emitOSBuddyEvent({ type: "game:start", game });
         }}
         onHide={() => {
           void setEnabled(false);
+          toast.success(
+            locale === "zh-TW"
+              ? "OS Buddy 已隱藏。你可以在設定中重新開啟。"
+              : "OS Buddy hidden. You can bring it back from Settings.",
+          );
         }}
+        birthdayProfile={birthdayProfile}
+        onSaveBirthdayProfile={saveBirthdayProfile}
       />
 
       <OSBuddyPetPicker
@@ -1061,7 +1578,7 @@ export function OSBuddyDock() {
       />
 
       <OSBuddyMiniGameModal
-        open={isMiniGameOpen}
+        open={isMiniGameOpen && activeMiniGame !== "play-ball"}
         onOpenChange={(open) => {
           if (!open) closeMiniGame();
         }}
@@ -1070,9 +1587,17 @@ export function OSBuddyDock() {
         petId={petId}
         buddyName={name}
         onComplete={(game, score) => {
+          void incrementOSBuddyStat("gamesPlayed");
+          void addOSBuddyBadge("first-game");
           emitOSBuddyEvent({ type: "game:complete", game, score });
           closeMiniGame();
         }}
+      />
+
+      <OSBuddyPlayBallOverlay
+        open={isPlayBallOpen}
+        locale={locale}
+        onBallThrown={(target, outcome) => chasePlayBall(target, outcome)}
       />
     </>
   );

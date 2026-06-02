@@ -25,7 +25,7 @@ import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { Idea, JournalEntry } from "@/types/database";
 import type { Quote } from "@/types/quote";
 
-const OS_BUDDY_GAMES: OSBuddyMiniGame[] = ["pixel-catch", "focus-tap", "clean-desk"];
+const OS_BUDDY_GAMES: OSBuddyMiniGame[] = ["pixel-catch", "focus-tap", "clean-desk", "play-ball"];
 
 function itemPriority(item: CalendarItem): string | null {
   if ("priority" in item && typeof item.priority === "string") return item.priority;
