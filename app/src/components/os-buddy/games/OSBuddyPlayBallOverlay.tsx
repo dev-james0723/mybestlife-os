@@ -4,6 +4,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 
 export type OSBuddyPlayBallOutcome = "caught" | "missed";
+export type OSBuddyPlayBallEvent = {
+  id: number;
+  point: BallPoint;
+  outcome: OSBuddyPlayBallOutcome;
+  ballSize: number;
+};
+export type OSBuddyPlayBallCatchSignal = {
+  id: number;
+  point: BallPoint;
+};
 
 type BallPoint = { x: number; y: number };
 type BallState = BallPoint & { vx: number; vy: number };
@@ -11,7 +21,9 @@ type BallState = BallPoint & { vx: number; vy: number };
 type OSBuddyPlayBallOverlayProps = {
   open: boolean;
   locale: AppLocale;
-  onBallThrown: (target: BallPoint, outcome: OSBuddyPlayBallOutcome) => void;
+  caughtBall: OSBuddyPlayBallCatchSignal | null;
+  onBallThrown: (event: OSBuddyPlayBallEvent) => void;
+  onBallMove: (event: OSBuddyPlayBallEvent) => void;
 };
 
 const BALL_SIZE = 38;
@@ -34,13 +46,15 @@ function initialBallState(): BallState {
 export function OSBuddyPlayBallOverlay({
   open,
   locale,
+  caughtBall,
   onBallThrown,
+  onBallMove,
 }: OSBuddyPlayBallOverlayProps) {
   const zh = locale === "zh-TW";
   const [countdown, setCountdown] = useState(3);
-  const [phase, setPhase] = useState<"countdown" | "ready" | "thrown" | "result">("countdown");
+  const [phase, setPhase] = useState<"countdown" | "ready" | "thrown">("countdown");
   const [ball, setBall] = useState<BallState>(() => initialBallState());
-  const [result, setResult] = useState<OSBuddyPlayBallOutcome | null>(null);
+  const ballRef = useRef<BallState>(ball);
   const dragRef = useRef<{
     pointerId: number;
     lastX: number;
@@ -51,14 +65,33 @@ export function OSBuddyPlayBallOverlay({
     prevAt: number;
   } | null>(null);
   const frameRef = useRef<number | null>(null);
+  const throwIdRef = useRef(0);
+  const activeThrowRef = useRef<{
+    id: number;
+    outcome: OSBuddyPlayBallOutcome;
+  } | null>(null);
+  const resetTimerRef = useRef<number | null>(null);
+
+  const setBallState = useCallback((nextBall: BallState) => {
+    ballRef.current = nextBall;
+    setBall(nextBall);
+  }, []);
+
+  const clearResetTimer = useCallback(() => {
+    if (resetTimerRef.current) {
+      window.clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
 
+    clearResetTimer();
+    activeThrowRef.current = null;
     setCountdown(3);
     setPhase("countdown");
-    setResult(null);
-    setBall(initialBallState());
+    setBallState(initialBallState());
 
     const interval = window.setInterval(() => {
       setCountdown((current) => {
@@ -72,32 +105,42 @@ export function OSBuddyPlayBallOverlay({
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [open]);
+  }, [clearResetTimer, open, setBallState]);
 
   useEffect(() => {
     if (!open || phase !== "thrown") return;
 
     const tick = () => {
-      setBall((current) => {
-        const maxX = Math.max(0, window.innerWidth - BALL_SIZE);
-        const maxY = Math.max(0, window.innerHeight - BALL_SIZE);
-        let x = current.x + current.vx;
-        let y = current.y + current.vy;
-        let vx = current.vx * 0.992;
-        let vy = current.vy * 0.992 + 0.24;
+      const current = ballRef.current;
+      const maxX = Math.max(0, window.innerWidth - BALL_SIZE);
+      const maxY = Math.max(0, window.innerHeight - BALL_SIZE);
+      let x = current.x + current.vx;
+      let y = current.y + current.vy;
+      let vx = current.vx * 0.992;
+      let vy = current.vy * 0.992 + 0.24;
 
-        if (x <= 0 || x >= maxX) {
-          x = clamp(x, 0, maxX);
-          vx = -vx * 0.88;
-        }
+      if (x <= 0 || x >= maxX) {
+        x = clamp(x, 0, maxX);
+        vx = -vx * 0.88;
+      }
 
-        if (y <= 0 || y >= maxY) {
-          y = clamp(y, 0, maxY);
-          vy = -vy * 0.82;
-        }
+      if (y <= 0 || y >= maxY) {
+        y = clamp(y, 0, maxY);
+        vy = -vy * 0.82;
+      }
 
-        return { x, y, vx, vy };
-      });
+      const nextBall = { x, y, vx, vy };
+      setBallState(nextBall);
+
+      const activeThrow = activeThrowRef.current;
+      if (activeThrow) {
+        onBallMove({
+          id: activeThrow.id,
+          point: { x: nextBall.x + BALL_SIZE / 2, y: nextBall.y + BALL_SIZE / 2 },
+          outcome: activeThrow.outcome,
+          ballSize: BALL_SIZE,
+        });
+      }
 
       frameRef.current = window.requestAnimationFrame(tick);
     };
@@ -109,32 +152,69 @@ export function OSBuddyPlayBallOverlay({
         frameRef.current = null;
       }
     };
-  }, [open, phase]);
+  }, [onBallMove, open, phase, setBallState]);
+
+  useEffect(() => {
+    if (!open || !caughtBall) return;
+    const activeThrow = activeThrowRef.current;
+    if (!activeThrow || activeThrow.id !== caughtBall.id) return;
+
+    activeThrowRef.current = null;
+    clearResetTimer();
+    if (frameRef.current != null) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    setBallState({
+      x: clamp(caughtBall.point.x - BALL_SIZE / 2, 0, window.innerWidth - BALL_SIZE),
+      y: clamp(caughtBall.point.y - BALL_SIZE / 2, 0, window.innerHeight - BALL_SIZE),
+      vx: 0,
+      vy: 0,
+    });
+    resetTimerRef.current = window.setTimeout(() => {
+      resetTimerRef.current = null;
+      setPhase("ready");
+      setBallState(initialBallState());
+    }, 900);
+  }, [caughtBall, clearResetTimer, open, setBallState]);
+
+  useEffect(
+    () => () => {
+      clearResetTimer();
+    },
+    [clearResetTimer],
+  );
 
   const resetBall = useCallback(() => {
-    setResult(null);
+    activeThrowRef.current = null;
     setPhase("ready");
-    setBall(initialBallState());
-  }, []);
+    setBallState(initialBallState());
+  }, [setBallState]);
 
   const throwBall = useCallback(
     (nextBall: BallState) => {
       const outcome: OSBuddyPlayBallOutcome = Math.random() < 0.5 ? "caught" : "missed";
-      setBall(nextBall);
+      const id = throwIdRef.current + 1;
+      throwIdRef.current = id;
+      activeThrowRef.current = { id, outcome };
+      clearResetTimer();
+      setBallState(nextBall);
       setPhase("thrown");
-      setResult(null);
-      onBallThrown(
-        { x: nextBall.x + BALL_SIZE / 2, y: nextBall.y + BALL_SIZE / 2 },
+      onBallThrown({
+        id,
+        point: { x: nextBall.x + BALL_SIZE / 2, y: nextBall.y + BALL_SIZE / 2 },
         outcome,
-      );
+        ballSize: BALL_SIZE,
+      });
 
-      window.setTimeout(() => {
-        setResult(outcome);
-        setPhase("result");
-        window.setTimeout(resetBall, 2100);
-      }, 1450);
+      if (outcome === "missed") {
+        resetTimerRef.current = window.setTimeout(() => {
+          resetTimerRef.current = null;
+          resetBall();
+        }, 2_500);
+      }
     },
-    [onBallThrown, resetBall],
+    [clearResetTimer, onBallThrown, resetBall, setBallState],
   );
 
   if (!open) return null;
@@ -151,20 +231,6 @@ export function OSBuddyPlayBallOverlay({
 
       {phase !== "countdown" ? (
         <>
-          <div className="absolute left-1/2 top-1/2 max-w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-popover/90 px-4 py-3 text-center text-xs font-semibold shadow">
-            {result
-              ? result === "caught"
-                ? zh
-                  ? "接到了。再丟一次。"
-                  : "Caught. Toss again."
-                : zh
-                  ? "差一點。再試一次。"
-                  : "Almost. Try another toss."
-              : zh
-                ? "拖住像素球，往任何方向丟。"
-                : "Drag the pixel ball and toss it any direction."}
-          </div>
-
           <div
             className="pointer-events-auto absolute select-none"
             style={{
@@ -203,11 +269,11 @@ export function OSBuddyPlayBallOverlay({
                 lastAt: now,
               };
 
-              setBall((current) => ({
-                ...current,
+              setBallState({
+                ...ballRef.current,
                 x: clamp(event.clientX - BALL_SIZE / 2, 0, window.innerWidth - BALL_SIZE),
                 y: clamp(event.clientY - BALL_SIZE / 2, 0, window.innerHeight - BALL_SIZE),
-              }));
+              });
             }}
             onPointerUp={(event) => {
               const drag = dragRef.current;

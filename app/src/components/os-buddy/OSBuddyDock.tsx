@@ -24,6 +24,8 @@ import { OSBuddyFocusBadge } from "./OSBuddyFocusBadge";
 import { OSBuddyMiniGameModal } from "./games/OSBuddyMiniGameModal";
 import {
   OSBuddyPlayBallOverlay,
+  type OSBuddyPlayBallCatchSignal,
+  type OSBuddyPlayBallEvent,
   type OSBuddyPlayBallOutcome,
 } from "./games/OSBuddyPlayBallOverlay";
 import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
@@ -59,6 +61,11 @@ const WALK_EXIT_DOUBLE_TAP_MAX_DISTANCE_PX = 64;
 const TRIPLE_TAP_GRACE_MS = 360;
 const BUDDY_SCALE_STEP = 0.16;
 const BUDDY_MAX_SCALE_CAP = 12;
+const PLAY_BALL_CATCH_SPEED_PX = 38;
+const PLAY_BALL_MISS_SPEED_PX = 30;
+const PLAY_BALL_CATCH_FORCE_MS = 1_800;
+const PLAY_BALL_MISS_RESOLVE_MS = 1_550;
+const PLAY_BALL_MISS_FORCE_MS = 2_000;
 const BIRTHDAY_EASTER_EGG_STORAGE_KEY = "mblos:os-buddy-birthday-easter-eggs";
 const BIRTHDAY_EASTER_EGG_WINDOW_MS = 5_000;
 const BIRTHDAY_EASTER_EGG_EXTENSION_MS = 8_000;
@@ -74,6 +81,11 @@ const FREE_ROAM_BLOCKING_MOODS = new Set<OSBuddyMood>([
 
 type DockPoint = { x: number; y: number };
 type WalkDirection = "left" | "right" | "idle";
+type PlayBallChaseState = {
+  id: number;
+  outcome: OSBuddyPlayBallOutcome;
+  startedAt: number;
+};
 
 type DragSession = {
   pointerId: number;
@@ -300,6 +312,84 @@ function pickPlayBallLine(
   return pool[Math.floor(Math.random() * pool.length)] ?? pool[0];
 }
 
+function dockIntersectsBall(params: {
+  dockPoint: DockPoint;
+  buddyBox: { width: number; height: number };
+  ballCenter: DockPoint;
+  ballSize: number;
+}) {
+  const ballLeft = params.ballCenter.x - params.ballSize / 2;
+  const ballTop = params.ballCenter.y - params.ballSize / 2;
+  return (
+    params.dockPoint.x < ballLeft + params.ballSize &&
+    params.dockPoint.x + params.buddyBox.width > ballLeft &&
+    params.dockPoint.y < ballTop + params.ballSize &&
+    params.dockPoint.y + params.buddyBox.height > ballTop
+  );
+}
+
+function resolveCaughtPlayBallTarget(params: {
+  event: OSBuddyPlayBallEvent;
+  viewport: { width: number; height: number };
+  buddyBox: { width: number; height: number };
+}) {
+  return clampDockPoint(
+    {
+      x: params.event.point.x - params.buddyBox.width / 2,
+      y: params.event.point.y - params.buddyBox.height / 2,
+    },
+    params.viewport,
+    params.buddyBox,
+  );
+}
+
+function resolveMissedPlayBallTarget(params: {
+  event: OSBuddyPlayBallEvent;
+  viewport: { width: number; height: number };
+  buddyBox: { width: number; height: number };
+}) {
+  const clearGap = Math.max(56, params.event.ballSize + 28);
+  const candidates = [
+    {
+      x: params.event.point.x + clearGap,
+      y: params.event.point.y - params.buddyBox.height / 2,
+    },
+    {
+      x: params.event.point.x - params.buddyBox.width - clearGap,
+      y: params.event.point.y - params.buddyBox.height / 2,
+    },
+    {
+      x: params.event.point.x - params.buddyBox.width / 2,
+      y: params.event.point.y - params.buddyBox.height - clearGap,
+    },
+    {
+      x: params.event.point.x - params.buddyBox.width / 2,
+      y: params.event.point.y + clearGap,
+    },
+  ].map((point) => clampDockPoint(point, params.viewport, params.buddyBox));
+
+  const scored = candidates.map((point) => ({
+    point,
+    intersects: dockIntersectsBall({
+      dockPoint: point,
+      buddyBox: params.buddyBox,
+      ballCenter: params.event.point,
+      ballSize: params.event.ballSize,
+    }),
+    distance: Math.hypot(
+      point.x + params.buddyBox.width / 2 - params.event.point.x,
+      point.y + params.buddyBox.height / 2 - params.event.point.y,
+    ),
+  }));
+
+  return (
+    scored.find((candidate) => !candidate.intersects) ??
+    scored.reduce((best, candidate) =>
+      candidate.distance > best.distance ? candidate : best,
+    )
+  ).point;
+}
+
 export function OSBuddyDock() {
   const locale = useAppStore((s) => s.language);
   const pathname = usePathname();
@@ -363,6 +453,8 @@ export function OSBuddyDock() {
   const [menuPoint, setMenuPoint] = useState<DockPoint>({ x: 0, y: 0 });
   const [buddyScale, setBuddyScale] = useState(1);
   const [secretModeActive, setSecretModeActive] = useState(false);
+  const [playBallCatchSignal, setPlayBallCatchSignal] =
+    useState<OSBuddyPlayBallCatchSignal | null>(null);
 
   useOSBuddyBirthday({
     enabled: mounted && enabled,
@@ -447,6 +539,8 @@ export function OSBuddyDock() {
   const walkPointerRef = useRef<{ x: number; y: number; pointerType: string } | null>(null);
   const walkAnimationFrameRef = useRef<number | null>(null);
   const playBallChaseFrameRef = useRef<number | null>(null);
+  const playBallTargetRef = useRef<OSBuddyPlayBallEvent | null>(null);
+  const playBallChaseStateRef = useRef<PlayBallChaseState | null>(null);
   const walkDirectionRef = useRef<WalkDirection | null>(null);
   const walkTargetRef = useRef<DockPoint | null>(null);
   const restingTargetRef = useRef<DockPoint | null>(null);
@@ -909,6 +1003,9 @@ export function OSBuddyDock() {
   const closePlayBallGame = useCallback(() => {
     if (!isPlayBallOpen) return;
     cancelPlayBallChaseFrame();
+    playBallTargetRef.current = null;
+    playBallChaseStateRef.current = null;
+    setPlayBallCatchSignal(null);
     closeMiniGame();
     restingTargetRef.current = resolveRestingTarget();
     setWalkModeActive(false);
@@ -944,6 +1041,7 @@ export function OSBuddyDock() {
       startReturnHome();
     }
 
+    setPlayBallCatchSignal(null);
     interruptFreeRoam("mini-game-open");
     setMenuOpen(false);
     setPetPickerOpen(false);
@@ -970,46 +1068,109 @@ export function OSBuddyDock() {
     startReturnHome,
   ]);
 
+  const trackPlayBall = useCallback((event: OSBuddyPlayBallEvent) => {
+    if (playBallChaseStateRef.current?.id !== event.id) return;
+    playBallTargetRef.current = event;
+  }, []);
+
   const chasePlayBall = useCallback(
-    (target: DockPoint, outcome: OSBuddyPlayBallOutcome) => {
+    (event: OSBuddyPlayBallEvent) => {
       cancelPlayBallChaseFrame();
+      setPlayBallCatchSignal(null);
+      playBallTargetRef.current = event;
+      playBallChaseStateRef.current = {
+        id: event.id,
+        outcome: event.outcome,
+        startedAt: performance.now(),
+      };
 
-      const targetPoint = clampDockPoint(
-        {
-          x: target.x - buddyBox.width / 2,
-          y: target.y - buddyBox.height / 2,
-        },
-        viewport,
-        buddyBox,
-      );
-
-      const tick = () => {
-        const current = dockPointRef.current;
-        const dx = targetPoint.x - current.x;
-        const dy = targetPoint.y - current.y;
-        const distance = Math.hypot(dx, dy);
-
-        if (distance <= RETURN_HOME_SNAP_PX) {
-          dockPointRef.current = targetPoint;
-          setDockPoint(targetPoint);
-          setMood(outcome === "caught" ? "success" : "error");
-          showBubble(pickPlayBallLine(locale, outcome), "game", {
-            force: true,
-            durationMs: 2600,
-            kind: "game",
+      const finishChase = (params: {
+        finalPoint: DockPoint;
+        outcome: OSBuddyPlayBallOutcome;
+        ballEvent: OSBuddyPlayBallEvent;
+      }) => {
+        dockPointRef.current = params.finalPoint;
+        setDockPoint(params.finalPoint);
+        setMood(params.outcome === "caught" ? "success" : "error");
+        showBubble(pickPlayBallLine(locale, params.outcome), "game", {
+          force: true,
+          durationMs: 2600,
+          kind: "game",
+        });
+        if (params.outcome === "caught") {
+          setPlayBallCatchSignal({
+            id: params.ballEvent.id,
+            point: params.ballEvent.point,
           });
+        }
+        playBallTargetRef.current = null;
+        playBallChaseStateRef.current = null;
+        playBallChaseFrameRef.current = null;
+      };
+
+      const tick = (now: number) => {
+        const chaseState = playBallChaseStateRef.current;
+        const ballEvent = playBallTargetRef.current;
+        if (!chaseState || !ballEvent || viewport.width <= 0 || viewport.height <= 0) {
           playBallChaseFrameRef.current = null;
           return;
         }
 
-        const nextPoint = clampDockPoint(
-          {
-            x: current.x + (dx / distance) * Math.min(RETURN_HOME_SPEED_PX, distance),
-            y: current.y + (dy / distance) * Math.min(RETURN_HOME_SPEED_PX, distance),
-          },
-          viewport,
-          buddyBox,
-        );
+        const targetPoint =
+          chaseState.outcome === "caught"
+            ? resolveCaughtPlayBallTarget({ event: ballEvent, viewport, buddyBox })
+            : resolveMissedPlayBallTarget({ event: ballEvent, viewport, buddyBox });
+        const current = dockPointRef.current;
+        const dx = targetPoint.x - current.x;
+        const dy = targetPoint.y - current.y;
+        const distance = Math.hypot(dx, dy);
+        const speed =
+          chaseState.outcome === "caught"
+            ? PLAY_BALL_CATCH_SPEED_PX
+            : PLAY_BALL_MISS_SPEED_PX;
+        const nextPoint =
+          distance <= 0
+            ? targetPoint
+            : clampDockPoint(
+                {
+                  x: current.x + (dx / distance) * Math.min(speed, distance),
+                  y: current.y + (dy / distance) * Math.min(speed, distance),
+                },
+                viewport,
+                buddyBox,
+              );
+        const elapsedMs = now - chaseState.startedAt;
+
+        if (
+          chaseState.outcome === "caught" &&
+          (dockIntersectsBall({
+            dockPoint: nextPoint,
+            buddyBox,
+            ballCenter: ballEvent.point,
+            ballSize: ballEvent.ballSize,
+          }) ||
+            elapsedMs >= PLAY_BALL_CATCH_FORCE_MS)
+        ) {
+          finishChase({
+            finalPoint: resolveCaughtPlayBallTarget({ event: ballEvent, viewport, buddyBox }),
+            outcome: "caught",
+            ballEvent,
+          });
+          return;
+        }
+
+        if (
+          chaseState.outcome === "missed" &&
+          ((elapsedMs >= PLAY_BALL_MISS_RESOLVE_MS && distance <= speed * 2) ||
+            elapsedMs >= PLAY_BALL_MISS_FORCE_MS)
+        ) {
+          finishChase({
+            finalPoint: resolveMissedPlayBallTarget({ event: ballEvent, viewport, buddyBox }),
+            outcome: "missed",
+            ballEvent,
+          });
+          return;
+        }
 
         dockPointRef.current = nextPoint;
         setDockPoint(nextPoint);
@@ -1025,6 +1186,7 @@ export function OSBuddyDock() {
       cancelPlayBallChaseFrame,
       locale,
       setMood,
+      setPlayBallCatchSignal,
       showBubble,
       viewport,
     ],
@@ -1597,7 +1759,9 @@ export function OSBuddyDock() {
       <OSBuddyPlayBallOverlay
         open={isPlayBallOpen}
         locale={locale}
-        onBallThrown={(target, outcome) => chasePlayBall(target, outcome)}
+        caughtBall={playBallCatchSignal}
+        onBallThrown={chasePlayBall}
+        onBallMove={trackPlayBall}
       />
     </>
   );
