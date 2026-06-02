@@ -88,20 +88,22 @@ export function TodayBlock() {
     >
       <div className="space-y-5">
         {/* Header row */}
-        <header className="flex flex-wrap items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <CalendarClock className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {copy.todayBlockTitle}
-            </p>
-            <p className="text-lg font-semibold tracking-tight text-foreground">
-              {format(todayDate, "EEEE, MMMM d", { locale: dateLocale })}
-            </p>
+        <header className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {copy.todayBlockTitle}
+              </p>
+              <p className="text-lg font-semibold tracking-tight text-foreground">
+                {format(todayDate, "EEEE, MMMM d", { locale: dateLocale })}
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
             {timezoneLabel && (
               <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
                 {timezoneLabel}

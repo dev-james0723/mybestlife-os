@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tasksRepository, type CreateTaskInput, type UpdateTaskInput } from "@/lib/repositories/tasks";
 import { getTasksUiCopy } from "@/lib/i18n/tasks-ui";
+import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "sonner";
 
@@ -42,10 +43,13 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateTaskInput }) =>
       tasksRepository.update(id, data),
-    onSuccess: () => {
+    onSuccess: (task, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       const ui = getTasksUiCopy(useAppStore.getState().language);
       toast.success(ui.toastTaskUpdated);
+      if (variables.data.status === "done") {
+        emitOSBuddyEvent({ type: "task:complete", title: task.title });
+      }
     },
     onError: () => {
       const ui = getTasksUiCopy(useAppStore.getState().language);
@@ -77,10 +81,13 @@ export function useBulkUpdateTasks() {
     mutationFn: async ({ ids, data }: { ids: string[]; data: UpdateTaskInput }) => {
       await Promise.all(ids.map((id) => tasksRepository.update(id, data)));
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       const ui = getTasksUiCopy(useAppStore.getState().language);
       toast.success(ui.toastTaskUpdated);
+      if (variables.data.status === "done") {
+        emitOSBuddyEvent({ type: "task:complete" });
+      }
     },
     onError: () => {
       const ui = getTasksUiCopy(useAppStore.getState().language);

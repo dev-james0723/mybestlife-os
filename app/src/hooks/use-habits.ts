@@ -22,6 +22,7 @@ import {
   type CreateTimerSessionInput,
   type CreateHabitReflectionInput,
 } from "@/lib/repositories/habits";
+import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
 import { getMiscUiCopy } from "@/lib/i18n/misc-ui";
@@ -185,6 +186,9 @@ export function useUpsertCompletion() {
       queryClient.invalidateQueries({ queryKey: habitsKeys.allFreezes });
       const ui = getMiscUiCopy(useAppStore.getState().language).toasts.habits;
       toast.success(ui.logSaved);
+      if ((variables.status ?? "done") === "done") {
+        emitOSBuddyEvent({ type: "habit:complete" });
+      }
     },
     onError: () => {
       const ui = getMiscUiCopy(useAppStore.getState().language).toasts.habits;
@@ -198,13 +202,16 @@ export function useUpdateCompletion() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateCompletionInput }) =>
       habitCompletionsRepository.update(id, data),
-    onSuccess: (row) => {
+    onSuccess: (row, variables) => {
       queryClient.invalidateQueries({ queryKey: habitsKeys.allCompletions });
       queryClient.invalidateQueries({
         queryKey: habitsKeys.completions(row.habit_id),
       });
       queryClient.invalidateQueries({ queryKey: habitsKeys.all });
       queryClient.invalidateQueries({ queryKey: habitsKeys.allFreezes });
+      if (variables.data.status === "done") {
+        emitOSBuddyEvent({ type: "habit:complete" });
+      }
     },
   });
 }
@@ -357,7 +364,13 @@ export function useStartTimerSession() {
   return useMutation({
     mutationFn: (input: CreateTimerSessionInput) =>
       timerSessionsRepository.create(input),
-    onSuccess: () => invalidateTimerQueries(queryClient),
+    onSuccess: (session) => {
+      invalidateTimerQueries(queryClient);
+      emitOSBuddyEvent({
+        type: "focus:start",
+        durationMinutes: Math.max(1, Math.round(session.target_duration_seconds / 60)),
+      });
+    },
   });
 }
 
@@ -365,7 +378,10 @@ export function usePauseTimerSession() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => timerSessionsRepository.pause(id),
-    onSuccess: () => invalidateTimerQueries(queryClient),
+    onSuccess: () => {
+      invalidateTimerQueries(queryClient);
+      emitOSBuddyEvent({ type: "focus:pause" });
+    },
   });
 }
 
@@ -373,7 +389,10 @@ export function useResumeTimerSession() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => timerSessionsRepository.resume(id),
-    onSuccess: () => invalidateTimerQueries(queryClient),
+    onSuccess: () => {
+      invalidateTimerQueries(queryClient);
+      emitOSBuddyEvent({ type: "focus:resume" });
+    },
   });
 }
 
@@ -381,7 +400,10 @@ export function useCompleteTimerSession() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => timerSessionsRepository.complete(id),
-    onSuccess: () => invalidateTimerQueries(queryClient),
+    onSuccess: () => {
+      invalidateTimerQueries(queryClient);
+      emitOSBuddyEvent({ type: "focus:complete" });
+    },
   });
 }
 
