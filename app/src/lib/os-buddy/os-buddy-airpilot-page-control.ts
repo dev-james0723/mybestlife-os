@@ -5,13 +5,29 @@ export const AIRPILOT_IGNORE_SELECTOR =
   '[data-airpilot-ignore="true"], .os-buddy-dock';
 export const AIRPILOT_TARGET_HIGHLIGHT_CLASS = "os-buddy-airpilot-target-highlight";
 
+const EXPLICIT_AIRPILOT_TARGET_SELECTOR = [
+  "[data-airpilot-target]",
+  "[data-airpilot-clickable]",
+  "[data-airpilot-selectable]",
+].join(",");
+
 const CLICKABLE_SELECTOR = [
   "button",
   "a[href]",
   "summary",
   '[role="button"]',
   '[role="link"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="tab"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  EXPLICIT_AIRPILOT_TARGET_SELECTOR,
+  ".cursor-pointer",
 ].join(",");
+
+const FORM_FIELD_SELECTOR = "input, textarea, select";
 
 const targetKeys = new WeakMap<HTMLElement, string>();
 let nextTargetKey = 1;
@@ -46,6 +62,12 @@ function isVisibleElement(element: HTMLElement) {
 export function isAirPilotSelectableElement(element: HTMLElement) {
   if (element.closest(AIRPILOT_IGNORE_SELECTOR)) return false;
   if (!element.matches(CLICKABLE_SELECTOR)) return false;
+  if (
+    element.matches(FORM_FIELD_SELECTOR) &&
+    !element.matches(EXPLICIT_AIRPILOT_TARGET_SELECTOR)
+  ) {
+    return false;
+  }
   if (isDisabledElement(element)) return false;
   if (!isVisibleElement(element)) return false;
 

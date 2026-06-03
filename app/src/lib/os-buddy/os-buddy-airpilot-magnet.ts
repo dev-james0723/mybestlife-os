@@ -11,8 +11,9 @@ export const AIRPILOT_MAGNET_DWELL_MS = 300;
 export const AIRPILOT_MAGNET_JITTER_PX = 24;
 export const AIRPILOT_MAGNET_ESCAPE_PX = 72;
 export const AIRPILOT_INDEX_TAP_ARM_MS = 80;
-export const AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD = 0.1;
-export const AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD = 0.18;
+export const AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD = 0.06;
+export const AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD = 0.11;
+export const AIRPILOT_INDEX_TAP_DELTA_THRESHOLD = 0.055;
 export const AIRPILOT_SELECTION_COOLDOWN_MS = 600;
 
 const HAND_LANDMARK_COUNT = 21;
@@ -335,10 +336,14 @@ function updateLocked(params: {
 
   const armed = now - tapArmedAt >= AIRPILOT_INDEX_TAP_ARM_MS && now >= wakeGuardUntil;
   const previousScore = previous.lastTapScore;
+  const risingTap =
+    indexTapScore != null &&
+    previousScore <= AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD &&
+    indexTapScore - previousScore >= AIRPILOT_INDEX_TAP_DELTA_THRESHOLD;
   const canSelect =
     armed &&
     indexTapScore != null &&
-    previousScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD &&
+    (previousScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD || risingTap) &&
     indexTapScore >= AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD;
 
   if (canSelect) {

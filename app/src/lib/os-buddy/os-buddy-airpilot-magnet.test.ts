@@ -5,6 +5,7 @@ import type {
 } from "./os-buddy-air-control-types";
 import {
   AIRPILOT_INDEX_TAP_ARM_MS,
+  AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD,
   AIRPILOT_MAGNET_DWELL_MS,
   AIRPILOT_MAGNET_ESCAPE_PX,
   createAirPilotMagnetMachine,
@@ -173,7 +174,20 @@ describe("AirPilot magnet state machine", () => {
 
     expect(selected.selectedPoint).toEqual(buttonA.center);
     expect(selected.selectState).toBe("tapping");
-    expect(selected.indexTapScore).toBeGreaterThan(0.18);
+    expect(selected.indexTapScore).toBeGreaterThan(AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD);
+  });
+
+  it("selects from a subtle index joint flick while locked", () => {
+    const locked = lockButtonA();
+    const selected = update({
+      previous: locked.state,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
+      hand: makeHand({ indexOffset: { y: 0.08 } }),
+    });
+
+    expect(selected.selectedPoint).toEqual(buttonA.center);
+    expect(selected.selectState).toBe("tapping");
+    expect(selected.indexTapScore).toBeGreaterThan(AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD);
   });
 
   it("does not select for whole-hand drift inside the locked range", () => {
@@ -205,12 +219,12 @@ describe("AirPilot magnet state machine", () => {
     const selected = update({
       previous: locked.state,
       now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
-      hand: makeHand({ indexOffset: { y: 0.18 } }),
+      hand: makeHand({ indexOffset: { y: 0.08 } }),
     });
     const repeated = update({
       previous: selected.state,
       now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 50,
-      hand: makeHand({ indexOffset: { y: 0.18 } }),
+      hand: makeHand({ indexOffset: { y: 0.08 } }),
     });
 
     expect(selected.selectedPoint).toEqual(buttonA.center);
