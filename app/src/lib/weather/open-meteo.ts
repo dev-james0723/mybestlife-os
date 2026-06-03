@@ -6,8 +6,8 @@
  * which is free for non-commercial use, needs no API key, and is
  * CORS-friendly.
  *
- *   - Forecast API     → current.uv_index
- *   - Air-Quality API  → current.us_aqi (US EPA 0-500 scale)
+ *   - Forecast API     -> current.uv_index
+ *   - Air-Quality API  -> current.us_aqi (US EPA 0-500 scale)
  *
  * In the browser we prefer the same-origin `/api/weather/supplements` proxy
  * (ad-blockers often block third-party weather APIs). Returns nulls on any
@@ -38,17 +38,20 @@ type FetchUvAirQualityOptions = {
   useProxy?: boolean;
 };
 
-/** Client entry — same-origin proxy, then direct Open-Meteo fallback. */
+const EMPTY_UV_AQI: UvAirQuality = {
+  uvIndex: null,
+  airQualityIndex: null,
+  aqiCategory: null,
+};
+
+/** Client entry: browser calls stay same-origin; server code calls upstream. */
 export async function fetchUvAndAirQuality(
   lat: number,
   lon: number,
   options: FetchUvAirQualityOptions = {},
 ): Promise<UvAirQuality> {
-  if (typeof window !== "undefined" && options.useProxy !== false) {
-    const proxied = await fetchUvAndAirQualityViaApi(lat, lon);
-    if (proxied.uvIndex != null || proxied.airQualityIndex != null) {
-      return proxied;
-    }
+  if (typeof window !== "undefined") {
+    return options.useProxy === false ? EMPTY_UV_AQI : fetchUvAndAirQualityViaApi(lat, lon);
   }
   return fetchUvAndAirQualityUpstream(lat, lon);
 }
@@ -79,7 +82,7 @@ async function fetchUvAndAirQualityViaApi(
     url.searchParams.set("lon", String(lon));
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) {
-      return { uvIndex: null, airQualityIndex: null, aqiCategory: null };
+      return EMPTY_UV_AQI;
     }
     const data = (await res.json()) as UvAirQuality;
     return {
@@ -88,7 +91,7 @@ async function fetchUvAndAirQualityViaApi(
       aqiCategory: data.aqiCategory ?? null,
     };
   } catch {
-    return { uvIndex: null, airQualityIndex: null, aqiCategory: null };
+    return EMPTY_UV_AQI;
   }
 }
 
