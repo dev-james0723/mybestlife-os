@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Bookmark, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,13 +48,9 @@ function builtInLabel(copy: TasksCenterUiCopy, id: BuiltInPresetId): string {
 }
 
 export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProps) {
-  const [custom, setCustom] = useState<TaskFilterPreset[]>([]);
+  const [custom, setCustom] = useState<TaskFilterPreset[]>(loadCustomPresets);
   const [saveOpen, setSaveOpen] = useState(false);
   const [name, setName] = useState("");
-
-  useEffect(() => {
-    setCustom(loadCustomPresets());
-  }, []);
 
   const canSave = hasActiveFilters(filter);
 
@@ -70,7 +66,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
         <Bookmark className="h-3.5 w-3.5" />
         {copy.savedFilters}
@@ -84,7 +80,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
             type="button"
             onClick={() => onApply(p.filter)}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs transition-colors",
+              "min-h-11 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border hover:bg-muted",
@@ -101,20 +97,24 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
           <span
             key={p.id}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-xs transition-colors",
+              "inline-flex min-h-11 items-center gap-1 rounded-xl border py-1 pl-3 pr-1 text-sm font-semibold transition-colors",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border hover:bg-muted",
             )}
           >
-            <button type="button" onClick={() => onApply(p.filter)}>
+            <button
+              type="button"
+              onClick={() => onApply(p.filter)}
+              className="min-h-9"
+            >
               {p.name}
             </button>
             <button
               type="button"
               onClick={() => handleDelete(p.id)}
               aria-label={copy.deletePresetAria}
-              className="rounded-full p-0.5 opacity-70 hover:bg-background/20 hover:opacity-100"
+              className="flex size-9 items-center justify-center rounded-lg opacity-70 hover:bg-background/20 hover:opacity-100"
             >
               <X className="h-3 w-3" />
             </button>
@@ -126,7 +126,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
         <Popover open={saveOpen} onOpenChange={setSaveOpen}>
           <PopoverTrigger
             render={
-              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" />
+              <Button variant="ghost" size="sm" className="min-h-11 gap-1 rounded-xl text-sm" />
             }
           >
             <Plus className="h-3.5 w-3.5" />
@@ -144,7 +144,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
             />
             <Button
               size="sm"
-              className="w-full"
+              className="min-h-11 w-full rounded-xl"
               onClick={handleSave}
               disabled={!name.trim()}
             >

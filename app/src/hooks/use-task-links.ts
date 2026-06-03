@@ -6,7 +6,7 @@
  * views, plus the mutations the detail panel uses to create links. Query keys
  * mirror the owning hooks so caches are shared, not duplicated.
  */
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   useMutation,
   useQuery,
@@ -18,6 +18,7 @@ import { useDailyPlans } from "@/hooks/use-daily-plans";
 import { useIdeas } from "@/hooks/use-ideas";
 import { habitLinksRepository } from "@/lib/repositories/habits";
 import { brainRelationsRepository } from "@/lib/brain/queries";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 import {
   addTaskToDailyPlan,
   buildTaskLinkIndex,
@@ -30,8 +31,21 @@ import {
 
 const LINK_STALE_MS = 60_000;
 
+const subscribeOptionalBrainRelationsApi = () => () => {};
+const getOptionalBrainRelationsApiClientSnapshot = () => !hasDevLoginBypassCookie();
+const getOptionalBrainRelationsApiServerSnapshot = () => false;
+
+function useOptionalBrainRelationsApiEnabled() {
+  return useSyncExternalStore(
+    subscribeOptionalBrainRelationsApi,
+    getOptionalBrainRelationsApiClientSnapshot,
+    getOptionalBrainRelationsApiServerSnapshot,
+  );
+}
+
 export function useTaskLinks(tasks: Task[] | undefined) {
   const queryClient = useQueryClient();
+  const optionalBrainRelationsApiEnabled = useOptionalBrainRelationsApiEnabled();
 
   const dailyPlans = useDailyPlans();
   const ideas = useIdeas();
@@ -45,6 +59,7 @@ export function useTaskLinks(tasks: Task[] | undefined) {
   const relations = useQuery({
     queryKey: ["brain", "relations"] as const,
     queryFn: () => brainRelationsRepository.list(),
+    enabled: optionalBrainRelationsApiEnabled,
     staleTime: LINK_STALE_MS,
   });
 
@@ -65,7 +80,10 @@ export function useTaskLinks(tasks: Task[] | undefined) {
     [index],
   );
 
-  const relationRows = relations.data ?? ([] as BrainRelationRow[]);
+  const relationRows = useMemo(
+    () => relations.data ?? ([] as BrainRelationRow[]),
+    [relations.data],
+  );
 
   const goalsForTask = useCallback(
     (taskId: string) => goalIdsForTask(relationRows, taskId),

@@ -84,9 +84,12 @@ export function FilterBar({
   const common = getCommonUiCopy(language);
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+    <div
+      data-slot="filter-bar"
+      className="flex flex-col gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055] sm:flex-row sm:flex-wrap sm:items-center"
+    >
       {search && (
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={
@@ -94,7 +97,7 @@ export function FilterBar({
             }
             value={search.value}
             onChange={(e) => search.onChange(e.target.value)}
-            className="pl-9"
+            className="h-11 min-h-11 rounded-[0.95rem] border-slate-200/80 bg-white/76 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-white/10 dark:bg-white/[0.06]"
           />
         </div>
       )}
@@ -107,7 +110,7 @@ export function FilterBar({
             if (value !== null) onFilterChange?.(filter.key, value);
           }}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[160px]">
             <SelectValue placeholder={filter.label} />
           </SelectTrigger>
           <SelectContent>
@@ -132,7 +135,7 @@ export function FilterBar({
             if (value !== null) sort.onChange(value);
           }}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[160px]">
             <ArrowUpDown className="h-4 w-4 mr-2" />
             <SelectValue
               placeholder={i18n?.sortPlaceholder ?? common.sortBy}
@@ -149,7 +152,7 @@ export function FilterBar({
       )}
 
       {viewModes && viewModes.length > 1 && (
-        <div className="flex items-center border rounded-lg p-1 ml-auto">
+        <div className="ml-auto flex w-full items-center gap-1 overflow-x-auto rounded-[1.15rem] border border-slate-200/70 bg-white/58 p-1 [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 dark:bg-white/[0.04] sm:w-auto [&::-webkit-scrollbar]:hidden">
           {viewModes.map((mode) => {
             const Icon = viewModeIcons[mode];
             return (
@@ -157,7 +160,7 @@ export function FilterBar({
                 key={mode}
                 variant={activeViewMode === mode ? "secondary" : "ghost"}
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-11 min-h-11 w-11 shrink-0 rounded-xl p-0"
                 onClick={() => onViewModeChange?.(mode)}
                 aria-label={common.switchToView(mode)}
               >

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
+import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import type { CreateTaskInput } from "@/lib/repositories/tasks";
 import type { TasksUiCopy } from "@/lib/i18n/tasks-ui";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
@@ -51,12 +51,13 @@ export function TaskCreateQuickForm({
           }
         }}
         placeholder={copy.placeholderTaskTitle}
+        className="h-11 min-h-11 rounded-xl"
       />
       <p className="text-xs text-muted-foreground">{centerCopy.quickAddHint}</p>
       <DialogFooter>
-        <Button onClick={submit} disabled={!title.trim() || isPending}>
+        <OSPrimaryAction onClick={submit} disabled={!title.trim() || isPending}>
           {isPending ? copy.creating : copy.createTask}
-        </Button>
+        </OSPrimaryAction>
       </DialogFooter>
     </div>
   );

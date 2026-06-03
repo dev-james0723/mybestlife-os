@@ -45,7 +45,7 @@ export function TaskProjectLinker({
         options.find((o) => o.value === v)?.label ?? String(v)
       }
     >
-      <SelectTrigger className="h-8 w-full">
+      <SelectTrigger className="h-11 min-h-11 w-full rounded-xl">
         <span className="flex items-center gap-1.5">
           <Folder className="h-3.5 w-3.5 text-muted-foreground" />
           <SelectValue placeholder={centerCopy.linkProject} />

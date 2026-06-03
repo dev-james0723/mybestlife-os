@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { CalendarPlus, Loader2, Target, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { OSControl } from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -58,9 +58,8 @@ export function TaskConnections({
       </p>
 
       <div className="space-y-1.5">
-        <Button
+        <OSControl
           variant="outline"
-          size="sm"
           className="w-full justify-start gap-2"
           onClick={onAddToPlan}
           disabled={addingToPlan}
@@ -71,7 +70,7 @@ export function TaskConnections({
             <CalendarPlus className="h-4 w-4" />
           )}
           {copy.addToTodayPlan}
-        </Button>
+        </OSControl>
         {task.scheduled_date && (
           <p className="pl-1 text-xs text-muted-foreground">
             {copy.scheduledForLabel} · {formatDate(task.scheduled_date)}
@@ -96,7 +95,7 @@ export function TaskConnections({
                 <button
                   type="button"
                   onClick={() => onUnlinkGoal(id)}
-                  className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                   aria-label={`${copy.goalUnlinkedToast}: ${goalName(id)}`}
                 >
                   <X className="h-3 w-3" />
@@ -108,7 +107,7 @@ export function TaskConnections({
 
         {linkable.length > 0 ? (
           <Select value="" onValueChange={(v) => v && onLinkGoal(v)}>
-            <SelectTrigger size="sm" className="w-full">
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-xl">
               <SelectValue placeholder={copy.linkGoalPlaceholder} />
             </SelectTrigger>
             <SelectContent>

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  OSDialogSurface,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import type { CreateTaskInput } from "@/lib/repositories/tasks";
 import type { TasksUiCopy } from "@/lib/i18n/tasks-ui";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
@@ -47,11 +49,6 @@ export function TaskCreateDialog({
 }: TaskCreateDialogProps) {
   const [mode, setMode] = useState<TaskCreateMode>(initialMode);
 
-  // Reset to the requested entry mode whenever the dialog (re)opens.
-  useEffect(() => {
-    if (open) setMode(initialMode);
-  }, [open, initialMode]);
-
   const generate = async (prompt: string): Promise<TaskDraft> => {
     if (onAiGenerate) return onAiGenerate(prompt);
     return buildLocalTaskDraft(prompt, copy);
@@ -71,7 +68,7 @@ export function TaskCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
+      <OSDialogSurface size="lg">
         <DialogHeader>
           <DialogTitle>{copy.createTask}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -79,20 +76,20 @@ export function TaskCreateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={mode}
-          onValueChange={(v) => setMode(v as TaskCreateMode)}
-          className="gap-4"
-        >
-          <TabsList className="w-full">
-            <TabsTrigger value="quick">{centerCopy.createTabQuick}</TabsTrigger>
-            <TabsTrigger value="manual">
-              {centerCopy.createTabManual}
-            </TabsTrigger>
-            <TabsTrigger value="ai">{centerCopy.createTabAi}</TabsTrigger>
-          </TabsList>
+        <div className="space-y-4">
+          <OSSegmentedControl<TaskCreateMode>
+            items={[
+              { id: "quick", label: centerCopy.createTabQuick },
+              { id: "manual", label: centerCopy.createTabManual },
+              { id: "ai", label: centerCopy.createTabAi },
+            ]}
+            value={mode}
+            onValueChange={setMode}
+            ariaLabel={copy.createTask}
+            layoutId="tasks-create-mode-pill"
+          />
 
-          <TabsContent value="quick">
+          {mode === "quick" ? (
             <TaskCreateQuickForm
               defaultProjectId={defaultProjectId}
               onSubmit={onCreate}
@@ -100,9 +97,9 @@ export function TaskCreateDialog({
               copy={copy}
               centerCopy={centerCopy}
             />
-          </TabsContent>
+          ) : null}
 
-          <TabsContent value="manual">
+          {mode === "manual" ? (
             <TaskCreateManualForm
               projects={projects}
               defaultProjectId={defaultProjectId}
@@ -111,9 +108,9 @@ export function TaskCreateDialog({
               copy={copy}
               centerCopy={centerCopy}
             />
-          </TabsContent>
+          ) : null}
 
-          <TabsContent value="ai">
+          {mode === "ai" ? (
             <TaskCreateAiForm
               projects={projects}
               defaultProjectId={defaultProjectId}
@@ -123,9 +120,9 @@ export function TaskCreateDialog({
               copy={copy}
               centerCopy={centerCopy}
             />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+          ) : null}
+        </div>
+      </OSDialogSurface>
     </Dialog>
   );
 }

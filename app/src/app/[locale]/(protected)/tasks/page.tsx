@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingPage } from "@/components/shared/loading-state";
+import { LoadingCards } from "@/components/shared/loading-state";
 import { PreTaskRitualModal } from "@/components/tasks/pre-task-ritual-modal";
 import { CheckSquare, Zap, FileEdit, Sparkles, BarChart3 } from "lucide-react";
 import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
@@ -84,6 +84,22 @@ const VALID_GROUP_BYS: TaskGroupBy[] = [
   "deadline",
 ];
 
+function readStoredTaskViewMode(): TaskViewMode {
+  if (typeof window === "undefined") return "list";
+  const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+  return stored && (VALID_VIEW_MODES as string[]).includes(stored)
+    ? (stored as TaskViewMode)
+    : "list";
+}
+
+function readStoredBoardGroupBy(): TaskGroupBy {
+  if (typeof window === "undefined") return "status";
+  const stored = window.localStorage.getItem(BOARD_GROUP_STORAGE_KEY);
+  return stored && (VALID_GROUP_BYS as string[]).includes(stored)
+    ? (stored as TaskGroupBy)
+    : "status";
+}
+
 // ---------------------------------------------------------------------------
 // TasksPage
 // ---------------------------------------------------------------------------
@@ -110,8 +126,10 @@ export default function TasksPage() {
   const [filter, setFilter] = useState<TaskFilterState>(EMPTY_TASK_FILTER);
   const [sortKey, setSortKey] = useState<TaskSortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [viewMode, setViewMode] = useState<TaskViewMode>("list");
-  const [boardGroupBy, setBoardGroupBy] = useState<TaskGroupBy>("status");
+  const [viewMode, setViewMode] = useState<TaskViewMode>(readStoredTaskViewMode);
+  const [boardGroupBy, setBoardGroupBy] = useState<TaskGroupBy>(
+    readStoredBoardGroupBy,
+  );
 
   const [showCreate, setShowCreate] = useState(false);
   const [createMode, setCreateMode] = useState<TaskCreateMode>("manual");
@@ -120,19 +138,6 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showRitual, setShowRitual] = useState(false);
-
-  // Persist view mode + board grouping across sessions.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    if (stored && (VALID_VIEW_MODES as string[]).includes(stored)) {
-      setViewMode(stored as TaskViewMode);
-    }
-    const storedGroup = window.localStorage.getItem(BOARD_GROUP_STORAGE_KEY);
-    if (storedGroup && (VALID_GROUP_BYS as string[]).includes(storedGroup)) {
-      setBoardGroupBy(storedGroup as TaskGroupBy);
-    }
-  }, []);
 
   const handleViewModeChange = useCallback((mode: TaskViewMode) => {
     setViewMode(mode);
@@ -148,7 +153,7 @@ export default function TasksPage() {
     }
   }, []);
 
-  const now = useMemo(() => new Date(), [tasks]);
+  const [now] = useState(() => new Date());
 
   const { getLinkFlags } = taskLinks;
 
@@ -437,6 +442,11 @@ export default function TasksPage() {
     setTimeout(() => setShowRitual(true), 150);
   };
 
+  const handleDetailOpenChange = useCallback((open: boolean) => {
+    setShowDetail(open);
+    if (!open) setSelectedTask(null);
+  }, []);
+
   const handleBeginTask = () => {
     if (selectedTask) {
       toast.success(ui.toastFocusStarted(selectedTask.title));
@@ -486,7 +496,38 @@ export default function TasksPage() {
     [taskLinks.unlinkGoal, centerUi],
   );
 
-  if (isLoading) return <LoadingPage />;
+  if (isLoading) {
+    return (
+      <PageShell
+        title={ui.pageTitle}
+        description={ui.pageDescription}
+        actions={
+          <>
+            <OSControl aria-label={centerUi.openInsights} disabled>
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">{centerUi.openInsights}</span>
+            </OSControl>
+            <OSPrimaryAction disabled>
+              <CheckSquare className="h-4 w-4" />
+              {ui.newTask}
+            </OSPrimaryAction>
+          </>
+        }
+      >
+        <div className="space-y-4" aria-busy="true" aria-live="polite">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-[84px] animate-pulse rounded-xl border border-slate-200/70 bg-slate-200/35 dark:border-white/10 dark:bg-white/[0.055]"
+              />
+            ))}
+          </div>
+          <LoadingCards count={4} columns={2} />
+        </div>
+      </PageShell>
+    );
+  }
 
   const viewProps = {
     tasks: filteredTasks,
@@ -506,6 +547,7 @@ export default function TasksPage() {
         actions={
           <>
             <OSControl
+              aria-label={centerUi.openInsights}
               onClick={() => setShowInsights(true)}
             >
               <BarChart3 className="h-4 w-4" />
@@ -605,6 +647,7 @@ export default function TasksPage() {
       </PageShell>
 
       <TaskCreateDialog
+        key={showCreate ? createMode : "closed"}
         open={showCreate}
         onOpenChange={setShowCreate}
         projects={projects}
@@ -640,9 +683,10 @@ export default function TasksPage() {
       />
 
       <TaskDetailPanel
+        key={selectedTask?.id ?? "empty-task-detail"}
         task={selectedTask}
         open={showDetail}
-        onOpenChange={setShowDetail}
+        onOpenChange={handleDetailOpenChange}
         projects={projects}
         onUpdate={handleInlineUpdate}
         onDelete={handleDelete}

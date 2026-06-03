@@ -30,11 +30,20 @@ export function EntityCard({
   return (
     <Card
       className={cn(
-        "transition-all",
-        onClick && "cursor-pointer hover:shadow-md",
+        "rounded-2xl border-slate-200/80 bg-white/86 shadow-[0_10px_30px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.68)] transition-[border-color,background,transform,box-shadow] duration-150 dark:border-white/10 dark:bg-white/[0.055]",
+        onClick &&
+          "cursor-pointer hover:border-lime-300/40 hover:bg-white/94 hover:shadow-[0_14px_34px_rgba(15,23,42,0.1),inset_0_1px_0_rgba(255,255,255,0.72)] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:hover:bg-white/[0.08]",
         className
       )}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        onClick();
+      }}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">

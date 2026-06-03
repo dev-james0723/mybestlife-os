@@ -335,11 +335,11 @@ export function OSBuddyAirControlOverlay({
                 <Hand className="size-3.5" aria-hidden="true" />
                 <span>AirPilot Debug</span>
               </span>
-	              <button
-	                type="button"
-	                onClick={() => setDebugEnabled(!debugEnabled)}
-	                className="min-h-11 rounded bg-muted px-3 py-2 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-	              >
+              <button
+                type="button"
+                onClick={() => setDebugEnabled(!debugEnabled)}
+                className="min-h-11 rounded bg-muted px-3 py-2 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              >
                 {debugEnabled ? (zh ? "隱藏" : "Hide") : zh ? "顯示" : "Pin"}
               </button>
             </div>
@@ -354,12 +354,22 @@ export function OSBuddyAirControlOverlay({
               <dd className="truncate text-foreground">{debugState.gesture ?? "None"}</dd>
               <dt>Pinch</dt>
               <dd className="truncate text-foreground">{debugState.pinchState}</dd>
+              <dt>Magnet</dt>
+              <dd className="truncate text-foreground">{debugState.magnetPhase}</dd>
+              <dt>Target</dt>
+              <dd className="truncate text-foreground">{debugState.magnetTargetLabel ?? "None"}</dd>
               <dt>Confidence</dt>
               <dd className="text-foreground">{debugState.confidence.toFixed(2)}</dd>
               <dt>Cursor</dt>
               <dd className="text-foreground">
                 {debugState.fingertip
                   ? `${Math.round(debugState.fingertip.x)}, ${Math.round(debugState.fingertip.y)}`
+                  : "none"}
+              </dd>
+              <dt>Raw</dt>
+              <dd className="text-foreground">
+                {debugState.rawCursor
+                  ? `${Math.round(debugState.rawCursor.x)}, ${Math.round(debugState.rawCursor.y)}`
                   : "none"}
               </dd>
               <dt>Landmarks</dt>

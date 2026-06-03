@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { BarChart3, ListChecks, Sparkles } from "lucide-react";
 import {
   Sheet,
-  SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import {
+  OSBottomSheet,
+  OSSegmentedControl,
+} from "@/components/ui/os-primitives";
 import type { Task } from "@/types/database";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { TasksUiCopy } from "@/lib/i18n/tasks-ui";
@@ -48,6 +49,26 @@ export function TaskInsightPanel({
   >({ summary: null, "weekly-review": null });
 
   const analytics = useMemo(() => computeTaskAnalytics(tasks), [tasks]);
+  const insightTabs = useMemo(
+    () => [
+      {
+        id: "rule" as const,
+        label: centerCopy.insightRuleBased,
+        icon: ListChecks,
+      },
+      {
+        id: "summary" as const,
+        label: centerCopy.insightAiSummary,
+        icon: Sparkles,
+      },
+      {
+        id: "weekly-review" as const,
+        label: centerCopy.insightWeeklyReview,
+        icon: Sparkles,
+      },
+    ],
+    [centerCopy],
+  );
 
   const ruleInsight = useMemo<TaskReviewAiResult>(
     () => buildLocalTaskInsight(analytics, locale, centerCopy),
@@ -85,57 +106,27 @@ export function TaskInsightPanel({
           source: ai[mode]?.source,
         };
 
-  const TabButton = ({
-    value,
-    icon: Icon,
-    label,
-    onClick,
-  }: {
-    value: InsightMode;
-    icon: typeof Sparkles;
-    label: string;
-    onClick: () => void;
-  }) => (
-    <Button
-      type="button"
-      size="sm"
-      variant={mode === value ? "default" : "outline"}
-      className={cn("h-8 gap-1.5 text-xs", mode === value && "shadow-sm")}
-      onClick={onClick}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {label}
-    </Button>
-  );
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md">
+      <OSBottomSheet side="right" className="w-full sm:max-w-md">
         <SheetHeader className="gap-3">
           <SheetTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             {centerCopy.insightsTitle}
           </SheetTitle>
-          <div className="flex flex-wrap gap-2">
-            <TabButton
-              value="rule"
-              icon={ListChecks}
-              label={centerCopy.insightRuleBased}
-              onClick={() => setMode("rule")}
-            />
-            <TabButton
-              value="summary"
-              icon={Sparkles}
-              label={centerCopy.insightAiSummary}
-              onClick={() => runAi("summary")}
-            />
-            <TabButton
-              value="weekly-review"
-              icon={Sparkles}
-              label={centerCopy.insightWeeklyReview}
-              onClick={() => runAi("weekly-review")}
-            />
-          </div>
+          <OSSegmentedControl
+            items={insightTabs}
+            value={mode}
+            onValueChange={(next) => {
+              if (next === "rule") {
+                setMode(next);
+              } else {
+                void runAi(next);
+              }
+            }}
+            ariaLabel={centerCopy.insightsTitle}
+            layoutId="tasks-insight-mode-pill"
+          />
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-6">
@@ -161,7 +152,7 @@ export function TaskInsightPanel({
             />
           </div>
         </div>
-      </SheetContent>
+      </OSBottomSheet>
     </Sheet>
   );
 }

@@ -252,7 +252,7 @@ export function OSSegmentedControl<T extends string>({
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
             }}
             className={cn(
-              "relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[1rem] px-3 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
+              "relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-[1rem] px-3 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
               active
                 ? "text-slate-950"
                 : "text-slate-700 hover:text-slate-950 dark:text-white/64 dark:hover:text-white",

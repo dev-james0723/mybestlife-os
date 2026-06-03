@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -12,10 +12,10 @@ import {
   X,
 } from "lucide-react";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { OSControl } from "@/components/ui/os-primitives";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
   Select,
@@ -30,7 +30,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -114,6 +113,19 @@ function defaultVisibility(): Record<ColumnKey, boolean> {
   };
 }
 
+function readStoredVisibility(): Record<ColumnKey, boolean> {
+  const fallback = defaultVisibility();
+  if (typeof window === "undefined") return fallback;
+  const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as Partial<Record<ColumnKey, boolean>>;
+    return { ...fallback, ...parsed };
+  } catch {
+    return fallback;
+  }
+}
+
 function columnLabel(key: ColumnKey, centerCopy: TasksCenterUiCopy): string {
   switch (key) {
     case "project":
@@ -160,7 +172,7 @@ function SortHeader({
       type="button"
       onClick={() => onColumnSort(mapped)}
       className={cn(
-        "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+        "inline-flex min-h-11 items-center gap-1 rounded-lg transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60",
         active && "text-foreground",
         className,
       )}
@@ -202,7 +214,7 @@ function InlineSelect({
       }
     >
       <SelectTrigger
-        className="h-7 border-0 bg-transparent px-1 shadow-none hover:bg-muted/60 focus:ring-0 [&>svg]:opacity-0 hover:[&>svg]:opacity-60"
+        className="h-11 min-h-11 rounded-xl border-0 bg-transparent px-2 shadow-none hover:bg-muted/60 focus:ring-0 [&>svg]:opacity-0 hover:[&>svg]:opacity-60"
         onClick={(e) => e.stopPropagation()}
       >
         <SelectValue>
@@ -237,24 +249,11 @@ export function TaskTableView({
 }: TaskTableViewProps) {
   void getLinkFlags;
   const [visible, setVisible] = useState<Record<ColumnKey, boolean>>(
-    defaultVisibility,
+    readStoredVisibility,
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
-
-  // Restore persisted column visibility.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as Partial<Record<ColumnKey, boolean>>;
-      setVisible((prev) => ({ ...prev, ...parsed }));
-    } catch {
-      // ignore malformed storage
-    }
-  }, []);
 
   const toggleColumn = (key: ColumnKey) => {
     setVisible((prev) => {
@@ -266,21 +265,6 @@ export function TaskTableView({
     });
   };
 
-  // Drop selections that are no longer present (e.g. after a delete/filter).
-  useEffect(() => {
-    setSelected((prev) => {
-      if (prev.size === 0) return prev;
-      const ids = new Set(tasks.map((t) => t.id));
-      let changed = false;
-      const next = new Set<string>();
-      for (const id of prev) {
-        if (ids.has(id)) next.add(id);
-        else changed = true;
-      }
-      return changed ? next : prev;
-    });
-  }, [tasks]);
-
   const statusOptions = useMemo(() => getTaskStatusOptions(copy), [copy]);
   const priorityOptions = useMemo(() => getTaskPriorityOptions(copy), [copy]);
   const projectOptions = useMemo(
@@ -291,8 +275,13 @@ export function TaskTableView({
     [projects, centerCopy.projectNone],
   );
 
-  const allSelected = tasks.length > 0 && selected.size === tasks.length;
-  const someSelected = selected.size > 0 && !allSelected;
+  const taskIds = useMemo(() => new Set(tasks.map((task) => task.id)), [tasks]);
+  const activeSelected = useMemo(
+    () => new Set([...selected].filter((id) => taskIds.has(id))),
+    [selected, taskIds],
+  );
+  const allSelected = tasks.length > 0 && activeSelected.size === tasks.length;
+  const someSelected = activeSelected.size > 0 && !allSelected;
 
   const toggleAll = () => {
     setSelected(allSelected ? new Set() : new Set(tasks.map((t) => t.id)));
@@ -310,12 +299,12 @@ export function TaskTableView({
   const clearSelection = () => setSelected(new Set());
 
   const applyBulk = (patch: TaskFieldPatch) => {
-    if (selected.size === 0) return;
-    onBulkUpdate([...selected], patch);
+    if (activeSelected.size === 0) return;
+    onBulkUpdate([...activeSelected], patch);
   };
 
   const handleBulkDelete = () => {
-    onBulkDelete([...selected]);
+    onBulkDelete([...activeSelected]);
     clearSelection();
   };
 
@@ -337,10 +326,10 @@ export function TaskTableView({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        {selected.size > 0 ? (
+        {activeSelected.size > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">
-              {centerCopy.bulkSelected(selected.size)}
+              {centerCopy.bulkSelected(activeSelected.size)}
             </span>
             <BulkMenu
               label={centerCopy.bulkSetStatus}
@@ -359,19 +348,18 @@ export function TaskTableView({
                 applyBulk({ project_id: v === NO_PROJECT_FILTER ? null : v })
               }
             />
-            <Button
+            <OSControl
               variant="ghost"
-              size="sm"
               className="text-destructive hover:text-destructive"
               onClick={handleBulkDelete}
             >
               <Trash2 className="h-4 w-4" />
               {centerCopy.bulkDelete}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
+            </OSControl>
+            <OSControl variant="ghost" onClick={clearSelection}>
               <X className="h-4 w-4" />
               {centerCopy.bulkClear}
-            </Button>
+            </OSControl>
           </div>
         ) : (
           <span />
@@ -379,7 +367,7 @@ export function TaskTableView({
 
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="outline" size="sm" />}
+            render={<OSControl variant="outline" />}
             aria-label={centerCopy.columns}
           >
             <Columns3 className="h-4 w-4" />
@@ -498,7 +486,7 @@ export function TaskTableView({
             <tbody>
               {tasks.map((task) => {
                 const vm = toTaskViewModel(task, now);
-                const isSelected = selected.has(task.id);
+                const isSelected = activeSelected.has(task.id);
                 return (
                   <tr
                     key={task.id}
@@ -523,7 +511,7 @@ export function TaskTableView({
                         <Input
                           value={draftTitle}
                           autoFocus
-                          className="h-7"
+                          className="h-11 min-h-11 rounded-xl"
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setDraftTitle(e.target.value)}
                           onBlur={() => commitTitle(task)}
@@ -679,7 +667,7 @@ function BulkMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+      <DropdownMenuTrigger render={<OSControl variant="outline" />}>
         {label}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

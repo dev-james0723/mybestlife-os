@@ -19,12 +19,16 @@ import {
 } from "@/lib/os-buddy/os-buddy-air-smoothing";
 import {
   AIRPILOT_WAKE_GUARD_MS,
-  createAirPilotPinchMachine,
   getAirPilotPalmCenter,
   getAirPilotThumbIndexRatio,
-  updateAirPilotPinchMachine,
-  type AirPilotPinchMachine,
 } from "@/lib/os-buddy/os-buddy-airpilot-pinch";
+import {
+  AIRPILOT_MAGNET_RADIUS_PX,
+  createAirPilotMagnetMachine,
+  updateAirPilotMagnetMachine,
+  type AirPilotMagnetMachine,
+} from "@/lib/os-buddy/os-buddy-airpilot-magnet";
+import { resolveNearestAirPilotMagnetTarget } from "@/lib/os-buddy/os-buddy-airpilot-page-control";
 import type { CalibrationData } from "@/lib/os-buddy/air-control/types";
 import type {
   OSBuddyAirControlCommand,
@@ -195,7 +199,7 @@ export function useOSBuddyAirControl({
   const activeRef = useRef(airPilotActive);
   const wakeListeningRef = useRef(wakeListening);
   const wakeGuardUntilRef = useRef(0);
-  const pinchMachineRef = useRef<AirPilotPinchMachine>(createAirPilotPinchMachine());
+  const magnetMachineRef = useRef<AirPilotMagnetMachine>(createAirPilotMagnetMachine());
   const previousPalmPointRef = useRef<OSBuddyAirControlPoint | null>(null);
   const dockBoxRef = useRef({ dockPoint, buddyBox });
   const sensorModeRef = useRef<OSBuddyAirControlSensorMode>(sensorMode);
@@ -212,6 +216,9 @@ export function useOSBuddyAirControl({
     quality: "uncalibrated",
     latencyMs: 0,
     pinchState: "tracking",
+    magnetPhase: "tracking",
+    magnetTargetLabel: undefined,
+    rawCursor: null,
     landmarks: [],
     fps: 0,
   });
@@ -242,7 +249,7 @@ export function useOSBuddyAirControl({
 
     if (airPilotActive && !wasActive) {
       wakeGuardUntilRef.current = performance.now() + AIRPILOT_WAKE_GUARD_MS;
-      pinchMachineRef.current = createAirPilotPinchMachine();
+      magnetMachineRef.current = createAirPilotMagnetMachine();
       previousPalmPointRef.current = null;
       useOSBuddyStore.getState().setAirPilotPinchState("tracking");
       useOSBuddyStore.getState().setAirTouchState("tracking");
@@ -250,7 +257,7 @@ export function useOSBuddyAirControl({
 
     if (!airPilotActive) {
       cursorSmootherRef.current.reset();
-      pinchMachineRef.current = createAirPilotPinchMachine();
+      magnetMachineRef.current = createAirPilotMagnetMachine();
       previousPalmPointRef.current = null;
       useOSBuddyStore.getState().setAirControlTarget(null);
       useOSBuddyStore.getState().setAirControlLandmarks([]);
@@ -315,6 +322,7 @@ export function useOSBuddyAirControl({
       frame: OSBuddyAirControlFrame;
       gesture: OSBuddyAirControlGesture | null;
       target: OSBuddyAirControlPoint | null;
+      rawCursor?: OSBuddyAirControlPoint | null;
       now: number;
       latencyMs: number;
       pinchState?: OSBuddyAirControlDebugState["pinchState"];
@@ -323,6 +331,8 @@ export function useOSBuddyAirControl({
       fpsWindow.push(params.now);
       fpsWindowRef.current = fpsWindow;
       const storeState = useOSBuddyStore.getState();
+      const magnet = magnetMachineRef.current;
+      const magnetTarget = magnet.lockedTarget ?? magnet.candidateTarget;
 
       setDebugState({
         handCount: params.frame.handCount,
@@ -335,7 +345,10 @@ export function useOSBuddyAirControl({
         sensorMode: sensorModeRef.current,
         quality: storeState.airControlQuality,
         latencyMs: params.latencyMs,
-        pinchState: params.pinchState ?? pinchMachineRef.current.phase,
+        pinchState: params.pinchState ?? "tracking",
+        magnetPhase: magnet.phase,
+        magnetTargetLabel: magnetTarget?.label,
+        rawCursor: params.rawCursor ?? params.target,
         landmarks: params.frame.primaryHand?.landmarks ?? [],
         fps: fpsWindow.length,
       });
@@ -353,7 +366,7 @@ export function useOSBuddyAirControl({
       state.setAirControlLandmarks([]);
       state.setAirControlTarget(null);
       state.setAirPilotPinchState("tracking");
-      pinchMachineRef.current = createAirPilotPinchMachine();
+      magnetMachineRef.current = createAirPilotMagnetMachine();
       previousPalmPointRef.current = null;
 
       if (!activeRef.current) {
@@ -413,6 +426,7 @@ export function useOSBuddyAirControl({
       gesture: OSBuddyAirControlGesture;
       primaryHand: OSBuddyAirControlHand;
       cursor: OSBuddyAirControlPoint | null;
+      rawCursor: OSBuddyAirControlPoint | null;
       now: number;
       latencyMs: number;
     }) => {
@@ -425,42 +439,60 @@ export function useOSBuddyAirControl({
         closedFistSinceRef.current = null;
       }
 
+      let displayCursor: OSBuddyAirControlPoint | null = params.cursor;
+      let pinchState: OSBuddyAirControlDebugState["pinchState"] = "tracking";
+
       if (params.cursor) {
-        state.setAirControlTarget(params.cursor);
         const thumbIndexRatio = getAirPilotThumbIndexRatio(params.primaryHand);
-        const pinchUpdate = updateAirPilotPinchMachine({
-          previous: pinchMachineRef.current,
+        const magnetTarget = resolveNearestAirPilotMagnetTarget(
+          params.cursor,
+          AIRPILOT_MAGNET_RADIUS_PX,
+        );
+        const magnetUpdate = updateAirPilotMagnetMachine({
+          previous: magnetMachineRef.current,
           now: params.now,
-          cursor: params.cursor,
+          rawCursor: params.rawCursor ?? params.cursor,
+          target: magnetTarget,
           thumbIndexRatio,
           wakeGuardUntil: wakeGuardUntilRef.current,
         });
-        pinchMachineRef.current = pinchUpdate.state;
-        state.setAirPilotPinchState(pinchUpdate.state.phase);
-        emitCommand(
-          {
-            type: "page-cursor",
-            point: params.cursor,
-            gesture: params.gesture,
-            pinchState: pinchUpdate.state.phase,
-          },
-          params.now,
-        );
+        magnetMachineRef.current = magnetUpdate.state;
+        displayCursor = magnetUpdate.cursor;
+        pinchState = magnetUpdate.pinchState;
 
-        if (pinchUpdate.selectedPoint) {
+        if (displayCursor) {
+          state.setAirControlTarget(displayCursor);
+          state.setAirPilotPinchState(pinchState);
           emitCommand(
             {
-              type: "page-select",
-              point: pinchUpdate.selectedPoint,
+              type: "page-cursor",
+              point: displayCursor,
               gesture: params.gesture,
-              pinchState: pinchUpdate.state.phase,
+              pinchState,
             },
             params.now,
           );
         }
+        if (magnetUpdate.selectedPoint) {
+          emitCommand(
+            {
+              type: "page-select",
+              point: magnetUpdate.selectedPoint,
+              gesture: params.gesture,
+              pinchState,
+            },
+            params.now,
+          );
+        }
+      } else {
+        magnetMachineRef.current = createAirPilotMagnetMachine();
+        state.setAirControlTarget(null);
+        state.setAirPilotPinchState("tracking");
       }
 
-      if (params.gesture === "Open_Palm") {
+      const magnetLocked = magnetMachineRef.current.phase === "locked";
+
+      if (!magnetLocked && params.gesture === "Open_Palm") {
         const palmPoint = mapHandPointToViewport({
           point: getAirPilotPalmCenter(params.primaryHand),
           viewport,
@@ -474,7 +506,7 @@ export function useOSBuddyAirControl({
             emitCommand(
               {
                 type: "page-scroll",
-                point: params.cursor ?? palmPoint,
+                point: displayCursor ?? palmPoint,
                 deltaY,
                 gesture: params.gesture,
               },
@@ -499,10 +531,11 @@ export function useOSBuddyAirControl({
       updateDebug({
         frame: params.frame,
         gesture: params.gesture,
-        target: params.cursor,
+        target: displayCursor,
+        rawCursor: params.rawCursor,
         now: params.now,
         latencyMs: params.latencyMs,
-        pinchState: pinchMachineRef.current.phase,
+        pinchState,
       });
     };
 
@@ -549,7 +582,7 @@ export function useOSBuddyAirControl({
         return;
       }
 
-      handleAirPilotFrame({ frame, gesture, primaryHand, cursor, now, latencyMs });
+      handleAirPilotFrame({ frame, gesture, primaryHand, cursor, rawCursor, now, latencyMs });
       previousFrameRef.current = frame;
     };
 
@@ -574,7 +607,7 @@ export function useOSBuddyAirControl({
       closedFistSinceRef.current = null;
       cursorSmootherRef.current.reset();
       stableGestureRef.current.reset();
-      pinchMachineRef.current = createAirPilotPinchMachine();
+      magnetMachineRef.current = createAirPilotMagnetMachine();
       previousPalmPointRef.current = null;
       useOSBuddyStore.getState().setAirControlTarget(null);
       useOSBuddyStore.getState().setAirControlRawPoint(null);
@@ -684,17 +717,27 @@ export function useOSBuddyAirControl({
           "@mediapipe/tasks-vision"
         );
         const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
-        const recognizer = await GestureRecognizerTask.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: GESTURE_MODEL_URL,
-            delegate: "GPU",
-          },
-          runningMode: "VIDEO",
+        const recognizerOptions = {
+          runningMode: "VIDEO" as const,
           numHands: 2,
           minHandDetectionConfidence: 0.5,
           minHandPresenceConfidence: 0.5,
           minTrackingConfidence: 0.5,
-        });
+        };
+        const createRecognizer = (delegate: "GPU" | "CPU") =>
+          GestureRecognizerTask.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: GESTURE_MODEL_URL,
+              delegate,
+            },
+            ...recognizerOptions,
+          });
+        let recognizer: GestureRecognizer;
+        try {
+          recognizer = await createRecognizer("GPU");
+        } catch {
+          recognizer = await createRecognizer("CPU");
+        }
         if (cancelled) {
           recognizer.close();
           return;

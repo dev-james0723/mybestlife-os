@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   clickAirPilotTarget,
+  getAirPilotTargetCenter,
+  resolveNearestAirPilotMagnetTarget,
   resolveAirPilotTargetAtPoint,
   setAirPilotHighlightedTarget,
 } from "./os-buddy-airpilot-page-control";
@@ -26,6 +28,8 @@ class FakeElement {
   classList = new FakeClassList();
   clicked = false;
   focused = false;
+  textContent = "";
+  tagName = "BUTTON";
 
   constructor(
     private readonly options: {
@@ -33,8 +37,22 @@ class FakeElement {
       closestIgnore?: boolean;
       disabled?: boolean;
       hidden?: boolean;
+      rect?: { left: number; top: number; width: number; height: number };
+      label?: string;
     } = {},
-  ) {}
+  ) {
+    this.textContent = options.label ?? "";
+    this.tagName =
+      options.selector === "a[href]"
+        ? "A"
+        : options.selector === "input"
+          ? "INPUT"
+          : options.selector === "textarea"
+            ? "TEXTAREA"
+            : options.selector === "select"
+              ? "SELECT"
+              : "BUTTON";
+  }
 
   matches(selector: string) {
     return Boolean(this.options.selector && selector.includes(this.options.selector));
@@ -49,12 +67,25 @@ class FakeElement {
 
   getAttribute(name: string) {
     if (name === "aria-disabled" && this.options.disabled) return "true";
+    if (name === "aria-label") return this.options.label ?? null;
+    if (name === "title") return null;
     if (name === "tabindex") return null;
     return null;
   }
 
+  getBoundingClientRect() {
+    const rect = this.options.rect ?? { left: 0, top: 0, width: 10, height: 10 };
+    return {
+      ...rect,
+      x: rect.left,
+      y: rect.top,
+      right: rect.left + rect.width,
+      bottom: rect.top + rect.height,
+    };
+  }
+
   getClientRects() {
-    return this.options.hidden ? [] : [{ width: 10, height: 10 }];
+    return this.options.hidden ? [] : [this.getBoundingClientRect()];
   }
 
   focus() {
@@ -86,6 +117,7 @@ function installDom(elements: FakeElement[]) {
   Object.defineProperty(globalThis, "document", {
     value: {
       elementsFromPoint: () => elements,
+      querySelectorAll: () => elements,
     },
     configurable: true,
   });
@@ -133,5 +165,56 @@ describe("AirPilot page control", () => {
     expect(current).toBe(next);
     expect(previous.classList.has("os-buddy-airpilot-target-highlight")).toBe(false);
     expect(next.classList.has("os-buddy-airpilot-target-highlight")).toBe(true);
+  });
+
+  it("resolves the nearest clickable magnet target inside the radius", () => {
+    const far = new FakeElement({
+      selector: "button",
+      rect: { left: 200, top: 100, width: 40, height: 40 },
+      label: "Far",
+    });
+    const near = new FakeElement({
+      selector: "button",
+      rect: { left: 90, top: 90, width: 40, height: 40 },
+      label: "Near",
+    });
+    installDom([far, near]);
+
+    const target = resolveNearestAirPilotMagnetTarget({ x: 82, y: 110 }, 48);
+
+    expect(target?.element).toBe(near);
+    expect(target?.center).toEqual({ x: 110, y: 110 });
+    expect(target?.label).toBe("Near");
+  });
+
+  it("excludes hidden, disabled, ignored, and form-only elements from magnet targets", () => {
+    const hidden = new FakeElement({ selector: "button", hidden: true });
+    const disabled = new FakeElement({ selector: "button", disabled: true });
+    const ignored = new FakeElement({ selector: "button", closestIgnore: true });
+    const input = new FakeElement({ selector: "input" });
+    const textarea = new FakeElement({ selector: "textarea" });
+    const select = new FakeElement({ selector: "select" });
+    const tabindexOnly = new FakeElement({ selector: "[tabindex]" });
+    installDom([hidden, disabled, ignored, input, textarea, select, tabindexOnly]);
+
+    expect(resolveNearestAirPilotMagnetTarget({ x: 4, y: 4 }, 48)).toBeNull();
+  });
+
+  it("returns the center for clickable targets only", () => {
+    const button = new FakeElement({
+      selector: "button",
+      rect: { left: 10, top: 20, width: 80, height: 30 },
+    });
+    const input = new FakeElement({
+      selector: "input",
+      rect: { left: 10, top: 20, width: 80, height: 30 },
+    });
+    installDom([button, input]);
+
+    expect(getAirPilotTargetCenter(button as unknown as HTMLElement)).toEqual({
+      x: 50,
+      y: 35,
+    });
+    expect(getAirPilotTargetCenter(input as unknown as HTMLElement)).toBeNull();
   });
 });

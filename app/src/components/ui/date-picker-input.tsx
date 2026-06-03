@@ -69,7 +69,7 @@ export function DatePickerInput({
         setVisibleMonth(startOfMonth(parsed ?? new Date()));
       }
     },
-    [parsed],
+    [parsed, setOpen, setVisibleMonth],
   );
 
   const monthStart = startOfMonth(visibleMonth);
@@ -86,7 +86,7 @@ export function DatePickerInput({
       onChange(format(day, "yyyy-MM-dd"));
       setOpen(false);
     },
-    [onChange],
+    [onChange, setOpen],
   );
 
   const resolvedPlaceholder = placeholder ?? ui.pickDate;
@@ -99,7 +99,7 @@ export function DatePickerInput({
             type="button"
             disabled={disabled}
             className={cn(
-              "flex h-8 w-full min-w-0 items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1 text-left text-sm transition-colors outline-none",
+              "flex h-11 min-h-11 w-full min-w-0 items-center gap-2 rounded-xl border border-input bg-transparent px-3 py-2 text-left text-sm transition-colors outline-none",
               "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
               "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50",
               "dark:bg-input/30",

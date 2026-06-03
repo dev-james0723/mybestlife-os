@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Flame, Clock, CloudFog, BarChart3 } from "lucide-react";
 import { isProjectStale, isDueThisWeek } from "@/lib/projects/health";
@@ -82,19 +81,7 @@ export function InsightStrip({
       {tiles.map((tile) => {
         const Icon = tile.icon;
         const isActive = activeFilter === tile.key;
-        return (
-          <Card
-            key={tile.key}
-            className={cn(
-              "cursor-pointer p-3 transition-all hover:shadow-sm",
-              isActive && "ring-2 ring-primary/30",
-            )}
-            onClick={() =>
-              tile.key === "portfolio"
-                ? undefined
-                : onFilterChange(isActive ? null : tile.key)
-            }
-          >
+        const tileContent = (
             <div className="flex items-center gap-3">
               <div
                 className={cn(
@@ -136,7 +123,33 @@ export function InsightStrip({
                 )}
               </div>
             </div>
-          </Card>
+        );
+
+        if (tile.isPortfolio) {
+          return (
+            <div
+              key={tile.key}
+              className="rounded-[1.05rem] border border-slate-200/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:bg-white/[0.05]"
+            >
+              {tileContent}
+            </div>
+          );
+        }
+
+        return (
+          <button
+            key={tile.key}
+            type="button"
+            className={cn(
+              "min-h-[4.75rem] rounded-[1.05rem] border border-slate-200/70 bg-white/72 p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] transition-[border-color,background,transform,box-shadow] duration-150 hover:border-lime-300/40 hover:bg-lime-300/8 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:border-white/10 dark:bg-white/[0.05] dark:hover:bg-lime-300/7",
+              isActive &&
+                "border-lime-300/55 bg-lime-300/14 shadow-[0_12px_28px_rgba(190,242,100,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] dark:bg-lime-300/12",
+            )}
+            aria-pressed={isActive}
+            onClick={() => onFilterChange(isActive ? null : tile.key)}
+          >
+            {tileContent}
+          </button>
         );
       })}
     </div>

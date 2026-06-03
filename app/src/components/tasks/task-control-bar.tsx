@@ -75,7 +75,7 @@ function QuickSelect({
         options.find((o) => o.value === v)?.label ?? String(v)
       }
     >
-      <SelectTrigger className={cn("h-8", width)}>
+      <SelectTrigger className={cn("h-11 min-h-11 rounded-xl", width)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -152,13 +152,13 @@ export function TaskControlBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-[200px] max-w-sm flex-1">
+      <div className="relative min-w-[220px] max-w-sm flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filter.search}
           onChange={(e) => onFilterChange({ search: e.target.value })}
           placeholder={centerCopy.controlSearchPlaceholder}
-          className="h-8 pl-9"
+          className="h-11 min-h-11 rounded-xl pl-9"
         />
       </div>
 

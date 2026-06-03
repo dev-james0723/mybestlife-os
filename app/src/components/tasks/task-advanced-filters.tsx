@@ -2,13 +2,16 @@
 
 import {
   Sheet,
-  SheetContent,
   SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import {
+  OSBottomSheet,
+  OSControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import {
   formatAllFilterLabel,
@@ -87,7 +90,7 @@ function PillRow({
           type="button"
           onClick={() => onSelect(opt.value)}
           className={cn(
-            "rounded-full border px-3 py-1 text-xs transition-colors",
+            "min-h-11 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
             isActive(opt.value)
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border hover:bg-muted",
@@ -261,7 +264,7 @@ export function TaskAdvancedFilters({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md">
+      <OSBottomSheet side="right" className="w-full sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{centerCopy.filtersTitle}</SheetTitle>
         </SheetHeader>
@@ -386,12 +389,14 @@ export function TaskAdvancedFilters({
         </div>
 
         <SheetFooter className="flex-row justify-between gap-2">
-          <Button variant="ghost" onClick={onReset}>
+          <OSControl variant="ghost" onClick={onReset}>
             {centerCopy.reset}
-          </Button>
-          <Button onClick={() => onOpenChange(false)}>{centerCopy.apply}</Button>
+          </OSControl>
+          <OSPrimaryAction onClick={() => onOpenChange(false)}>
+            {centerCopy.apply}
+          </OSPrimaryAction>
         </SheetFooter>
-      </SheetContent>
+      </OSBottomSheet>
     </Sheet>
   );
 }

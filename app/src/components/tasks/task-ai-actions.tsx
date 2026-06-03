@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { ListTree, Flag, CalendarClock, Loader2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  ListTree,
+  Flag,
+  CalendarClock,
+  Loader2,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { OSControl } from "@/components/ui/os-primitives";
 import type { Task } from "@/types/database";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
@@ -12,6 +19,35 @@ import { postTaskAi, type TaskAiSource } from "@/lib/ai/task-ai";
 import { useCreateSubtasksBulk } from "@/hooks/use-task-subtasks";
 
 type ActionKind = "breakdown" | "prioritize" | "schedule";
+
+function TaskAiActionButton({
+  kind,
+  icon: Icon,
+  label,
+  busy,
+  onRun,
+}: {
+  kind: ActionKind;
+  icon: LucideIcon;
+  label: string;
+  busy: ActionKind | null;
+  onRun: (kind: ActionKind) => void;
+}) {
+  return (
+    <OSControl
+      variant="outline"
+      disabled={busy !== null}
+      onClick={() => onRun(kind)}
+    >
+      {busy === kind ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Icon className="h-3.5 w-3.5" />
+      )}
+      {label}
+    </OSControl>
+  );
+}
 
 interface TaskAiActionsProps {
   task: Task;
@@ -77,30 +113,6 @@ export function TaskAiActions({ task, locale, copy, onUpdate }: TaskAiActionsPro
     }
   };
 
-  const Action = ({
-    kind,
-    icon: Icon,
-    label,
-  }: {
-    kind: ActionKind;
-    icon: typeof ListTree;
-    label: string;
-  }) => (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={busy !== null}
-      onClick={() => run(kind)}
-    >
-      {busy === kind ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        <Icon className="h-3.5 w-3.5" />
-      )}
-      {label}
-    </Button>
-  );
-
   return (
     <div className="space-y-2">
       <p className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
@@ -108,9 +120,27 @@ export function TaskAiActions({ task, locale, copy, onUpdate }: TaskAiActionsPro
         {copy.aiAssistHeading}
       </p>
       <div className="flex flex-wrap gap-2">
-        <Action kind="breakdown" icon={ListTree} label={copy.aiBreakdown} />
-        <Action kind="prioritize" icon={Flag} label={copy.aiPrioritize} />
-        <Action kind="schedule" icon={CalendarClock} label={copy.aiSchedule} />
+        <TaskAiActionButton
+          kind="breakdown"
+          icon={ListTree}
+          label={copy.aiBreakdown}
+          busy={busy}
+          onRun={run}
+        />
+        <TaskAiActionButton
+          kind="prioritize"
+          icon={Flag}
+          label={copy.aiPrioritize}
+          busy={busy}
+          onRun={run}
+        />
+        <TaskAiActionButton
+          kind="schedule"
+          icon={CalendarClock}
+          label={copy.aiSchedule}
+          busy={busy}
+          onRun={run}
+        />
       </div>
       {note && (
         <p className="flex items-start gap-1.5 rounded-md bg-primary/5 px-2.5 py-1.5 text-xs text-foreground/80">

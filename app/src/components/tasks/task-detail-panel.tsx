@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertCircle,
   Bell,
@@ -12,12 +12,10 @@ import {
 } from "lucide-react";
 import {
   Sheet,
-  SheetContent,
   SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,7 +40,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import {
+  OSBottomSheet,
+  OSControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { formatDate, isOverdue } from "@/lib/utils/date";
 import type { Task } from "@/types/database";
 import {
@@ -120,19 +122,12 @@ export function TaskDetailPanel({
     [centerCopy],
   );
 
-  const [titleDraft, setTitleDraft] = useState("");
-  const [descDraft, setDescDraft] = useState("");
-  const [blocksDraft, setBlocksDraft] = useState("");
+  const [titleDraft, setTitleDraft] = useState(task?.title ?? "");
+  const [descDraft, setDescDraft] = useState(task?.description ?? "");
+  const [blocksDraft, setBlocksDraft] = useState(
+    task?.estimated_blocks?.toString() ?? "",
+  );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Seed editable drafts when a different task opens (not on every refetch).
-  useEffect(() => {
-    if (task && open) {
-      setTitleDraft(task.title);
-      setDescDraft(task.description ?? "");
-      setBlocksDraft(task.estimated_blocks?.toString() ?? "");
-    }
-  }, [task?.id, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!task) return null;
 
@@ -164,7 +159,7 @@ export function TaskDetailPanel({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-lg">
+        <OSBottomSheet side="right" className="w-full sm:max-w-lg">
           <SheetHeader className="gap-2 pr-10">
             <div className="flex flex-wrap items-center gap-1.5">
               {isTaskAiGenerated(t) && (
@@ -219,7 +214,7 @@ export function TaskDetailPanel({
                     statusOptions.find((o) => o.value === v)?.label ?? String(v)
                   }
                 >
-                  <SelectTrigger className="h-8">
+                  <SelectTrigger className="h-11 min-h-11 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -241,7 +236,7 @@ export function TaskDetailPanel({
                     priorityOptions.find((o) => o.value === v)?.label ?? String(v)
                   }
                 >
-                  <SelectTrigger className="h-8">
+                  <SelectTrigger className="h-11 min-h-11 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -276,7 +271,7 @@ export function TaskDetailPanel({
                     categoryOptions.find((o) => o.value === v)?.label ?? String(v)
                   }
                 >
-                  <SelectTrigger className="h-8">
+                  <SelectTrigger className="h-11 min-h-11 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -314,12 +309,12 @@ export function TaskDetailPanel({
                   onChange={(e) => setBlocksDraft(e.target.value)}
                   onBlur={commitBlocks}
                   placeholder={copy.placeholderBlocks}
-                  className="h-8"
+                  className="h-11 min-h-11 rounded-xl"
                 />
               </Field>
               {t.reminder_date && (
                 <Field label={copy.detailReminder}>
-                  <p className="flex h-8 items-center gap-1 text-sm">
+                  <p className="flex h-11 min-h-11 items-center gap-1 text-sm">
                     <Bell className="h-3.5 w-3.5 text-muted-foreground" />
                     {formatDate(t.reminder_date)}
                   </p>
@@ -431,28 +426,27 @@ export function TaskDetailPanel({
           </div>
 
           <SheetFooter className="flex-row items-center justify-between gap-2">
-            <Button
+            <OSControl
               variant="ghost"
-              size="sm"
               className="text-destructive hover:text-destructive"
               onClick={() => setShowDeleteConfirm(true)}
             >
               <Trash2 className="h-4 w-4" />
               {copy.delete}
-            </Button>
+            </OSControl>
             <div className="flex items-center gap-2">
               {t.status !== "done" && onOpenRitual && (
-                <Button variant="outline" size="sm" onClick={onOpenRitual}>
+                <OSControl variant="outline" onClick={onOpenRitual}>
                   <Focus className="h-4 w-4" />
                   {copy.focusRitual}
-                </Button>
+                </OSControl>
               )}
-              <Button size="sm" onClick={() => onOpenChange(false)}>
+              <OSPrimaryAction onClick={() => onOpenChange(false)}>
                 {copy.close}
-              </Button>
+              </OSPrimaryAction>
             </div>
           </SheetFooter>
-        </SheetContent>
+        </OSBottomSheet>
       </Sheet>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

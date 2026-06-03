@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
+import {
+  OSControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import type { Task } from "@/types/database";
 import type { CreateTaskInput } from "@/lib/repositories/tasks";
 import {
@@ -66,34 +69,30 @@ export function TaskCreateManualForm({
     [centerCopy],
   );
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<Task["status"]>("todo");
-  const [priority, setPriority] = useState<Task["priority"]>("medium");
-  const [dueDate, setDueDate] = useState("");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [category, setCategory] = useState<string>(NONE);
+  const [title, setTitle] = useState(initialDraft?.title ?? "");
+  const [description, setDescription] = useState(initialDraft?.description ?? "");
+  const [status, setStatus] = useState<Task["status"]>(
+    initialDraft?.status ?? "todo",
+  );
+  const [priority, setPriority] = useState<Task["priority"]>(
+    initialDraft?.priority ?? "medium",
+  );
+  const [dueDate, setDueDate] = useState(initialDraft?.due_date ?? "");
+  const [scheduledDate, setScheduledDate] = useState(
+    initialDraft?.scheduled_date ?? "",
+  );
+  const [category, setCategory] = useState<string>(
+    initialDraft?.category ?? NONE,
+  );
   const [projectId, setProjectId] = useState(defaultProjectId ?? "");
-  const [estimatedBlocks, setEstimatedBlocks] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
-
-  // Seed from an AI draft when one is supplied (and reseed when it changes).
-  useEffect(() => {
-    if (!initialDraft) return;
-    setTitle(initialDraft.title ?? "");
-    setDescription(initialDraft.description ?? "");
-    setStatus(initialDraft.status ?? "todo");
-    setPriority(initialDraft.priority ?? "medium");
-    setDueDate(initialDraft.due_date ?? "");
-    setScheduledDate(initialDraft.scheduled_date ?? "");
-    setCategory(initialDraft.category ?? NONE);
-    setEstimatedBlocks(
-      initialDraft.estimated_blocks != null
-        ? String(initialDraft.estimated_blocks)
-        : "",
-    );
-    setTagsInput((initialDraft.tags ?? []).join(", "));
-  }, [initialDraft]);
+  const [estimatedBlocks, setEstimatedBlocks] = useState(
+    initialDraft?.estimated_blocks != null
+      ? String(initialDraft.estimated_blocks)
+      : "",
+  );
+  const [tagsInput, setTagsInput] = useState(
+    (initialDraft?.tags ?? []).join(", "),
+  );
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -125,6 +124,7 @@ export function TaskCreateManualForm({
             autoFocus
             onChange={(e) => setTitle(e.target.value)}
             placeholder={copy.placeholderTaskTitle}
+            className="h-11 min-h-11 rounded-xl"
           />
         </div>
         <div className="space-y-2">
@@ -148,7 +148,7 @@ export function TaskCreateManualForm({
                 statusOptions.find((o) => o.value === v)?.label ?? String(v)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 min-h-11 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -171,7 +171,7 @@ export function TaskCreateManualForm({
                 priorityOptions.find((o) => o.value === v)?.label ?? String(v)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 min-h-11 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -206,7 +206,7 @@ export function TaskCreateManualForm({
                 categoryOptions.find((o) => o.value === v)?.label ?? String(v)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 min-h-11 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -226,6 +226,7 @@ export function TaskCreateManualForm({
               value={estimatedBlocks}
               onChange={(e) => setEstimatedBlocks(e.target.value)}
               placeholder={copy.placeholderBlocks}
+              className="h-11 min-h-11 rounded-xl"
             />
           </div>
         </div>
@@ -243,7 +244,7 @@ export function TaskCreateManualForm({
                   : projects.find((p) => p.id === v)?.name ?? String(v)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 min-h-11 rounded-xl">
                 <SelectValue placeholder={copy.noProject} />
               </SelectTrigger>
               <SelectContent>
@@ -263,19 +264,20 @@ export function TaskCreateManualForm({
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder={centerCopy.tagsInputPlaceholder}
+            className="h-11 min-h-11 rounded-xl"
           />
         </div>
       </div>
 
       <DialogFooter>
         {onCancel && (
-          <Button variant="outline" onClick={onCancel}>
+          <OSControl variant="outline" onClick={onCancel}>
             {copy.cancel}
-          </Button>
+          </OSControl>
         )}
-        <Button onClick={handleSubmit} disabled={!title.trim() || isPending}>
+        <OSPrimaryAction onClick={handleSubmit} disabled={!title.trim() || isPending}>
           {isPending ? copy.creating : submitLabel ?? copy.createTask}
-        </Button>
+        </OSPrimaryAction>
       </DialogFooter>
     </div>
   );

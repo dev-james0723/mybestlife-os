@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Command } from "cmdk";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { OSDialogSurface } from "@/components/ui/os-primitives";
 import {
   Plus,
   Columns3,
@@ -45,6 +46,8 @@ export function ProjectCommandPalette({
   ui,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
+  const commandItemClassName =
+    "flex min-h-11 items-center gap-2 rounded-[0.95rem] px-3 text-sm font-medium text-foreground/90 cursor-pointer transition-colors duration-150 aria-selected:bg-lime-300/18 aria-selected:text-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-40 motion-reduce:transition-none";
 
   const runAndClose = (fn: () => void) => {
     fn();
@@ -59,35 +62,38 @@ export function ProjectCommandPalette({
         onOpenChange(v);
       }}
     >
-      <DialogContent className="p-0 overflow-hidden max-w-lg" showCloseButton={false}>
-        <Command className="border-0" shouldFilter>
-          <div className="flex items-center border-b px-3">
+      <OSDialogSurface className="max-w-lg overflow-hidden p-0" showCloseButton={false}>
+        <Command
+          className="border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[0.68rem] [&_[cmdk-group-heading]]:font-bold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground/80"
+          shouldFilter
+        >
+          <div className="flex items-center border-b border-slate-200/65 bg-white/58 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.04]">
             <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
             <Command.Input
               value={query}
               onValueChange={setQuery}
-              placeholder="Type a command or search projects..."
-              className="flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+              placeholder={`${ui.searchPlaceholder.replace(/\.\.\.$/, "")} or command`}
+              className="flex h-12 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          <Command.List className="max-h-[300px] overflow-y-auto p-2">
+          <Command.List className="max-h-[min(70dvh,460px)] overflow-y-auto p-2">
             <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
-              No results found.
+              {ui.noResultsTitle}
             </Command.Empty>
 
             {/* Actions group */}
             <Command.Group heading="Actions">
               <Command.Item
                 onSelect={() => runAndClose(onNewProject)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                className={commandItemClassName}
               >
                 <Plus className="h-4 w-4" />
                 {ui.newProject}
               </Command.Item>
               <Command.Item
                 onSelect={() => runAndClose(onNavigatePlanner)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                className={commandItemClassName}
               >
                 <CalendarDays className="h-4 w-4" />
                 {ui.dailyPlanner}
@@ -112,7 +118,7 @@ export function ProjectCommandPalette({
                     onSelect={() =>
                       runAndClose(() => onSetView(v.key as ProjectViewMode))
                     }
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                    className={commandItemClassName}
                   >
                     <Icon className="h-4 w-4" />
                     {v.label}
@@ -127,28 +133,28 @@ export function ProjectCommandPalette({
                 onSelect={() =>
                   runAndClose(() => onSetInsightFilter("stale"))
                 }
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                className={commandItemClassName}
               >
                 <CloudFog className="h-4 w-4" />
-                Show stale projects
+                {ui.insightStale}
               </Command.Item>
               <Command.Item
                 onSelect={() =>
                   runAndClose(() => onSetInsightFilter("dueThisWeek"))
                 }
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                className={commandItemClassName}
               >
                 <CalendarDays className="h-4 w-4" />
-                Show this week
+                {ui.insightDueThisWeek}
               </Command.Item>
               <Command.Item
                 onSelect={() =>
                   runAndClose(() => onSetInsightFilter("active"))
                 }
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                className={commandItemClassName}
               >
                 <Flame className="h-4 w-4" />
-                Show active projects
+                {ui.insightActiveNow}
               </Command.Item>
             </Command.Group>
 
@@ -162,7 +168,7 @@ export function ProjectCommandPalette({
                     onSelect={() =>
                       runAndClose(() => onSelectProject(p.project))
                     }
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                    className={commandItemClassName}
                   >
                     <FolderKanban className="h-4 w-4 text-muted-foreground" />
                     <span className="truncate">{p.project.name}</span>
@@ -175,7 +181,7 @@ export function ProjectCommandPalette({
             )}
           </Command.List>
         </Command>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }

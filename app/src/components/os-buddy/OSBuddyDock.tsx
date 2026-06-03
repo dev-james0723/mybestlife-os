@@ -668,12 +668,9 @@ export function OSBuddyDock() {
 
   useEffect(() => {
     if (!onSignalsRoute) return;
-    if (useOSBuddyStore.getState().isAirControlActive) {
-      stopAirControl("route-change");
-    }
     const current = useOSBuddyStore.getState().bubble;
     if (current?.type === "context") clearBubble();
-  }, [clearBubble, onSignalsRoute, stopAirControl]);
+  }, [clearBubble, onSignalsRoute]);
 
   const clearLongPressTimer = useCallback(() => {
     if (longPressTimerRef.current) {
@@ -1303,8 +1300,8 @@ export function OSBuddyDock() {
     emitOSBuddyEvent({ type: "buddy:air-control:start", sensorMode: "rgb-webcam" });
     showBubble(
       locale === "zh-TW"
-        ? "AirPilot 啟動。紅點會跟住你的食指，張開拇指同食指後再 Pinch 即可點擊。"
-        : "AirPilot is on. The red dot follows your index finger; open thumb and index, then pinch to click.",
+        ? "AirPilot 啟動。紅點停喺按鈕附近會吸附；吸附後張開再 Pinch 即可選取。"
+        : "AirPilot is on. Pause near a button to magnet-lock, then open and pinch to select.",
       "user-triggered",
       { force: true, durationMs: 4_000 },
     );
@@ -2121,8 +2118,7 @@ export function OSBuddyDock() {
 
   if (!mounted || !enabled) return null;
 
-  const airPilotRuntimeEnabled =
-    !onSignalsRoute && (isAirControlActive || airPilotSettings.wakeEnabled);
+  const airPilotRuntimeEnabled = isAirControlActive || airPilotSettings.wakeEnabled;
   const bubbleHorizontal = dockPoint.x > viewport.width / 2 ? "left" : "right";
   const bubbleVertical = dockPoint.y < 136 ? "below" : "above";
 

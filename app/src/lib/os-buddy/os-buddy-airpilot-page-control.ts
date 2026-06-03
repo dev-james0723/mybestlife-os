@@ -1,20 +1,20 @@
+import type { AirPilotMagnetTarget } from "./os-buddy-airpilot-magnet";
 import type { OSBuddyAirControlPoint } from "./os-buddy-air-control-types";
 
 export const AIRPILOT_IGNORE_SELECTOR =
   '[data-airpilot-ignore="true"], .os-buddy-dock';
 export const AIRPILOT_TARGET_HIGHLIGHT_CLASS = "os-buddy-airpilot-target-highlight";
 
-const SELECTABLE_SELECTOR = [
+const CLICKABLE_SELECTOR = [
   "button",
   "a[href]",
-  "input",
-  "select",
-  "textarea",
   "summary",
   '[role="button"]',
   '[role="link"]',
-  "[tabindex]",
 ].join(",");
+
+const targetKeys = new WeakMap<HTMLElement, string>();
+let nextTargetKey = 1;
 
 function isHTMLElement(value: Element | null): value is HTMLElement {
   return value instanceof HTMLElement;
@@ -45,12 +45,9 @@ function isVisibleElement(element: HTMLElement) {
 
 export function isAirPilotSelectableElement(element: HTMLElement) {
   if (element.closest(AIRPILOT_IGNORE_SELECTOR)) return false;
-  if (!element.matches(SELECTABLE_SELECTOR)) return false;
+  if (!element.matches(CLICKABLE_SELECTOR)) return false;
   if (isDisabledElement(element)) return false;
   if (!isVisibleElement(element)) return false;
-
-  const tabindex = element.getAttribute("tabindex");
-  if (tabindex != null && Number(tabindex) < 0) return false;
 
   return true;
 }
@@ -73,6 +70,113 @@ export function resolveAirPilotTargetAtPoint(point: OSBuddyAirControlPoint) {
     if (target) return target;
   }
   return null;
+}
+
+function getAirPilotTargetKey(element: HTMLElement) {
+  const existing = targetKeys.get(element);
+  if (existing) return existing;
+  const next = `airpilot-target-${nextTargetKey}`;
+  nextTargetKey += 1;
+  targetKeys.set(element, next);
+  return next;
+}
+
+function getVisibleRects(element: HTMLElement) {
+  return Array.from(element.getClientRects()).filter(
+    (rect) => rect.width > 0 && rect.height > 0,
+  );
+}
+
+function distancePointToRect(point: OSBuddyAirControlPoint, rect: DOMRect) {
+  const dx = Math.max(rect.left - point.x, 0, point.x - rect.right);
+  const dy = Math.max(rect.top - point.y, 0, point.y - rect.bottom);
+  return Math.hypot(dx, dy);
+}
+
+function getRectCenter(rect: DOMRect): OSBuddyAirControlPoint {
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+}
+
+function getAirPilotTargetLabel(element: HTMLElement) {
+  const label =
+    element.getAttribute("aria-label") ??
+    element.getAttribute("title") ??
+    element.textContent ??
+    element.tagName.toLowerCase();
+
+  return label.replace(/\s+/g, " ").trim().slice(0, 64) || element.tagName.toLowerCase();
+}
+
+export function getAirPilotTargetCenter(
+  target: HTMLElement | null,
+): OSBuddyAirControlPoint | null {
+  if (!target || !isAirPilotSelectableElement(target)) return null;
+  const rect = target.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return getRectCenter(rect);
+}
+
+function toMagnetTarget(
+  element: HTMLElement,
+  rect: DOMRect,
+): AirPilotMagnetTarget & { element: HTMLElement } {
+  return {
+    key: getAirPilotTargetKey(element),
+    label: getAirPilotTargetLabel(element),
+    center: getRectCenter(rect),
+    rect: {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+    },
+    element,
+  };
+}
+
+export function resolveNearestAirPilotMagnetTarget(
+  point: OSBuddyAirControlPoint,
+  radius: number,
+): (AirPilotMagnetTarget & { element: HTMLElement }) | null {
+  if (typeof document === "undefined") return null;
+
+  let best:
+    | {
+        distance: number;
+        centerDistance: number;
+        target: AirPilotMagnetTarget & { element: HTMLElement };
+      }
+    | null = null;
+
+  const elements = Array.from(document.querySelectorAll(CLICKABLE_SELECTOR));
+  for (const element of elements) {
+    if (!(element instanceof HTMLElement)) continue;
+    if (!isAirPilotSelectableElement(element)) continue;
+
+    for (const rect of getVisibleRects(element)) {
+      const edgeDistance = distancePointToRect(point, rect);
+      if (edgeDistance > radius) continue;
+
+      const center = getRectCenter(rect);
+      const centerDistance = Math.hypot(point.x - center.x, point.y - center.y);
+      if (
+        !best ||
+        edgeDistance < best.distance ||
+        (edgeDistance === best.distance && centerDistance < best.centerDistance)
+      ) {
+        best = {
+          distance: edgeDistance,
+          centerDistance,
+          target: toMagnetTarget(element, rect),
+        };
+      }
+    }
+  }
+
+  return best?.target ?? null;
 }
 
 export function clickAirPilotTarget(target: HTMLElement | null) {

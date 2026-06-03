@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   getPlannerGcalLastPushAt,
@@ -23,14 +23,16 @@ export type GoogleCalendarPlannerStatus = {
   remoteDeletedCount: number;
 };
 
+const subscribeOptionalGoogleCalendarApi = () => () => {};
+const getOptionalGoogleCalendarApiClientSnapshot = () => !hasDevLoginBypassCookie();
+const getOptionalGoogleCalendarApiServerSnapshot = () => false;
+
 function useOptionalGoogleCalendarApiEnabled() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    setEnabled(!hasDevLoginBypassCookie());
-  }, []);
-
-  return enabled;
+  return useSyncExternalStore(
+    subscribeOptionalGoogleCalendarApi,
+    getOptionalGoogleCalendarApiClientSnapshot,
+    getOptionalGoogleCalendarApiServerSnapshot,
+  );
 }
 
 export function useGoogleCalendarPlannerStatus() {

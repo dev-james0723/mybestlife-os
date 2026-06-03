@@ -6,13 +6,15 @@ import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingPage } from "@/components/shared/loading-state";
+import { LoadingCards } from "@/components/shared/loading-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import {
+  OSDialogSurface,
   OSControl,
   OSIconControl,
   OSPrimaryAction,
+  OSSolidPanel,
 } from "@/components/ui/os-primitives";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -21,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -31,7 +32,6 @@ import {
 } from "@/components/ui/select";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -92,6 +92,13 @@ const statusOptions = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+const goalInputClassName =
+  "h-11 min-h-11 rounded-xl border-slate-200/80 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.06]";
+const goalTextAreaClassName =
+  "min-h-24 rounded-xl border-slate-200/80 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.06]";
+const goalSelectClassName =
+  "h-11 min-h-11 rounded-xl border-slate-200/80 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.06]";
+
 type KeyResultDraft = {
   _tempId: string;
   id?: string;
@@ -133,8 +140,7 @@ function KeyResultsFormSection({
   emptyMessage: string;
 }) {
   return (
-    <Card>
-      <CardContent className="p-4 space-y-4">
+    <OSSolidPanel className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <Label className="text-base font-medium">Key Results</Label>
           <OSControl type="button" onClick={onAdd}>
@@ -147,10 +153,13 @@ function KeyResultsFormSection({
         )}
         <div className="space-y-3">
           {drafts.map((kr) => (
-            <div key={kr._tempId} className="rounded-lg border p-3 space-y-3">
+            <div
+              key={kr._tempId}
+              className="space-y-3 rounded-xl border border-slate-200/70 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:bg-white/[0.04]"
+            >
               <div className="flex items-start gap-2">
                 <Input
-                  className="flex-1"
+                  className={cn("flex-1", goalInputClassName)}
                   value={kr.name}
                   onChange={(e) => onUpdate(kr._tempId, "name", e.target.value)}
                   placeholder="Key result title"
@@ -174,6 +183,7 @@ function KeyResultsFormSection({
                   <div className="space-y-1">
                     <Label className="text-xs">Current Value</Label>
                     <Input
+                      className={goalInputClassName}
                       type="number"
                       value={kr.current_value}
                       onChange={(e) =>
@@ -185,6 +195,7 @@ function KeyResultsFormSection({
                 <div className="space-y-1">
                   <Label className="text-xs">Target Value</Label>
                   <Input
+                    className={goalInputClassName}
                     type="number"
                     value={kr.target_value}
                     onChange={(e) =>
@@ -196,6 +207,7 @@ function KeyResultsFormSection({
                 <div className="space-y-1">
                   <Label className="text-xs">Unit</Label>
                   <Input
+                    className={goalInputClassName}
                     value={kr.unit}
                     onChange={(e) =>
                       onUpdate(kr._tempId, "unit", e.target.value)
@@ -207,8 +219,7 @@ function KeyResultsFormSection({
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </OSSolidPanel>
   );
 }
 
@@ -374,7 +385,7 @@ function GoalDetailModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
+        <OSDialogSurface size="2xl" className="max-h-[85dvh] overflow-y-auto">
           {editing ? (
             <>
               <DialogHeader>
@@ -382,11 +393,11 @@ function GoalDetailModal({
               </DialogHeader>
 
               <div className="space-y-6 pt-2">
-                <Card>
-                  <CardContent className="p-4 space-y-4">
+                <OSSolidPanel className="space-y-4 p-4">
                     <div className="space-y-2">
                       <Label>Goal Name *</Label>
                       <Input
+                        className={goalInputClassName}
                         value={editForm.name}
                         onChange={(e) =>
                           setEditForm((f) => ({ ...f, name: e.target.value }))
@@ -397,6 +408,7 @@ function GoalDetailModal({
                     <div className="space-y-2">
                       <Label>Description</Label>
                       <Textarea
+                        className={goalTextAreaClassName}
                         value={editForm.description}
                         onChange={(e) =>
                           setEditForm((f) => ({ ...f, description: e.target.value }))
@@ -413,7 +425,7 @@ function GoalDetailModal({
                             setEditForm((f) => ({ ...f, status: v as Goal["status"] }))
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className={goalSelectClassName}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -438,6 +450,7 @@ function GoalDetailModal({
                     <div className="space-y-2">
                       <Label>Category</Label>
                       <Input
+                        className={goalInputClassName}
                         value={editForm.category}
                         onChange={(e) =>
                           setEditForm((f) => ({ ...f, category: e.target.value }))
@@ -445,8 +458,7 @@ function GoalDetailModal({
                         placeholder="e.g. Health, Career, Finance"
                       />
                     </div>
-                  </CardContent>
-                </Card>
+                </OSSolidPanel>
 
                 <KeyResultsFormSection
                   drafts={editKRs}
@@ -461,7 +473,7 @@ function GoalDetailModal({
                 <Button
                   variant="destructive"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="sm:mr-auto"
+                  className="min-h-11 rounded-xl sm:mr-auto"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
@@ -649,18 +661,18 @@ function GoalDetailModal({
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={enterEditMode}>
+                <OSControl onClick={enterEditMode}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit
-                </Button>
+                </OSControl>
               </DialogFooter>
             </>
           )}
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border border-slate-200/80 bg-white/94 shadow-[0_24px_90px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/12 dark:bg-slate-950/94">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -670,11 +682,12 @@ function GoalDetailModal({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="min-h-11 rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}
               disabled={deleteGoal.isPending}
+              className="min-h-11 rounded-xl"
             >
               {deleteGoal.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -769,17 +782,17 @@ function CreateGoalModal({
         onOpenChange(v);
       }}
     >
-      <DialogContent size="xl" className="max-h-[85vh] overflow-y-auto">
+      <OSDialogSurface size="xl" className="max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Goal</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
-          <Card>
-            <CardContent className="p-4 space-y-4">
+          <OSSolidPanel className="space-y-4 p-4">
               <div className="space-y-2">
                 <Label>Goal Name *</Label>
                 <Input
+                  className={goalInputClassName}
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="What do you want to achieve?"
@@ -788,6 +801,7 @@ function CreateGoalModal({
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea
+                  className={goalTextAreaClassName}
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={3}
@@ -801,7 +815,7 @@ function CreateGoalModal({
                     value={form.status}
                     onValueChange={(v) => setForm((f) => ({ ...f, status: v as Goal["status"] }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={goalSelectClassName}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -824,13 +838,13 @@ function CreateGoalModal({
               <div className="space-y-2">
                 <Label>Category</Label>
                 <Input
+                  className={goalInputClassName}
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   placeholder="e.g. Health, Career, Finance"
                 />
               </div>
-            </CardContent>
-          </Card>
+          </OSSolidPanel>
 
           <KeyResultsFormSection
             drafts={krDrafts}
@@ -856,7 +870,7 @@ function CreateGoalModal({
             )}
           </OSPrimaryAction>
         </DialogFooter>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }
@@ -889,7 +903,29 @@ export default function GoalsPage() {
     return result;
   }, [goals, search, statusFilter]);
 
-  if (isLoading) return <LoadingPage />;
+  if (isLoading) {
+    return (
+      <PageShell
+        title="Goals"
+        description="Set and track your goals and key results"
+        actions={
+          <OSPrimaryAction disabled>
+            <Plus className="h-4 w-4 mr-2" />
+            New Goal
+          </OSPrimaryAction>
+        }
+      >
+        <div
+          aria-hidden="true"
+          className="grid gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.055] sm:grid-cols-[minmax(16rem,1fr)_10rem]"
+        >
+          <div className="h-11 rounded-[0.95rem] bg-slate-200/60 dark:bg-white/10" />
+          <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+        </div>
+        <LoadingCards count={6} columns={3} />
+      </PageShell>
+    );
+  }
 
   return (
     <>

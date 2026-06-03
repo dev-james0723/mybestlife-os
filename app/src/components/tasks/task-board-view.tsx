@@ -186,7 +186,7 @@ export function TaskBoardView({
             groupByOptions.find((o) => o.value === v)?.label ?? String(v)
           }
         >
-          <SelectTrigger className="h-8 w-[150px]">
+          <SelectTrigger className="h-11 min-h-11 w-[150px] rounded-xl">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -339,7 +339,7 @@ function BoardCard({
             </h4>
             <div
               {...listeners}
-              className="-mr-1 cursor-grab touch-manipulation p-0.5"
+              className="-mr-2 flex size-11 cursor-grab touch-manipulation items-center justify-center rounded-xl text-muted-foreground/70 hover:bg-muted/60"
               onClick={(e) => e.stopPropagation()}
               aria-label={centerCopy.dragHandleAria}
             >

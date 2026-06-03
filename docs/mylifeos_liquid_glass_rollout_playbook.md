@@ -162,10 +162,10 @@ Status values:
 | --- | --- | --- | --- |
 | 1 | Bucket List | Reference | Visual benchmark; local glass and motion tokens now alias shared OS primitives. |
 | 1 | Calendar | Verified | Calendar tab rail, Today actions, Week mobile collapse/desktop controls, Month Complete/Minimal/Orbital modes, agenda side panel, AI Plan actions, and shared shell checks passed runtime and route-specific verification. |
-| 1 | Projects | Partial | Header actions and view switcher use OS controls; filters, dialogs, command palette, and views still need audit. |
+| 1 | Projects | Partial | Loading shell, mobile action row, toolbar controls, insight tiles, suggestion bar, command palette, template menu, filters, search, empty state, and view switcher passed runtime/focused checks; seeded authenticated project data is still needed for populated cards, detail modal, map relationships, updates, and destructive confirmations. |
 | 1 | Dashboard | Verified | Header, motivation refresh, Today controls, Signals widget, grateful slots, quote/video inspiration controls, shared checkbox target, and floating AI action passed runtime and route-specific checks. |
-| 1 | Daily Planner | Partial | Header actions, date controls, sync action, and planning-mode toggle use OS primitives; dialogs, popovers, boards, timeline, and mobile runtime audit remain. |
-| 1 | Tasks | Partial | Header actions, create trigger, sort/view controls use OS primitives; filters, saved filters, dialogs, panels, and table view still need audit. |
+| 1 | Daily Planner | Verified | Header actions, date controls, sync action, planning-mode toggle, time pickers, task/import/quick-task dialogs, quick-task block picker, visual schedule menu, Free Plan mode, passive AirPilot overlay lane, and shared shell checks passed runtime and route-specific verification. |
+| 1 | Tasks | Partial | Low-data shell, loading state, Insights sheet, create menu/dialog, create tabs/forms, advanced filters, saved filters, quick selects, and view switcher passed runtime and focused checks; seeded task data is still needed for task detail, inline edit, bulk selection, drag/drop, ritual, and destructive confirmation verification. |
 | 2 | Goals | Partial | Parent create action and standard goal dialog controls use OS primitives; filters, cards, progress surfaces, and modal/sheet audit remain. |
 | 2 | Bucket List Map | Verified | Shares Bucket List OS tokens; reachable low-data map state, status rail, back control, zoom controls, and add-travel sheet passed runtime and route-specific checks. |
 | 2 | Relationship | Partial | Container sub-tabs use `OSSegmentedControl`; relationship cards, forms, AI sheets, and hidden layers still need audit. |
@@ -315,6 +315,48 @@ Every page must be marked as `Reference`, `Verified`, or `Deferred` with a reaso
 - Validation commands: `npm run audit:liquid-glass -- --routes=/en/calendar --timeout-ms=360000`; Playwright Calendar focused interaction check for `390` and `1280`; targeted `npx eslint --max-warnings=0 ...`; `npx eslint --quiet src/components/idea-capture/IdeaCaptureSheet.tsx`; `npx tsc --noEmit --pretty false`; `git diff --check`
 - Result: runtime audit 8 checks, 0 fail, 0 warn; focused interaction check passed at `390` and `1280`; targeted lint, TypeScript, and whitespace checks passed
 - Known remaining issues: none for the reachable dev-bypass Calendar state; future real-session pass should cover populated external calendar items and provider-specific event data if connected calendars are present
+
+### 2026-06-03 - Daily Planner
+
+- Route: `/en/daily-planner`
+- Final status: `Verified`
+- Route/support files changed: `app/src/app/[locale]/(protected)/daily-planner/page.tsx`, `app/src/components/daily-planner/free-plan-board.tsx`, `app/src/components/daily-planner/mini-calendar-popover.tsx`, `app/src/components/daily-planner/visual-schedule-generator.tsx`, `app/src/lib/daily-planner/quick-task-preset-meta.ts`, `app/src/hooks/use-google-calendar-planner.ts`, `app/src/components/os-buddy/OSBuddyAirControlOverlay.tsx`, `app/src/components/os-buddy/OSBuddyDock.tsx`, `app/src/components/idea-capture/IdeaCaptureSheet.tsx`, `app/src/app/globals.css`
+- Viewports checked: `320`, `390`, `430`, `768`, `1024`, `1280`, `1440`, plus `390` with `prefers-reduced-motion`
+- Hidden/common shell states checked: Quick Capture sheet, global command palette, theme toggle, clock panel, desktop utility menu where applicable; Escape close checked for sheet/dialog/panel layers. Passive AirPilot permission/listening UI no longer overlaps Quick Capture.
+- Page-specific interaction checked: mini calendar popover; start/end time pickers; Time Block and Free Plan mode switch; Create Task dialog; Import tasks dialog; Add Quick Task dialog; quick-task block picker; Visual Schedule style listbox; Free Plan create flow; keyboard focus at mobile, desktop, and reduced-motion viewports.
+- Page-specific hidden states: calendar popover, time wheel popovers, create task dialog, import dialog, add quick task dialog, quick-task block popover, visual schedule select/listbox, common Quick Capture sheet, search palette, and clock dialog.
+- Screenshots: `app/.next/liquid-glass-audit/en-daily-planner-*.png`; focused screenshots: `app/.next/liquid-glass-audit/daily-planner-focused-390-no-preference.png`, `app/.next/liquid-glass-audit/daily-planner-focused-1280-no-preference.png`, `app/.next/liquid-glass-audit/daily-planner-focused-390-reduce.png`
+- Validation commands: `npm run audit:liquid-glass -- --routes=/en/daily-planner --timeout-ms=360000`; Playwright Daily Planner focused interaction check for `390`, `1280`, and `390` reduced motion; targeted `npx eslint ...`; `npx tsc --noEmit --pretty false`; `git diff --check`
+- Result: runtime audit 8 checks, 0 fail, 0 warn; focused interaction check passed at `390`, `1280`, and `390` reduced motion; targeted lint returned 0 errors with 13 existing warnings in Daily Planner, Visual Schedule, Idea Capture, and OS Buddy files; TypeScript and whitespace checks passed.
+- Known remaining issues: none for the reachable dev-bypass Daily Planner state; lint warnings should be addressed in a future cleanup pass but did not block runtime verification.
+
+### 2026-06-03 - Projects Partial Evidence
+
+- Route: `/en/projects`
+- Final status: `Partial`
+- Route files changed: `app/src/app/[locale]/(protected)/projects/page.tsx`, `app/src/components/projects/command-palette.tsx`, `app/src/components/projects/insight-strip.tsx`, `app/src/components/projects/whats-next-bar.tsx`
+- Viewports checked: `320`, `390`, `430`, `768`, `1024`, `1280`, `1440`, plus `390` with `prefers-reduced-motion`; focused Playwright checks at `390`, `1280`, and `390` reduced motion.
+- Hidden/common shell states checked: shared runtime audit covered common shell interactions; focused check verified the global Quick Capture hit target is no longer obstructed by the Projects page action system.
+- Page-specific interaction checked: PageShell loading state keeps the `Projects` H1 and disabled actions; mobile inline action row opens New Project; template dropdown opens/closes on mobile and desktop; command palette searches and switches to Map; status and priority filters apply and clear through focusable chips; sort select opens and applies; search no-data state remains readable; Gallery/List/Timeline/Kanban view tabs switch with selected state.
+- Page-specific hidden states: New Project dialog shell, template dropdown, command palette, select listboxes, empty/no-projects state. Create submit, AI generation, project detail modal, edit/update, map relationship dialog, populated list/kanban/gallery/timeline cards, and delete confirmation were not executed.
+- Screenshots: `app/.next/liquid-glass-audit/en-projects-*.png`; focused screenshots: `app/.next/liquid-glass-audit/projects-focused-mobile-390.png`, `app/.next/liquid-glass-audit/projects-focused-desktop-1280.png`, `app/.next/liquid-glass-audit/projects-focused-mobile-390-reduce.png`
+- Validation commands: `npm run audit:liquid-glass -- --routes=/en/projects --timeout-ms=360000`; Playwright Projects focused interaction check for `390`, `1280`, and `390` reduced motion; targeted `npx eslint --max-warnings=0 ...`; `npx tsc --noEmit --pretty false`; `git diff --check`
+- Result: runtime audit 8 checks, 0 fail, 1 warn on the `390` reduced-motion common-shell layer detector; focused route-specific checks passed with no console/page errors and no horizontal overflow; targeted lint, TypeScript, and whitespace checks passed.
+- Remaining blocker before `Verified`: dev-bypass data currently has no project records and project creation requires a real Supabase user, so populated project cards, detail/edit modal, status mutation, pin behavior on populated views, map relationship creation, timeline/list row actions, and destructive delete confirmation still need a seeded non-production project-data pass. The reduced-motion common-shell warning should be rechecked with the next shared-shell audit.
+
+### 2026-06-03 - Tasks Partial Evidence
+
+- Route: `/en/tasks`
+- Final status: `Partial`
+- Route/support files changed: `app/src/app/[locale]/(protected)/tasks/page.tsx`, `app/src/components/tasks/task-advanced-filters.tsx`, `app/src/components/tasks/task-ai-actions.tsx`, `app/src/components/tasks/task-board-view.tsx`, `app/src/components/tasks/task-connections.tsx`, `app/src/components/tasks/task-control-bar.tsx`, `app/src/components/tasks/task-create-ai-form.tsx`, `app/src/components/tasks/task-create-dialog.tsx`, `app/src/components/tasks/task-create-manual-form.tsx`, `app/src/components/tasks/task-create-quick-form.tsx`, `app/src/components/tasks/task-detail-panel.tsx`, `app/src/components/tasks/task-insight-panel.tsx`, `app/src/components/tasks/task-project-linker.tsx`, `app/src/components/tasks/task-saved-filters.tsx`, `app/src/components/tasks/task-subtasks.tsx`, `app/src/components/tasks/task-table-view.tsx`, `app/src/components/ui/date-picker-input.tsx`, `app/src/components/ui/dropdown-menu.tsx`, `app/src/components/ui/os-glass.ts`, `app/src/components/ui/os-primitives.tsx`, `app/src/components/ui/select.tsx`, `app/src/hooks/use-task-links.ts`
+- Viewports checked: `320`, `390`, `430`, `768`, `1024`, `1280`, `1440`, plus `390` with `prefers-reduced-motion`
+- Hidden/common shell states checked: Quick Capture sheet, global command palette, theme toggle, clock panel, desktop utility menu where applicable through the shared runtime audit; route-specific Playwright pass also checked `390`, `1280`, and `390` reduced motion.
+- Page-specific interaction checked: PageShell loading state keeps the `Tasks` H1 and disabled actions; Insights opens as an OS sheet and Escape closes it; New Task dropdown opens and `Create Manually` opens the create dialog; Quick/Manual/AI create tabs switch through `OSSegmentedControl`; Advanced Filters opens, filter chips select, Apply closes the sheet; quick select opens and closes; saved filter applies and can be cleared; Grid/Table/Board/List view tabs switch with selected state; Board group select opens and closes.
+- Page-specific hidden states: Insights sheet, create dropdown, create dialog/forms, advanced filter sheet, quick select listbox, saved filter state, board group select listbox, low-data empty state. AI generation, create submit, destructive delete, and mutation actions were not executed.
+- Screenshots: `app/.next/liquid-glass-audit/en-tasks-*.png`
+- Validation commands: `npm run audit:liquid-glass -- --routes=/en/tasks --timeout-ms=360000`; Playwright Tasks focused interaction check for `390`, `1280`, and `390` reduced motion; focused Advanced Filters close timing check at `1280`; targeted `npx eslint --max-warnings=0 ...`; `npx tsc --noEmit --pretty false`; `git diff --check`
+- Result: runtime audit 8 checks, 0 fail, 0 warn; focused interaction check passed with no page errors, no HTTP errors, and no horizontal overflow; Advanced Filters close verified after the exit transition at `1280`; targeted lint, TypeScript, and whitespace checks passed.
+- Remaining blocker before `Verified`: dev-bypass data currently has no task records, so populated task card/detail panel, inline table edit, bulk selection, board drag/drop, pre-task ritual, subtask controls, goal/plan connections, and delete confirmation still need a seeded non-production task-data pass.
 
 ## Per-Page Migration Checklist
 

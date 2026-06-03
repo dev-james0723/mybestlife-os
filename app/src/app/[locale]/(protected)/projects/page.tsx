@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingPage } from "@/components/shared/loading-state";
+import { LoadingCards } from "@/components/shared/loading-state";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
+  OSIconControl,
   OSControl,
   OSPrimaryAction,
   OSSegmentedControl,
@@ -164,6 +164,7 @@ export default function ProjectsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dailyPlannerHref = useLocalizedPath("/daily-planner");
+  const shouldReduceMotion = useReducedMotion();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: tasks } = useTasks();
   const { data: notes } = useNotes();
@@ -421,7 +422,45 @@ export default function ProjectsPage() {
     [updateProject],
   );
 
-  if (projectsLoading) return <LoadingPage />;
+  const openNewProject = useCallback(() => {
+    setCreatePreset(null);
+    setShowCreate(true);
+  }, []);
+
+  if (projectsLoading) {
+    return (
+      <div className="pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1rem))] md:pb-0">
+        <PageShell
+          title={ui.pageTitle}
+          description={ui.pageDescription}
+          actions={
+            <>
+              <OSControl disabled className="hidden sm:inline-flex">
+                <CalendarDays className="mr-1.5 h-4 w-4" />
+                {ui.dailyPlanner}
+              </OSControl>
+              <OSPrimaryAction disabled className="hidden sm:inline-flex">
+                <Plus className="mr-1.5 h-4 w-4" />
+                {ui.newProject}
+              </OSPrimaryAction>
+            </>
+          }
+        >
+          <div
+            aria-hidden="true"
+            className="grid gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.055] sm:grid-cols-[minmax(16rem,1fr)_8.75rem_8.75rem_8.75rem_auto]"
+          >
+            <div className="h-11 rounded-[0.95rem] bg-slate-200/60 dark:bg-white/10" />
+            <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+            <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+            <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+            <div className="h-11 rounded-[1rem] bg-lime-300/50 dark:bg-lime-300/35" />
+          </div>
+          <LoadingCards count={6} columns={3} />
+        </PageShell>
+      </div>
+    );
+  }
 
   const sortOptions: { value: SortKey; label: string }[] = [
     { value: "updated", label: ui.sortUpdated },
@@ -445,7 +484,7 @@ export default function ProjectsPage() {
   ];
 
   return (
-    <div className="pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4rem))] md:pb-0">
+    <div className="pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1rem))] md:pb-0">
       <PageShell
         title={ui.pageTitle}
         description={ui.pageDescription}
@@ -504,10 +543,7 @@ export default function ProjectsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
             <OSPrimaryAction
-              onClick={() => {
-                setCreatePreset(null);
-                setShowCreate(true);
-              }}
+              onClick={openNewProject}
               className="hidden sm:inline-flex"
             >
               <Plus className="mr-1.5 h-4 w-4" />
@@ -527,16 +563,69 @@ export default function ProjectsPage() {
         {/* What's Next Suggestion */}
         <WhatsNextBar projects={allProjectsWithMeta} ui={ui} onOpen={setSelectedProject} />
 
+        {/* Mobile primary actions */}
+        <div className="grid grid-cols-[1fr_auto_auto] gap-2 sm:hidden">
+          <OSPrimaryAction onClick={openNewProject} className="justify-center">
+            <Plus className="mr-1.5 h-4 w-4" />
+            {ui.newProject}
+          </OSPrimaryAction>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <OSIconControl aria-label={ui.fromTemplate} />
+              }
+            >
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-72 w-56 overflow-y-auto">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{ui.fromTemplate}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {getMergedTemplates().map((t) => (
+                  <DropdownMenuItem
+                    key={t.id}
+                    onClick={() => {
+                      setCreatePreset({
+                        name: t.name,
+                        description: t.description,
+                        status: t.status,
+                        priority: t.priority,
+                        suggestedTasks: t.suggestedTasks,
+                        tags: t.tags,
+                      });
+                      setShowCreate(true);
+                    }}
+                  >
+                    <span className="mr-2" aria-hidden>
+                      {t.icon}
+                    </span>
+                    {t.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <OSIconControl
+            aria-label={ui.commandPaletteHint}
+            onClick={() => setCommandPaletteOpen(true)}
+          >
+            <Command className="h-4 w-4" />
+          </OSIconControl>
+        </div>
+
         {/* Toolbar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+        <div
+          data-slot="projects-toolbar"
+          className="flex flex-col gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055] sm:flex-row sm:flex-wrap sm:items-center"
+        >
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={ui.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="h-11 min-h-11 rounded-[0.95rem] border-slate-200/80 bg-white/76 pl-9 pr-14 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-white/10 dark:bg-white/[0.06]"
             />
             {search && (
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground tabular-nums">
@@ -549,15 +638,15 @@ export default function ProjectsPage() {
           {activeFilters.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
               {activeFilters.map((f) => (
-                <Badge
+                <button
                   key={f.key}
-                  variant="secondary"
-                  className="cursor-pointer gap-1 pr-1"
+                  type="button"
+                  className="inline-flex min-h-11 items-center gap-1 rounded-[0.9rem] border border-lime-300/35 bg-lime-300/16 px-3 pr-2 text-xs font-semibold text-slate-800 transition-[background,border-color,transform] duration-150 hover:border-lime-300/55 hover:bg-lime-300/24 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:text-lime-50"
                   onClick={() => clearFilter(f.key)}
                 >
                   {f.label}
                   <X className="h-3 w-3" />
-                </Badge>
+                </button>
               ))}
             </div>
           )}
@@ -574,7 +663,7 @@ export default function ProjectsPage() {
                 : getProjectStatusLabel(v as Project["status"], ui)
             }
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[140px]">
               <SelectValue placeholder={ui.filterStatus} />
             </SelectTrigger>
             <SelectContent>
@@ -598,7 +687,7 @@ export default function ProjectsPage() {
                 : getProjectPriorityLabel(v as Project["priority"], ui)
             }
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[140px]">
               <SelectValue placeholder={ui.filterPriority} />
             </SelectTrigger>
             <SelectContent>
@@ -625,7 +714,7 @@ export default function ProjectsPage() {
               sortOptions.find((o) => o.value === v)?.label ?? String(v)
             }
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[140px]">
               <ArrowUpDown className="h-4 w-4 mr-1.5" />
               <SelectValue placeholder={ui.sortBy} />
             </SelectTrigger>
@@ -680,10 +769,13 @@ export default function ProjectsPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={viewMode}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.15 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 6, scale: 0.995 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.995 }}
+              transition={{
+                duration: shouldReduceMotion ? 0 : 0.24,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               {viewMode === "kanban" && (
                 <ProjectKanbanView
@@ -730,19 +822,6 @@ export default function ProjectsPage() {
           </AnimatePresence>
         )}
       </PageShell>
-
-      {/* Mobile FAB */}
-      <button
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg sm:hidden"
-        style={{ bottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))" }}
-        onClick={() => {
-          setCreatePreset(null);
-          setShowCreate(true);
-        }}
-        aria-label={ui.newProject}
-      >
-        <Plus className="h-6 w-6" />
-      </button>
 
       {/* Modals */}
       <CreateProjectModal

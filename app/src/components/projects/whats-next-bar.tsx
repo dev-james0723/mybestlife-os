@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { OSControl, OSIconControl } from "@/components/ui/os-primitives";
 import { Lightbulb, X } from "lucide-react";
 import { isProjectStale, staleDays } from "@/lib/projects/health";
 import { formatProjectDate } from "@/lib/projects/presentation";
@@ -64,29 +64,29 @@ export function WhatsNextBar({ projects, ui, onOpen }: WhatsNextBarProps) {
     : "";
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-      <Lightbulb className="h-4 w-4 shrink-0 text-primary" />
-      <p className="flex-1 text-sm text-foreground">
-        {ui.whatsNextPrefix} &quot;{suggestion.project.name}&quot; in {days}{" "}
-        days{dueInfo}. {ui.whatsNextSuffix}
-      </p>
-      <div className="flex items-center gap-2 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs"
+    <div className="flex flex-col gap-3 rounded-[1.1rem] border border-lime-300/25 bg-lime-300/8 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] supports-backdrop-filter:backdrop-blur-xl dark:border-lime-300/18 dark:bg-lime-300/7 sm:flex-row sm:items-center sm:px-4">
+      <div className="flex min-w-0 items-start gap-3 sm:items-center">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border border-lime-300/25 bg-lime-300/14 text-lime-700 dark:text-lime-200">
+          <Lightbulb className="h-4 w-4" />
+        </span>
+        <p className="min-w-0 flex-1 text-sm leading-6 text-foreground">
+          {ui.whatsNextPrefix} &quot;{suggestion.project.name}&quot; in {days}{" "}
+          days{dueInfo}. {ui.whatsNextSuffix}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+        <OSControl
+          className="min-w-0 flex-1 justify-center px-4 sm:flex-none"
           onClick={() => onOpen(suggestion.project)}
         >
           {ui.open}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0"
+        </OSControl>
+        <OSIconControl
+          aria-label="Dismiss suggestion"
           onClick={() => setDismissed(true)}
         >
-          <X className="h-3.5 w-3.5" />
-        </Button>
+          <X className="h-4 w-4" />
+        </OSIconControl>
       </div>
     </div>
   );

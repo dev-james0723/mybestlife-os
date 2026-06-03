@@ -58,6 +58,8 @@ export type OSBuddyAirPilotPinchState =
   | "pinching"
   | "cooldown";
 
+export type OSBuddyAirPilotMagnetPhase = "tracking" | "candidate" | "locked";
+
 export type OSBuddyAirControlPoint = {
   x: number;
   y: number;
@@ -142,6 +144,9 @@ export type OSBuddyAirControlDebugState = {
   quality: OSBuddyAirControlQuality;
   latencyMs: number;
   pinchState: OSBuddyAirPilotPinchState;
+  magnetPhase: OSBuddyAirPilotMagnetPhase;
+  magnetTargetLabel?: string;
+  rawCursor: OSBuddyAirControlPoint | null;
   landmarks: OSBuddyAirControlLandmark[];
   fps: number;
 };

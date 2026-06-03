@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { OSIconControl } from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
 import {
@@ -93,7 +93,7 @@ export function TaskSubtasks({ taskId, copy }: TaskSubtasksProps) {
                 type="button"
                 onClick={() => deleteSubtask.mutate(subtask.id)}
                 aria-label={copy.deleteSubtaskAria}
-                className="rounded p-1 text-muted-foreground/60 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                className="flex size-11 items-center justify-center rounded-xl text-muted-foreground/60 opacity-0 transition-opacity hover:bg-muted/60 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -112,20 +112,19 @@ export function TaskSubtasks({ taskId, copy }: TaskSubtasksProps) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={copy.addSubtaskPlaceholder}
-          className="h-8"
+          className="h-11 min-h-11 rounded-xl"
           onKeyDown={(e) => {
             if (e.key === "Enter") handleAdd();
           }}
         />
-        <Button
-          size="icon-sm"
+        <OSIconControl
           variant="outline"
           onClick={handleAdd}
           disabled={!draft.trim() || createSubtask.isPending}
           aria-label={copy.addSubtaskAction}
         >
           <Plus className="h-4 w-4" />
-        </Button>
+        </OSIconControl>
       </div>
     </div>
   );

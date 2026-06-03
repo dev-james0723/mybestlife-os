@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Sparkles, Lightbulb, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogFooter } from "@/components/ui/dialog";
+import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import type { CreateTaskInput } from "@/lib/repositories/tasks";
 import type { TasksUiCopy } from "@/lib/i18n/tasks-ui";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
@@ -103,7 +103,7 @@ export function TaskCreateAiForm({
         }}
       />
       <DialogFooter>
-        <Button onClick={() => void generate()} disabled={!prompt.trim() || generating}>
+        <OSPrimaryAction onClick={() => void generate()} disabled={!prompt.trim() || generating}>
           {generating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -115,7 +115,7 @@ export function TaskCreateAiForm({
               {centerCopy.aiGenerate}
             </>
           )}
-        </Button>
+        </OSPrimaryAction>
       </DialogFooter>
     </div>
   );
