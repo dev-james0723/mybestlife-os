@@ -11,14 +11,14 @@
  * the accuracy of the fingertip's screen position.
  */
 
-import { isUsableCalibration } from "./calibration";
+import { applyAffine, isUsableCalibration } from "./calibration";
 import {
   getIndexTipPoint,
   isIndexExtendedForCursor,
   mapNormalizedPointToViewport,
   resolveAirControlGesture,
 } from "./gestures";
-import { confidenceScore, type Vec2, type Vec3 } from "./geometry";
+import { clampToViewport, confidenceScore, type Vec2, type Vec3 } from "./geometry";
 import type { AirTouchReading, CalibrationData } from "./types";
 import type {
   OSBuddyAirControlHand,
@@ -79,16 +79,26 @@ export function resolveAirTouch(input: ResolveAirTouchInput): AirTouchReading {
     };
   }
 
-  // 2D fallback: map the image-space index tip into the viewport.
+  // 2D path. When a usable affine calibration exists we map the raw normalized
+  // tip through it (more accurate, "Calibrated Air Touch"); otherwise we use the
+  // plain mirrored viewport mapping (honest "2D fallback"). Either way mode stays
+  // "2d" — calibration does not add depth.
   const tip = getIndexTipPoint(hand);
-  const fingertip: Vec2 | null =
-    tip && isIndexExtended
-      ? mapNormalizedPointToViewport({
+  const affine =
+    isUsableCalibration(input.calibration ?? null) && input.calibration?.mapping?.affine
+      ? input.calibration.mapping.affine
+      : null;
+
+  let fingertip: Vec2 | null = null;
+  if (tip && isIndexExtended) {
+    fingertip = affine
+      ? clampToViewport(applyAffine(affine, tip), viewport)
+      : mapNormalizedPointToViewport({
           point: tip,
           viewport,
           mirrored: input.mirrored ?? true,
-        })
-      : null;
+        });
+  }
 
   return {
     timestamp: now,

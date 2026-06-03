@@ -1,7 +1,9 @@
 "use client";
 
-import { Camera, Hand, X } from "lucide-react";
+import { useState } from "react";
+import { Camera, Crosshair, Hand, RotateCcw, Smartphone, X } from "lucide-react";
 import { useOSBuddyAirControl } from "@/hooks/use-os-buddy-air-control";
+import { saveLocalAirControlCalibration } from "@/lib/os-buddy/air-control/air-control-settings";
 import type {
   OSBuddyAirControlCommand,
   OSBuddyAirControlQuality,
@@ -10,6 +12,7 @@ import type {
 } from "@/lib/os-buddy/os-buddy-air-control-types";
 import { useOSBuddyStore } from "@/stores/os-buddy-store";
 import { cn } from "@/lib/utils";
+import { OSBuddyCalibrationFlow } from "./air-control/OSBuddyCalibrationFlow";
 
 type OSBuddyAirControlOverlayProps = {
   active: boolean;
@@ -93,9 +96,13 @@ export function OSBuddyAirControlOverlay({
   const status = useOSBuddyStore((s) => s.airControlStatus);
   const sensorMode = useOSBuddyStore((s) => s.airControlSensorMode);
   const quality = useOSBuddyStore((s) => s.airControlQuality);
+  const calibration = useOSBuddyStore((s) => s.airControlCalibration);
   const debugEnabled = useOSBuddyStore((s) => s.airControlDebugEnabled);
   const setDebugEnabled = useOSBuddyStore((s) => s.setAirControlDebugEnabled);
+  const clearAirControlCalibration = useOSBuddyStore((s) => s.clearAirControlCalibration);
   const stopAirControl = useOSBuddyStore((s) => s.stopAirControl);
+  const [calibrating, setCalibrating] = useState(false);
+  const [pairingUrl, setPairingUrl] = useState<string | null>(null);
   const { videoRef, debugState } = useOSBuddyAirControl({
     enabled: active,
     locale,
@@ -103,10 +110,26 @@ export function OSBuddyAirControlOverlay({
     dockPoint,
     buddyBox,
     sensorMode,
+    calibration,
     onCommand,
   });
   const zh = locale === "zh-TW";
   const showDebug = debugEnabled || process.env.NODE_ENV !== "production";
+
+  const resetCalibration = () => {
+    clearAirControlCalibration();
+    saveLocalAirControlCalibration(null);
+  };
+
+  const startPhonePairing = () => {
+    const sessionId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const localePrefix = locale === "zh-TW" ? "zh-TW" : locale || "en";
+    const url = `${window.location.origin}/${localePrefix}/os-buddy/air-remote?session=${sessionId}`;
+    setPairingUrl(url);
+  };
 
   if (!active) return null;
 
@@ -182,6 +205,57 @@ export function OSBuddyAirControlOverlay({
           </button>
         </div>
 
+        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-2 py-1 text-[11px] shadow-lg shadow-black/10 backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => setCalibrating(true)}
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Crosshair className="size-3.5" aria-hidden="true" />
+            <span>{zh ? "校準" : "Calibrate"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={resetCalibration}
+            disabled={!calibration}
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+          >
+            <RotateCcw className="size-3.5" aria-hidden="true" />
+            <span>{zh ? "重設校準" : "Reset"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={startPhonePairing}
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Smartphone className="size-3.5" aria-hidden="true" />
+            <span>{zh ? "用手機相機" : "Phone"}</span>
+          </button>
+        </div>
+
+        {pairingUrl ? (
+          <div className="pointer-events-auto w-64 rounded-lg border border-border/70 bg-background/92 p-3 text-[11px] text-muted-foreground shadow-lg shadow-black/10 backdrop-blur-md">
+            <p className="mb-1 font-medium text-foreground">
+              {zh ? "在手機開啟此連結" : "Open this link on your phone"}
+            </p>
+            <p className="break-all rounded bg-muted px-2 py-1 text-[10px] text-foreground">
+              {pairingUrl}
+            </p>
+            <p className="mt-1 text-[10px]">
+              {zh
+                ? "實驗功能：手機在本機處理手勢，只傳送座標。"
+                : "Experimental: the phone processes gestures locally and sends only coordinates."}
+            </p>
+            <button
+              type="button"
+              onClick={() => setPairingUrl(null)}
+              className="mt-2 rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+            >
+              {zh ? "關閉" : "Dismiss"}
+            </button>
+          </div>
+        ) : null}
+
         {showDebug ? (
           <div className="pointer-events-auto w-64 rounded-lg border border-border/70 bg-background/92 p-3 text-[11px] text-muted-foreground shadow-lg shadow-black/10 backdrop-blur-md">
             <div className="mb-2 flex items-center justify-between font-medium text-foreground">
@@ -218,6 +292,14 @@ export function OSBuddyAirControlOverlay({
           </div>
         ) : null}
       </div>
+
+      <OSBuddyCalibrationFlow
+        key={calibrating ? "calibrating" : "idle"}
+        open={calibrating}
+        locale={locale}
+        viewport={viewport}
+        onClose={() => setCalibrating(false)}
+      />
     </>
   );
 }

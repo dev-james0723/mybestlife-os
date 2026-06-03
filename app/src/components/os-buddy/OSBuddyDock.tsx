@@ -19,6 +19,10 @@ import { useOSBuddyStore, type OSBuddyMiniGame } from "@/stores/os-buddy-store";
 import { OSBuddySprite } from "./OSBuddySprite";
 import { OSBuddyBubble } from "./OSBuddyBubble";
 import { OSBuddyAirControlOverlay } from "./OSBuddyAirControlOverlay";
+import {
+  getLocalAirControlCalibration,
+  getLocalAirControlSettings,
+} from "@/lib/os-buddy/air-control/air-control-settings";
 import { OSBuddyMenu } from "./OSBuddyMenu";
 import { OSBuddyPetPicker } from "./OSBuddyPetPicker";
 import { OSBuddyFocusBadge } from "./OSBuddyFocusBadge";
@@ -434,6 +438,8 @@ export function OSBuddyDock() {
   const startAirControl = useOSBuddyStore((s) => s.startAirControl);
   const stopAirControl = useOSBuddyStore((s) => s.stopAirControl);
   const setAirControlSensorMode = useOSBuddyStore((s) => s.setAirControlSensorMode);
+  const setAirControlCalibration = useOSBuddyStore((s) => s.setAirControlCalibration);
+  const setAirControlDebugEnabled = useOSBuddyStore((s) => s.setAirControlDebugEnabled);
   const temporarilySetMood = useOSBuddyStore((s) => s.temporarilySetMood);
   const registerClickBurst = useOSBuddyStore((s) => s.registerClickBurst);
   const resetClickBurst = useOSBuddyStore((s) => s.resetClickBurst);
@@ -567,6 +573,14 @@ export function OSBuddyDock() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load persisted Air Touch calibration + debug preference (numbers only).
+  useEffect(() => {
+    const calibration = getLocalAirControlCalibration();
+    if (calibration) setAirControlCalibration(calibration);
+    const settings = getLocalAirControlSettings();
+    setAirControlDebugEnabled(settings.showDebugOverlay);
+  }, [setAirControlCalibration, setAirControlDebugEnabled]);
 
   useEffect(() => {
     dockPointRef.current = dockPoint;
@@ -1474,7 +1488,9 @@ export function OSBuddyDock() {
 
       if (resolution.kind === "trigger") {
         lastTapRef.current = null;
-        activateAirControl();
+        if (getLocalAirControlSettings().enableQuadTap) {
+          activateAirControl();
+        }
         return;
       }
 

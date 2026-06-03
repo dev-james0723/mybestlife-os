@@ -12,8 +12,9 @@ import {
   type AirGrabState,
 } from "@/lib/os-buddy/air-control/air-grab-machine";
 import { resolveAirTouch } from "@/lib/os-buddy/air-control/air-touch-resolver";
-import { selectPrimaryAirControlHand } from "@/lib/os-buddy/air-control/gestures";
+import { getIndexTipPoint, selectPrimaryAirControlHand } from "@/lib/os-buddy/air-control/gestures";
 import type { Hitbox } from "@/lib/os-buddy/air-control/geometry";
+import type { CalibrationData } from "@/lib/os-buddy/air-control/types";
 import type {
   OSBuddyAirControlCommand,
   OSBuddyAirControlDebugState,
@@ -39,6 +40,7 @@ type UseOSBuddyAirControlParams = {
   dockPoint: { x: number; y: number };
   buddyBox: { width: number; height: number };
   sensorMode?: OSBuddyAirControlSensorMode;
+  calibration?: CalibrationData | null;
   onCommand: (command: OSBuddyAirControlCommand) => void;
 };
 
@@ -126,6 +128,7 @@ export function useOSBuddyAirControl({
   dockPoint,
   buddyBox,
   sensorMode = "rgb-webcam",
+  calibration = null,
   onCommand,
 }: UseOSBuddyAirControlParams) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -144,6 +147,7 @@ export function useOSBuddyAirControl({
   const onCommandRef = useRef(onCommand);
   // Kept fresh without restarting the camera effect.
   const dockBoxRef = useRef({ dockPoint, buddyBox });
+  const calibrationRef = useRef<CalibrationData | null>(calibration);
   const [debugState, setDebugState] = useState<OSBuddyAirControlDebugState>({
     handCount: 0,
     gesture: null,
@@ -165,6 +169,10 @@ export function useOSBuddyAirControl({
   useEffect(() => {
     dockBoxRef.current = { dockPoint, buddyBox };
   }, [dockPoint, buddyBox]);
+
+  useEffect(() => {
+    calibrationRef.current = calibration;
+  }, [calibration]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -231,11 +239,16 @@ export function useOSBuddyAirControl({
         height: box.height,
       };
 
+      // Surface the raw normalized index tip for the calibration flow.
+      const rawTip = primaryHand ? getIndexTipPoint(primaryHand) : null;
+      useOSBuddyStore.getState().setAirControlRawPoint(rawTip);
+
       const reading = resolveAirTouch({
         hand: primaryHand,
         viewport,
         now,
         sensorMode,
+        calibration: calibrationRef.current,
         mirrored: true,
       });
 
