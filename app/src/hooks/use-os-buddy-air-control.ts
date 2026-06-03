@@ -7,20 +7,19 @@ import type {
   NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 import {
-  detectOpenPalmSwipe,
-  getIndexTipPoint,
-  mapNormalizedPointToViewport,
-  resolveAirControlGesture,
-  selectPrimaryAirControlHand,
-} from "@/lib/os-buddy/os-buddy-air-gestures";
-import { OSBuddyAirPointSmoother, OSBuddyAirStableValue } from "@/lib/os-buddy/os-buddy-air-smoothing";
+  createAirGrabState,
+  stepAirGrab,
+  type AirGrabState,
+} from "@/lib/os-buddy/air-control/air-grab-machine";
+import { resolveAirTouch } from "@/lib/os-buddy/air-control/air-touch-resolver";
+import { selectPrimaryAirControlHand } from "@/lib/os-buddy/air-control/gestures";
+import type { Hitbox } from "@/lib/os-buddy/air-control/geometry";
 import type {
   OSBuddyAirControlCommand,
   OSBuddyAirControlDebugState,
-  OSBuddyAirControlFrame,
   OSBuddyAirControlGesture,
   OSBuddyAirControlHand,
-  OSBuddyAirControlPoint,
+  OSBuddyAirControlSensorMode,
 } from "@/lib/os-buddy/os-buddy-air-control-types";
 import { useOSBuddyStore } from "@/stores/os-buddy-store";
 
@@ -28,7 +27,7 @@ const MEDIAPIPE_VERSION = "0.10.35";
 const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
 const GESTURE_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task";
-const DETECTION_INTERVAL_MS = 66;
+const DETECTION_INTERVAL_MS = 50;
 const LOST_HAND_MS = 1_500;
 const CLOSED_FIST_EXIT_MS = 800;
 const COMMAND_COOLDOWN_MS = 1_200;
@@ -37,6 +36,9 @@ type UseOSBuddyAirControlParams = {
   enabled: boolean;
   locale: string;
   viewport: { width: number; height: number };
+  dockPoint: { x: number; y: number };
+  buddyBox: { width: number; height: number };
+  sensorMode?: OSBuddyAirControlSensorMode;
   onCommand: (command: OSBuddyAirControlCommand) => void;
 };
 
@@ -101,10 +103,29 @@ function getHandsFromResult(result: GestureRecognizerResult): OSBuddyAirControlH
   });
 }
 
+/** One-shot gestures (outside the grab lifecycle) and the command they fire. */
+function oneShotCommandFor(
+  gesture: OSBuddyAirControlGesture,
+): Extract<OSBuddyAirControlCommand, { type: "select" | "play-ball" | "celebrate" }> | null {
+  switch (gesture) {
+    case "Pinch":
+      return { type: "select", gesture };
+    case "Victory":
+      return { type: "play-ball", gesture };
+    case "Thumb_Up":
+      return { type: "celebrate", gesture };
+    default:
+      return null;
+  }
+}
+
 export function useOSBuddyAirControl({
   enabled,
   locale,
   viewport,
+  dockPoint,
+  buddyBox,
+  sensorMode = "rgb-webcam",
   onCommand,
 }: UseOSBuddyAirControlParams) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -114,26 +135,36 @@ export function useOSBuddyAirControl({
   const lastInferenceAtRef = useRef(0);
   const lastVideoTimeRef = useRef(-1);
   const lastSeenAtRef = useRef(0);
-  const previousFrameRef = useRef<OSBuddyAirControlFrame | null>(null);
-  const smootherRef = useRef(new OSBuddyAirPointSmoother(0.36));
-  const stableGestureRef = useRef(new OSBuddyAirStableValue<OSBuddyAirControlGesture>(110));
-  const closedFistSinceRef = useRef<number | null>(null);
   const lostHandNotifiedRef = useRef(false);
+  const machineRef = useRef<AirGrabState>(createAirGrabState());
+  const closedFistSinceRef = useRef<number | null>(null);
   const lastCommandAtRef = useRef<Record<string, number>>({});
   const fpsWindowRef = useRef<number[]>([]);
   const lastGestureRef = useRef<OSBuddyAirControlGesture | null>(null);
   const onCommandRef = useRef(onCommand);
+  // Kept fresh without restarting the camera effect.
+  const dockBoxRef = useRef({ dockPoint, buddyBox });
   const [debugState, setDebugState] = useState<OSBuddyAirControlDebugState>({
     handCount: 0,
     gesture: null,
     confidence: 0,
     target: null,
+    fingertip: null,
+    state: "inactive",
+    hitbox: null,
+    sensorMode,
+    quality: "uncalibrated",
+    latencyMs: 0,
     fps: 0,
   });
 
   useEffect(() => {
     onCommandRef.current = onCommand;
   }, [onCommand]);
+
+  useEffect(() => {
+    dockBoxRef.current = { dockPoint, buddyBox };
+  }, [dockPoint, buddyBox]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -167,32 +198,20 @@ export function useOSBuddyAirControl({
     const store = useOSBuddyStore.getState();
 
     const emitCommand = (command: OSBuddyAirControlCommand, now: number) => {
-      if (command.type !== "follow") {
+      // Grab-lifecycle / cursor commands always flow; one-shots are rate limited.
+      const rateLimited =
+        command.type === "select" ||
+        command.type === "play-ball" ||
+        command.type === "celebrate" ||
+        command.type === "exit" ||
+        command.type === "lost-hand";
+      if (rateLimited) {
         const previousAt = lastCommandAtRef.current[command.type] ?? 0;
         if (now - previousAt < COMMAND_COOLDOWN_MS) return false;
         lastCommandAtRef.current[command.type] = now;
       }
-
       onCommandRef.current(command);
       return true;
-    };
-
-    const updateDebug = (params: {
-      frame: OSBuddyAirControlFrame;
-      gesture: OSBuddyAirControlGesture | null;
-      target: OSBuddyAirControlPoint | null;
-      now: number;
-    }) => {
-      const fpsWindow = fpsWindowRef.current.filter((timestamp) => params.now - timestamp < 1_000);
-      fpsWindow.push(params.now);
-      fpsWindowRef.current = fpsWindow;
-      setDebugState({
-        handCount: params.frame.handCount,
-        gesture: params.gesture,
-        confidence: params.frame.primaryHand?.confidence ?? 0,
-        target: params.target,
-        fps: fpsWindow.length,
-      });
     };
 
     const setGesture = (gesture: OSBuddyAirControlGesture | null) => {
@@ -201,93 +220,96 @@ export function useOSBuddyAirControl({
       useOSBuddyStore.getState().setAirControlGesture(gesture);
     };
 
-    const handleResult = (result: GestureRecognizerResult, now: number) => {
+    const handleResult = (result: GestureRecognizerResult, now: number, latencyMs: number) => {
       const hands = getHandsFromResult(result);
       const primaryHand = selectPrimaryAirControlHand(hands);
-      const frame: OSBuddyAirControlFrame = {
-        handCount: hands.length,
-        primaryHand,
-        now,
+      const { dockPoint: dock, buddyBox: box } = dockBoxRef.current;
+      const hitbox: Hitbox = {
+        x: dock.x,
+        y: dock.y,
+        width: box.width,
+        height: box.height,
       };
 
+      const reading = resolveAirTouch({
+        hand: primaryHand,
+        viewport,
+        now,
+        sensorMode,
+        mirrored: true,
+      });
+
+      const { next, commands } = stepAirGrab(machineRef.current, {
+        reading,
+        hitbox,
+        dockPoint: dock,
+        now,
+      });
+      machineRef.current = next;
+
+      const isGrabbing = next.state === "grabbed" || next.state === "dragging";
+
+      // Lost-hand bookkeeping (hint + status), independent of the grab freeze.
       if (!primaryHand) {
         const lastSeenAt = lastSeenAtRef.current;
         if (lastSeenAt > 0 && now - lastSeenAt >= LOST_HAND_MS && !lostHandNotifiedRef.current) {
           lostHandNotifiedRef.current = true;
-          smootherRef.current.reset();
-          stableGestureRef.current.reset();
           closedFistSinceRef.current = null;
-          setGesture(null);
-          useOSBuddyStore.getState().setAirControlTarget(null);
           useOSBuddyStore.getState().setAirControlStatus("paused");
           emitCommand({ type: "lost-hand" }, now);
         }
-        updateDebug({ frame, gesture: null, target: null, now });
-        previousFrameRef.current = frame;
-        return;
+      } else {
+        lostHandNotifiedRef.current = false;
+        lastSeenAtRef.current = now;
+        useOSBuddyStore.getState().markAirControlHandSeen(Date.now());
+        useOSBuddyStore.getState().setAirControlStatus("tracking");
       }
 
-      lostHandNotifiedRef.current = false;
-      lastSeenAtRef.current = now;
-      useOSBuddyStore.getState().markAirControlHandSeen(Date.now());
-      useOSBuddyStore.getState().setAirControlStatus("tracking");
+      setGesture(reading.gesture);
+      useOSBuddyStore.getState().setAirTouchState(next.state);
 
-      const rawGesture = resolveAirControlGesture(primaryHand);
-      const swipeGesture = detectOpenPalmSwipe({
-        current: frame,
-        previous: previousFrameRef.current,
-        gesture: rawGesture,
-      });
-      const stableGesture = stableGestureRef.current.update(swipeGesture ?? rawGesture, now);
-      const gesture = swipeGesture ?? stableGesture ?? rawGesture;
-      let target: OSBuddyAirControlPoint | null = null;
+      // Emit grab-lifecycle + cursor commands.
+      for (const command of commands) {
+        emitCommand(command, now);
+      }
 
-      setGesture(gesture);
+      // One-shot gestures only when NOT holding (avoid fighting a drag). Open palm
+      // release is handled inside the machine, so it's excluded here.
+      if (!isGrabbing) {
+        const oneShot = oneShotCommandFor(reading.gesture);
+        if (oneShot) emitCommand(oneShot, now);
+      }
 
-      if (gesture !== "Closed_Fist") {
+      // Closed-fist hold fully exits Air Control.
+      if (reading.gesture === "Closed_Fist") {
+        closedFistSinceRef.current ??= now;
+        if (now - closedFistSinceRef.current >= CLOSED_FIST_EXIT_MS) {
+          emitCommand({ type: "exit", gesture: "Closed_Fist" }, now);
+        }
+      } else {
         closedFistSinceRef.current = null;
       }
 
-      if (gesture === "Index_Point" || gesture === "Pointing_Up") {
-        const indexTip = getIndexTipPoint(primaryHand);
-        if (indexTip && viewport.width > 0 && viewport.height > 0) {
-          target = smootherRef.current.update(
-            mapNormalizedPointToViewport({
-              point: indexTip,
-              viewport,
-              mirrored: true,
-            }),
-          );
-          useOSBuddyStore.getState().setAirControlTarget(target);
-          emitCommand({ type: "follow", point: target, gesture }, now);
-        }
-      } else if (gesture === "Open_Palm") {
-        smootherRef.current.reset();
-        useOSBuddyStore.getState().setAirControlTarget(null);
-        useOSBuddyStore.getState().setAirControlStatus("paused");
-        emitCommand({ type: "pause", gesture }, now);
-      } else if (gesture === "Closed_Fist") {
-        smootherRef.current.reset();
-        useOSBuddyStore.getState().setAirControlTarget(null);
-        emitCommand({ type: "hold", gesture }, now);
-        closedFistSinceRef.current ??= now;
-        if (now - closedFistSinceRef.current >= CLOSED_FIST_EXIT_MS) {
-          emitCommand({ type: "exit", gesture }, now);
-        }
-      } else if (gesture === "Pinch") {
-        emitCommand({ type: "select", gesture }, now);
-      } else if (gesture === "Victory") {
-        emitCommand({ type: "play-ball", gesture }, now);
-      } else if (gesture === "Thumb_Up") {
-        emitCommand({ type: "celebrate", gesture }, now);
-      } else if (gesture === "Swipe_Left") {
-        emitCommand({ type: "dash-left", gesture }, now);
-      } else if (gesture === "Swipe_Right") {
-        emitCommand({ type: "dash-right", gesture }, now);
-      }
+      const fpsWindow = fpsWindowRef.current.filter((timestamp) => now - timestamp < 1_000);
+      fpsWindow.push(now);
+      fpsWindowRef.current = fpsWindow;
 
-      updateDebug({ frame, gesture, target, now });
-      previousFrameRef.current = frame;
+      const cursor = next.smoothed;
+      const storeState = useOSBuddyStore.getState();
+      storeState.setAirControlTarget(cursor ?? null);
+      setDebugState({
+        handCount: hands.length,
+        gesture: reading.gesture,
+        confidence: reading.confidence,
+        target: cursor ?? null,
+        fingertip: cursor ?? null,
+        state: next.state,
+        hitbox,
+        sensorMode,
+        quality: storeState.airControlQuality,
+        latencyMs,
+        fps: fpsWindow.length,
+      });
     };
 
     const stopRuntimeResources = () => {
@@ -303,15 +325,14 @@ export function useOSBuddyAirControl({
         videoRef.current.pause();
         videoRef.current.srcObject = null;
       }
-      previousFrameRef.current = null;
       lastInferenceAtRef.current = 0;
       lastVideoTimeRef.current = -1;
       lastSeenAtRef.current = 0;
       lostHandNotifiedRef.current = false;
       closedFistSinceRef.current = null;
-      smootherRef.current.reset();
-      stableGestureRef.current.reset();
+      machineRef.current = createAirGrabState();
       useOSBuddyStore.getState().setAirControlTarget(null);
+      useOSBuddyStore.getState().setAirTouchState("inactive");
     };
 
     const loop = (now: number) => {
@@ -324,9 +345,11 @@ export function useOSBuddyAirControl({
           now - lastInferenceAtRef.current >= DETECTION_INTERVAL_MS &&
           video.currentTime !== lastVideoTimeRef.current;
         if (shouldInfer) {
+          const startedAt = performance.now();
           lastInferenceAtRef.current = now;
           lastVideoTimeRef.current = video.currentTime;
-          handleResult(recognizer.recognizeForVideo(video, now), now);
+          const result = recognizer.recognizeForVideo(video, now);
+          handleResult(result, now, performance.now() - startedAt);
         }
       }
 
@@ -338,6 +361,7 @@ export function useOSBuddyAirControl({
       message: string,
     ) => {
       useOSBuddyStore.getState().setAirControlStatus("error");
+      useOSBuddyStore.getState().setAirControlError(message);
       store.showBubble(message, "error", { force: true, durationMs: 4_200 });
       useOSBuddyStore.getState().stopAirControl(status);
     };
@@ -432,10 +456,10 @@ export function useOSBuddyAirControl({
         useOSBuddyStore.getState().setAirControlStatus("tracking");
         store.showBubble(
           locale === "zh-TW"
-            ? "隔空操控啟動。伸出食指，我會跟住你。"
-            : "Air Control is on. Point with your index finger and I'll follow.",
+            ? "隔空觸碰啟動。伸出食指，碰到我就可以抓住我移動。"
+            : "Air Touch is on. Point your index finger, then reach onto me to grab and move me.",
           "user-triggered",
-          { force: true, durationMs: 3_600 },
+          { force: true, durationMs: 3_800 },
         );
         frameRef.current = window.requestAnimationFrame(loop);
       } catch {
@@ -455,7 +479,7 @@ export function useOSBuddyAirControl({
       cancelled = true;
       stopRuntimeResources();
     };
-  }, [enabled, locale, viewport]);
+  }, [enabled, locale, viewport, sensorMode]);
 
   return {
     videoRef,

@@ -47,7 +47,7 @@ describe("selectBestSource", () => {
 });
 
 describe("fuseReadings", () => {
-  function reading(confidence: number, id: string): AirTouchReading {
+  function reading(confidence: number): AirTouchReading {
     return {
       timestamp: 0,
       fingertip: { x: confidence, y: 0 },
@@ -56,12 +56,11 @@ describe("fuseReadings", () => {
       confidence,
       mode: "2d",
       sensorMode: "rgb-webcam",
-      // carry id via fingertip.x for assertion simplicity
-    } as AirTouchReading & { id?: string };
+    };
   }
 
   it("passes through the highest-confidence reading", () => {
-    const fused = fuseReadings([reading(0.3, "a"), reading(0.9, "b"), reading(0.5, "c")]);
+    const fused = fuseReadings([reading(0.3), reading(0.9), reading(0.5)]);
     expect(fused?.confidence).toBe(0.9);
   });
 

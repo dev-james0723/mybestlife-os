@@ -71,4 +71,25 @@ describe("OS Buddy tap resolver", () => {
       sequence: null,
     });
   });
+
+  it("restarts the sequence when taps are too far apart in time", () => {
+    const first = tap(null, 1_000);
+    // second tap arrives after the tap window -> counts as a fresh single
+    const second = tap(first.kind === "pending" ? first.sequence : null, 1_000 + 400);
+    expect(second).toMatchObject({ kind: "pending", action: "single", sequence: { count: 1 } });
+  });
+
+  it("restarts the sequence when taps are too far apart in space", () => {
+    const first = resolveOSBuddyTapSequence({
+      previous: null,
+      tap: { at: 1_000, x: 100, y: 100, pointerType: "mouse" },
+      options,
+    });
+    const second = resolveOSBuddyTapSequence({
+      previous: first.kind === "pending" ? first.sequence : null,
+      tap: { at: 1_100, x: 300, y: 300, pointerType: "mouse" }, // > maxDistancePx away
+      options,
+    });
+    expect(second).toMatchObject({ kind: "pending", action: "single", sequence: { count: 1 } });
+  });
 });

@@ -433,6 +433,7 @@ export function OSBuddyDock() {
   const setReturningHome = useOSBuddyStore((s) => s.setReturningHome);
   const startAirControl = useOSBuddyStore((s) => s.startAirControl);
   const stopAirControl = useOSBuddyStore((s) => s.stopAirControl);
+  const setAirControlSensorMode = useOSBuddyStore((s) => s.setAirControlSensorMode);
   const temporarilySetMood = useOSBuddyStore((s) => s.temporarilySetMood);
   const registerClickBurst = useOSBuddyStore((s) => s.registerClickBurst);
   const resetClickBurst = useOSBuddyStore((s) => s.resetClickBurst);
@@ -550,6 +551,7 @@ export function OSBuddyDock() {
   const walkTargetRef = useRef<DockPoint | null>(null);
   const restingTargetRef = useRef<DockPoint | null>(null);
   const dockPointRef = useRef<DockPoint>({ x: 0, y: 0 });
+  const airGrabOffsetRef = useRef<DockPoint | null>(null);
   const secretModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const birthdayClickBurstRef = useRef<{
     dateKey: string | null;
@@ -1143,46 +1145,6 @@ export function OSBuddyDock() {
     ],
   );
 
-  const setAirControlWalkTarget = useCallback(
-    (target: DockPoint, pointer?: DockPoint) => {
-      if (viewport.width <= 0 || viewport.height <= 0) return;
-
-      activeWalkPointerIdRef.current = null;
-      if (pointer) {
-        walkPointerRef.current = { x: pointer.x, y: pointer.y, pointerType: "air" };
-        walkTargetRef.current = getWalkTargetPoint(pointer.x, pointer.y, "air");
-      } else {
-        walkPointerRef.current = null;
-        walkTargetRef.current = clampDockPoint(target, viewport, buddyBox);
-      }
-
-      const state = useOSBuddyStore.getState();
-      if (state.isWalkModeActive && !state.isReturningHome) return;
-
-      walkDirectionRef.current = null;
-      restingTargetRef.current = resolveRestingTarget();
-      setDragging(false, null);
-      setMenuOpen(false);
-      setPetPickerOpen(false);
-      setReturningHome(false);
-      setWalkModeActive(true);
-      setMood("playful");
-      emitOSBuddyEvent({ type: "buddy:walk:start" });
-    },
-    [
-      buddyBox,
-      getWalkTargetPoint,
-      resolveRestingTarget,
-      setDragging,
-      setMenuOpen,
-      setMood,
-      setPetPickerOpen,
-      setReturningHome,
-      setWalkModeActive,
-      viewport,
-    ],
-  );
-
   const activateAirControl = useCallback(() => {
     clearSingleClickTimer();
     clearLongPressTimer();
@@ -1200,14 +1162,18 @@ export function OSBuddyDock() {
     setDragging(false, null);
     setReturningHome(false);
     setWalkModeActive(false);
+    airGrabOffsetRef.current = null;
     setMood("playful");
+    setAirControlSensorMode("rgb-webcam");
     startAirControl();
+    emitOSBuddyEvent({ type: "buddy:air-control:start", sensorMode: "rgb-webcam" });
   }, [
     clearLongPressTimer,
     clearSingleClickTimer,
     closeMiniGame,
     interruptFreeRoam,
     resetPlayBallRuntime,
+    setAirControlSensorMode,
     setDragging,
     setMenuOpen,
     setMood,
@@ -1220,28 +1186,81 @@ export function OSBuddyDock() {
   const handleAirControlCommand = useCallback(
     (command: OSBuddyAirControlCommand) => {
       switch (command.type) {
-        case "follow":
-          setAirControlWalkTarget(command.point, command.point);
+        case "cursor":
+          // Virtual cursor only; rendered by the overlay. No dock movement.
           return;
+        case "hover":
+          // Reaching toward OSBuddy; a subtle playful cue, no movement yet.
+          temporarilySetMood("playful", 320);
+          return;
+        case "grab": {
+          // Stop other modes and "pick up" OSBuddy at the grab offset.
+          interruptFreeRoam("user-click");
+          setMenuOpen(false);
+          setPetPickerOpen(false);
+          setWalkModeActive(false);
+          setReturningHome(false);
+          walkTargetRef.current = null;
+          airGrabOffsetRef.current = command.grabOffset;
+          setDragging(true, null);
+          setMood("playful");
+          showBubble(locale === "zh-TW" ? "抓到我喇！" : "You grabbed me!", "user-triggered", {
+            force: true,
+            durationMs: 1_400,
+          });
+          return;
+        }
+        case "drag": {
+          const offset = airGrabOffsetRef.current ?? { x: 0, y: 0 };
+          const next = clampDockPoint(
+            { x: command.point.x - offset.x, y: command.point.y - offset.y },
+            viewport,
+            buddyBox,
+          );
+          const direction =
+            next.x < dockPointRef.current.x - 0.5
+              ? "left"
+              : next.x > dockPointRef.current.x + 0.5
+                ? "right"
+                : null;
+          dockPointRef.current = next;
+          setDockPoint(next);
+          setDragging(true, direction);
+          return;
+        }
+        case "release": {
+          airGrabOffsetRef.current = null;
+          setDragging(false, null);
+          setMood("idle");
+          if (command.save && viewport.width > 0 && viewport.height > 0) {
+            const finalPosition: OSBuddyPosition = {
+              x: Math.round(dockPointRef.current.x),
+              y: Math.round(dockPointRef.current.y),
+              anchor: "custom",
+            };
+            setActivePosition(finalPosition);
+            void savePosition(finalPosition);
+          }
+          showBubble(locale === "zh-TW" ? "放低咗，就放呢度。" : "Set down right here.", "user-triggered", {
+            force: true,
+            durationMs: 1_500,
+          });
+          return;
+        }
         case "pause":
-          pauseAirControlWalk("playful");
-          showBubble(locale === "zh-TW" ? "我停喺呢度。" : "I'll stay here.", "user-triggered", {
-            force: true,
-            durationMs: 1_600,
-          });
+          // Hand lost / low confidence: freeze in place, keep the grab.
+          setDragging(false, null);
+          temporarilySetMood("playful", 600);
           return;
-        case "hold":
-          pauseAirControlWalk("playful");
-          showBubble(locale === "zh-TW" ? "握拳，我先停低。" : "Fist held. I'll freeze.", "user-triggered", {
-            force: true,
-            durationMs: 1_200,
-          });
+        case "resume":
+          setDragging(true, null);
           return;
         case "exit":
+          airGrabOffsetRef.current = null;
           pauseAirControlWalk("idle");
           stopAirControl(command.gesture === "Closed_Fist" ? "closed-fist" : "user-exit");
           showBubble(
-            locale === "zh-TW" ? "隔空操控已關閉。" : "Air Control is off.",
+            locale === "zh-TW" ? "隔空觸碰已關閉。" : "Air Touch is off.",
             "system",
             {
               force: true,
@@ -1253,6 +1272,7 @@ export function OSBuddyDock() {
           void triggerClickReaction();
           return;
         case "play-ball":
+          airGrabOffsetRef.current = null;
           pauseAirControlWalk("playful");
           togglePlayBallGame();
           return;
@@ -1263,23 +1283,9 @@ export function OSBuddyDock() {
             durationMs: 1_500,
           });
           return;
-        case "dash-left":
-        case "dash-right": {
-          const x =
-            command.type === "dash-left"
-              ? VIEWPORT_EDGE_GAP
-              : viewport.width - buddyBox.width - VIEWPORT_EDGE_GAP;
-          setAirControlWalkTarget({
-            x,
-            y: dockPointRef.current.y,
-          });
-          temporarilySetMood(command.type === "dash-left" ? "dragging-left" : "dragging-right", 700);
-          return;
-        }
         case "lost-hand":
-          pauseAirControlWalk("playful");
           showBubble(
-            locale === "zh-TW" ? "我暫時睇唔到隻手，先停一停。" : "I lost your hand, so I'll pause.",
+            locale === "zh-TW" ? "我暫時睇唔到隻手。" : "I can't see your hand right now.",
             "system",
             {
               force: true,
@@ -1292,16 +1298,25 @@ export function OSBuddyDock() {
       }
     },
     [
-      buddyBox.width,
+      buddyBox,
+      interruptFreeRoam,
       locale,
       pauseAirControlWalk,
-      setAirControlWalkTarget,
+      savePosition,
+      setActivePosition,
+      setDockPoint,
+      setDragging,
+      setMenuOpen,
+      setMood,
+      setPetPickerOpen,
+      setReturningHome,
+      setWalkModeActive,
       showBubble,
       stopAirControl,
       temporarilySetMood,
       togglePlayBallGame,
       triggerClickReaction,
-      viewport.width,
+      viewport,
     ],
   );
 
@@ -1971,6 +1986,8 @@ export function OSBuddyDock() {
         active={isAirControlActive}
         locale={locale}
         viewport={viewport}
+        dockPoint={dockPoint}
+        buddyBox={buddyBox}
         onCommand={handleAirControlCommand}
       />
 

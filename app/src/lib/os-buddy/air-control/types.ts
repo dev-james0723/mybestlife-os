@@ -7,7 +7,7 @@
  * command/gesture types in os-buddy-air-control-types.ts without duplicating them.
  */
 
-import type { Hitbox, Vec2, Vec3 } from "./geometry";
+import type { Vec2, Vec3 } from "./geometry";
 import type {
   OSBuddyAirControlGesture,
   OSBuddyAirControlHand,
