@@ -12,7 +12,6 @@ import { SkillChatRoom } from "@/components/mind-council/SkillChatRoom";
 import { GroupCouncilPanel } from "@/components/mind-council/GroupCouncilPanel";
 import { CreateSkillModal } from "@/components/mind-council/CreateSkillModal";
 import { AdvisorProfilePanel } from "@/components/mind-council/AdvisorProfilePanel";
-import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/stores/app-store";
 import { getMindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
@@ -21,6 +20,12 @@ import { useRoleModelMindSkills } from "@/hooks/use-role-model-neural-skills";
 import type { MindSkill } from "@/lib/mind-council/types";
 import { toast } from "sonner";
 import { PlusCircle } from "lucide-react";
+import {
+  OSMotionPanel,
+  OSFrostedPanel,
+  OSPrimaryAction,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 
 const CUSTOM_KEY = "mind-council-custom-skills-v1";
 
@@ -259,7 +264,7 @@ export function MindCouncilExperience() {
 
   return (
     <PageShell title={ui.pageTitle} description={ui.pageDescription}>
-      <div className="space-y-10 pb-16">
+      <OSMotionPanel className="space-y-10 pb-16">
         <MindCouncilHero
           ui={ui}
           value={heroInput}
@@ -269,9 +274,9 @@ export function MindCouncilExperience() {
           onAskCouncil={openCouncil}
         />
 
-        <p className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+        <OSSolidPanel className="border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-muted-foreground shadow-none">
           {ui.disclaimerPanel}
-        </p>
+        </OSSolidPanel>
 
         <ReadySkillsSection
           ui={ui}
@@ -304,17 +309,17 @@ export function MindCouncilExperience() {
           onProfile={openProfile}
         />
 
-        <section className="flex flex-col items-start gap-3 rounded-3xl border border-border/50 bg-muted/20 p-5 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+        <OSFrostedPanel className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold">{ui.createSkillTitle}</h2>
             <p className="text-sm text-muted-foreground">{ui.createSkillSubtitle}</p>
           </div>
-          <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setCreateOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
+          <OSPrimaryAction type="button" onClick={() => setCreateOpen(true)}>
+            <PlusCircle className="h-4 w-4" />
             {ui.createSkillTitle}
-          </Button>
-        </section>
-      </div>
+          </OSPrimaryAction>
+        </OSFrostedPanel>
+      </OSMotionPanel>
 
       <SkillChatRoom
         key={chatSkill?.skillId ?? "none"}

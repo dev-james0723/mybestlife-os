@@ -341,7 +341,7 @@ function StatusFilterRail({
               aria-selected={active}
               onClick={() => onSelect(status)}
               className={cn(
-                "relative isolate h-9 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.08em] transition-[color,transform] active:translate-y-px",
+                "relative isolate flex min-h-11 shrink-0 snap-start items-center overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.08em] transition-[color,transform] active:translate-y-px",
                 active
                   ? "text-lime-950 dark:text-lime-100"
                   : "text-slate-500 hover:text-slate-950 dark:text-white/55 dark:hover:text-white/85",

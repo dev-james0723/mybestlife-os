@@ -5,8 +5,8 @@ import type { MindSkill, MindSkillCategory } from "@/lib/mind-council/types";
 import type { MindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
 import { SkillCard } from "@/components/mind-council/SkillCard";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search } from "lucide-react";
+import { OSEmptyState, OSStatusRail } from "@/components/ui/os-primitives";
 
 const ALL_CATS: (MindSkillCategory | "all")[] = [
   "all",
@@ -41,6 +41,15 @@ export function SkillLibrary({
   const [tab, setTab] = useState<(typeof ALL_CATS)[number]>("all");
   const [q, setQ] = useState("");
 
+  const categoryItems = useMemo(
+    () =>
+      ALL_CATS.map((c) => ({
+        id: c,
+        label: c === "all" ? ui.tabAll : ui.categoryTab[c],
+      })),
+    [ui],
+  );
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return skills.filter((s) => {
@@ -64,25 +73,23 @@ export function SkillLibrary({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={ui.searchPlaceholder}
-            className="rounded-2xl pl-9"
+            className="h-10 rounded-xl border-border/70 bg-background/78 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-md"
           />
         </div>
       </div>
-      <Tabs value={tab} onValueChange={(v) => setTab(v as (typeof ALL_CATS)[number])}>
-        <TabsList className="no-scrollbar flex h-auto w-full flex-wrap justify-start gap-1 overflow-x-auto rounded-2xl bg-muted/40 p-1">
-          {ALL_CATS.map((c) => (
-            <TabsTrigger
-              key={c}
-              value={c}
-              className="rounded-xl px-3 py-1.5 text-xs data-[state=active]:shadow-sm sm:text-sm"
-            >
-              {c === "all" ? ui.tabAll : ui.categoryTab[c]}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <OSStatusRail
+        items={categoryItems}
+        value={tab}
+        onValueChange={setTab}
+        ariaLabel={ui.libraryTitle}
+        allowReselect
+      />
       {filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{ui.noSearchResults}</p>
+        <OSEmptyState
+          icon={Search}
+          title={ui.noSearchResults}
+          className="border-dashed py-8"
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((skill) => (

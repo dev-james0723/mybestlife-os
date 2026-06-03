@@ -5,9 +5,9 @@ import type {
   OSBuddyAirControlLandmark,
   OSBuddyAirControlPoint,
 } from "./os-buddy-air-control-types";
+import { AIRPILOT_PINCH_RATIO_THRESHOLD, getAirPilotThumbIndexRatio } from "./os-buddy-airpilot-pinch";
 
 const WRIST = 0;
-const THUMB_TIP = 4;
 const INDEX_MCP = 5;
 const INDEX_PIP = 6;
 const INDEX_TIP = 8;
@@ -22,7 +22,6 @@ const PINKY_PIP = 18;
 const PINKY_TIP = 20;
 
 const MIN_HAND_CONFIDENCE = 0.45;
-const PINCH_RATIO_THRESHOLD = 0.34;
 const INDEX_EXTENSION_RATIO = 1.12;
 const OTHER_FINGER_EXTENSION_RATIO = 1.08;
 const SWIPE_MIN_VELOCITY = 0.00125;
@@ -62,14 +61,6 @@ function isFingerExtended(
   return tipDistance > Math.max(pipDistance * ratio, mcpDistance * (ratio + 0.18));
 }
 
-function getPalmSize(landmarks: OSBuddyAirControlLandmark[]) {
-  return Math.max(
-    0.001,
-    distance(landmarkAt(landmarks, WRIST), landmarkAt(landmarks, MIDDLE_MCP)),
-    distance(landmarkAt(landmarks, INDEX_MCP), landmarkAt(landmarks, PINKY_MCP)),
-  );
-}
-
 function getPalmCenter(landmarks: OSBuddyAirControlLandmark[]): OSBuddyAirControlPoint | null {
   const anchors = [WRIST, INDEX_MCP, MIDDLE_MCP, RING_MCP, PINKY_MCP]
     .map((index) => landmarkAt(landmarks, index))
@@ -89,10 +80,38 @@ export function getIndexTipPoint(hand: OSBuddyAirControlHand) {
 }
 
 export function isPinching(hand: OSBuddyAirControlHand) {
-  const thumbTip = landmarkAt(hand.landmarks, THUMB_TIP);
-  const indexTip = landmarkAt(hand.landmarks, INDEX_TIP);
-  if (!thumbTip || !indexTip) return false;
-  return distance(thumbTip, indexTip) / getPalmSize(hand.landmarks) <= PINCH_RATIO_THRESHOLD;
+  const ratio = getAirPilotThumbIndexRatio(hand);
+  return ratio != null && ratio <= AIRPILOT_PINCH_RATIO_THRESHOLD;
+}
+
+export function isOkOpenGesture(hand: OSBuddyAirControlHand) {
+  const landmarks = hand.landmarks;
+  if (hand.confidence < MIN_HAND_CONFIDENCE || landmarks.length < 21) return false;
+  if (!isPinching(hand)) return false;
+
+  const middleExtended = isFingerExtended(
+    landmarks,
+    MIDDLE_TIP,
+    MIDDLE_PIP,
+    MIDDLE_MCP,
+    OTHER_FINGER_EXTENSION_RATIO,
+  );
+  const ringExtended = isFingerExtended(
+    landmarks,
+    RING_TIP,
+    RING_PIP,
+    RING_MCP,
+    OTHER_FINGER_EXTENSION_RATIO,
+  );
+  const pinkyExtended = isFingerExtended(
+    landmarks,
+    PINKY_TIP,
+    PINKY_PIP,
+    PINKY_MCP,
+    OTHER_FINGER_EXTENSION_RATIO,
+  );
+
+  return middleExtended && ringExtended && pinkyExtended;
 }
 
 export function isIndexPointGesture(hand: OSBuddyAirControlHand) {
@@ -168,6 +187,7 @@ export function normalizeMediaPipeGesture(name: string | null): OSBuddyAirContro
 
 export function resolveAirControlGesture(hand: OSBuddyAirControlHand | null) {
   if (!hand || hand.confidence < MIN_HAND_CONFIDENCE) return "None";
+  if (isOkOpenGesture(hand)) return "OK_Open";
   if (isPinching(hand)) return "Pinch";
   if (isIndexPointGesture(hand)) return "Index_Point";
   return normalizeMediaPipeGesture(hand.gestureName);

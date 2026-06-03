@@ -11,11 +11,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/shared/page-shell";
-import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { Package, Plus, Lock } from "lucide-react";
+import {
+  OSEmptyState,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
+import {
+  osControlSizeClassName,
+  osDialogSurfaceClassName,
+  osGlassControlClassName,
+  osPrimaryControlClassName,
+} from "@/components/ui/os-glass";
 import {
   useSoftwareVault,
   useDeleteSoftwareVaultEntry,
@@ -66,7 +75,7 @@ export function VaultInterior() {
     [entries, selectedEntryId],
   );
 
-  const entryList = entries ?? [];
+  const entryList = useMemo(() => entries ?? [], [entries]);
 
   useEffect(() => {
     const ids = entryList.map((e) => e.id);
@@ -97,18 +106,18 @@ export function VaultInterior() {
         title={copy.gallery.title[uiTheme]}
         description={copy.gallery.description[uiTheme]}
         actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <>
             {softwareMode === "my-vault" ? <VaultCostDashboard entries={entryList} /> : null}
-            <Button variant="ghost" size="sm" onClick={lock} title={copy.gallery.lockBtn}>
+            <OSIconControl osSize="compact" onClick={lock} title={copy.gallery.lockBtn} aria-label={copy.gallery.lockBtn}>
               <Lock className="h-4 w-4" />
-            </Button>
+            </OSIconControl>
             {softwareMode === "my-vault" ? (
-              <Button onClick={() => setAddDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
+              <OSPrimaryAction onClick={() => setAddDialogOpen(true)}>
+                <Plus className="h-4 w-4" />
                 {addLabel}
-              </Button>
+              </OSPrimaryAction>
             ) : null}
-          </div>
+          </>
         }
       >
         <div
@@ -144,14 +153,16 @@ export function VaultInterior() {
               viewMode={viewMode}
               onSelect={selectEntry}
               emptyState={
-                <EmptyState
+                <OSEmptyState
                   icon={Package}
                   title={copy.gallery.emptyTitle[uiTheme]}
                   description={copy.gallery.emptyDescription}
-                  action={{
-                    label: addLabel,
-                    onClick: () => setAddDialogOpen(true),
-                  }}
+                  action={
+                    <OSPrimaryAction onClick={() => setAddDialogOpen(true)}>
+                      <Plus className="h-4 w-4" />
+                      {addLabel}
+                    </OSPrimaryAction>
+                  }
                 />
               }
             />
@@ -185,7 +196,7 @@ export function VaultInterior() {
       <VaultAddDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className={osDialogSurfaceClassName}>
           <AlertDialogHeader>
             <AlertDialogTitle>{copy.confirm.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -193,8 +204,11 @@ export function VaultInterior() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{copy.confirm.cancel}</AlertDialogCancel>
+            <AlertDialogCancel className={`${osGlassControlClassName} ${osControlSizeClassName}`}>
+              {copy.confirm.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
+              className={`${osPrimaryControlClassName} ${osControlSizeClassName}`}
               onClick={async () => {
                 if (!deleteId) return;
                 try {

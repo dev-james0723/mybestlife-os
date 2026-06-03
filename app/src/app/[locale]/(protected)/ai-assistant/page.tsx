@@ -6,6 +6,7 @@ import { OSFrostedPanel, OSPrimaryAction } from "@/components/ui/os-primitives";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SendHorizontal } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getMiscUiCopy } from "@/lib/i18n/misc-ui";
@@ -24,10 +25,15 @@ export default function AiAssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const reduceMotion = useReducedMotion() ?? false;
+  const draftIsEmpty = draft.trim().length === 0;
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    bottomRef.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [messages.length, reduceMotion]);
 
   const send = useCallback(() => {
     const text = draft.trim();
@@ -94,9 +100,14 @@ export default function AiAssistantPage() {
                 send();
               }
             }}
-            className="flex-1"
+            className="h-11 flex-1 rounded-xl px-3"
           />
-          <OSPrimaryAction type="button" onClick={send} aria-label={ui.sendMessageAria}>
+          <OSPrimaryAction
+            type="button"
+            onClick={send}
+            aria-label={ui.sendMessageAria}
+            disabled={draftIsEmpty}
+          >
             <SendHorizontal className="h-4 w-4" />
             {ui.send}
           </OSPrimaryAction>

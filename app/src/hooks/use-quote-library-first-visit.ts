@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 import { useQuotes } from "./use-quotes";
 
 const FIRST_VISIT_FLAG = "mylifeos-quote-library-seeded-v1";
@@ -22,6 +23,7 @@ export function useQuoteLibraryFirstVisit() {
     if (!quotes) return;
     if (quotes.length > 0) return;
     if (typeof window === "undefined") return;
+    if (hasDevLoginBypassCookie()) return;
     if (window.localStorage.getItem(FIRST_VISIT_FLAG) === "done") return;
 
     seededRef.current = true;

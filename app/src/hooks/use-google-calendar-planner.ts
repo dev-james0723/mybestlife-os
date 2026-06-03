@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   getPlannerGcalLastPushAt,
@@ -8,6 +8,7 @@ import {
   subscribePlannerGcalLastPush,
   subscribePlannerGcalPushPending,
 } from "@/lib/google/planner-calendar-push-request";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 
 export type GoogleCalendarPlannerStatus = {
   connected: boolean;
@@ -22,7 +23,19 @@ export type GoogleCalendarPlannerStatus = {
   remoteDeletedCount: number;
 };
 
+function useOptionalGoogleCalendarApiEnabled() {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    setEnabled(!hasDevLoginBypassCookie());
+  }, []);
+
+  return enabled;
+}
+
 export function useGoogleCalendarPlannerStatus() {
+  const optionalApiEnabled = useOptionalGoogleCalendarApiEnabled();
+
   return useQuery({
     queryKey: ["google-calendar-planner-status"],
     queryFn: async (): Promise<GoogleCalendarPlannerStatus> => {
@@ -30,6 +43,7 @@ export function useGoogleCalendarPlannerStatus() {
       if (!res.ok) throw new Error(await res.text());
       return (await res.json()) as GoogleCalendarPlannerStatus;
     },
+    enabled: optionalApiEnabled,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
@@ -59,6 +73,9 @@ export function usePlannerGcalLastPushAt(planDate: string | undefined) {
 export type TaskSyncMap = Record<string, { sync_status: string; sync_error_message: string | null }>;
 
 export function useGoogleCalendarTaskSyncForDate(planDate: string | undefined) {
+  const optionalApiEnabled = useOptionalGoogleCalendarApiEnabled();
+  const hasValidPlanDate = !!planDate && /^\d{4}-\d{2}-\d{2}$/.test(planDate);
+
   return useQuery({
     queryKey: ["google-calendar-task-sync", planDate],
     queryFn: async (): Promise<TaskSyncMap> => {
@@ -70,7 +87,7 @@ export function useGoogleCalendarTaskSyncForDate(planDate: string | undefined) {
       const j = (await res.json()) as { tasks: TaskSyncMap };
       return j.tasks ?? {};
     },
-    enabled: !!planDate && /^\d{4}-\d{2}-\d{2}$/.test(planDate),
+    enabled: optionalApiEnabled && hasValidPlanDate,
     staleTime: 10_000,
   });
 }

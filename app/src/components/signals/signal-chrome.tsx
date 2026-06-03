@@ -221,11 +221,13 @@ export function SourceLine({
   copy,
   dateLocale,
   className,
+  showDomain = true,
 }: {
   signal: SignalItem;
   copy: SignalsUiCopy;
   dateLocale: Locale;
   className?: string;
+  showDomain?: boolean;
 }) {
   const published = formatRelative(signal.publishedAt, dateLocale);
   const corroboration = signal.corroborationCount && signal.corroborationCount >= 2;
@@ -240,7 +242,7 @@ export function SourceLine({
         <SourceIcon source={signal.source} size={16} />
         {signal.source.name}
       </span>
-      {signal.source.domain && (
+      {showDomain && signal.source.domain && (
         <span className="text-muted-foreground/70">{signal.source.domain}</span>
       )}
       <span aria-hidden className="opacity-50">

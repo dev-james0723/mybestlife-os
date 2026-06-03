@@ -228,7 +228,7 @@ function QuoteFormBody({
               onChange={handleQuoteChange}
               placeholder={copy.placeholderQuote}
               rows={5}
-              className="font-serif text-lg leading-relaxed"
+              className="min-h-[132px] rounded-xl font-serif text-lg leading-relaxed"
               autoFocus
             />
           </div>
@@ -243,6 +243,7 @@ function QuoteFormBody({
                   setForm((p) => ({ ...p, source_author: e.target.value }))
                 }
                 placeholder={copy.placeholderAuthor}
+                className="h-[44px] rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -254,6 +255,7 @@ function QuoteFormBody({
                   setForm((p) => ({ ...p, source_context: e.target.value }))
                 }
                 placeholder={copy.placeholderContext}
+                className="h-[44px] rounded-xl"
               />
             </div>
           </div>
@@ -269,6 +271,7 @@ function QuoteFormBody({
                   setForm((p) => ({ ...p, source_url: e.target.value }))
                 }
                 placeholder={copy.placeholderUrl}
+                className="h-[44px] rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -277,7 +280,7 @@ function QuoteFormBody({
                 value={form.source_type || undefined}
                 onValueChange={(v) => selectValue(v, "source_type")}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-[44px] min-h-[44px] rounded-xl">
                   <SelectValue placeholder={copy.filterAny} />
                 </SelectTrigger>
                 <SelectContent>
@@ -298,7 +301,7 @@ function QuoteFormBody({
                 value={form.category || undefined}
                 onValueChange={(v) => selectValue(v, "category")}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-[44px] min-h-[44px] rounded-xl">
                   <SelectValue placeholder={copy.filterAny} />
                 </SelectTrigger>
                 <SelectContent>
@@ -323,7 +326,7 @@ function QuoteFormBody({
                 value={form.emotion_tone || undefined}
                 onValueChange={(v) => selectValue(v, "emotion_tone")}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-[44px] min-h-[44px] rounded-xl">
                   <SelectValue placeholder={copy.filterAny} />
                 </SelectTrigger>
                 <SelectContent>
@@ -358,6 +361,7 @@ function QuoteFormBody({
               }
               placeholder={copy.placeholderPersonalNote}
               rows={3}
+              className="min-h-[96px] rounded-xl"
             />
           </div>
 
@@ -375,7 +379,7 @@ function QuoteFormBody({
                   }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-[44px] min-h-[44px] rounded-xl">
                   <SelectValue placeholder={copy.languageAuto} />
                 </SelectTrigger>
                 <SelectContent>
@@ -388,7 +392,7 @@ function QuoteFormBody({
               </Select>
             </div>
             <div className="flex items-end">
-              <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
+              <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl text-sm">
                 <Checkbox
                   checked={form.is_favorite}
                   onCheckedChange={(v) =>
@@ -407,6 +411,7 @@ function QuoteFormBody({
           variant="outline"
           onClick={onDone}
           disabled={isSubmitting}
+          className="h-[44px] min-h-[44px] rounded-xl px-4"
         >
           {copy.buttonCancel}
         </Button>
@@ -414,6 +419,7 @@ function QuoteFormBody({
           type="button"
           onClick={() => void handleSubmit()}
           disabled={!canSubmit}
+          className="h-[44px] min-h-[44px] rounded-xl px-4"
         >
           {isSubmitting ? (
             <>

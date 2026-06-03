@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useAppStore } from "@/stores/app-store";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { useOSBuddyAirPilotSettings } from "@/hooks/use-os-buddy-airpilot-settings";
 import { useOSBuddyFreeRoamSettings } from "@/hooks/use-os-buddy-free-roam-settings";
 import type { OSBuddyPetId } from "@/types/os-buddy";
 import { OSBuddyBehaviorSettings } from "@/components/os-buddy/OSBuddyBehaviorSettings";
@@ -44,6 +45,10 @@ export function OSBuddySettingsSection() {
     settings: freeRoamSettings,
     saveSettings: saveFreeRoamSettings,
   } = useOSBuddyFreeRoamSettings();
+  const {
+    settings: airPilotSettings,
+    saveSettings: saveAirPilotSettings,
+  } = useOSBuddyAirPilotSettings();
 
   const [draftEnabled, setDraftEnabled] = useState(enabled);
   const [draftPetId, setDraftPetId] = useState<OSBuddyPetId>(petId);
@@ -152,7 +157,9 @@ export function OSBuddySettingsSection() {
         <OSBuddyBehaviorSettings
           locale={locale}
           value={freeRoamSettings}
+          airPilotValue={airPilotSettings}
           onSave={saveFreeRoamSettings}
+          onSaveAirPilot={saveAirPilotSettings}
         />
 
         <OSBuddyAirControlSettings locale={locale} />

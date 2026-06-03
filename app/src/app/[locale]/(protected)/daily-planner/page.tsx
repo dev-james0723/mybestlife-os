@@ -500,7 +500,7 @@ function TimeWheelPicker({
             <Button
               variant="outline"
               size="sm"
-              className="w-full min-w-0 justify-start gap-2 text-sm font-medium tabular-nums"
+              className="h-11 min-h-11 w-full min-w-0 justify-start gap-2 rounded-xl text-sm font-medium tabular-nums"
             />
           }
         >
@@ -539,10 +539,19 @@ function TimeWheelPicker({
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="xs" onClick={() => setOpen(false)}>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-11 min-h-11 rounded-xl px-3"
+              onClick={() => setOpen(false)}
+            >
               {copy.cancel}
             </Button>
-            <Button size="xs" onClick={handleDone}>
+            <Button
+              size="xs"
+              className="h-11 min-h-11 rounded-xl px-3"
+              onClick={handleDone}
+            >
               {copy.done}
             </Button>
           </div>
@@ -607,11 +616,17 @@ function BlockCountWheel({
         {copy.blockCountSummary(local, fmtBlocks(local))}
       </p>
       <div className="flex justify-end gap-2 mt-2">
-        <Button variant="ghost" size="xs" onClick={onClose}>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="h-11 min-h-11 rounded-xl px-3"
+          onClick={onClose}
+        >
           {copy.cancel}
         </Button>
         <Button
           size="xs"
+          className="h-11 min-h-11 rounded-xl px-3"
           onClick={() => {
             onChange(local);
             onClose();
@@ -662,7 +677,7 @@ function QuickTaskButton({
       <div className="flex items-stretch">
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-l-lg border border-r-0 px-2 py-2 text-left text-sm transition-colors hover:bg-muted/50 touch-manipulation"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-l-xl border border-r-0 px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/50 touch-manipulation"
           onClick={() => onAdd(task.blocks)}
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/70 ring-1 ring-border/40">
@@ -692,7 +707,7 @@ function QuickTaskButton({
           render={
             <button
               type="button"
-              className="flex items-center border rounded-r-lg px-1.5 hover:bg-muted/50 transition-colors touch-manipulation shrink-0"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-r-xl border px-2 hover:bg-muted/50 transition-colors touch-manipulation"
               aria-label={`Choose blocks for ${task.name}`}
             />
           }
@@ -712,7 +727,7 @@ function QuickTaskButton({
             <Separator />
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
               onClick={() => {
                 onDelete();
                 setPickerOpen(false);
@@ -1848,7 +1863,7 @@ export default function DailyPlannerPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <Button
                 size="sm"
-                className="h-9 w-full shrink-0 gap-2 border-transparent bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-sm hover:from-fuchsia-500 hover:to-pink-500 sm:flex-1"
+                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl border-transparent bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-sm hover:from-fuchsia-500 hover:to-pink-500 sm:flex-1"
                 onClick={() => setCreateAiDialogOpen(true)}
               >
                 <Wand2 className="h-3.5 w-3.5 shrink-0" />
@@ -1857,7 +1872,7 @@ export default function DailyPlannerPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 w-full shrink-0 gap-2 border-2 border-cyan-500/70 bg-background text-cyan-950 hover:bg-cyan-50 dark:border-cyan-400/55 dark:text-cyan-50 dark:hover:bg-cyan-950/35 sm:flex-1"
+                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl border-2 border-cyan-500/70 bg-background text-cyan-950 hover:bg-cyan-50 dark:border-cyan-400/55 dark:text-cyan-50 dark:hover:bg-cyan-950/35 sm:flex-1"
                 onClick={() => setImportDialogOpen(true)}
               >
                 <FolderInput className="h-3.5 w-3.5 shrink-0" />
@@ -1877,7 +1892,7 @@ export default function DailyPlannerPage() {
                     type="button"
                     variant="outline"
                     size="xs"
-                    className="gap-1 text-xs h-7"
+                    className="h-11 min-h-11 min-w-11 gap-1 rounded-xl px-3 text-xs"
                     disabled={quickIconsBusy}
                     onClick={() => void handleBackfillQuickIcons()}
                   >
@@ -1891,7 +1906,7 @@ export default function DailyPlannerPage() {
                   <Button
                     variant="ghost"
                     size="xs"
-                    className="gap-1 text-xs h-7"
+                    className="h-11 min-h-11 gap-1 rounded-xl px-3 text-xs"
                     onClick={() => setAddQuickTaskOpen(true)}
                   >
                     <Plus className="h-3 w-3" />
@@ -1944,10 +1959,20 @@ export default function DailyPlannerPage() {
                     </p>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setAddQuickTaskOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-11 min-h-11 rounded-xl px-3"
+                      onClick={() => setAddQuickTaskOpen(false)}
+                    >
                       {copy.cancel}
                     </Button>
-                    <Button size="sm" onClick={handleAddQuickTask} disabled={!newQuickName.trim()}>
+                    <Button
+                      size="sm"
+                      className="h-11 min-h-11 rounded-xl px-3"
+                      onClick={handleAddQuickTask}
+                      disabled={!newQuickName.trim()}
+                    >
                       {copy.add}
                     </Button>
                   </div>
@@ -2065,7 +2090,7 @@ export default function DailyPlannerPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-9 flex-1 gap-2 border-fuchsia-400/35 bg-fuchsia-500/10 text-fuchsia-100 hover:bg-fuchsia-500/15 dark:text-fuchsia-100"
+                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl border-fuchsia-400/35 bg-fuchsia-500/10 text-fuchsia-100 hover:bg-fuchsia-500/15 dark:text-fuchsia-100"
                   onClick={() => setCreateAiDialogOpen(true)}
                 >
                   <Wand2 className="h-3.5 w-3.5 shrink-0" />
@@ -2075,7 +2100,7 @@ export default function DailyPlannerPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-9 flex-1 gap-2 border-cyan-400/35 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/15 dark:text-cyan-100"
+                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl border-cyan-400/35 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/15 dark:text-cyan-100"
                   onClick={() => setImportDialogOpen(true)}
                 >
                   <FolderInput className="h-3.5 w-3.5 shrink-0" />
@@ -2097,7 +2122,7 @@ export default function DailyPlannerPage() {
           type="button"
           variant="outline"
           size="sm"
-          className="gap-1.5"
+          className="h-11 min-h-11 rounded-xl px-3 gap-1.5"
           aria-label={copy.ariaBackToTop}
           onClick={() => {
             const opts: ScrollToOptions = { top: 0, behavior: "smooth" };

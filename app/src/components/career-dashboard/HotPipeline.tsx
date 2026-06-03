@@ -7,6 +7,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import { OSSolidPanel } from "@/components/ui/os-primitives";
 import { useCareerOpportunities } from "@/hooks/use-career-opportunities";
 
 export function HotPipelineWidget() {
@@ -27,7 +28,7 @@ export function HotPipelineWidget() {
   );
 
   return (
-    <div className="rounded-xl border bg-background/60 p-3">
+    <OSSolidPanel className="p-3">
       <div className="flex items-center gap-2">
         <Flame className="h-4 w-4 text-rose-500" aria-hidden />
         <span className="text-sm font-medium">
@@ -54,6 +55,6 @@ export function HotPipelineWidget() {
           })}
         </ul>
       ) : null}
-    </div>
+    </OSSolidPanel>
   );
 }

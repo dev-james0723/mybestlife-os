@@ -19,20 +19,39 @@ export function FreeWindowChips({ windows, title, className, onSelect }: Props) 
         {title}
       </p>
       <div className="flex flex-wrap gap-2">
-        {windows.map((w) => (
-          <button
-            key={`${w.start}-${w.end}`}
-            type="button"
-            onClick={onSelect ? () => onSelect(w) : undefined}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 py-1.5 text-xs font-medium",
-              "transition-colors hover:border-border hover:bg-card"
-            )}
-          >
-            <Clock className="h-3 w-3 text-muted-foreground" />
-            <span>{w.label}</span>
-          </button>
-        ))}
+        {windows.map((w) => {
+          const content = (
+            <>
+              <Clock className="h-3 w-3 text-muted-foreground" />
+              <span>{w.label}</span>
+            </>
+          );
+
+          if (!onSelect) {
+            return (
+              <span
+                key={`${w.start}-${w.end}`}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 text-xs font-medium"
+              >
+                {content}
+              </span>
+            );
+          }
+
+          return (
+            <button
+              key={`${w.start}-${w.end}`}
+              type="button"
+              onClick={() => onSelect(w)}
+              className={cn(
+                "inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 text-xs font-medium",
+                "transition-colors hover:border-border hover:bg-card"
+              )}
+            >
+              {content}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

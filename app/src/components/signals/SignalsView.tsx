@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { Radar, RotateCw, Settings2, Wand2 } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  MoreHorizontal,
+  Radar,
+  RotateCw,
+  Settings2,
+  SlidersHorizontal,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -11,7 +20,16 @@ import { useAppStore } from "@/stores/app-store";
 import { getDateFnsLocale } from "@/lib/i18n/date-locale";
 import { getSignalsUiCopy } from "@/lib/i18n/signals-ui";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { OSActionRow, OSControl, OSIconControl } from "@/components/ui/os-primitives";
+import { OSControl } from "@/components/ui/os-primitives";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useSignalsPreferences } from "@/hooks/signals/use-signals-preferences";
 import { useLifeOsContext } from "@/hooks/signals/use-life-os-context";
 import { useSignalsPage } from "@/hooks/signals/use-signals-page";
@@ -54,7 +72,7 @@ import { SignalsLocationControl } from "./SignalsLocationControl";
 import { SignalsSettingsSheet } from "./SignalsSettingsSheet";
 import { SignalsFilterBar } from "./SignalsFilterBar";
 import { SignalsFilterDrawer } from "./SignalsFilterDrawer";
-import { SignalsViewSwitcher } from "./SignalsViewSwitcher";
+import { VIEW_ORDER } from "./SignalsViewSwitcher";
 import { SignalsGridView } from "./SignalsGridView";
 import { SignalsTableView } from "./SignalsTableView";
 import { SignalsCompactView } from "./SignalsCompactView";
@@ -309,6 +327,7 @@ export function SignalsView() {
   const updatedLabel = data.generatedAt
     ? copy.header.lastUpdated(format(parseISO(data.generatedAt), "HH:mm", { locale: dateLocale }))
     : null;
+  const dateLabel = format(new Date(), "EEE, MMMM d", { locale: dateLocale });
 
   const clearFilters = () => setFilter(DEFAULT_FILTER_STATE);
 
@@ -346,76 +365,23 @@ export function SignalsView() {
 
   return (
     <PageContainer>
-      {/* Header */}
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Radar className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {copy.pageTitle}
-              </h1>
-              <p className="text-sm text-muted-foreground">{copy.pageSubtitle}</p>
-            </div>
-          </div>
-
-          <OSActionRow className="sm:justify-start">
-            <SignalsViewSwitcher value={viewMode} onChange={setViewMode} copy={copy} />
-            <OSControl
-              osSize="compact"
-              onClick={regenerateTop3}
-              disabled={regenerating || data.status !== "ok"}
-              aria-label={copy.header.regenerateTop3}
-              title={copy.header.regenerateTop3}
-            >
-              <Wand2 className={cn(regenerating && "animate-pulse")} />
-              <span className="hidden md:inline">{copy.header.regenerateTop3}</span>
-            </OSControl>
-            <OSControl
-              osSize="compact"
-              onClick={refreshSources}
-              disabled={refreshing}
-              aria-label={copy.header.refreshSources}
-              title={copy.header.refreshSources}
-            >
-              <RotateCw className={cn(refreshing && "animate-spin")} />
-              <span className="hidden md:inline">
-                {refreshing ? copy.header.refreshing : copy.header.refreshSources}
-              </span>
-            </OSControl>
-            <OSIconControl
-              osSize="compact"
-              onClick={() => setSettingsOpen(true)}
-              aria-label={copy.header.settings}
-            >
-              <Settings2 />
-            </OSIconControl>
-          </OSActionRow>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span>{format(new Date(), "EEEE, MMMM d", { locale: dateLocale })}</span>
-          {updatedLabel && (
-            <>
-              <span aria-hidden className="opacity-50">·</span>
-              <span>{updatedLabel}</span>
-            </>
-          )}
-          <span aria-hidden className="opacity-50">·</span>
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-              data.dataSource === "live"
-                ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                : "border-border/60 bg-muted/40 text-muted-foreground",
-            )}
-          >
-            {data.dataSource === "live" ? copy.header.liveBadge : copy.header.demoBadge}
-          </span>
-        </div>
-      </header>
+      <SignalsPageHeader
+        copy={copy}
+        dateLabel={dateLabel}
+        updatedLabel={updatedLabel}
+        dataSource={data.dataSource}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onRefresh={refreshSources}
+        onRegenerate={regenerateTop3}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenFilters={() => setFilterOpen(true)}
+        refreshing={refreshing}
+        regenerating={regenerating}
+        canRegenerate={data.status === "ok"}
+        canOpenFilters={data.status === "ok"}
+        filtersActive={filtersActive}
+      />
 
       {/* Filter bar (hidden until data is present) */}
       {data.status === "ok" && (
@@ -466,101 +432,117 @@ export function SignalsView() {
                   </section>
                 )}
 
-                {world.length > 0 && (
-                  <SignalsSection
-                    title={copy.sections.worldTitle}
-                    subtitle={copy.sections.worldSubtitle}
-                    items={world}
-                    copy={copy}
-                    dateLocale={dateLocale}
-                    handlers={handlers}
-                    initialCount={4}
-                  />
-                )}
+                <div className="grid gap-5 xl:grid-cols-3">
+                  {world.length > 0 && (
+                    <SignalsSection
+                      title={copy.sections.worldTitle}
+                      subtitle={copy.sections.worldSubtitle}
+                      items={world}
+                      copy={copy}
+                      dateLocale={dateLocale}
+                      variant="preview"
+                      layout="stack"
+                      handlers={handlers}
+                      initialCount={2}
+                    />
+                  )}
 
-                {markets.length > 0 && (
                   <SignalsSection
-                    title={copy.markets.title}
-                    subtitle={copy.markets.subtitle}
-                    items={markets}
+                    title={
+                      data.location
+                        ? copy.sections.localCity(data.location.displayLabel || data.location.city)
+                        : copy.sections.localTitle
+                    }
+                    subtitle={copy.sections.localSubtitle}
+                    items={local}
                     copy={copy}
                     dateLocale={dateLocale}
-                    variant="feature"
-                    layout="carousel"
+                    variant="preview"
+                    layout="stack"
                     handlers={handlers}
+                    initialCount={2}
+                    headerRight={
+                      <SignalsLocationControl
+                        copy={copy}
+                        location={data.location}
+                        detecting={detecting}
+                        onDetect={handleDetect}
+                        onPick={(loc) =>
+                          update({ localLocation: weatherLocationToLocalLocation(loc, "manual") })
+                        }
+                      />
+                    }
                     note={
-                      <p className="text-[11px] text-muted-foreground">{copy.markets.disclaimer}</p>
+                      local.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {data.location
+                            ? copy.sections.localPrecisionNote
+                            : copy.sections.localNoLocation}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground">
+                          {copy.sections.localPrecisionNote}
+                        </p>
+                      )
                     }
                   />
-                )}
 
-                {video.length > 0 && (
                   <SignalsSection
-                    title={copy.video.title}
-                    subtitle={copy.video.subtitle}
-                    items={video}
+                    title={copy.sections.personalTitle}
+                    subtitle={copy.sections.personalSubtitle}
+                    items={personal}
                     copy={copy}
                     dateLocale={dateLocale}
-                    variant="feature"
-                    layout="carousel"
+                    variant="preview"
+                    layout="stack"
                     handlers={handlers}
+                    initialCount={2}
+                    note={
+                      personal.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {copy.sections.personalEmpty}
+                        </p>
+                      ) : null
+                    }
                   />
+                </div>
+
+                {(markets.length > 0 || video.length > 0) && (
+                  <div className="grid gap-5 lg:grid-cols-2">
+                    {markets.length > 0 && (
+                      <SignalsSection
+                        title={copy.markets.title}
+                        subtitle={copy.markets.subtitle}
+                        items={markets}
+                        copy={copy}
+                        dateLocale={dateLocale}
+                        variant="preview"
+                        layout="stack"
+                        handlers={handlers}
+                        initialCount={2}
+                        note={
+                          <p className="text-[11px] text-muted-foreground">
+                            {copy.markets.disclaimer}
+                          </p>
+                        }
+                      />
+                    )}
+
+                    {video.length > 0 && (
+                      <SignalsSection
+                        title={copy.video.title}
+                        subtitle={copy.video.subtitle}
+                        items={video}
+                        copy={copy}
+                        dateLocale={dateLocale}
+                        variant="preview"
+                        layout="stack"
+                        handlers={handlers}
+                        initialCount={2}
+                      />
+                    )}
+                  </div>
                 )}
-
-                <SignalsSection
-                  title={
-                    data.location
-                      ? copy.sections.localCity(data.location.displayLabel || data.location.city)
-                      : copy.sections.localTitle
-                  }
-                  subtitle={copy.sections.localSubtitle}
-                  items={local}
-                  copy={copy}
-                  dateLocale={dateLocale}
-                  handlers={handlers}
-                  initialCount={4}
-                  headerRight={
-                    <SignalsLocationControl
-                      copy={copy}
-                      location={data.location}
-                      detecting={detecting}
-                      onDetect={handleDetect}
-                      onPick={(loc) =>
-                        update({ localLocation: weatherLocationToLocalLocation(loc, "manual") })
-                      }
-                    />
-                  }
-                  note={
-                    local.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        {data.location
-                          ? copy.sections.localPrecisionNote
-                          : copy.sections.localNoLocation}
-                      </p>
-                    ) : (
-                      <p className="text-[11px] text-muted-foreground">
-                        {copy.sections.localPrecisionNote}
-                      </p>
-                    )
-                  }
-                />
-
-                <SignalsSection
-                  title={copy.sections.personalTitle}
-                  subtitle={copy.sections.personalSubtitle}
-                  items={personal}
-                  copy={copy}
-                  dateLocale={dateLocale}
-                  handlers={handlers}
-                  initialCount={4}
-                  note={
-                    personal.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        {copy.sections.personalEmpty}
-                      </p>
-                    ) : null
-                  }
-                />
 
                 <SignalsFollowUps
                   followUps={followUps.followUps}
@@ -608,7 +590,197 @@ export function SignalsView() {
   );
 }
 
-/** Daily Top 3 editorial hero: one large feature + two smaller. */
+function SignalsPageHeader({
+  copy,
+  dateLabel,
+  updatedLabel,
+  dataSource,
+  viewMode,
+  onViewModeChange,
+  onRefresh,
+  onRegenerate,
+  onOpenSettings,
+  onOpenFilters,
+  refreshing,
+  regenerating,
+  canRegenerate,
+  canOpenFilters,
+  filtersActive,
+}: {
+  copy: ReturnType<typeof getSignalsUiCopy>;
+  dateLabel: string;
+  updatedLabel: string | null;
+  dataSource: "live" | "demo" | "mixed";
+  viewMode: SignalsViewMode;
+  onViewModeChange: (mode: SignalsViewMode) => void;
+  onRefresh: () => void;
+  onRegenerate: () => void;
+  onOpenSettings: () => void;
+  onOpenFilters: () => void;
+  refreshing: boolean;
+  regenerating: boolean;
+  canRegenerate: boolean;
+  canOpenFilters: boolean;
+  filtersActive: boolean;
+}) {
+  return (
+    <header className="flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <span className="mt-0.5 flex size-14 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/10 sm:size-12">
+            <Radar className="h-7 w-7 sm:h-6 sm:w-6" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-4xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
+              {copy.pageTitle}
+            </h1>
+            <p className="mt-1 text-base text-muted-foreground sm:text-sm">
+              {copy.pageSubtitle}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <OSControl
+            osSize="compact"
+            onClick={onRefresh}
+            disabled={refreshing}
+            aria-label={copy.header.refreshSources}
+            title={copy.header.refreshSources}
+            className="hidden sm:inline-flex"
+          >
+            <RotateCw className={cn(refreshing && "animate-spin")} />
+            <span>{refreshing ? copy.header.refreshing : copy.header.refresh}</span>
+          </OSControl>
+          <SignalsHeaderMenu
+            copy={copy}
+            viewMode={viewMode}
+            onViewModeChange={onViewModeChange}
+            onRefresh={onRefresh}
+            onRegenerate={onRegenerate}
+            onOpenSettings={onOpenSettings}
+            onOpenFilters={onOpenFilters}
+            refreshing={refreshing}
+            regenerating={regenerating}
+            canRegenerate={canRegenerate}
+            canOpenFilters={canOpenFilters}
+            filtersActive={filtersActive}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground sm:text-xs">
+        <span className="inline-flex items-center gap-1.5">
+          <CalendarDays className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden />
+          {dateLabel}
+        </span>
+        {updatedLabel && (
+          <>
+            <span aria-hidden className="opacity-50">·</span>
+            <span>{updatedLabel}</span>
+          </>
+        )}
+        <span
+          className={cn(
+            "ml-1 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide",
+            dataSource === "live"
+              ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : "border-border/60 bg-muted/40 text-muted-foreground",
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 rounded-full",
+              dataSource === "live" ? "bg-emerald-400" : "bg-muted-foreground/60",
+            )}
+          />
+          {dataSource === "live" ? copy.header.liveBadge : copy.header.demoBadge}
+        </span>
+      </div>
+    </header>
+  );
+}
+
+function SignalsHeaderMenu({
+  copy,
+  viewMode,
+  onViewModeChange,
+  onRefresh,
+  onRegenerate,
+  onOpenSettings,
+  onOpenFilters,
+  refreshing,
+  regenerating,
+  canRegenerate,
+  canOpenFilters,
+  filtersActive,
+}: {
+  copy: ReturnType<typeof getSignalsUiCopy>;
+  viewMode: SignalsViewMode;
+  onViewModeChange: (mode: SignalsViewMode) => void;
+  onRefresh: () => void;
+  onRegenerate: () => void;
+  onOpenSettings: () => void;
+  onOpenFilters: () => void;
+  refreshing: boolean;
+  regenerating: boolean;
+  canRegenerate: boolean;
+  canOpenFilters: boolean;
+  filtersActive: boolean;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <OSControl osSize="compact" aria-label={copy.filters.more} title={copy.filters.more}>
+            <MoreHorizontal />
+            <span className="hidden sm:inline">{copy.filters.more}</span>
+          </OSControl>
+        }
+      />
+      <DropdownMenuContent align="end" className="min-w-60">
+        <DropdownMenuItem className="sm:hidden" onClick={onRefresh} disabled={refreshing}>
+          <RotateCw className={cn(refreshing && "animate-spin")} />
+          {refreshing ? copy.header.refreshing : copy.header.refreshSources}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={onRegenerate}
+          disabled={regenerating || !canRegenerate}
+        >
+          <Wand2 className={cn(regenerating && "animate-pulse")} />
+          {copy.header.regenerateTop3}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenFilters} disabled={!canOpenFilters}>
+          <SlidersHorizontal />
+          {copy.header.filters}
+          {filtersActive && (
+            <span className="ml-auto size-1.5 rounded-full bg-lime-300" aria-hidden />
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenSettings}>
+          <Settings2 />
+          {copy.header.settings}
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{copy.header.view}</DropdownMenuLabel>
+          {VIEW_ORDER.map((mode) => (
+            <DropdownMenuItem key={mode} onClick={() => onViewModeChange(mode)}>
+              <Check
+                className={cn("size-4", viewMode === mode ? "opacity-100" : "opacity-0")}
+              />
+              {copy.views.modes[mode]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Daily Top 3 editorial layout: ranked lead + two compact secondaries. */
 function HeroBlock({
   items,
   copy,
@@ -623,25 +795,30 @@ function HeroBlock({
   const [lead, ...rest] = items;
   if (!lead) return null;
   return (
-    <div data-stagger className="grid gap-4 lg:grid-cols-3">
-      <div className="lg:col-span-2">
+    <div
+      data-stagger
+      className="grid gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.95fr)]"
+    >
+      <div className="min-w-0">
         <SignalCardWithHandlers
           signal={lead}
           copy={copy}
           dateLocale={dateLocale}
-          variant="hero"
+          variant="topLead"
+          rank={1}
           handlers={handlers}
         />
       </div>
       {rest.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          {rest.slice(0, 2).map((signal) => (
+        <div className="grid min-w-0 gap-3">
+          {rest.slice(0, 2).map((signal, index) => (
             <SignalCardWithHandlers
               key={signal.id}
               signal={signal}
               copy={copy}
               dateLocale={dateLocale}
-              variant="feature"
+              variant="ranked"
+              rank={index + 2}
               handlers={handlers}
             />
           ))}
@@ -652,5 +829,9 @@ function HeroBlock({
 }
 
 function PageContainer({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto w-full max-w-5xl space-y-6 pb-24">{children}</div>;
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:space-y-6 sm:pb-24 xl:pr-20 2xl:pr-0">
+      {children}
+    </div>
+  );
 }

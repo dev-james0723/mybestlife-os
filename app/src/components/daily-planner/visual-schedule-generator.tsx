@@ -154,7 +154,7 @@ export function VisualScheduleGenerator({
             }}
             itemToStringLabel={(v) => getScheduleImageStyleLabel(String(v))}
           >
-            <SelectTrigger className="w-full bg-background/80">
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-xl bg-background/80">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-[min(24rem,70vh)]">
@@ -169,7 +169,7 @@ export function VisualScheduleGenerator({
 
         <Button
           type="button"
-          className="w-full gap-2 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+          className="h-11 min-h-11 w-full gap-2 rounded-xl border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700"
           disabled={!hasTasks || busy}
           onClick={() => void runGenerate()}
         >
@@ -190,7 +190,7 @@ export function VisualScheduleGenerator({
               <Button
                 type="button"
                 variant="secondary"
-                className="flex-1 gap-2"
+                className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
                 disabled={!hasTasks || busy}
                 onClick={() => void runGenerate()}
               >
@@ -200,7 +200,7 @@ export function VisualScheduleGenerator({
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 gap-2"
+                className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
                 onClick={handleDownload}
               >
                 <Download className="h-4 w-4" />

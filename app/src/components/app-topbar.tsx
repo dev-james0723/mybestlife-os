@@ -131,7 +131,7 @@ function TopbarInnerRow() {
       <div className="flex min-h-0 min-w-0 flex-1 items-center gap-1.5 overflow-x-hidden px-3">
         <Link
           href={dashboardHref}
-          className="flex min-w-0 items-center gap-2 text-foreground"
+          className="flex min-h-11 min-w-0 items-center gap-2 text-foreground"
         >
           <LifeOsLogo size="sm" className="shrink-0" />
           <span className="truncate text-sm font-bold tracking-tight sm:text-base">

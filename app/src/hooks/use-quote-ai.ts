@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 import { getQuoteLibraryUiCopy } from "@/lib/i18n/quote-library-ui";
 import type { Quote } from "@/types/quote";
 
@@ -110,6 +112,15 @@ export type DailyPickResponse = {
 };
 
 export function useDailyQuote() {
+  const [shouldFetchDailyQuote, setShouldFetchDailyQuote] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setShouldFetchDailyQuote(!hasDevLoginBypassCookie());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return useQuery<DailyPickResponse>({
     queryKey: DAILY_KEY,
     queryFn: async () => {
@@ -119,6 +130,7 @@ export function useDailyQuote() {
       if (!res.ok) throw new Error("daily_quote_failed");
       return (await res.json()) as DailyPickResponse;
     },
+    enabled: shouldFetchDailyQuote,
     staleTime: 15 * 60 * 1000,
   });
 }

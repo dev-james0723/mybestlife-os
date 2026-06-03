@@ -64,7 +64,7 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
           <button
             type="button"
             onClick={() => refresh()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:bg-muted/40"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 text-xs font-medium text-foreground/80 transition-colors hover:bg-muted/40"
           >
             <RotateCw className="h-3 w-3" />
             {copy.retry}
@@ -72,7 +72,7 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
           <Link
             href={signalsHref}
             prefetch={false}
-            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
           >
             {copy.openPage}
             <ChevronRight className="h-3 w-3" />
@@ -96,7 +96,7 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
         href={signalsHref}
         prefetch={false}
         aria-label={copy.ariaOpen}
-        className="flex items-start gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex min-h-11 items-start gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <WidgetHeader copy={copy} />
         <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
@@ -115,7 +115,7 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
               <Link
                 href={`${signalsHref}?focus=${encodeURIComponent(signal.id)}`}
                 prefetch={false}
-                className="-mx-1 flex gap-2.5 rounded-lg px-1 py-0.5 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="-mx-1 flex min-h-11 gap-2.5 rounded-xl px-1 py-1 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               >
                 <SignalThumbnail
                   signal={signal}

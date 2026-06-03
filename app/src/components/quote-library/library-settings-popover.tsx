@@ -47,6 +47,7 @@ export function LibrarySettingsPopover() {
               variant="ghost"
               size="icon-sm"
               aria-label={copy.settingsAction}
+              className="h-11 min-h-11 w-11 rounded-xl"
             >
               <Settings2 className="size-4" aria-hidden />
             </Button>
@@ -56,7 +57,7 @@ export function LibrarySettingsPopover() {
           <div className="space-y-1">
             <h3 className="text-sm font-semibold">{copy.settingsTitle}</h3>
           </div>
-          <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
+          <label className="flex min-h-[44px] cursor-pointer items-center justify-between gap-2 rounded-xl text-sm">
             <span>{copy.settingsShowAiBadge}</span>
             <Checkbox
               checked={showAiBadge}
@@ -67,7 +68,7 @@ export function LibrarySettingsPopover() {
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start"
+              className="h-[44px] min-h-[44px] w-full justify-start rounded-xl"
               disabled={!quotes || quotes.length === 0}
               onClick={async () => {
                 if (!quotes || quotes.length === 0) return;
@@ -83,7 +84,7 @@ export function LibrarySettingsPopover() {
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start"
+              className="h-[44px] min-h-[44px] w-full justify-start rounded-xl"
               disabled={!quotes || quotes.length === 0 || isExportingPdf}
               onClick={async () => {
                 if (!quotes || quotes.length === 0) return;
@@ -107,7 +108,7 @@ export function LibrarySettingsPopover() {
           <Button
             variant="outline"
             size="sm"
-            className="w-full"
+            className="h-[44px] min-h-[44px] w-full rounded-xl"
             onClick={() => setConfirmClear(true)}
           >
             {copy.settingsClearSeeds}
@@ -124,8 +125,11 @@ export function LibrarySettingsPopover() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{copy.buttonCancel}</AlertDialogCancel>
+            <AlertDialogCancel className="h-[44px] min-h-[44px] rounded-xl px-4">
+              {copy.buttonCancel}
+            </AlertDialogCancel>
             <AlertDialogAction
+              className="h-[44px] min-h-[44px] rounded-xl px-4"
               onClick={async () => {
                 try {
                   const res = await fetch("/api/quote-library/seed", {

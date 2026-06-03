@@ -47,7 +47,7 @@ export function MotivationCard({
           type="button"
           variant="ghost"
           size="icon"
-          className="shrink-0 text-teal-700 hover:bg-teal-500/15 dark:text-teal-200 dark:hover:bg-teal-400/15"
+          className="h-11 min-h-11 w-11 shrink-0 rounded-xl text-teal-700 hover:bg-teal-500/15 dark:text-teal-200 dark:hover:bg-teal-400/15"
           aria-label={refreshAriaLabel}
           onClick={() => {
             setPhase("generating");

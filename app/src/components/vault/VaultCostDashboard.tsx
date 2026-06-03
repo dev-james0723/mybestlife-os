@@ -5,6 +5,8 @@ import type { SoftwareVaultEntry } from "@/types/database";
 import { parseMonthlyCost, isRecurringActive } from "@/stores/vault-store";
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
+import { cn } from "@/lib/utils";
+import { osGlassControlClassName } from "@/components/ui/os-glass";
 
 type Props = {
   entries: SoftwareVaultEntry[];
@@ -22,7 +24,7 @@ export function VaultCostDashboard({ entries }: Props) {
   const coreCount = entries.filter((e) => e.is_default_stack).length;
 
   return (
-    <div className="flex items-center gap-3 rounded-full border border-border/60 bg-background/80 px-4 py-1.5 text-xs font-medium shadow-sm backdrop-blur">
+    <div className={cn(osGlassControlClassName, "flex min-h-9 items-center gap-3 rounded-xl px-3 py-1.5 text-xs font-medium")}>
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <DollarSign className="h-3.5 w-3.5" aria-hidden="true" />
         <span>{copy.gallery.monthlyTotal}</span>

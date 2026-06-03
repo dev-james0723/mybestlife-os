@@ -143,7 +143,10 @@ export function AIPlanTab() {
             </div>
             <Button
               size="sm"
-              className={cn("calendar-lime-cta gap-1.5", isGenerating && "opacity-90")}
+              className={cn(
+                "calendar-lime-cta h-11 min-h-11 gap-1.5 rounded-xl px-3",
+                isGenerating && "opacity-90",
+              )}
               onClick={() => void handleGenerate()}
               disabled={isGenerating || isLoadingCalendar}
             >
@@ -184,7 +187,7 @@ export function AIPlanTab() {
               <Button
                 size="xs"
                 variant="outline"
-                className="gap-1"
+                className="h-11 min-h-11 gap-1 rounded-xl px-3"
                 onClick={handleAcceptAll}
                 disabled={pending.length === 0}
               >
@@ -232,6 +235,7 @@ export function AIPlanTab() {
                         <Button
                           size="icon-xs"
                           variant="ghost"
+                          className="h-11 min-h-11 w-11 rounded-xl"
                           aria-label={copy.aiReject}
                           onClick={() => handleStatus(suggestion.id, "rejected")}
                         >
@@ -239,7 +243,7 @@ export function AIPlanTab() {
                         </Button>
                         <Button
                           size="icon-xs"
-                          className="calendar-lime-cta"
+                          className="calendar-lime-cta h-11 min-h-11 w-11 rounded-xl"
                           aria-label={copy.aiAccept}
                           onClick={() => handleStatus(suggestion.id, "accepted")}
                         >
@@ -272,7 +276,7 @@ export function AIPlanTab() {
           <Button
             size="sm"
             variant="outline"
-            className="gap-1.5"
+            className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
             render={<Link href={plannerHref} />}
           >
             <CalendarClock className="h-3.5 w-3.5" />

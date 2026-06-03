@@ -172,17 +172,26 @@ export function TodayTab() {
           <Button
             size="sm"
             variant="outline"
-            className="gap-1.5"
+            className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
             render={<Link href={`${plannerHref}#quick-add`} />}
           >
             <Plus className="h-3.5 w-3.5" />
             {copy.quickAdd}
           </Button>
-          <Button size="sm" className="calendar-lime-cta gap-1.5" render={<Link href="?tab=ai-plan" />}>
+          <Button
+            size="sm"
+            className="calendar-lime-cta h-11 min-h-11 gap-1.5 rounded-xl px-3"
+            render={<Link href="?tab=ai-plan" />}
+          >
             <Sparkles className="h-3.5 w-3.5" />
             {copy.planMyDay}
           </Button>
-          <Button size="sm" variant="ghost" className="gap-1.5" render={<Link href={plannerHref} />}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
+            render={<Link href={plannerHref} />}
+          >
             <CalendarClock className="h-3.5 w-3.5" />
             {copy.backToDailyPlanner}
           </Button>

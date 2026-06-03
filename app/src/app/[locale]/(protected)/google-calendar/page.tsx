@@ -21,8 +21,13 @@ export default function GoogleCalendarPage() {
   const dailyPlannerHref = useLocalizedPath("/daily-planner");
   const settingsHref = useLocalizedPath("/settings");
   const ui = getSettingsUiCopy(locale);
-  const { startGoogleCalendarAccessFlow } = useAuth();
+  const {
+    user,
+    isLoading: authLoading,
+    startGoogleCalendarAccessFlow,
+  } = useAuth();
   const [busy, setBusy] = useState(false);
+  const connectUnavailable = !authLoading && !user;
 
   const handleConnect = async () => {
     setBusy(true);
@@ -57,7 +62,8 @@ export default function GoogleCalendarPage() {
               type="button"
               className="w-full sm:w-fit"
               onClick={() => void handleConnect()}
-              disabled={busy}
+              disabled={busy || authLoading || connectUnavailable}
+              aria-describedby={connectUnavailable ? "google-calendar-connect-status" : undefined}
             >
               {busy ? ui.googleCalendarConnecting : ui.googleCalendarConnect}
             </OSPrimaryAction>
@@ -75,6 +81,14 @@ export default function GoogleCalendarPage() {
               {ui.pageTitle}
             </OSControl>
           </div>
+          {connectUnavailable ? (
+            <p
+              id="google-calendar-connect-status"
+              className="text-xs leading-5 text-muted-foreground"
+            >
+              {ui.googleCalendarConnectFailed}
+            </p>
+          ) : null}
         </OSFrostedPanel>
 
         <OSSolidPanel className="space-y-2 p-4 text-sm text-muted-foreground">

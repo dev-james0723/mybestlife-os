@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import type { Locale } from "date-fns";
 import {
   Bookmark,
@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-  HelpCircle,
   ListPlus,
   Loader2,
   MoreHorizontal,
@@ -44,7 +43,14 @@ import {
 } from "./signal-chrome";
 import { SignalThumbnail } from "./SignalThumbnail";
 
-export type SignalCardVariant = "hero" | "feature" | "list" | "compact";
+export type SignalCardVariant =
+  | "hero"
+  | "feature"
+  | "topLead"
+  | "ranked"
+  | "preview"
+  | "list"
+  | "compact";
 
 export type SignalCardCallbacks = {
   saving?: boolean;
@@ -73,11 +79,15 @@ type Props = SignalCardCallbacks & {
   copy: SignalsUiCopy;
   dateLocale: Locale;
   variant?: SignalCardVariant;
+  rank?: number;
 };
 
 export function SignalCard(props: Props) {
   const { variant = "list" } = props;
   if (variant === "compact") return <CompactCard {...props} />;
+  if (variant === "topLead") return <TopLeadCard {...props} />;
+  if (variant === "ranked") return <RankedCard {...props} />;
+  if (variant === "preview") return <PreviewCard {...props} />;
   if (variant === "list") return <ListCard {...props} />;
   return <FeatureCard {...props} />;
 }
@@ -149,7 +159,12 @@ function PrimaryActions(props: Props & { compact?: boolean }) {
         {!compact && (saved ? copy.card.saved : copy.card.save)}
       </Button>
       {!compact && (
-        <Button size="sm" variant="ghost" onClick={() => onDismiss(signal)} aria-label={copy.card.dismiss}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onDismiss(signal)}
+          aria-label={copy.card.dismiss}
+        >
           <X />
           {copy.card.dismiss}
         </Button>
@@ -227,62 +242,93 @@ function MoreActionsMenu({
   );
 }
 
-function ExpandedExtras({
+function RankBadge({ rank }: { rank?: number }) {
+  if (!rank) return null;
+  return (
+    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-[0.45rem] bg-lime-300 text-xs font-black tabular-nums text-slate-950 shadow-[0_10px_24px_rgba(190,242,100,0.22)]">
+      {rank}
+    </span>
+  );
+}
+
+function DetailsDisclosure({
   signal,
   copy,
-  onMore,
-  onLess,
-  onFollowTopic,
-}: Props) {
-  const [whyOpen, setWhyOpen] = useState(false);
-  const whyId = useId();
+  className,
+  children,
+  compactActions = false,
+  ...props
+}: Props & {
+  className?: string;
+  children?: ReactNode;
+  compactActions?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const detailsId = useId();
   const relevanceLine = signal.whyRelevantToUser ?? signal.whyItMatters;
+
   return (
-    <div className="space-y-3">
-      <div className="grid gap-2 sm:grid-cols-2">
-        <RelevanceBlock label={copy.card.whyItMatters} value={signal.whyItMatters} />
-        {signal.whyRelevantToUser && (
-          <RelevanceBlock label={copy.card.whyForYou} value={signal.whyRelevantToUser} />
-        )}
-      </div>
+    <div className={cn("border-t border-border/40 pt-2", className)}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={detailsId}
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-1.5 text-xs font-semibold text-lime-700 transition-colors hover:text-lime-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 dark:text-lime-300 dark:hover:text-lime-200"
+      >
+        {open ? copy.card.collapse : copy.card.whyThisSignal}
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+      </button>
 
-      <div className="flex flex-wrap items-center gap-1">
-        <Button size="icon-sm" variant="ghost" onClick={() => onMore(signal)} aria-label={copy.card.moreLikeThis} title={copy.card.moreLikeThis}>
-          <ThumbsUp />
-        </Button>
-        <Button size="icon-sm" variant="ghost" onClick={() => onLess(signal)} aria-label={copy.card.lessLikeThis} title={copy.card.lessLikeThis}>
-          <ThumbsDown />
-        </Button>
-        {onFollowTopic && (
-          <Button size="sm" variant="ghost" onClick={() => onFollowTopic(signal)} aria-label={copy.card.followTopic} title={copy.card.followTopic}>
-            {copy.card.followTopic}
-          </Button>
-        )}
-      </div>
-
-      <div className="border-t border-border/40 pt-2">
-        <button
-          type="button"
-          onClick={() => setWhyOpen((v) => !v)}
-          aria-expanded={whyOpen}
-          aria-controls={whyId}
-          className="inline-flex items-center gap-1.5 rounded text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          <HelpCircle className="h-3.5 w-3.5" />
-          {copy.card.whyThisSignal}
-          <ChevronDown className={cn("h-3 w-3 transition-transform", whyOpen && "rotate-180")} />
-        </button>
-        {whyOpen && (
-          <div id={whyId} className="mt-2 space-y-1 text-xs text-muted-foreground">
-            <p className="text-foreground/80">{relevanceLine}</p>
-            <p>
-              {signal.isDemo
-                ? copy.card.sampleNote
-                : "Ranked by importance, freshness, source quality, and fit to your topics — not by an AI guess."}
-            </p>
+      {open && (
+        <div id={detailsId} className="space-y-3 pt-2">
+          {children}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <RelevanceBlock label={copy.card.whyItMatters} value={signal.whyItMatters} />
+            {signal.whyRelevantToUser && (
+              <RelevanceBlock label={copy.card.whyForYou} value={signal.whyRelevantToUser} />
+            )}
           </div>
-        )}
-      </div>
+          <ConnectionStrip signal={signal} />
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {signal.isDemo
+              ? copy.card.sampleNote
+              : relevanceLine}
+          </p>
+          <div className="flex flex-wrap items-center gap-1">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => props.onMore(signal)}
+              aria-label={copy.card.moreLikeThis}
+              title={copy.card.moreLikeThis}
+            >
+              <ThumbsUp />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => props.onLess(signal)}
+              aria-label={copy.card.lessLikeThis}
+              title={copy.card.lessLikeThis}
+            >
+              <ThumbsDown />
+            </Button>
+            {props.onFollowTopic && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => props.onFollowTopic?.(signal)}
+                aria-label={copy.card.followTopic}
+                title={copy.card.followTopic}
+              >
+                {copy.card.followTopic}
+              </Button>
+            )}
+          </div>
+          <PrimaryActions {...props} signal={signal} copy={copy} compact={compactActions} />
+        </div>
+      )}
     </div>
   );
 }
@@ -293,6 +339,140 @@ function RelevanceBlock({ label, value }: { label: string; value: string }) {
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-xs leading-relaxed text-foreground/80">{value}</p>
     </div>
+  );
+}
+
+function CompactSummary({
+  signal,
+  copy,
+  className,
+}: {
+  signal: SignalItem;
+  copy: SignalsUiCopy;
+  className?: string;
+}) {
+  const text = signal.aiOverview ?? signal.summary;
+  if (!text) return null;
+  return (
+    <div className={cn("space-y-1", className)}>
+      <p className="line-clamp-2 text-xs leading-relaxed text-foreground/75">{text}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+        {copy.card.overview}
+      </p>
+    </div>
+  );
+}
+
+// ── Daily Top 3 lead card ──
+
+function TopLeadCard(props: Props) {
+  const { signal, copy, dateLocale, rank } = props;
+
+  return (
+    <GlassPanel
+      data-signal-id={signal.id}
+      variant="default"
+      className="calendar-specular-highlight overflow-hidden p-3 scroll-mt-24 sm:p-4 [&.signal-focused]:ring-2 [&.signal-focused]:ring-primary/60"
+    >
+      <article
+        aria-label={signal.headline}
+        className="grid grid-cols-[minmax(7rem,0.82fr)_minmax(0,1.18fr)] gap-3 sm:grid-cols-[minmax(12rem,0.9fr)_minmax(0,1.1fr)] sm:gap-4 lg:grid-cols-[minmax(0,1.36fr)_minmax(300px,0.86fr)]"
+      >
+        <div className="relative min-w-0">
+          <SignalThumbnail
+            signal={signal}
+            copy={copy}
+            className="h-full min-h-44 w-full lg:min-h-[21rem]"
+            rounded="rounded-xl"
+          />
+          <div className="absolute left-2 top-2">
+            <RankBadge rank={rank} />
+          </div>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3 py-0.5">
+          <Labels signal={signal} copy={copy} />
+          <h3 className="line-clamp-4 text-lg font-bold leading-tight tracking-tight text-foreground sm:text-xl lg:text-2xl">
+            {signal.headline}
+          </h3>
+          <SourceLine signal={signal} copy={copy} dateLocale={dateLocale} showDomain={false} />
+          <AiOverview signal={signal} copy={copy} clamp={3} />
+          <DetailsDisclosure {...props} className="mt-auto" />
+        </div>
+      </article>
+    </GlassPanel>
+  );
+}
+
+// ── Ranked Daily Top 3 secondary cards ──
+
+function RankedCard(props: Props) {
+  const { signal, copy, dateLocale, rank } = props;
+
+  return (
+    <GlassPanel
+      data-signal-id={signal.id}
+      variant="strong"
+      className="h-full overflow-hidden p-3 scroll-mt-24 sm:p-3.5 [&.signal-focused]:ring-2 [&.signal-focused]:ring-primary/60"
+    >
+      <article aria-label={signal.headline} className="flex h-full gap-3">
+        <SignalThumbnail
+          signal={signal}
+          copy={copy}
+          className="size-24 shrink-0 sm:size-28 lg:size-28"
+          rounded="rounded-lg"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className="flex items-start gap-2">
+            <RankBadge rank={rank} />
+            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
+              {signal.headline}
+            </h3>
+          </div>
+          <SourceLine
+            signal={signal}
+            copy={copy}
+            dateLocale={dateLocale}
+            showDomain={false}
+            className="text-[11px]"
+          />
+          <CompactSummary signal={signal} copy={copy} className="hidden lg:block" />
+          <DetailsDisclosure {...props} compactActions className="mt-auto" />
+        </div>
+      </article>
+    </GlassPanel>
+  );
+}
+
+// ── Lower section preview cards ──
+
+function PreviewCard(props: Props) {
+  const { signal, copy, dateLocale } = props;
+
+  return (
+    <GlassPanel
+      data-signal-id={signal.id}
+      variant="strong"
+      className="h-full overflow-hidden p-3 scroll-mt-24 [&.signal-focused]:ring-2 [&.signal-focused]:ring-primary/60"
+    >
+      <article aria-label={signal.headline} className="flex h-full gap-3">
+        <SignalThumbnail signal={signal} copy={copy} className="size-20 shrink-0" rounded="rounded-lg" />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+            {signal.headline}
+          </h3>
+          <SourceLine
+            signal={signal}
+            copy={copy}
+            dateLocale={dateLocale}
+            showDomain={false}
+            className="text-[11px]"
+          />
+          <CompactSummary signal={signal} copy={copy} className="hidden lg:block" />
+          <DetailsDisclosure {...props} compactActions className="mt-auto" />
+        </div>
+      </article>
+    </GlassPanel>
   );
 }
 
@@ -329,21 +509,16 @@ function FeatureCard(props: Props) {
         <SourceLine signal={signal} copy={copy} dateLocale={dateLocale} />
         <ConnectionStrip signal={signal} />
         <AiOverview signal={signal} copy={copy} clamp={isHero ? undefined : 3} />
-        <div className={cn("pt-1", !isHero && "mt-auto")}>
-          <PrimaryActions {...props} />
-        </div>
-        {isHero && <ExpandedExtras {...props} />}
+        <DetailsDisclosure {...props} className={cn("pt-2", !isHero && "mt-auto")} />
       </div>
     </GlassPanel>
   );
 }
 
-// ── List (horizontal thumbnail + text, expand/collapse) ──
+// ── List (horizontal thumbnail + text) ──
 
 function ListCard(props: Props) {
   const { signal, copy, dateLocale } = props;
-  const [expanded, setExpanded] = useState(false);
-  const detailsId = useId();
   return (
     <GlassPanel
       data-signal-id={signal.id}
@@ -359,30 +534,12 @@ function ListCard(props: Props) {
         />
         <div className="flex min-w-0 flex-1 flex-col space-y-2">
           <Labels signal={signal} copy={copy} />
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            aria-controls={detailsId}
-            className="group flex w-full items-start gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-          >
-            <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug text-foreground sm:text-base">
-              {signal.headline}
-            </span>
-            <ChevronDown
-              className={cn(
-                "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform duration-200",
-                expanded && "rotate-180",
-              )}
-            />
-          </button>
-          <SourceLine signal={signal} copy={copy} dateLocale={dateLocale} />
-          <ConnectionStrip signal={signal} />
-          <AiOverview signal={signal} copy={copy} clamp={expanded ? undefined : 2} />
-          <div id={detailsId} className="space-y-3">
-            <PrimaryActions {...props} />
-            {expanded && <ExpandedExtras {...props} />}
-          </div>
+          <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground sm:text-base">
+            {signal.headline}
+          </h3>
+          <SourceLine signal={signal} copy={copy} dateLocale={dateLocale} showDomain={false} />
+          <AiOverview signal={signal} copy={copy} clamp={2} />
+          <DetailsDisclosure {...props} className="mt-auto" />
         </div>
       </article>
     </GlassPanel>

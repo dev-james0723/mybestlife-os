@@ -2,12 +2,16 @@
 
 import { useMemo } from "react";
 import { Target } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import {
+  OSControl,
+  OSFrostedPanel,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import { useCareerProfile } from "@/hooks/use-career-profile";
 import { useCareerOpportunities } from "@/hooks/use-career-opportunities";
 import { computeProfileCompleteness } from "@/lib/repositories/career-profile";
@@ -45,7 +49,7 @@ export function TransitionProgressWidget() {
   const profileHref = withLocalePrefix(localeSlug, "/career/profile");
 
   return (
-    <section className="rounded-2xl border bg-card p-5">
+    <OSFrostedPanel as="section" className="p-5">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {copy.sections.today}
       </h2>
@@ -78,7 +82,7 @@ export function TransitionProgressWidget() {
       </div>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border bg-background/50 p-3">
+        <OSSolidPanel className="p-3">
           <dt className="text-[11px] font-medium uppercase text-muted-foreground">
             {copy.today.topGoal}
           </dt>
@@ -89,25 +93,25 @@ export function TransitionProgressWidget() {
               </span>
             )}
           </dd>
-        </div>
-        <div className="rounded-lg border bg-background/50 p-3">
+        </OSSolidPanel>
+        <OSSolidPanel className="p-3">
           <dt className="text-[11px] font-medium uppercase text-muted-foreground">
             {copy.today.transitionCta}
           </dt>
           <dd className="mt-1">
-            <Button variant="outline" size="sm" render={<Link href={profileHref} />}>
+            <OSControl osSize="compact" render={<Link href={profileHref} />}>
               {profileCompletePct < 100
                 ? copy.today.profileCta
                 : copy.today.transitionCta}
-            </Button>
+            </OSControl>
             {profileCompletePct < 100 ? (
               <p className="mt-2 text-[11px] text-muted-foreground">
                 {copy.today.profileIncomplete(profileCompletePct)}
               </p>
             ) : null}
           </dd>
-        </div>
+        </OSSolidPanel>
       </dl>
-    </section>
+    </OSFrostedPanel>
   );
 }

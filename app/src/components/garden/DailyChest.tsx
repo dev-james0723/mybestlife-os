@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Gift, Droplets, Sun, Leaf, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { OSFrostedPanel, OSPrimaryAction, OSSolidPanel } from "@/components/ui/os-primitives";
 import { useClaimDailyChest, useGardenTodayLog } from "@/hooks/use-garden";
 import { useAppStore } from "@/stores/app-store";
 import { getGardenUiCopy } from "@/lib/i18n/garden-ui";
@@ -31,6 +30,7 @@ export function DailyChest() {
   const claimChest = useClaimDailyChest();
   const [revealedItems, setRevealedItems] = useState<{ type: GardenItemType; qty: number }[] | null>(null);
   const [isOpening, setIsOpening] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const alreadyClaimed = todayLog?.chest_claimed === true;
 
@@ -51,103 +51,107 @@ export function DailyChest() {
 
   if (alreadyClaimed && !revealedItems) {
     return (
-      <Card className="border-dashed opacity-60">
-        <CardContent className="flex items-center gap-3 py-3 px-4">
-          <Gift className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{ui.dailyChestClaimed}</span>
-        </CardContent>
-      </Card>
+      <OSSolidPanel className="flex items-center gap-3 border-dashed px-4 py-3 opacity-70">
+        <Gift className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">{ui.dailyChestClaimed}</span>
+      </OSSolidPanel>
     );
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="py-4 px-4">
-        <AnimatePresence mode="wait">
-          {revealedItems ? (
+    <OSFrostedPanel className="px-4 py-4">
+      <AnimatePresence mode="wait">
+        {revealedItems ? (
+          <motion.div
+            key="result"
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
+            <p className="text-center text-sm font-medium">{ui.dailyChestReceived}</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {revealedItems.map((item, i) => {
+                const cfg = ITEM_CONFIG[item.type];
+                const Icon = cfg.icon;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={reduceMotion ? false : { scale: 0.92, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: reduceMotion ? 0 : i * 0.12, duration: reduceMotion ? 0 : 0.22 }}
+                    className={`flex min-w-[100px] flex-col items-center gap-1.5 rounded-xl bg-gradient-to-b ${RARITY_BG[cfg.rarity]} p-4`}
+                  >
+                    <Icon className={`h-8 w-8 ${cfg.color}`} />
+                    <span className="text-xs font-semibold">{ui.itemLabels[item.type]}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {ui.rarityLabels[cfg.rarity]}
+                    </span>
+                    {item.qty > 1 && (
+                      <span className="text-xs font-bold">x{item.qty}</span>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="chest"
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+            className="flex flex-col items-center gap-3"
+          >
             <motion.div
-              key="result"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-3"
+              animate={
+                reduceMotion
+                  ? undefined
+                  : isOpening
+                    ? {
+                        rotate: [0, -8, 8, -8, 8, 0],
+                        scale: [1, 1.08, 1.08, 1.08, 1.08, 1.16],
+                      }
+                    : {
+                        y: [0, -3, 0],
+                      }
+              }
+              transition={
+                isOpening
+                  ? { duration: 0.8 }
+                  : {
+                      repeat: reduceMotion ? 0 : Infinity,
+                      duration: 2,
+                      ease: "easeInOut",
+                    }
+              }
             >
-              <p className="text-sm font-medium text-center">{ui.dailyChestReceived}</p>
-              <div className="flex flex-wrap justify-center gap-3">
-                {revealedItems.map((item, i) => {
-                  const cfg = ITEM_CONFIG[item.type];
-                  const Icon = cfg.icon;
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ scale: 0, rotate: -20 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: i * 0.15, type: "spring", stiffness: 300 }}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl bg-gradient-to-b ${RARITY_BG[cfg.rarity]} p-4 min-w-[100px]`}
-                    >
-                      <Icon className={`h-8 w-8 ${cfg.color}`} />
-                      <span className="text-xs font-semibold">{ui.itemLabels[item.type]}</span>
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        {ui.rarityLabels[cfg.rarity]}
-                      </span>
-                      {item.qty > 1 && (
-                        <span className="text-xs font-bold">x{item.qty}</span>
-                      )}
-                    </motion.div>
-                  );
-                })}
+              <div className="relative">
+                <Gift className="h-12 w-12 text-amber-600 dark:text-amber-400" />
+                {!isOpening && !reduceMotion && (
+                  <motion.div
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="absolute -right-1 -top-1"
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-400" />
+                  </motion.div>
+                )}
               </div>
             </motion.div>
-          ) : (
-            <motion.div
-              key="chest"
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="flex flex-col items-center gap-3"
+            <div className="text-center">
+              <p className="text-sm font-medium">{ui.dailyChestTitle}</p>
+              <p className="text-xs text-muted-foreground">{ui.dailyChestDescription}</p>
+            </div>
+            <OSPrimaryAction
+              onClick={handleOpen}
+              disabled={isOpening || claimChest.isPending}
+              osSize="compact"
+              className="gap-2"
             >
-              <motion.div
-                animate={isOpening ? {
-                  rotate: [0, -10, 10, -10, 10, 0],
-                  scale: [1, 1.1, 1.1, 1.1, 1.1, 1.2],
-                } : {
-                  y: [0, -3, 0],
-                }}
-                transition={isOpening ? {
-                  duration: 0.8,
-                } : {
-                  repeat: Infinity,
-                  duration: 2,
-                  ease: "easeInOut",
-                }}
-              >
-                <div className="relative">
-                  <Gift className="h-12 w-12 text-amber-600 dark:text-amber-400" />
-                  {!isOpening && (
-                    <motion.div
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="absolute -top-1 -right-1"
-                    >
-                      <Sparkles className="h-4 w-4 text-amber-400" />
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-              <div className="text-center">
-                <p className="text-sm font-medium">{ui.dailyChestTitle}</p>
-                <p className="text-xs text-muted-foreground">{ui.dailyChestDescription}</p>
-              </div>
-              <Button
-                onClick={handleOpen}
-                disabled={isOpening || claimChest.isPending}
-                size="sm"
-                className="gap-2"
-              >
-                <Gift className="h-4 w-4" />
-                {isOpening ? ui.openingChest : ui.openChest}
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </CardContent>
-    </Card>
+              <Gift className="h-4 w-4" />
+              {isOpening ? ui.openingChest : ui.openChest}
+            </OSPrimaryAction>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </OSFrostedPanel>
   );
 }

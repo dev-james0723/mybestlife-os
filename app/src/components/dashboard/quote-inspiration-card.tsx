@@ -116,7 +116,7 @@ export function QuoteInspirationCard({
           href={libraryHref}
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "gap-1 font-medium",
+            "h-11 min-h-11 gap-1 rounded-xl px-3 font-medium",
           )}
         >
           {copy.pageTitle}
@@ -136,7 +136,10 @@ export function QuoteInspirationCard({
           </p>
           <Link
             href={libraryHref}
-            className={cn(buttonVariants({ variant: "default", size: "sm" }))}
+            className={cn(
+              buttonVariants({ variant: "default", size: "sm" }),
+              "h-11 min-h-11 rounded-xl px-3",
+            )}
           >
             {copy.addQuote}
           </Link>
@@ -192,7 +195,7 @@ export function QuoteInspirationCard({
               type="button"
               variant="default"
               size="sm"
-              className="gap-1.5"
+              className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
               onClick={() => void handleInspire()}
               disabled={inspire.isPending}
             >
@@ -209,7 +212,7 @@ export function QuoteInspirationCard({
               type="button"
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
               onClick={handleShuffle}
               disabled={favLoading || (favorites?.length ?? 0) < 2}
               aria-label={copy.dashboardQuoteShuffle}
@@ -221,7 +224,7 @@ export function QuoteInspirationCard({
               href={libraryHref}
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "ml-auto gap-1 text-muted-foreground",
+                "ml-auto h-11 min-h-11 gap-1 rounded-xl px-3 text-muted-foreground",
               )}
             >
               <QuoteIcon className="size-3.5" aria-hidden />

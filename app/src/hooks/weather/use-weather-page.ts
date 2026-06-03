@@ -76,7 +76,7 @@ export function useWeatherPage() {
       fetchCurrentWeatherRich(coords),
       fetchForecast(coords),
       reverseGeocodeCoordinates(coords.lat, coords.lon),
-      fetchUvAndAirQuality(coords.lat, coords.lon),
+      fetchUvAndAirQuality(coords.lat, coords.lon, { useProxy: !!user }),
     ]);
 
     if (currentResult.status !== "ok") {
@@ -160,7 +160,10 @@ export function useWeatherPage() {
   useEffect(() => {
     if (authLoading) return;
     if (user && profileLoading) return;
-    void refresh();
+    const timeout = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [
     authLoading,
     user,

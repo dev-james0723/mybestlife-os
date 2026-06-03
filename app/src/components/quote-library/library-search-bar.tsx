@@ -58,7 +58,7 @@ export function LibrarySearchBar() {
           value={filters.search}
           onChange={(e) => setFilters({ search: e.target.value })}
           placeholder={copy.searchPlaceholder}
-          className="pl-9"
+          className="h-11 rounded-xl pl-9"
           aria-label={copy.searchPlaceholder}
         />
       </div>
@@ -68,7 +68,7 @@ export function LibrarySearchBar() {
         variant={filters.favoritesOnly ? "default" : "outline"}
         size="sm"
         onClick={() => setFilters({ favoritesOnly: !filters.favoritesOnly })}
-        className="gap-2"
+        className="h-11 min-h-11 gap-2 rounded-xl px-3"
         aria-pressed={filters.favoritesOnly}
       >
         <Star
@@ -82,7 +82,7 @@ export function LibrarySearchBar() {
         value={sort}
         onValueChange={(value) => value && setSort(value as QuoteSortKey)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="h-11 min-h-11 w-[180px] rounded-xl">
           <ArrowUpDown className="mr-2 size-4" aria-hidden />
           <SelectValue placeholder={copy.sortPlaceholder} />
         </SelectTrigger>
@@ -101,7 +101,7 @@ export function LibrarySearchBar() {
           variant="ghost"
           size="sm"
           onClick={resetFilters}
-          className="gap-2 text-muted-foreground"
+          className="h-11 min-h-11 gap-2 rounded-xl px-3 text-muted-foreground"
         >
           <X className="size-4" aria-hidden />
           {copy.filterClear}

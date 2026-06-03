@@ -65,7 +65,7 @@ export function TagInput({
   return (
     <div
       className={cn(
-        "flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-input bg-transparent px-2 py-1.5 text-sm focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30",
+        "flex min-h-[44px] flex-wrap items-center gap-1.5 rounded-xl border border-input bg-transparent px-2 py-1.5 text-sm focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30",
         className,
       )}
       onClick={(e) => {

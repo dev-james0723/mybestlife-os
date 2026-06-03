@@ -6,6 +6,8 @@ import {
   normalizeLocaleSlug,
 } from "@/lib/i18n/locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
+import { osMapSurfaceClassName } from "@/components/ui/os-glass";
+import { cn } from "@/lib/utils";
 
 type PageProps = { params: Promise<{ locale: string }> };
 
@@ -33,7 +35,12 @@ export default async function BrainPage({ params }: PageProps) {
   if (!user) redirect(withLocalePrefix(slug, "/login"));
 
   return (
-    <div className="h-[calc(100dvh-5rem)] min-h-[560px] w-full overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/10 sm:h-[calc(100dvh-6rem)]">
+    <div
+      className={cn(
+        osMapSurfaceClassName,
+        "h-[calc(100dvh-5rem)] min-h-[560px] w-full sm:h-[calc(100dvh-6rem)]",
+      )}
+    >
       <BrainView userId={user.id} />
     </div>
   );

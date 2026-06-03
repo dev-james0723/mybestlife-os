@@ -1,9 +1,14 @@
 "use client";
 
 import type { MindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sparkles, Users } from "lucide-react";
+import {
+  OSActionRow,
+  OSControl,
+  OSGlassPanel,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 
 type MindCouncilHeroProps = {
   ui: MindCouncilUiCopy;
@@ -31,9 +36,7 @@ export function MindCouncilHero({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/10 via-card/80 to-card/40 p-6 shadow-lg backdrop-blur-xl sm:p-8">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl" />
+    <OSGlassPanel className="p-6 sm:p-8">
       <div className="relative space-y-5">
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -46,41 +49,37 @@ export function MindCouncilHero({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={ui.heroPlaceholder}
-          className="h-12 rounded-2xl border-border/70 bg-background/70 text-base backdrop-blur-md"
+          className="h-12 rounded-xl border-border/70 bg-background/78 text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-md"
         />
         <div className="flex flex-wrap gap-2">
           {chips.map((c) => (
-            <Button
+            <OSControl
               key={c.label}
               type="button"
-              variant="secondary"
-              size="sm"
-              className="rounded-full border border-border/50 bg-background/50 backdrop-blur-md"
+              osSize="compact"
               onClick={() => {
                 onChange(c.text);
                 onChip(c.text);
               }}
             >
               {c.label}
-            </Button>
+            </OSControl>
           ))}
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
+        <OSActionRow className="sm:justify-start">
+          <OSPrimaryAction
             type="button"
-            className="rounded-2xl"
-            variant="default"
             onClick={onRecommend}
           >
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="h-4 w-4" />
             {ui.recommendAdvisors}
-          </Button>
-          <Button type="button" variant="outline" className="rounded-2xl" onClick={onAskCouncil}>
-            <Users className="mr-2 h-4 w-4" />
+          </OSPrimaryAction>
+          <OSControl type="button" onClick={onAskCouncil}>
+            <Users className="h-4 w-4" />
             {ui.askTheCouncil}
-          </Button>
-        </div>
+          </OSControl>
+        </OSActionRow>
       </div>
-    </section>
+    </OSGlassPanel>
   );
 }

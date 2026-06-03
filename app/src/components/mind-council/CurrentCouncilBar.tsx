@@ -2,9 +2,9 @@
 
 import type { MindSkill } from "@/lib/mind-council/types";
 import type { MindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
-import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { AdvisorPortrait } from "@/components/mind-council/AdvisorPortrait";
+import { OSFrostedPanel, OSIconControl } from "@/components/ui/os-primitives";
 
 type CurrentCouncilBarProps = {
   ui: MindCouncilUiCopy;
@@ -14,7 +14,7 @@ type CurrentCouncilBarProps = {
 
 export function CurrentCouncilBar({ ui, members, onRemove }: CurrentCouncilBarProps) {
   return (
-    <section className="rounded-3xl border border-dashed border-primary/25 bg-primary/5 p-4 backdrop-blur-md sm:p-5">
+    <OSFrostedPanel className="border-dashed border-primary/25 bg-primary/5 p-4 sm:p-5">
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-semibold">{ui.currentCouncilTitle}</h2>
@@ -29,24 +29,23 @@ export function CurrentCouncilBar({ ui, members, onRemove }: CurrentCouncilBarPr
           {members.map((m) => (
               <div
                 key={m.skillId}
-                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 py-1 pl-1 pr-2 text-xs shadow-sm"
+                className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/70 py-1 pl-1 pr-2 text-xs shadow-sm"
               >
                 <AdvisorPortrait skill={m} className="h-8 w-8" pixelSize={32} />
                 <span className="max-w-[140px] truncate font-medium">{m.lensTitle}</span>
-                <Button
+                <OSIconControl
                   type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className="h-7 w-7 shrink-0 rounded-lg"
+                  osSize="compact"
+                  className="h-7 min-h-7 w-7 shrink-0"
                   onClick={() => onRemove(m.skillId)}
                   aria-label={ui.removeAdvisor}
                 >
                   <X className="h-3.5 w-3.5" />
-                </Button>
+                </OSIconControl>
               </div>
           ))}
         </div>
       )}
-    </section>
+    </OSFrostedPanel>
   );
 }

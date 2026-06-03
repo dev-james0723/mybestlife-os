@@ -425,6 +425,22 @@ html.focus-mode [data-focus-hideable] {
   user-select: none;
 }
 
+.os-buddy-dock > button {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.os-buddy-airpilot-target-highlight {
+  outline: 2px solid #ef4444 !important;
+  outline-offset: 3px !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 16px rgba(239, 68, 68, 0.35) !important;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .os-buddy-dock--free-roaming .os-buddy-sprite {
     animation: os-buddy-free-roam-bounce 1.15s ease-in-out infinite;
@@ -619,17 +635,20 @@ html.focus-mode [data-focus-hideable] {
 
 .os-buddy-pixel-bubble-close {
   position: absolute;
-  top: 3px;
-  right: 3px;
+  top: -12px;
+  right: -12px;
   display: inline-flex;
-  width: 20px;
-  height: 20px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 12px;
   color: var(--os-buddy-bubble-ink);
-  opacity: 0;
-  transition: opacity 140ms ease;
+  opacity: 0.72;
+  transition:
+    background 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
 }
 
 .os-buddy-pixel-bubble:hover .os-buddy-pixel-bubble-close,
@@ -638,6 +657,7 @@ html.focus-mode [data-focus-hideable] {
 }
 
 .os-buddy-pixel-bubble-close:hover {
+  background: color-mix(in oklch, var(--os-buddy-bubble-bg) 82%, white 18%);
   opacity: 1;
 }
 
@@ -1370,7 +1390,7 @@ html[data-ui-theme="default"] .topbar-search-pill {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 40px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.12);
@@ -1441,7 +1461,7 @@ html[data-ui-theme="default"] .topbar-weather-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.12);
@@ -1469,6 +1489,11 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
    Theme-agnostic so it works under every data-ui-theme. The scrim keeps the
    temperature + description readable over the animation. */
 .topbar-weather-badge {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -1519,8 +1544,8 @@ html[data-ui-theme="default"] .topbar-pill {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  height: 40px;
-  padding: 4px 6px;
+  height: 44px;
+  padding: 0 4px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(18px) saturate(125%);
@@ -1538,8 +1563,8 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill {
     inset 0 1px 0 rgba(255, 255, 255, 0.80);
 }
 html[data-ui-theme="default"] .topbar-pill-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
@@ -1593,7 +1618,7 @@ html[data-ui-theme="default"] .topbar-clock-trigger {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.12);
@@ -1811,12 +1836,12 @@ html:not([data-ui-theme="default"]) .topbar-clock-trigger {
 }
 html:not([data-ui-theme="default"]) .topbar-pill {
   gap: 2px;
-  padding: 4px 6px;
-  height: 40px;
+  padding: 0 4px;
+  height: 44px;
 }
 html:not([data-ui-theme="default"]) .topbar-pill-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
@@ -2778,6 +2803,10 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
 }
 
 .travel-google-map .leaflet-control-zoom a {
+  display: grid;
+  min-height: 44px;
+  min-width: 44px;
+  place-items: center;
   background: rgba(15, 23, 42, 0.9);
   color: rgba(255, 255, 255, 0.85);
   border-color: rgba(255, 255, 255, 0.12);

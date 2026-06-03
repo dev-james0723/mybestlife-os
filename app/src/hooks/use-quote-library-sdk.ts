@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   useMutation,
   useQuery,
@@ -21,6 +22,7 @@ import {
   type MindSweepContext,
   type ResonantQuoteMatch,
 } from "@/lib/quote-library/sdk";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 import type { Quote } from "@/types/quote";
 
 /**
@@ -46,6 +48,15 @@ export function useDailyInspirationFavorites(
   options?: { limit?: number; enabled?: boolean },
 ) {
   const limit = options?.limit ?? 5;
+  const [canFetchFavorites, setCanFetchFavorites] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setCanFetchFavorites(!hasDevLoginBypassCookie());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return useQuery({
     queryKey: [...DAILY_INSPIRATION_KEY, limit],
     queryFn: async () => {
@@ -54,7 +65,7 @@ export function useDailyInspirationFavorites(
       return res.data;
     },
     staleTime: 10 * 60 * 1000,
-    enabled: options?.enabled ?? true,
+    enabled: (options?.enabled ?? true) && canFetchFavorites,
   });
 }
 

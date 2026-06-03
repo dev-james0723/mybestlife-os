@@ -17,7 +17,11 @@ export function AddQuoteButton() {
   const openAddSheet = useQuoteLibraryStore((s) => s.openAddSheet);
 
   return (
-    <Button onClick={openAddSheet} aria-label={copy.addQuoteAria}>
+    <Button
+      onClick={openAddSheet}
+      aria-label={copy.addQuoteAria}
+      className="h-11 min-h-11 rounded-xl px-3"
+    >
       <Plus className="mr-2 size-4" aria-hidden />
       {copy.addQuote}
     </Button>

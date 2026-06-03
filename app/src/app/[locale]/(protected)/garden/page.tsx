@@ -15,6 +15,7 @@ import { useAppStore } from "@/stores/app-store";
 import { getGardenUiCopy } from "@/lib/i18n/garden-ui";
 import { getGardenHubPageDescription } from "@/lib/i18n/bio-lab-tools-ui";
 import { useTheme } from "@/lib/theme-context";
+import { OSMotionPanel } from "@/components/ui/os-primitives";
 
 export default function GardenPage() {
   const language = useAppStore((s) => s.language);
@@ -40,26 +41,21 @@ export default function GardenPage() {
       title={ui.pageTitle}
       description={pageDescription}
     >
-      <div className="space-y-6">
+      <OSMotionPanel className="space-y-6">
         <GardenBioLabQuerySync />
         <BioLabToolsSection />
 
-        {/* Daily chest — always shown */}
         <DailyChest />
-
-        {/* Inventory bar */}
         <InventoryBar />
 
-        {/* Main content: either active plant or seed selector */}
         {hasActivePlant ? (
           <GardenView garden={garden} />
         ) : (
           <SeedSelector />
         )}
 
-        {/* Plant collection gallery */}
         <PlantCollection />
-      </div>
+      </OSMotionPanel>
     </PageShell>
   );
 }

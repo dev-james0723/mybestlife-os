@@ -3,10 +3,10 @@
 import type { MindSkill } from "@/lib/mind-council/types";
 import type { MindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MessageCircle, Plus } from "lucide-react";
 import { AdvisorPortrait } from "@/components/mind-council/AdvisorPortrait";
+import { OSControl, OSFrostedPanel, OSPrimaryAction } from "@/components/ui/os-primitives";
 
 type SkillCardProps = {
   skill: MindSkill;
@@ -30,9 +30,9 @@ export function SkillCard({
   compact,
 }: SkillCardProps) {
   return (
-    <div
+    <OSFrostedPanel
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/50 p-4 shadow-sm backdrop-blur-xl transition hover:border-primary/25 hover:bg-card/70",
+        "group flex flex-col p-4 transition hover:border-primary/25 hover:bg-card/70",
         compact && "p-3",
       )}
     >
@@ -58,22 +58,20 @@ export function SkillCard({
         </div>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button type="button" size="sm" className="rounded-xl" onClick={onChat}>
-          <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+        <OSPrimaryAction type="button" osSize="compact" onClick={onChat}>
+          <MessageCircle className="h-3.5 w-3.5" />
           {ui.chatTitle}
-        </Button>
-        <Button
+        </OSPrimaryAction>
+        <OSControl
           type="button"
-          size="sm"
-          variant="outline"
-          className="rounded-xl"
+          osSize="compact"
           disabled={(!inCouncil && councilFull) || inCouncil}
           onClick={onAddCouncil}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          <Plus className="h-3.5 w-3.5" />
           {inCouncil ? "✓" : ui.addToCouncil}
-        </Button>
+        </OSControl>
       </div>
-    </div>
+    </OSFrostedPanel>
   );
 }

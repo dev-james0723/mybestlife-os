@@ -12,6 +12,7 @@ import { ColdRelationshipsWidget } from "@/components/career-dashboard/ColdRelat
 import { SkillsGapWidget } from "@/components/career-dashboard/SkillsGap";
 import { AISuggestionsWidget } from "@/components/career-dashboard/AISuggestions";
 import { OmnisearchTrigger } from "@/components/career/Omnisearch";
+import { OSFrostedPanel, OSMotionPanel } from "@/components/ui/os-primitives";
 
 /**
  * Career Command Center — replaces the former link-grid landing. Widgets
@@ -28,7 +29,7 @@ export default function CareerCommandCenterPage() {
       description={copy.pageDescription}
       actions={<OmnisearchTrigger />}
     >
-      <div className="grid gap-4 lg:grid-cols-3">
+      <OSMotionPanel className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
           <TransitionProgressWidget />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -40,7 +41,7 @@ export default function CareerCommandCenterPage() {
 
         <div className="space-y-4">
           <AISuggestionsWidget />
-          <section className="rounded-2xl border bg-card p-5">
+          <OSFrostedPanel as="section" className="p-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {copy.sections.intelligence}
             </h2>
@@ -49,9 +50,9 @@ export default function CareerCommandCenterPage() {
               <ColdRelationshipsWidget />
               <SkillsGapWidget />
             </div>
-          </section>
+          </OSFrostedPanel>
         </div>
-      </div>
+      </OSMotionPanel>
     </PageShell>
   );
 }

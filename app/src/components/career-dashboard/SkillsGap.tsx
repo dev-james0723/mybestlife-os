@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { TrendingUp } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import { OSSolidPanel } from "@/components/ui/os-primitives";
 import { useCareerOpportunities } from "@/hooks/use-career-opportunities";
 import { useCareerProfile } from "@/hooks/use-career-profile";
 import { skillsGap } from "@/lib/dashboard/aggregators";
@@ -21,7 +22,7 @@ export function SkillsGapWidget() {
   );
 
   return (
-    <div className="rounded-xl border bg-background/60 p-3">
+    <OSSolidPanel className="p-3">
       <div className="flex items-center gap-2">
         <TrendingUp className="h-4 w-4 text-violet-500" aria-hidden />
         <span className="text-sm font-medium">
@@ -30,6 +31,6 @@ export function SkillsGapWidget() {
             : copy.skillsGap(gaps.join(", "))}
         </span>
       </div>
-    </div>
+    </OSSolidPanel>
   );
 }

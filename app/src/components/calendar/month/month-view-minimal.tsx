@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   addDays,
   addMonths,
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getCalendarUiCopy } from "@/lib/i18n/calendar-ui";
 import { getDateFnsLocale } from "@/lib/i18n/date-locale";
+import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { itemsForDate } from "@/lib/calendar/projection";
 import type { CalendarItem, CalendarItemSourceType } from "@/lib/calendar/types";
 
@@ -59,6 +61,7 @@ export function MonthViewMinimal({ items, isLoading }: Props) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
+  const plannerHref = useLocalizedPath("/daily-planner");
   const prefersReduced = useReducedMotion();
 
   const [anchor, setAnchor] = useState(() => new Date());
@@ -125,6 +128,7 @@ export function MonthViewMinimal({ items, isLoading }: Props) {
           <Button
             size="icon-sm"
             variant="outline"
+            className="h-11 min-h-11 w-11 rounded-xl"
             aria-label="Previous month"
             onClick={() => setAnchor((d) => subMonths(d, 1))}
           >
@@ -133,12 +137,18 @@ export function MonthViewMinimal({ items, isLoading }: Props) {
           <Button
             size="icon-sm"
             variant="outline"
+            className="h-11 min-h-11 w-11 rounded-xl"
             aria-label="Next month"
             onClick={() => setAnchor((d) => addMonths(d, 1))}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setAnchor(new Date())}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-11 min-h-11 rounded-xl px-3"
+            onClick={() => setAnchor(new Date())}
+          >
             {copy.today}
           </Button>
           <span className="ml-auto text-base font-semibold tracking-wide tabular-nums">
@@ -258,8 +268,8 @@ export function MonthViewMinimal({ items, isLoading }: Props) {
           <Button
             size="sm"
             variant="outline"
-            className="w-full gap-1.5"
-            onClick={() => void 0}
+            className="h-11 min-h-11 w-full gap-1.5 rounded-xl px-3"
+            render={<Link href={`${plannerHref}#quick-add`} />}
           >
             <Plus className="h-3.5 w-3.5" />
             {copy.newEvent}

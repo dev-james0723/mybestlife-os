@@ -34,12 +34,17 @@ export type UvAirQuality = {
   aqiCategory: AqiCategory | null;
 };
 
+type FetchUvAirQualityOptions = {
+  useProxy?: boolean;
+};
+
 /** Client entry — same-origin proxy, then direct Open-Meteo fallback. */
 export async function fetchUvAndAirQuality(
   lat: number,
   lon: number,
+  options: FetchUvAirQualityOptions = {},
 ): Promise<UvAirQuality> {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && options.useProxy !== false) {
     const proxied = await fetchUvAndAirQualityViaApi(lat, lon);
     if (proxied.uvIndex != null || proxied.airQualityIndex != null) {
       return proxied;

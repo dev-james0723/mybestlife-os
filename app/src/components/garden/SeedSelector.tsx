@@ -1,11 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Lock, Sprout, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { osSheenClassName, osSolidPanelClassName } from "@/components/ui/os-glass";
 import { usePlantSeed, useGardenCollection } from "@/hooks/use-garden";
 import { getPlantUnlockRequirement } from "@/lib/repositories/garden";
 import { useAppStore } from "@/stores/app-store";
@@ -50,14 +49,15 @@ export function SeedSelector() {
   const plantSeed = usePlantSeed();
   const { data: collection } = useGardenCollection();
   const totalHarvests = collection?.length ?? 0;
+  const reduceMotion = useReducedMotion();
 
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={reduceMotion ? false : { scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200 }}
+          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
           <Sprout className="h-12 w-12 mx-auto text-green-500" />
         </motion.div>
@@ -73,56 +73,57 @@ export function SeedSelector() {
           const isLocked = totalHarvests < requiredHarvests;
 
           return (
-            <motion.div
+            <motion.button
               key={plant.type}
-              initial={{ opacity: 0, y: 20 }}
+              type="button"
+              disabled={isLocked || plantSeed.isPending}
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              whileHover={reduceMotion || isLocked ? undefined : { y: -2 }}
+              whileTap={reduceMotion || isLocked ? undefined : { scale: 0.985 }}
+              transition={{ delay: reduceMotion ? 0 : i * 0.05, duration: reduceMotion ? 0 : 0.22 }}
+              onClick={() => plantSeed.mutate(plant.type)}
+              className={cn(
+                osSolidPanelClassName,
+                osSheenClassName,
+                "relative flex min-h-[190px] flex-col items-center gap-3 overflow-hidden border p-4 text-center transition-[border-color,box-shadow,transform,opacity] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60",
+                isLocked
+                  ? "cursor-not-allowed opacity-55"
+                  : "cursor-pointer hover:border-lime-300/60 hover:shadow-[0_14px_36px_rgba(15,23,42,0.12)]",
+                `bg-gradient-to-b ${plant.color}`,
+              )}
             >
-              <Card
-                className={cn(
-                  "relative overflow-hidden transition-all border",
-                  isLocked
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:shadow-md hover:scale-[1.02] cursor-pointer",
-                  `bg-gradient-to-b ${plant.color}`,
-                )}
-                onClick={() => !isLocked && !plantSeed.isPending && plantSeed.mutate(plant.type)}
-              >
-                <CardContent className="flex flex-col items-center gap-3 py-5 px-4">
-                  {isLocked && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px] z-10">
-                      <div className="flex flex-col items-center gap-1">
-                        <Lock className="h-6 w-6 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {ui.unlockRequirement(requiredHarvests)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <span className="text-3xl">
-                    {plant.type === "grass" && "🌿"}
-                    {plant.type === "sunflower" && "🌻"}
-                    {plant.type === "lily" && "🌸"}
-                    {plant.type === "orchid" && "🪻"}
-                    {plant.type === "apple_tree" && "🍎"}
-                  </span>
-
-                  <div className="text-center space-y-1">
-                    <h3 className="font-semibold">{ui.plantLabels[plant.type]}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {ui.plantDescriptions[plant.type]}
-                    </p>
+              {isLocked && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/62 backdrop-blur-[2px]">
+                  <div className="flex flex-col items-center gap-1">
+                    <Lock className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {ui.unlockRequirement(requiredHarvests)}
+                    </span>
                   </div>
+                </div>
+              )}
 
-                  <Badge variant="outline" className="gap-1 text-xs">
-                    <Clock className="h-3 w-3" />
-                    {ui.bloomDays(plant.bloomDays)}
-                  </Badge>
-                </CardContent>
-              </Card>
-            </motion.div>
+              <span className="text-3xl">
+                {plant.type === "grass" && "🌿"}
+                {plant.type === "sunflower" && "🌻"}
+                {plant.type === "lily" && "🌸"}
+                {plant.type === "orchid" && "🪻"}
+                {plant.type === "apple_tree" && "🍎"}
+              </span>
+
+              <div className="space-y-1">
+                <h3 className="font-semibold">{ui.plantLabels[plant.type]}</h3>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {ui.plantDescriptions[plant.type]}
+                </p>
+              </div>
+
+              <Badge variant="outline" className="mt-auto gap-1 border-border/60 bg-background/70 text-xs">
+                <Clock className="h-3 w-3" />
+                {ui.bloomDays(plant.bloomDays)}
+              </Badge>
+            </motion.button>
           );
         })}
       </div>

@@ -27,15 +27,18 @@ import {
   osSolidPanelClassName,
 } from "./os-glass";
 
-type PanelProps = React.ComponentProps<"div">;
+type PanelElement = "div" | "section" | "article" | "aside" | "li";
+type PanelProps = React.HTMLAttributes<HTMLElement> & {
+  as?: PanelElement;
+};
 
 type OSButtonProps = React.ComponentProps<typeof Button> & {
   osSize?: "default" | "compact" | "none";
 };
 
-export function OSGlassPanel({ className, ...props }: PanelProps) {
+export function OSGlassPanel({ as: Component = "div", className, ...props }: PanelProps) {
   return (
-    <div
+    <Component
       data-slot="os-glass-panel"
       className={cn(osGlassPanelClassName, osSheenClassName, className)}
       {...props}
@@ -43,9 +46,9 @@ export function OSGlassPanel({ className, ...props }: PanelProps) {
   );
 }
 
-export function OSFrostedPanel({ className, ...props }: PanelProps) {
+export function OSFrostedPanel({ as: Component = "div", className, ...props }: PanelProps) {
   return (
-    <div
+    <Component
       data-slot="os-frosted-panel"
       className={cn(osFrostedPanelClassName, osSheenClassName, className)}
       {...props}
@@ -53,9 +56,9 @@ export function OSFrostedPanel({ className, ...props }: PanelProps) {
   );
 }
 
-export function OSSolidPanel({ className, ...props }: PanelProps) {
+export function OSSolidPanel({ as: Component = "div", className, ...props }: PanelProps) {
   return (
-    <div
+    <Component
       data-slot="os-solid-panel"
       className={cn(osSolidPanelClassName, className)}
       {...props}
@@ -249,7 +252,7 @@ export function OSSegmentedControl<T extends string>({
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
             }}
             className={cn(
-              "relative inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-[1rem] px-3 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
+              "relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[1rem] px-3 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
               active
                 ? "text-slate-950"
                 : "text-slate-700 hover:text-slate-950 dark:text-white/64 dark:hover:text-white",
@@ -340,7 +343,7 @@ export function OSStatusRail<T extends string>({
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
             }}
             className={cn(
-              "relative inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[0.9rem] px-3 text-[0.72rem] font-bold uppercase tracking-[0.12em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
+              "relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[0.9rem] px-3 text-[0.72rem] font-bold uppercase tracking-[0.12em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
               active
                 ? "text-slate-950"
                 : "text-slate-600 hover:text-slate-950 dark:text-white/54 dark:hover:text-white",

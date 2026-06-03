@@ -63,6 +63,7 @@ export function WeekTab() {
         <Button
           size="icon-sm"
           variant="outline"
+          className="h-11 min-h-11 w-11 rounded-xl"
           aria-label="Previous week"
           onClick={() => setAnchor((d) => addDays(d, -7))}
         >
@@ -71,6 +72,7 @@ export function WeekTab() {
         <Button
           size="icon-sm"
           variant="outline"
+          className="h-11 min-h-11 w-11 rounded-xl"
           aria-label="Next week"
           onClick={() => setAnchor((d) => addDays(d, 7))}
         >
@@ -79,6 +81,7 @@ export function WeekTab() {
         <Button
           size="sm"
           variant="ghost"
+          className="h-11 min-h-11 rounded-xl px-3"
           onClick={() => setAnchor(new Date())}
         >
           {copy.today}
@@ -145,4 +148,3 @@ export function WeekTab() {
     </motion.div>
   );
 }
-

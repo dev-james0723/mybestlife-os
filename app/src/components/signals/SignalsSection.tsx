@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { Locale } from "date-fns";
+import { ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,12 +36,14 @@ export function SignalCardWithHandlers({
   dateLocale,
   variant,
   handlers,
+  rank,
 }: {
   signal: SignalItem;
   copy: SignalsUiCopy;
   dateLocale: Locale;
   variant: SignalCardVariant;
   handlers: SignalCardHandlers;
+  rank?: number;
 }) {
   return (
     <SignalCard
@@ -48,6 +51,7 @@ export function SignalCardWithHandlers({
       copy={copy}
       dateLocale={dateLocale}
       variant={variant}
+      rank={rank}
       saving={handlers.savingId === signal.id}
       saved={handlers.savedIds.has(signal.id)}
       creatingTask={handlers.creatingTaskId === signal.id}
@@ -79,6 +83,7 @@ type Props = {
   handlers: SignalCardHandlers;
   /** Initial cap; a "Show more" button reveals the rest (never infinite). */
   initialCount?: number;
+  className?: string;
 };
 
 export function SignalsSection({
@@ -93,20 +98,32 @@ export function SignalsSection({
   note,
   handlers,
   initialCount,
+  className,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const cap = initialCount ?? items.length;
   const visible = expanded ? items : items.slice(0, cap);
   const hasMore = items.length > visible.length;
+  const showMoreButton = hasMore ? (
+    <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>
+      {copy.sections.seeAll}
+      <ChevronRight className="size-3.5" />
+    </Button>
+  ) : null;
 
   return (
-    <section aria-label={title} className="space-y-3">
+    <section aria-label={title} className={cn("space-y-3", className)}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
-        {headerRight}
+        {(headerRight || showMoreButton) && (
+          <div className="flex items-center gap-2">
+            {headerRight}
+            {showMoreButton}
+          </div>
+        )}
       </div>
 
       {note}
@@ -138,14 +155,6 @@ export function SignalsSection({
               />
             </div>
           ))}
-        </div>
-      )}
-
-      {hasMore && (
-        <div className="flex justify-center pt-1">
-          <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>
-            {copy.filters.showMoreFromTopic(title)}
-          </Button>
         </div>
       )}
     </section>

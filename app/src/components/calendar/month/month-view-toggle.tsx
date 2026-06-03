@@ -36,7 +36,7 @@ export function MonthViewToggle({ value, onChange, labels, className }: Props) {
             aria-checked={active}
             onClick={() => onChange(option)}
             className={cn(
-              "relative rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ease-out",
+              "relative inline-flex min-h-11 items-center rounded-full px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ease-out",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--calendar-lime)]/70",
               active
                 ? "bg-[var(--calendar-lime)] text-[#0d0d0d] shadow-sm"

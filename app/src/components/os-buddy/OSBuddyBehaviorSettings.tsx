@@ -16,12 +16,18 @@ import {
   type OSBuddyFreeRoamIntensity,
   type OSBuddyFreeRoamSettings,
 } from "@/lib/os-buddy/os-buddy-free-roam";
+import {
+  validateOSBuddyAirPilotSettings,
+  type OSBuddyAirPilotSettings,
+} from "@/lib/os-buddy/os-buddy-airpilot-settings";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 
 type OSBuddyBehaviorSettingsProps = {
   locale: AppLocale;
   value: OSBuddyFreeRoamSettings;
+  airPilotValue: OSBuddyAirPilotSettings;
   onSave: (value: OSBuddyFreeRoamSettings) => Promise<void> | void;
+  onSaveAirPilot: (value: OSBuddyAirPilotSettings) => Promise<void> | void;
 };
 
 const INTENSITY_OPTIONS: OSBuddyFreeRoamIntensity[] = ["subtle", "balanced", "lively"];
@@ -34,6 +40,11 @@ function copy(locale: AppLocale) {
     freeRoamDescription: zh
       ? "讓 OS Buddy 在你空閒時偶爾移動。"
       : "Let OS Buddy move around occasionally while you are idle.",
+    airPilot: "AirPilot",
+    airPilotWake: zh ? "OK 手勢喚醒 AirPilot" : "Wake AirPilot with OK gesture",
+    airPilotWakeDescription: zh
+      ? "授權後，OS Buddy 會在本機低頻追蹤手部關鍵點；做 OK 手勢即可開始控制頁面。"
+      : "After permission, OS Buddy listens locally at low frequency; make an OK gesture to control the page.",
     movementLevel: zh ? "活動頻率" : "Movement level",
     intensity: {
       subtle: zh ? "低調" : "Subtle",
@@ -56,23 +67,38 @@ function copy(locale: AppLocale) {
 export function OSBuddyBehaviorSettings({
   locale,
   value,
+  airPilotValue,
   onSave,
+  onSaveAirPilot,
 }: OSBuddyBehaviorSettingsProps) {
   const ui = useMemo(() => copy(locale), [locale]);
   const [draft, setDraft] = useState(() => validateOSBuddyFreeRoamSettings(value));
+  const [airPilotDraft, setAirPilotDraft] = useState(() =>
+    validateOSBuddyAirPilotSettings(airPilotValue),
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setDraft(validateOSBuddyFreeRoamSettings(value));
   }, [value]);
 
+  useEffect(() => {
+    setAirPilotDraft(validateOSBuddyAirPilotSettings(airPilotValue));
+  }, [airPilotValue]);
+
   const normalizedValue = validateOSBuddyFreeRoamSettings(value);
+  const normalizedAirPilotValue = validateOSBuddyAirPilotSettings(airPilotValue);
   const dirty = JSON.stringify(draft) !== JSON.stringify(normalizedValue);
+  const airPilotDirty =
+    JSON.stringify(airPilotDraft) !== JSON.stringify(normalizedAirPilotValue);
 
   const save = async () => {
     setSaving(true);
     try {
-      await onSave(validateOSBuddyFreeRoamSettings(draft));
+      if (dirty) await onSave(validateOSBuddyFreeRoamSettings(draft));
+      if (airPilotDirty) {
+        await onSaveAirPilot(validateOSBuddyAirPilotSettings(airPilotDraft));
+      }
     } finally {
       setSaving(false);
     }
@@ -97,6 +123,21 @@ export function OSBuddyBehaviorSettings({
           onCheckedChange={(checked) => {
             if (typeof checked === "boolean") {
               setDraft((current) => ({ ...current, enabled: checked }));
+            }
+          }}
+        />
+      </label>
+
+      <label className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border p-3">
+        <div className="min-w-0 space-y-1">
+          <p className="font-medium">{ui.airPilotWake}</p>
+          <p className="text-sm text-muted-foreground">{ui.airPilotWakeDescription}</p>
+        </div>
+        <Checkbox
+          checked={airPilotDraft.wakeEnabled}
+          onCheckedChange={(checked) => {
+            if (typeof checked === "boolean") {
+              setAirPilotDraft((current) => ({ ...current, wakeEnabled: checked }));
             }
           }}
         />
@@ -164,7 +205,11 @@ export function OSBuddyBehaviorSettings({
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" onClick={() => void save()} disabled={!dirty || saving}>
+        <Button
+          type="button"
+          onClick={() => void save()}
+          disabled={(!dirty && !airPilotDirty) || saving}
+        >
           {saving ? ui.saving : ui.save}
         </Button>
       </div>

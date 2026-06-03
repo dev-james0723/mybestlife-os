@@ -92,7 +92,7 @@ export function MiniCalendarPopover({
             size="icon-sm"
             aria-label="Open calendar"
             title="Pick date"
-            className="border-border/80 bg-muted/30 hover:bg-muted/60"
+            className="h-11 min-h-11 w-11 rounded-xl border-border/80 bg-muted/30 hover:bg-muted/60"
           />
         }
       >
@@ -108,7 +108,7 @@ export function MiniCalendarPopover({
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="shrink-0"
+            className="h-11 min-h-11 w-11 shrink-0 rounded-xl"
             onClick={() => setVisibleMonth((m) => subMonths(m, 1))}
             aria-label="Previous month"
           >
@@ -121,7 +121,7 @@ export function MiniCalendarPopover({
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="shrink-0"
+            className="h-11 min-h-11 w-11 shrink-0 rounded-xl"
             onClick={() => setVisibleMonth((m) => addMonths(m, 1))}
             aria-label="Next month"
           >
@@ -151,7 +151,7 @@ export function MiniCalendarPopover({
                 type="button"
                 onClick={() => handlePick(day)}
                 className={cn(
-                  "flex h-8 w-full items-center justify-center rounded-lg text-xs font-medium transition-colors",
+                  "flex h-11 min-h-11 w-full items-center justify-center rounded-xl text-xs font-medium transition-colors",
                   !inMonth && "text-muted-foreground/40 hover:bg-muted/50",
                   inMonth &&
                     !selected &&
@@ -174,7 +174,7 @@ export function MiniCalendarPopover({
             type="button"
             variant="ghost"
             size="xs"
-            className="text-muted-foreground"
+            className="h-11 min-h-11 rounded-xl px-3 text-muted-foreground"
             onClick={() => setOpen(false)}
           >
             Close
@@ -183,7 +183,7 @@ export function MiniCalendarPopover({
             type="button"
             variant="ghost"
             size="xs"
-            className="font-medium text-primary"
+            className="h-11 min-h-11 rounded-xl px-3 font-medium text-primary"
             onClick={() => {
               const t = new Date();
               t.setHours(0, 0, 0, 0);

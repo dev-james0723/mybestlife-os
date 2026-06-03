@@ -77,8 +77,7 @@ export function resolveQuickTaskRaster(row: {
       ? (row.presetKey as QuickTaskPresetKey)
       : null) ?? guessPresetKeyFromTaskLabel(row.name);
   if (pk) {
-    const c = quickTaskPresetPublicCandidates(pk);
-    return { primary: c[0], fallback: c[1] };
+    return {};
   }
   return {};
 }

@@ -7,6 +7,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import { OSFrostedPanel, OSIconControl } from "@/components/ui/os-primitives";
 import { useCareerOpportunities } from "@/hooks/use-career-opportunities";
 import { upcomingOpportunities } from "@/lib/dashboard/aggregators";
 
@@ -39,7 +40,7 @@ export function NextActionWidget() {
     : withLocalePrefix(localeSlug, "/career/pipeline");
 
   return (
-    <section className="rounded-2xl border bg-card p-5">
+    <OSFrostedPanel as="section" className="p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -65,14 +66,14 @@ export function NextActionWidget() {
             </p>
           )}
         </div>
-        <Link
-          href={href}
-          className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+        <OSIconControl
+          osSize="compact"
+          render={<Link href={href} />}
           aria-label={copy.submenu.pipeline}
         >
           <ArrowRight className="h-4 w-4" />
-        </Link>
+        </OSIconControl>
       </div>
-    </section>
+    </OSFrostedPanel>
   );
 }

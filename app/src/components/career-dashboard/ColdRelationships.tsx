@@ -7,6 +7,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import { OSSolidPanel } from "@/components/ui/os-primitives";
 import { useCareerNetworkNodes } from "@/hooks/use-career-network";
 import { coldRelationships } from "@/lib/dashboard/aggregators";
 
@@ -22,7 +23,7 @@ export function ColdRelationshipsWidget() {
   );
 
   return (
-    <div className="rounded-xl border bg-background/60 p-3">
+    <OSSolidPanel className="p-3">
       <div className="flex items-center gap-2">
         <Snowflake className="h-4 w-4 text-sky-500" aria-hidden />
         <span className="text-sm font-medium">
@@ -52,6 +53,6 @@ export function ColdRelationshipsWidget() {
           })}
         </ul>
       ) : null}
-    </div>
+    </OSSolidPanel>
   );
 }

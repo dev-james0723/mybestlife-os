@@ -49,7 +49,7 @@ export function FreeWindowPanel({
               <Button
                 size="xs"
                 variant="outline"
-                className="gap-1"
+                className="h-11 min-h-11 gap-1 rounded-xl px-3"
                 onClick={() => onSchedule?.(w)}
               >
                 <Plus className="h-3 w-3" />

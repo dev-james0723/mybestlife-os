@@ -71,6 +71,7 @@ export type SignalsUiCopy = {
   filters: {
     title: string;
     button: string;
+    more: string;
     clearAll: string;
     apply: string;
     activeCount: (n: number) => string;
@@ -151,6 +152,7 @@ export type SignalsUiCopy = {
   sections: {
     top3Title: string;
     top3Subtitle: string;
+    seeAll: string;
     worldTitle: string;
     worldSubtitle: string;
     localTitle: string;
@@ -344,6 +346,7 @@ const en: SignalsUiCopy = {
   filters: {
     title: "Filter signals",
     button: "Filters",
+    more: "More",
     clearAll: "Clear all",
     apply: "Apply",
     activeCount: (n) => `${n} active`,
@@ -469,6 +472,7 @@ const en: SignalsUiCopy = {
   sections: {
     top3Title: "Daily Top 3",
     top3Subtitle: "The few things worth your attention today.",
+    seeAll: "See all",
     worldTitle: "World Signals",
     worldSubtitle: "High-signal global stories.",
     localTitle: "Local Signals",
@@ -732,6 +736,7 @@ const zhTW: DeepPartial<SignalsUiCopy> = {
   sections: {
     top3Title: "每日精選 3 則",
     top3Subtitle: "今天少數值得你關注的事。",
+    seeAll: "查看全部",
     worldTitle: "世界訊號",
     worldSubtitle: "高價值的全球新聞。",
     localTitle: "在地訊號",
@@ -817,6 +822,7 @@ const zhTW: DeepPartial<SignalsUiCopy> = {
   filters: {
     title: "篩選訊號",
     button: "篩選",
+    more: "更多",
     clearAll: "全部清除",
     apply: "套用",
     activeCount: (n) => `${n} 項啟用`,

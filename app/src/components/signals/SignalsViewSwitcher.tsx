@@ -6,7 +6,7 @@ import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import type { SignalsViewMode } from "@/lib/signals/types";
 import type { SignalsUiCopy } from "@/lib/i18n/signals-ui";
 
-const VIEW_ORDER: SignalsViewMode[] = ["editorial", "grid", "table", "compact", "gallery"];
+export const VIEW_ORDER: SignalsViewMode[] = ["editorial", "grid", "table", "compact", "gallery"];
 
 const VIEW_ICON: Record<SignalsViewMode, typeof Newspaper> = {
   editorial: Newspaper,

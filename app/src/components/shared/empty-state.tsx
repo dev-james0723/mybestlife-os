@@ -32,7 +32,7 @@ function EmptyStateButton({ action, className }: { action: EmptyStateAction; cla
       type="button"
       variant={variant}
       onClick={action.onClick}
-      className={cn("gap-2", className)}
+      className={cn("min-h-11 gap-2 rounded-xl px-3", className)}
     >
       {showPlus ? <Plus className="h-4 w-4" aria-hidden /> : null}
       {action.label}

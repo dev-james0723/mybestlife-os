@@ -176,7 +176,7 @@ export function TodayBlock() {
           <Button
             size="sm"
             variant="outline"
-            className="gap-1.5"
+            className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
             render={<Link href={`${plannerHref}#quick-add`} />}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -184,7 +184,7 @@ export function TodayBlock() {
           </Button>
           <Button
             size="sm"
-            className="calendar-lime-cta gap-1.5"
+            className="calendar-lime-cta h-11 min-h-11 gap-1.5 rounded-xl px-3"
             render={<Link href={`${calendarHref}?tab=ai-plan`} />}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -193,7 +193,7 @@ export function TodayBlock() {
           <Button
             size="sm"
             variant="ghost"
-            className="gap-1.5"
+            className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
             render={<Link href={`${calendarHref}?tab=today`} />}
           >
             <CalendarClock className="h-3.5 w-3.5" />

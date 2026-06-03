@@ -1158,7 +1158,7 @@ export function IdeaCaptureSheet() {
         onClick={toggle}
         title={`${fabLabel} (⌘⇧I)`}
         className={cn(
-          "fixed bottom-6 right-6 z-40 size-14 rounded-full",
+          "fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] right-6 z-40 size-14 rounded-full",
           "bg-primary text-primary-foreground",
           "shadow-lg shadow-foreground/10 dark:shadow-primary/20",
           "ring-1 ring-foreground/5 dark:ring-primary/30",
@@ -1194,6 +1194,7 @@ export function IdeaCaptureSheet() {
         className="hidden"
         aria-hidden="true"
         tabIndex={-1}
+        style={{ caretColor: "transparent" }}
       />
 
       {/* ── Sheet ──────────────────────────────────────────────────────── */}

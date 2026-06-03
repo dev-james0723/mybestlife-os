@@ -79,7 +79,7 @@ export function DailyInspirationCard({ copy }: DailyInspirationCardProps) {
               className={buttonVariants({
                 variant: "default",
                 size: "lg",
-                className: "h-10 gap-2 px-4 font-semibold shadow-sm",
+                className: "h-11 min-h-11 gap-2 rounded-xl px-4 font-semibold shadow-sm",
               })}
             >
               <ExternalLink className="h-4 w-4" />
@@ -88,7 +88,7 @@ export function DailyInspirationCard({ copy }: DailyInspirationCardProps) {
           </div>
 
           <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl text-sm text-foreground">
               <Checkbox checked={watched} onCheckedChange={(v) => setWatched(v === true)} />
               {copy.markWatched}
             </label>
@@ -97,7 +97,7 @@ export function DailyInspirationCard({ copy }: DailyInspirationCardProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-1.5"
+                className="h-11 min-h-11 gap-1.5 rounded-xl px-3"
                 onClick={shuffle}
                 disabled={loading}
               >

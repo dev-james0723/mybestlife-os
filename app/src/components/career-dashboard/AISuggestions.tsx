@@ -2,9 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { Sparkles, CheckCircle2, X, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/stores/app-store";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import {
+  OSControl,
+  OSFrostedPanel,
+  OSIconControl,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
+import { cn } from "@/lib/utils";
 import {
   useSetInsightInteraction,
   useTodayInsights,
@@ -60,7 +66,7 @@ export function AISuggestionsWidget() {
   };
 
   return (
-    <section className="rounded-2xl border bg-card p-5">
+    <OSFrostedPanel as="section" className="p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-amber-500" aria-hidden />
@@ -68,9 +74,8 @@ export function AISuggestionsWidget() {
             {copy.aiSuggestion}
           </h2>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
+        <OSControl
+          osSize="compact"
           onClick={handleGenerate}
           disabled={regenerating || insights.isLoading}
         >
@@ -78,11 +83,23 @@ export function AISuggestionsWidget() {
             className={`mr-1 h-4 w-4 ${regenerating ? "animate-spin" : ""}`}
           />
           {copy.aiRegenerate}
-        </Button>
+        </OSControl>
       </div>
 
       {insights.isLoading || regenerating ? (
-        <p className="mt-3 text-sm text-muted-foreground">{copy.aiLoading}</p>
+        <div className="mt-3 space-y-2" aria-live="polite">
+          <p className="sr-only">{copy.aiLoading}</p>
+          {[0, 1].map((index) => (
+            <OSSolidPanel
+              key={index}
+              className="h-20 animate-pulse bg-white/60 p-3 dark:bg-white/[0.05]"
+            >
+              <div className="h-2.5 w-24 rounded-full bg-slate-200/80 dark:bg-white/10" />
+              <div className="mt-3 h-3 w-2/3 rounded-full bg-slate-200/80 dark:bg-white/10" />
+              <div className="mt-2 h-2.5 w-4/5 rounded-full bg-slate-200/70 dark:bg-white/10" />
+            </OSSolidPanel>
+          ))}
+        </div>
       ) : active.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{copy.aiEmpty}</p>
       ) : (
@@ -90,11 +107,14 @@ export function AISuggestionsWidget() {
           {active.slice(0, 3).map((s) => {
             const done = interactions[s.id]?.status === "done";
             return (
-              <li
+              <OSSolidPanel
+                as="li"
                 key={s.id}
-                className={`rounded-xl border p-3 ${
-                  PRIORITY_STYLES[s.priority] ?? PRIORITY_STYLES.low
-                } ${done ? "opacity-60" : ""}`}
+                className={cn(
+                  "p-3",
+                  PRIORITY_STYLES[s.priority] ?? PRIORITY_STYLES.low,
+                  done && "opacity-60",
+                )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -112,9 +132,8 @@ export function AISuggestionsWidget() {
                     <p className="mt-1 text-xs">{s.action}</p>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
+                    <OSIconControl
+                      osSize="compact"
                       aria-label={copy.markDone}
                       title={copy.markDone}
                       onClick={() => {
@@ -127,10 +146,9 @@ export function AISuggestionsWidget() {
                       }}
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
+                    </OSIconControl>
+                    <OSIconControl
+                      osSize="compact"
                       aria-label={copy.dismiss}
                       title={copy.dismiss}
                       onClick={() => {
@@ -143,14 +161,14 @@ export function AISuggestionsWidget() {
                       }}
                     >
                       <X className="h-4 w-4" />
-                    </Button>
+                    </OSIconControl>
                   </div>
                 </div>
-              </li>
+              </OSSolidPanel>
             );
           })}
         </ul>
       )}
-    </section>
+    </OSFrostedPanel>
   );
 }

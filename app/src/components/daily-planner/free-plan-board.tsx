@@ -465,12 +465,12 @@ export function FreePlanBoard({
                   onChange={(e) => setDraftTitle(e.target.value)}
                   onKeyDown={handleQuickAddKey}
                   placeholder={copy.freeQuickCapturePlaceholder}
-                  className="h-10 flex-1 bg-background/60 backdrop-blur-sm"
+                  className="h-11 min-h-11 flex-1 rounded-xl bg-background/60 backdrop-blur-sm"
                   aria-label={copy.freeQuickCaptureHeading}
                 />
                 <Button
                   size="sm"
-                  className="h-10 shrink-0 px-5"
+                  className="h-11 min-h-11 shrink-0 rounded-xl px-5"
                   onClick={() => submitDraft(false)}
                   disabled={!draftTitle.trim()}
                 >
@@ -482,7 +482,7 @@ export function FreePlanBoard({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-[12px] text-muted-foreground"
+                  className="h-11 min-h-11 rounded-xl px-3 text-[12px] text-muted-foreground"
                   onClick={() => {
                     setShowDraftNotes(true);
                     requestAnimationFrame(() => notesRef.current?.focus());
@@ -501,7 +501,7 @@ export function FreePlanBoard({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-[11px] text-muted-foreground"
+                      className="h-11 min-h-11 rounded-xl px-3 text-[11px] text-muted-foreground"
                       onClick={() => {
                         setShowDraftNotes(false);
                         setDraftNotes("");

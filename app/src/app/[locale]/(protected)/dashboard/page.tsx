@@ -89,7 +89,10 @@ function DashboardSectionHeader({
         {meta && <p className="mt-1 text-xs font-medium text-muted-foreground">{meta}</p>}
       </div>
       {actionHref && actionLabel && (
-        <Link href={actionHref} className="text-sm font-semibold text-primary hover:underline">
+        <Link
+          href={actionHref}
+          className="inline-flex min-h-11 items-center rounded-xl px-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+        >
           {actionLabel}
         </Link>
       )}
@@ -346,7 +349,7 @@ export default function DashboardPage() {
                 href={hrefGrateful}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
-                  "shrink-0 font-medium"
+                  "h-11 min-h-11 shrink-0 rounded-xl px-3 font-medium"
                 )}
               >
                 {copy.addGrateful}
@@ -359,7 +362,7 @@ export default function DashboardPage() {
                   <li key={entry?.id ?? `slot-${i}`}>
                     <Link
                       href={hrefGrateful}
-                      className="flex items-start gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-pink-500/10 dark:hover:bg-pink-400/10 md:max-xl:px-3 xl:px-2"
+                      className="flex min-h-11 items-start gap-2.5 rounded-xl px-2 py-2 text-sm transition-colors hover:bg-pink-500/10 dark:hover:bg-pink-400/10 md:max-xl:px-3 xl:px-2"
                     >
                       <Plus className="mt-0.5 h-4 w-4 shrink-0 text-pink-600 dark:text-pink-300" />
                       <span className={cn(!entry && "text-muted-foreground")}>
@@ -411,7 +414,7 @@ export default function DashboardPage() {
         size="icon-lg"
         className={cn(
           "fixed right-6 z-40 h-14 min-h-14 w-14 rounded-full p-0",
-          "bottom-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))]"
+          "bottom-[max(9.5rem,calc(env(safe-area-inset-bottom,0px)+9.5rem))]"
         )}
         aria-label={copy.openAiAssistantAria}
       >

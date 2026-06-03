@@ -17,8 +17,8 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { OSControl, OSDialogSurface } from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
@@ -57,16 +57,14 @@ export function OmnisearchTrigger() {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
+      <OSControl
         onClick={() => setOpen(true)}
         aria-label={copy.trigger}
         className="gap-2"
       >
         <Search className="h-4 w-4" aria-hidden />
         <span className="hidden sm:inline">{copy.trigger}</span>
-      </Button>
+      </OSControl>
       <OmnisearchDialog open={open} onOpenChange={setOpen} />
     </>
   );
@@ -274,23 +272,24 @@ function OmnisearchDialog({
         onOpenChange(v);
       }}
     >
-      <DialogContent
-        className="max-w-xl overflow-hidden p-0"
+      <OSDialogSurface
+        size="xl"
+        className="overflow-hidden p-0"
         showCloseButton={false}
       >
-        <Command className="border-0" shouldFilter={false}>
-          <div className="flex items-center border-b px-3">
+        <Command className="border-0 bg-transparent" shouldFilter={false}>
+          <div className="flex items-center border-b border-slate-200/70 px-3 dark:border-white/10">
             <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
             <Command.Input
               autoFocus
               value={query}
               onValueChange={setQuery}
               placeholder={copy.placeholder}
-              className="flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+              className="flex h-12 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          <Command.List className="max-h-[60vh] overflow-y-auto p-2">
+          <Command.List className="max-h-[min(60vh,32rem)] overflow-y-auto p-2 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[0.68rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground">
             <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
               {copy.noResults}
             </Command.Empty>
@@ -306,7 +305,7 @@ function OmnisearchDialog({
                       onSelect={() =>
                         go(withLocalePrefix(localeSlug, a.href))
                       }
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                      className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors aria-selected:bg-white/72 aria-selected:text-foreground dark:aria-selected:bg-white/[0.08]"
                     >
                       <Icon
                         className="h-4 w-4 text-muted-foreground"
@@ -331,7 +330,7 @@ function OmnisearchDialog({
                         key={it.id}
                         value={`${it.id}-${it.title}`}
                         onSelect={() => go(it.href)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer aria-selected:bg-muted"
+                        className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors aria-selected:bg-white/72 aria-selected:text-foreground dark:aria-selected:bg-white/[0.08]"
                       >
                         <Icon
                           className="h-4 w-4 shrink-0 text-muted-foreground"
@@ -353,7 +352,7 @@ function OmnisearchDialog({
             )}
           </Command.List>
         </Command>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }

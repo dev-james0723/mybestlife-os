@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
+import { OSFrostedPanel, OSSolidPanel } from "@/components/ui/os-primitives";
 import { useCareerVaultFiles } from "@/hooks/use-career-vault";
 import { useCareerOpportunities } from "@/hooks/use-career-opportunities";
 import { useCareerEvents } from "@/hooks/use-career-events";
@@ -89,15 +90,16 @@ export function StatsOverviewWidget() {
   ]);
 
   return (
-    <section className="rounded-2xl border bg-card p-5">
+    <OSFrostedPanel as="section" className="p-5">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {copy.sections.atAGlance}
       </h2>
       <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
         {tiles.map((t) => (
-          <li
+          <OSSolidPanel
+            as="li"
             key={t.label}
-            className="rounded-lg border bg-background/60 p-3 text-center"
+            className="p-3 text-center"
           >
             <div className={`mx-auto mb-1 grid h-6 w-6 place-items-center ${t.accent}`} aria-hidden>
               {t.icon}
@@ -106,9 +108,9 @@ export function StatsOverviewWidget() {
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
               {t.label}
             </div>
-          </li>
+          </OSSolidPanel>
         ))}
       </ul>
-    </section>
+    </OSFrostedPanel>
   );
 }

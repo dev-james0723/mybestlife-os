@@ -46,7 +46,8 @@ export function ClockPill({ className }: { className?: string }) {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    setMounted(true);
+    const timeout = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const updatePanelPosition = useCallback(() => {
@@ -100,7 +101,7 @@ export function ClockPill({ className }: { className?: string }) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "topbar-clock-trigger",
-          isMobile && "!h-10 !w-10 justify-center !px-0"
+          isMobile && "!h-11 !w-11 justify-center !px-0"
         )}
       >
         <Clock className="h-4 w-4 opacity-85" />

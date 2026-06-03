@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import type { VaultUiCopy } from "@/lib/i18n/vault-ui";
 import {
   isVaultSoftwareMode,
@@ -14,32 +14,23 @@ type Props = {
 };
 
 export function VaultSoftwareModeTabs({ copy, value, onValueChange }: Props) {
+  const items = [
+    { id: "my-vault" as const, label: copy.myVault },
+    { id: "recommended-stacks" as const, label: copy.recommendedStacks },
+    { id: "compare" as const, label: copy.compare },
+    { id: "build-stack" as const, label: copy.buildMyStack },
+  ];
+
   return (
-    <Tabs
+    <OSSegmentedControl
+      items={items}
       value={value}
       onValueChange={(v) => {
         if (isVaultSoftwareMode(v)) onValueChange(v);
       }}
-      className="w-full min-w-0"
-    >
-      <TabsList
-        variant="line"
-        className="h-auto w-full min-w-0 flex-wrap justify-start gap-1 bg-transparent p-0 sm:flex-nowrap"
-        aria-label={copy.groupAria}
-      >
-        <TabsTrigger value="my-vault" className="shrink-0 text-xs sm:text-sm">
-          {copy.myVault}
-        </TabsTrigger>
-        <TabsTrigger value="recommended-stacks" className="shrink-0 text-xs sm:text-sm">
-          {copy.recommendedStacks}
-        </TabsTrigger>
-        <TabsTrigger value="compare" className="shrink-0 text-xs sm:text-sm">
-          {copy.compare}
-        </TabsTrigger>
-        <TabsTrigger value="build-stack" className="shrink-0 text-xs sm:text-sm">
-          {copy.buildMyStack}
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+      ariaLabel={copy.groupAria}
+      className="w-full sm:w-fit"
+      layoutId="vault-software-mode-active"
+    />
   );
 }

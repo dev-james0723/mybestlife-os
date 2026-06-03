@@ -24,6 +24,7 @@
     "test:knowledge-taxonomy-zod": "node scripts/test-knowledge-dynamic-taxonomy-zod.mjs",
     "test:quote-library": "node --experimental-strip-types scripts/test-quote-library-pure.ts",
     "test:brain": "node --experimental-strip-types --import ./scripts/test-node-alias-resolver.mjs scripts/test-brain-engine.ts",
+    "audit:liquid-glass": "node scripts/audit-liquid-glass-runtime.mjs",
     "backfill:idea-card-visuals": "node --experimental-strip-types --env-file=.env.local scripts/backfill-idea-card-visuals.ts",
     "seed:prompt-library": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts",
     "seed:prompt-library:dry": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts --dry-run",

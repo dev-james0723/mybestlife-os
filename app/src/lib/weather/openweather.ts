@@ -36,7 +36,7 @@ export type WeatherError = {
 export type WeatherResult = WeatherSnapshot | WeatherError;
 
 const OWM_CURRENT = "https://api.openweathermap.org/data/2.5/weather";
-const IP_GEO = "https://ip-api.com/json/?fields=status,message,city,lat,lon";
+const IP_GEO = "http://ip-api.com/json/?fields=status,message,city,lat,lon";
 
 /**
  * Read the publishable OpenWeather key. Env is intentionally
@@ -77,6 +77,9 @@ async function tryGeolocation(): Promise<WeatherCoords | null> {
 }
 
 async function tryIpLookup(): Promise<WeatherCoords | null> {
+  if (typeof window !== "undefined" && window.location.protocol !== "http:") {
+    return null;
+  }
   try {
     const res = await fetch(IP_GEO, { cache: "no-store" });
     if (!res.ok) return null;

@@ -98,6 +98,7 @@ export function MonthViewComplete({ items, isLoading }: Props) {
         <Button
           size="icon-sm"
           variant="outline"
+          className="h-11 min-h-11 w-11 rounded-xl"
           aria-label="Previous month"
           onClick={() => setAnchor((d) => subMonths(d, 1))}
         >
@@ -106,12 +107,18 @@ export function MonthViewComplete({ items, isLoading }: Props) {
         <Button
           size="icon-sm"
           variant="outline"
+          className="h-11 min-h-11 w-11 rounded-xl"
           aria-label="Next month"
           onClick={() => setAnchor((d) => addMonths(d, 1))}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setAnchor(new Date())}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-11 min-h-11 rounded-xl px-3"
+          onClick={() => setAnchor(new Date())}
+        >
           {copy.today}
         </Button>
         <span className="ml-auto text-base font-semibold tabular-nums">
@@ -213,7 +220,7 @@ export function MonthViewComplete({ items, isLoading }: Props) {
             animate={{ x: 0, opacity: 1 }}
             exit={prefersReduced ? { opacity: 0 } : { x: "100%", opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed right-0 top-0 z-40 flex h-full w-full max-w-[380px] flex-col"
+            className="fixed right-0 top-0 z-[60] flex h-[100dvh] w-full max-w-[380px] flex-col pt-[env(safe-area-inset-top,0px)]"
             aria-label={`Agenda for ${selectedDate}`}
           >
             <GlassPanel className="calendar-specular-highlight m-3 flex h-full flex-col overflow-hidden rounded-2xl">
@@ -231,6 +238,7 @@ export function MonthViewComplete({ items, isLoading }: Props) {
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  className="h-11 min-h-11 w-11 rounded-xl"
                   onClick={() => setSelectedDate(null)}
                   aria-label={copy.close}
                 >

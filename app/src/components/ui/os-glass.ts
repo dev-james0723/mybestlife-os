@@ -14,10 +14,10 @@ export const osPrimaryControlClassName =
   "bg-lime-300 text-slate-950 shadow-[0_10px_30px_rgba(190,242,100,0.16),inset_0_1px_0_rgba(255,255,255,0.42)] transition-[background,transform,box-shadow] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-lime-200 active:translate-y-px focus-visible:ring-lime-300/55 disabled:pointer-events-none disabled:opacity-45 motion-reduce:transition-none";
 
 export const osControlSizeClassName =
-  "h-10 min-h-10 rounded-xl px-3 text-sm font-semibold";
+  "h-11 min-h-11 rounded-xl px-3 text-sm font-semibold";
 
 export const osIconControlSizeClassName =
-  "h-10 min-h-10 w-10 rounded-xl p-0";
+  "h-11 min-h-11 w-11 rounded-xl p-0";
 
 export const osSegmentedShellClassName =
   "relative flex min-w-0 items-center gap-1 rounded-[1.35rem] p-1";

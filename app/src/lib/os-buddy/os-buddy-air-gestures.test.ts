@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   detectOpenPalmSwipe,
+  isOkOpenGesture,
   isPinching,
   mapNormalizedPointToViewport,
   resolveAirControlGesture,
@@ -56,6 +57,28 @@ describe("OS Buddy Air Control gestures", () => {
 
     expect(isPinching(testHand)).toBe(true);
     expect(resolveAirControlGesture(testHand)).toBe("Pinch");
+  });
+
+  it("detects an expanded OK gesture separately from a normal pinch", () => {
+    const testHand = hand({
+      landmarks: landmarks({
+        0: { x: 0.5, y: 0.85 },
+        4: { x: 0.52, y: 0.38 },
+        8: { x: 0.525, y: 0.385 },
+        9: { x: 0.5, y: 0.62 },
+        10: { x: 0.5, y: 0.5 },
+        12: { x: 0.5, y: 0.2 },
+        13: { x: 0.58, y: 0.64 },
+        14: { x: 0.58, y: 0.52 },
+        16: { x: 0.58, y: 0.22 },
+        17: { x: 0.66, y: 0.66 },
+        18: { x: 0.66, y: 0.54 },
+        20: { x: 0.66, y: 0.24 },
+      }),
+    });
+
+    expect(isOkOpenGesture(testHand)).toBe(true);
+    expect(resolveAirControlGesture(testHand)).toBe("OK_Open");
   });
 
   it("prefers custom index-point over a missing canned gesture", () => {
