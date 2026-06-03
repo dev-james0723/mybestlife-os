@@ -2,9 +2,13 @@ import { create } from "zustand";
 import type {
   OSBuddyAirControlGesture,
   OSBuddyAirControlPoint,
+  OSBuddyAirControlQuality,
+  OSBuddyAirControlSensorMode,
   OSBuddyAirControlStatus,
   OSBuddyAirControlStopReason,
+  OSBuddyAirTouchState,
 } from "@/lib/os-buddy/os-buddy-air-control-types";
+import type { CalibrationData } from "@/lib/os-buddy/air-control/types";
 import type {
   OSBuddyCompanionCta,
   OSBuddyCompanionKind,
@@ -62,7 +66,19 @@ interface OSBuddyRuntimeState {
   airControlStatus: OSBuddyAirControlStatus;
   airControlGesture: OSBuddyAirControlGesture | null;
   airControlTarget: OSBuddyAirControlPoint | null;
+  airControlRawPoint: OSBuddyAirControlPoint | null;
   airControlLastSeenAt: number | null;
+  airTouchState: OSBuddyAirTouchState;
+  airControlSensorMode: OSBuddyAirControlSensorMode;
+  airControlQuality: OSBuddyAirControlQuality;
+  airControlCalibration: CalibrationData | null;
+  airControlCalibrationSummary: {
+    quality: OSBuddyAirControlQuality;
+    rmsErrorPx: number | null;
+    createdAt: number | null;
+  } | null;
+  airControlDebugEnabled: boolean;
+  airControlError: string | null;
   isFreeRoaming: boolean;
   freeRoamStartedAt: number | null;
   freeRoamUntil: number | null;
@@ -115,6 +131,14 @@ interface OSBuddyRuntimeState {
   setAirControlGesture: (gesture: OSBuddyAirControlGesture | null) => void;
   setAirControlStatus: (status: OSBuddyAirControlStatus) => void;
   markAirControlHandSeen: (seenAt?: number) => void;
+  setAirTouchState: (state: OSBuddyAirTouchState) => void;
+  setAirControlRawPoint: (point: OSBuddyAirControlPoint | null) => void;
+  setAirControlSensorMode: (mode: OSBuddyAirControlSensorMode) => void;
+  setAirControlQuality: (quality: OSBuddyAirControlQuality) => void;
+  setAirControlCalibration: (calibration: CalibrationData | null) => void;
+  clearAirControlCalibration: () => void;
+  setAirControlDebugEnabled: (enabled: boolean) => void;
+  setAirControlError: (error: string | null) => void;
   startFreeRoam: (params: {
     until: number;
     initialPosition?: { x: number; y: number } | null;
@@ -152,7 +176,15 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   airControlStatus: "idle",
   airControlGesture: null,
   airControlTarget: null,
+  airControlRawPoint: null,
   airControlLastSeenAt: null,
+  airTouchState: "inactive",
+  airControlSensorMode: "fallback-2d",
+  airControlQuality: "uncalibrated",
+  airControlCalibration: null,
+  airControlCalibrationSummary: null,
+  airControlDebugEnabled: false,
+  airControlError: null,
   isFreeRoaming: false,
   freeRoamStartedAt: null,
   freeRoamUntil: null,
@@ -261,6 +293,8 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       airControlGesture: null,
       airControlTarget: null,
       airControlLastSeenAt: null,
+      airTouchState: "tracking",
+      airControlError: null,
     }),
 
   stopAirControl: () =>
@@ -270,6 +304,7 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       airControlGesture: null,
       airControlTarget: null,
       airControlLastSeenAt: null,
+      airTouchState: "inactive",
     }),
 
   setAirControlTarget: (point) =>
@@ -286,6 +321,39 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
     set({
       airControlLastSeenAt: seenAt,
     }),
+
+  setAirTouchState: (state) => set({ airTouchState: state }),
+
+  setAirControlRawPoint: (point) =>
+    set({ airControlRawPoint: point ? { x: point.x, y: point.y } : null }),
+
+  setAirControlSensorMode: (mode) => set({ airControlSensorMode: mode }),
+
+  setAirControlQuality: (quality) => set({ airControlQuality: quality }),
+
+  setAirControlCalibration: (calibration) =>
+    set({
+      airControlCalibration: calibration,
+      airControlCalibrationSummary: calibration
+        ? {
+            quality: calibration.quality,
+            rmsErrorPx: calibration.rmsErrorPx,
+            createdAt: calibration.createdAt,
+          }
+        : null,
+      airControlQuality: calibration?.quality ?? "uncalibrated",
+    }),
+
+  clearAirControlCalibration: () =>
+    set({
+      airControlCalibration: null,
+      airControlCalibrationSummary: null,
+      airControlQuality: "uncalibrated",
+    }),
+
+  setAirControlDebugEnabled: (enabled) => set({ airControlDebugEnabled: enabled }),
+
+  setAirControlError: (error) => set({ airControlError: error }),
 
   setDragging: (dragging, direction = null) => {
     set((state) => {

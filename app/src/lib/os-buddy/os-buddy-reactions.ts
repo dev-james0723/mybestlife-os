@@ -258,6 +258,44 @@ export function handleOSBuddyReaction(params: {
       setMood("idle");
       return;
 
+    case "buddy:air-control:start":
+      temporarilySetMood("playful", 1_400);
+      showBubble(
+        t(
+          locale,
+          "Air Touch on. Point your index finger, then reach onto me to grab.",
+          "隔空觸碰開啟。伸出食指，碰到我就可以抓住我。",
+        ),
+        "user-triggered",
+        { force: true, durationMs: 3_400 },
+      );
+      return;
+    case "buddy:air-control:calibrated":
+      temporarilySetMood("success", 1_600);
+      showBubble(
+        event.quality === "good"
+          ? t(locale, "Calibration looks great.", "校準效果很好。")
+          : t(locale, "Calibration saved. Good enough to use.", "校準已儲存，可以使用。"),
+        "success",
+        { force: true, durationMs: 2_600 },
+      );
+      return;
+    case "buddy:air-control:error":
+      temporarilySetMood("error", 1_800);
+      showBubble(
+        event.error ??
+          t(locale, "Air Touch ran into a problem.", "隔空觸碰遇到問題。"),
+        "error",
+        { force: true, durationMs: 3_600 },
+      );
+      return;
+    case "buddy:air-control:end":
+      setMood("idle");
+      return;
+    case "buddy:air-control:gesture":
+      // Gesture telemetry only; no bubble spam.
+      return;
+
     case "buddy:free-roam:start":
       setMood("playful");
       return;

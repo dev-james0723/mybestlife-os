@@ -18,6 +18,7 @@ import { useOSBuddy } from "@/hooks/use-os-buddy";
 import { useOSBuddyFreeRoamSettings } from "@/hooks/use-os-buddy-free-roam-settings";
 import type { OSBuddyPetId } from "@/types/os-buddy";
 import { OSBuddyBehaviorSettings } from "@/components/os-buddy/OSBuddyBehaviorSettings";
+import { OSBuddyAirControlSettings } from "@/components/os-buddy/OSBuddyAirControlSettings";
 import { OSBuddySprite } from "@/components/os-buddy/OSBuddySprite";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
 
@@ -153,6 +154,8 @@ export function OSBuddySettingsSection() {
           value={freeRoamSettings}
           onSave={saveFreeRoamSettings}
         />
+
+        <OSBuddyAirControlSettings locale={locale} />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button

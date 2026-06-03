@@ -1,5 +1,11 @@
 import { useEffect } from "react";
 import type {
+  OSBuddyAirControlGesture,
+  OSBuddyAirControlQuality,
+  OSBuddyAirControlSensorMode,
+  OSBuddyAirControlStopReason,
+} from "@/lib/os-buddy/os-buddy-air-control-types";
+import type {
   OSBuddyMiniGame,
   OSBuddyRoamInterruptReason,
 } from "@/stores/os-buddy-store";
@@ -38,6 +44,15 @@ export type OSBuddyEvent =
   | { type: "buddy:walk:start" }
   | { type: "buddy:walk:return" }
   | { type: "buddy:walk:end" }
+  | { type: "buddy:air-control:start"; sensorMode?: OSBuddyAirControlSensorMode }
+  | { type: "buddy:air-control:end"; reason?: OSBuddyAirControlStopReason }
+  | {
+      type: "buddy:air-control:calibrated";
+      quality: OSBuddyAirControlQuality;
+      rmsErrorPx?: number | null;
+    }
+  | { type: "buddy:air-control:error"; error?: string }
+  | { type: "buddy:air-control:gesture"; gesture: OSBuddyAirControlGesture }
   | { type: "buddy:free-roam:start" }
   | { type: "buddy:free-roam:end"; reason?: OSBuddyRoamInterruptReason }
   | {
