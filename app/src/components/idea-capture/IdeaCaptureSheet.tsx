@@ -1194,7 +1194,6 @@ export function IdeaCaptureSheet() {
         className="hidden"
         aria-hidden="true"
         tabIndex={-1}
-        style={{ caretColor: "transparent" }}
       />
 
       {/* ── Sheet ──────────────────────────────────────────────────────── */}
