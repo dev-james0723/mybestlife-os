@@ -19,7 +19,7 @@ type FocusTapOverlayProps = {
 type FocusTapPhase = "waiting" | "active" | "feedback" | "result";
 
 const TOTAL_ROUNDS = 8;
-export const PERFECT_WINDOW_MS = 160;
+export const PERFECT_WINDOW_MS = 850;
 const RESULT_DELAY_MS = 1_150;
 const FEEDBACK_DELAY_MS = 650;
 
@@ -134,7 +134,7 @@ export function FocusTapOverlay({
       cueRef.current = { round, startedAt, tapped: false };
       phaseRef.current = "active";
       setPhase("active");
-      setMood("playful");
+      setMood("celebrating");
       setFeedback(zh ? "現在。" : "Now.");
 
       lateTimerRef.current = setTimeout(() => {
@@ -207,15 +207,15 @@ export function FocusTapOverlay({
 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,hsl(var(--destructive)/0.12),transparent_52%)]" />
 
-          <div className="absolute inset-x-0 top-20 flex h-[min(36vh,360px)] items-end justify-center overflow-visible">
+          <div className="absolute inset-x-0 top-28 flex h-[min(36vh,360px)] items-end justify-center overflow-visible">
             <div
               className={cn(
                 "origin-bottom",
                 reducedMotion
-                  ? "scale-[3.2] sm:scale-[4.4] lg:scale-[5.2]"
+                  ? "scale-[2.85] sm:scale-[4.4] lg:scale-[5.2]"
                   : phase === "active"
-                    ? "scale-[3.4] sm:scale-[4.8] lg:scale-[5.6]"
-                    : "scale-[3.2] sm:scale-[4.6] lg:scale-[5.4]",
+                    ? "scale-[3.05] sm:scale-[4.8] lg:scale-[5.6]"
+                    : "scale-[2.85] sm:scale-[4.6] lg:scale-[5.4]",
               )}
             >
               <OSBuddySprite
@@ -228,8 +228,18 @@ export function FocusTapOverlay({
             </div>
           </div>
 
-          <div className="absolute left-1/2 top-[46%] z-30 w-[min(88vw,420px)] -translate-x-1/2 rounded-2xl border bg-popover/90 px-4 py-3 text-center text-sm font-semibold shadow-xl">
-            {feedback}
+          <div className="absolute left-1/2 top-[clamp(154px,29%,178px)] z-30 h-0 w-0">
+            <div
+              key={`${phase}:${feedback}`}
+              className="os-buddy-pixel-bubble pointer-events-none"
+              data-horizontal="center"
+              data-vertical="above"
+              data-kind={phase === "active" ? "game" : undefined}
+              role="status"
+              aria-live="polite"
+            >
+              <div className="os-buddy-pixel-bubble-text text-center">{feedback}</div>
+            </div>
           </div>
 
           <div className="absolute inset-x-0 bottom-8 z-30 flex justify-center">
