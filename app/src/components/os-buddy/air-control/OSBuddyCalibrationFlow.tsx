@@ -96,7 +96,7 @@ export function OSBuddyCalibrationFlow({
   const target = targets[index];
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[2147483002] bg-background/80 backdrop-blur-sm">
       {/* Target */}
       <div
         className="absolute size-10 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full border-4 border-emerald-500 bg-emerald-400/30"

@@ -73,7 +73,7 @@ export function OSBuddyMenu({
       ref={rootRef}
       role="menu"
       aria-label={zh ? "OS Buddy 選單" : "OS Buddy menu"}
-      className="fixed z-[46] max-h-[min(560px,calc(100vh-24px))] w-[270px] overflow-y-auto rounded-xl border bg-popover p-2 shadow-xl"
+      className="fixed z-[2147483002] max-h-[min(560px,calc(100vh-24px))] w-[270px] overflow-y-auto rounded-xl border bg-popover p-2 shadow-xl"
       style={{ left: x, top: y }}
     >
       <div className="space-y-1">

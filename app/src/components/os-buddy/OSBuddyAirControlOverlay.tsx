@@ -261,7 +261,7 @@ export function OSBuddyAirControlOverlay({
           "pointer-events-none fixed scale-x-[-1] object-cover",
           hudVisible
             ? cn(
-                "z-[43] border border-border/70 bg-black opacity-75 shadow-lg shadow-black/20",
+                "z-[2147482995] border border-border/70 bg-black opacity-75 shadow-lg shadow-black/20",
                 hudFrameClass,
               )
             : "left-0 top-0 h-px w-px -translate-x-full opacity-0",
@@ -271,13 +271,13 @@ export function OSBuddyAirControlOverlay({
       {airPilotActive && cursor ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed z-[48] size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500 shadow-[0_0_0_1px_rgba(255,255,255,0.95),0_0_0_3px_rgba(239,68,68,0.18),0_0_10px_rgba(239,68,68,0.65)]"
+          className="pointer-events-none fixed z-[2147483001] size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500 shadow-[0_0_0_1px_rgba(255,255,255,0.95),0_0_0_3px_rgba(239,68,68,0.18),0_0_10px_rgba(239,68,68,0.65)]"
           style={{ left: cursor.x, top: cursor.y }}
         />
       ) : null}
 
       {hudVisible ? (
-        <div className={cn("pointer-events-none fixed z-[44] overflow-hidden", hudFrameClass)}>
+        <div className={cn("pointer-events-none fixed z-[2147482996] overflow-hidden", hudFrameClass)}>
           <SkeletonOverlay landmarks={debugState.landmarks} />
           <div className="absolute left-2 top-2 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
             {debugState.landmarks.length}
@@ -295,7 +295,7 @@ export function OSBuddyAirControlOverlay({
       ) : null}
 
       {airPilotActive ? (
-        <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 z-[47] w-[min(calc(100vw-1.5rem),25rem)] -translate-x-1/2">
+        <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 z-[2147482997] w-[min(calc(100vw-1.5rem),25rem)] -translate-x-1/2">
           {panelExpanded ? (
             <div
               className={cn(

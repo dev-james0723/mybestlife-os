@@ -84,6 +84,7 @@ const PLAY_BALL_CATCH_FORCE_MS = 1_800;
 const PLAY_BALL_MISS_RESOLVE_MS = 1_550;
 const PLAY_BALL_MISS_FORCE_MS = 2_000;
 const BIRTHDAY_EASTER_EGG_STORAGE_KEY = "mblos:os-buddy-birthday-easter-eggs";
+const AIRPILOT_SESSION_ACTIVE_KEY = "mblos:airpilot-session-active";
 const BIRTHDAY_EASTER_EGG_WINDOW_MS = 5_000;
 const BIRTHDAY_EASTER_EGG_EXTENSION_MS = 8_000;
 const FREE_ROAM_BLOCKING_MOODS = new Set<OSBuddyMood>([
@@ -125,6 +126,28 @@ function getBirthdayEasterEggMap(): Record<string, boolean> {
       : {};
   } catch {
     return {};
+  }
+}
+
+function setAirPilotSessionActive(active: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (active) {
+      window.sessionStorage.setItem(AIRPILOT_SESSION_ACTIVE_KEY, "true");
+      return;
+    }
+    window.sessionStorage.removeItem(AIRPILOT_SESSION_ACTIVE_KEY);
+  } catch {
+    // Session persistence is a convenience; AirPilot still works without it.
+  }
+}
+
+function shouldRestoreAirPilotSession() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(AIRPILOT_SESSION_ACTIVE_KEY) === "true";
+  } catch {
+    return false;
   }
 }
 
@@ -568,6 +591,7 @@ export function OSBuddyDock() {
   const dockPointRef = useRef<DockPoint>({ x: 0, y: 0 });
   const airGrabOffsetRef = useRef<DockPoint | null>(null);
   const airPilotHoverTargetRef = useRef<HTMLElement | null>(null);
+  const restoredAirPilotSessionRef = useRef(false);
   const secretModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const birthdayClickBurstRef = useRef<{
     dateKey: string | null;
@@ -706,14 +730,13 @@ export function OSBuddyDock() {
     if (pathnameRef.current === pathname) return;
     pathnameRef.current = pathname;
     interruptFreeRoam("route-change");
-    stopAirControl("route-change");
     airPilotHoverTargetRef.current = setAirPilotHighlightedTarget({
       previous: airPilotHoverTargetRef.current,
       next: null,
     });
     resetPlayBallRuntime();
     closeMiniGame();
-  }, [closeMiniGame, interruptFreeRoam, pathname, resetPlayBallRuntime, stopAirControl]);
+  }, [closeMiniGame, interruptFreeRoam, pathname, resetPlayBallRuntime]);
 
   const getWalkTargetPoint = useCallback(
     (clientX: number, clientY: number, pointerType: string) =>
@@ -1271,7 +1294,7 @@ export function OSBuddyDock() {
     ],
   );
 
-  const activateAirControl = useCallback(() => {
+  const activateAirControl = useCallback((options?: { restored?: boolean }) => {
     clearSingleClickTimer();
     clearLongPressTimer();
     lastTapRef.current = null;
@@ -1292,13 +1315,18 @@ export function OSBuddyDock() {
     setMood("playful");
     setAirControlSensorMode("rgb-webcam");
     startAirControl();
+    setAirPilotSessionActive(true);
     emitOSBuddyEvent({ type: "buddy:air-control:start", sensorMode: "rgb-webcam" });
     showBubble(
-      locale === "zh-TW"
-        ? "AirPilot 啟動。紅點停喺按鈕附近會吸附；吸附後輕動食指即可選取。"
-        : "AirPilot is on. Pause near a button to magnet-lock, then tap your index finger to select.",
+      options?.restored
+        ? locale === "zh-TW"
+          ? "AirPilot 繼續保持開啟。"
+          : "AirPilot is still on."
+        : locale === "zh-TW"
+          ? "AirPilot 啟動。紅點停喺按鈕附近會吸附；吸附後輕動食指即可選取。"
+          : "AirPilot is on. Pause near a button to magnet-lock, then tap your index finger to select.",
       "user-triggered",
-      { force: true, durationMs: 4_000 },
+      { force: true, durationMs: options?.restored ? 1_800 : 4_000 },
     );
   }, [
     clearLongPressTimer,
@@ -1318,8 +1346,19 @@ export function OSBuddyDock() {
     startAirControl,
   ]);
 
+  useEffect(() => {
+    if (restoredAirPilotSessionRef.current) return;
+    if (!mounted || !enabled || isAirControlActive) return;
+    if (!shouldRestoreAirPilotSession()) return;
+
+    restoredAirPilotSessionRef.current = true;
+    const timer = window.setTimeout(() => activateAirControl({ restored: true }), 0);
+    return () => window.clearTimeout(timer);
+  }, [activateAirControl, enabled, isAirControlActive, mounted]);
+
   const stopAirPilotControl = useCallback(
     (reason: "user-exit" | "closed-fist" = "user-exit") => {
+      setAirPilotSessionActive(false);
       airGrabOffsetRef.current = null;
       pauseAirControlWalk("idle");
       stopAirControl(reason);
@@ -2112,7 +2151,7 @@ export function OSBuddyDock() {
     <>
       <div
         className={cn(
-          "os-buddy-dock fixed z-[45]",
+          "os-buddy-dock fixed z-[2147483000]",
           isFreeRoaming && "os-buddy-dock--free-roaming",
         )}
         style={{
