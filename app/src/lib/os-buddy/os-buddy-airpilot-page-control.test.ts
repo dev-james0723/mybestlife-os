@@ -51,11 +51,17 @@ class FakeElement {
             ? "TEXTAREA"
             : options.selector === "select"
               ? "SELECT"
-              : "BUTTON";
+              : options.selector === "button"
+                ? "BUTTON"
+                : "DIV";
   }
 
   matches(selector: string) {
-    return Boolean(this.options.selector && selector.includes(this.options.selector));
+    if (!this.options.selector) return false;
+    return selector
+      .split(",")
+      .map((part) => part.trim())
+      .includes(this.options.selector);
   }
 
   closest(selector: string) {
@@ -185,6 +191,42 @@ describe("AirPilot page control", () => {
     expect(target?.element).toBe(near);
     expect(target?.center).toEqual({ x: 110, y: 110 });
     expect(target?.label).toBe("Near");
+  });
+
+  it("resolves ARIA menu items as selectable targets", () => {
+    const menuItem = new FakeElement({
+      selector: '[role="menuitem"]',
+      rect: { left: 20, top: 20, width: 100, height: 36 },
+      label: "Open menu item",
+    });
+    installDom([menuItem]);
+
+    const target = resolveNearestAirPilotMagnetTarget({ x: 40, y: 30 }, 48);
+
+    expect(target?.element).toBe(menuItem);
+    expect(clickAirPilotTarget(menuItem as unknown as HTMLElement)).toBe(true);
+    expect(menuItem.clicked).toBe(true);
+  });
+
+  it("climbs to custom cursor-pointer controls from child content", () => {
+    const card = new FakeElement({
+      selector: ".cursor-pointer",
+      rect: { left: 30, top: 40, width: 160, height: 80 },
+      label: "Clickable card",
+    });
+    const child = new FakeElement({
+      rect: { left: 42, top: 52, width: 40, height: 20 },
+      label: "Card title",
+    });
+    child.parentElement = card;
+    installDom([child, card]);
+
+    expect(resolveAirPilotTargetAtPoint({ x: 50, y: 60 })).toBe(card);
+
+    const target = resolveNearestAirPilotMagnetTarget({ x: 25, y: 70 }, 48);
+    expect(target?.element).toBe(card);
+    expect(clickAirPilotTarget(card as unknown as HTMLElement)).toBe(true);
+    expect(card.clicked).toBe(true);
   });
 
   it("excludes hidden, disabled, ignored, and form-only elements from magnet targets", () => {

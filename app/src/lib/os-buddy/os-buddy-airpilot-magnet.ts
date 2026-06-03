@@ -11,8 +11,11 @@ export const AIRPILOT_MAGNET_DWELL_MS = 300;
 export const AIRPILOT_MAGNET_JITTER_PX = 24;
 export const AIRPILOT_MAGNET_ESCAPE_PX = 72;
 export const AIRPILOT_INDEX_TAP_ARM_MS = 80;
-export const AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD = 0.1;
-export const AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD = 0.18;
+export const AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD = 0.025;
+export const AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD = 0.055;
+export const AIRPILOT_INDEX_TAP_DELTA_THRESHOLD = 0.028;
+export const AIRPILOT_INDEX_TOUCH_TAP_PX = 8;
+export const AIRPILOT_INDEX_TOUCH_FLICK_PX = 5;
 export const AIRPILOT_SELECTION_COOLDOWN_MS = 600;
 
 const HAND_LANDMARK_COUNT = 21;
@@ -61,6 +64,8 @@ export type AirPilotMagnetMachine = {
   tapBaseline: AirPilotIndexTapPose | null;
   tapArmedAt: number | null;
   lastTapScore: number;
+  lockedIndexPalmVector: OSBuddyAirControlPoint | null;
+  lastIndexPalmVector: OSBuddyAirControlPoint | null;
   cooldownUntil: number | null;
 };
 
@@ -84,6 +89,8 @@ export function createAirPilotMagnetMachine(): AirPilotMagnetMachine {
     tapBaseline: null,
     tapArmedAt: null,
     lastTapScore: 0,
+    lockedIndexPalmVector: null,
+    lastIndexPalmVector: null,
     cooldownUntil: null,
   };
 }
@@ -235,20 +242,36 @@ function beginCandidate(params: {
   };
 }
 
+function getIndexPalmVector(
+  rawCursor: OSBuddyAirControlPoint,
+  rawPalmCursor: OSBuddyAirControlPoint | null,
+) {
+  if (!rawPalmCursor) return null;
+  return {
+    x: rawCursor.x - rawPalmCursor.x,
+    y: rawCursor.y - rawPalmCursor.y,
+  };
+}
+
 function lockTarget(params: {
   target: AirPilotMagnetTarget;
   now: number;
+  rawCursor: OSBuddyAirControlPoint;
+  rawPalmCursor: OSBuddyAirControlPoint | null;
   hand: OSBuddyAirControlHand | null;
   cooldownUntil: number | null;
 }): AirPilotMagnetMachine {
   const tapBaseline = getAirPilotIndexTapPose(params.hand);
+  const indexPalmVector = getIndexPalmVector(params.rawCursor, params.rawPalmCursor);
   return {
     ...createAirPilotMagnetMachine(),
     phase: "locked",
     lockedTarget: params.target,
     lockedAt: params.now,
     tapBaseline,
-    tapArmedAt: tapBaseline ? params.now : null,
+    tapArmedAt: tapBaseline || indexPalmVector ? params.now : null,
+    lockedIndexPalmVector: indexPalmVector,
+    lastIndexPalmVector: indexPalmVector,
     cooldownUntil: params.cooldownUntil,
   };
 }
@@ -257,12 +280,22 @@ function updateLocked(params: {
   previous: AirPilotMagnetMachine;
   lockedTarget: AirPilotMagnetTarget;
   rawCursor: OSBuddyAirControlPoint;
+  rawPalmCursor: OSBuddyAirControlPoint | null;
   hand: OSBuddyAirControlHand | null;
   now: number;
   wakeGuardUntil: number;
   cooldownUntil: number | null;
 }): AirPilotMagnetUpdate {
-  const { previous, lockedTarget, rawCursor, hand, now, wakeGuardUntil, cooldownUntil } = params;
+  const {
+    previous,
+    lockedTarget,
+    rawCursor,
+    rawPalmCursor,
+    hand,
+    now,
+    wakeGuardUntil,
+    cooldownUntil,
+  } = params;
   const escaped =
     distance(rawCursor, lockedTarget.center) > AIRPILOT_MAGNET_ESCAPE_PX ||
     !pointInsideInflatedRect(rawCursor, lockedTarget.rect, AIRPILOT_MAGNET_ESCAPE_PX);
@@ -281,11 +314,20 @@ function updateLocked(params: {
   const pose = getAirPilotIndexTapPose(hand);
   const baseline = previous.tapBaseline ?? pose;
   const indexTapScore = getAirPilotIndexTapScore(pose, baseline);
+  const indexPalmVector = getIndexPalmVector(rawCursor, rawPalmCursor);
+  const lockedIndexPalmVector = previous.lockedIndexPalmVector ?? indexPalmVector;
+  const lastIndexPalmVector = previous.lastIndexPalmVector ?? indexPalmVector;
+  const touchTapDistance =
+    indexPalmVector && lockedIndexPalmVector
+      ? distance(indexPalmVector, lockedIndexPalmVector)
+      : 0;
+  const touchFlickDistance =
+    indexPalmVector && lastIndexPalmVector ? distance(indexPalmVector, lastIndexPalmVector) : 0;
   const released =
     indexTapScore != null && indexTapScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD;
   const tapBaseline = released ? pose : baseline;
   const tapArmedAt =
-    previous.tapArmedAt ?? (tapBaseline ? now : null);
+    previous.tapArmedAt ?? (tapBaseline || indexPalmVector ? now : null);
 
   if (cooldownUntil) {
     return {
@@ -300,6 +342,8 @@ function updateLocked(params: {
         tapBaseline,
         tapArmedAt: released ? now : tapArmedAt,
         lastTapScore: indexTapScore ?? previous.lastTapScore,
+        lockedIndexPalmVector,
+        lastIndexPalmVector: indexPalmVector,
         cooldownUntil,
       },
       cursor: lockedTarget.center,
@@ -310,7 +354,7 @@ function updateLocked(params: {
     };
   }
 
-  if (!tapBaseline || tapArmedAt == null) {
+  if (tapArmedAt == null) {
     return {
       state: {
         ...previous,
@@ -323,6 +367,8 @@ function updateLocked(params: {
         tapBaseline,
         tapArmedAt,
         lastTapScore: indexTapScore ?? previous.lastTapScore,
+        lockedIndexPalmVector,
+        lastIndexPalmVector: indexPalmVector,
         cooldownUntil: null,
       },
       cursor: lockedTarget.center,
@@ -335,11 +381,19 @@ function updateLocked(params: {
 
   const armed = now - tapArmedAt >= AIRPILOT_INDEX_TAP_ARM_MS && now >= wakeGuardUntil;
   const previousScore = previous.lastTapScore;
+  const risingTap =
+    indexTapScore != null &&
+    previousScore <= AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD &&
+    indexTapScore - previousScore >= AIRPILOT_INDEX_TAP_DELTA_THRESHOLD;
+  const touchTap =
+    touchTapDistance >= AIRPILOT_INDEX_TOUCH_TAP_PX ||
+    touchFlickDistance >= AIRPILOT_INDEX_TOUCH_FLICK_PX;
   const canSelect =
     armed &&
-    indexTapScore != null &&
-    previousScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD &&
-    indexTapScore >= AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD;
+    ((indexTapScore != null &&
+      (previousScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD || risingTap) &&
+      indexTapScore >= AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD) ||
+      touchTap);
 
   if (canSelect) {
     return {
@@ -353,7 +407,9 @@ function updateLocked(params: {
         lockedAt: previous.lockedAt ?? now,
         tapBaseline,
         tapArmedAt,
-        lastTapScore: indexTapScore,
+        lastTapScore: indexTapScore ?? previous.lastTapScore,
+        lockedIndexPalmVector,
+        lastIndexPalmVector: indexPalmVector,
         cooldownUntil: now + AIRPILOT_SELECTION_COOLDOWN_MS,
       },
       cursor: lockedTarget.center,
@@ -376,6 +432,8 @@ function updateLocked(params: {
       tapBaseline,
       tapArmedAt: released ? now : tapArmedAt,
       lastTapScore: indexTapScore ?? previous.lastTapScore,
+      lockedIndexPalmVector,
+      lastIndexPalmVector: indexPalmVector,
       cooldownUntil: null,
     },
     cursor: lockedTarget.center,
@@ -390,11 +448,13 @@ export function updateAirPilotMagnetMachine(params: {
   previous: AirPilotMagnetMachine;
   now: number;
   rawCursor: OSBuddyAirControlPoint | null;
+  rawPalmCursor?: OSBuddyAirControlPoint | null;
   target: AirPilotMagnetTarget | null;
   hand: OSBuddyAirControlHand | null;
   wakeGuardUntil?: number | null;
 }): AirPilotMagnetUpdate {
   const { previous, now, rawCursor, target, hand } = params;
+  const rawPalmCursor = params.rawPalmCursor ?? null;
   const wakeGuardUntil = params.wakeGuardUntil ?? 0;
   const cooldownUntil = activeCooldown(previous, now);
 
@@ -414,6 +474,7 @@ export function updateAirPilotMagnetMachine(params: {
       previous,
       lockedTarget: previous.lockedTarget,
       rawCursor,
+      rawPalmCursor,
       hand,
       now,
       wakeGuardUntil,
@@ -451,7 +512,7 @@ export function updateAirPilotMagnetMachine(params: {
     }
 
     if (now - previous.candidateSince >= AIRPILOT_MAGNET_DWELL_MS) {
-      const state = lockTarget({ target, now, hand, cooldownUntil });
+      const state = lockTarget({ target, now, rawCursor, rawPalmCursor, hand, cooldownUntil });
       return {
         state,
         cursor: target.center,

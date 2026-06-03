@@ -417,6 +417,10 @@ export function useOSBuddyAirControl({
       }
 
       if (params.cursor) {
+        const rawPalmCursor = mapHandPointToViewport({
+          point: getAirPilotPalmCenter(params.primaryHand),
+          viewport,
+        });
         const magnetTarget = resolveNearestAirPilotMagnetTarget(
           params.cursor,
           AIRPILOT_MAGNET_RADIUS_PX,
@@ -425,6 +429,7 @@ export function useOSBuddyAirControl({
           previous: magnetMachineRef.current,
           now: params.now,
           rawCursor: params.rawCursor ?? params.cursor,
+          rawPalmCursor,
           target: magnetTarget,
           hand: params.primaryHand,
           wakeGuardUntil: wakeGuardUntilRef.current,
