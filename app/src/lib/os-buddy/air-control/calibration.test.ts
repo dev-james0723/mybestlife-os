@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyAffine,
   identityCalibration,
   isUsableCalibration,
   qualityFromRms,
   reprojectionRmsError,
+  solveAffineMapping,
+  solveScreenPlaneFrom9Points,
   summarizeCalibration,
+  type Affine,
 } from "./calibration";
 
 describe("qualityFromRms", () => {
@@ -77,5 +81,54 @@ describe("identityCalibration / usability / summary", () => {
       rmsErrorPx: null,
       createdAt: null,
     });
+  });
+});
+
+describe("solveAffineMapping", () => {
+  it("recovers a known affine from exact correspondences", () => {
+    const truth: Affine = [800, 0, 10, 0, 600, 20]; // scale + translate
+    const src = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0.5, y: 0.5 },
+    ];
+    const pairs = src.map((s) => ({ src: s, dst: applyAffine(truth, s) }));
+    const solved = solveAffineMapping(pairs);
+    expect(solved).not.toBeNull();
+    solved!.forEach((v, i) => expect(v).toBeCloseTo(truth[i], 4));
+  });
+
+  it("returns null with fewer than three pairs", () => {
+    expect(solveAffineMapping([{ src: { x: 0, y: 0 }, dst: { x: 0, y: 0 } }])).toBeNull();
+  });
+});
+
+describe("solveScreenPlaneFrom9Points", () => {
+  const screenCssSize = { width: 800, height: 600 };
+
+  it("yields ~0 RMS and good quality on perfect synthetic data", () => {
+    const truth: Affine = [800, 0, 0, 0, 600, 0];
+    const grid = [0, 0.5, 1];
+    const samples = grid.flatMap((x) =>
+      grid.map((y) => ({ imagePoint: { x, y }, screenPoint: applyAffine(truth, { x, y }) })),
+    );
+    const cal = solveScreenPlaneFrom9Points({ samples, screenCssSize });
+    expect(cal.rmsErrorPx).toBeCloseTo(0, 3);
+    expect(cal.quality).toBe("good");
+    expect(cal.mapping).not.toBeNull();
+  });
+
+  it("reports poor quality when samples are noisy/inconsistent", () => {
+    const samples = [
+      { imagePoint: { x: 0, y: 0 }, screenPoint: { x: 0, y: 0 } },
+      { imagePoint: { x: 1, y: 0 }, screenPoint: { x: 800, y: 0 } },
+      { imagePoint: { x: 0, y: 1 }, screenPoint: { x: 0, y: 600 } },
+      { imagePoint: { x: 0.5, y: 0.5 }, screenPoint: { x: 700, y: 90 } }, // large outlier
+      { imagePoint: { x: 0.5, y: 0.5 }, screenPoint: { x: 100, y: 520 } }, // contradicts above
+    ];
+    const cal = solveScreenPlaneFrom9Points({ samples, screenCssSize });
+    expect(cal.rmsErrorPx).toBeGreaterThan(40);
+    expect(cal.quality).toBe("poor");
   });
 });
