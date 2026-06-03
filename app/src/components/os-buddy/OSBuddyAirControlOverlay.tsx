@@ -172,6 +172,12 @@ export function OSBuddyAirControlOverlay({
   });
   const zh = locale === "zh-TW";
   const showDebug = debugEnabled;
+  const showStatusPill =
+    airPilotActive ||
+    debugEnabled ||
+    status === "requesting-permission" ||
+    status === "loading-model" ||
+    status === "error";
 
   const resetCalibration = () => {
     clearAirControlCalibration();
@@ -223,52 +229,54 @@ export function OSBuddyAirControlOverlay({
         </div>
       ) : null}
 
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[47] flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2">
-        <div
-          className={cn(
-            "pointer-events-auto flex min-h-11 items-center gap-2 rounded-full border border-border/70 bg-background/90 px-3 py-2 text-xs font-medium text-foreground shadow-lg shadow-black/10 backdrop-blur-md",
-            status === "tracking" && "border-emerald-400/50",
-            status === "wake-listening" && "border-sky-400/55",
-            status === "paused" && "border-amber-400/60",
-            status === "error" && "border-destructive/60",
-          )}
-        >
-          <span
+      <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] right-4 z-[47] flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2">
+        {showStatusPill ? (
+          <div
             className={cn(
-              "flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground",
-              status === "tracking" && "bg-emerald-500/12 text-emerald-600",
-              status === "wake-listening" && "bg-sky-500/12 text-sky-600",
-              status === "paused" && "bg-amber-500/12 text-amber-600",
-              status === "error" && "bg-destructive/12 text-destructive",
+              "pointer-events-auto flex min-h-11 items-center gap-2 rounded-full border border-border/70 bg-background/90 px-3 py-2 text-xs font-medium text-foreground shadow-lg shadow-black/10 backdrop-blur-md",
+              status === "tracking" && "border-emerald-400/50",
+              status === "wake-listening" && "border-sky-400/55",
+              status === "paused" && "border-amber-400/60",
+              status === "error" && "border-destructive/60",
             )}
           >
-            <Camera className="size-3.5" aria-hidden="true" />
-          </span>
-          <span className="truncate">{getStatusLabel(locale, status, airPilotActive)}</span>
-          <span className="hidden rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground sm:inline">
-            {getSensorLabel(locale, sensorMode, quality)}
-          </span>
-          {airPilotActive ? (
-            <span className="hidden max-w-24 truncate rounded-full bg-red-500/12 px-2 py-1 text-[11px] text-red-600 sm:inline">
-              {pinchState}
+            <span
+              className={cn(
+                "flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground",
+                status === "tracking" && "bg-emerald-500/12 text-emerald-600",
+                status === "wake-listening" && "bg-sky-500/12 text-sky-600",
+                status === "paused" && "bg-amber-500/12 text-amber-600",
+                status === "error" && "bg-destructive/12 text-destructive",
+              )}
+            >
+              <Camera className="size-3.5" aria-hidden="true" />
             </span>
-          ) : gesture ? (
-            <span className="hidden max-w-28 truncate rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground sm:inline">
-              {gesture}
+            <span className="truncate">{getStatusLabel(locale, status, airPilotActive)}</span>
+            <span className="hidden rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground sm:inline">
+              {getSensorLabel(locale, sensorMode, quality)}
             </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => stopAirControl("user-exit")}
-            className="ml-1 flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            aria-label={zh ? "停止 AirPilot" : "Stop AirPilot"}
-          >
-            <X className="size-3.5" aria-hidden="true" />
-          </button>
-        </div>
+            {airPilotActive ? (
+              <span className="hidden max-w-24 truncate rounded-full bg-red-500/12 px-2 py-1 text-[11px] text-red-600 sm:inline">
+                {pinchState}
+              </span>
+            ) : gesture ? (
+              <span className="hidden max-w-28 truncate rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground sm:inline">
+                {gesture}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => stopAirControl("user-exit")}
+              className="ml-1 flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              aria-label={zh ? "停止 AirPilot" : "Stop AirPilot"}
+            >
+              <X className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
 
         {airPilotActive ? (
-	          <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-2 py-1 text-[11px] shadow-lg shadow-black/10 backdrop-blur-md">
+          <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-2 py-1 text-[11px] shadow-lg shadow-black/10 backdrop-blur-md">
             <button
               type="button"
               onClick={() => setCalibrating(true)}
