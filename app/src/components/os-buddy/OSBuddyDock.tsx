@@ -23,6 +23,7 @@ import {
   getLocalAirControlCalibration,
   getLocalAirControlSettings,
 } from "@/lib/os-buddy/air-control/air-control-settings";
+import { getLocalOSBuddyAirPilotSettings } from "@/lib/os-buddy/os-buddy-airpilot-settings";
 import { OSBuddyMenu } from "./OSBuddyMenu";
 import { OSBuddyPetPicker } from "./OSBuddyPetPicker";
 import { OSBuddyFocusBadge } from "./OSBuddyFocusBadge";
@@ -465,6 +466,7 @@ export function OSBuddyDock() {
   const isWalkModeActive = useOSBuddyStore((s) => s.isWalkModeActive);
   const isReturningHome = useOSBuddyStore((s) => s.isReturningHome);
   const isAirControlActive = useOSBuddyStore((s) => s.isAirControlActive);
+  const airPilotPlusMode = useOSBuddyStore((s) => s.airPilotPlusMode);
   const setWalkModeActive = useOSBuddyStore((s) => s.setWalkModeActive);
   const setReturningHome = useOSBuddyStore((s) => s.setReturningHome);
   const startAirControl = useOSBuddyStore((s) => s.startAirControl);
@@ -605,7 +607,10 @@ export function OSBuddyDock() {
   const pathnameRef = useRef(pathname);
 
   useEffect(() => {
-    setMounted(true);
+    const frame = window.requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   // Load persisted Air Touch calibration + debug preference (numbers only).
@@ -621,7 +626,10 @@ export function OSBuddyDock() {
   }, [dockPoint]);
 
   useEffect(() => {
-    setBuddyScale((current) => clamp(current, 1, maxBuddyScale));
+    const frame = window.requestAnimationFrame(() => {
+      setBuddyScale((current) => clamp(current, 1, maxBuddyScale));
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [maxBuddyScale]);
 
   useEffect(() => {
@@ -637,7 +645,10 @@ export function OSBuddyDock() {
   }, []);
 
   useEffect(() => {
-    setActivePosition(restingPosition);
+    const frame = window.requestAnimationFrame(() => {
+      setActivePosition(restingPosition);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [restingPosition]);
 
   useEffect(() => {
@@ -645,14 +656,14 @@ export function OSBuddyDock() {
     if (dragSessionRef.current) return;
     if (isWalkModeActive || isReturningHome) return;
 
-    if (freeRoamRuntimePosition) {
-      const next = clampDockPoint(freeRoamRuntimePosition, viewport, buddyBox);
-      setDockPoint(next);
-      return;
-    }
+    const next = freeRoamRuntimePosition
+      ? clampDockPoint(freeRoamRuntimePosition, viewport, buddyBox)
+      : resolveAnchorPosition(activePosition, viewport, buddyBox);
 
-    const next = resolveAnchorPosition(activePosition, viewport, buddyBox);
-    setDockPoint(next);
+    const frame = window.requestAnimationFrame(() => {
+      setDockPoint(next);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [
     activePosition,
     buddyBox,
@@ -1471,6 +1482,20 @@ export function OSBuddyDock() {
             deltaY: command.deltaY,
           });
           return;
+        case "zoom-osbuddy": {
+          const delta = command.direction === "in" ? command.amount : -command.amount;
+          const nextScale = clamp(buddyScale + delta, 1, maxBuddyScale);
+          setClampedBuddyScale(nextScale);
+          temporarilySetMood("celebrating", 900);
+          showBubble(
+            locale === "zh-TW"
+              ? `OS Buddy ${Math.round(nextScale * 100)}%`
+              : `OS Buddy ${Math.round(nextScale * 100)}%`,
+            "success",
+            { force: true, durationMs: 1_300 },
+          );
+          return;
+        }
         case "pause":
           // Hand lost / low confidence: freeze in place, keep the grab.
           setDragging(false, null);
@@ -1529,11 +1554,14 @@ export function OSBuddyDock() {
     },
     [
       buddyBox,
+      buddyScale,
       interruptFreeRoam,
       locale,
+      maxBuddyScale,
       pauseAirControlWalk,
       savePosition,
       setActivePosition,
+      setClampedBuddyScale,
       setAirControlWalkTarget,
       setDockPoint,
       setDragging,
@@ -1565,6 +1593,23 @@ export function OSBuddyDock() {
     if (playBallChaseStateRef.current?.id !== event.id) return;
     playBallTargetRef.current = event;
   }, []);
+
+  const handlePlayBallCommandZone = useCallback(
+    (zone: "brain" | "idea" | "project" | "osBuddy" | "shortcut") => {
+      const label =
+        zone === "osBuddy"
+          ? "OS Buddy"
+          : zone.charAt(0).toUpperCase() + zone.slice(1);
+      showBubble(
+        locale === "zh-TW"
+          ? `Play Ball 已命中 ${label} zone。`
+          : `Play Ball hit the ${label} zone.`,
+        "game",
+        { force: true, durationMs: 1_800, kind: "game" },
+      );
+    },
+    [locale, showBubble],
+  );
 
   const chasePlayBall = useCallback(
     (event: OSBuddyPlayBallEvent) => {
@@ -2144,6 +2189,7 @@ export function OSBuddyDock() {
   if (!mounted || !enabled) return null;
 
   const airPilotRuntimeEnabled = isAirControlActive;
+  const airPilotSettingsSnapshot = getLocalOSBuddyAirPilotSettings();
   const bubbleHorizontal = dockPoint.x > viewport.width / 2 ? "left" : "right";
   const bubbleVertical = dockPoint.y < 136 ? "below" : "above";
 
@@ -2285,8 +2331,14 @@ export function OSBuddyDock() {
         open={isPlayBallOpen}
         locale={locale}
         caughtBall={playBallCatchSignal}
+        gestureZonesEnabled={
+          isAirControlActive &&
+          airPilotPlusMode === "plusActive" &&
+          airPilotSettingsSnapshot.playBallGestureModeEnabled
+        }
         onBallThrown={chasePlayBall}
         onBallMove={trackPlayBall}
+        onCommandZoneHit={handlePlayBallCommandZone}
       />
     </>
   );

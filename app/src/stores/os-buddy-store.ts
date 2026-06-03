@@ -11,6 +11,13 @@ import type {
   OSBuddyAirPilotSelectState,
 } from "@/lib/os-buddy/os-buddy-air-control-types";
 import type { CalibrationData } from "@/lib/os-buddy/air-control/types";
+import {
+  createAIPilotPlusCountdownState,
+  type AIPilotPlusDomain,
+  type AIPilotPlusPilotAction,
+  type AIPilotPlusCountdownState,
+  type AIPilotPlusPilotMode,
+} from "@/lib/os-buddy/ai-pilot-plus";
 import type {
   OSBuddyCompanionCta,
   OSBuddyCompanionKind,
@@ -83,6 +90,11 @@ interface OSBuddyRuntimeState {
   } | null;
   airControlDebugEnabled: boolean;
   airControlError: string | null;
+  airPilotPlusMode: AIPilotPlusPilotMode;
+  airPilotPlusCountdown: AIPilotPlusCountdownState;
+  airPilotPlusDomain: AIPilotPlusDomain | null;
+  airPilotPlusActionPreview: AIPilotPlusPilotAction | null;
+  airPilotPlusActionPreviewLabel: string | null;
   isFreeRoaming: boolean;
   freeRoamStartedAt: number | null;
   freeRoamUntil: number | null;
@@ -145,6 +157,16 @@ interface OSBuddyRuntimeState {
   clearAirControlCalibration: () => void;
   setAirControlDebugEnabled: (enabled: boolean) => void;
   setAirControlError: (error: string | null) => void;
+  setAirPilotPlusState: (
+    mode: AIPilotPlusPilotMode,
+    countdown: AIPilotPlusCountdownState,
+  ) => void;
+  setAirPilotPlusDomainPreview: (params: {
+    domain: AIPilotPlusDomain | null;
+    actionPreview: AIPilotPlusPilotAction | null;
+    previewLabel: string | null;
+  }) => void;
+  resetAirPilotPlus: () => void;
   startFreeRoam: (params: {
     until: number;
     initialPosition?: { x: number; y: number } | null;
@@ -166,6 +188,16 @@ interface OSBuddyRuntimeState {
 let moodResetTimer: ReturnType<typeof setTimeout> | null = null;
 let bubbleClearTimer: ReturnType<typeof setTimeout> | null = null;
 let birthdayModeTimer: ReturnType<typeof setTimeout> | null = null;
+
+function inactiveAirPilotPlusCountdown(durationMs = 0): AIPilotPlusCountdownState {
+  return createAIPilotPlusCountdownState({
+    kind: "inactive",
+    now: 0,
+    startedAt: null,
+    durationMs,
+    label: null,
+  });
+}
 
 export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   mood: "idle",
@@ -193,6 +225,11 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   airControlCalibrationSummary: null,
   airControlDebugEnabled: false,
   airControlError: null,
+  airPilotPlusMode: "off",
+  airPilotPlusCountdown: inactiveAirPilotPlusCountdown(),
+  airPilotPlusDomain: null,
+  airPilotPlusActionPreview: null,
+  airPilotPlusActionPreviewLabel: null,
   isFreeRoaming: false,
   freeRoamStartedAt: null,
   freeRoamUntil: null,
@@ -306,6 +343,11 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       airControlLastSeenAt: null,
       airTouchState: "tracking",
       airControlError: null,
+      airPilotPlusMode: "normal",
+      airPilotPlusCountdown: inactiveAirPilotPlusCountdown(2_000),
+      airPilotPlusDomain: null,
+      airPilotPlusActionPreview: null,
+      airPilotPlusActionPreviewLabel: null,
     }),
 
   stopAirControl: () =>
@@ -319,6 +361,11 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       airControlLandmarks: [],
       airControlLastSeenAt: null,
       airTouchState: "inactive",
+      airPilotPlusMode: "off",
+      airPilotPlusCountdown: inactiveAirPilotPlusCountdown(),
+      airPilotPlusDomain: null,
+      airPilotPlusActionPreview: null,
+      airPilotPlusActionPreviewLabel: null,
     }),
 
   setAirControlTarget: (point) =>
@@ -379,6 +426,28 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   setAirControlDebugEnabled: (enabled) => set({ airControlDebugEnabled: enabled }),
 
   setAirControlError: (error) => set({ airControlError: error }),
+
+  setAirPilotPlusState: (mode, countdown) =>
+    set({
+      airPilotPlusMode: mode,
+      airPilotPlusCountdown: countdown,
+    }),
+
+  setAirPilotPlusDomainPreview: ({ domain, actionPreview, previewLabel }) =>
+    set({
+      airPilotPlusDomain: domain,
+      airPilotPlusActionPreview: actionPreview,
+      airPilotPlusActionPreviewLabel: previewLabel,
+    }),
+
+  resetAirPilotPlus: () =>
+    set({
+      airPilotPlusMode: "off",
+      airPilotPlusCountdown: inactiveAirPilotPlusCountdown(),
+      airPilotPlusDomain: null,
+      airPilotPlusActionPreview: null,
+      airPilotPlusActionPreviewLabel: null,
+    }),
 
   setDragging: (dragging, direction = null) => {
     set((state) => {

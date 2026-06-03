@@ -21,6 +21,7 @@ import {
   AIRPILOT_WAKE_GUARD_MS,
   getAirPilotPalmCenter,
 } from "@/lib/os-buddy/os-buddy-airpilot-pinch";
+import { getLocalOSBuddyAirPilotSettings } from "@/lib/os-buddy/os-buddy-airpilot-settings";
 import {
   AIRPILOT_MAGNET_RADIUS_PX,
   createAirPilotMagnetMachine,
@@ -28,6 +29,19 @@ import {
   type AirPilotMagnetMachine,
 } from "@/lib/os-buddy/os-buddy-airpilot-magnet";
 import { resolveNearestAirPilotMagnetTarget } from "@/lib/os-buddy/os-buddy-airpilot-page-control";
+import {
+  DEFAULT_AI_PILOT_PLUS_CONFIG,
+  createAIPilotPlusCircleRecognizerState,
+  createAIPilotPlusGestureEventFromAirControl,
+  createAIPilotPlusModeMachineState,
+  createAIPilotPlusScrollState,
+  createAIPilotPlusTwoHandState,
+  stepAIPilotPlusCircleRecognizer,
+  stepAIPilotPlusModeMachine,
+  stepAIPilotPlusScroll,
+  stepAIPilotPlusTwoHandController,
+  type AIPilotPlusFrame,
+} from "@/lib/os-buddy/ai-pilot-plus";
 import type { CalibrationData } from "@/lib/os-buddy/air-control/types";
 import type {
   OSBuddyAirControlCommand,
@@ -48,8 +62,6 @@ const GESTURE_MODEL_URL =
 const DETECTION_INTERVAL_MS = 50;
 const LOST_HAND_MS = 1_500;
 const COMMAND_COOLDOWN_MS = 1_200;
-const AIRPILOT_SCROLL_MIN_DELTA_PX = 8;
-const AIRPILOT_SCROLL_MULTIPLIER = 1.8;
 
 type UseOSBuddyAirControlParams = {
   enabled: boolean;
@@ -70,6 +82,11 @@ function isLocalhost() {
     window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "::1"
   );
+}
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function stopStream(stream: MediaStream | null) {
@@ -166,6 +183,17 @@ function shouldBypassCommandCooldown(command: OSBuddyAirControlCommand) {
   );
 }
 
+function areBothHandsOpen(hands: OSBuddyAirControlHand[]) {
+  if (hands.length < 2) return false;
+  return hands
+    .slice(0, 2)
+    .every((hand) => resolveAirControlGesture(hand) === "Open_Palm" && hand.confidence >= 0.75);
+}
+
+function findHandBySide(hands: OSBuddyAirControlHand[], side: "Left" | "Right") {
+  return hands.find((hand) => hand.handedness === side) ?? null;
+}
+
 export function useOSBuddyAirControl({
   enabled,
   airPilotActive,
@@ -194,9 +222,13 @@ export function useOSBuddyAirControl({
   const lastGestureRef = useRef<OSBuddyAirControlGesture | null>(null);
   const onCommandRef = useRef(onCommand);
   const activeRef = useRef(airPilotActive);
+  const airPilotSettingsRef = useRef(getLocalOSBuddyAirPilotSettings());
   const wakeGuardUntilRef = useRef(0);
   const magnetMachineRef = useRef<AirPilotMagnetMachine>(createAirPilotMagnetMachine());
-  const previousPalmPointRef = useRef<OSBuddyAirControlPoint | null>(null);
+  const airPilotScrollRef = useRef(createAIPilotPlusScrollState());
+  const airPilotPlusModeRef = useRef(createAIPilotPlusModeMachineState());
+  const airPilotCircleRef = useRef(createAIPilotPlusCircleRecognizerState());
+  const airPilotTwoHandRef = useRef(createAIPilotPlusTwoHandState());
   const dockBoxRef = useRef({ dockPoint, buddyBox });
   const sensorModeRef = useRef<OSBuddyAirControlSensorMode>(sensorMode);
   const calibrationRef = useRef<CalibrationData | null>(calibration);
@@ -216,6 +248,8 @@ export function useOSBuddyAirControl({
     magnetPhase: "tracking",
     magnetTargetLabel: undefined,
     rawCursor: null,
+    circleTrail: [],
+    circleProgress: null,
     landmarks: [],
     fps: 0,
   });
@@ -241,9 +275,13 @@ export function useOSBuddyAirControl({
     activeRef.current = airPilotActive;
 
     if (airPilotActive && !wasActive) {
+      airPilotSettingsRef.current = getLocalOSBuddyAirPilotSettings();
       wakeGuardUntilRef.current = performance.now() + AIRPILOT_WAKE_GUARD_MS;
       magnetMachineRef.current = createAirPilotMagnetMachine();
-      previousPalmPointRef.current = null;
+      airPilotScrollRef.current = createAIPilotPlusScrollState();
+      airPilotPlusModeRef.current = createAIPilotPlusModeMachineState();
+      airPilotCircleRef.current = createAIPilotPlusCircleRecognizerState();
+      airPilotTwoHandRef.current = createAIPilotPlusTwoHandState();
       useOSBuddyStore.getState().setAirPilotSelectState("tracking");
       useOSBuddyStore.getState().setAirTouchState("tracking");
     }
@@ -251,7 +289,10 @@ export function useOSBuddyAirControl({
     if (!airPilotActive) {
       cursorSmootherRef.current.reset();
       magnetMachineRef.current = createAirPilotMagnetMachine();
-      previousPalmPointRef.current = null;
+      airPilotScrollRef.current = createAIPilotPlusScrollState();
+      airPilotPlusModeRef.current = createAIPilotPlusModeMachineState();
+      airPilotCircleRef.current = createAIPilotPlusCircleRecognizerState();
+      airPilotTwoHandRef.current = createAIPilotPlusTwoHandState();
       useOSBuddyStore.getState().setAirControlTarget(null);
       useOSBuddyStore.getState().setAirControlLandmarks([]);
       useOSBuddyStore.getState().setAirPilotSelectState("tracking");
@@ -307,6 +348,8 @@ export function useOSBuddyAirControl({
       latencyMs: number;
       selectState?: OSBuddyAirControlDebugState["selectState"];
       indexTapScore?: number | null;
+      circleTrail?: OSBuddyAirControlPoint[];
+      circleProgress?: number | null;
     }) => {
       const fpsWindow = fpsWindowRef.current.filter((timestamp) => params.now - timestamp < 1_000);
       fpsWindow.push(params.now);
@@ -331,6 +374,8 @@ export function useOSBuddyAirControl({
         magnetPhase: magnet.phase,
         magnetTargetLabel: magnetTarget?.label,
         rawCursor: params.rawCursor ?? params.target,
+        circleTrail: params.circleTrail ?? [],
+        circleProgress: params.circleProgress ?? null,
         landmarks: params.frame.primaryHand?.landmarks ?? [],
         fps: fpsWindow.length,
       });
@@ -349,7 +394,30 @@ export function useOSBuddyAirControl({
       state.setAirControlTarget(null);
       state.setAirPilotSelectState("tracking");
       magnetMachineRef.current = createAirPilotMagnetMachine();
-      previousPalmPointRef.current = null;
+      airPilotScrollRef.current = createAIPilotPlusScrollState();
+      airPilotCircleRef.current = createAIPilotPlusCircleRecognizerState();
+      airPilotTwoHandRef.current = createAIPilotPlusTwoHandState();
+
+      const plusUpdate = stepAIPilotPlusModeMachine({
+        previous: airPilotPlusModeRef.current,
+        frame: {
+          active: activeRef.current && airPilotSettingsRef.current.plusEnabled,
+          now,
+          gesture: "None",
+          handCount: 0,
+          confidence: 0,
+          bothHandsOpen: false,
+        },
+      });
+      airPilotPlusModeRef.current = plusUpdate.next;
+      state.setAirPilotPlusState(plusUpdate.next.mode, plusUpdate.next.countdown);
+      if (plusUpdate.next.mode !== "plusActive") {
+        state.setAirPilotPlusDomainPreview({
+          domain: null,
+          actionPreview: null,
+          previewLabel: null,
+        });
+      }
 
       if (!activeRef.current) {
         state.setAirControlStatus("idle");
@@ -378,8 +446,11 @@ export function useOSBuddyAirControl({
       frame: OSBuddyAirControlFrame;
       gesture: OSBuddyAirControlGesture;
       primaryHand: OSBuddyAirControlHand;
+      hands: OSBuddyAirControlHand[];
       cursor: OSBuddyAirControlPoint | null;
       rawCursor: OSBuddyAirControlPoint | null;
+      bothHandsOpen: boolean;
+      plusConfidence: number;
       now: number;
       latencyMs: number;
     }) => {
@@ -395,14 +466,20 @@ export function useOSBuddyAirControl({
       let displayCursor: OSBuddyAirControlPoint | null = params.cursor;
       let selectState: OSBuddyAirControlDebugState["selectState"] = "tracking";
       let indexTapScore: number | null = null;
+      let circleTrail: OSBuddyAirControlPoint[] = [];
+      let circleProgress: number | null = null;
 
       if (params.gesture === "Closed_Fist") {
         cursorSmootherRef.current.reset();
         magnetMachineRef.current = createAirPilotMagnetMachine();
-        previousPalmPointRef.current = null;
+        airPilotScrollRef.current = createAIPilotPlusScrollState();
+        airPilotPlusModeRef.current = createAIPilotPlusModeMachineState();
+        airPilotCircleRef.current = createAIPilotPlusCircleRecognizerState();
+        airPilotTwoHandRef.current = createAIPilotPlusTwoHandState();
         state.setAirControlTarget(null);
         state.setAirControlRawPoint(null);
         state.setAirPilotSelectState("tracking");
+        state.resetAirPilotPlus();
         emitCommand({ type: "exit", gesture: params.gesture }, params.now);
         updateDebug({
           frame: params.frame,
@@ -416,11 +493,65 @@ export function useOSBuddyAirControl({
         return;
       }
 
+      const plusUpdate = stepAIPilotPlusModeMachine({
+        previous: airPilotPlusModeRef.current,
+        frame: {
+          active: activeRef.current && airPilotSettingsRef.current.plusEnabled,
+          now: params.now,
+          gesture: params.gesture,
+          handCount: params.frame.handCount,
+          confidence: params.plusConfidence,
+          bothHandsOpen: params.bothHandsOpen,
+        },
+      });
+      airPilotPlusModeRef.current = plusUpdate.next;
+      state.setAirPilotPlusState(plusUpdate.next.mode, plusUpdate.next.countdown);
+      for (const event of plusUpdate.events) {
+        if (event.type === "plus-activated") {
+          state.showBubble(
+            locale === "zh-TW"
+              ? "AI Pilot Plus 已啟動。雙手進階手勢已解鎖。"
+              : "AI Pilot Plus is active. Advanced two-hand gestures are unlocked.",
+            "success",
+            { force: true, durationMs: 3_000 },
+          );
+        }
+        if (event.type === "plus-exited") {
+          state.showBubble(
+            locale === "zh-TW"
+              ? "AI Pilot Plus 已退出，AirPilot 繼續保持正常模式。"
+              : "AI Pilot Plus exited. AirPilot is back to normal mode.",
+            "system",
+            { force: true, durationMs: 2_600 },
+          );
+        }
+      }
+
+      const rightGestureEvent = createAIPilotPlusGestureEventFromAirControl({
+        gesture: params.gesture,
+        timestamp: params.now,
+        confidence: params.plusConfidence,
+      });
+      const twoHandUpdate = stepAIPilotPlusTwoHandController({
+        previous: airPilotTwoHandRef.current,
+        mode: plusUpdate.next.mode,
+        enabled: airPilotSettingsRef.current.twoHandModeEnabled,
+        leftHand: findHandBySide(params.hands, "Left"),
+        rightGestureEvent,
+      });
+      airPilotTwoHandRef.current = twoHandUpdate.next;
+      state.setAirPilotPlusDomainPreview({
+        domain: twoHandUpdate.next.domain,
+        actionPreview: twoHandUpdate.next.actionPreview,
+        previewLabel: twoHandUpdate.next.previewLabel,
+      });
+
+      const rawPalmCursor = mapHandPointToViewport({
+        point: getAirPilotPalmCenter(params.primaryHand),
+        viewport,
+      });
+
       if (params.cursor) {
-        const rawPalmCursor = mapHandPointToViewport({
-          point: getAirPilotPalmCenter(params.primaryHand),
-          viewport,
-        });
         const magnetTarget = resolveNearestAirPilotMagnetTarget(
           params.cursor,
           AIRPILOT_MAGNET_RADIUS_PX,
@@ -471,30 +602,89 @@ export function useOSBuddyAirControl({
 
       const magnetLocked = magnetMachineRef.current.phase === "locked";
 
-      if (!magnetLocked && params.gesture === "Open_Palm") {
-        const palmPoint = mapHandPointToViewport({
-          point: getAirPilotPalmCenter(params.primaryHand),
-          viewport,
-        });
-        const previousPalmPoint = previousPalmPointRef.current;
-        previousPalmPointRef.current = palmPoint;
-
-        if (palmPoint && previousPalmPoint) {
-          const deltaY = (palmPoint.y - previousPalmPoint.y) * AIRPILOT_SCROLL_MULTIPLIER;
-          if (Math.abs(deltaY) >= AIRPILOT_SCROLL_MIN_DELTA_PX) {
-            emitCommand(
-              {
-                type: "page-scroll",
-                point: displayCursor ?? palmPoint,
-                deltaY,
-                gesture: params.gesture,
-              },
-              params.now,
-            );
-          }
-        }
+      if (magnetLocked) {
+        airPilotScrollRef.current = createAIPilotPlusScrollState();
+        airPilotCircleRef.current = createAIPilotPlusCircleRecognizerState();
       } else {
-        previousPalmPointRef.current = null;
+        const plusActive = plusUpdate.next.mode === "plusActive";
+        const circleUpdate = stepAIPilotPlusCircleRecognizer({
+          previous: airPilotCircleRef.current,
+          now: params.now,
+          point: params.rawCursor ?? rawPalmCursor,
+          confidence: params.primaryHand.confidence,
+          enabled:
+            plusActive &&
+            (params.gesture === "Index_Point" || params.gesture === "Pointing_Up"),
+          config: {
+            minConfidence: Math.min(
+              0.95,
+              Math.max(0.5, 0.72 / airPilotSettingsRef.current.gestureSensitivity),
+            ),
+          },
+        });
+        airPilotCircleRef.current = circleUpdate.next;
+        circleTrail = circleUpdate.trail;
+        circleProgress = circleUpdate.progress;
+
+        if (circleUpdate.event) {
+          emitCommand(
+            {
+              type: "zoom-osbuddy",
+              point: circleUpdate.event.center,
+              direction: circleUpdate.event.direction === "clockwise" ? "in" : "out",
+              amount: 0.16,
+              gesture: params.gesture,
+            },
+            params.now,
+          );
+        }
+
+        const scrollFrame: AIPilotPlusFrame = {
+          now: params.now,
+          active: activeRef.current,
+          handCount: params.frame.handCount,
+          gesture: params.gesture,
+          confidence: params.primaryHand.confidence,
+          sensorMode: sensorModeRef.current,
+          cursor: displayCursor,
+          rawCursor: params.rawCursor,
+          palm: rawPalmCursor,
+          indexPalmVector: null,
+          primaryHand: params.primaryHand,
+          secondaryHand: null,
+          secondaryPalm: null,
+          target: null,
+          lockedTarget: null,
+        };
+        const scrollUpdate = stepAIPilotPlusScroll({
+          previous: airPilotScrollRef.current,
+          frame: scrollFrame,
+          config: {
+            ...DEFAULT_AI_PILOT_PLUS_CONFIG,
+            scrollScale:
+              DEFAULT_AI_PILOT_PLUS_CONFIG.scrollScale *
+              airPilotSettingsRef.current.scrollSensitivity,
+            scrollVelocityScale:
+              DEFAULT_AI_PILOT_PLUS_CONFIG.scrollVelocityScale *
+              airPilotSettingsRef.current.scrollSensitivity,
+            scrollSmoothingAlpha: airPilotSettingsRef.current.smoothingStrength,
+            scrollReducedMotion:
+              prefersReducedMotion() || airPilotSettingsRef.current.reducedMotion,
+          },
+        });
+        airPilotScrollRef.current = scrollUpdate.next;
+
+        if (scrollUpdate.deltaY != null && scrollUpdate.point) {
+          emitCommand(
+            {
+              type: "page-scroll",
+              point: displayCursor ?? scrollUpdate.point,
+              deltaY: scrollUpdate.deltaY,
+              gesture: params.gesture,
+            },
+            params.now,
+          );
+        }
       }
 
       updateDebug({
@@ -506,6 +696,8 @@ export function useOSBuddyAirControl({
         latencyMs: params.latencyMs,
         selectState,
         indexTapScore,
+        circleTrail,
+        circleProgress,
       });
     };
 
@@ -531,6 +723,10 @@ export function useOSBuddyAirControl({
       useOSBuddyStore.getState().setAirControlRawPoint(rawTip);
 
       const rawGesture = resolveAirControlGesture(primaryHand);
+      const bothHandsOpen = areBothHandsOpen(hands);
+      const plusConfidence = bothHandsOpen
+        ? Math.min(...hands.slice(0, 2).map((hand) => hand.confidence))
+        : primaryHand.confidence;
       const swipeGesture = detectOpenPalmSwipe({
         current: frame,
         previous: previousFrameRef.current,
@@ -553,7 +749,18 @@ export function useOSBuddyAirControl({
         return;
       }
 
-      handleAirPilotFrame({ frame, gesture, primaryHand, cursor, rawCursor, now, latencyMs });
+      handleAirPilotFrame({
+        frame,
+        gesture,
+        primaryHand,
+        hands,
+        cursor,
+        rawCursor,
+        bothHandsOpen,
+        plusConfidence,
+        now,
+        latencyMs,
+      });
       previousFrameRef.current = frame;
     };
 
@@ -579,7 +786,10 @@ export function useOSBuddyAirControl({
       cursorSmootherRef.current.reset();
       stableGestureRef.current.reset();
       magnetMachineRef.current = createAirPilotMagnetMachine();
-      previousPalmPointRef.current = null;
+      airPilotScrollRef.current = createAIPilotPlusScrollState();
+      airPilotPlusModeRef.current = createAIPilotPlusModeMachineState();
+      airPilotCircleRef.current = createAIPilotPlusCircleRecognizerState();
+      airPilotTwoHandRef.current = createAIPilotPlusTwoHandState();
       useOSBuddyStore.getState().setAirControlTarget(null);
       useOSBuddyStore.getState().setAirControlRawPoint(null);
       useOSBuddyStore.getState().setAirControlLandmarks([]);

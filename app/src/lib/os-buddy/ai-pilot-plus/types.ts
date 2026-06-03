@@ -180,7 +180,12 @@ export type AIPilotPlusConfig = {
   selectCooldownMs: number;
   scrollDeadzonePx: number;
   scrollScale: number;
+  scrollSmoothingAlpha: number;
+  scrollVelocityScale: number;
   scrollMaxDeltaY: number;
+  scrollInertiaDurationMs: number;
+  scrollInertiaMinDeltaY: number;
+  scrollReducedMotion: boolean;
   zoomDeadzonePx: number;
   zoomScale: number;
   zoomMaxScaleDelta: number;
@@ -192,8 +197,13 @@ export const DEFAULT_AI_PILOT_PLUS_CONFIG: AIPilotPlusConfig = {
   lockedTapFlickPx: 5,
   selectCooldownMs: 450,
   scrollDeadzonePx: 6,
-  scrollScale: 1.1,
+  scrollScale: 0.58,
+  scrollSmoothingAlpha: 0.32,
+  scrollVelocityScale: 18,
   scrollMaxDeltaY: 72,
+  scrollInertiaDurationMs: 320,
+  scrollInertiaMinDeltaY: 0.8,
+  scrollReducedMotion: false,
   zoomDeadzonePx: 10,
   zoomScale: 0.004,
   zoomMaxScaleDelta: 0.24,

@@ -161,6 +161,10 @@ export function OSBuddyAirControlOverlay({
   const quality = useOSBuddyStore((s) => s.airControlQuality);
   const calibration = useOSBuddyStore((s) => s.airControlCalibration);
   const debugEnabled = useOSBuddyStore((s) => s.airControlDebugEnabled);
+  const plusMode = useOSBuddyStore((s) => s.airPilotPlusMode);
+  const plusCountdown = useOSBuddyStore((s) => s.airPilotPlusCountdown);
+  const plusDomain = useOSBuddyStore((s) => s.airPilotPlusDomain);
+  const plusActionPreviewLabel = useOSBuddyStore((s) => s.airPilotPlusActionPreviewLabel);
   const setDebugEnabled = useOSBuddyStore((s) => s.setAirControlDebugEnabled);
   const clearAirControlCalibration = useOSBuddyStore((s) => s.clearAirControlCalibration);
   const [calibrating, setCalibrating] = useState(false);
@@ -187,6 +191,9 @@ export function OSBuddyAirControlOverlay({
     Boolean(pairingUrl);
   const panelExpanded = airPilotActive && (controlsExpanded || keepControlsExpanded);
   const hudVisible = airPilotActive && !hudHidden;
+  const plusCountdownVisible = airPilotActive && plusCountdown.kind !== "inactive";
+  const plusActiveVisible = airPilotActive && plusMode === "plusActive";
+  const plusStatusVisible = plusCountdownVisible || plusActiveVisible;
   const hudFrameClass =
     "left-[max(env(safe-area-inset-left),1rem)] top-[calc(env(safe-area-inset-top)+1rem)] h-[clamp(99px,25.5vw,144px)] w-[clamp(132px,34vw,192px)] rounded-lg";
 
@@ -274,6 +281,63 @@ export function OSBuddyAirControlOverlay({
           className="pointer-events-none fixed z-[2147483001] size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500 shadow-[0_0_0_1px_rgba(255,255,255,0.95),0_0_0_3px_rgba(239,68,68,0.18),0_0_10px_rgba(239,68,68,0.65)]"
           style={{ left: cursor.x, top: cursor.y }}
         />
+      ) : null}
+
+      {plusActiveVisible && debugState.circleTrail.length > 1 ? (
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[2147483001] h-screen w-screen"
+        >
+          <polyline
+            points={debugState.circleTrail
+              .map((point) => `${Math.round(point.x)},${Math.round(point.y)}`)
+              .join(" ")}
+            fill="none"
+            stroke="rgba(52, 211, 153, 0.82)"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="3"
+            className="drop-shadow-[0_0_8px_rgba(52,211,153,0.45)]"
+          />
+        </svg>
+      ) : null}
+
+      {plusStatusVisible ? (
+        <div className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+1rem)] z-[2147483002] w-[min(calc(100vw-2rem),18rem)] -translate-x-1/2 rounded-full border border-emerald-300/45 bg-background/92 px-3 py-2 text-xs text-foreground shadow-lg shadow-black/15 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3">
+            <span className="truncate font-medium">
+              {plusCountdown.kind === "plusActivation"
+                ? zh
+                  ? "AI Pilot Plus 啟動中"
+                  : "AI Pilot Plus activating"
+                : plusCountdown.kind === "plusExit"
+                  ? zh
+                    ? "AI Pilot Plus 退出中"
+                    : "AI Pilot Plus exiting"
+                  : zh
+                    ? "AI Pilot Plus 已啟動"
+                    : "AI Pilot Plus Active"}
+            </span>
+            <span className="shrink-0 text-[11px] text-emerald-500">
+              {plusCountdownVisible
+                ? `${Math.round(plusCountdown.progress * 100)}%`
+                : "ON"}
+            </span>
+          </div>
+          {plusCountdownVisible ? (
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-emerald-400 transition-[width] duration-100"
+                style={{ width: `${Math.round(plusCountdown.progress * 100)}%` }}
+              />
+            </div>
+          ) : null}
+          {plusActiveVisible && (plusActionPreviewLabel || plusDomain) ? (
+            <div className="mt-1 truncate text-[11px] text-muted-foreground">
+              {plusActionPreviewLabel ?? plusDomain}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {hudVisible ? (

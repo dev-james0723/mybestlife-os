@@ -126,6 +126,13 @@ export type OSBuddyAirControlCommand =
       gesture: OSBuddyAirControlGesture;
     }
   | {
+      type: "zoom-osbuddy";
+      point: OSBuddyAirControlPoint;
+      direction: "in" | "out";
+      amount: number;
+      gesture: OSBuddyAirControlGesture;
+    }
+  | {
       type: "pause";
       reason?: "hand-lost" | "low-confidence";
       gesture?: OSBuddyAirControlGesture;
@@ -156,6 +163,8 @@ export type OSBuddyAirControlDebugState = {
   magnetPhase: OSBuddyAirPilotMagnetPhase;
   magnetTargetLabel?: string;
   rawCursor: OSBuddyAirControlPoint | null;
+  circleTrail: OSBuddyAirControlPoint[];
+  circleProgress: number | null;
   landmarks: OSBuddyAirControlLandmark[];
   fps: number;
 };

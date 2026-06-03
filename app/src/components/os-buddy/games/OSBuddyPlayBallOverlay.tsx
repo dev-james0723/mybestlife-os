@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import {
+  getAIPilotPlusPlayBallThrowVelocity,
+  getAIPilotPlusPlayBallZoneRects,
+  isAIPilotPlusPointNearBall,
+  resolveAIPilotPlusPlayBallZone,
+  type AIPilotPlusPlayBallSample,
+  type AIPilotPlusPlayBallZone,
+} from "@/lib/os-buddy/ai-pilot-plus";
+import { useOSBuddyStore } from "@/stores/os-buddy-store";
 
 export type OSBuddyPlayBallOutcome = "caught" | "missed";
 export type OSBuddyPlayBallEvent = {
@@ -22,8 +31,10 @@ type OSBuddyPlayBallOverlayProps = {
   open: boolean;
   locale: AppLocale;
   caughtBall: OSBuddyPlayBallCatchSignal | null;
+  gestureZonesEnabled?: boolean;
   onBallThrown: (event: OSBuddyPlayBallEvent) => void;
   onBallMove: (event: OSBuddyPlayBallEvent) => void;
+  onCommandZoneHit?: (zone: AIPilotPlusPlayBallZone) => void;
 };
 
 const BALL_SIZE = 38;
@@ -47,10 +58,15 @@ export function OSBuddyPlayBallOverlay({
   open,
   locale,
   caughtBall,
+  gestureZonesEnabled = false,
   onBallThrown,
   onBallMove,
+  onCommandZoneHit,
 }: OSBuddyPlayBallOverlayProps) {
   const zh = locale === "zh-TW";
+  const airPilotPlusMode = useOSBuddyStore((s) => s.airPilotPlusMode);
+  const airControlTarget = useOSBuddyStore((s) => s.airControlTarget);
+  const airControlGesture = useOSBuddyStore((s) => s.airControlGesture);
   const [countdown, setCountdown] = useState(3);
   const [phase, setPhase] = useState<"countdown" | "ready" | "thrown">("countdown");
   const [ball, setBall] = useState<BallState>(() => initialBallState());
@@ -69,6 +85,11 @@ export function OSBuddyPlayBallOverlay({
   const activeThrowRef = useRef<{
     id: number;
     outcome: OSBuddyPlayBallOutcome;
+    zoneHit: boolean;
+  } | null>(null);
+  const gestureDragRef = useRef<{
+    previous: AIPilotPlusPlayBallSample;
+    current: AIPilotPlusPlayBallSample;
   } | null>(null);
   const resetTimerRef = useRef<number | null>(null);
 
@@ -87,24 +108,30 @@ export function OSBuddyPlayBallOverlay({
   useEffect(() => {
     if (!open) return;
 
-    clearResetTimer();
-    activeThrowRef.current = null;
-    setCountdown(3);
-    setPhase("countdown");
-    setBallState(initialBallState());
+    let interval: number | null = null;
+    const frame = window.requestAnimationFrame(() => {
+      clearResetTimer();
+      activeThrowRef.current = null;
+      setCountdown(3);
+      setPhase("countdown");
+      setBallState(initialBallState());
 
-    const interval = window.setInterval(() => {
-      setCountdown((current) => {
-        if (current <= 1) {
-          window.clearInterval(interval);
-          setPhase("ready");
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
+      interval = window.setInterval(() => {
+        setCountdown((current) => {
+          if (current <= 1) {
+            if (interval != null) window.clearInterval(interval);
+            setPhase("ready");
+            return 0;
+          }
+          return current - 1;
+        });
+      }, 1000);
+    });
 
-    return () => window.clearInterval(interval);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (interval != null) window.clearInterval(interval);
+    };
   }, [clearResetTimer, open, setBallState]);
 
   useEffect(() => {
@@ -134,9 +161,18 @@ export function OSBuddyPlayBallOverlay({
 
       const activeThrow = activeThrowRef.current;
       if (activeThrow) {
+        const ballCenter = { x: nextBall.x + BALL_SIZE / 2, y: nextBall.y + BALL_SIZE / 2 };
+        const commandZone = resolveAIPilotPlusPlayBallZone({
+          point: ballCenter,
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+        });
+        if (gestureZonesEnabled && commandZone && !activeThrow.zoneHit) {
+          activeThrow.zoneHit = true;
+          onCommandZoneHit?.(commandZone);
+        }
         onBallMove({
           id: activeThrow.id,
-          point: { x: nextBall.x + BALL_SIZE / 2, y: nextBall.y + BALL_SIZE / 2 },
+          point: ballCenter,
           outcome: activeThrow.outcome,
           ballSize: BALL_SIZE,
         });
@@ -152,7 +188,7 @@ export function OSBuddyPlayBallOverlay({
         frameRef.current = null;
       }
     };
-  }, [onBallMove, open, phase, setBallState]);
+  }, [gestureZonesEnabled, onBallMove, onCommandZoneHit, open, phase, setBallState]);
 
   useEffect(() => {
     if (!open || !caughtBall) return;
@@ -187,6 +223,7 @@ export function OSBuddyPlayBallOverlay({
 
   const resetBall = useCallback(() => {
     activeThrowRef.current = null;
+    gestureDragRef.current = null;
     setPhase("ready");
     setBallState(initialBallState());
   }, [setBallState]);
@@ -196,7 +233,7 @@ export function OSBuddyPlayBallOverlay({
       const outcome: OSBuddyPlayBallOutcome = Math.random() < 0.5 ? "caught" : "missed";
       const id = throwIdRef.current + 1;
       throwIdRef.current = id;
-      activeThrowRef.current = { id, outcome };
+      activeThrowRef.current = { id, outcome, zoneHit: false };
       clearResetTimer();
       setBallState(nextBall);
       setPhase("thrown");
@@ -217,10 +254,101 @@ export function OSBuddyPlayBallOverlay({
     [clearResetTimer, onBallThrown, resetBall, setBallState],
   );
 
+  useEffect(() => {
+    if (!open || !gestureZonesEnabled || airPilotPlusMode !== "plusActive" || !airControlTarget) {
+      gestureDragRef.current = null;
+      return;
+    }
+
+    const now = performance.now();
+    const ballCenter = {
+      x: ballRef.current.x + BALL_SIZE / 2,
+      y: ballRef.current.y + BALL_SIZE / 2,
+    };
+    const nearBall = isAIPilotPlusPointNearBall({
+      point: airControlTarget,
+      ballCenter,
+      ballSize: BALL_SIZE,
+    });
+
+    if (phase === "thrown" && airControlGesture === "Open_Palm" && nearBall) {
+      activeThrowRef.current = null;
+      setPhase("ready");
+      setBallState({
+        x: clamp(airControlTarget.x - BALL_SIZE / 2, 0, window.innerWidth - BALL_SIZE),
+        y: clamp(airControlTarget.y - BALL_SIZE / 2, 0, window.innerHeight - BALL_SIZE),
+        vx: 0,
+        vy: 0,
+      });
+      return;
+    }
+
+    if (phase === "thrown") return;
+
+    if (airControlGesture === "Pinch" && (nearBall || gestureDragRef.current)) {
+      const previous = gestureDragRef.current?.current ?? {
+        x: airControlTarget.x,
+        y: airControlTarget.y,
+        at: now,
+      };
+      const current = { x: airControlTarget.x, y: airControlTarget.y, at: now };
+      gestureDragRef.current = { previous, current };
+      setBallState({
+        ...ballRef.current,
+        x: clamp(airControlTarget.x - BALL_SIZE / 2, 0, window.innerWidth - BALL_SIZE),
+        y: clamp(airControlTarget.y - BALL_SIZE / 2, 0, window.innerHeight - BALL_SIZE),
+      });
+      return;
+    }
+
+    if (gestureDragRef.current) {
+      const velocity = getAIPilotPlusPlayBallThrowVelocity(gestureDragRef.current);
+      const current = gestureDragRef.current.current;
+      gestureDragRef.current = null;
+      throwBall({
+        x: clamp(current.x - BALL_SIZE / 2, 0, window.innerWidth - BALL_SIZE),
+        y: clamp(current.y - BALL_SIZE / 2, 0, window.innerHeight - BALL_SIZE),
+        vx: Math.abs(velocity.x) < 1 ? (Math.random() > 0.5 ? 8 : -8) : velocity.x,
+        vy: Math.abs(velocity.y) < 1 ? -14 : velocity.y,
+      });
+    }
+  }, [
+    airControlGesture,
+    airControlTarget,
+    airPilotPlusMode,
+    gestureZonesEnabled,
+    open,
+    phase,
+    setBallState,
+    throwBall,
+  ]);
+
   if (!open) return null;
+  const zoneRects = gestureZonesEnabled
+    ? getAIPilotPlusPlayBallZoneRects({
+        width: typeof window === "undefined" ? 0 : window.innerWidth,
+        height: typeof window === "undefined" ? 0 : window.innerHeight,
+      })
+    : [];
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[118] overflow-hidden">
+      {zoneRects.map((zone) => (
+        <div
+          key={zone.zone}
+          aria-hidden="true"
+          className="absolute rounded-xl border border-emerald-300/35 bg-emerald-400/8 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200/90"
+          style={{
+            left: zone.rect.x,
+            top: zone.rect.y,
+            width: zone.rect.width,
+            height: zone.rect.height,
+          }}
+        >
+          <span className="absolute left-2 top-2">{zone.zone}</span>
+        </div>
+      ))}
+
       {phase === "countdown" ? (
         <div className="absolute inset-0 grid place-items-center bg-background/20 backdrop-blur-[1px]">
           <div className="rounded-2xl border-4 border-foreground bg-popover px-10 py-7 font-mono text-7xl font-black shadow-[8px_8px_0_var(--foreground)]">

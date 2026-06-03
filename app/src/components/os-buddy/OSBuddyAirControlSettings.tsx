@@ -17,6 +17,11 @@ import {
   saveLocalAirControlSettings,
   type OSBuddyAirControlSettings as AirControlSettings,
 } from "@/lib/os-buddy/air-control/air-control-settings";
+import {
+  getLocalOSBuddyAirPilotSettings,
+  saveLocalOSBuddyAirPilotSettings,
+  type OSBuddyAirPilotSettings,
+} from "@/lib/os-buddy/os-buddy-airpilot-settings";
 import type { OSBuddyAirControlSensorMode } from "@/lib/os-buddy/os-buddy-air-control-types";
 import { useOSBuddyStore } from "@/stores/os-buddy-store";
 
@@ -35,9 +40,16 @@ export function OSBuddyAirControlSettings({ locale }: Props) {
   const clearAirControlCalibration = useOSBuddyStore((s) => s.clearAirControlCalibration);
   const calibrationSummary = useOSBuddyStore((s) => s.airControlCalibrationSummary);
   const [settings, setSettings] = useState<AirControlSettings>(getLocalAirControlSettings());
+  const [airPilotSettings, setAirPilotSettings] = useState<OSBuddyAirPilotSettings>(
+    getLocalOSBuddyAirPilotSettings(),
+  );
 
   useEffect(() => {
-    setSettings(getLocalAirControlSettings());
+    const timer = window.setTimeout(() => {
+      setSettings(getLocalAirControlSettings());
+      setAirPilotSettings(getLocalOSBuddyAirPilotSettings());
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const update = (patch: Partial<AirControlSettings>) => {
@@ -45,6 +57,12 @@ export function OSBuddyAirControlSettings({ locale }: Props) {
     setSettings(next);
     saveLocalAirControlSettings(next);
     if (patch.showDebugOverlay !== undefined) setAirControlDebugEnabled(patch.showDebugOverlay);
+  };
+
+  const updateAirPilot = (patch: Partial<OSBuddyAirPilotSettings>) => {
+    const next = { ...airPilotSettings, ...patch };
+    setAirPilotSettings(next);
+    saveLocalOSBuddyAirPilotSettings(next);
   };
 
   return (
@@ -108,6 +126,85 @@ export function OSBuddyAirControlSettings({ locale }: Props) {
           }}
         />
       </label>
+
+      <div className="space-y-2 rounded-lg border border-border/70 p-3">
+        <p className="text-sm font-medium">AI Pilot Plus</p>
+        {[
+          {
+            key: "plusEnabled" as const,
+            label: zh ? "啟用 Plus 手勢" : "Enable Plus gestures",
+          },
+          {
+            key: "twoHandModeEnabled" as const,
+            label: zh ? "啟用雙手模式" : "Enable two-hand mode",
+          },
+          {
+            key: "tenFingerModeEnabled" as const,
+            label: zh ? "啟用 10 指模式（預覽）" : "Enable 10-finger mode (preview)",
+          },
+          {
+            key: "playBallGestureModeEnabled" as const,
+            label: zh ? "啟用 Play Ball 手勢" : "Enable Play Ball gestures",
+          },
+          {
+            key: "reducedMotion" as const,
+            label: zh ? "減少慣性/動態效果" : "Reduce motion and inertia",
+          },
+        ].map((item) => (
+          <label key={item.key} className="flex cursor-pointer items-center justify-between gap-4">
+            <span className="text-sm">{item.label}</span>
+            <Checkbox
+              checked={Boolean(airPilotSettings[item.key])}
+              onCheckedChange={(checked) => {
+                if (typeof checked === "boolean") {
+                  updateAirPilot({
+                    [item.key]: checked,
+                  } as Partial<OSBuddyAirPilotSettings>);
+                }
+              }}
+            />
+          </label>
+        ))}
+
+        <label className="block space-y-1.5">
+          <span className="text-sm">{zh ? "滾動靈敏度" : "Scroll sensitivity"}</span>
+          <input
+            type="range"
+            min="0.25"
+            max="2"
+            step="0.05"
+            value={airPilotSettings.scrollSensitivity}
+            onChange={(event) => updateAirPilot({ scrollSensitivity: Number(event.target.value) })}
+            className="w-full accent-primary"
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-sm">{zh ? "平滑強度" : "Smoothing strength"}</span>
+          <input
+            type="range"
+            min="0.05"
+            max="0.95"
+            step="0.05"
+            value={airPilotSettings.smoothingStrength}
+            onChange={(event) => updateAirPilot({ smoothingStrength: Number(event.target.value) })}
+            className="w-full accent-primary"
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-sm">{zh ? "手勢靈敏度" : "Gesture sensitivity"}</span>
+          <input
+            type="range"
+            min="0.25"
+            max="2"
+            step="0.05"
+            value={airPilotSettings.gestureSensitivity}
+            onChange={(event) => updateAirPilot({ gestureSensitivity: Number(event.target.value) })}
+            className="w-full accent-primary"
+          />
+        </label>
+      </div>
 
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">
