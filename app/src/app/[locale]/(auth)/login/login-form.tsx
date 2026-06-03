@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Brain, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -121,31 +122,32 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
-              <Brain className="h-9 w-9 text-primary-foreground" />
+      <Reveal scroll={false} className="w-full max-w-md">
+        <Card className="w-full">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
+                <Brain className="h-9 w-9 text-primary-foreground" />
+              </div>
             </div>
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">{ui.heading}</CardTitle>
-            <CardDescription className="mt-2">
-              {ui.description}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button
-            variant="outline"
-            className="w-full h-12 text-base gap-3"
-            type="button"
-            disabled={oauthBusy !== null}
-            onClick={() => void runOAuth("google")}
-          >
-            <GoogleBrandIcon />
-            {oauthBusy === "google" ? ui.redirecting : ui.continueWithGoogle}
-          </Button>
+            <div>
+              <CardTitle className="text-2xl font-bold">{ui.heading}</CardTitle>
+              <CardDescription className="mt-2">
+                {ui.description}
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full h-12 text-base gap-3"
+              type="button"
+              disabled={oauthBusy !== null}
+              onClick={() => void runOAuth("google")}
+            >
+              <GoogleBrandIcon />
+              {oauthBusy === "google" ? ui.redirecting : ui.continueWithGoogle}
+            </Button>
 
           <Button
             variant="outline"
@@ -321,6 +323,7 @@ export function LoginForm() {
           </p>
         </CardContent>
       </Card>
+      </Reveal>
     </div>
   );
 }

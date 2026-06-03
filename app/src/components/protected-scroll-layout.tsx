@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Menu } from "lucide-react";
 import { AppTopbar, APP_TOPBAR_LAYOUT_HEIGHT_CLASS_PT } from "@/components/app-topbar";
+import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSmartScrollNav } from "@/hooks/use-smart-scroll-nav";
@@ -60,7 +61,9 @@ export function ProtectedScrollLayout({
               showFab && "pb-24"
             )}
           >
-            <div className="mx-auto w-full max-w-7xl">{children}</div>
+            <div className="mx-auto w-full max-w-7xl">
+              <PageTransition>{children}</PageTransition>
+            </div>
           </div>
         </>
       ) : (
@@ -80,7 +83,7 @@ export function ProtectedScrollLayout({
               PROTECTED_DESKTOP_GUTTER_X
             )}
           >
-            {children}
+            <PageTransition>{children}</PageTransition>
           </div>
         </div>
       )}

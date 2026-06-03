@@ -41,9 +41,11 @@ export function PageShell({ title, description, actions, preHeader, children }: 
 
   return (
     <div className="space-y-8 sm:space-y-10">
-      {preHeader}
-      <OSPageHeader title={displayTitle} description={description} actions={actions} />
-      {children}
+      {preHeader ? <div data-motion-reveal>{preHeader}</div> : null}
+      <div data-motion-reveal>
+        <OSPageHeader title={displayTitle} description={description} actions={actions} />
+      </div>
+      <div data-motion-reveal>{children}</div>
     </div>
   );
 }

@@ -221,6 +221,7 @@ export default function DashboardPage() {
             "relative -mt-6 mb-6 h-40 overflow-hidden rounded-b-xl sm:-mt-8 sm:h-52",
             PROTECTED_DESKTOP_GUTTER_NEG_X
           )}
+          data-motion-reveal
         >
           <Image
             src={profile.dashboard_cover_url}
@@ -235,23 +236,26 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <OSPageHeader
-        title={getGreeting(language, profile?.greeting_tone ?? "friendly", profile?.full_name)}
-        description={profile?.motto ?? undefined}
-        actions={
-          <p className="text-sm text-muted-foreground sm:text-right">
-            <span className="font-medium text-foreground/90">
-              {format(clock, "EEEE, MMMM d, yyyy", { locale })}
-            </span>
-            <span className="mx-2 text-muted-foreground/80">•</span>
-            <span className="tabular-nums">{format(clock, "HH:mm:ss")}</span>
-          </p>
-        }
-      />
+      <div data-motion-reveal>
+        <OSPageHeader
+          title={getGreeting(language, profile?.greeting_tone ?? "friendly", profile?.full_name)}
+          description={profile?.motto ?? undefined}
+          actions={
+            <p className="text-sm text-muted-foreground sm:text-right">
+              <span className="font-medium text-foreground/90">
+                {format(clock, "EEEE, MMMM d, yyyy", { locale })}
+              </span>
+              <span className="mx-2 text-muted-foreground/80">•</span>
+              <span className="tabular-nums">{format(clock, "HH:mm:ss")}</span>
+            </p>
+          }
+        />
+      </div>
 
       <section
         aria-label={copy.title}
         className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]"
+        data-motion-reveal
         data-stagger
       >
         <MotivationCard
@@ -286,7 +290,10 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)]">
+      <div
+        className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)]"
+        data-motion-reveal
+      >
         <main className="min-w-0 space-y-6">
           <TodayBlock />
 
@@ -395,7 +402,11 @@ export default function DashboardPage() {
         </aside>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]" data-stagger>
+      <div
+        className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]"
+        data-motion-reveal
+        data-stagger
+      >
         <QuoteInspirationCard focus={summaryText} className="h-full" />
 
         <DailyInspirationCard

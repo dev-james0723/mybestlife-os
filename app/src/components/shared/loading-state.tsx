@@ -41,17 +41,19 @@ export function LoadingCards({ count = 6, columns = 3 }: LoadingCardsProps) {
 
 export function LoadingPage() {
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
+    <div className="space-y-8" data-motion-reveal>
+      <div className="space-y-2" data-motion-reveal>
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-64" />
       </div>
-      <div className="flex gap-3">
+      <div className="flex gap-3" data-motion-reveal>
         <Skeleton className="h-10 w-[200px]" />
         <Skeleton className="h-10 w-[160px]" />
         <Skeleton className="h-10 w-[160px]" />
       </div>
-      <LoadingCards />
+      <div data-motion-reveal>
+        <LoadingCards />
+      </div>
     </div>
   );
 }

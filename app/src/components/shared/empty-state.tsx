@@ -50,7 +50,10 @@ export function EmptyState({
   const hasActions = Boolean(action || secondaryAction);
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div
+      className="flex flex-col items-center justify-center py-16 px-4 text-center"
+      data-motion-reveal
+    >
       <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
         <Icon className="h-8 w-8 text-muted-foreground" />
       </div>
