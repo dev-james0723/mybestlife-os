@@ -8,7 +8,7 @@ import type {
   OSBuddyAirControlStatus,
   OSBuddyAirControlStopReason,
   OSBuddyAirTouchState,
-  OSBuddyAirPilotPinchState,
+  OSBuddyAirPilotSelectState,
 } from "@/lib/os-buddy/os-buddy-air-control-types";
 import type { CalibrationData } from "@/lib/os-buddy/air-control/types";
 import type {
@@ -69,7 +69,7 @@ interface OSBuddyRuntimeState {
   airControlGesture: OSBuddyAirControlGesture | null;
   airControlTarget: OSBuddyAirControlPoint | null;
   airControlRawPoint: OSBuddyAirControlPoint | null;
-  airPilotPinchState: OSBuddyAirPilotPinchState;
+  airPilotSelectState: OSBuddyAirPilotSelectState;
   airControlLandmarks: OSBuddyAirControlLandmark[];
   airControlLastSeenAt: number | null;
   airTouchState: OSBuddyAirTouchState;
@@ -134,7 +134,7 @@ interface OSBuddyRuntimeState {
   setAirControlTarget: (point: OSBuddyAirControlPoint | null) => void;
   setAirControlGesture: (gesture: OSBuddyAirControlGesture | null) => void;
   setAirControlStatus: (status: OSBuddyAirControlStatus) => void;
-  setAirPilotPinchState: (state: OSBuddyAirPilotPinchState) => void;
+  setAirPilotSelectState: (state: OSBuddyAirPilotSelectState) => void;
   setAirControlLandmarks: (landmarks: OSBuddyAirControlLandmark[]) => void;
   markAirControlHandSeen: (seenAt?: number) => void;
   setAirTouchState: (state: OSBuddyAirTouchState) => void;
@@ -183,7 +183,7 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   airControlGesture: null,
   airControlTarget: null,
   airControlRawPoint: null,
-  airPilotPinchState: "tracking",
+  airPilotSelectState: "tracking",
   airControlLandmarks: [],
   airControlLastSeenAt: null,
   airTouchState: "inactive",
@@ -301,7 +301,7 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       airControlGesture: null,
       airControlTarget: null,
       airControlRawPoint: null,
-      airPilotPinchState: "tracking",
+      airPilotSelectState: "tracking",
       airControlLandmarks: [],
       airControlLastSeenAt: null,
       airTouchState: "tracking",
@@ -315,7 +315,7 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       airControlGesture: null,
       airControlTarget: null,
       airControlRawPoint: null,
-      airPilotPinchState: "tracking",
+      airPilotSelectState: "tracking",
       airControlLandmarks: [],
       airControlLastSeenAt: null,
       airTouchState: "inactive",
@@ -331,7 +331,7 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
 
   setAirControlStatus: (status) => set({ airControlStatus: status }),
 
-  setAirPilotPinchState: (airPilotPinchState) => set({ airPilotPinchState }),
+  setAirPilotSelectState: (airPilotSelectState) => set({ airPilotSelectState }),
 
   setAirControlLandmarks: (landmarks) =>
     set({

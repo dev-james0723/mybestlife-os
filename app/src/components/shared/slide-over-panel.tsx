@@ -9,6 +9,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { osSheetSurfaceClassName } from "@/components/ui/os-glass";
 import { cn } from "@/lib/utils";
 
 interface SlideOverPanelProps {
@@ -42,8 +43,14 @@ export function SlideOverPanel({
 }: SlideOverPanelProps) {
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <SheetContent className={cn("flex flex-col p-0", widthClasses[width])}>
-        <SheetHeader className="shrink-0 border-b border-border px-6 pt-6 pb-4">
+      <SheetContent
+        className={cn(
+          osSheetSurfaceClassName,
+          "flex flex-col gap-0 p-0",
+          widthClasses[width],
+        )}
+      >
+        <SheetHeader className="shrink-0 border-b border-slate-200/70 px-4 pb-4 pt-5 sm:px-6 dark:border-white/10">
           <div className="flex items-start justify-between">
             <div className="min-w-0 flex-1">
               <SheetTitle>{title}</SheetTitle>
@@ -57,10 +64,10 @@ export function SlideOverPanel({
           </div>
         </SheetHeader>
         <ScrollArea className="flex-1">
-          <div className="px-6 py-4">{children}</div>
+          <div className="px-4 py-4 sm:px-6">{children}</div>
         </ScrollArea>
         {footer && (
-          <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-4">
+          <div className="shrink-0 border-t border-slate-200/70 bg-white/72 px-4 py-4 sm:px-6 dark:border-white/10 dark:bg-white/[0.035]">
             {footer}
           </div>
         )}

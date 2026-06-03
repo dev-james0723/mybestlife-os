@@ -26,10 +26,15 @@ import {
   type ReactNode,
 } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Plus, RefreshCw, Sparkles, PenLine } from "lucide-react";
+import { Plus, RefreshCw, SearchX, Sparkles, PenLine } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { Button } from "@/components/ui/button";
+import {
+  OSActionRow,
+  OSControl,
+  OSEmptyState,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
 import { RelationshipEmptyState } from "@/components/relationship/empty-states";
@@ -225,20 +230,20 @@ export function RelationshipsView({
   // ---- Render ----
   // Three-action hub navigation (spec §3): AI capture is primary.
   const hubActions = (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button onClick={() => setWizardOpen(true)} size="sm">
+    <OSActionRow>
+      <OSPrimaryAction onClick={() => setWizardOpen(true)}>
         <Sparkles className="mr-1.5 h-3.5 w-3.5" />
         {copy.hubAddWithAi}
-      </Button>
-      <Button onClick={() => openLoggerFor(null)} size="sm" variant="outline">
+      </OSPrimaryAction>
+      <OSControl onClick={() => openLoggerFor(null)}>
         <PenLine className="mr-1.5 h-3.5 w-3.5" />
         {copy.hubLogInteraction}
-      </Button>
-      <Button onClick={openCreate} size="sm" variant="ghost">
+      </OSControl>
+      <OSControl onClick={openCreate} variant="ghost">
         <Plus className="mr-1.5 h-3.5 w-3.5" />
         {copy.hubAddManually}
-      </Button>
-    </div>
+      </OSControl>
+    </OSActionRow>
   );
 
   let body: ReactNode;
@@ -385,7 +390,7 @@ export function RelationshipsView({
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">{copy.hubIntro}</p>
-          <div className="flex justify-end">{hubActions}</div>
+          <div className="flex justify-start sm:justify-end">{hubActions}</div>
         </div>
         {inner}
       </div>
@@ -417,16 +422,17 @@ function ErrorPanel({
   onRetry: () => void;
 }) {
   return (
-    <div
+    <OSEmptyState
       role="alert"
-      className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center"
-    >
-      <p className="text-sm text-destructive">{message}</p>
-      <Button size="sm" variant="outline" onClick={onRetry}>
-        <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-        {retryLabel}
-      </Button>
-    </div>
+      icon={RefreshCw}
+      title={message}
+      action={
+        <OSControl onClick={onRetry}>
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+          {retryLabel}
+        </OSControl>
+      }
+    />
   );
 }
 
@@ -442,14 +448,15 @@ function NoResultsPanel({
   onClear: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-card/40 px-6 py-12 text-center">
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      <Button size="sm" variant="ghost" onClick={onClear}>
-        {clearLabel}
-      </Button>
-    </div>
+    <OSEmptyState
+      icon={SearchX}
+      title={title}
+      description={description}
+      action={
+        <OSControl variant="ghost" onClick={onClear}>
+          {clearLabel}
+        </OSControl>
+      }
+    />
   );
 }

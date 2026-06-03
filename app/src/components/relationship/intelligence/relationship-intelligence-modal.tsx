@@ -43,14 +43,18 @@ import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSDialogSurface,
+  OSIconControl,
+} from "@/components/ui/os-primitives";
+import { osDialogSurfaceClassName } from "@/components/ui/os-glass";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,6 +70,7 @@ import { RelationshipPromiseKeeper } from "@/components/relationship/intelligenc
 import { RelationshipContextHealth } from "@/components/relationship/intelligence/relationship-context-health";
 import { RelationshipSharedMemories } from "@/components/relationship/intelligence/relationship-shared-memories";
 import { RelationshipMessageDraftPanel } from "@/components/relationship/intelligence/relationship-message-draft-panel";
+import { relationshipDialogHeaderClassName } from "@/components/relationship/relationship-os";
 import { useAppStore } from "@/stores/app-store";
 import {
   formatRelationshipCopy,
@@ -157,10 +162,10 @@ export function RelationshipIntelligenceModal({
   if (!relationship) {
     return (
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent size="2xl">
+        <OSDialogSurface size="2xl">
           <DialogTitle className="sr-only">—</DialogTitle>
           <div />
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
     );
   }
@@ -240,11 +245,11 @@ export function RelationshipIntelligenceModal({
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent
+        <OSDialogSurface
           size="5xl"
-          className="flex max-h-[92vh] flex-col gap-0 p-0"
+          className="flex max-h-[90dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0"
         >
-          <DialogHeader className="border-b border-border px-6 py-4">
+          <DialogHeader className={relationshipDialogHeaderClassName}>
             <DialogTitle className="sr-only">{r.person_name}</DialogTitle>
             {/* Hero */}
             <div className="flex items-start gap-4">
@@ -292,22 +297,28 @@ export function RelationshipIntelligenceModal({
                     { name: r.person_name },
                   )}
                 />
-                <Button size="sm" variant="outline" onClick={onLogInteraction}>
+                <OSIconControl
+                  onClick={onLogInteraction}
+                  className="sm:hidden"
+                  aria-label={copy.hubLogInteraction}
+                >
+                  <PenLine className="h-3.5 w-3.5" />
+                </OSIconControl>
+                <OSControl onClick={onLogInteraction} className="hidden sm:inline-flex">
                   <PenLine className="mr-1.5 h-3.5 w-3.5" />
                   {copy.hubLogInteraction}
-                </Button>
-                <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={copy.relDetailEdit}>
+                </OSControl>
+                <OSIconControl variant="ghost" onClick={onEdit} aria-label={copy.relDetailEdit}>
                   <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  size="icon-sm"
+                </OSIconControl>
+                <OSIconControl
                   variant="ghost"
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => setConfirmingDelete(true)}
                   aria-label={copy.relDetailDelete}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                </OSIconControl>
               </div>
             </div>
           </DialogHeader>
@@ -412,7 +423,7 @@ export function RelationshipIntelligenceModal({
                     <Sparkles className="h-4 w-4" aria-hidden />
                     AI
                   </h3>
-                  <Button size="sm" variant="outline" onClick={generateInsight} disabled={generating}>
+                  <OSControl onClick={generateInsight} disabled={generating}>
                     {generating ? (
                       <>
                         <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -424,7 +435,7 @@ export function RelationshipIntelligenceModal({
                         {report ? copy.modalRefreshInsight : copy.modalGenerateInsight}
                       </>
                     )}
-                  </Button>
+                  </OSControl>
                 </div>
 
                 <AnimatePresence mode="wait" initial={false}>
@@ -555,11 +566,11 @@ export function RelationshipIntelligenceModal({
               </div>
             </div>
           </ScrollArea>
-        </DialogContent>
+        </OSDialogSurface>
       </Dialog>
 
       <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-        <AlertDialogContent>
+        <AlertDialogContent className={osDialogSurfaceClassName}>
           <AlertDialogHeader>
             <AlertDialogTitle>{copy.relDetailDeleteConfirmTitle}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -569,13 +580,15 @@ export function RelationshipIntelligenceModal({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{copy.cancel}</AlertDialogCancel>
+            <AlertDialogCancel className="min-h-11 rounded-xl">
+              {copy.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setConfirmingDelete(false);
                 onDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="min-h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {copy.relDetailDelete}
             </AlertDialogAction>

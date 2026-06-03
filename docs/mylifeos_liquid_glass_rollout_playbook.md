@@ -30,6 +30,29 @@ can_exit =
   && final_commit_pushed
 ```
 
+### Pursue Goal Exit Contract
+
+Use this as the stop line for Pursue Goal mode:
+
+| Gate | Exit requirement | Proof |
+| --- | --- | --- |
+| Inventory | Every protected route or route family is listed. | Inventory table has no missing known protected routes. |
+| Status | `Pending = 0`, `Partial = 0`, and `Known regressions = 0`. | Inventory rows are only `Reference`, `Verified`, or reasoned `Deferred`. |
+| System | Shared OS primitives are the default for chrome, controls, surfaces, hidden layers, states, and motion. | Page-local one-off styling is removed, aliased, or documented. |
+| Page evidence | Every non-deferred page has runtime evidence, including hidden states. | Evidence log entry exists with viewports, interactions, screenshots/notes, and remaining issues. |
+| Responsive quality | Mobile, tablet, desktop, and wide desktop are checked. | No unresolved wrapping, clipping, overflow, safe-area, or floating-control collisions. |
+| Accessibility | Keyboard, focus-visible, reduced motion, tap target, contrast, and ARIA behavior are preserved where touched. | Audit notes or automated/focused checks document the result. |
+| Product safety | No unapproved business logic, API, routing, auth, form, mutation, or state-management changes. | Diff review and validation notes confirm behavior scope. |
+| Validation | Required commands pass or failures are documented as unrelated/pre-existing. | TypeScript, lint, relevant tests, runtime audits, and `git diff --check` results are recorded. |
+| Delivery | Final changes are committed and pushed. | Final commit hash and pushed branch are recorded. |
+
+Exit answer:
+
+- `YES`: all gates above are green.
+- `NO`: any gate is red or unknown.
+
+Unknown counts as `NO`. A page that is visually improved but lacks runtime/hidden-state evidence remains `Partial`.
+
 ### Exit Gate Checklist
 
 Pursue Goal mode should stop only after this checklist is fully green:
@@ -166,9 +189,9 @@ Status values:
 | 1 | Dashboard | Verified | Header, motivation refresh, Today controls, Signals widget, grateful slots, quote/video inspiration controls, shared checkbox target, and floating AI action passed runtime and route-specific checks. |
 | 1 | Daily Planner | Verified | Header actions, date controls, sync action, planning-mode toggle, time pickers, task/import/quick-task dialogs, quick-task block picker, visual schedule menu, Free Plan mode, passive AirPilot overlay lane, and shared shell checks passed runtime and route-specific verification. |
 | 1 | Tasks | Partial | Low-data shell, loading state, Insights sheet, create menu/dialog, create tabs/forms, advanced filters, saved filters, quick selects, and view switcher passed runtime and focused checks; seeded task data is still needed for task detail, inline edit, bulk selection, drag/drop, ritual, and destructive confirmation verification. |
-| 2 | Goals | Partial | Parent create action and standard goal dialog controls use OS primitives; filters, cards, progress surfaces, and modal/sheet audit remain. |
+| 2 | Goals | Partial | Loading shell, filter bar, empty state, create dialog shell, and status/date/key-result form controls passed runtime/focused checks; seeded authenticated goal data is still needed for populated cards, detail/edit modal, entity-card focus semantics with data, key-result updates, linked quotes/tasks, and delete confirmation. |
 | 2 | Bucket List Map | Verified | Shares Bucket List OS tokens; reachable low-data map state, status rail, back control, zoom controls, and add-travel sheet passed runtime and route-specific checks. |
-| 2 | Relationship | Partial | Container sub-tabs use `OSSegmentedControl`; relationship cards, forms, AI sheets, and hidden layers still need audit. |
+| 2 | Relationship | Partial | Relationship-tab entry actions, filter favorites/clear controls, empty/no-results/error states, manual form, AI creation wizard, quick logger, favorite star, shared dialog close target, and Role Model low-data/create-sheet flow now use OS primitives/tokens and passed runtime/focused checks; populated role-model cards/intelligence/edit/delete, populated relationship detail/edit/delete, and seeded data flows still need verification. |
 | 2 | Relationships | Deferred | Legacy redirect to `/relationship?tab=relationship`; UI is covered by the Relationship hub rollout. |
 | 2 | Quote Library | Verified | Library tabs, search/filter controls, settings popover, seed-clear confirmation, Add quote sheet/form, empty CTA, and dev-bypass quote API behavior passed runtime and route-specific checks. |
 | 2 | Knowledge Base + Oracle route | Partial | Covers `/knowledge-base` and `/knowledge-base/[itemId]/oracle`; page actions, top view switcher, AI ask action, type trigger, and quick filters use OS controls; sidebar, add modal, detail sheet, document chat dialogs, oracle route, and constellation controls still need audit. |
@@ -357,6 +380,34 @@ Every page must be marked as `Reference`, `Verified`, or `Deferred` with a reaso
 - Validation commands: `npm run audit:liquid-glass -- --routes=/en/tasks --timeout-ms=360000`; Playwright Tasks focused interaction check for `390`, `1280`, and `390` reduced motion; focused Advanced Filters close timing check at `1280`; targeted `npx eslint --max-warnings=0 ...`; `npx tsc --noEmit --pretty false`; `git diff --check`
 - Result: runtime audit 8 checks, 0 fail, 0 warn; focused interaction check passed with no page errors, no HTTP errors, and no horizontal overflow; Advanced Filters close verified after the exit transition at `1280`; targeted lint, TypeScript, and whitespace checks passed.
 - Remaining blocker before `Verified`: dev-bypass data currently has no task records, so populated task card/detail panel, inline table edit, bulk selection, board drag/drop, pre-task ritual, subtask controls, goal/plan connections, and delete confirmation still need a seeded non-production task-data pass.
+
+### 2026-06-03 - Goals Partial Evidence
+
+- Route: `/en/goals`
+- Final status: `Partial`
+- Route files changed: `app/src/app/[locale]/(protected)/goals/page.tsx`
+- Viewports checked: `320`, `390`, `430`, `768`, `1024`, `1280`, `1440`, plus `390` with `prefers-reduced-motion`; focused Playwright checks at `390`, `1280`, and `390` reduced motion.
+- Hidden/common shell states checked: shared runtime audit exercised common shell interactions where detected; focused check verified the global Quick Capture hit target is not obstructed by Goals.
+- Page-specific interaction checked: PageShell loading state keeps the `Goals` H1 and disabled action; shared filter bar search and status select are `44px` controls and do not overflow; empty/no-results state is readable; New Goal opens the OS dialog shell; create form accepts name/description; status select opens and changes; date picker opens and selects a date; key-result add flow exposes title, target, and unit fields; Create Goal becomes enabled when the required name is present; Escape/Cancel closes without submitting.
+- Page-specific hidden states: Create Goal dialog shell, status select listbox, date picker popover, key-result draft row, empty/no-goals state. Create submit, populated goal detail modal, edit mode, key-result update/delete, linked quotes/tasks panels with data, and destructive delete confirmation were not executed.
+- Screenshots: `app/.next/liquid-glass-audit/en-goals-*.png`; focused screenshots: `app/.next/liquid-glass-audit/goals-focused-mobile-390.png`, `app/.next/liquid-glass-audit/goals-focused-desktop-1280.png`, `app/.next/liquid-glass-audit/goals-focused-mobile-390-reduce.png`
+- Validation commands: `npm run audit:liquid-glass -- --routes=/en/goals --timeout-ms=360000`; Playwright Goals focused interaction check for `390`, `1280`, and `390` reduced motion; targeted `npx eslint --max-warnings=0 ...`; `npx tsc --noEmit --pretty false`; `git diff --check`
+- Result: runtime audit 8 checks, 0 fail, 3 common-shell warnings for undetected Quick Capture/topbar-search/clock layers on selected passes; focused route-specific checks passed with no Goals page errors, no horizontal overflow, and no compact route-owned controls. A global Open-Meteo CORS console error appeared during one reduced-motion run and was filtered as unrelated weather-shell noise. Targeted lint, TypeScript, and whitespace checks passed.
+- Remaining blocker before `Verified`: dev-bypass data currently has no goal records and goal creation requires a real Supabase user, so populated goal cards, detail/edit modal, key-result mutation paths, linked quotes/tasks panels with data, and delete confirmation still need a seeded non-production goal-data pass. The common-shell layer-detector warnings should be rechecked in the next shared-shell audit.
+
+### 2026-06-03 - Relationship Partial Evidence
+
+- Route: `/en/relationship`
+- Final status: `Partial`
+- Route/shared files changed: `app/src/components/ui/dialog.tsx`, `app/src/components/ui/sheet.tsx`, `app/src/components/shared/filter-bar.tsx`, `app/src/components/shared/slide-over-panel.tsx`, `app/src/components/relationship/relationship-os.ts`, `app/src/components/relationship/views/relationships-view.tsx`, `app/src/components/relationship/views/role-models-view.tsx`, `app/src/components/relationship/filters/relationship-filter-bar.tsx`, `app/src/components/relationship/empty-states.tsx`, `app/src/components/relationship/forms/relationship-form-modal.tsx`, `app/src/components/relationship/forms/relationship-form.tsx`, `app/src/components/relationship/forms/relationship-tag-input.tsx`, `app/src/components/relationship/ai/ai-relationship-creation-wizard.tsx`, `app/src/components/relationship/ai/quick-interaction-logger.tsx`, `app/src/components/relationship/intelligence/relationship-intelligence-modal.tsx`, `app/src/components/relationship/cards/relationship-favorite-star.tsx`, `app/src/components/relationship/role-model-card.tsx`, `app/src/components/relationship/role-model-editors.tsx`, `app/src/components/relationship/role-model-form.tsx`, `app/src/components/relationship/role-models/role-model-intelligence-modal.tsx`, `app/src/components/relationship/role-models/role-model-pattern-banner.tsx`, `app/src/hooks/use-role-model-neural-skills.ts`, `app/src/hooks/use-role-model-talk.ts`, `app/src/stores/os-buddy-store.ts`, `app/src/lib/i18n/relationship-ui.ts`
+- Viewports checked: runtime audit at `320`, `390`, `430`, `768`, `1024`, `1280`, `1440`, plus `390` with `prefers-reduced-motion`; focused hidden-state checks at `390`, `1280`, and `390` reduced motion.
+- Hidden/common shell states checked: shared runtime audit opened Quick Capture, topbar command palette, theme toggle, clock tools, and desktop utility menu where applicable; Escape close passed for detected layers.
+- Page-specific interactions checked: relationship tab visible action row; Add with AI dialog opens, accepts note text, and closes without submit; Log Interaction dialog opens, accepts note text, and closes without submit; Add Manually dialog opens, required name fills, and closes without submit; Role Model empty state keeps the CTA clear of floating controls, sort label renders as `Recently added` instead of `created_at`, sort listbox opens, grid/list controls switch, Add role model opens the slide-over, required name fills, dirty Cancel opens discard confirmation, Keep editing restores the form, Discard closes without submitting, and role-owned tap targets are at least `44px` in visible/form/confirmation states.
+- Page-specific hidden states checked: relationship empty state, AI creation wizard input phase, quick interaction logger input phase, manual relationship form shell/fields/tags/favorite control, Role Model low-data empty state, Role Model create slide-over with AI hero/photo upload tabs/form footer, dirty-discard confirmation, no-results/error shell styling by code path, and shared dialog close target. Populated relationship card grid, populated role-model card grid/list, detail intelligence modal with real data, edit mode from detail, delete confirmation execution, promise keeper mutations, shared memories, and message draft generation were not fully data-verified.
+- Screenshots: `app/.next/liquid-glass-audit/en-relationship-*.png`, `app/.next/liquid-glass-audit/en-relationship-tab-role-model-*.png`, `app/.next/liquid-glass-audit/role-model-focused-mobile-390-empty.png`, `app/.next/liquid-glass-audit/role-model-focused-mobile-390-sheet.png`, `app/.next/liquid-glass-audit/role-model-focused-desktop-1280-empty.png`, `app/.next/liquid-glass-audit/role-model-focused-desktop-1280-sheet.png`, `app/.next/liquid-glass-audit/role-model-focused-mobile-390-reduce-empty.png`, `app/.next/liquid-glass-audit/role-model-focused-mobile-390-reduce-sheet.png`
+- Validation commands: `npm run audit:liquid-glass -- --routes=/en/relationship --timeout-ms=360000`; `npm run audit:liquid-glass -- --routes='/en/relationship?tab=role-model' --timeout-ms=360000`; focused Playwright checks for route-owned touch targets, sort label/listbox, grid/list switch, create slide-over, dirty-discard confirmation, no floating-control overlap, and reduced-motion state across `390`, `1280`, and `390` reduced motion; targeted `npx eslint --max-warnings=0 ...`; `npx tsc --noEmit --pretty false`; `git diff --check`
+- Result: relationship-tab runtime audit 8 checks, 0 fail, 8 warn from the pre-existing `relationship_promises` 404; focused relationship checks passed with no small route-owned targets. Role Model final runtime audit 8 checks, 0 fail, 0 warn after gating closed-state neural-skill queries; focused Role Model check passed with no page errors, no HTTP errors, no horizontal overflow, no route-owned small targets, no floating-control overlap, and 44px photo upload tabs. Targeted lint, TypeScript, and `git diff --check` passed.
+- Remaining blocker before `Verified`: populated relationship and role-model seeded-data flows still need a dedicated non-production data pass, including populated card/list layouts, detail intelligence modal with real records, edit mode from detail, delete confirmations, promise keeper mutations, shared memories, message draft generation, and Role Model talk/generate neural-skill behavior when the optional `role_model_neural_skills` table exists.
 
 ## Per-Page Migration Checklist
 

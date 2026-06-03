@@ -83,8 +83,8 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-[max(0.5rem,env(safe-area-inset-top,0px))] right-[max(0.5rem,env(safe-area-inset-right,0px))]"
-                size="icon-sm"
+                className="absolute top-[max(0.5rem,env(safe-area-inset-top,0px))] right-[max(0.5rem,env(safe-area-inset-right,0px))] !size-12 rounded-xl"
+                size="icon"
               />
             }
           >

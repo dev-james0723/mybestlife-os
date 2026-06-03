@@ -41,10 +41,10 @@ function copy(locale: AppLocale) {
       ? "讓 OS Buddy 在你空閒時偶爾移動。"
       : "Let OS Buddy move around occasionally while you are idle.",
     airPilot: "AirPilot",
-    airPilotWake: zh ? "OK 手勢喚醒 AirPilot" : "Wake AirPilot with OK gesture",
-    airPilotWakeDescription: zh
-      ? "授權後，OS Buddy 會在本機低頻追蹤手部關鍵點；做 OK 手勢即可開始控制頁面。"
-      : "After permission, OS Buddy listens locally at low frequency; make an OK gesture to control the page.",
+    airPilotHud: zh ? "預設顯示 AirPilot HUD" : "Show AirPilot HUD by default",
+    airPilotHudDescription: zh
+      ? "AirPilot 只會由四下點擊 OS Buddy 開啟；HUD 可在控制面板或左上角預覽中隱藏。"
+      : "AirPilot only starts from a quadruple tap on OS Buddy; hide the HUD from the control panel or top-left preview.",
     movementLevel: zh ? "活動頻率" : "Movement level",
     intensity: {
       subtle: zh ? "低調" : "Subtle",
@@ -130,14 +130,14 @@ export function OSBuddyBehaviorSettings({
 
       <label className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border p-3">
         <div className="min-w-0 space-y-1">
-          <p className="font-medium">{ui.airPilotWake}</p>
-          <p className="text-sm text-muted-foreground">{ui.airPilotWakeDescription}</p>
+          <p className="font-medium">{ui.airPilotHud}</p>
+          <p className="text-sm text-muted-foreground">{ui.airPilotHudDescription}</p>
         </div>
         <Checkbox
-          checked={airPilotDraft.wakeEnabled}
+          checked={!airPilotDraft.hudHidden}
           onCheckedChange={(checked) => {
             if (typeof checked === "boolean") {
-              setAirPilotDraft((current) => ({ ...current, wakeEnabled: checked }));
+              setAirPilotDraft((current) => ({ ...current, hudHidden: !checked }));
             }
           }}
         />

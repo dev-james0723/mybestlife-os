@@ -19,14 +19,13 @@ import { toast } from "sonner";
 import { PenLine, Sparkles } from "lucide-react";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OSControl, OSDialogSurface, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -41,6 +40,13 @@ import {
   useCreateRelationshipInteraction,
   useCreateRelationshipPromise,
 } from "@/hooks/use-relationship-intelligence";
+import {
+  relationshipDialogBodyClassName,
+  relationshipDialogFooterClassName,
+  relationshipDialogHeaderClassName,
+  relationshipSelectTriggerClassName,
+  relationshipTextAreaClassName,
+} from "@/components/relationship/relationship-os";
 import { requestLogInteraction } from "@/lib/relationships/insight-api";
 import type {
   InteractionExtraction,
@@ -193,8 +199,11 @@ export function QuickInteractionLogger({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
-      <DialogContent size="2xl" className="flex max-h-[90vh] flex-col gap-0 p-0">
-        <DialogHeader className="border-b border-border px-6 py-4">
+      <OSDialogSurface
+        size="2xl"
+        className="flex max-h-[88dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0"
+      >
+        <DialogHeader className={relationshipDialogHeaderClassName}>
           <DialogTitle className="flex items-center gap-2">
             <PenLine className="h-4 w-4 text-primary" />
             {copy.loggerTitle}
@@ -202,7 +211,7 @@ export function QuickInteractionLogger({
         </DialogHeader>
 
         <ScrollArea className="flex-1">
-          <div className="px-6 py-5">
+          <div className={relationshipDialogBodyClassName}>
             <AnimatePresence mode="wait" initial={false}>
               {phase === "input" && (
                 <motion.div
@@ -221,7 +230,7 @@ export function QuickInteractionLogger({
                         value={selectedId ?? ""}
                         onValueChange={(v) => setSelectedId(v)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={relationshipSelectTriggerClassName}>
                           <SelectValue placeholder={copy.loggerSelectPerson} />
                         </SelectTrigger>
                         <SelectContent>
@@ -236,6 +245,7 @@ export function QuickInteractionLogger({
                   )}
 
                   <Textarea
+                    className={relationshipTextAreaClassName}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={copy.loggerNotePlaceholder}
@@ -243,17 +253,17 @@ export function QuickInteractionLogger({
                     autoFocus
                   />
 
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={close}>
+                  <div className={relationshipDialogFooterClassName}>
+                    <OSControl variant="ghost" onClick={close}>
                       {copy.cancel}
-                    </Button>
-                    <Button
+                    </OSControl>
+                    <OSPrimaryAction
                       onClick={runExtraction}
                       disabled={!selected || note.trim().length === 0}
                     >
                       <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                       {copy.loggerExtract}
-                    </Button>
+                    </OSPrimaryAction>
                   </div>
                 </motion.div>
               )}
@@ -298,7 +308,7 @@ export function QuickInteractionLogger({
                   )}
 
                   {extraction.commitments.length > 0 && (
-                    <label className="flex items-start gap-2 rounded-md border border-border bg-card/40 px-3 py-2.5 text-sm">
+                    <label className="flex items-start gap-2 rounded-xl border border-slate-200/75 bg-white/72 px-3 py-2.5 text-sm dark:border-white/8 dark:bg-white/[0.035]">
                       <Checkbox
                         checked={createPromises}
                         onCheckedChange={(c) => setCreatePromises(Boolean(c))}
@@ -325,18 +335,18 @@ export function QuickInteractionLogger({
                     </ul>
                   )}
 
-                  <div className="flex justify-between gap-2 pt-2">
-                    <Button variant="ghost" onClick={() => setPhase("input")}>
+                  <div className={relationshipDialogFooterClassName}>
+                    <OSControl variant="ghost" onClick={() => setPhase("input")}>
                       {copy.wizardBack}
-                    </Button>
-                    <Button onClick={handleApply}>{copy.loggerApply}</Button>
+                    </OSControl>
+                    <OSPrimaryAction onClick={handleApply}>{copy.loggerApply}</OSPrimaryAction>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </ScrollArea>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }
@@ -352,8 +362,10 @@ function DiffRow({
 }) {
   return (
     <label
-      className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
-        accepted ? "border-primary/30 bg-primary/5" : "border-border bg-card/40"
+      className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm transition-[background,border-color,transform] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] active:translate-y-px motion-reduce:transition-none ${
+        accepted
+          ? "border-lime-300/45 bg-lime-300/10"
+          : "border-slate-200/75 bg-white/72 dark:border-white/8 dark:bg-white/[0.035]"
       }`}
     >
       <Checkbox

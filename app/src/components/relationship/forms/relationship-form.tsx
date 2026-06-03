@@ -29,11 +29,11 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -52,6 +52,13 @@ import {
 } from "@/components/relationship/utils/relationship-display";
 import { RelationshipPhotoPicker } from "@/components/relationship/forms/relationship-photo-picker";
 import { RelationshipTagInput } from "@/components/relationship/forms/relationship-tag-input";
+import {
+  relationshipDialogFooterClassName,
+  relationshipFieldClassName,
+  relationshipInnerPanelClassName,
+  relationshipSelectTriggerClassName,
+  relationshipTextAreaClassName,
+} from "@/components/relationship/relationship-os";
 import {
   DEFAULT_RELATIONSHIP_CATEGORY,
   DEFAULT_RELATIONSHIP_STRENGTH,
@@ -228,6 +235,7 @@ export function RelationshipForm({
         <Field id="rel-name" label={`${copy.relFieldName} *`}>
           <Input
             id="rel-name"
+            className={relationshipFieldClassName}
             value={personName}
             onChange={(e) => setPersonName(e.target.value)}
             placeholder={copy.relFieldNamePlaceholder}
@@ -242,7 +250,10 @@ export function RelationshipForm({
               value={category}
               onValueChange={(v) => setCategory(v as RelationshipCategory)}
             >
-              <SelectTrigger id="rel-category">
+              <SelectTrigger
+                id="rel-category"
+                className={relationshipSelectTriggerClassName}
+              >
                 <SelectValue placeholder={copy.relFieldCategoryPlaceholder} />
               </SelectTrigger>
               <SelectContent>
@@ -260,7 +271,10 @@ export function RelationshipForm({
               value={strength}
               onValueChange={(v) => setStrength(v as RelationshipStrength)}
             >
-              <SelectTrigger id="rel-strength">
+              <SelectTrigger
+                id="rel-strength"
+                className={relationshipSelectTriggerClassName}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -282,6 +296,7 @@ export function RelationshipForm({
             <Input
               id="rel-email"
               type="email"
+              className={relationshipFieldClassName}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={copy.relFieldEmailPlaceholder}
@@ -291,6 +306,7 @@ export function RelationshipForm({
             <Input
               id="rel-phone"
               type="tel"
+              className={relationshipFieldClassName}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={copy.relFieldPhonePlaceholder}
@@ -305,6 +321,7 @@ export function RelationshipForm({
           <DatePickerInput
             value={lastContactDate}
             onChange={setLastContactDate}
+            className={relationshipSelectTriggerClassName}
           />
         </Field>
         <Field
@@ -313,6 +330,7 @@ export function RelationshipForm({
         >
           <Textarea
             id="rel-last-notes"
+            className={relationshipTextAreaClassName}
             value={lastInteractionNotes}
             onChange={(e) => setLastInteractionNotes(e.target.value)}
             placeholder={copy.relFieldLastInteractionPlaceholder}
@@ -322,6 +340,7 @@ export function RelationshipForm({
         <Field id="rel-next-action" label={copy.relFieldNextAction}>
           <Textarea
             id="rel-next-action"
+            className={relationshipTextAreaClassName}
             value={nextAction}
             onChange={(e) => setNextAction(e.target.value)}
             placeholder={copy.relFieldNextActionPlaceholder}
@@ -335,6 +354,7 @@ export function RelationshipForm({
           <DatePickerInput
             value={nextActionDate}
             onChange={setNextActionDate}
+            className={relationshipSelectTriggerClassName}
           />
         </Field>
       </Section>
@@ -344,6 +364,7 @@ export function RelationshipForm({
         <Field id="rel-commitments" label={copy.relFieldCommitments}>
           <Textarea
             id="rel-commitments"
+            className={relationshipTextAreaClassName}
             value={commitments}
             onChange={(e) => setCommitments(e.target.value)}
             placeholder={copy.relFieldCommitmentsPlaceholder}
@@ -353,6 +374,7 @@ export function RelationshipForm({
         <Field id="rel-preferences" label={copy.relFieldPreferences}>
           <Textarea
             id="rel-preferences"
+            className={relationshipTextAreaClassName}
             value={preferences}
             onChange={(e) => setPreferences(e.target.value)}
             placeholder={copy.relFieldPreferencesPlaceholder}
@@ -362,6 +384,7 @@ export function RelationshipForm({
         <Field id="rel-general-notes" label={copy.relFieldGeneralNotes}>
           <Textarea
             id="rel-general-notes"
+            className={relationshipTextAreaClassName}
             value={generalNotes}
             onChange={(e) => setGeneralNotes(e.target.value)}
             placeholder={copy.relFieldGeneralNotesPlaceholder}
@@ -387,7 +410,10 @@ export function RelationshipForm({
               setLinkedProjectId(v === NO_PROJECT_VALUE ? null : v)
             }
           >
-            <SelectTrigger id="rel-project">
+            <SelectTrigger
+              id="rel-project"
+              className={relationshipSelectTriggerClassName}
+            >
               <SelectValue placeholder={copy.relFieldLinkedProjectPlaceholder} />
             </SelectTrigger>
             <SelectContent>
@@ -407,6 +433,7 @@ export function RelationshipForm({
             id="rel-favorite"
             checked={isFavorite}
             onCheckedChange={(v) => setIsFavorite(v === true)}
+            className="!size-12"
           />
           <Label htmlFor="rel-favorite" className="cursor-pointer text-sm font-normal">
             {copy.relFieldFavorite}
@@ -415,13 +442,13 @@ export function RelationshipForm({
       </Section>
 
       {/* ---- Footer ---- */}
-      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+      <div className={relationshipDialogFooterClassName}>
+        <OSControl type="button" variant="ghost" onClick={onCancel}>
           {copy.cancel}
-        </Button>
-        <Button type="submit" disabled={isSubmitting || personName.trim().length === 0}>
+        </OSControl>
+        <OSPrimaryAction type="submit" disabled={isSubmitting || personName.trim().length === 0}>
           {isSubmitting ? copy.saving : copy.relSaveRelationship}
-        </Button>
+        </OSPrimaryAction>
       </div>
     </form>
   );
@@ -439,7 +466,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3">
+    <section className={relationshipInnerPanelClassName}>
       <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h3>

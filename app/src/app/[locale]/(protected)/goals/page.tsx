@@ -141,85 +141,85 @@ function KeyResultsFormSection({
 }) {
   return (
     <OSSolidPanel className="space-y-4 p-4">
-        <div className="flex items-center justify-between">
-          <Label className="text-base font-medium">Key Results</Label>
-          <OSControl type="button" onClick={onAdd}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add
-          </OSControl>
-        </div>
-        {drafts.length === 0 && (
-          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-        )}
-        <div className="space-y-3">
-          {drafts.map((kr) => (
-            <div
-              key={kr._tempId}
-              className="space-y-3 rounded-xl border border-slate-200/70 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:bg-white/[0.04]"
-            >
-              <div className="flex items-start gap-2">
-                <Input
-                  className={cn("flex-1", goalInputClassName)}
-                  value={kr.name}
-                  onChange={(e) => onUpdate(kr._tempId, "name", e.target.value)}
-                  placeholder="Key result title"
-                />
-                <OSIconControl
-                  type="button"
-                  onClick={() => onRemove(kr._tempId)}
-                >
-                  <X className="h-4 w-4" />
-                </OSIconControl>
-              </div>
-              <div
-                className={cn(
-                  "grid gap-3",
-                  kr.id
-                    ? "grid-cols-1 sm:grid-cols-3"
-                    : "grid-cols-1 sm:grid-cols-2"
-                )}
+      <div className="flex items-center justify-between">
+        <Label className="text-base font-medium">Key Results</Label>
+        <OSControl type="button" onClick={onAdd}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add
+        </OSControl>
+      </div>
+      {drafts.length === 0 && (
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      )}
+      <div className="space-y-3">
+        {drafts.map((kr) => (
+          <div
+            key={kr._tempId}
+            className="space-y-3 rounded-xl border border-slate-200/70 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:bg-white/[0.04]"
+          >
+            <div className="flex items-start gap-2">
+              <Input
+                className={cn("flex-1", goalInputClassName)}
+                value={kr.name}
+                onChange={(e) => onUpdate(kr._tempId, "name", e.target.value)}
+                placeholder="Key result title"
+              />
+              <OSIconControl
+                type="button"
+                onClick={() => onRemove(kr._tempId)}
               >
-                {kr.id && (
-                  <div className="space-y-1">
-                    <Label className="text-xs">Current Value</Label>
-                    <Input
-                      className={goalInputClassName}
-                      type="number"
-                      value={kr.current_value}
-                      onChange={(e) =>
-                        onUpdate(kr._tempId, "current_value", e.target.value)
-                      }
-                    />
-                  </div>
-                )}
+                <X className="h-4 w-4" />
+              </OSIconControl>
+            </div>
+            <div
+              className={cn(
+                "grid gap-3",
+                kr.id
+                  ? "grid-cols-1 sm:grid-cols-3"
+                  : "grid-cols-1 sm:grid-cols-2"
+              )}
+            >
+              {kr.id && (
                 <div className="space-y-1">
-                  <Label className="text-xs">Target Value</Label>
+                  <Label className="text-xs">Current Value</Label>
                   <Input
                     className={goalInputClassName}
                     type="number"
-                    value={kr.target_value}
+                    value={kr.current_value}
                     onChange={(e) =>
-                      onUpdate(kr._tempId, "target_value", e.target.value)
+                      onUpdate(kr._tempId, "current_value", e.target.value)
                     }
-                    placeholder="e.g. 10"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Unit</Label>
-                  <Input
-                    className={goalInputClassName}
-                    value={kr.unit}
-                    onChange={(e) =>
-                      onUpdate(kr._tempId, "unit", e.target.value)
-                    }
-                    placeholder="e.g. km, books, %"
-                  />
-                </div>
+              )}
+              <div className="space-y-1">
+                <Label className="text-xs">Target Value</Label>
+                <Input
+                  className={goalInputClassName}
+                  type="number"
+                  value={kr.target_value}
+                  onChange={(e) =>
+                    onUpdate(kr._tempId, "target_value", e.target.value)
+                  }
+                  placeholder="e.g. 10"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Unit</Label>
+                <Input
+                  className={goalInputClassName}
+                  value={kr.unit}
+                  onChange={(e) =>
+                    onUpdate(kr._tempId, "unit", e.target.value)
+                  }
+                  placeholder="e.g. km, books, %"
+                />
               </div>
             </div>
-          ))}
-        </div>
-      </OSSolidPanel>
+          </div>
+        ))}
+      </div>
+    </OSSolidPanel>
   );
 }
 
@@ -394,70 +394,70 @@ function GoalDetailModal({
 
               <div className="space-y-6 pt-2">
                 <OSSolidPanel className="space-y-4 p-4">
+                  <div className="space-y-2">
+                    <Label>Goal Name *</Label>
+                    <Input
+                      className={goalInputClassName}
+                      value={editForm.name}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, name: e.target.value }))
+                      }
+                      placeholder="Goal name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      className={goalTextAreaClassName}
+                      value={editForm.description}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, description: e.target.value }))
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Goal Name *</Label>
-                      <Input
-                        className={goalInputClassName}
-                        value={editForm.name}
-                        onChange={(e) =>
-                          setEditForm((f) => ({ ...f, name: e.target.value }))
+                      <Label>Status</Label>
+                      <Select
+                        value={editForm.status}
+                        onValueChange={(v) =>
+                          setEditForm((f) => ({ ...f, status: v as Goal["status"] }))
                         }
-                        placeholder="Goal name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea
-                        className={goalTextAreaClassName}
-                        value={editForm.description}
-                        onChange={(e) =>
-                          setEditForm((f) => ({ ...f, description: e.target.value }))
-                        }
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Status</Label>
-                        <Select
-                          value={editForm.status}
-                          onValueChange={(v) =>
-                            setEditForm((f) => ({ ...f, status: v as Goal["status"] }))
-                          }
-                        >
-                          <SelectTrigger className={goalSelectClassName}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map((o) => (
-                              <SelectItem key={o.value} value={o.value}>
-                                {o.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Target Date</Label>
-                        <DatePickerInput
-                          value={editForm.target_date}
-                          onChange={(v) =>
-                            setEditForm((f) => ({ ...f, target_date: v }))
-                          }
-                        />
-                      </div>
+                      >
+                        <SelectTrigger className={goalSelectClassName}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Category</Label>
-                      <Input
-                        className={goalInputClassName}
-                        value={editForm.category}
-                        onChange={(e) =>
-                          setEditForm((f) => ({ ...f, category: e.target.value }))
+                      <Label>Target Date</Label>
+                      <DatePickerInput
+                        value={editForm.target_date}
+                        onChange={(v) =>
+                          setEditForm((f) => ({ ...f, target_date: v }))
                         }
-                        placeholder="e.g. Health, Career, Finance"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Input
+                      className={goalInputClassName}
+                      value={editForm.category}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, category: e.target.value }))
+                      }
+                      placeholder="e.g. Health, Career, Finance"
+                    />
+                  </div>
                 </OSSolidPanel>
 
                 <KeyResultsFormSection
@@ -789,61 +789,61 @@ function CreateGoalModal({
 
         <div className="space-y-6 pt-2">
           <OSSolidPanel className="space-y-4 p-4">
+            <div className="space-y-2">
+              <Label>Goal Name *</Label>
+              <Input
+                className={goalInputClassName}
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="What do you want to achieve?"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                className={goalTextAreaClassName}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                rows={3}
+                placeholder="Describe your goal..."
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Goal Name *</Label>
-                <Input
-                  className={goalInputClassName}
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="What do you want to achieve?"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  className={goalTextAreaClassName}
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={3}
-                  placeholder="Describe your goal..."
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) => setForm((f) => ({ ...f, status: v as Goal["status"] }))}
-                  >
-                    <SelectTrigger className={goalSelectClassName}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Target Date</Label>
-                  <DatePickerInput
-                    value={form.target_date}
-                    onChange={(v) => setForm((f) => ({ ...f, target_date: v }))}
-                  />
-                </div>
+                <Label>Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(v) => setForm((f) => ({ ...f, status: v as Goal["status"] }))}
+                >
+                  <SelectTrigger className={goalSelectClassName}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label>Category</Label>
-                <Input
-                  className={goalInputClassName}
-                  value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                  placeholder="e.g. Health, Career, Finance"
+                <Label>Target Date</Label>
+                <DatePickerInput
+                  value={form.target_date}
+                  onChange={(v) => setForm((f) => ({ ...f, target_date: v }))}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input
+                className={goalInputClassName}
+                value={form.category}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                placeholder="e.g. Health, Career, Finance"
+              />
+            </div>
           </OSSolidPanel>
 
           <KeyResultsFormSection

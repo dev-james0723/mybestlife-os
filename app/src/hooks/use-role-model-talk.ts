@@ -26,10 +26,11 @@ export type TalkOptions = { prompt?: string };
  */
 export function useRoleModelTalk(
   buildContext: (rm: RoleModel) => RoleModelInsightContextPayload,
+  options?: { enabled?: boolean },
 ) {
   const router = useRouter();
   const mindCouncilBase = useLocalizedPath("/mind-council");
-  const { byRoleModelId } = useRoleModelMindSkills();
+  const { byRoleModelId } = useRoleModelMindSkills(options?.enabled ?? true);
   const generate = useGenerateNeuralSkill();
 
   const [pending, setPending] = useState<{ rm: RoleModel; opts: TalkOptions } | null>(null);

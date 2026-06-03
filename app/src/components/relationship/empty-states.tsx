@@ -1,7 +1,12 @@
 "use client";
 
 import { Plus, Sparkles, Users, PenLine } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  OSActionRow,
+  OSControl,
+  OSGlassPanel,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
 
@@ -35,20 +40,20 @@ export function RelationshipEmptyState({
       title={copy.hubEmptyTitle}
       description={copy.hubEmptyDescription}
     >
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button onClick={onAddWithAi} size="lg">
+      <OSActionRow className="justify-center sm:justify-center">
+        <OSPrimaryAction onClick={onAddWithAi}>
           <Sparkles className="mr-2 h-4 w-4" />
           {copy.hubAddWithAi}
-        </Button>
-        <Button onClick={onLogInteraction} size="lg" variant="outline">
+        </OSPrimaryAction>
+        <OSControl onClick={onLogInteraction}>
           <PenLine className="mr-2 h-4 w-4" />
           {copy.hubLogInteraction}
-        </Button>
-        <Button onClick={onAddManually} size="lg" variant="ghost">
+        </OSControl>
+        <OSControl onClick={onAddManually} variant="ghost">
           <Plus className="mr-2 h-4 w-4" />
           {copy.hubAddManually}
-        </Button>
-      </div>
+        </OSControl>
+      </OSActionRow>
     </EmptyShell>
   );
 }
@@ -72,17 +77,17 @@ export function RoleModelEmptyState({ onAction }: Props) {
       description={copy.rmEmptyDescNoEntries}
     >
       <div className="flex flex-col items-center gap-4">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button onClick={onAction} size="lg">
+        <OSActionRow className="justify-center sm:justify-center">
+          <OSPrimaryAction onClick={onAction}>
             <Plus className="mr-2 h-4 w-4" />
             {copy.rmEmptyAction}
-          </Button>
-          <Button onClick={onAction} size="lg" variant="outline">
+          </OSPrimaryAction>
+          <OSControl onClick={onAction} className="hidden sm:inline-flex">
             <Sparkles className="mr-2 h-4 w-4" aria-hidden />
             {copy.rmEmptyTrySampleAction}
-          </Button>
-        </div>
-        <p className="max-w-md text-pretty text-xs text-muted-foreground">
+          </OSControl>
+        </OSActionRow>
+        <p className="hidden max-w-md text-pretty text-xs text-muted-foreground sm:block">
           {copy.rmEmptyTrySampleHint}
         </p>
       </div>
@@ -103,24 +108,24 @@ function EmptyShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-16 text-center sm:py-20">
-      <div className="relative mb-6">
+    <OSGlassPanel className="flex flex-col items-center justify-center px-4 py-8 text-center sm:px-6 sm:py-16">
+      <div className="relative mb-4 sm:mb-6">
         {/* Soft brand halo behind the icon — pure token via primary alpha. */}
         <div
           aria-hidden
           className="absolute inset-0 -m-4 rounded-full bg-primary/5 blur-xl"
         />
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-muted ring-1 ring-border">
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/72 text-lime-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.06] dark:text-lime-200 sm:h-20 sm:w-20">
           {icon}
         </div>
       </div>
-      <h3 className="max-w-sm text-balance text-xl font-semibold tracking-tight text-foreground">
+      <h3 className="max-w-sm text-balance text-lg font-semibold tracking-tight text-foreground sm:text-xl">
         {title}
       </h3>
       <p className="mt-2 max-w-md text-pretty text-sm text-muted-foreground">
         {description}
       </p>
-      <div className="mt-7">{children}</div>
-    </div>
+      <div className="mt-5 sm:mt-7">{children}</div>
+    </OSGlassPanel>
   );
 }

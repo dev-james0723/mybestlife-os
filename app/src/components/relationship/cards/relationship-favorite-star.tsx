@@ -10,7 +10,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { OSIconControl } from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -33,12 +33,11 @@ export function RelationshipFavoriteStar({
   const reduce = useReducedMotion();
 
   return (
-    <Button
+    <OSIconControl
       type="button"
-      size="sm"
       variant="ghost"
       className={cn(
-        "h-8 w-8 p-0 shrink-0",
+        "shrink-0",
         active
           ? "text-amber-500 hover:text-amber-500"
           : "text-muted-foreground/60 hover:text-foreground",
@@ -64,6 +63,6 @@ export function RelationshipFavoriteStar({
           strokeWidth={active ? 1.5 : 2}
         />
       </motion.span>
-    </Button>
+    </OSIconControl>
   );
 }

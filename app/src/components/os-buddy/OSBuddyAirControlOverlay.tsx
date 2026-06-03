@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Camera, Crosshair, Hand, RotateCcw, Smartphone, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Camera,
+  ChevronUp,
+  Crosshair,
+  Eye,
+  EyeOff,
+  Hand,
+  RotateCcw,
+  Smartphone,
+} from "lucide-react";
 import { useOSBuddyAirControl } from "@/hooks/use-os-buddy-air-control";
 import { saveLocalAirControlCalibration } from "@/lib/os-buddy/air-control/air-control-settings";
 import type {
@@ -9,6 +18,10 @@ import type {
   OSBuddyAirControlQuality,
   OSBuddyAirControlSensorMode,
 } from "@/lib/os-buddy/os-buddy-air-control-types";
+import {
+  getLocalOSBuddyAirPilotSettings,
+  saveLocalOSBuddyAirPilotSettings,
+} from "@/lib/os-buddy/os-buddy-airpilot-settings";
 import {
   AIRPILOT_EMPHASIZED_LANDMARKS,
   OS_BUDDY_HAND_CONNECTIONS,
@@ -20,7 +33,6 @@ import { OSBuddyCalibrationFlow } from "./air-control/OSBuddyCalibrationFlow";
 type OSBuddyAirControlOverlayProps = {
   runtimeEnabled: boolean;
   airPilotActive: boolean;
-  wakeListening: boolean;
   locale: string;
   viewport: { width: number; height: number };
   dockPoint: { x: number; y: number };
@@ -35,8 +47,6 @@ function getStatusLabel(locale: string, status: string, active: boolean) {
       return zh ? "等待相機權限" : "Camera permission";
     case "loading-model":
       return zh ? "載入手勢模型" : "Loading gestures";
-    case "wake-listening":
-      return zh ? "AirPilot 待命" : "AirPilot listening";
     case "tracking":
       return active
         ? zh
@@ -55,8 +65,8 @@ function getStatusLabel(locale: string, status: string, active: boolean) {
           ? "AirPilot 凌空控制"
           : "AirPilot control"
         : zh
-          ? "AirPilot 待命"
-          : "AirPilot listening";
+          ? "AirPilot 已關閉"
+          : "AirPilot off";
   }
 }
 
@@ -138,7 +148,6 @@ function SkeletonOverlay({
 export function OSBuddyAirControlOverlay({
   runtimeEnabled,
   airPilotActive,
-  wakeListening,
   locale,
   viewport,
   dockPoint,
@@ -146,22 +155,21 @@ export function OSBuddyAirControlOverlay({
   onCommand,
 }: OSBuddyAirControlOverlayProps) {
   const status = useOSBuddyStore((s) => s.airControlStatus);
-  const gesture = useOSBuddyStore((s) => s.airControlGesture);
   const cursor = useOSBuddyStore((s) => s.airControlTarget);
-  const pinchState = useOSBuddyStore((s) => s.airPilotPinchState);
+  const selectState = useOSBuddyStore((s) => s.airPilotSelectState);
   const sensorMode = useOSBuddyStore((s) => s.airControlSensorMode);
   const quality = useOSBuddyStore((s) => s.airControlQuality);
   const calibration = useOSBuddyStore((s) => s.airControlCalibration);
   const debugEnabled = useOSBuddyStore((s) => s.airControlDebugEnabled);
   const setDebugEnabled = useOSBuddyStore((s) => s.setAirControlDebugEnabled);
   const clearAirControlCalibration = useOSBuddyStore((s) => s.clearAirControlCalibration);
-  const stopAirControl = useOSBuddyStore((s) => s.stopAirControl);
   const [calibrating, setCalibrating] = useState(false);
   const [pairingUrl, setPairingUrl] = useState<string | null>(null);
+  const [controlsExpanded, setControlsExpanded] = useState(false);
+  const [hudHidden, setHudHidden] = useState(() => getLocalOSBuddyAirPilotSettings().hudHidden);
   const { videoRef, debugState } = useOSBuddyAirControl({
     enabled: runtimeEnabled,
     airPilotActive,
-    wakeListening,
     locale,
     viewport,
     dockPoint,
@@ -171,13 +179,57 @@ export function OSBuddyAirControlOverlay({
     onCommand,
   });
   const zh = locale === "zh-TW";
-  const showDebug = debugEnabled;
-  const showStatusPill =
-    airPilotActive ||
-    debugEnabled ||
+  const keepControlsExpanded =
     status === "requesting-permission" ||
     status === "loading-model" ||
-    status === "error";
+    status === "error" ||
+    calibrating ||
+    Boolean(pairingUrl);
+  const panelExpanded = airPilotActive && (controlsExpanded || keepControlsExpanded);
+  const hudVisible = airPilotActive && !hudHidden;
+  const hudFrameClass =
+    "left-[max(env(safe-area-inset-left),1rem)] top-[calc(env(safe-area-inset-top)+1rem)] h-[clamp(99px,25.5vw,144px)] w-[clamp(132px,34vw,192px)] rounded-lg";
+
+  const statusTone = useMemo(
+    () =>
+      cn(
+        "bg-muted text-muted-foreground",
+        status === "tracking" && "bg-emerald-500/12 text-emerald-600",
+        status === "paused" && "bg-amber-500/12 text-amber-600",
+        status === "error" && "bg-destructive/12 text-destructive",
+      ),
+    [status],
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (airPilotActive) {
+        setControlsExpanded(true);
+        return;
+      }
+
+      setControlsExpanded(false);
+      setPairingUrl(null);
+      setCalibrating(false);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [airPilotActive]);
+
+  useEffect(() => {
+    if (!airPilotActive) {
+      return;
+    }
+    if (!controlsExpanded || keepControlsExpanded) return;
+    const timer = window.setTimeout(() => setControlsExpanded(false), 5_000);
+    return () => window.clearTimeout(timer);
+  }, [airPilotActive, controlsExpanded, keepControlsExpanded, status]);
+
+  const setHudHiddenPersisted = (hidden: boolean) => {
+    setHudHidden(hidden);
+    const current = getLocalOSBuddyAirPilotSettings();
+    saveLocalOSBuddyAirPilotSettings({ ...current, hudHidden: hidden });
+  };
 
   const resetCalibration = () => {
     clearAirControlCalibration();
@@ -191,6 +243,7 @@ export function OSBuddyAirControlOverlay({
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const localePrefix = locale === "zh-TW" ? "zh-TW" : locale || "en";
     const url = `${window.location.origin}/${localePrefix}/os-buddy/air-remote?session=${sessionId}`;
+    setControlsExpanded(true);
     setPairingUrl(url);
   };
 
@@ -206,8 +259,11 @@ export function OSBuddyAirControlOverlay({
         playsInline
         className={cn(
           "pointer-events-none fixed scale-x-[-1] object-cover",
-          airPilotActive
-            ? "bottom-24 right-4 z-[43] h-36 w-48 rounded-lg border border-border/70 bg-black opacity-75 shadow-lg shadow-black/20"
+          hudVisible
+            ? cn(
+                "z-[43] border border-border/70 bg-black opacity-75 shadow-lg shadow-black/20",
+                hudFrameClass,
+              )
             : "left-0 top-0 h-px w-px -translate-x-full opacity-0",
         )}
       />
@@ -220,168 +276,170 @@ export function OSBuddyAirControlOverlay({
         />
       ) : null}
 
-      {airPilotActive ? (
-        <div className="pointer-events-none fixed bottom-24 right-4 z-[44] h-36 w-48 overflow-hidden rounded-lg">
+      {hudVisible ? (
+        <div className={cn("pointer-events-none fixed z-[44] overflow-hidden", hudFrameClass)}>
           <SkeletonOverlay landmarks={debugState.landmarks} />
           <div className="absolute left-2 top-2 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
-            {zh ? "追蹤 21 個手部關鍵點" : "Tracking 21 hand landmarks"}
+            {debugState.landmarks.length}
           </div>
+          <button
+            type="button"
+            onClick={() => setHudHiddenPersisted(true)}
+            className="pointer-events-auto absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            aria-label={zh ? "隱藏 HUD" : "Hide HUD"}
+            title={zh ? "隱藏 HUD" : "Hide HUD"}
+          >
+            <EyeOff className="size-3.5" aria-hidden="true" />
+          </button>
         </div>
       ) : null}
 
-      <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] right-4 z-[47] flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2">
-        {showStatusPill ? (
-          <div
-            className={cn(
-              "pointer-events-auto flex min-h-11 items-center gap-2 rounded-full border border-border/70 bg-background/90 px-3 py-2 text-xs font-medium text-foreground shadow-lg shadow-black/10 backdrop-blur-md",
-              status === "tracking" && "border-emerald-400/50",
-              status === "wake-listening" && "border-sky-400/55",
-              status === "paused" && "border-amber-400/60",
-              status === "error" && "border-destructive/60",
-            )}
-          >
-            <span
+      {airPilotActive ? (
+        <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 z-[47] w-[min(calc(100vw-1.5rem),25rem)] -translate-x-1/2">
+          {panelExpanded ? (
+            <div
               className={cn(
-                "flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground",
-                status === "tracking" && "bg-emerald-500/12 text-emerald-600",
-                status === "wake-listening" && "bg-sky-500/12 text-sky-600",
-                status === "paused" && "bg-amber-500/12 text-amber-600",
-                status === "error" && "bg-destructive/12 text-destructive",
+                "pointer-events-auto rounded-2xl border border-border/70 bg-background/92 p-2.5 text-xs text-muted-foreground shadow-xl shadow-black/15 backdrop-blur-md",
+                status === "tracking" && "border-emerald-400/45",
+                status === "paused" && "border-amber-400/55",
+                status === "error" && "border-destructive/60",
               )}
             >
-              <Camera className="size-3.5" aria-hidden="true" />
-            </span>
-            <span className="truncate">{getStatusLabel(locale, status, airPilotActive)}</span>
-            <span className="hidden rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground sm:inline">
-              {getSensorLabel(locale, sensorMode, quality)}
-            </span>
-            {airPilotActive ? (
-              <span className="hidden max-w-24 truncate rounded-full bg-red-500/12 px-2 py-1 text-[11px] text-red-600 sm:inline">
-                {pinchState}
-              </span>
-            ) : gesture ? (
-              <span className="hidden max-w-28 truncate rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground sm:inline">
-                {gesture}
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => stopAirControl("user-exit")}
-              className="ml-1 flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              aria-label={zh ? "停止 AirPilot" : "Stop AirPilot"}
-            >
-              <X className="size-3.5" aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
+              <div className="flex items-center gap-2">
+                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", statusTone)}>
+                  <Camera className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-foreground">
+                    {getStatusLabel(locale, status, airPilotActive)}
+                  </div>
+                  <div className="truncate text-[11px]">
+                    {getSensorLabel(locale, sensorMode, quality)} · {selectState}
+                  </div>
+                </div>
+              </div>
 
-        {airPilotActive ? (
-          <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/70 bg-background/90 px-2 py-1 text-[11px] shadow-lg shadow-black/10 backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => setCalibrating(true)}
-              className="flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              <Crosshair className="size-3.5" aria-hidden="true" />
-              <span>{zh ? "校準" : "Calibrate"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={resetCalibration}
-              disabled={!calibration}
-              className="flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40"
-            >
-              <RotateCcw className="size-3.5" aria-hidden="true" />
-              <span>{zh ? "重設校準" : "Reset"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={startPhonePairing}
-              className="flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              <Smartphone className="size-3.5" aria-hidden="true" />
-              <span>{zh ? "用手機相機" : "Phone"}</span>
-            </button>
-          </div>
-        ) : null}
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCalibrating(true)}
+                  className="flex min-h-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  aria-label={zh ? "校準" : "Calibrate"}
+                  title={zh ? "校準" : "Calibrate"}
+                >
+                  <Crosshair className="size-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={resetCalibration}
+                  disabled={!calibration}
+                  className="flex min-h-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40"
+                  aria-label={zh ? "重設校準" : "Reset calibration"}
+                  title={zh ? "重設校準" : "Reset calibration"}
+                >
+                  <RotateCcw className="size-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={startPhonePairing}
+                  className="flex min-h-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  aria-label={zh ? "用手機相機" : "Use phone camera"}
+                  title={zh ? "用手機相機" : "Use phone camera"}
+                >
+                  <Smartphone className="size-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHudHiddenPersisted(!hudHidden)}
+                  className="flex min-h-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  aria-label={hudHidden ? (zh ? "顯示 HUD" : "Show HUD") : zh ? "隱藏 HUD" : "Hide HUD"}
+                  title={hudHidden ? (zh ? "顯示 HUD" : "Show HUD") : zh ? "隱藏 HUD" : "Hide HUD"}
+                >
+                  {hudHidden ? <Eye className="size-4" aria-hidden="true" /> : <EyeOff className="size-4" aria-hidden="true" />}
+                </button>
+              </div>
 
-        {pairingUrl ? (
-          <div className="pointer-events-auto w-64 rounded-lg border border-border/70 bg-background/92 p-3 text-[11px] text-muted-foreground shadow-lg shadow-black/10 backdrop-blur-md">
-            <p className="mb-1 font-medium text-foreground">
-              {zh ? "在手機開啟此連結" : "Open this link on your phone"}
-            </p>
-            <p className="break-all rounded bg-muted px-2 py-1 text-[10px] text-foreground">
-              {pairingUrl}
-            </p>
-            <p className="mt-1 text-[10px]">
-              {zh
-                ? "實驗功能：手機在本機處理手勢，只傳送座標。"
-                : "Experimental: the phone processes gestures locally and sends only coordinates."}
-            </p>
-            <button
-              type="button"
-              onClick={() => setPairingUrl(null)}
-              className="mt-2 min-h-11 rounded bg-muted px-3 py-2 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              {zh ? "關閉" : "Dismiss"}
-            </button>
-          </div>
-        ) : null}
+              {pairingUrl ? (
+                <div className="mt-2 rounded-lg border border-border/70 bg-muted/55 p-2 text-[11px]">
+                  <p className="mb-1 font-medium text-foreground">
+                    {zh ? "在手機開啟此連結" : "Open this link on your phone"}
+                  </p>
+                  <p className="break-all rounded bg-background/80 px-2 py-1 text-[10px] text-foreground">
+                    {pairingUrl}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPairingUrl(null)}
+                    className="mt-2 min-h-11 rounded-full bg-background px-3 py-2 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  >
+                    {zh ? "關閉" : "Dismiss"}
+                  </button>
+                </div>
+              ) : null}
 
-        {showDebug ? (
-          <div className="pointer-events-auto w-64 rounded-lg border border-border/70 bg-background/92 p-3 text-[11px] text-muted-foreground shadow-lg shadow-black/10 backdrop-blur-md">
-            <div className="mb-2 flex items-center justify-between font-medium text-foreground">
-              <span className="flex items-center gap-2">
-                <Hand className="size-3.5" aria-hidden="true" />
-                <span>AirPilot Debug</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setDebugEnabled(!debugEnabled)}
-                className="min-h-11 rounded bg-muted px-3 py-2 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              >
-                {debugEnabled ? (zh ? "隱藏" : "Hide") : zh ? "顯示" : "Pin"}
-              </button>
+              {debugEnabled ? (
+                <div className="mt-2 rounded-lg border border-border/70 bg-muted/55 p-2 text-[11px]">
+                  <div className="mb-2 flex items-center justify-between font-medium text-foreground">
+                    <span className="flex items-center gap-2">
+                      <Hand className="size-3.5" aria-hidden="true" />
+                      <span>AirPilot Debug</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDebugEnabled(!debugEnabled)}
+                      className="min-h-11 rounded-full bg-background px-3 py-2 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    >
+                      {zh ? "隱藏" : "Hide"}
+                    </button>
+                  </div>
+                  <dl className="grid grid-cols-[88px_1fr] gap-x-2 gap-y-1">
+                    <dt>Status</dt>
+                    <dd className="truncate text-foreground">{status}</dd>
+                    <dt>State</dt>
+                    <dd className="truncate text-foreground">{debugState.state}</dd>
+                    <dt>Hands</dt>
+                    <dd className="text-foreground">{debugState.handCount}</dd>
+                    <dt>Gesture</dt>
+                    <dd className="truncate text-foreground">{debugState.gesture ?? "None"}</dd>
+                    <dt>Select</dt>
+                    <dd className="truncate text-foreground">{debugState.selectState}</dd>
+                    <dt>Tap</dt>
+                    <dd className="truncate text-foreground">
+                      {debugState.indexTapScore == null ? "none" : debugState.indexTapScore.toFixed(3)}
+                    </dd>
+                    <dt>Magnet</dt>
+                    <dd className="truncate text-foreground">{debugState.magnetPhase}</dd>
+                    <dt>Target</dt>
+                    <dd className="truncate text-foreground">{debugState.magnetTargetLabel ?? "None"}</dd>
+                    <dt>Raw</dt>
+                    <dd className="text-foreground">
+                      {debugState.rawCursor
+                        ? `${Math.round(debugState.rawCursor.x)}, ${Math.round(debugState.rawCursor.y)}`
+                        : "none"}
+                    </dd>
+                    <dt>Landmarks</dt>
+                    <dd className="text-foreground">{debugState.landmarks.length}</dd>
+                    <dt>Latency</dt>
+                    <dd className="text-foreground">{debugState.latencyMs.toFixed(1)} ms</dd>
+                    <dt>FPS</dt>
+                    <dd className="text-foreground">{debugState.fps}</dd>
+                  </dl>
+                </div>
+              ) : null}
             </div>
-            <dl className="grid grid-cols-[88px_1fr] gap-x-2 gap-y-1">
-              <dt>Status</dt>
-              <dd className="truncate text-foreground">{status}</dd>
-              <dt>State</dt>
-              <dd className="truncate text-foreground">{debugState.state}</dd>
-              <dt>Hands</dt>
-              <dd className="text-foreground">{debugState.handCount}</dd>
-              <dt>Gesture</dt>
-              <dd className="truncate text-foreground">{debugState.gesture ?? "None"}</dd>
-              <dt>Pinch</dt>
-              <dd className="truncate text-foreground">{debugState.pinchState}</dd>
-              <dt>Magnet</dt>
-              <dd className="truncate text-foreground">{debugState.magnetPhase}</dd>
-              <dt>Target</dt>
-              <dd className="truncate text-foreground">{debugState.magnetTargetLabel ?? "None"}</dd>
-              <dt>Confidence</dt>
-              <dd className="text-foreground">{debugState.confidence.toFixed(2)}</dd>
-              <dt>Cursor</dt>
-              <dd className="text-foreground">
-                {debugState.fingertip
-                  ? `${Math.round(debugState.fingertip.x)}, ${Math.round(debugState.fingertip.y)}`
-                  : "none"}
-              </dd>
-              <dt>Raw</dt>
-              <dd className="text-foreground">
-                {debugState.rawCursor
-                  ? `${Math.round(debugState.rawCursor.x)}, ${Math.round(debugState.rawCursor.y)}`
-                  : "none"}
-              </dd>
-              <dt>Landmarks</dt>
-              <dd className="text-foreground">{debugState.landmarks.length}</dd>
-              <dt>Latency</dt>
-              <dd className="text-foreground">{debugState.latencyMs.toFixed(1)} ms</dd>
-              <dt>FPS</dt>
-              <dd className="text-foreground">{debugState.fps}</dd>
-            </dl>
-          </div>
-        ) : null}
-      </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setControlsExpanded(true)}
+              className="pointer-events-auto mx-auto flex h-11 w-24 items-start justify-center rounded-t-full border border-border/70 bg-background/92 pt-2 text-muted-foreground shadow-xl shadow-black/15 backdrop-blur-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              aria-label={zh ? "展開 AirPilot 控制" : "Expand AirPilot controls"}
+              title={zh ? "展開 AirPilot 控制" : "Expand AirPilot controls"}
+            >
+              <ChevronUp className="size-5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      ) : null}
 
       <OSBuddyCalibrationFlow
         key={calibrating ? "calibrating" : "idle"}

@@ -9,9 +9,14 @@ import {
 } from "react";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar, type ViewMode } from "@/components/shared/filter-bar";
-import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { Button } from "@/components/ui/button";
+import {
+  OSActionRow,
+  OSControl,
+  OSEmptyState,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
+import { osDialogSurfaceClassName } from "@/components/ui/os-glass";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Sparkles, UserRound } from "lucide-react";
+import { Plus, SearchX, Sparkles, UserRound } from "lucide-react";
 import {
   useRoleModels,
   useCreateRoleModel,
@@ -98,7 +103,9 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
 
   // Intelligence Hub: compact Life OS context + "Talk To {name}" routing.
   const buildContext = useRoleModelContextBuilder();
-  const talk = useRoleModelTalk(buildContext);
+  const talk = useRoleModelTalk(buildContext, {
+    enabled: (roleModels?.length ?? 0) > 0,
+  });
 
   const patternRoster = useMemo(
     () =>
@@ -245,6 +252,8 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
   // an option that's no longer offered.
   useEffect(() => {
     if (filters.sortBy === "favorites_first" && !hasAnyFavorite) {
+      // Intentional filter cleanup after the last favorite is removed.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFilters((f) => ({ ...f, sortBy: "created_at" }));
     }
   }, [filters.sortBy, hasAnyFavorite]);
@@ -323,10 +332,10 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
   if (isLoading) return <LoadingPage />;
 
   const addButton = (
-    <Button onClick={() => setShowCreate(true)}>
+    <OSPrimaryAction onClick={() => setShowCreate(true)}>
       <Plus className="h-4 w-4 mr-2" />
       {copy.rmAdd}
-    </Button>
+    </OSPrimaryAction>
   );
 
   const noResultsAfterFilters = (roleModels?.length ?? 0) > 0 && filtered.length === 0;
@@ -402,24 +411,25 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
       {isEmptyEntirely ? (
         <RoleModelEmptyState onAction={() => setShowCreate(true)} />
       ) : noResultsAfterFilters ? (
-        <EmptyState
-          icon={Sparkles}
+        <OSEmptyState
+          icon={SearchX}
           title={copy.rmEmptyTitle}
           description={copy.rmEmptyDescNoResults}
-          action={{
-            label: copy.rmFilterClear,
-            // Only clear *constraints* (search, category, favorites-only).
-            // Preserving viewMode and sortBy respects the user's view
-            // preferences — surprising them with a reset on clear-filters
-            // would feel arbitrary.
-            onClick: () =>
-              setFilters((f) => ({
-                ...f,
-                search: "",
-                category: null,
-                favoritesOnly: false,
-              })),
-          }}
+          action={
+            <OSControl
+              variant="ghost"
+              onClick={() =>
+                setFilters((f) => ({
+                  ...f,
+                  search: "",
+                  category: null,
+                  favoritesOnly: false,
+                }))
+              }
+            >
+              {copy.rmFilterClear}
+            </OSControl>
+          }
         />
       ) : (
         <div
@@ -514,7 +524,7 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
           if (!v) talk.cancelGenerate();
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={osDialogSurfaceClassName}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               Create a Mind Council lens from {talk.pending?.rm.name ?? "this Role Model"}?
@@ -525,13 +535,16 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={talk.isGenerating}>{copy.cancel}</AlertDialogCancel>
+            <AlertDialogCancel disabled={talk.isGenerating} className="min-h-11 rounded-xl">
+              {copy.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
                 void talk.confirmGenerate();
               }}
               disabled={talk.isGenerating}
+              className="min-h-11 rounded-xl"
             >
               {talk.isGenerating ? "Generating…" : "Generate Neural Skill"}
             </AlertDialogAction>
@@ -541,7 +554,7 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
 
       {/* Delete confirm */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className={osDialogSurfaceClassName}>
           <AlertDialogHeader>
             <AlertDialogTitle>{copy.rmDeleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -551,10 +564,12 @@ export function RoleModelsView({ embedded = false }: RoleModelsViewProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{copy.cancel}</AlertDialogCancel>
+            <AlertDialogCancel className="min-h-11 rounded-xl">
+              {copy.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="min-h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {copy.delete}
             </AlertDialogAction>
@@ -609,7 +624,7 @@ function CategoryChipsRow({
       ))}
       {favoriteAvailable && (
         <>
-          <span aria-hidden className="mx-1 h-4 w-px bg-border" />
+          <span aria-hidden className="mx-1 h-6 w-px bg-border" />
           <ChipButton
             active={favoritesActive}
             onClick={onToggleFavorites}
@@ -652,6 +667,7 @@ function ChipButton({
       aria-pressed={active}
       className={cn(
         "inline-flex items-center rounded-full border px-3 py-1 text-xs font-normal transition-colors",
+        "min-h-11",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
         active ? activeStyles : inactiveStyles,
       )}
@@ -867,7 +883,9 @@ function EmbeddedHeader({
 }) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">{actions}</div>
+      <div className="flex justify-start sm:justify-end">
+        <OSActionRow>{actions}</OSActionRow>
+      </div>
       {children}
     </div>
   );

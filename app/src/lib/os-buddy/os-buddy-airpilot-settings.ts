@@ -1,9 +1,11 @@
 export type OSBuddyAirPilotSettings = {
   wakeEnabled: boolean;
+  hudHidden: boolean;
 };
 
 export const DEFAULT_OS_BUDDY_AIRPILOT_SETTINGS: OSBuddyAirPilotSettings = {
   wakeEnabled: true,
+  hudHidden: false,
 };
 
 export const OS_BUDDY_AIRPILOT_SETTINGS_STORAGE_KEY =
@@ -43,6 +45,10 @@ export function validateOSBuddyAirPilotSettings(
       typeof settings.wakeEnabled === "boolean"
         ? settings.wakeEnabled
         : DEFAULT_OS_BUDDY_AIRPILOT_SETTINGS.wakeEnabled,
+    hudHidden:
+      typeof settings.hudHidden === "boolean"
+        ? settings.hudHidden
+        : DEFAULT_OS_BUDDY_AIRPILOT_SETTINGS.hudHidden,
   };
 }
 

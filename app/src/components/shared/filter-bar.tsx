@@ -102,31 +102,41 @@ export function FilterBar({
         </div>
       )}
 
-      {filters?.map((filter) => (
-        <Select
-          key={filter.key}
-          value={filter.value ?? "all"}
-          onValueChange={(value) => {
-            if (value !== null) onFilterChange?.(filter.key, value);
-          }}
-        >
-          <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[160px]">
-            <SelectValue placeholder={filter.label} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              {(i18n?.formatAllFilterOption ?? ((l: string) => `All ${l}`))(
-                filter.label,
-              )}
-            </SelectItem>
-            {filter.options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ))}
+      {filters?.map((filter) => {
+        const allLabel = (
+          i18n?.formatAllFilterOption ?? ((label: string) => `All ${label}`)
+        )(filter.label);
+        const selectedValue = filter.value ?? "all";
+        const selectedLabel =
+          selectedValue === "all"
+            ? allLabel
+            : filter.options.find((option) => option.value === selectedValue)
+                ?.label;
+
+        return (
+          <Select
+            key={filter.key}
+            value={selectedValue}
+            onValueChange={(value) => {
+              if (value !== null) onFilterChange?.(filter.key, value);
+            }}
+          >
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[160px]">
+              <SelectValue placeholder={filter.label}>
+                {selectedLabel ?? filter.label}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{allLabel}</SelectItem>
+              {filter.options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      })}
 
       {sort && (
         <Select
@@ -139,7 +149,12 @@ export function FilterBar({
             <ArrowUpDown className="h-4 w-4 mr-2" />
             <SelectValue
               placeholder={i18n?.sortPlaceholder ?? common.sortBy}
-            />
+            >
+              {sort.options.find((option) => option.value === sort.value)
+                ?.label ??
+                i18n?.sortPlaceholder ??
+                common.sortBy}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {sort.options.map((option) => (

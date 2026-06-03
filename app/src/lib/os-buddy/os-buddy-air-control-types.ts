@@ -58,6 +58,14 @@ export type OSBuddyAirPilotPinchState =
   | "pinching"
   | "cooldown";
 
+export type OSBuddyAirPilotSelectState =
+  | "tracking"
+  | "candidate"
+  | "locked"
+  | "armed"
+  | "tapping"
+  | "cooldown";
+
 export type OSBuddyAirPilotMagnetPhase = "tracking" | "candidate" | "locked";
 
 export type OSBuddyAirControlPoint = {
@@ -103,13 +111,13 @@ export type OSBuddyAirControlCommand =
       type: "page-cursor";
       point: OSBuddyAirControlPoint;
       gesture: OSBuddyAirControlGesture;
-      pinchState: OSBuddyAirPilotPinchState;
+      selectState: OSBuddyAirPilotSelectState;
     }
   | {
       type: "page-select";
       point: OSBuddyAirControlPoint;
       gesture: OSBuddyAirControlGesture;
-      pinchState: OSBuddyAirPilotPinchState;
+      selectState: OSBuddyAirPilotSelectState;
     }
   | {
       type: "page-scroll";
@@ -143,7 +151,8 @@ export type OSBuddyAirControlDebugState = {
   sensorMode: OSBuddyAirControlSensorMode;
   quality: OSBuddyAirControlQuality;
   latencyMs: number;
-  pinchState: OSBuddyAirPilotPinchState;
+  selectState: OSBuddyAirPilotSelectState;
+  indexTapScore: number | null;
   magnetPhase: OSBuddyAirPilotMagnetPhase;
   magnetTargetLabel?: string;
   rawCursor: OSBuddyAirControlPoint | null;

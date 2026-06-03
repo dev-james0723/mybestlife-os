@@ -11,15 +11,19 @@
 import { useMemo } from "react";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { OSDialogSurface } from "@/components/ui/os-primitives";
 import {
   RelationshipForm,
   type RelationshipFormInitial,
 } from "@/components/relationship/forms/relationship-form";
+import {
+  relationshipDialogBodyClassName,
+  relationshipDialogHeaderClassName,
+} from "@/components/relationship/relationship-os";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
 import type { RelationshipInsert } from "@/types/relationship";
@@ -49,12 +53,12 @@ export function RelationshipFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-2xl">
-        <DialogHeader className="border-b border-border px-6 py-4">
+      <OSDialogSurface className="flex max-h-[88dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className={relationshipDialogHeaderClassName}>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <ScrollArea className="flex-1">
-          <div className="px-6 py-5">
+          <div className={relationshipDialogBodyClassName}>
             {/*
               `key` triggers a fresh mount whenever we switch between
               create (no id) and edit (with id), or between two different
@@ -71,7 +75,7 @@ export function RelationshipFormModal({
             />
           </div>
         </ScrollArea>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }

@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  OSControl,
+  OSGlassPanel,
+  OSPrimaryAction,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -50,7 +55,7 @@ export function RoleModelPatternBanner({ roster, aboutMe, onAddRoleModel }: Prop
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-indigo-500/5 via-card/40 to-sky-500/5">
+    <OSGlassPanel as="section">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -87,10 +92,10 @@ export function RoleModelPatternBanner({ roster, aboutMe, onAddRoleModel }: Prop
                     Analyze all {roster.length} role models together to surface your recurring
                     admiration patterns, blind spots, and missing archetypes.
                   </p>
-                  <Button onClick={() => run(false)} className="rounded-full">
+                  <OSPrimaryAction onClick={() => run(false)}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     Analyze My Pattern
-                  </Button>
+                  </OSPrimaryAction>
                 </div>
               ) : null}
 
@@ -142,31 +147,31 @@ export function RoleModelPatternBanner({ roster, aboutMe, onAddRoleModel }: Prop
                       </p>
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {report.suggestedRoleModels.map((s, i) => (
-                          <div key={i} className="rounded-lg border border-border/60 bg-background/50 p-3">
+                          <OSSolidPanel key={i} className="p-3">
                             <div className="mb-1 flex items-center justify-between gap-2">
                               <p className="text-sm font-medium">{s.archetype}</p>
                               {onAddRoleModel ? (
-                                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onAddRoleModel}>
+                                <OSControl variant="ghost" onClick={onAddRoleModel}>
                                   <PlusCircle className="mr-1 h-3.5 w-3.5" />
                                   Add
-                                </Button>
+                                </OSControl>
                               ) : null}
                             </div>
                             <p className="text-xs text-muted-foreground">{s.reason}</p>
                             {s.exampleNames?.length ? (
                               <p className="mt-1 text-[11px] text-muted-foreground/80">e.g. {s.exampleNames.join(", ")}</p>
                             ) : null}
-                          </div>
+                          </OSSolidPanel>
                         ))}
                       </div>
                     </div>
                   ) : null}
 
                   <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => run(true)} disabled={generating}>
+                    <OSControl variant="ghost" onClick={() => run(true)} disabled={generating}>
                       {generating ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
                       Refresh
-                    </Button>
+                    </OSControl>
                   </div>
                 </div>
               ) : null}
@@ -174,19 +179,19 @@ export function RoleModelPatternBanner({ roster, aboutMe, onAddRoleModel }: Prop
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </section>
+    </OSGlassPanel>
   );
 }
 
 function Panel({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+    <OSSolidPanel className="p-3">
       <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {icon}
         {title}
       </p>
       {children}
-    </div>
+    </OSSolidPanel>
   );
 }
 

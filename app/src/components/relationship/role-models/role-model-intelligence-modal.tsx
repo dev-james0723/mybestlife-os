@@ -2,8 +2,13 @@
 
 import { useMemo, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
+import {
+  OSControl,
+  OSDialogSurface,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { RoleModelPhoto } from "@/components/relationship/role-model-photo";
@@ -77,7 +82,7 @@ export function RoleModelIntelligenceModal({
   const reduce = useReducedMotion();
   const rmId = roleModel?.id ?? null;
   const { insight, meta, isPeeking, generate } = useRoleModelInsight(rmId);
-  const { byRoleModelId } = useRoleModelMindSkills();
+  const { byRoleModelId } = useRoleModelMindSkills(open && Boolean(roleModel));
   const generateSkill = useGenerateNeuralSkill();
 
   const preset = useMemo(
@@ -116,10 +121,10 @@ export function RoleModelIntelligenceModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent
+      <OSDialogSurface
         size="5xl"
         showCloseButton
-        className="flex max-h-[94vh] flex-col overflow-hidden p-0"
+        className="flex max-h-[90dvh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden p-0"
       >
         <DialogTitle className="sr-only">{roleModel.name} — Intelligence</DialogTitle>
 
@@ -159,33 +164,31 @@ export function RoleModelIntelligenceModal({
                   <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{blurb}</p>
                 ) : null}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <Button
+                  <OSPrimaryAction
                     onClick={() => onTalk(roleModel)}
-                    className="group relative rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 text-white shadow-md hover:from-indigo-500 hover:to-sky-400"
+                    className="group relative"
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Talk To {roleModel.name}
                     {!reduce && (
                       <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-sky-400/0 transition group-hover:ring-sky-400/40" />
                     )}
-                  </Button>
+                  </OSPrimaryAction>
                   {onToggleFavorite ? (
-                    <Button variant="outline" size="icon" onClick={onToggleFavorite} aria-label="Toggle favorite">
+                    <OSIconControl onClick={onToggleFavorite} aria-label="Toggle favorite">
                       <Star className={cn("h-4 w-4", roleModel.is_favorite && "fill-amber-400 text-amber-500")} />
-                    </Button>
+                    </OSIconControl>
                   ) : null}
-                  <Button variant="outline" size="icon" onClick={onEdit} aria-label="Edit role model">
+                  <OSIconControl onClick={onEdit} aria-label="Edit role model">
                     <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
+                  </OSIconControl>
+                  <OSIconControl
                     onClick={onDelete}
                     aria-label="Delete role model"
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </OSIconControl>
                 </div>
                 <p className="text-[11px] text-muted-foreground/70">{DISCLAIMER}</p>
               </div>
@@ -292,15 +295,14 @@ export function RoleModelIntelligenceModal({
                   <h3 className="font-heading text-sm font-semibold uppercase tracking-wide">AI Intelligence</h3>
                 </div>
                 {hasInsight ? (
-                  <Button
+                  <OSControl
                     variant="ghost"
-                    size="sm"
                     onClick={() => runGenerate(true)}
                     disabled={generating}
                   >
                     {generating ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
                     Refresh
-                  </Button>
+                  </OSControl>
                 ) : null}
               </div>
 
@@ -378,15 +380,14 @@ export function RoleModelIntelligenceModal({
                             <div key={i} className="rounded-lg border border-border/60 bg-background/50 p-3">
                               <p className="mb-1 text-sm font-medium">{cp.title}</p>
                               <p className="mb-2 text-xs leading-relaxed text-muted-foreground">{cp.prompt}</p>
-                              <Button
-                                size="sm"
+                              <OSControl
                                 variant="outline"
-                                className="group rounded-full hover:border-amber-400/60 hover:text-amber-600"
+                                className="group hover:border-amber-400/60 hover:text-amber-600"
                                 onClick={() => onTalk(roleModel, { prompt: cp.prompt })}
                               >
                                 <Zap className="mr-1.5 h-3.5 w-3.5" />
                                 Send to {roleModel.name}
-                              </Button>
+                              </OSControl>
                             </div>
                           ))}
                         </div>
@@ -429,7 +430,7 @@ export function RoleModelIntelligenceModal({
             </div>
           </div>
         </div>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }
@@ -495,10 +496,10 @@ function GenerateCTA({ onGenerate, loading }: { onGenerate: () => void; loading:
       <p className="mb-3 text-xs text-muted-foreground">
         Connect this role model to your real projects, goals, and identity.
       </p>
-      <Button onClick={onGenerate} disabled={loading} className="rounded-full">
+      <OSPrimaryAction onClick={onGenerate} disabled={loading}>
         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
         Generate Insight
-      </Button>
+      </OSPrimaryAction>
     </div>
   );
 }
@@ -608,15 +609,15 @@ function NeuralSkillPanel({
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" className="rounded-full" onClick={onTalk}>
+        <OSPrimaryAction onClick={onTalk}>
           <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
           Talk To {roleModel.name}
-        </Button>
+        </OSPrimaryAction>
         {!hasPreset && !hasSaved ? (
-          <Button size="sm" variant="outline" className="rounded-full" onClick={onGenerate} disabled={generating}>
+          <OSControl onClick={onGenerate} disabled={generating}>
             {generating ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
             Create Neural Skill
-          </Button>
+          </OSControl>
         ) : null}
       </div>
     </div>

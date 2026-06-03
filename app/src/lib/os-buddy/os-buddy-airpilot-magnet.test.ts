@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type {
+  OSBuddyAirControlHand,
+  OSBuddyAirControlLandmark,
+} from "./os-buddy-air-control-types";
 import {
+  AIRPILOT_INDEX_TAP_ARM_MS,
   AIRPILOT_MAGNET_DWELL_MS,
   AIRPILOT_MAGNET_ESCAPE_PX,
   createAirPilotMagnetMachine,
@@ -14,19 +19,78 @@ const buttonA: AirPilotMagnetTarget = {
   rect: { x: 90, y: 100, width: 60, height: 40 },
 };
 
+function makeHand(params: {
+  indexOffset?: Partial<OSBuddyAirControlLandmark>;
+  wholeHandOffset?: Partial<OSBuddyAirControlLandmark>;
+  thumbOffset?: Partial<OSBuddyAirControlLandmark>;
+} = {}): OSBuddyAirControlHand {
+  const whole = {
+    x: params.wholeHandOffset?.x ?? 0,
+    y: params.wholeHandOffset?.y ?? 0,
+    z: params.wholeHandOffset?.z ?? 0,
+  };
+  const index = {
+    x: params.indexOffset?.x ?? 0,
+    y: params.indexOffset?.y ?? 0,
+    z: params.indexOffset?.z ?? 0,
+  };
+  const thumb = {
+    x: params.thumbOffset?.x ?? 0,
+    y: params.thumbOffset?.y ?? 0,
+    z: params.thumbOffset?.z ?? 0,
+  };
+  const landmarks: OSBuddyAirControlLandmark[] = new Array(21)
+    .fill(null)
+    .map(() => ({ x: whole.x, y: whole.y, z: whole.z }));
+
+  landmarks[0] = { x: whole.x, y: whole.y, z: whole.z };
+  landmarks[4] = {
+    x: whole.x + 0.05 + thumb.x,
+    y: whole.y - 0.45 + thumb.y,
+    z: whole.z + thumb.z,
+  };
+  landmarks[5] = { x: whole.x + 0.2, y: whole.y, z: whole.z };
+  landmarks[6] = {
+    x: whole.x + 0.2 + index.x,
+    y: whole.y - 0.3 + index.y,
+    z: whole.z + index.z,
+  };
+  landmarks[7] = {
+    x: whole.x + 0.2 + index.x,
+    y: whole.y - 0.5 + index.y,
+    z: whole.z + index.z,
+  };
+  landmarks[8] = {
+    x: whole.x + 0.2 + index.x,
+    y: whole.y - 0.7 + index.y,
+    z: whole.z + index.z,
+  };
+  landmarks[9] = { x: whole.x + 0.4, y: whole.y, z: whole.z };
+  landmarks[13] = { x: whole.x + 0.6, y: whole.y, z: whole.z };
+  landmarks[17] = { x: whole.x + 0.8, y: whole.y, z: whole.z };
+
+  return {
+    landmarks,
+    handedness: "Right",
+    confidence: 0.95,
+    gestureName: null,
+    gestureScore: 0,
+  };
+}
+
 function update(params: {
   previous?: ReturnType<typeof createAirPilotMagnetMachine>;
   now: number;
   rawCursor?: { x: number; y: number } | null;
   target?: AirPilotMagnetTarget | null;
-  thumbIndexRatio?: number | null;
+  hand?: OSBuddyAirControlHand | null;
 }) {
   return updateAirPilotMagnetMachine({
     previous: params.previous ?? createAirPilotMagnetMachine(),
     now: params.now,
     rawCursor: params.rawCursor ?? { x: 116, y: 118 },
     target: params.target ?? buttonA,
-    thumbIndexRatio: params.thumbIndexRatio ?? null,
+    hand: params.hand ?? makeHand(),
   });
 }
 
@@ -57,6 +121,7 @@ describe("AirPilot magnet state machine", () => {
     expect(locked.state.phase).toBe("locked");
     expect(locked.cursor).toEqual(buttonA.center);
     expect(locked.target?.label).toBe("Button A");
+    expect(locked.selectState).toBe("locked");
   });
 
   it("stays locked for small finger movement", () => {
@@ -86,70 +151,70 @@ describe("AirPilot magnet state machine", () => {
     });
   });
 
-  it("requires open after lock before pinch selection", () => {
+  it("does not select while locked without an index tap", () => {
     const locked = lockButtonA();
-    const alreadyPinched = update({
+    const idle = update({
       previous: locked.state,
-      now: 1_320,
-      thumbIndexRatio: 0.2,
-    });
-    const opening = update({
-      previous: alreadyPinched.state,
-      now: 1_430,
-      thumbIndexRatio: 0.7,
-    });
-    const prepared = update({
-      previous: opening.state,
-      now: 1_560,
-      thumbIndexRatio: 0.7,
-    });
-    const pinching = update({
-      previous: prepared.state,
-      now: 1_570,
-      thumbIndexRatio: 0.2,
-    });
-    const selected = update({
-      previous: pinching.state,
-      now: 1_690,
-      thumbIndexRatio: 0.2,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
     });
 
-    expect(alreadyPinched.selectedPoint).toBeNull();
-    expect(prepared.pinchState).toBe("prepared");
-    expect(pinching.pinchState).toBe("pinching");
+    expect(idle.state.phase).toBe("locked");
+    expect(idle.selectState).toBe("armed");
+    expect(idle.selectedPoint).toBeNull();
+  });
+
+  it("selects the locked target center when the index finger taps", () => {
+    const locked = lockButtonA();
+    const selected = update({
+      previous: locked.state,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
+      hand: makeHand({ indexOffset: { y: 0.18 } }),
+    });
+
     expect(selected.selectedPoint).toEqual(buttonA.center);
+    expect(selected.selectState).toBe("tapping");
+    expect(selected.indexTapScore).toBeGreaterThan(0.18);
+  });
+
+  it("does not select for whole-hand drift inside the locked range", () => {
+    const locked = lockButtonA();
+    const drifted = update({
+      previous: locked.state,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
+      hand: makeHand({ wholeHandOffset: { x: 0.2, y: 0.2, z: 0.05 } }),
+    });
+
+    expect(drifted.selectedPoint).toBeNull();
+    expect(drifted.indexTapScore).toBeLessThan(0.01);
+  });
+
+  it("does not select for thumb-only pinch movement", () => {
+    const locked = lockButtonA();
+    const thumbMoved = update({
+      previous: locked.state,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
+      hand: makeHand({ thumbOffset: { x: 0.2, y: 0.25 } }),
+    });
+
+    expect(thumbMoved.selectedPoint).toBeNull();
+    expect(thumbMoved.selectState).toBe("armed");
   });
 
   it("blocks repeated selections during cooldown", () => {
     const locked = lockButtonA();
-    const prepared = update({
-      previous: locked.state,
-      now: 1_500,
-      thumbIndexRatio: 0.7,
-    });
-    const preparedHeld = update({
-      previous: prepared.state,
-      now: 1_630,
-      thumbIndexRatio: 0.7,
-    });
-    const pinching = update({
-      previous: preparedHeld.state,
-      now: 1_640,
-      thumbIndexRatio: 0.2,
-    });
     const selected = update({
-      previous: pinching.state,
-      now: 1_760,
-      thumbIndexRatio: 0.2,
+      previous: locked.state,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 1,
+      hand: makeHand({ indexOffset: { y: 0.18 } }),
     });
     const repeated = update({
       previous: selected.state,
-      now: 1_810,
-      thumbIndexRatio: 0.2,
+      now: 1_000 + AIRPILOT_MAGNET_DWELL_MS + AIRPILOT_INDEX_TAP_ARM_MS + 50,
+      hand: makeHand({ indexOffset: { y: 0.18 } }),
     });
 
     expect(selected.selectedPoint).toEqual(buttonA.center);
     expect(repeated.selectedPoint).toBeNull();
-    expect(repeated.pinchState).toBe("cooldown");
+    expect(repeated.selectState).toBe("cooldown");
   });
 });

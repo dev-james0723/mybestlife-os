@@ -19,12 +19,16 @@
  *  - Both are disabled when the user prefers reduced motion.
  */
 
-import { useMemo } from "react";
+import { useMemo, type KeyboardEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
 import { RoleModelPhoto } from "@/components/relationship/role-model-photo";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  OSControl,
+  OSFrostedPanel,
+  OSIconControl,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { Sparkles, UserRound, MessageCircle, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -82,55 +86,58 @@ export function RoleModelCard({
   if (compact) {
     return (
       <motion.div {...entrance}>
-        <Card
-          className="group cursor-pointer transition-all hover:shadow-md hover:border-border"
+        <OSFrostedPanel
+          as="article"
+          role="button"
+          tabIndex={0}
+          className="group cursor-pointer transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
           onClick={onClick}
+          onKeyDown={(event) => activateCard(event, onClick)}
         >
-          <CardContent className="p-0">
-            <div className="flex min-h-24">
-              <CardPhoto photo={photo} name={roleModel.name} initials={initials} />
-              <div className="min-w-0 flex-1 p-3 pr-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium truncate">{roleModel.name}</h3>
-                    {roleModel.category && (
-                      <Badge
-                        variant="secondary"
-                        className="font-normal mt-1 text-[10px] shrink-0"
-                      >
-                        {capitalize(roleModel.category)}
-                      </Badge>
-                    )}
-                  </div>
-                  <FavoriteButton
-                    active={roleModel.is_favorite}
-                    onClick={onToggleFavorite}
-                    addLabel={copy.rmFavoriteAddAria}
-                    removeLabel={copy.rmFavoriteRemoveAria}
-                  />
+          <div className="flex min-h-28">
+            <CardPhoto photo={photo} name={roleModel.name} initials={initials} />
+            <div className="min-w-0 flex-1 p-3 pr-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-medium truncate">{roleModel.name}</h3>
+                  {roleModel.category && (
+                    <Badge
+                      variant="secondary"
+                      className="font-normal mt-1 text-[10px] shrink-0"
+                    >
+                      {capitalize(roleModel.category)}
+                    </Badge>
+                  )}
                 </div>
-                {subtitle && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5">
-                    {subtitle}
-                  </p>
-                )}
-                {onTalk && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTalk();
-                    }}
-                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Talk To {roleModel.name}
-                  </button>
-                )}
+                <FavoriteButton
+                  active={roleModel.is_favorite}
+                  onClick={onToggleFavorite}
+                  addLabel={copy.rmFavoriteAddAria}
+                  removeLabel={copy.rmFavoriteRemoveAria}
+                />
               </div>
+              {subtitle && (
+                <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5">
+                  {subtitle}
+                </p>
+              )}
+              {onTalk && (
+                <OSControl
+                  type="button"
+                  variant="ghost"
+                  className="mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTalk();
+                  }}
+                >
+                  <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                  Talk To {roleModel.name}
+                </OSControl>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </OSFrostedPanel>
       </motion.div>
     );
   }
@@ -145,95 +152,95 @@ export function RoleModelCard({
           : { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const }
       }
     >
-      <Card
-        className="group cursor-pointer overflow-hidden transition-shadow hover:shadow-md hover:border-border h-full"
+      <OSFrostedPanel
+        as="article"
+        role="button"
+        tabIndex={0}
+        className="group h-full cursor-pointer transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
         onClick={onClick}
+        onKeyDown={(event) => activateCard(event, onClick)}
       >
-        <CardContent className="p-0 h-full">
-          <div className="flex min-h-[172px] h-full">
-            <CardPhoto photo={photo} name={roleModel.name} initials={initials} />
-            <div className="flex-1 min-w-0 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold truncate">
-                    {roleModel.name}
-                  </h3>
-                  {roleModel.category && (
-                    <Badge
-                      variant="secondary"
-                      className="font-normal mt-1 text-[10px]"
-                    >
-                      {capitalize(roleModel.category)}
-                    </Badge>
-                  )}
-                </div>
-                <FavoriteButton
-                  active={roleModel.is_favorite}
-                  onClick={onToggleFavorite}
-                  addLabel={copy.rmFavoriteAddAria}
-                  removeLabel={copy.rmFavoriteRemoveAria}
-                />
-              </div>
-              {subtitle && (
-                <p className="mt-2 text-sm text-muted-foreground line-clamp-3 text-pretty">
-                  {subtitle}
-                </p>
-              )}
-              {roleModel.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {roleModel.tags.slice(0, 4).map((t) => (
-                    <Badge
-                      key={t}
-                      variant="outline"
-                      className="font-normal text-[10px] py-0"
-                    >
-                      {t}
-                    </Badge>
-                  ))}
-                  {roleModel.tags.length > 4 && (
-                    <span className="text-[10px] text-muted-foreground self-center">
-                      +{roleModel.tags.length - 4}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-3 flex items-center gap-2">
-                {onTalk && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-8 rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 px-3 text-xs text-white hover:from-indigo-500 hover:to-sky-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTalk();
-                    }}
+        <div className="flex min-h-[172px] h-full">
+          <CardPhoto photo={photo} name={roleModel.name} initials={initials} />
+          <div className="flex-1 min-w-0 p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold truncate">
+                  {roleModel.name}
+                </h3>
+                {roleModel.category && (
+                  <Badge
+                    variant="secondary"
+                    className="font-normal mt-1 text-[10px]"
                   >
-                    <MessageCircle className="mr-1 h-3.5 w-3.5" />
-                    Talk To {roleModel.name}
-                  </Button>
+                    {capitalize(roleModel.category)}
+                  </Badge>
                 )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClick();
-                  }}
-                  className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  Open Intelligence
-                </button>
-                {linkedCount > 0 && (
-                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Link2 className="h-3 w-3" />
-                    {linkedCount}
+              </div>
+              <FavoriteButton
+                active={roleModel.is_favorite}
+                onClick={onToggleFavorite}
+                addLabel={copy.rmFavoriteAddAria}
+                removeLabel={copy.rmFavoriteRemoveAria}
+              />
+            </div>
+            {subtitle && (
+              <p className="mt-2 text-sm text-muted-foreground line-clamp-3 text-pretty">
+                {subtitle}
+              </p>
+            )}
+            {roleModel.tags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1">
+                {roleModel.tags.slice(0, 4).map((t) => (
+                  <Badge
+                    key={t}
+                    variant="outline"
+                    className="font-normal text-[10px] py-0"
+                  >
+                    {t}
+                  </Badge>
+                ))}
+                {roleModel.tags.length > 4 && (
+                  <span className="text-[10px] text-muted-foreground self-center">
+                    +{roleModel.tags.length - 4}
                   </span>
                 )}
               </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {onTalk && (
+                <OSPrimaryAction
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTalk();
+                  }}
+                >
+                  <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                  Talk To {roleModel.name}
+                </OSPrimaryAction>
+              )}
+              <OSControl
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick();
+                }}
+              >
+                  Open Intelligence
+              </OSControl>
+              {linkedCount > 0 && (
+                <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Link2 className="h-3 w-3" />
+                  {linkedCount}
+                </span>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </OSFrostedPanel>
     </motion.div>
   );
 }
@@ -281,12 +288,11 @@ function FavoriteButton({
 }) {
   const reduce = useReducedMotion();
   return (
-    <Button
+    <OSIconControl
       type="button"
-      size="sm"
       variant="ghost"
       className={cn(
-        "h-8 w-8 p-0 shrink-0",
+        "shrink-0",
         active
           ? "text-primary hover:text-primary"
           : "text-muted-foreground/60 hover:text-foreground",
@@ -314,8 +320,14 @@ function FavoriteButton({
           fill={active ? "currentColor" : "none"}
         />
       </motion.span>
-    </Button>
+    </OSIconControl>
   );
+}
+
+function activateCard(event: KeyboardEvent<HTMLElement>, onClick: () => void) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  onClick();
 }
 
 function capitalize(s: string): string {

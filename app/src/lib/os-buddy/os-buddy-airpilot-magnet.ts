@@ -1,20 +1,41 @@
-import {
-  AIRPILOT_OPEN_HOLD_MS,
-  AIRPILOT_OPEN_RATIO_THRESHOLD,
-  AIRPILOT_PINCH_HOLD_MS,
-  AIRPILOT_PINCH_RATIO_THRESHOLD,
-  AIRPILOT_SELECTION_COOLDOWN_MS,
-} from "./os-buddy-airpilot-pinch";
 import type {
+  OSBuddyAirControlHand,
+  OSBuddyAirControlLandmark,
   OSBuddyAirControlPoint,
   OSBuddyAirPilotMagnetPhase,
-  OSBuddyAirPilotPinchState,
+  OSBuddyAirPilotSelectState,
 } from "./os-buddy-air-control-types";
 
 export const AIRPILOT_MAGNET_RADIUS_PX = 48;
 export const AIRPILOT_MAGNET_DWELL_MS = 300;
 export const AIRPILOT_MAGNET_JITTER_PX = 24;
 export const AIRPILOT_MAGNET_ESCAPE_PX = 72;
+export const AIRPILOT_INDEX_TAP_ARM_MS = 80;
+export const AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD = 0.1;
+export const AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD = 0.18;
+export const AIRPILOT_SELECTION_COOLDOWN_MS = 600;
+
+const HAND_LANDMARK_COUNT = 21;
+const WRIST = 0;
+const INDEX_MCP = 5;
+const INDEX_PIP = 6;
+const INDEX_DIP = 7;
+const INDEX_TIP = 8;
+const MIDDLE_MCP = 9;
+const RING_MCP = 13;
+const PINKY_MCP = 17;
+
+type Vec3 = {
+  x: number;
+  y: number;
+  z: number;
+};
+
+type AirPilotIndexTapPose = {
+  pip: Vec3;
+  dip: Vec3;
+  tip: Vec3;
+};
 
 export type AirPilotMagnetRect = {
   x: number;
@@ -36,9 +57,10 @@ export type AirPilotMagnetMachine = {
   candidateSince: number | null;
   candidateStartCursor: OSBuddyAirControlPoint | null;
   lockedTarget: AirPilotMagnetTarget | null;
-  openSince: number | null;
-  pinchSince: number | null;
-  openedWhileLocked: boolean;
+  lockedAt: number | null;
+  tapBaseline: AirPilotIndexTapPose | null;
+  tapArmedAt: number | null;
+  lastTapScore: number;
   cooldownUntil: number | null;
 };
 
@@ -47,7 +69,8 @@ export type AirPilotMagnetUpdate = {
   cursor: OSBuddyAirControlPoint | null;
   selectedPoint: OSBuddyAirControlPoint | null;
   target: AirPilotMagnetTarget | null;
-  pinchState: OSBuddyAirPilotPinchState;
+  selectState: OSBuddyAirPilotSelectState;
+  indexTapScore: number | null;
 };
 
 export function createAirPilotMagnetMachine(): AirPilotMagnetMachine {
@@ -57,15 +80,35 @@ export function createAirPilotMagnetMachine(): AirPilotMagnetMachine {
     candidateSince: null,
     candidateStartCursor: null,
     lockedTarget: null,
-    openSince: null,
-    pinchSince: null,
-    openedWhileLocked: false,
+    lockedAt: null,
+    tapBaseline: null,
+    tapArmedAt: null,
+    lastTapScore: 0,
     cooldownUntil: null,
   };
 }
 
 function distance(a: OSBuddyAirControlPoint, b: OSBuddyAirControlPoint) {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function distance3D(a: Vec3, b: Vec3) {
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+function landmarkAt(
+  landmarks: OSBuddyAirControlLandmark[],
+  index: number,
+): OSBuddyAirControlLandmark | null {
+  return landmarks[index] ?? null;
+}
+
+function toVec3(landmark: OSBuddyAirControlLandmark): Vec3 {
+  return {
+    x: landmark.x,
+    y: landmark.y,
+    z: landmark.z ?? 0,
+  };
 }
 
 function sameTarget(a: AirPilotMagnetTarget | null, b: AirPilotMagnetTarget | null) {
@@ -88,6 +131,84 @@ function pointInsideInflatedRect(
     point.x <= rect.x + rect.width + padding &&
     point.y >= rect.y - padding &&
     point.y <= rect.y + rect.height + padding
+  );
+}
+
+function getTapLandmarks(hand: OSBuddyAirControlHand | null) {
+  if (!hand) return null;
+  const landmarks =
+    hand.worldLandmarks && hand.worldLandmarks.length >= HAND_LANDMARK_COUNT
+      ? hand.worldLandmarks
+      : hand.landmarks;
+  return landmarks.length >= HAND_LANDMARK_COUNT ? landmarks : null;
+}
+
+function getPalmCenter(landmarks: OSBuddyAirControlLandmark[]): Vec3 | null {
+  const anchors = [WRIST, INDEX_MCP, MIDDLE_MCP, RING_MCP, PINKY_MCP]
+    .map((index) => landmarkAt(landmarks, index))
+    .filter(Boolean) as OSBuddyAirControlLandmark[];
+  if (anchors.length === 0) return null;
+
+  return {
+    x: anchors.reduce((sum, landmark) => sum + landmark.x, 0) / anchors.length,
+    y: anchors.reduce((sum, landmark) => sum + landmark.y, 0) / anchors.length,
+    z: anchors.reduce((sum, landmark) => sum + (landmark.z ?? 0), 0) / anchors.length,
+  };
+}
+
+function getPalmSize(landmarks: OSBuddyAirControlLandmark[]) {
+  const wrist = landmarkAt(landmarks, WRIST);
+  const middleMcp = landmarkAt(landmarks, MIDDLE_MCP);
+  const indexMcp = landmarkAt(landmarks, INDEX_MCP);
+  const pinkyMcp = landmarkAt(landmarks, PINKY_MCP);
+  if (!wrist || !middleMcp || !indexMcp || !pinkyMcp) return 0.001;
+  return Math.max(
+    0.001,
+    distance3D(toVec3(wrist), toVec3(middleMcp)),
+    distance3D(toVec3(indexMcp), toVec3(pinkyMcp)),
+  );
+}
+
+function normalizeJoint(
+  landmark: OSBuddyAirControlLandmark | null,
+  palmCenter: Vec3,
+  palmSize: number,
+) {
+  if (!landmark) return null;
+  return {
+    x: (landmark.x - palmCenter.x) / palmSize,
+    y: (landmark.y - palmCenter.y) / palmSize,
+    z: ((landmark.z ?? 0) - palmCenter.z) / palmSize,
+  };
+}
+
+export function getAirPilotIndexTapPose(
+  hand: OSBuddyAirControlHand | null,
+): AirPilotIndexTapPose | null {
+  const landmarks = getTapLandmarks(hand);
+  if (!landmarks) return null;
+
+  const palmCenter = getPalmCenter(landmarks);
+  if (!palmCenter) return null;
+
+  const palmSize = getPalmSize(landmarks);
+  const pip = normalizeJoint(landmarkAt(landmarks, INDEX_PIP), palmCenter, palmSize);
+  const dip = normalizeJoint(landmarkAt(landmarks, INDEX_DIP), palmCenter, palmSize);
+  const tip = normalizeJoint(landmarkAt(landmarks, INDEX_TIP), palmCenter, palmSize);
+  if (!pip || !dip || !tip) return null;
+
+  return { pip, dip, tip };
+}
+
+export function getAirPilotIndexTapScore(
+  pose: AirPilotIndexTapPose | null,
+  baseline: AirPilotIndexTapPose | null,
+) {
+  if (!pose || !baseline) return null;
+  return (
+    distance3D(pose.pip, baseline.pip) * 0.25 +
+    distance3D(pose.dip, baseline.dip) * 0.35 +
+    distance3D(pose.tip, baseline.tip) * 0.4
   );
 }
 
@@ -116,12 +237,18 @@ function beginCandidate(params: {
 
 function lockTarget(params: {
   target: AirPilotMagnetTarget;
+  now: number;
+  hand: OSBuddyAirControlHand | null;
   cooldownUntil: number | null;
 }): AirPilotMagnetMachine {
+  const tapBaseline = getAirPilotIndexTapPose(params.hand);
   return {
     ...createAirPilotMagnetMachine(),
     phase: "locked",
     lockedTarget: params.target,
+    lockedAt: params.now,
+    tapBaseline,
+    tapArmedAt: tapBaseline ? params.now : null,
     cooldownUntil: params.cooldownUntil,
   };
 }
@@ -130,20 +257,12 @@ function updateLocked(params: {
   previous: AirPilotMagnetMachine;
   lockedTarget: AirPilotMagnetTarget;
   rawCursor: OSBuddyAirControlPoint;
+  hand: OSBuddyAirControlHand | null;
   now: number;
-  thumbIndexRatio: number | null;
   wakeGuardUntil: number;
   cooldownUntil: number | null;
 }): AirPilotMagnetUpdate {
-  const {
-    previous,
-    lockedTarget,
-    rawCursor,
-    now,
-    thumbIndexRatio,
-    wakeGuardUntil,
-    cooldownUntil,
-  } = params;
+  const { previous, lockedTarget, rawCursor, hand, now, wakeGuardUntil, cooldownUntil } = params;
   const escaped =
     distance(rawCursor, lockedTarget.center) > AIRPILOT_MAGNET_ESCAPE_PX ||
     !pointInsideInflatedRect(rawCursor, lockedTarget.rect, AIRPILOT_MAGNET_ESCAPE_PX);
@@ -154,9 +273,19 @@ function updateLocked(params: {
       cursor: rawCursor,
       selectedPoint: null,
       target: null,
-      pinchState: cooldownUntil ? "cooldown" : "tracking",
+      selectState: cooldownUntil ? "cooldown" : "tracking",
+      indexTapScore: null,
     };
   }
+
+  const pose = getAirPilotIndexTapPose(hand);
+  const baseline = previous.tapBaseline ?? pose;
+  const indexTapScore = getAirPilotIndexTapScore(pose, baseline);
+  const released =
+    indexTapScore != null && indexTapScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD;
+  const tapBaseline = released ? pose : baseline;
+  const tapArmedAt =
+    previous.tapArmedAt ?? (tapBaseline ? now : null);
 
   if (cooldownUntil) {
     return {
@@ -167,27 +296,21 @@ function updateLocked(params: {
         candidateTarget: null,
         candidateSince: null,
         candidateStartCursor: null,
-        openSince: null,
-        pinchSince: null,
-        openedWhileLocked: false,
+        lockedAt: previous.lockedAt ?? now,
+        tapBaseline,
+        tapArmedAt: released ? now : tapArmedAt,
+        lastTapScore: indexTapScore ?? previous.lastTapScore,
         cooldownUntil,
       },
       cursor: lockedTarget.center,
       selectedPoint: null,
       target: lockedTarget,
-      pinchState: "cooldown",
+      selectState: "cooldown",
+      indexTapScore,
     };
   }
 
-  const isOpen = thumbIndexRatio != null && thumbIndexRatio >= AIRPILOT_OPEN_RATIO_THRESHOLD;
-  const isPinched = thumbIndexRatio != null && thumbIndexRatio <= AIRPILOT_PINCH_RATIO_THRESHOLD;
-
-  if (isOpen) {
-    const openSince = previous.openSince ?? now;
-    const openedWhileLocked =
-      previous.openedWhileLocked ||
-      (now - openSince >= AIRPILOT_OPEN_HOLD_MS && now >= wakeGuardUntil);
-
+  if (!tapBaseline || tapArmedAt == null) {
     return {
       state: {
         ...previous,
@@ -196,43 +319,29 @@ function updateLocked(params: {
         candidateTarget: null,
         candidateSince: null,
         candidateStartCursor: null,
-        openSince,
-        pinchSince: null,
-        openedWhileLocked,
+        lockedAt: previous.lockedAt ?? now,
+        tapBaseline,
+        tapArmedAt,
+        lastTapScore: indexTapScore ?? previous.lastTapScore,
         cooldownUntil: null,
       },
       cursor: lockedTarget.center,
       selectedPoint: null,
       target: lockedTarget,
-      pinchState: openedWhileLocked ? "prepared" : "tracking",
+      selectState: "locked",
+      indexTapScore,
     };
   }
 
-  if (previous.openedWhileLocked && isPinched) {
-    const pinchSince = previous.pinchSince ?? now;
-    const canSelect = now - pinchSince >= AIRPILOT_PINCH_HOLD_MS && now >= wakeGuardUntil;
+  const armed = now - tapArmedAt >= AIRPILOT_INDEX_TAP_ARM_MS && now >= wakeGuardUntil;
+  const previousScore = previous.lastTapScore;
+  const canSelect =
+    armed &&
+    indexTapScore != null &&
+    previousScore <= AIRPILOT_INDEX_TAP_RELEASE_THRESHOLD &&
+    indexTapScore >= AIRPILOT_INDEX_TAP_TRIGGER_THRESHOLD;
 
-    if (canSelect) {
-      return {
-        state: {
-          ...previous,
-          phase: "locked",
-          lockedTarget,
-          candidateTarget: null,
-          candidateSince: null,
-          candidateStartCursor: null,
-          openSince: null,
-          pinchSince: null,
-          openedWhileLocked: false,
-          cooldownUntil: now + AIRPILOT_SELECTION_COOLDOWN_MS,
-        },
-        cursor: lockedTarget.center,
-        selectedPoint: lockedTarget.center,
-        target: lockedTarget,
-        pinchState: "cooldown",
-      };
-    }
-
+  if (canSelect) {
     return {
       state: {
         ...previous,
@@ -241,14 +350,17 @@ function updateLocked(params: {
         candidateTarget: null,
         candidateSince: null,
         candidateStartCursor: null,
-        openSince: previous.openSince,
-        pinchSince,
-        cooldownUntil: null,
+        lockedAt: previous.lockedAt ?? now,
+        tapBaseline,
+        tapArmedAt,
+        lastTapScore: indexTapScore,
+        cooldownUntil: now + AIRPILOT_SELECTION_COOLDOWN_MS,
       },
       cursor: lockedTarget.center,
-      selectedPoint: null,
+      selectedPoint: lockedTarget.center,
       target: lockedTarget,
-      pinchState: "pinching",
+      selectState: "tapping",
+      indexTapScore,
     };
   }
 
@@ -260,14 +372,17 @@ function updateLocked(params: {
       candidateTarget: null,
       candidateSince: null,
       candidateStartCursor: null,
-      openSince: previous.openedWhileLocked ? previous.openSince : null,
-      pinchSince: null,
+      lockedAt: previous.lockedAt ?? now,
+      tapBaseline,
+      tapArmedAt: released ? now : tapArmedAt,
+      lastTapScore: indexTapScore ?? previous.lastTapScore,
       cooldownUntil: null,
     },
     cursor: lockedTarget.center,
     selectedPoint: null,
     target: lockedTarget,
-    pinchState: previous.openedWhileLocked ? "prepared" : "tracking",
+    selectState: armed ? "armed" : "locked",
+    indexTapScore,
   };
 }
 
@@ -276,10 +391,10 @@ export function updateAirPilotMagnetMachine(params: {
   now: number;
   rawCursor: OSBuddyAirControlPoint | null;
   target: AirPilotMagnetTarget | null;
-  thumbIndexRatio: number | null;
+  hand: OSBuddyAirControlHand | null;
   wakeGuardUntil?: number | null;
 }): AirPilotMagnetUpdate {
-  const { previous, now, rawCursor, target, thumbIndexRatio } = params;
+  const { previous, now, rawCursor, target, hand } = params;
   const wakeGuardUntil = params.wakeGuardUntil ?? 0;
   const cooldownUntil = activeCooldown(previous, now);
 
@@ -289,7 +404,8 @@ export function updateAirPilotMagnetMachine(params: {
       cursor: null,
       selectedPoint: null,
       target: null,
-      pinchState: cooldownUntil ? "cooldown" : "tracking",
+      selectState: cooldownUntil ? "cooldown" : "tracking",
+      indexTapScore: null,
     };
   }
 
@@ -298,8 +414,8 @@ export function updateAirPilotMagnetMachine(params: {
       previous,
       lockedTarget: previous.lockedTarget,
       rawCursor,
+      hand,
       now,
-      thumbIndexRatio,
       wakeGuardUntil,
       cooldownUntil,
     });
@@ -311,7 +427,8 @@ export function updateAirPilotMagnetMachine(params: {
       cursor: rawCursor,
       selectedPoint: null,
       target: null,
-      pinchState: cooldownUntil ? "cooldown" : "tracking",
+      selectState: cooldownUntil ? "cooldown" : "tracking",
+      indexTapScore: null,
     };
   }
 
@@ -328,18 +445,20 @@ export function updateAirPilotMagnetMachine(params: {
         cursor: rawCursor,
         selectedPoint: null,
         target,
-        pinchState: cooldownUntil ? "cooldown" : "tracking",
+        selectState: cooldownUntil ? "cooldown" : "candidate",
+        indexTapScore: null,
       };
     }
 
     if (now - previous.candidateSince >= AIRPILOT_MAGNET_DWELL_MS) {
-      const state = lockTarget({ target, cooldownUntil });
+      const state = lockTarget({ target, now, hand, cooldownUntil });
       return {
         state,
         cursor: target.center,
         selectedPoint: null,
         target,
-        pinchState: cooldownUntil ? "cooldown" : "tracking",
+        selectState: cooldownUntil ? "cooldown" : "locked",
+        indexTapScore: 0,
       };
     }
 
@@ -352,7 +471,8 @@ export function updateAirPilotMagnetMachine(params: {
       cursor: rawCursor,
       selectedPoint: null,
       target,
-      pinchState: cooldownUntil ? "cooldown" : "tracking",
+      selectState: cooldownUntil ? "cooldown" : "candidate",
+      indexTapScore: null,
     };
   }
 
@@ -361,6 +481,7 @@ export function updateAirPilotMagnetMachine(params: {
     cursor: rawCursor,
     selectedPoint: null,
     target,
-    pinchState: cooldownUntil ? "cooldown" : "tracking",
+    selectState: cooldownUntil ? "cooldown" : "candidate",
+    indexTapScore: null,
   };
 }

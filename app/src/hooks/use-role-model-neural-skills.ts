@@ -43,11 +43,12 @@ export const neuralSkillKeys = {
   all: ["role-model-neural-skills"] as const,
 };
 
-export function useRoleModelNeuralSkills() {
+export function useRoleModelNeuralSkills(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: neuralSkillKeys.all,
     queryFn: roleModelNeuralSkillsRepository.getAll,
     staleTime: 60_000,
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -113,12 +114,12 @@ export function neuralSkillToMindSkill(ns: RoleModelNeuralSkill): MindSkill {
 }
 
 /** All persisted Neural Skills as ready-to-use Mind Council skills. */
-export function useRoleModelMindSkills(): {
+export function useRoleModelMindSkills(enabled = true): {
   skills: MindSkill[];
   byRoleModelId: Map<string, RoleModelNeuralSkill>;
   isLoading: boolean;
 } {
-  const { data, isLoading } = useRoleModelNeuralSkills();
+  const { data, isLoading } = useRoleModelNeuralSkills({ enabled });
   return useMemo(() => {
     const rows = data ?? [];
     return {

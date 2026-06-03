@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
-import { useOSBuddyAirPilotSettings } from "@/hooks/use-os-buddy-airpilot-settings";
 import { useOSBuddyFreeRoam } from "@/hooks/use-os-buddy-free-roam";
 import { useOSBuddyFreeRoamSettings } from "@/hooks/use-os-buddy-free-roam-settings";
 import {
@@ -434,10 +433,6 @@ export function OSBuddyDock() {
   const {
     settings: freeRoamSettings,
   } = useOSBuddyFreeRoamSettings();
-  const {
-    settings: airPilotSettings,
-  } = useOSBuddyAirPilotSettings();
-
   const bubble = useOSBuddyStore((s) => s.bubble);
   const clearBubble = useOSBuddyStore((s) => s.clearBubble);
   const isMenuOpen = useOSBuddyStore((s) => s.isMenuOpen);
@@ -1300,8 +1295,8 @@ export function OSBuddyDock() {
     emitOSBuddyEvent({ type: "buddy:air-control:start", sensorMode: "rgb-webcam" });
     showBubble(
       locale === "zh-TW"
-        ? "AirPilot 啟動。紅點停喺按鈕附近會吸附；吸附後張開再 Pinch 即可選取。"
-        : "AirPilot is on. Pause near a button to magnet-lock, then open and pinch to select.",
+        ? "AirPilot 啟動。紅點停喺按鈕附近會吸附；吸附後輕動食指即可選取。"
+        : "AirPilot is on. Pause near a button to magnet-lock, then tap your index finger to select.",
       "user-triggered",
       { force: true, durationMs: 4_000 },
     );
@@ -1322,6 +1317,28 @@ export function OSBuddyDock() {
     showBubble,
     startAirControl,
   ]);
+
+  const stopAirPilotControl = useCallback(
+    (reason: "user-exit" | "closed-fist" = "user-exit") => {
+      airGrabOffsetRef.current = null;
+      pauseAirControlWalk("idle");
+      stopAirControl(reason);
+      airPilotHoverTargetRef.current = setAirPilotHighlightedTarget({
+        previous: airPilotHoverTargetRef.current,
+        next: null,
+      });
+      returnAirPilotToDefaultHome();
+      showBubble(
+        locale === "zh-TW" ? "AirPilot 已關閉。" : "AirPilot is off.",
+        "system",
+        {
+          force: true,
+          durationMs: 1_600,
+        },
+      );
+    },
+    [locale, pauseAirControlWalk, returnAirPilotToDefaultHome, showBubble, stopAirControl],
+  );
 
   const handleAirControlCommand = useCallback(
     (command: OSBuddyAirControlCommand) => {
@@ -1388,7 +1405,6 @@ export function OSBuddyDock() {
           return;
         }
         case "wake":
-          if (!isAirControlActive) activateAirControl();
           return;
         case "follow":
           setAirControlWalkTarget(command.point, command.point);
@@ -1422,32 +1438,12 @@ export function OSBuddyDock() {
           temporarilySetMood("playful", 600);
           return;
         case "hold":
-          pauseAirControlWalk("playful");
-          showBubble(locale === "zh-TW" ? "握拳，我先停低。" : "Fist held. I'll freeze.", "user-triggered", {
-            force: true,
-            durationMs: 1_200,
-          });
           return;
         case "resume":
           setDragging(true, null);
           return;
         case "exit":
-          airGrabOffsetRef.current = null;
-          pauseAirControlWalk("idle");
-          stopAirControl(command.gesture === "Closed_Fist" ? "closed-fist" : "user-exit");
-          airPilotHoverTargetRef.current = setAirPilotHighlightedTarget({
-            previous: airPilotHoverTargetRef.current,
-            next: null,
-          });
-          returnAirPilotToDefaultHome();
-          showBubble(
-            locale === "zh-TW" ? "AirPilot 已關閉。" : "AirPilot is off.",
-            "system",
-            {
-              force: true,
-              durationMs: 1_600,
-            },
-          );
+          stopAirPilotControl(command.gesture === "Closed_Fist" ? "closed-fist" : "user-exit");
           return;
         case "select":
           void triggerClickReaction();
@@ -1493,13 +1489,10 @@ export function OSBuddyDock() {
       }
     },
     [
-      activateAirControl,
       buddyBox,
       interruptFreeRoam,
-      isAirControlActive,
       locale,
       pauseAirControlWalk,
-      returnAirPilotToDefaultHome,
       savePosition,
       setActivePosition,
       setAirControlWalkTarget,
@@ -1511,7 +1504,7 @@ export function OSBuddyDock() {
       setReturningHome,
       setWalkModeActive,
       showBubble,
-      stopAirControl,
+      stopAirPilotControl,
       temporarilySetMood,
       togglePlayBallGame,
       triggerClickReaction,
@@ -1674,7 +1667,11 @@ export function OSBuddyDock() {
       if (resolution.kind === "trigger") {
         lastTapRef.current = null;
         if (getLocalAirControlSettings().enableQuadTap) {
-          activateAirControl();
+          if (isAirControlActive) {
+            stopAirPilotControl("user-exit");
+          } else {
+            activateAirControl();
+          }
         }
         return;
       }
@@ -1703,6 +1700,8 @@ export function OSBuddyDock() {
       activateAirControl,
       clearSingleClickTimer,
       interruptFreeRoam,
+      isAirControlActive,
+      stopAirPilotControl,
       togglePlayBallGame,
       toggleWalkMode,
       triggerClickReaction,
@@ -1881,23 +1880,18 @@ export function OSBuddyDock() {
 
     if (isAirControlActive) {
       event.preventDefault();
-      clearSingleClickTimer();
-      lastTapRef.current = null;
-      pauseAirControlWalk("idle");
-      stopAirControl("user-exit");
-      airPilotHoverTargetRef.current = setAirPilotHighlightedTarget({
-        previous: airPilotHoverTargetRef.current,
-        next: null,
-      });
-      returnAirPilotToDefaultHome();
-      showBubble(
-        locale === "zh-TW" ? "AirPilot 已關閉。" : "AirPilot is off.",
-        "system",
-        {
-          force: true,
-          durationMs: 1_600,
-        },
-      );
+      clearLongPressTimer();
+      longPressTriggeredRef.current = false;
+      dragSessionRef.current = {
+        pointerId: event.pointerId,
+        startPointerX: event.clientX,
+        startPointerY: event.clientY,
+        startDockX: dockPoint.x,
+        startDockY: dockPoint.y,
+        lastDockX: dockPoint.x,
+        isDragging: false,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
 
@@ -1946,6 +1940,7 @@ export function OSBuddyDock() {
   const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
     const session = dragSessionRef.current;
     if (!session || session.pointerId !== event.pointerId) return;
+    if (isAirControlActive) return;
 
     if (isWalkModeActive || isReturningHome) {
       if (isWalkModeActive) {
@@ -2098,15 +2093,6 @@ export function OSBuddyDock() {
 
     if (event.key === "Escape") {
       event.preventDefault();
-      if (isAirControlActive) {
-        pauseAirControlWalk("idle");
-        stopAirControl("user-exit");
-        airPilotHoverTargetRef.current = setAirPilotHighlightedTarget({
-          previous: airPilotHoverTargetRef.current,
-          next: null,
-        });
-        returnAirPilotToDefaultHome();
-      }
       interruptFreeRoam("keyboard");
       clearBubble();
       setMenuOpen(false);
@@ -2118,7 +2104,7 @@ export function OSBuddyDock() {
 
   if (!mounted || !enabled) return null;
 
-  const airPilotRuntimeEnabled = isAirControlActive || airPilotSettings.wakeEnabled;
+  const airPilotRuntimeEnabled = isAirControlActive;
   const bubbleHorizontal = dockPoint.x > viewport.width / 2 ? "left" : "right";
   const bubbleVertical = dockPoint.y < 136 ? "below" : "above";
 
@@ -2197,7 +2183,6 @@ export function OSBuddyDock() {
       <OSBuddyAirControlOverlay
         runtimeEnabled={airPilotRuntimeEnabled}
         airPilotActive={isAirControlActive}
-        wakeListening={airPilotSettings.wakeEnabled}
         locale={locale}
         viewport={viewport}
         dockPoint={dockPoint}

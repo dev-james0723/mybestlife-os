@@ -604,9 +604,8 @@ const en: RelationshipUiCopy = {
   rmSortRecentlyAdded: "Recently added",
   rmEmptyTitle: "No role models yet",
   rmEmptyDescNoResults: "Try a different search",
-  rmEmptyDescNoEntries:
-    "Collect mentors, leaders, and inspirations in one gallery — start with someone who's shaped how you think.",
-  rmEmptyAction: "Add one",
+  rmEmptyDescNoEntries: "Start with someone who shaped how you think.",
+  rmEmptyAction: "Add role model",
   rmMetaLinks: "{count} links",
   rmCreateTitle: "Add role model",
   rmEditTitle: "Edit role model",
@@ -742,7 +741,8 @@ const en: RelationshipUiCopy = {
   rmSpotlightNextAria: "Show another quote",
   rmSortFavoritesFirst: "Favorites first",
   rmLinkedOpenInAria: "Open in {area}",
-  rmEmptyTrySampleHint: "Or try a name like Marie Curie, Steve Jobs, or Maya Angelou — AI will fill the rest.",
+  rmEmptyTrySampleHint:
+    "Try Marie Curie, Steve Jobs, or Maya Angelou; AI drafts the profile.",
   rmEmptyTrySampleAction: "Try with AI",
 
   rmDiscardChangesTitle: "Discard your changes?",

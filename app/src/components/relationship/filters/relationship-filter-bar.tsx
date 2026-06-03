@@ -13,7 +13,7 @@
 
 import { useMemo } from "react";
 import { FilterBar } from "@/components/shared/filter-bar";
-import { Button } from "@/components/ui/button";
+import { OSControl } from "@/components/ui/os-primitives";
 import { Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -120,10 +120,9 @@ export function RelationshipFilterBar({
         }}
       />
 
-      <Button
+      <OSControl
         type="button"
         variant={filters.favoritesOnly ? "default" : "outline"}
-        size="sm"
         className={cn(
           "gap-1.5",
           filters.favoritesOnly && "bg-amber-500 hover:bg-amber-500/90",
@@ -139,13 +138,12 @@ export function RelationshipFilterBar({
           strokeWidth={filters.favoritesOnly ? 1.5 : 2}
         />
         {copy.relFilterFavoritesOnly}
-      </Button>
+      </OSControl>
 
       {isDirty && (
-        <Button
+        <OSControl
           type="button"
           variant="ghost"
-          size="sm"
           className="gap-1 text-muted-foreground hover:text-foreground"
           onClick={() =>
             onFiltersChange({
@@ -158,7 +156,7 @@ export function RelationshipFilterBar({
         >
           <X className="h-3.5 w-3.5" aria-hidden />
           {copy.relFilterClear}
-        </Button>
+        </OSControl>
       )}
     </div>
   );

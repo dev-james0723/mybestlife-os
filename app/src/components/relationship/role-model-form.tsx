@@ -28,10 +28,15 @@ import {
   type FormEvent,
 } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  OSControl,
+  OSGlassPanel,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
+import { osDialogSurfaceClassName } from "@/components/ui/os-glass";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,6 +91,13 @@ import type { RoleModel, Project, Goal, Note, Task } from "@/types/database";
 import type { CreateRoleModelInput } from "@/lib/repositories/role-models";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  relationshipDialogFooterClassName,
+  relationshipFieldClassName,
+  relationshipInnerPanelClassName,
+  relationshipSelectTriggerClassName,
+  relationshipTextAreaClassName,
+} from "@/components/relationship/relationship-os";
 import {
   AlertCircle,
   CheckCircle2,
@@ -251,6 +263,8 @@ export function RoleModelForm({
   useEffect(() => {
     if (!open) return;
     const seeded = initial ? fromRoleModel(initial) : EMPTY_FORM;
+    // Intentional prop-to-local form sync when the sheet opens or changes rows.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(seeded);
     setBaseline(JSON.stringify(seeded));
     autofill.reset();
@@ -430,9 +444,9 @@ export function RoleModelForm({
       title={mode === "create" ? copy.rmCreateTitle : copy.rmEditTitle}
       width="2xl"
       footer={
-        <div className="flex items-center justify-between gap-2">
+        <div className={cn(relationshipDialogFooterClassName, "justify-between sm:justify-between")}>
           {mode === "edit" && onDelete ? (
-            <Button
+            <OSControl
               type="button"
               variant="ghost"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -440,21 +454,21 @@ export function RoleModelForm({
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {copy.delete}
-            </Button>
+            </OSControl>
           ) : (
             <span />
           )}
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={requestClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <OSControl type="button" variant="outline" onClick={requestClose}>
               {copy.cancel}
-            </Button>
-            <Button
+            </OSControl>
+            <OSPrimaryAction
               type="submit"
               form={formId}
               disabled={!form.name.trim() || isSaving}
             >
               {isSaving ? copy.saving : mode === "create" ? copy.create : copy.save}
-            </Button>
+            </OSPrimaryAction>
           </div>
         </div>
       }
@@ -525,7 +539,7 @@ export function RoleModelForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rm-category">{copy.rmLabelCategory}</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Select
                   value={
                     isSuggestedCategory(form.category)
@@ -536,7 +550,12 @@ export function RoleModelForm({
                     update("category", v === "__custom" ? form.category : v)
                   }
                 >
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger
+                    className={cn(
+                      relationshipSelectTriggerClassName,
+                      "w-full sm:w-[180px]",
+                    )}
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -554,7 +573,7 @@ export function RoleModelForm({
                     update("category", e.target.value || null)
                   }
                   placeholder={copy.rmLabelCategoryPlaceholder}
-                  className="flex-1"
+                  className={cn(relationshipFieldClassName, "flex-1")}
                 />
               </div>
             </div>
@@ -565,8 +584,9 @@ export function RoleModelForm({
                 type="button"
                 onClick={() => update("is_favorite", !form.is_favorite)}
                 className={cn(
-                  "flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm transition-colors hover:bg-accent",
-                  form.is_favorite && "border-primary/40 bg-primary/5",
+                  relationshipSelectTriggerClassName,
+                  "flex w-full items-center gap-2 px-3 text-left",
+                  form.is_favorite && "border-lime-300/60 bg-lime-300/12",
                 )}
                 aria-pressed={form.is_favorite}
                 aria-label={
@@ -595,6 +615,7 @@ export function RoleModelForm({
             <Label htmlFor="rm-blurb">{copy.rmLabelAdmirationBlurb}</Label>
             <Input
               id="rm-blurb"
+              className={relationshipFieldClassName}
               value={form.admiration_blurb ?? ""}
               onChange={updateString("admiration_blurb")}
               placeholder={copy.rmLabelAdmirationBlurbPlaceholder}
@@ -609,6 +630,7 @@ export function RoleModelForm({
             <Label htmlFor="rm-bio">{copy.rmLabelBio}</Label>
             <Textarea
               id="rm-bio"
+              className={relationshipTextAreaClassName}
               value={form.bio ?? ""}
               onChange={updateString("bio")}
               placeholder={copy.rmLabelBioPlaceholder}
@@ -690,6 +712,7 @@ export function RoleModelForm({
             <Label htmlFor="rm-notes">{copy.rmLabelNotesPersonal}</Label>
             <Textarea
               id="rm-notes"
+              className={relationshipTextAreaClassName}
               value={form.notes ?? ""}
               onChange={updateString("notes")}
               placeholder={copy.rmLabelNotesPersonalPlaceholder}
@@ -707,7 +730,7 @@ export function RoleModelForm({
       stacking inside another modal would otherwise trap focus oddly.
     */}
     <AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
-      <AlertDialogContent>
+      <AlertDialogContent className={osDialogSurfaceClassName}>
         <AlertDialogHeader>
           <AlertDialogTitle>{copy.rmDiscardChangesTitle}</AlertDialogTitle>
           <AlertDialogDescription>
@@ -715,10 +738,12 @@ export function RoleModelForm({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{copy.rmDiscardKeepEditing}</AlertDialogCancel>
+          <AlertDialogCancel className="min-h-11 rounded-xl">
+            {copy.rmDiscardKeepEditing}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={confirmDiscard}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="min-h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {copy.rmDiscardConfirm}
           </AlertDialogAction>
@@ -749,7 +774,7 @@ function FormSection({
 }) {
   return (
     <motion.section
-      className="space-y-4"
+      className={relationshipInnerPanelClassName}
       // Re-key the wrapper on each pulse so framer-motion replays initial→animate.
       key={pulseSignal ?? "section"}
       initial={pulseSignal ? { opacity: 0.5, y: 6 } : false}
@@ -781,12 +806,7 @@ function AiHero({
   const hasResult = autofill.status === "success";
 
   return (
-    <section
-      className={cn(
-        "relative overflow-hidden rounded-xl border border-border p-5 transition-colors",
-        "bg-gradient-to-br from-primary/5 via-background to-background",
-      )}
-    >
+    <OSGlassPanel className="p-4 sm:p-5">
       {/* Decorative halo */}
       <div
         aria-hidden
@@ -812,6 +832,7 @@ function AiHero({
           <Label htmlFor="rm-name">{copy.rmLabelName}</Label>
           <Input
             id="rm-name"
+            className={relationshipFieldClassName}
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="e.g. Marie Curie"
@@ -820,7 +841,7 @@ function AiHero({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
+          <OSPrimaryAction
             type="button"
             onClick={onRun}
             disabled={!name.trim() || isLoading}
@@ -832,17 +853,16 @@ function AiHero({
               <Sparkles className="h-4 w-4" />
             )}
             {hasResult ? copy.rmAutoFillCtaRefresh : copy.rmAutoFillCta}
-          </Button>
+          </OSPrimaryAction>
 
           {isLoading && (
-            <Button
+            <OSControl
               type="button"
               variant="ghost"
-              size="sm"
               onClick={autofill.cancel}
             >
               {copy.cancel}
-            </Button>
+            </OSControl>
           )}
 
           <AutoFillStatus copy={copy} status={autofill.status} />
@@ -852,7 +872,7 @@ function AiHero({
           <ErrorPill copy={copy} error={autofill.error} />
         )}
       </div>
-    </section>
+    </OSGlassPanel>
   );
 }
 
@@ -951,7 +971,7 @@ function LinkedEntitySection({
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <div className="rounded-lg border p-3 space-y-2 max-h-36 overflow-y-auto">
+      <div className="max-h-36 space-y-2 overflow-y-auto rounded-2xl border border-slate-200/75 bg-white/72 p-3 dark:border-white/8 dark:bg-white/[0.035]">
         {items.map((item) => (
           <label
             key={item.id}

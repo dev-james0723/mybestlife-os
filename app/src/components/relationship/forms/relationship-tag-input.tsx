@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { parseTagsInput } from "@/types/relationship";
+import { relationshipSelectTriggerClassName } from "@/components/relationship/relationship-os";
 
 type Props = {
   value: string[];
@@ -79,7 +80,8 @@ export function RelationshipTagInput({
   return (
     <div
       className={cn(
-        "flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5",
+        relationshipSelectTriggerClassName,
+        "flex h-auto min-h-12 flex-wrap items-center gap-1.5 px-2 py-1.5",
         "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0",
       )}
     >
@@ -113,7 +115,7 @@ export function RelationshipTagInput({
         }}
         placeholder={value.length === 0 ? placeholder : undefined}
         aria-label={ariaLabel}
-        className="h-7 min-w-[120px] flex-1 border-0 bg-transparent p-0 px-1 shadow-none focus-visible:ring-0"
+        className="!h-12 !min-h-12 min-w-[120px] flex-1 border-0 bg-transparent p-0 px-1 shadow-none focus-visible:ring-0"
       />
     </div>
   );

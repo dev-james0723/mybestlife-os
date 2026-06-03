@@ -32,9 +32,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  OSControl,
+  OSIconControl,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import { RoleModelPhoto } from "@/components/relationship/role-model-photo";
 import {
   Select,
@@ -58,6 +62,11 @@ import {
   ROLE_MODEL_PHOTO_ALLOWED_MIMES,
   isRoleModelStorageUrl,
 } from "@/lib/role-models/photo-storage";
+import {
+  relationshipFieldClassName,
+  relationshipSelectTriggerClassName,
+  relationshipTextAreaClassName,
+} from "@/components/relationship/relationship-os";
 import {
   useRoleModelPhotoUpload,
   type RoleModelPhotoUploadErrorCode,
@@ -144,6 +153,8 @@ export function PhotoEditor({
   // a successful upload, retriggering the framer-motion `key`-driven entrance.
   const [pulseKey, setPulseKey] = useState(0);
   useEffect(() => {
+    // Intentional animation retrigger when the external pulse signal changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pulseSignal != null) setPulseKey((k) => k + 1);
   }, [pulseSignal]);
 
@@ -187,9 +198,19 @@ export function PhotoEditor({
 
         <div className="flex-1 min-w-0">
           <Tabs defaultValue="upload">
-            <TabsList className="mb-3">
-              <TabsTrigger value="upload">{uploadTabLabel}</TabsTrigger>
-              <TabsTrigger value="url">{urlTabLabel}</TabsTrigger>
+            <TabsList className="mb-3 min-h-[52px] rounded-xl border border-slate-200/70 bg-white/68 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.055]">
+              <TabsTrigger
+                value="upload"
+                className="min-h-11 rounded-lg px-3 text-xs"
+              >
+                {uploadTabLabel}
+              </TabsTrigger>
+              <TabsTrigger
+                value="url"
+                className="min-h-11 rounded-lg px-3 text-xs"
+              >
+                {urlTabLabel}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload" className="space-y-2">
@@ -278,7 +299,7 @@ export function PhotoEditor({
                   value={value && !isRoleModelStorageUrl(value) ? value : ""}
                   onChange={(e) => onChange(e.target.value || null)}
                   placeholder={placeholder}
-                  className="pl-9"
+                  className={cn(relationshipFieldClassName, "pl-9")}
                   type="url"
                   inputMode="url"
                 />
@@ -296,11 +317,10 @@ export function PhotoEditor({
           </Tabs>
 
           {value && (
-            <Button
+            <OSControl
               type="button"
               variant="ghost"
-              size="sm"
-              className="mt-2 h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+              className="mt-2 text-muted-foreground hover:text-destructive"
               onClick={() => {
                 onChange(null);
                 upload.reset();
@@ -308,7 +328,7 @@ export function PhotoEditor({
             >
               <X className="h-3 w-3 mr-1" />
               {removeLabel}
-            </Button>
+            </OSControl>
           )}
         </div>
       </div>
@@ -363,7 +383,12 @@ export function TagsEditor({
   return (
     <div className="space-y-2">
       <Label htmlFor="rm-tags-input">{label}</Label>
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-input bg-background px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring">
+      <div
+        className={cn(
+          relationshipSelectTriggerClassName,
+          "flex h-auto min-h-12 flex-wrap items-center gap-2 px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring",
+        )}
+      >
         {value.map((t) => (
           <Badge
             key={t}
@@ -374,7 +399,7 @@ export function TagsEditor({
             <button
               type="button"
               onClick={() => onChange(value.filter((x) => x !== t))}
-              className="rounded p-0.5 hover:bg-muted-foreground/20"
+              className="inline-flex size-11 items-center justify-center rounded-xl hover:bg-muted-foreground/20"
               aria-label={`${removeLabel} ${t}`}
             >
               <X className="h-3 w-3" />
@@ -388,7 +413,7 @@ export function TagsEditor({
           onKeyDown={handleKey}
           onBlur={commit}
           placeholder={value.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="min-h-11 flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
       </div>
       {helpText && (
@@ -431,15 +456,14 @@ export function QuotesEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
-        <Button
+        <OSControl
           type="button"
           variant="ghost"
-          size="sm"
           onClick={() => onChange([...value, { text: "", source: null }])}
         >
           <Plus className="h-4 w-4 mr-1" />
           {addLabel}
-        </Button>
+        </OSControl>
       </div>
 
       {value.length === 0 ? (
@@ -447,9 +471,9 @@ export function QuotesEditor({
       ) : (
         <div className="space-y-3">
           {value.map((q, idx) => (
-            <div
+            <OSSolidPanel
               key={idx}
-              className="rounded-lg border border-border bg-card p-3 space-y-2"
+              className="p-3 space-y-2"
             >
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">
@@ -459,7 +483,7 @@ export function QuotesEditor({
                   value={q.text}
                   onChange={(e) => update(idx, { text: e.target.value })}
                   rows={2}
-                  className="resize-none"
+                  className={cn(relationshipTextAreaClassName, "resize-none")}
                 />
               </div>
               <div className="flex items-end gap-2">
@@ -468,24 +492,24 @@ export function QuotesEditor({
                     {sourceLabel}
                   </Label>
                   <Input
+                    className={relationshipFieldClassName}
                     value={q.source ?? ""}
                     onChange={(e) =>
                       update(idx, { source: e.target.value || null })
                     }
                   />
                 </div>
-                <Button
+                <OSIconControl
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="h-9 text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive"
                   onClick={() => onChange(value.filter((_, i) => i !== idx))}
                   aria-label={removeLabel}
                 >
                   <Trash2 className="h-4 w-4" />
-                </Button>
+                </OSIconControl>
               </div>
-            </div>
+            </OSSolidPanel>
           ))}
         </div>
       )}
@@ -526,15 +550,14 @@ export function KeyLessonsEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
-        <Button
+        <OSControl
           type="button"
           variant="ghost"
-          size="sm"
           onClick={() => onChange([...value, { title: "", detail: null }])}
         >
           <Plus className="h-4 w-4 mr-1" />
           {addLabel}
-        </Button>
+        </OSControl>
       </div>
 
       {value.length === 0 ? (
@@ -542,9 +565,9 @@ export function KeyLessonsEditor({
       ) : (
         <div className="space-y-3">
           {value.map((l, idx) => (
-            <div
+            <OSSolidPanel
               key={idx}
-              className="rounded-lg border border-border bg-card p-3 space-y-2"
+              className="p-3 space-y-2"
             >
               <div className="flex items-start gap-2">
                 <div className="flex-1 space-y-1">
@@ -552,20 +575,20 @@ export function KeyLessonsEditor({
                     {titleLabel}
                   </Label>
                   <Input
+                    className={relationshipFieldClassName}
                     value={l.title}
                     onChange={(e) => update(idx, { title: e.target.value })}
                   />
                 </div>
-                <Button
+                <OSIconControl
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="h-9 mt-5 text-muted-foreground hover:text-destructive"
+                  className="mt-5 text-muted-foreground hover:text-destructive"
                   onClick={() => onChange(value.filter((_, i) => i !== idx))}
                   aria-label={removeLabel}
                 >
                   <Trash2 className="h-4 w-4" />
-                </Button>
+                </OSIconControl>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">
@@ -577,10 +600,10 @@ export function KeyLessonsEditor({
                     update(idx, { detail: e.target.value || null })
                   }
                   rows={2}
-                  className="resize-none"
+                  className={cn(relationshipTextAreaClassName, "resize-none")}
                 />
               </div>
-            </div>
+            </OSSolidPanel>
           ))}
         </div>
       )}
@@ -627,10 +650,9 @@ export function LinksEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
-        <Button
+        <OSControl
           type="button"
           variant="ghost"
-          size="sm"
           onClick={() =>
             onChange([
               ...value,
@@ -640,7 +662,7 @@ export function LinksEditor({
         >
           <Plus className="h-4 w-4 mr-1" />
           {addLabel}
-        </Button>
+        </OSControl>
       </div>
 
       {value.length === 0 ? (
@@ -648,9 +670,9 @@ export function LinksEditor({
       ) : (
         <div className="space-y-3">
           {value.map((l, idx) => (
-            <div
+            <OSSolidPanel
               key={idx}
-              className="rounded-lg border border-border bg-card p-3 space-y-2"
+              className="p-3 space-y-2"
             >
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
                 <div className="space-y-1">
@@ -658,6 +680,7 @@ export function LinksEditor({
                     {linkLabelLabel}
                   </Label>
                   <Input
+                    className={relationshipFieldClassName}
                     value={l.label}
                     onChange={(e) => update(idx, { label: e.target.value })}
                   />
@@ -672,7 +695,7 @@ export function LinksEditor({
                       update(idx, { kind: next as RoleModelLinkKind })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={relationshipSelectTriggerClassName}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -691,6 +714,7 @@ export function LinksEditor({
                     {urlLabel}
                   </Label>
                   <Input
+                    className={relationshipFieldClassName}
                     value={l.url}
                     onChange={(e) => update(idx, { url: e.target.value })}
                     placeholder="https://…"
@@ -698,18 +722,17 @@ export function LinksEditor({
                     inputMode="url"
                   />
                 </div>
-                <Button
+                <OSIconControl
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="h-9 text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive"
                   onClick={() => onChange(value.filter((_, i) => i !== idx))}
                   aria-label={removeLabel}
                 >
                   <Trash2 className="h-4 w-4" />
-                </Button>
+                </OSIconControl>
               </div>
-            </div>
+            </OSSolidPanel>
           ))}
         </div>
       )}
@@ -723,9 +746,9 @@ export function LinksEditor({
 
 function EmptyEditorCard({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center">
+    <OSSolidPanel className="border-dashed px-4 py-6 text-center">
       <p className="text-xs text-muted-foreground text-balance">{text}</p>
-    </div>
+    </OSSolidPanel>
   );
 }
 

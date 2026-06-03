@@ -17,16 +17,15 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Sparkles, FileText, MessageSquareText, UserPlus2 } from "lucide-react";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { OSControl, OSDialogSurface, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -44,6 +43,15 @@ import {
 } from "@/components/relationship/utils/relationship-display";
 import { requestRelationshipAutofill } from "@/lib/relationships/insight-api";
 import { parseTagsInput, formatTagsForInput } from "@/types/relationship";
+import {
+  relationshipDialogBodyClassName,
+  relationshipDialogFooterClassName,
+  relationshipDialogHeaderClassName,
+  relationshipFieldClassName,
+  relationshipInnerPanelClassName,
+  relationshipSelectTriggerClassName,
+  relationshipTextAreaClassName,
+} from "@/components/relationship/relationship-os";
 import type {
   RelationshipCategory,
   RelationshipStrength,
@@ -179,11 +187,11 @@ export function AIRelationshipCreationWizard({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
-      <DialogContent
+      <OSDialogSurface
         size="3xl"
-        className="flex max-h-[90vh] flex-col gap-0 p-0"
+        className="flex max-h-[88dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0"
       >
-        <DialogHeader className="border-b border-border px-6 py-4">
+        <DialogHeader className={relationshipDialogHeaderClassName}>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             {copy.wizardTitle}
@@ -191,7 +199,7 @@ export function AIRelationshipCreationWizard({
         </DialogHeader>
 
         <ScrollArea className="flex-1">
-          <div className="px-6 py-5">
+          <div className={relationshipDialogBodyClassName}>
             <AnimatePresence mode="wait" initial={false}>
               {phase === "input" && (
                 <motion.div
@@ -228,6 +236,7 @@ export function AIRelationshipCreationWizard({
 
                   {method === "name" ? (
                     <Input
+                      className={relationshipFieldClassName}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder={copy.wizardNamePlaceholder}
@@ -235,6 +244,7 @@ export function AIRelationshipCreationWizard({
                     />
                   ) : (
                     <Textarea
+                      className={relationshipTextAreaClassName}
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       placeholder={copy.wizardInputPlaceholder}
@@ -247,14 +257,14 @@ export function AIRelationshipCreationWizard({
                     <p className="text-sm text-destructive">{error}</p>
                   )}
 
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={close}>
+                  <div className={relationshipDialogFooterClassName}>
+                    <OSControl variant="ghost" onClick={close}>
                       {copy.cancel}
-                    </Button>
-                    <Button onClick={runExtraction} disabled={!canExtract}>
+                    </OSControl>
+                    <OSPrimaryAction onClick={runExtraction} disabled={!canExtract}>
                       <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                       {copy.wizardExtract}
-                    </Button>
+                    </OSPrimaryAction>
                   </div>
                 </motion.div>
               )}
@@ -309,7 +319,7 @@ export function AIRelationshipCreationWizard({
                   exit={reduce ? undefined : { opacity: 0, y: -6 }}
                   className="space-y-4"
                 >
-                  <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                     {copy.wizardReviewBanner}
                   </div>
 
@@ -319,6 +329,7 @@ export function AIRelationshipCreationWizard({
                     copy={copy}
                   >
                     <Input
+                      className={relationshipFieldClassName}
                       value={draft.person_name}
                       onChange={(e) => patch("person_name", e.target.value)}
                     />
@@ -336,7 +347,7 @@ export function AIRelationshipCreationWizard({
                           patch("category", v as RelationshipCategory)
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={relationshipSelectTriggerClassName}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -363,7 +374,7 @@ export function AIRelationshipCreationWizard({
                           )
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={relationshipSelectTriggerClassName}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -384,6 +395,7 @@ export function AIRelationshipCreationWizard({
                       copy={copy}
                     >
                       <Input
+                        className={relationshipFieldClassName}
                         value={draft.email ?? ""}
                         onChange={(e) =>
                           patch("email", e.target.value || null)
@@ -396,6 +408,7 @@ export function AIRelationshipCreationWizard({
                       copy={copy}
                     >
                       <Input
+                        className={relationshipFieldClassName}
                         value={draft.phone ?? ""}
                         onChange={(e) =>
                           patch("phone", e.target.value || null)
@@ -410,6 +423,7 @@ export function AIRelationshipCreationWizard({
                     copy={copy}
                   >
                     <Textarea
+                      className={relationshipTextAreaClassName}
                       value={draft.next_action ?? ""}
                       onChange={(e) =>
                         patch("next_action", e.target.value || null)
@@ -424,6 +438,7 @@ export function AIRelationshipCreationWizard({
                     copy={copy}
                   >
                     <Textarea
+                      className={relationshipTextAreaClassName}
                       value={draft.commitments_made ?? ""}
                       onChange={(e) =>
                         patch("commitments_made", e.target.value || null)
@@ -438,6 +453,7 @@ export function AIRelationshipCreationWizard({
                     copy={copy}
                   >
                     <Textarea
+                      className={relationshipTextAreaClassName}
                       value={draft.preferences_and_details ?? ""}
                       onChange={(e) =>
                         patch(
@@ -455,6 +471,7 @@ export function AIRelationshipCreationWizard({
                     copy={copy}
                   >
                     <Input
+                      className={relationshipFieldClassName}
                       value={tagsInput}
                       onChange={(e) => setTagsInput(e.target.value)}
                     />
@@ -486,23 +503,23 @@ export function AIRelationshipCreationWizard({
                     </ul>
                   )}
 
-                  <div className="flex justify-between gap-2 pt-2">
-                    <Button
+                  <div className={relationshipDialogFooterClassName}>
+                    <OSControl
                       variant="ghost"
                       onClick={() => setPhase("input")}
                     >
                       {copy.wizardBack}
-                    </Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
+                    </OSControl>
+                    <OSPrimaryAction onClick={handleSave} disabled={isSaving}>
                       {copy.wizardSave}
-                    </Button>
+                    </OSPrimaryAction>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </ScrollArea>
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }
@@ -522,10 +539,10 @@ function MethodButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
+      className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-[background,border-color,color,transform] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/40 motion-reduce:transition-none ${
         active
-          ? "border-primary/40 bg-primary/5 text-foreground"
-          : "border-border bg-card/40 text-muted-foreground hover:border-border hover:bg-muted/50"
+          ? "border-lime-300/60 bg-lime-300/12 text-foreground"
+          : "border-slate-300/60 bg-white/72 text-muted-foreground hover:border-slate-400/70 hover:bg-white/90 dark:border-white/12 dark:bg-white/[0.055] dark:hover:bg-white/[0.085]"
       }`}
     >
       <span className={active ? "text-primary" : ""}>{icon}</span>
@@ -580,7 +597,7 @@ function ReviewField({
 }) {
   const badge = confidenceLabel(confidence, copy);
   return (
-    <div className="space-y-1.5">
+    <div className={relationshipInnerPanelClassName}>
       <div className="flex items-center justify-between gap-2">
         <Label className="text-xs font-medium text-muted-foreground">
           {label}
