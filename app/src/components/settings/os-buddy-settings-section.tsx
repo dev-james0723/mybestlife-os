@@ -15,13 +15,16 @@ import {
 } from "@/components/ui/select";
 import { useAppStore } from "@/stores/app-store";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { useProfile, useUpdateProfile } from "@/hooks/use-settings";
 import { useOSBuddyAirPilotSettings } from "@/hooks/use-os-buddy-airpilot-settings";
 import { useOSBuddyFreeRoamSettings } from "@/hooks/use-os-buddy-free-roam-settings";
 import type { OSBuddyPetId } from "@/types/os-buddy";
 import { OSBuddyBehaviorSettings } from "@/components/os-buddy/OSBuddyBehaviorSettings";
 import { OSBuddyAirControlSettings } from "@/components/os-buddy/OSBuddyAirControlSettings";
+import { OSBuddyShortcutSettings } from "@/components/os-buddy/OSBuddyShortcutSettings";
 import { OSBuddySprite } from "@/components/os-buddy/OSBuddySprite";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
+import { validateOSBuddyShortcutSettings } from "@/lib/os-buddy/os-buddy-shortcuts";
 
 const PET_OPTIONS: Array<{ id: OSBuddyPetId; label: string }> = [
   { id: "xiaoba", label: "Xiaoba" },
@@ -41,6 +44,8 @@ export function OSBuddySettingsSection() {
     resetPosition,
     setEnabled,
   } = useOSBuddy();
+  const { data: profile } = useProfile();
+  const updateProfile = useUpdateProfile();
   const {
     settings: freeRoamSettings,
     saveSettings: saveFreeRoamSettings,
@@ -70,6 +75,10 @@ export function OSBuddySettingsSection() {
   const previewSrc = useMemo(
     () => getOSBuddyAssetSrc({ petId: draftPetId, mood: "idle" }),
     [draftPetId],
+  );
+  const shortcutSettings = useMemo(
+    () => validateOSBuddyShortcutSettings(profile?.os_buddy_shortcut_settings),
+    [profile?.os_buddy_shortcut_settings],
   );
 
   const dirty =
@@ -160,6 +169,18 @@ export function OSBuddySettingsSection() {
           airPilotValue={airPilotSettings}
           onSave={saveFreeRoamSettings}
           onSaveAirPilot={saveAirPilotSettings}
+        />
+
+        <OSBuddyShortcutSettings
+          key={JSON.stringify(shortcutSettings)}
+          locale={locale}
+          value={shortcutSettings}
+          saving={updateProfile.isPending}
+          onSave={async (nextSettings) => {
+            await updateProfile.mutateAsync({
+              os_buddy_shortcut_settings: nextSettings,
+            });
+          }}
         />
 
         <OSBuddyAirControlSettings locale={locale} />

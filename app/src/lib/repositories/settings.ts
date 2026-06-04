@@ -4,6 +4,10 @@ import type { NotificationPreferences, UserProfile } from "@/types/database";
 import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
 import type { OSBuddyFreeRoamIntensity } from "@/lib/os-buddy/os-buddy-free-roam";
 import {
+  validateOSBuddyShortcutSettings,
+  type OSBuddyShortcutSettings,
+} from "@/lib/os-buddy/os-buddy-shortcuts";
+import {
   validateOSBuddyBirthdayProfile,
   type OSBuddyBirthdayProfile,
 } from "@/lib/os-buddy/os-buddy-birthday";
@@ -59,6 +63,7 @@ export type UpdateProfileInput = Partial<
     | "os_buddy_free_roam_intensity"
     | "os_buddy_free_roam_return_home"
     | "os_buddy_free_roam_near_home_only"
+    | "os_buddy_shortcut_settings"
   >
 >;
 
@@ -84,6 +89,7 @@ const OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS = [
   "os_buddy_free_roam_return_home",
   "os_buddy_free_roam_near_home_only",
 ] as const;
+const OS_BUDDY_SHORTCUT_PROFILE_COLUMNS = ["os_buddy_shortcut_settings"] as const;
 
 export type UpdateNotificationPreferencesInput = Partial<
   Pick<NotificationPreferences, "task_reminders" | "daily_summary" | "study_streak_reminders">
@@ -174,6 +180,12 @@ function coerceOSBuddyFreeRoamIntensity(v: unknown): OSBuddyFreeRoamIntensity {
   return "balanced";
 }
 
+function coerceOSBuddyShortcutSettings(v: unknown): OSBuddyShortcutSettings {
+  return validateOSBuddyShortcutSettings(
+    v as Partial<OSBuddyShortcutSettings> | null | undefined,
+  );
+}
+
 function coerceOSBuddyBirthdayProfile(row: Record<string, unknown>): OSBuddyBirthdayProfile {
   return validateOSBuddyBirthdayProfile({
     enabled: row.os_buddy_birthday_enabled as boolean | undefined,
@@ -252,6 +264,9 @@ function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
     os_buddy_birthday_timezone: birthday.timezone ?? null,
     os_buddy_birthday_last_celebrated_on: birthday.lastCelebratedOn ?? null,
     os_buddy_birthday_last_reminder_on: birthday.lastReminderOn ?? null,
+    os_buddy_shortcut_settings: coerceOSBuddyShortcutSettings(
+      row.os_buddy_shortcut_settings,
+    ),
     ...freeRoamFields,
   };
 }
@@ -355,6 +370,13 @@ export const settingsRepository = {
         ? {
             os_buddy_free_roam_intensity: coerceOSBuddyFreeRoamIntensity(
               input.os_buddy_free_roam_intensity,
+            ),
+          }
+        : {}),
+      ...(input.os_buddy_shortcut_settings !== undefined
+        ? {
+            os_buddy_shortcut_settings: coerceOSBuddyShortcutSettings(
+              input.os_buddy_shortcut_settings,
             ),
           }
         : {}),
@@ -494,6 +516,17 @@ export const settingsRepository = {
         )
       ) {
         payload = omitKeys(payload, OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS);
+        continue;
+      }
+
+      if (
+        error &&
+        OS_BUDDY_SHORTCUT_PROFILE_COLUMNS.some((column) => column in payload) &&
+        OS_BUDDY_SHORTCUT_PROFILE_COLUMNS.some((column) =>
+          isMissingProfilesColumnError(error, column),
+        )
+      ) {
+        payload = omitKeys(payload, OS_BUDDY_SHORTCUT_PROFILE_COLUMNS);
         continue;
       }
 

@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type { OSBuddyShortcutSettings } from "@/lib/os-buddy/os-buddy-shortcuts";
 import type { OSBuddyFreeRoamIntensity } from "@/lib/os-buddy/os-buddy-free-roam";
 import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
 import type {
@@ -96,6 +97,7 @@ export type UserProfile = {
   os_buddy_free_roam_intensity?: OSBuddyFreeRoamIntensity | null;
   os_buddy_free_roam_return_home?: boolean;
   os_buddy_free_roam_near_home_only?: boolean;
+  os_buddy_shortcut_settings: OSBuddyShortcutSettings;
   created_at: string;
   updated_at: string;
 };

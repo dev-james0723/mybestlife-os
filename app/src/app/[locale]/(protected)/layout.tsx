@@ -5,6 +5,7 @@ import { SyncThemeFromProfile } from "@/components/sync-theme-from-profile";
 import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
 import { IdeaCaptureSheet } from "@/components/idea-capture/IdeaCaptureSheet";
 import { OSBuddyDock } from "@/components/os-buddy/OSBuddyDock";
+import { OSBuddyShortcutController } from "@/components/os-buddy/OSBuddyShortcutController";
 
 export default function ProtectedLayout({
   children,
@@ -20,6 +21,7 @@ export default function ProtectedLayout({
         <ProtectedScrollLayout>{children}</ProtectedScrollLayout>
       </SidebarInset>
       <IdeaCaptureSheet />
+      <OSBuddyShortcutController />
       <OSBuddyDock />
     </SidebarProvider>
   );

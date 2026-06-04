@@ -35,6 +35,21 @@ CREATE TABLE IF NOT EXISTS profiles (
   quick_save_default_destination text NOT NULL DEFAULT 'review'
     CHECK (quick_save_default_destination IN ('review', 'knowledge', 'idea')),
   quick_save_require_review boolean NOT NULL DEFAULT true,
+  os_buddy_shortcut_settings JSONB DEFAULT '{
+    "desktopToggle": {
+      "key": " ",
+      "code": "Space",
+      "label": "Space",
+      "modifiers": {
+        "ctrl": false,
+        "alt": false,
+        "shift": false,
+        "meta": false
+      },
+      "pressCount": 2
+    },
+    "twoFingerDoubleTapEnabled": true
+  }'::jsonb,
   weather_lat double precision,
   weather_lon double precision,
   weather_city text,
