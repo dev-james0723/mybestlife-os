@@ -20,9 +20,10 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   quoteId: string;
+  triggerClassName?: string;
 }
 
-export function ManageCollectionsPopover({ quoteId }: Props) {
+export function ManageCollectionsPopover({ quoteId, triggerClassName }: Props) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getQuoteLibraryUiCopy(language), [language]);
 
@@ -43,7 +44,12 @@ export function ManageCollectionsPopover({ quoteId }: Props) {
     <Popover>
       <PopoverTrigger
         render={
-          <Button type="button" variant="outline" size="sm" className="gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn("gap-2", triggerClassName)}
+          >
             <FolderPlus className="size-4" aria-hidden />
             {copy.collectionMembershipAdd}
           </Button>

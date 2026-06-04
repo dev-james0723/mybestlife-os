@@ -19,11 +19,13 @@ import type { Goal } from "@/types/database";
 interface QuoteGoalPickerProps {
   quoteId: string;
   currentGoalId: string | null;
+  triggerClassName?: string;
 }
 
 export function QuoteGoalPicker({
   quoteId,
   currentGoalId,
+  triggerClassName,
 }: QuoteGoalPickerProps) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getQuoteLibraryUiCopy(language), [language]);
@@ -55,12 +57,11 @@ export function QuoteGoalPicker({
             type="button"
             variant="outline"
             size="sm"
-            className="gap-2"
+            className={cn("gap-2", triggerClassName)}
+            title={currentGoal?.name ?? undefined}
           >
             <Target className="size-4" aria-hidden />
-            {currentGoal
-              ? `${copy.cardLinkedGoal}: ${truncate(currentGoal.name, 24)}`
-              : copy.cardLinkedGoal}
+            {currentGoal ? copy.cardLinkedGoal : copy.detailLinkGoal}
           </Button>
         }
       />
@@ -123,8 +124,4 @@ export function QuoteGoalPicker({
       </PopoverContent>
     </Popover>
   );
-}
-
-function truncate(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max)}…` : text;
 }

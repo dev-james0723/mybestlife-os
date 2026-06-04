@@ -93,6 +93,12 @@ export type QuoteLibraryUiCopy = {
   cardRelatedQuotes: string;
   cardNoRelatedQuotes: string;
   cardLinkedGoal: string;
+  detailTitle: string;
+  detailLinkGoal: string;
+  detailAuthorInfo: string;
+  detailShareImage: string;
+  detailNewThumbnail: string;
+  detailRefreshThumbnail: string;
 
   // Delete confirm
   deleteConfirmTitle: string;
@@ -304,6 +310,12 @@ const en: QuoteLibraryUiCopy = {
   cardRelatedQuotes: "More from this author",
   cardNoRelatedQuotes: "No related quotes yet.",
   cardLinkedGoal: "Linked goal",
+  detailTitle: "Quote details",
+  detailLinkGoal: "Link goal",
+  detailAuthorInfo: "Author info",
+  detailShareImage: "Share image",
+  detailNewThumbnail: "New thumbnail",
+  detailRefreshThumbnail: "Refresh thumbnail",
 
   deleteConfirmTitle: "Delete this quote?",
   deleteConfirmDescription:
@@ -515,6 +527,12 @@ const zhTW: QuoteLibraryUiCopy = {
   cardRelatedQuotes: "這位作者的其他語錄",
   cardNoRelatedQuotes: "暫無相關語錄。",
   cardLinkedGoal: "連結目標",
+  detailTitle: "語錄詳情",
+  detailLinkGoal: "連結目標",
+  detailAuthorInfo: "作者資料",
+  detailShareImage: "分享圖片",
+  detailNewThumbnail: "新背景",
+  detailRefreshThumbnail: "更新背景",
 
   deleteConfirmTitle: "要刪除這則語錄嗎？",
   deleteConfirmDescription: "刪除後也會從所有收藏集移除，此操作無法復原。",
@@ -747,6 +765,12 @@ const zhCN: QuoteLibraryUiCopy = {
   cardRelatedQuotes: "这位作者的其他语录",
   cardNoRelatedQuotes: "暂无相关语录。",
   cardLinkedGoal: "关联目标",
+  detailTitle: "语录详情",
+  detailLinkGoal: "关联目标",
+  detailAuthorInfo: "作者资料",
+  detailShareImage: "分享图片",
+  detailNewThumbnail: "新背景",
+  detailRefreshThumbnail: "更新背景",
 
   deleteConfirmTitle: "要删除这条语录吗？",
   deleteConfirmDescription: "删除后也会从所有合集移除，此操作无法撤销。",
@@ -968,6 +992,12 @@ const ja: QuoteLibraryUiCopy = {
   cardRelatedQuotes: "同じ著者の他の名言",
   cardNoRelatedQuotes: "関連する名言はまだありません。",
   cardLinkedGoal: "関連する目標",
+  detailTitle: "名言の詳細",
+  detailLinkGoal: "目標をリンク",
+  detailAuthorInfo: "著者情報",
+  detailShareImage: "画像を共有",
+  detailNewThumbnail: "新しい背景",
+  detailRefreshThumbnail: "背景を更新",
   deleteConfirmTitle: "この名言を削除しますか？",
   deleteConfirmDescription: "コレクションからも外れます。この操作は取り消せません。",
   buttonDelete: "削除",
@@ -1088,6 +1118,12 @@ const ko: QuoteLibraryUiCopy = {
   cardAuthorUnknown: "미상",
   cardAboutAuthor: "저자 소개",
   cardRelatedQuotes: "이 저자의 다른 문장",
+  detailTitle: "문장 상세",
+  detailLinkGoal: "목표 연결",
+  detailAuthorInfo: "저자 정보",
+  detailShareImage: "이미지 공유",
+  detailNewThumbnail: "새 배경",
+  detailRefreshThumbnail: "배경 새로고침",
   deleteConfirmTitle: "이 문장을 삭제할까요?",
   buttonDelete: "삭제",
   toastSaved: "문장을 저장했습니다",

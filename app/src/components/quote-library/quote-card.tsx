@@ -23,6 +23,7 @@ interface QuoteCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   isTagging?: boolean;
+  showInlineActions?: boolean;
   className?: string;
 }
 
@@ -34,6 +35,7 @@ export function QuoteCard({
   onEdit,
   onDelete,
   isTagging,
+  showInlineActions = true,
   className,
 }: QuoteCardProps) {
   const language = useAppStore((s) => s.language);
@@ -145,59 +147,61 @@ export function QuoteCard({
               </Badge>
             ) : null}
           </div>
-          <div className="flex items-center gap-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={handleFavorite}
-              aria-label={
-                quote.is_favorite
-                  ? copy.cardUnfavoriteAria
-                  : copy.cardFavoriteAria
-              }
-              aria-pressed={quote.is_favorite}
-              className={cn(
-                "text-white/75 hover:bg-white/10 hover:text-white",
-                quote.is_favorite && "text-amber-300 hover:text-amber-200",
-              )}
-            >
-              <Star
-                className={cn("size-4", quote.is_favorite && "fill-current")}
-                aria-hidden
-              />
-            </Button>
-            {onEdit ? (
+          {showInlineActions ? (
+            <div className="flex items-center gap-0.5">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                aria-label={copy.cardEditAria}
-                className="text-white/70 hover:bg-white/10 hover:text-white"
+                onClick={handleFavorite}
+                aria-label={
+                  quote.is_favorite
+                    ? copy.cardUnfavoriteAria
+                    : copy.cardFavoriteAria
+                }
+                aria-pressed={quote.is_favorite}
+                className={cn(
+                  "text-white/75 hover:bg-white/10 hover:text-white",
+                  quote.is_favorite && "text-amber-300 hover:text-amber-200",
+                )}
               >
-                <Pencil className="size-4" aria-hidden />
+                <Star
+                  className={cn("size-4", quote.is_favorite && "fill-current")}
+                  aria-hidden
+                />
               </Button>
-            ) : null}
-            {onDelete ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                aria-label={copy.cardDeleteAria}
-                className="text-white/70 hover:bg-white/10 hover:text-rose-300"
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            ) : null}
-          </div>
+              {onEdit ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  aria-label={copy.cardEditAria}
+                  className="text-white/70 hover:bg-white/10 hover:text-white"
+                >
+                  <Pencil className="size-4" aria-hidden />
+                </Button>
+              ) : null}
+              {onDelete ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  aria-label={copy.cardDeleteAria}
+                  className="text-white/70 hover:bg-white/10 hover:text-rose-300"
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <blockquote
