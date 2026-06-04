@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getServerPageUser } from "@/lib/auth/server-page-user";
 import { DEFAULT_LOCALE_SLUG, normalizeLocaleSlug } from "@/lib/i18n/locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { PageShell } from "@/components/shared/page-shell";
@@ -27,9 +28,7 @@ export default async function QuickSaveSuccessPage({ params, searchParams }: Pag
   const search = await searchParams;
   const slug = normalizeLocaleSlug(locale) ?? DEFAULT_LOCALE_SLUG;
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerPageUser(supabase);
 
   if (!user) redirect(withLocalePrefix(slug, "/login"));
 

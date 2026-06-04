@@ -60,7 +60,7 @@ export function PromptCategoryFilter({
                 onClick={() => onSelect(id)}
                 aria-pressed={active}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors sm:min-h-0 sm:px-3 sm:py-1.5 sm:text-xs",
                   active
                     ? "border-transparent bg-foreground text-background"
                     : "border-border bg-background text-foreground/70 hover:border-foreground/30 hover:text-foreground",

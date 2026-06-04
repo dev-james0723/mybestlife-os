@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getServerPageUser } from "@/lib/auth/server-page-user";
 import { getKnowledgeItemForUser } from "@/lib/knowledge/queries";
 import {
   DocOracleWorkspace,
@@ -25,9 +26,7 @@ export default async function DocOraclePage({ params }: PageProps) {
   const locale = (normalizeLocaleSlug(rawLocale) ?? DEFAULT_LOCALE_SLUG) as LocaleUrlSlug;
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerPageUser(supabase);
   if (!user) redirect(withLocalePrefix(locale, "/login"));
 
   const item = await getKnowledgeItemForUser(itemId, user.id);

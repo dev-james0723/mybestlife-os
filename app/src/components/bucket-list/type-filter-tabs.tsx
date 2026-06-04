@@ -80,7 +80,7 @@ export function BucketTypeFilterTabs() {
                   }
                 }}
                 className={cn(
-                  "relative h-9 shrink-0 snap-start overflow-hidden rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.06em] transition-[color,transform] sm:px-3.5 sm:text-xs active:translate-y-px",
+                  "relative h-11 shrink-0 snap-start overflow-hidden rounded-full px-4 text-xs font-semibold uppercase tracking-[0.06em] transition-[color,transform] sm:h-9 sm:px-3.5 active:translate-y-px",
                   active
                     ? "text-lime-950 dark:text-lime-100"
                     : "text-slate-500 hover:text-slate-950 dark:text-white/55 dark:hover:text-white/85",
@@ -147,7 +147,7 @@ function ViewModeButton({
       aria-pressed={active}
       aria-label={`${label} view`}
       className={cn(
-        "relative isolate inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-[color,transform] active:translate-y-px",
+        "relative isolate inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full transition-[color,transform] sm:h-9 sm:w-9 active:translate-y-px",
         active
           ? "text-slate-950"
           : "text-slate-500 hover:text-slate-950 dark:text-white/50 dark:hover:text-white/80",

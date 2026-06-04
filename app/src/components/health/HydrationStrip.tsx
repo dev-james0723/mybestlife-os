@@ -61,10 +61,9 @@ export function HydrationStrip({ todayISO, className }: Props) {
           goal={waterGoal}
           goalCopy={ui.waterGoal(waterGoal)}
           quickCopy={ui.waterAdd}
-          todayISO={todayISO}
         />
-        <CaffeineTile title={ui.caffeineLabel} total={caffeineTotal} todayISO={todayISO} ui={ui} />
-        <AlcoholTile title={ui.alcoholLabel} total={alcoholTotal} todayISO={todayISO} />
+        <CaffeineTile title={ui.caffeineLabel} total={caffeineTotal} ui={ui} />
+        <AlcoholTile title={ui.alcoholLabel} total={alcoholTotal} />
       </div>
     </section>
   );
@@ -76,14 +75,12 @@ function WaterTile({
   goal,
   goalCopy,
   quickCopy,
-  todayISO,
 }: {
   title: string;
   total: number;
   goal: number;
   goalCopy: string;
   quickCopy: (ml: number) => string;
-  todayISO: string;
 }) {
   const create = useCreateHealthMetric();
   const pct = goal > 0 ? Math.min(100, (total / goal) * 100) : 0;
@@ -107,6 +104,7 @@ function WaterTile({
             key={ml}
             size="sm"
             variant="outline"
+            className="h-11 min-w-11 px-4 sm:h-7 sm:px-2.5"
             disabled={create.isPending}
             onClick={() =>
               create.mutate({
@@ -129,12 +127,10 @@ function WaterTile({
 function CaffeineTile({
   title,
   total,
-  todayISO,
   ui,
 }: {
   title: string;
   total: number;
-  todayISO: string;
   ui: ReturnType<typeof getHealthUiCopy>["hydration"];
 }) {
   const create = useCreateHealthMetric();
@@ -159,6 +155,7 @@ function CaffeineTile({
             key={p.key}
             size="sm"
             variant="outline"
+            className="h-11 min-w-11 px-4 sm:h-7 sm:px-2.5"
             disabled={create.isPending}
             onClick={() =>
               create.mutate({
@@ -181,11 +178,9 @@ function CaffeineTile({
 function AlcoholTile({
   title,
   total,
-  todayISO,
 }: {
   title: string;
   total: number;
-  todayISO: string;
 }) {
   const create = useCreateHealthMetric();
   return (
@@ -204,6 +199,7 @@ function AlcoholTile({
             key={units}
             size="sm"
             variant="outline"
+            className="h-11 min-w-11 px-4 sm:h-7 sm:px-2.5"
             disabled={create.isPending}
             onClick={() =>
               create.mutate({

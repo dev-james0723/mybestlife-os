@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,38 @@ type PanelProps = React.HTMLAttributes<HTMLElement> & {
 type OSButtonProps = React.ComponentProps<typeof Button> & {
   osSize?: "default" | "compact" | "none";
 };
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function getReducedMotionSnapshot() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function subscribeReducedMotion(onStoreChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return () => {};
+  }
+
+  const media = window.matchMedia(REDUCED_MOTION_QUERY);
+  if (typeof media.addEventListener === "function") {
+    media.addEventListener("change", onStoreChange);
+    return () => media.removeEventListener("change", onStoreChange);
+  }
+
+  media.addListener(onStoreChange);
+  return () => media.removeListener(onStoreChange);
+}
+
+function useHydrationSafeReducedMotion() {
+  return React.useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    () => false,
+  );
+}
 
 export function OSGlassPanel({ as: Component = "div", className, ...props }: PanelProps) {
   return (
@@ -81,7 +113,7 @@ export function OSControl({
       className={cn(
         osGlassControlClassName,
         osSize === "default" && osControlSizeClassName,
-        osSize === "compact" && "h-8 min-h-8 rounded-lg px-2.5 text-xs font-semibold",
+        osSize === "compact" && "h-11 min-h-11 rounded-lg px-4 text-sm font-semibold sm:h-8 sm:min-h-8 sm:px-2.5 sm:text-xs",
         className,
       )}
       {...props}
@@ -108,7 +140,7 @@ export function OSIconControl({
       className={cn(
         osGlassControlClassName,
         osSize === "default" && osIconControlSizeClassName,
-        osSize === "compact" && "h-8 min-h-8 w-8 rounded-lg p-0",
+        osSize === "compact" && "h-11 min-h-11 w-11 rounded-lg p-0 sm:h-8 sm:min-h-8 sm:w-8",
         className,
       )}
       {...props}
@@ -129,7 +161,7 @@ export function OSPrimaryAction({
       className={cn(
         osPrimaryControlClassName,
         osSize === "default" && osControlSizeClassName,
-        osSize === "compact" && "h-8 min-h-8 rounded-lg px-2.5 text-xs font-semibold",
+        osSize === "compact" && "h-11 min-h-11 rounded-lg px-4 text-sm font-semibold sm:h-8 sm:min-h-8 sm:px-2.5 sm:text-xs",
         className,
       )}
       {...props}
@@ -220,7 +252,7 @@ export function OSSegmentedControl<T extends string>({
   labelMode = "always",
   layoutId = "os-segmented-active-pill",
 }: OSSegmentedControlProps<T>) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   return (
     <div
@@ -312,7 +344,7 @@ export function OSStatusRail<T extends string>({
   allowReselect = false,
   layoutId = "os-status-active-pill",
 }: OSStatusRailProps<T>) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   return (
     <div
@@ -343,7 +375,7 @@ export function OSStatusRail<T extends string>({
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
             }}
             className={cn(
-              "relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[0.9rem] px-3 text-[0.72rem] font-bold uppercase tracking-[0.12em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
+              "relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-[0.9rem] px-3 text-[0.72rem] font-bold uppercase tracking-[0.12em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none",
               active
                 ? "text-slate-950"
                 : "text-slate-600 hover:text-slate-950 dark:text-white/54 dark:hover:text-white",
@@ -379,7 +411,7 @@ export function OSMotionPanel({
   className,
   ...props
 }: React.ComponentProps<typeof motion.div>) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   return (
     <motion.div

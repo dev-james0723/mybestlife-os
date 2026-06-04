@@ -51,6 +51,7 @@ export function CrossPageHabitSuggestions({
           type="button"
           osSize="compact"
           size="icon-sm"
+          className="!h-11 !w-11 sm:!h-8 sm:!w-8"
           aria-label={copy.insightRefresh}
           disabled={refreshing}
           onClick={onRefresh}
@@ -108,7 +109,7 @@ export function CrossPageHabitSuggestions({
               type="button"
               size="sm"
               osSize="compact"
-              className="mt-3 w-full"
+              className="mt-3 !h-11 min-h-11 w-full sm:!h-8 sm:min-h-8"
               disabled={creating}
               onClick={() => onCreate(suggestion)}
             >

@@ -18,7 +18,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Eye,
   EyeOff,
@@ -71,22 +71,6 @@ interface BrainToolbarProps {
 }
 
 const DEPTHS: ConstellationDepth[] = [1, 2, 3];
-
-function useIsCompactViewport(): boolean {
-  const [isCompact, setIsCompact] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 640px)").matches;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(max-width: 640px)");
-    const onChange = () => setIsCompact(mql.matches);
-    onChange();
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-  return isCompact;
-}
 
 export function BrainToolbar({
   nodes,
@@ -153,8 +137,6 @@ export function BrainToolbar({
   }, [localSearch, nodes]);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const isCompact = useIsCompactViewport();
-  const placeholder = isCompact ? "Search…" : "Search across your brain…";
 
   const { t: graphT } = useGraphSurface();
 
@@ -170,9 +152,9 @@ export function BrainToolbar({
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setDropdownOpen(true)}
           onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
-          placeholder={placeholder}
+          placeholder="Search…"
           aria-label="Search the Brain graph"
-          className={graphT.toolbar.input}
+          className={cn(graphT.toolbar.input, "!h-11 sm:!h-9")}
         />
         {dropdownOpen && matches.length > 0 && (
           <ul
@@ -228,7 +210,7 @@ export function BrainToolbar({
               }}
               aria-pressed={active}
               className={cn(
-                "h-7 rounded-full border px-2.5 text-[11px] font-medium transition-colors",
+                "min-h-11 rounded-full border px-3 text-[11px] font-medium transition-colors sm:min-h-7 sm:px-2.5",
                 active
                   ? "border-amber-300/40 bg-amber-500/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.25)]"
                   : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
@@ -245,7 +227,7 @@ export function BrainToolbar({
           aria-pressed={orphanResolverOpen}
           onClick={() => setOrphanResolverOpen(!orphanResolverOpen)}
           className={cn(
-            "h-7 rounded-full border px-2.5 text-[11px] font-medium transition-colors",
+            "min-h-11 rounded-full border px-3 text-[11px] font-medium transition-colors sm:min-h-7 sm:px-2.5",
             orphanResolverOpen
               ? "border-emerald-300/40 bg-emerald-500/10 text-emerald-100"
               : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
@@ -269,7 +251,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={mode === "global"}
           className={cn(
-            "h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2.5",
             mode === "global" &&
               "bg-cyan-400/15 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.3)]",
           )}
@@ -284,7 +266,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={mode === "local"}
           className={cn(
-            "h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2.5",
             mode === "local" &&
               "bg-violet-400/15 text-violet-200 shadow-[inset_0_0_0_1px_rgba(196,181,253,0.3)]",
           )}
@@ -300,7 +282,7 @@ export function BrainToolbar({
           aria-pressed={isSphere}
           title="3D Sphere — slowly rotating second-brain planet"
           className={cn(
-            "h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2.5",
             isSphere &&
               "bg-fuchsia-400/15 text-fuchsia-200 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.35)]",
           )}
@@ -329,7 +311,7 @@ export function BrainToolbar({
               : "Fullscreen — maximum space for the 3D sphere"
           }
           className={cn(
-            "h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:px-2.5",
             sphereFullscreenActive &&
               "bg-fuchsia-400/15 text-fuchsia-100 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.35)]",
           )}
@@ -359,7 +341,7 @@ export function BrainToolbar({
               onChange={(e) =>
                 setSphereClusterBy(e.target.value as ConstellationClusterBy)
               }
-              className="h-7 appearance-none rounded-lg border border-border/60 bg-muted/40 pl-2.5 pr-7 text-xs text-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-fuchsia-300/40"
+              className="h-11 appearance-none rounded-lg border border-border/60 bg-muted/40 pl-3 pr-8 text-xs text-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-fuchsia-300/40 sm:h-7 sm:pl-2.5 sm:pr-7"
             >
               <option value="category">Category</option>
               <option value="node_type">Type</option>
@@ -398,7 +380,7 @@ export function BrainToolbar({
                     size="sm"
                     aria-pressed={active}
                     className={cn(
-                      "h-6 px-2 text-[11px] capitalize text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                      "!h-11 px-3 text-[11px] capitalize text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-6 sm:px-2",
                       active &&
                         "bg-fuchsia-400/15 text-fuchsia-100 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.3)]",
                     )}
@@ -431,7 +413,7 @@ export function BrainToolbar({
                 size="sm"
                 aria-pressed={depth === d}
                 className={cn(
-                  "h-7 w-7 p-0 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                  "!h-11 !w-11 p-0 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:!w-7",
                   depth === d &&
                     "bg-violet-400/20 text-violet-100 shadow-[inset_0_0_0_1px_rgba(196,181,253,0.3)]",
                 )}
@@ -452,7 +434,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={labelsOn}
           className={cn(
-            "h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
             labelsOn && "text-foreground",
           )}
           onClick={() => setLabelsOn(!labelsOn)}
@@ -477,7 +459,7 @@ export function BrainToolbar({
             size="sm"
             aria-pressed={sphereShowConnections}
             className={cn(
-              "h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+              "!h-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:px-2",
               sphereShowConnections && "text-foreground",
             )}
             onClick={() => setSphereShowConnections(!sphereShowConnections)}
@@ -498,7 +480,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={hideOrphans}
           className={cn(
-            "h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
             hideOrphans && "text-foreground",
           )}
           onClick={() =>
@@ -518,7 +500,7 @@ export function BrainToolbar({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="h-7 w-7 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          className="!size-11 text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!size-7"
           aria-label="Refresh data"
           title="Refresh data — reload graph from the database"
           onClick={() => void onRefreshData()}
@@ -529,7 +511,7 @@ export function BrainToolbar({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="h-7 w-7 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          className="!size-11 text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!size-7"
           aria-label="Reset layout"
           title="Reset layout — clear manual node positions"
           onClick={onResetLayout}
@@ -546,7 +528,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={filtersOpen}
           className={cn(
-            "h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
             filtersOpen && "text-foreground",
           )}
           onClick={() => setFiltersOpen(!filtersOpen)}
@@ -560,7 +542,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={legendOpen}
           className={cn(
-            "h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
             legendOpen && "text-foreground",
           )}
           onClick={() => setLegendOpen(!legendOpen)}
@@ -574,7 +556,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={inspectorOpen}
           className={cn(
-            "hidden h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground lg:inline-flex",
+            "hidden !h-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:px-2 lg:inline-flex",
             inspectorOpen && "text-foreground",
           )}
           onClick={() => setInspectorOpen(!inspectorOpen)}

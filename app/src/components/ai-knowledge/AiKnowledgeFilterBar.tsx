@@ -105,7 +105,7 @@ export function AiKnowledgeFilterBar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={ui.filters.searchPlaceholder}
-          className="pl-9"
+          className="h-11 pl-9 sm:h-8"
           aria-label={ui.filters.searchPlaceholder}
         />
         {onOpenPalette && (
@@ -126,7 +126,7 @@ export function AiKnowledgeFilterBar({
           onTopCategoryChange(v === ALL_VALUE ? null : (v as PromptTopCategory))
         }
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="!h-11 w-full sm:!h-8 sm:w-[200px]">
           <SelectValue placeholder={ui.filters.allCategories} />
         </SelectTrigger>
         <SelectContent>
@@ -146,7 +146,7 @@ export function AiKnowledgeFilterBar({
             onSubCategoryChange(v === ALL_VALUE ? null : v)
           }
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="!h-11 w-full sm:!h-8 sm:w-[200px]">
             <SelectValue placeholder={ui.filters.allSubcategories} />
           </SelectTrigger>
           <SelectContent>
@@ -166,8 +166,8 @@ export function AiKnowledgeFilterBar({
         <Select
           value={activeTag ?? ALL_VALUE}
           onValueChange={(v) => onTagChange(v === ALL_VALUE ? null : v)}
-        >
-          <SelectTrigger className="w-[160px]">
+      >
+          <SelectTrigger className="!h-11 w-full sm:!h-8 sm:w-[160px]">
             <SelectValue placeholder={ui.filters.tagFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>

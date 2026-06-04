@@ -56,9 +56,9 @@ export function WeatherHero({
         {/* Location header. */}
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-semibold tracking-tight text-[var(--weather-text-primary)] sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--weather-text-primary)] sm:text-3xl">
               {location.displayLabel}
-            </h2>
+            </h1>
             <span className="weather-glass-pill" data-accent="lime">
               <MapPin className="size-3.5" aria-hidden />
               {precisionLabel(copy, location.precision)}
@@ -394,4 +394,3 @@ function shortTip(current: CurrentWeather): string {
   if (current.conditionCode === "clear-day") return "Clear skies ahead";
   return current.condition;
 }
-

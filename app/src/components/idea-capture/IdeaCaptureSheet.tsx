@@ -256,6 +256,8 @@ function AttachmentStrip({
           className="group relative size-16 overflow-hidden rounded-md bg-muted"
         >
           {att.preview_url ? (
+            // Blob object URLs from user-picked files should render directly.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={att.preview_url}
               alt=""
@@ -840,32 +842,37 @@ export function IdeaCaptureSheet() {
   );
 
   const voice = useGeminiVoiceCapture({ onFinal: appendFromVoice });
+  const {
+    error: voiceError,
+    invalidate: invalidateVoice,
+    stop: stopVoice,
+  } = voice;
 
   useEffect(() => {
-    if (!voice.error) return;
+    if (!voiceError) return;
     // "unsupported" is already surfaced via the mic button tooltip.
-    if (voice.error === "unsupported") return;
+    if (voiceError === "unsupported") return;
     // Permission denials get their own actionable message.
     if (
-      voice.error === "not-allowed" ||
-      voice.error === "service-not-allowed"
+      voiceError === "not-allowed" ||
+      voiceError === "service-not-allowed"
     ) {
       toast.error(ui.ideaCaptureVoicePermissionDenied);
       return;
     }
-    if (voice.error.includes("Gemini is not configured")) {
+    if (voiceError.includes("Gemini is not configured")) {
       toast.error(ui.ideaCaptureVoiceGeminiUnavailable);
       return;
     }
     toast.error(ui.ideaCaptureVoiceError);
-  }, [voice.error, ui]);
+  }, [voiceError, ui]);
 
   useEffect(() => {
     if (!open) {
-      voice.invalidate();
-      voice.stop();
+      invalidateVoice();
+      stopVoice();
     }
-  }, [open, voice.invalidate, voice.stop]);
+  }, [open, invalidateVoice, stopVoice]);
 
   const handleMicClick = useCallback(() => {
     if (!voice.supported || voice.transcribing) return;
@@ -1116,14 +1123,31 @@ export function IdeaCaptureSheet() {
   >(null);
 
   useEffect(() => {
-    if (!open) setFooterSaveAction(null);
-  }, [open]);
+    if (open || footerSaveAction === null) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setFooterSaveAction(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [footerSaveAction, open]);
 
   useEffect(() => {
-    if (saveState === "idle" || saveState === "error") {
-      setFooterSaveAction(null);
+    if (
+      footerSaveAction === null ||
+      (saveState !== "idle" && saveState !== "error")
+    ) {
+      return;
     }
-  }, [saveState]);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setFooterSaveAction(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [footerSaveAction, saveState]);
 
   // ── Keyboard shortcuts inside the sheet ───────────────────────────────────
   const handleSheetKeyDown = useCallback(
@@ -1158,7 +1182,8 @@ export function IdeaCaptureSheet() {
         onClick={toggle}
         title={`${fabLabel} (⌘⇧I)`}
         className={cn(
-          "fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] right-6 z-40 size-14 rounded-full",
+          "fixed right-6 z-40 size-14 rounded-full",
+          "bottom-[max(5.75rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] sm:bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]",
           "bg-primary text-primary-foreground",
           "shadow-lg shadow-foreground/10 dark:shadow-primary/20",
           "ring-1 ring-foreground/5 dark:ring-primary/30",

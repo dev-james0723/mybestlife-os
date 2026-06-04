@@ -104,11 +104,20 @@ export function NetworkGraph() {
       description={copy.pageDescription}
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAddEdgeOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-11 px-4 sm:h-7 sm:px-2.5"
+            onClick={() => setAddEdgeOpen(true)}
+          >
             <Link2 className="mr-1 h-4 w-4" />
             {copy.addEdge}
           </Button>
-          <Button size="sm" onClick={() => setAddNodeOpen(true)}>
+          <Button
+            size="sm"
+            className="h-11 px-4 sm:h-7 sm:px-2.5"
+            onClick={() => setAddNodeOpen(true)}
+          >
             <Plus className="mr-1 h-4 w-4" />
             {copy.addNode}
           </Button>
@@ -139,7 +148,7 @@ export function NetworkGraph() {
             <button
               key={k}
               onClick={() => setFilter(k)}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              className={`min-h-11 min-w-11 rounded-full border px-4 py-2 text-sm transition-colors sm:min-h-0 sm:min-w-0 sm:px-3 sm:py-1 sm:text-xs ${
                 filter === k
                   ? "bg-foreground text-background"
                   : "bg-background hover:bg-accent/40"

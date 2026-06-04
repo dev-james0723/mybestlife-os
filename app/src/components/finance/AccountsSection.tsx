@@ -88,7 +88,7 @@ export function AccountsSection({ copy, language, accounts, isLoading, isError }
             type="button"
             variant="outline"
             size="sm"
-            className="h-9 shrink-0 px-3 text-sm font-medium"
+            className="!h-11 shrink-0 px-4 text-sm font-medium sm:!h-9 sm:px-3"
             onClick={openAdd}
           >
             {copy.accountsAddButton}

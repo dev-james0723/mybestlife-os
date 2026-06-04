@@ -9,7 +9,7 @@
  */
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ShoppingBag, Loader2, Sparkles } from "lucide-react";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { useAppStore } from "@/stores/app-store";
 import { getAssetIntelUiCopy } from "@/lib/i18n/asset-intelligence-ui";
 import { useAnalyzePotentialAsset } from "@/hooks/use-asset-ai";
@@ -41,7 +42,7 @@ export function PotentialAssetAnalyzer({
 }: PotentialAssetAnalyzerProps) {
   const language = useAppStore((s) => s.language);
   const t = getAssetIntelUiCopy(language).potential;
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
   const analyze = useAnalyzePotentialAsset();
 
   const [item, setItem] = useState("");

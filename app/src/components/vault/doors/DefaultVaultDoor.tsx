@@ -258,7 +258,7 @@ export function DefaultVaultDoor({ onUnlock, reducedMotion }: VaultDoorProps) {
           type="button"
           onClick={startSequence}
           disabled={phase !== "idle"}
-          className="rounded-full border border-foreground/15 bg-background/70 px-6 py-2 text-sm font-semibold tracking-wide text-foreground shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06)] backdrop-blur transition hover:bg-background disabled:opacity-60"
+          className="min-h-11 rounded-full border border-foreground/15 bg-background/70 px-6 py-2 text-sm font-semibold tracking-wide text-foreground shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06)] backdrop-blur transition hover:bg-background disabled:opacity-60"
         >
           {phase === "idle" ? prompt.cta : copy.gate.unlocking}
         </button>

@@ -164,7 +164,7 @@ export default function WeatherPage() {
               href={data.backgroundCredit.photoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline-offset-2 hover:underline"
+              className="inline-flex min-h-11 items-center underline-offset-2 hover:underline sm:min-h-0"
             >
               {copy.photoCredit(data.backgroundCredit.name)}
             </a>
@@ -175,7 +175,7 @@ export default function WeatherPage() {
                   href="https://unsplash.com?utm_source=mybestlife-os&utm_medium=referral"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline-offset-2 hover:underline"
+                  className="inline-flex min-h-11 items-center underline-offset-2 hover:underline sm:min-h-0"
                 >
                   Unsplash
                 </a>

@@ -235,14 +235,26 @@ export function BrainView({ userId }: BrainViewProps) {
     if (fsEl && host && fsEl === host) {
       void exitDocumentFullscreen();
     }
-    setPseudoGraphFullscreen(false);
-  }, [isSphere]);
+    if (!pseudoGraphFullscreen) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setPseudoGraphFullscreen(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSphere, pseudoGraphFullscreen]);
 
   useEffect(() => {
-    if (!isSphere) {
-      setSphereFocusZoomPct(0);
-    }
-  }, [isSphere]);
+    if (isSphere || sphereFocusZoomPct === 0) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setSphereFocusZoomPct(0);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSphere, sphereFocusZoomPct]);
 
   // ── Diagnostics: log per-query failures ─────────────────────────────
   // Brain reads from 22 tables. A single failure (e.g. a not-yet-migrated
@@ -1005,7 +1017,7 @@ export function BrainView({ userId }: BrainViewProps) {
                 <button
                   type="button"
                   onClick={() => useBrainStore.getState().clearFilters()}
-                  className="rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs uppercase tracking-wider text-foreground hover:bg-muted/60"
+                  className="min-h-11 rounded-full border border-border/60 bg-muted/40 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:bg-muted/60 sm:min-h-0 sm:px-3 sm:py-1"
                 >
                   Clear filters
                 </button>

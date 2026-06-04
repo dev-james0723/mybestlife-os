@@ -80,7 +80,12 @@ export function KanbanBoard() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" size="sm" render={<Link href={careerHref} />}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-11 px-4 sm:h-7 sm:px-2.5"
+          render={<Link href={careerHref} />}
+        >
           <ArrowLeft className="mr-1 h-4 w-4" />
           {copy.pipeline.breadcrumb}
         </Button>
@@ -88,7 +93,11 @@ export function KanbanBoard() {
         <h1 className="flex-1 truncate text-lg font-semibold sm:text-xl">
           {copy.pipeline.pageTitle}
         </h1>
-        <Button size="sm" onClick={() => setNewOpen(true)}>
+        <Button
+          size="sm"
+          className="h-11 px-4 sm:h-7 sm:px-2.5"
+          onClick={() => setNewOpen(true)}
+        >
           <Plus className="mr-1 h-4 w-4" />
           {copy.pipeline.newButton}
         </Button>

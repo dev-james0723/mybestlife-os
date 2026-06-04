@@ -135,7 +135,7 @@ export function AudioOverviewPanel({ metrics }: AudioOverviewPanelProps) {
               type="button"
               onClick={generateOverview}
               disabled={isGenerating}
-              className="gap-2"
+              className="h-11 gap-2 px-4 sm:h-8 sm:px-2.5"
             >
               {isGenerating ? (
                 <Loader2 className="size-4 animate-spin" />

@@ -15,7 +15,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +61,7 @@ import { useGoals } from "@/hooks/use-goals";
 import { useNotes } from "@/hooks/use-notes";
 import { useDocuments } from "@/hooks/use-documents";
 import { useAnalyzeAsset } from "@/hooks/use-asset-ai";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import {
   useAssetImages,
   useAssetDocuments,
@@ -111,7 +112,7 @@ export function AssetIntelligenceModal({
   const language = useAppStore((s) => s.language);
   const t = getAssetIntelUiCopy(language).modal;
   const resources = getResourcesUiCopy(language);
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
   const queryClient = useQueryClient();
 
   const assetId = asset?.id ?? null;

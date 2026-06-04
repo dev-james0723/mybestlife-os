@@ -70,6 +70,7 @@ export function JournalView() {
       description={copy.pageDescription}
       actions={
         <Button
+          className="h-11 px-4 sm:h-8 sm:px-2.5"
           onClick={() => {
             setEditing(null);
             setFormOpen(true);

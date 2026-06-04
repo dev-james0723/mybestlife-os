@@ -2895,6 +2895,7 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
 .weather-radar-scrubber {
   -webkit-appearance: none;
   appearance: none;
+  height: 44px;
   background: linear-gradient(
     to right,
     var(--weather-accent-lime) 0%,
@@ -2902,6 +2903,9 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
     rgba(255, 255, 255, 0.18) var(--progress, 50%),
     rgba(255, 255, 255, 0.18) 100%
   );
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 4px;
   border-radius: 9999px;
   cursor: pointer;
   outline: none;

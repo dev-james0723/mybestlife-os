@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 import type { CareerProfile } from "@/types/ai-coach";
 
 export type CareerProfileUpsertInput = Partial<
@@ -46,6 +47,7 @@ export const careerProfileRepository = {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+    if (authError && !user && hasDevLoginBypassCookie()) return null;
     if (authError) throw authError;
     if (!user) return null;
 

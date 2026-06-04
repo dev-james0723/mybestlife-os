@@ -1,8 +1,9 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
 
 type AssetsEmptyStateProps = {
@@ -23,7 +24,7 @@ export function AssetsEmptyState({
   ctaLabel,
   onCtaClick,
 }: AssetsEmptyStateProps) {
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   return (
     <motion.div

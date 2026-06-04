@@ -11,10 +11,11 @@
  */
 
 import { useMemo } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Layers, ShieldAlert, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { useAppStore } from "@/stores/app-store";
 import { getAssetIntelUiCopy } from "@/lib/i18n/asset-intelligence-ui";
 import {
@@ -36,7 +37,7 @@ function formatMoney(value: number): string {
 export function AssetPageIntelligence({ assets }: { assets: Asset[] }) {
   const language = useAppStore((s) => s.language);
   const t = getAssetIntelUiCopy(language).page;
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   const clusters = useMemo(() => clusterAssets(assets), [assets]);
 

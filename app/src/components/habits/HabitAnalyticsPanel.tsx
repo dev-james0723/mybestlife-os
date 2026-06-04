@@ -122,7 +122,7 @@ export function HabitAnalyticsPanel({
             <button
               key={key}
               type="button"
-              className={`rounded-full px-2.5 py-1 text-xs transition ${
+              className={`min-h-11 rounded-full px-4 py-2 text-sm transition sm:min-h-0 sm:px-2.5 sm:py-1 sm:text-xs ${
                 timeFilter === key
                   ? "bg-primary text-primary-foreground"
                   : "border border-white/10 bg-white/[0.05] text-muted-foreground hover:text-foreground"

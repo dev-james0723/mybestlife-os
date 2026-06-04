@@ -152,7 +152,7 @@ export function CategoriesSection({ copy, language, categories, isLoading, isErr
             type="button"
             size="sm"
             osSize="compact"
-            className="shrink-0 px-3 text-sm font-medium"
+            className="!h-11 min-h-11 shrink-0 px-4 text-sm font-medium sm:!h-8 sm:min-h-8 sm:px-3"
             onClick={openAdd}
           >
             {copy.categoriesAddButton}

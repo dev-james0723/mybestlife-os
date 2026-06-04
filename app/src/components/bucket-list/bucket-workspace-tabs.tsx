@@ -82,7 +82,7 @@ export function BucketWorkspaceTabs() {
               aria-selected={selected}
               onClick={() => setTab(tab)}
               className={cn(
-                "relative isolate inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-full px-3 text-sm font-semibold transition-colors sm:flex-none sm:px-3.5",
+                "relative isolate inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-full px-3 text-sm font-semibold transition-colors sm:h-9 sm:flex-none sm:px-3.5",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 active:translate-y-px",
                 selected
                   ? "text-slate-950"

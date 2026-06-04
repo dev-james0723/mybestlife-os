@@ -58,7 +58,12 @@ export function HealthGoalsPanel({ className }: Props) {
     <section className={className} aria-label={ui.sectionTitle}>
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="text-lg font-semibold">{ui.sectionTitle}</h2>
-        <Button size="sm" variant="outline" onClick={() => setIsAdding((v) => !v)}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-11 px-4 sm:h-7 sm:px-2.5"
+          onClick={() => setIsAdding((v) => !v)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           {ui.addGoal}
         </Button>
@@ -118,6 +123,7 @@ function GoalRow({
       <Button
         size="icon-sm"
         variant="ghost"
+        className="h-11 w-11 sm:h-7 sm:w-7"
         onClick={() => deleteGoal.mutate(goal.id)}
         aria-label="Delete goal"
       >

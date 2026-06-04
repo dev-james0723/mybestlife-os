@@ -41,9 +41,11 @@ CREATE INDEX IF NOT EXISTS idx_role_model_neural_skills_user
 ALTER TABLE public.role_model_neural_skills ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users manage own role_model_neural_skills" ON public.role_model_neural_skills;
 CREATE POLICY "Users manage own role_model_neural_skills"
-  ON public.role_model_neural_skills FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  ON public.role_model_neural_skills
+  FOR ALL
+  TO authenticated
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
 
 DROP TRIGGER IF EXISTS role_model_neural_skills_touch_updated_at ON public.role_model_neural_skills;
 CREATE TRIGGER role_model_neural_skills_touch_updated_at

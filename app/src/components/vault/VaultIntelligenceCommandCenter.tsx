@@ -113,15 +113,25 @@ export function VaultIntelligenceCommandCenter({
   const [usageNote, setUsageNote] = useState("");
 
   useEffect(() => {
-    setSelectedIds((current) => {
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+
       const valid = new Set(entries.map((entry) => entry.id));
-      const next = current.filter((id) => valid.has(id));
-      return next.length > 0 ? next : defaultSelection(entries);
+      setSelectedIds((current) => {
+        const next = current.filter((id) => valid.has(id));
+        return next.length > 0 ? next : defaultSelection(entries);
+      });
+      setUsageEntryId((current) =>
+        entries.some((entry) => entry.id === current) ? current : entries[0]?.id ?? "",
+      );
     });
-    if (!entries.some((entry) => entry.id === usageEntryId)) {
-      setUsageEntryId(entries[0]?.id ?? "");
-    }
-  }, [entries, usageEntryId]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entries]);
 
   const selectedEntries = useMemo(
     () => entries.filter((entry) => selectedIds.includes(entry.id)),
@@ -295,14 +305,27 @@ export function VaultIntelligenceCommandCenter({
                   if (event.key === "Enter" && command.trim()) runCommand(command);
                 }}
                 placeholder="Ask about a tool, paste a pricing page, or describe a workflow..."
+                className="h-11"
               />
-              <Button type="button" onClick={() => command.trim() && runCommand(command)} disabled={!command.trim()}>
+              <Button
+                type="button"
+                className="h-11 w-11 px-0"
+                onClick={() => command.trim() && runCommand(command)}
+                disabled={!command.trim()}
+              >
                 <Search className="size-4" />
               </Button>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {COMMAND_CHIPS.map((chip) => (
-                <Button key={chip} type="button" variant="outline" size="sm" onClick={() => runCommand(chip)}>
+                <Button
+                  key={chip}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-11 px-4 sm:h-7 sm:px-2.5"
+                  onClick={() => runCommand(chip)}
+                >
                   {chip}
                 </Button>
               ))}
@@ -427,7 +450,14 @@ function CommandButton({
   onClick: () => void;
 }) {
   return (
-    <Button type="button" variant={active ? "default" : "secondary"} size="sm" onClick={onClick} disabled={loading}>
+    <Button
+      type="button"
+      variant={active ? "default" : "secondary"}
+      size="sm"
+      className="h-11 px-4 sm:h-7 sm:px-2.5"
+      onClick={onClick}
+      disabled={loading}
+    >
       {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Icon className="mr-2 size-4" />}
       {label}
     </Button>

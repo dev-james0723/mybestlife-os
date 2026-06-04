@@ -173,6 +173,7 @@ export function CareerTimeline() {
       description={copy.pageDescription}
       actions={
         <Button
+          className="h-11 px-4 sm:h-8 sm:px-2.5"
           onClick={() => {
             setEditing(null);
             setFormOpen(true);
@@ -198,7 +199,7 @@ export function CareerTimeline() {
           <button
             key={k}
             onClick={() => setFilter(k)}
-            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            className={`min-h-11 min-w-11 rounded-full border px-4 py-2 text-sm transition-colors sm:min-h-0 sm:min-w-0 sm:px-3 sm:py-1 sm:text-xs ${
               filter === k
                 ? "bg-foreground text-background"
                 : "bg-background hover:bg-accent/40"

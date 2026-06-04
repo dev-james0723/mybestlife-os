@@ -36,7 +36,14 @@ export function RoutineStudio({
             {copy.routineStudioDescription}
           </p>
         </div>
-        <OSIconControl type="button" osSize="compact" size="icon-sm" aria-label={copy.actionsAddRoutine} onClick={onCreate}>
+        <OSIconControl
+          type="button"
+          osSize="compact"
+          size="icon-sm"
+          className="!h-11 !w-11 sm:!h-8 sm:!w-8"
+          aria-label={copy.actionsAddRoutine}
+          onClick={onCreate}
+        >
           <Plus className="size-4" />
         </OSIconControl>
       </div>

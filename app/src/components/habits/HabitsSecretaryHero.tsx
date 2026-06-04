@@ -67,14 +67,29 @@ export function HabitsSecretaryHero({
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <OSPrimaryAction type="button" osSize="compact" className="gap-1.5" onClick={onPlan}>
+            <OSPrimaryAction
+              type="button"
+              osSize="compact"
+              className="!h-11 min-h-11 justify-center gap-1.5 px-4 sm:!h-8 sm:min-h-8 sm:px-2.5"
+              onClick={onPlan}
+            >
               <Wand2 className="size-4" />
               {copy.secretaryPrimaryCta}
             </OSPrimaryAction>
-            <OSControl type="button" osSize="compact" onClick={onManual}>
+            <OSControl
+              type="button"
+              osSize="compact"
+              className="!h-11 min-h-11 justify-center px-4 sm:!h-8 sm:min-h-8 sm:px-2.5"
+              onClick={onManual}
+            >
               {copy.secretaryManualCta}
             </OSControl>
-            <OSControl type="button" osSize="compact" onClick={onReview}>
+            <OSControl
+              type="button"
+              osSize="compact"
+              className="!h-11 min-h-11 justify-center px-4 sm:!h-8 sm:min-h-8 sm:px-2.5"
+              onClick={onReview}
+            >
               {copy.secretaryReviewCta}
             </OSControl>
           </div>

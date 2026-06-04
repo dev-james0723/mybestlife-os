@@ -10,6 +10,31 @@ import { createClient } from "@/lib/supabase/client";
 import type { PromptFolderItemRow, PromptFolderRow } from "@/types/database";
 import type { PromptFolder, PromptFolderItemRef } from "@/types/prompt";
 
+let folderSchemaMissing = false;
+let listFoldersInFlight: Promise<PromptFolder[]> | null = null;
+
+function isMissingFolderTableError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as {
+    code?: unknown;
+    status?: unknown;
+    message?: unknown;
+    details?: unknown;
+  };
+  const code = typeof candidate.code === "string" ? candidate.code : "";
+  if (code === "42P01" || code === "PGRST205") return true;
+
+  const status =
+    typeof candidate.status === "number"
+      ? candidate.status
+      : Number(candidate.status);
+  const text = `${String(candidate.message ?? "")} ${String(candidate.details ?? "")}`;
+  return (
+    status === 404 &&
+    /ai_prompt_folder(?:s|_items)|schema cache|relation .* does not exist/i.test(text)
+  );
+}
+
 function toItemRef(row: PromptFolderItemRow): PromptFolderItemRef | null {
   if (row.library_prompt_id) {
     return { source: "library", prompt_id: row.library_prompt_id };
@@ -38,6 +63,47 @@ function toFolder(
   };
 }
 
+async function readFoldersFromSupabase(): Promise<PromptFolder[]> {
+  const supabase = createClient();
+  const foldersRes = await supabase
+    .from("ai_prompt_folders")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("updated_at", { ascending: false });
+  if (foldersRes.error) {
+    if (isMissingFolderTableError(foldersRes.error)) {
+      folderSchemaMissing = true;
+      return [];
+    }
+    throw foldersRes.error;
+  }
+
+  const itemsRes = await supabase
+    .from("ai_prompt_folder_items")
+    .select("*")
+    .order("added_at", { ascending: false });
+  if (itemsRes.error) {
+    if (isMissingFolderTableError(itemsRes.error)) {
+      folderSchemaMissing = true;
+      return [];
+    }
+    throw itemsRes.error;
+  }
+
+  const itemsByFolder = new Map<string, PromptFolderItemRef[]>();
+  for (const row of (itemsRes.data ?? []) as PromptFolderItemRow[]) {
+    const ref = toItemRef(row);
+    if (!ref) continue;
+    const list = itemsByFolder.get(row.folder_id) ?? [];
+    list.push(ref);
+    itemsByFolder.set(row.folder_id, list);
+  }
+
+  return ((foldersRes.data ?? []) as PromptFolderRow[]).map((row) =>
+    toFolder(row, itemsByFolder.get(row.id) ?? []),
+  );
+}
+
 export type NewFolderInput = {
   name: string;
   summary?: string | null;
@@ -51,33 +117,13 @@ export type UpdateFolderInput = Partial<NewFolderInput>;
 export const aiKnowledgeFoldersRepository = {
   /** Folders with their resolved item refs, ordered by sort_order then recency. */
   async listFolders(): Promise<PromptFolder[]> {
-    const supabase = createClient();
-    const [foldersRes, itemsRes] = await Promise.all([
-      supabase
-        .from("ai_prompt_folders")
-        .select("*")
-        .order("sort_order", { ascending: true })
-        .order("updated_at", { ascending: false }),
-      supabase
-        .from("ai_prompt_folder_items")
-        .select("*")
-        .order("added_at", { ascending: false }),
-    ]);
-    if (foldersRes.error) throw foldersRes.error;
-    if (itemsRes.error) throw itemsRes.error;
-
-    const itemsByFolder = new Map<string, PromptFolderItemRef[]>();
-    for (const row of (itemsRes.data ?? []) as PromptFolderItemRow[]) {
-      const ref = toItemRef(row);
-      if (!ref) continue;
-      const list = itemsByFolder.get(row.folder_id) ?? [];
-      list.push(ref);
-      itemsByFolder.set(row.folder_id, list);
+    if (folderSchemaMissing) return [];
+    if (!listFoldersInFlight) {
+      listFoldersInFlight = readFoldersFromSupabase().finally(() => {
+        listFoldersInFlight = null;
+      });
     }
-
-    return ((foldersRes.data ?? []) as PromptFolderRow[]).map((row) =>
-      toFolder(row, itemsByFolder.get(row.id) ?? []),
-    );
+    return listFoldersInFlight;
   },
 
   async createFolder(input: NewFolderInput): Promise<PromptFolder> {

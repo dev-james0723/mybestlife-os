@@ -1,9 +1,10 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import {
   ASSET_CATEGORY_KEYS,
   type AssetCategoryKey,
@@ -101,7 +102,7 @@ type CategoryChipProps = {
 };
 
 function CategoryChip({ active, hue, label, onClick }: CategoryChipProps) {
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   // Two visual states:
   //  - inactive: muted outline, inherits foreground color (so the row reads
@@ -122,7 +123,7 @@ function CategoryChip({ active, hue, label, onClick }: CategoryChipProps) {
       whileTap={prefersReduced ? undefined : { scale: 0.96 }}
       transition={{ duration: 0.15, ease: EASE_OUT_EXPO }}
       className={cn(
-        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium leading-tight",
+        "inline-flex min-h-11 min-w-11 items-center rounded-full border px-3 py-1 text-xs font-medium leading-tight sm:min-h-0 sm:min-w-0",
         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
         !active &&
           "border-border/70 bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -143,7 +144,7 @@ function FavoritesChip({
   label: string;
   onClick: () => void;
 }) {
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   return (
     <motion.button
@@ -153,7 +154,7 @@ function FavoritesChip({
       whileTap={prefersReduced ? undefined : { scale: 0.96 }}
       transition={{ duration: 0.15, ease: EASE_OUT_EXPO }}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium leading-tight transition-colors",
+        "inline-flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium leading-tight transition-colors sm:min-h-0 sm:min-w-0",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
         active
           ? "border-[var(--accent-pink)]/50 bg-[var(--accent-pink)]/12 text-[var(--accent-pink)]"

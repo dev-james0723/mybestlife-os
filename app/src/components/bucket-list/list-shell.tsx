@@ -499,16 +499,26 @@ function BucketDreamEmptyState({
           <Button
             type="button"
             onClick={onAi}
-            className={bucketPrimaryControl}
+            className={cn(bucketPrimaryControl, "h-11 px-4 sm:h-8 sm:px-2.5")}
           >
             <Sparkles className="h-4 w-4" />
             {copy.aiNewDream}
           </Button>
-          <Button type="button" variant="outline" onClick={onUpload} className={bucketGlassControl}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onUpload}
+            className={cn(bucketGlassControl, "h-11 px-4 sm:h-8 sm:px-2.5")}
+          >
             <ImagePlus className="h-4 w-4" />
             {copy.uploadInspiration}
           </Button>
-          <Button type="button" variant="outline" onClick={onManual} className={bucketGlassControl}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onManual}
+            className={cn(bucketGlassControl, "h-11 px-4 sm:h-8 sm:px-2.5")}
+          >
             <Plus className="h-4 w-4" />
             {copy.addManually}
           </Button>

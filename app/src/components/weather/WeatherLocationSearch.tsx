@@ -59,7 +59,6 @@ export function WeatherLocationSearch({
 
   useLayoutEffect(() => {
     if (!open) {
-      setMenuRect(null);
       return;
     }
     syncMenuPosition();
@@ -87,14 +86,10 @@ export function WeatherLocationSearch({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setResults([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    if (trimmed.length < 2) return;
+
     debounceRef.current = setTimeout(async () => {
+      setLoading(true);
       const res = await searchLocations(trimmed);
       if (res.status === "ok") {
         setResults(res.locations);
@@ -140,25 +135,33 @@ export function WeatherLocationSearch({
 
   return (
     <div ref={wrapperRef} className="relative z-[60] w-full max-w-md">
-      <div className="weather-glass-pill flex h-10 w-full items-center gap-2 px-3">
+      <div className="weather-glass-pill flex min-h-11 w-full items-center gap-2 px-3 sm:min-h-10">
         <Search className="size-4 opacity-70" aria-hidden />
         <input
           id={inputId}
           type="text"
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const nextQuery = e.target.value;
+            setQuery(nextQuery);
             setOpen(true);
             setActiveIdx(0);
+            if (nextQuery.trim().length < 2) {
+              setResults([]);
+              setError(null);
+              setLoading(false);
+            }
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder={copy.searchPlaceholder}
           aria-label={copy.searchPlaceholder}
+          role="combobox"
           aria-expanded={open}
+          aria-haspopup="listbox"
           aria-controls={`${inputId}-listbox`}
           aria-autocomplete="list"
-          className="flex-1 bg-transparent text-sm text-[var(--weather-text-primary)] placeholder:text-[var(--weather-text-muted)] focus:outline-none"
+          className="min-h-11 flex-1 bg-transparent text-sm text-[var(--weather-text-primary)] placeholder:text-[var(--weather-text-muted)] focus:outline-none sm:min-h-10"
         />
         {loading ? (
           <Loader2 className="size-4 animate-spin opacity-70" aria-hidden />
@@ -168,7 +171,7 @@ export function WeatherLocationSearch({
             type="button"
             onClick={onClear}
             aria-label={copy.clearSelectedLocation}
-            className="text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)]"
+            className="grid size-11 place-items-center rounded-full text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)] sm:size-8"
           >
             <X className="size-4" />
           </button>
@@ -177,7 +180,7 @@ export function WeatherLocationSearch({
             type="button"
             onClick={onUseMyLocation}
             aria-label={copy.useMyLocation}
-            className="text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)]"
+            className="grid size-11 place-items-center rounded-full text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)] sm:size-8"
           >
             <MapPin className="size-4" />
           </button>

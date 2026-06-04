@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getServerPageUser } from "@/lib/auth/server-page-user";
 import { BrainView } from "@/components/brain/BrainView";
 import {
   DEFAULT_LOCALE_SLUG,
@@ -29,9 +30,7 @@ export default async function BrainPage({ params }: PageProps) {
   const slug = normalizeLocaleSlug(locale) ?? DEFAULT_LOCALE_SLUG;
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerPageUser(supabase);
   if (!user) redirect(withLocalePrefix(slug, "/login"));
 
   return (

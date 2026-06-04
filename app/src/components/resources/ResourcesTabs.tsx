@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { AssetsView } from "@/components/resources/assets/AssetsView";
 import { DocumentsView } from "@/components/resources/documents/DocumentsView";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { useAppStore } from "@/stores/app-store";
 import { useTheme } from "@/lib/theme-context";
 import { getThemedItemLabel } from "@/lib/theme-labels";
@@ -55,7 +56,7 @@ export function ResourcesTabs() {
     { id: "assets" as const, label: assetsLabel },
     { id: "documents" as const, label: documentsLabel },
   ];
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

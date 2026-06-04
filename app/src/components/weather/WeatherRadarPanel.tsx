@@ -128,12 +128,12 @@ export function WeatherRadarPanel({
 
         {/* Floating playback controls. */}
         <div className="pointer-events-none absolute inset-x-4 bottom-4 flex flex-wrap items-center justify-between gap-2">
-          <div className="weather-glass-pill pointer-events-auto !h-9 gap-3 px-4">
+          <div className="weather-glass-pill pointer-events-auto min-h-11 gap-3 px-4 sm:!h-9 sm:min-h-9">
             <button
               type="button"
               onClick={() => setPlaying((p) => !p)}
               aria-label={playing ? "Pause radar animation" : "Play radar animation"}
-              className="text-[var(--weather-text-primary)]"
+              className="grid size-11 place-items-center rounded-full text-[var(--weather-text-primary)] sm:size-8"
             >
               {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
             </button>
@@ -147,7 +147,7 @@ export function WeatherRadarPanel({
                 setFrameIndex(Number(e.target.value));
               }}
               aria-label="Radar timeline"
-              className="weather-radar-scrubber h-1 w-28 sm:w-36"
+              className="weather-radar-scrubber w-28 sm:w-36"
               style={{ ["--progress" as string]: `${progress}%` }}
             />
             <span className="flex items-center gap-1.5 text-xs tabular-nums text-[var(--weather-text-secondary)]">
@@ -192,7 +192,7 @@ function RoundIconButton({
       aria-label={label}
       onClick={onClick}
       className={
-        "flex size-8 items-center justify-center rounded-full border border-[var(--weather-glass-border)] bg-[var(--weather-glass-elevated)] transition-colors hover:bg-white/10 " +
+        "flex size-11 items-center justify-center rounded-full border border-[var(--weather-glass-border)] bg-[var(--weather-glass-elevated)] transition-colors hover:bg-white/10 sm:size-8 " +
         (accent
           ? "text-[var(--weather-accent-lime)]"
           : "text-[var(--weather-text-primary)]")

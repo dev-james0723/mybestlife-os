@@ -68,7 +68,7 @@ export function QuarterlyReportButton() {
       <Button
         onClick={onGenerate}
         disabled={busy}
-        className="w-full sm:w-auto"
+        className="!h-11 w-full sm:!h-8 sm:w-auto"
       >
         {busy ? (
           <>

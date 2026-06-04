@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, Check, Download, Loader2, RefreshCw } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,10 +29,6 @@ export function AppleHealthSyncBanner({ onDismiss, className }: Props) {
   const ui = useMemo(() => getHealthUiCopy(language).sync, [language]);
   const createMany = useCreateHealthMetricsBulk();
   const [status, setStatus] = useState<SyncStatus>(() => appleHealthBridge.getStatus());
-
-  useEffect(() => {
-    setStatus(appleHealthBridge.getStatus());
-  }, []);
 
   async function handleSync() {
     setStatus({ ...status, state: "connected_syncing" });
@@ -83,30 +79,33 @@ export function AppleHealthSyncBanner({ onDismiss, className }: Props) {
               href={ui.shortcutUrl}
               target="_blank"
               rel="noreferrer"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "h-11 px-4 sm:h-7 sm:px-2.5",
+              )}
             >
               <Download className="mr-2 h-4 w-4" />
               {ui.downloadShortcut}
             </a>
-            <Button variant="ghost" size="sm" onClick={onDismiss}>
+            <Button variant="ghost" size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={onDismiss}>
               {ui.dismiss}
             </Button>
           </>
         )}
         {(state === "not_connected" || state === "error") && (
-          <Button size="sm" onClick={handleSync} disabled={createMany.isPending}>
+          <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={handleSync} disabled={createMany.isPending}>
             <RefreshCw className="mr-2 h-4 w-4" />
             {state === "error" ? ui.retry : ui.connect}
           </Button>
         )}
         {state === "connected_synced" && (
-          <Button variant="outline" size="sm" onClick={handleSync} disabled={createMany.isPending}>
+          <Button variant="outline" size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={handleSync} disabled={createMany.isPending}>
             <RefreshCw className="mr-2 h-4 w-4" />
             {ui.syncNow}
           </Button>
         )}
         {state === "connected_syncing" && (
-          <Button size="sm" disabled>
+          <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" disabled>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             {ui.syncing}
           </Button>

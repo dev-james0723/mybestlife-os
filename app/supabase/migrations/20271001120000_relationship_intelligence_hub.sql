@@ -28,7 +28,7 @@ BEGIN;
 -- ===========================================================================
 -- 1. relationship_interactions
 -- ===========================================================================
-CREATE TABLE public.relationship_interactions (
+CREATE TABLE IF NOT EXISTS public.relationship_interactions (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           UUID NOT NULL DEFAULT auth.uid()
                       REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -48,13 +48,13 @@ CREATE TABLE public.relationship_interactions (
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX relationship_interactions_user_rel_idx
+CREATE INDEX IF NOT EXISTS relationship_interactions_user_rel_idx
   ON public.relationship_interactions (user_id, relationship_id, interaction_date DESC);
 
 -- ===========================================================================
 -- 2. relationship_promises
 -- ===========================================================================
-CREATE TABLE public.relationship_promises (
+CREATE TABLE IF NOT EXISTS public.relationship_promises (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id               UUID NOT NULL DEFAULT auth.uid()
                           REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -72,17 +72,17 @@ CREATE TABLE public.relationship_promises (
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX relationship_promises_user_rel_idx
+CREATE INDEX IF NOT EXISTS relationship_promises_user_rel_idx
   ON public.relationship_promises (user_id, relationship_id);
 
-CREATE INDEX relationship_promises_user_open_idx
+CREATE INDEX IF NOT EXISTS relationship_promises_user_open_idx
   ON public.relationship_promises (user_id, status)
   WHERE status = 'open';
 
 -- ===========================================================================
 -- 3. relationship_ai_reports  (one cached report per relationship)
 -- ===========================================================================
-CREATE TABLE public.relationship_ai_reports (
+CREATE TABLE IF NOT EXISTS public.relationship_ai_reports (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           UUID NOT NULL DEFAULT auth.uid()
                       REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -96,15 +96,16 @@ CREATE TABLE public.relationship_ai_reports (
   input_hash        TEXT,
 
   generated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  UNIQUE (relationship_id)
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS relationship_ai_reports_relationship_id_key
+  ON public.relationship_ai_reports (relationship_id);
 
 -- ===========================================================================
 -- 4. relationship_message_drafts  (generated, never auto-sent)
 -- ===========================================================================
-CREATE TABLE public.relationship_message_drafts (
+CREATE TABLE IF NOT EXISTS public.relationship_message_drafts (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           UUID NOT NULL DEFAULT auth.uid()
                       REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -121,13 +122,13 @@ CREATE TABLE public.relationship_message_drafts (
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX relationship_message_drafts_user_rel_idx
+CREATE INDEX IF NOT EXISTS relationship_message_drafts_user_rel_idx
   ON public.relationship_message_drafts (user_id, relationship_id, created_at DESC);
 
 -- ===========================================================================
 -- 5. relationship_images  (multi-image memory layer)
 -- ===========================================================================
-CREATE TABLE public.relationship_images (
+CREATE TABLE IF NOT EXISTS public.relationship_images (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id             UUID NOT NULL DEFAULT auth.uid()
                         REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -150,7 +151,7 @@ CREATE TABLE public.relationship_images (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX relationship_images_user_rel_idx
+CREATE INDEX IF NOT EXISTS relationship_images_user_rel_idx
   ON public.relationship_images (user_id, relationship_id, created_at DESC);
 
 -- ===========================================================================
@@ -209,13 +210,13 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS "Users can delete own %1$s" ON public.%1$I;', t);
 
     EXECUTE format(
-      'CREATE POLICY "Users can view own %1$s" ON public.%1$I FOR SELECT USING (auth.uid() = user_id);', t);
+      'CREATE POLICY "Users can view own %1$s" ON public.%1$I FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);', t);
     EXECUTE format(
-      'CREATE POLICY "Users can insert own %1$s" ON public.%1$I FOR INSERT WITH CHECK (auth.uid() = user_id);', t);
+      'CREATE POLICY "Users can insert own %1$s" ON public.%1$I FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);', t);
     EXECUTE format(
-      'CREATE POLICY "Users can update own %1$s" ON public.%1$I FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t);
+      'CREATE POLICY "Users can update own %1$s" ON public.%1$I FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);', t);
     EXECUTE format(
-      'CREATE POLICY "Users can delete own %1$s" ON public.%1$I FOR DELETE USING (auth.uid() = user_id);', t);
+      'CREATE POLICY "Users can delete own %1$s" ON public.%1$I FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);', t);
   END LOOP;
 END $$;
 
@@ -251,7 +252,7 @@ ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'relationship-images'
-  AND (storage.foldername(name))[1] = auth.uid()::text
+  AND (storage.foldername(name))[1] = (select auth.uid())::text
 );
 
 CREATE POLICY "Users can update own relationship images"
@@ -259,11 +260,11 @@ ON storage.objects FOR UPDATE
 TO authenticated
 USING (
   bucket_id = 'relationship-images'
-  AND (storage.foldername(name))[1] = auth.uid()::text
+  AND (storage.foldername(name))[1] = (select auth.uid())::text
 )
 WITH CHECK (
   bucket_id = 'relationship-images'
-  AND (storage.foldername(name))[1] = auth.uid()::text
+  AND (storage.foldername(name))[1] = (select auth.uid())::text
 );
 
 CREATE POLICY "Users can delete own relationship images"
@@ -271,7 +272,7 @@ ON storage.objects FOR DELETE
 TO authenticated
 USING (
   bucket_id = 'relationship-images'
-  AND (storage.foldername(name))[1] = auth.uid()::text
+  AND (storage.foldername(name))[1] = (select auth.uid())::text
 );
 
 COMMIT;

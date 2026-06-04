@@ -71,6 +71,7 @@ export function VaultGate() {
       className="relative flex min-h-[calc(100vh-3.5rem)] w-full items-center justify-center overflow-hidden"
       data-ui-theme={uiTheme}
     >
+      <h1 className="sr-only">Vault</h1>
       <div className="relative z-10 flex w-full max-w-4xl flex-col items-center justify-center px-4">
         {renderDoorForTheme(uiTheme, {
           onUnlock: handleUnlock,
@@ -81,7 +82,7 @@ export function VaultGate() {
           <button
             type="button"
             onClick={handleSkip}
-            className="rounded-md px-3 py-1 transition hover:bg-foreground/5 hover:text-foreground"
+            className="min-h-11 rounded-md px-4 py-2 text-sm transition hover:bg-foreground/5 hover:text-foreground sm:min-h-0 sm:px-3 sm:py-1 sm:text-xs"
           >
             {copy.gate.skipLink}
           </button>
@@ -89,7 +90,7 @@ export function VaultGate() {
           <button
             type="button"
             onClick={() => setSoundMuted(!soundMuted)}
-            className="rounded-md px-3 py-1 transition hover:bg-foreground/5 hover:text-foreground"
+            className="min-h-11 rounded-md px-4 py-2 text-sm transition hover:bg-foreground/5 hover:text-foreground sm:min-h-0 sm:px-3 sm:py-1 sm:text-xs"
           >
             {soundMuted ? copy.gate.unmute : copy.gate.mute}
           </button>

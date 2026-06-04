@@ -407,7 +407,7 @@ export default function HabitsPage() {
 
           <GlassPanel className="space-y-4 p-4 sm:p-5 xl:col-span-12" variant="strong">
             <details>
-              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold">
                 <Archive className="size-4 text-primary" />
                 {copy.maintenanceTitle}
               </summary>

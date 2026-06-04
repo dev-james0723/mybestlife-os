@@ -76,7 +76,8 @@ export function QuickCapture() {
       <Button
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg",
+          "fixed right-6 z-40 h-14 w-14 rounded-full shadow-lg",
+          "bottom-[max(5.75rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] sm:bottom-6",
           "bg-primary text-primary-foreground hover:bg-primary/90",
           "transition-transform hover:scale-105"
         )}

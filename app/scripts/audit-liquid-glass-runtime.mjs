@@ -20,6 +20,27 @@ const APP_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const APP_DIR = path.join(APP_ROOT, "src/app");
 const NAVIGATION_FILE = path.join(APP_ROOT, "src/lib/constants/navigation.ts");
 
+function usage() {
+  return `
+Usage:
+  node scripts/audit-liquid-glass-runtime.mjs [options]
+
+Options:
+  --base=<url>                  Base URL to audit. Default: ${DEFAULT_BASE_URL}
+  --locale=<locale>             Locale used for discovered routes. Default: ${DEFAULT_LOCALE}
+  --routes=<list>               Comma-separated routes, or "pages"/"navigation".
+  --list-routes                 Print the resolved route plan and exit.
+  --include-dynamic=true        Include sampled dynamic routes.
+  --max-routes=<n>              Limit the resolved route list.
+  --viewports=<list>            Comma-separated viewport widths from 320,390,430,768,1024,1280,1440.
+  --reduced-motion=false        Skip the reduced-motion pass.
+  --element-click-limit=<n>     Click up to n safe interactive elements per viewport.
+  --timeout-ms=<n>              Cooperative run timeout. Default: 120000.
+  --out=<dir>                   Artifact output directory.
+  --help                        Show this help and exit.
+`.trim();
+}
+
 const INTERACTIVE_SELECTOR = [
   "a[href]",
   "button",
@@ -131,6 +152,27 @@ function normalizeRoute(route) {
 function buildUrl(baseUrl, route) {
   if (/^https?:\/\//.test(route)) return route;
   return new URL(route, baseUrl).toString();
+}
+
+function routeDestination(urlLike, baseUrl = DEFAULT_BASE_URL) {
+  const url = new URL(urlLike, baseUrl);
+  return `${normalizeRoute(url.pathname)}${url.search}`;
+}
+
+function isExpectedRedirect(requestedDestination, finalDestination) {
+  const expectedRedirects = [
+    [/^\/[^/]+\/ai-knowledge\/create$/, /^\/[^/]+\/ai-knowledge\?create=prompt$/],
+    [/^\/[^/]+\/ai-knowledge\/create\/blank$/, /^\/[^/]+\/ai-knowledge\?create=manual$/],
+    [/^\/[^/]+\/ai-knowledge\/create\/wizard$/, /^\/[^/]+\/ai-knowledge\?create=wizard$/],
+    [/^\/[^/]+\/relationships$/, /^\/[^/]+\/relationship\?tab=relationship$/],
+    [/^\/[^/]+\/software-vault$/, /^\/[^/]+\/vault$/],
+  ];
+  if (requestedDestination === "/" && /^\/[^/]+\/dashboard$/.test(finalDestination)) {
+    return true;
+  }
+  return expectedRedirects.some(
+    ([from, to]) => from.test(requestedDestination) && to.test(finalDestination),
+  );
 }
 
 function withLocalePrefix(route, locale) {
@@ -594,6 +636,53 @@ async function auditElementInteractions(page, params) {
   return results;
 }
 
+function compactError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.split("\n")[0] || message;
+}
+
+function isExpectedDevBypassHttpError(item, baseUrl) {
+  if (item.status !== 401) return false;
+  try {
+    const base = new URL(baseUrl);
+    const url = new URL(item.url);
+    return url.origin === base.origin && url.pathname.startsWith("/api/");
+  } catch {
+    return false;
+  }
+}
+
+function emptyMetrics(params, url) {
+  return {
+    url,
+    title: "",
+    h1: "",
+    viewport: {
+      width: params.viewport.width,
+      height: params.viewport.height,
+    },
+    scroll: {
+      width: params.viewport.width,
+      height: params.viewport.height,
+      overflowX: 0,
+    },
+    osSlots: 0,
+    interactiveCount: 0,
+    interactiveSample: [],
+    tooSmallTargets: [],
+    compactTargets: [],
+    focusedAfterTab: null,
+    timing: null,
+    vitals: null,
+    resourceSummary: {
+      count: 0,
+      totalTransferSize: 0,
+      byType: {},
+      slowResources: [],
+    },
+  };
+}
+
 async function auditViewport(browser, params) {
   const context = await browser.newContext({
     viewport: { width: params.viewport.width, height: params.viewport.height },
@@ -643,43 +732,78 @@ async function auditViewport(browser, params) {
   });
 
   const url = buildUrl(params.baseUrl, params.route);
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
-  await page.waitForTimeout(500);
-
   const screenshotPath = path.join(
     params.outDir,
     `${routeSlug(params.route)}-${params.viewport.name}-${params.reducedMotion}.png`,
   );
-  await page.screenshot({ path: screenshotPath, fullPage: true });
-
-  const metrics = await collectMetrics(page);
-  const shouldAuditShell = params.viewport.name === "390" || params.viewport.name === "1280";
-  const isMobileViewport = params.viewport.width < 768;
+  let metrics = null;
   const interactions = [];
-  if (shouldAuditShell) {
-    const specs = SHELL_INTERACTIONS.filter(
-      (spec) => spec.viewports !== "desktop" || !isMobileViewport,
-    );
-    for (const spec of specs) {
-      interactions.push(await auditInteraction(page, spec));
+  let elementInteractions = [];
+  let auditFailure = null;
+
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
+    await page.locator("h1").first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(500);
+
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+
+    metrics = await collectMetrics(page);
+    const shouldAuditShell = params.viewport.name === "390" || params.viewport.name === "1280";
+    const isMobileViewport = params.viewport.width < 768;
+    if (shouldAuditShell) {
+      const specs = SHELL_INTERACTIONS.filter(
+        (spec) => spec.viewports !== "desktop" || !isMobileViewport,
+      );
+      for (const spec of specs) {
+        interactions.push(await auditInteraction(page, spec));
+      }
+    }
+    elementInteractions = params.elementClickLimit > 0 && shouldAuditShell
+      ? await auditElementInteractions(page, { limit: params.elementClickLimit })
+      : [];
+  } catch (error) {
+    auditFailure = `Audit error: ${compactError(error)}`;
+    metrics = metrics ?? emptyMetrics(params, page.url() || url);
+    await page.screenshot({ path: screenshotPath, fullPage: true, timeout: 5000 }).catch(() => {});
+  } finally {
+    await context.close();
+  }
+
+  const failures = auditFailure ? [auditFailure] : [];
+  const warnings = [];
+  const requestedDestination = routeDestination(params.route, params.baseUrl);
+  const finalDestination = routeDestination(metrics.url || url, params.baseUrl);
+  if (
+    finalDestination !== requestedDestination &&
+    !isExpectedRedirect(requestedDestination, finalDestination)
+  ) {
+    const finalPath = new URL(metrics.url || url, params.baseUrl).pathname;
+    const requestedPath = new URL(buildUrl(params.baseUrl, params.route)).pathname;
+    const message = `Unexpected redirect: ${requestedDestination} -> ${finalDestination}`;
+    if (
+      (finalPath.endsWith("/dashboard") && !requestedPath.endsWith("/dashboard")) ||
+      finalPath.endsWith("/login")
+    ) {
+      failures.push(message);
+    } else {
+      warnings.push(message);
     }
   }
-  const elementInteractions = params.elementClickLimit > 0 && shouldAuditShell
-    ? await auditElementInteractions(page, { limit: params.elementClickLimit })
-    : [];
-
-  await context.close();
-
-  const failures = [];
-  const warnings = [];
   if (metrics.url.includes("/login")) failures.push("Redirected to login");
   if (!metrics.h1) failures.push("Missing h1");
   if (metrics.scroll.overflowX > 1) failures.push(`Horizontal overflow: ${metrics.scroll.overflowX}px`);
   if (pageErrors.length) failures.push(`Page errors: ${pageErrors.length}`);
   if (metrics.tooSmallTargets.length) failures.push(`Targets under 24px: ${metrics.tooSmallTargets.length}`);
-  if (httpErrors.length) {
-    const statusCounts = httpErrors.reduce((counts, item) => {
+  const expectedHttpErrors = httpErrors.filter((item) =>
+    isExpectedDevBypassHttpError(item, params.baseUrl),
+  );
+  const unexpectedHttpErrors = httpErrors.filter((item) =>
+    !isExpectedDevBypassHttpError(item, params.baseUrl),
+  );
+  if (unexpectedHttpErrors.length) {
+    const statusCounts = unexpectedHttpErrors.reduce((counts, item) => {
       counts[item.status] = (counts[item.status] ?? 0) + 1;
       return counts;
     }, {});
@@ -726,11 +850,12 @@ async function auditViewport(browser, params) {
     elementInteractions,
     consoleErrors: consoleErrors.slice(0, 10),
     httpErrors: httpErrors.slice(0, 20),
+    expectedHttpErrors: expectedHttpErrors.slice(0, 20),
     pageErrors,
   };
 }
 
-function markdownSummary(results, outDir, routePlan) {
+function markdownSummary(results, outDir, routePlan, runInfo = {}) {
   const lines = [
     "# MyBestLife OS Runtime Audit",
     "",
@@ -739,10 +864,15 @@ function markdownSummary(results, outDir, routePlan) {
     `Routes checked: ${new Set(results.map((result) => result.route)).size}`,
     `Viewport checks: ${results.length}`,
     `Skipped dynamic routes: ${routePlan.skippedDynamic.length}`,
+  ];
+  if (runInfo.timedOut) {
+    lines.push(`Run incomplete: timeout budget reached after ${runInfo.timeoutMs}ms.`);
+  }
+  lines.push(
     "",
     "| Route | Viewport | Motion | Status | Notes |",
     "| --- | ---: | --- | --- | --- |",
-  ];
+  );
   for (const result of results) {
     const notes = [...result.failures, ...result.warnings].join("; ") || "OK";
     lines.push(
@@ -768,7 +898,18 @@ function markdownSummary(results, outDir, routePlan) {
   return `${lines.join("\n")}\n`;
 }
 
+async function writeAuditArtifacts(outDir, routePlan, results, runInfo = {}) {
+  await writeFile(path.join(outDir, "route-plan.json"), JSON.stringify(routePlan, null, 2));
+  await writeFile(path.join(outDir, "summary.json"), JSON.stringify(results, null, 2));
+  await writeFile(path.join(outDir, "summary.md"), markdownSummary(results, outDir, routePlan, runInfo));
+}
+
 async function main() {
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+    console.log(usage());
+    return;
+  }
+
   const baseUrl = readArg("base", DEFAULT_BASE_URL);
   const locale = readArg("locale", DEFAULT_LOCALE);
   const requestedRoutes = readListArg("routes", DEFAULT_ROUTES);
@@ -784,18 +925,21 @@ async function main() {
   const elementClickLimit = readNumberArg("element-click-limit", 0);
   const outDir = path.resolve(readArg("out", ".next/liquid-glass-audit"));
   const runTimeoutMs = readNumberArg("timeout-ms", 120000);
-  const runTimeout = setTimeout(() => {
-    console.error(`Runtime audit exceeded ${runTimeoutMs}ms. Failing instead of hanging.`);
-    process.exit(1);
-  }, runTimeoutMs);
-  runTimeout.unref?.();
+  const startedAt = Date.now();
+  let timedOut = false;
+  const shouldStopForTimeout = () => Date.now() - startedAt >= runTimeoutMs;
   await mkdir(outDir, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
   const results = [];
   try {
+    routeLoop:
     for (const route of routes) {
       for (const viewport of viewports) {
+        if (shouldStopForTimeout()) {
+          timedOut = true;
+          break routeLoop;
+        }
         console.log(`Auditing ${route} at ${viewport.name}px (${viewport.width}x${viewport.height}, no-preference)`);
         results.push(await auditViewport(browser, {
           baseUrl,
@@ -805,8 +949,13 @@ async function main() {
           outDir,
           elementClickLimit,
         }));
+        await writeAuditArtifacts(outDir, routePlan, results, { timedOut, timeoutMs: runTimeoutMs });
       }
       if (readBooleanArg("reduced-motion", true)) {
+        if (shouldStopForTimeout()) {
+          timedOut = true;
+          break routeLoop;
+        }
         const reducedMotionViewport = viewports.find((item) => item.name === "390") ?? viewports[0];
         console.log(`Auditing ${route} at ${reducedMotionViewport.name}px (${reducedMotionViewport.width}x${reducedMotionViewport.height}, reduce)`);
         results.push(await auditViewport(browser, {
@@ -817,22 +966,21 @@ async function main() {
           outDir,
           elementClickLimit,
         }));
+        await writeAuditArtifacts(outDir, routePlan, results, { timedOut, timeoutMs: runTimeoutMs });
       }
     }
   } finally {
     await browser.close();
   }
 
-  await writeFile(path.join(outDir, "route-plan.json"), JSON.stringify(routePlan, null, 2));
-  await writeFile(path.join(outDir, "summary.json"), JSON.stringify(results, null, 2));
-  await writeFile(path.join(outDir, "summary.md"), markdownSummary(results, outDir, routePlan));
-  clearTimeout(runTimeout);
+  await writeAuditArtifacts(outDir, routePlan, results, { timedOut, timeoutMs: runTimeoutMs });
 
   const failed = results.filter((result) => result.status === "fail");
   const warned = results.filter((result) => result.status === "warn");
   console.log(`Runtime audit complete: ${results.length} checks, ${failed.length} fail, ${warned.length} warn.`);
+  if (timedOut) console.log(`Runtime audit stopped after timeout budget: ${runTimeoutMs}ms.`);
   console.log(`Summary: ${path.join(outDir, "summary.md")}`);
-  if (failed.length) process.exitCode = 1;
+  if (failed.length || timedOut) process.exitCode = 1;
 }
 
 main().catch((error) => {

@@ -67,7 +67,7 @@ export function GraphPageHeader({
               aria-expanded={mobileExpanded}
               onClick={() => setMobileExpanded((v) => !v)}
               className={cn(
-                "mt-0.5 flex items-center gap-1 text-[11px] leading-relaxed sm:hidden",
+                "mt-1 flex min-h-11 items-center gap-1 text-[11px] leading-relaxed sm:hidden",
                 graphT.tone.muted,
               )}
             >

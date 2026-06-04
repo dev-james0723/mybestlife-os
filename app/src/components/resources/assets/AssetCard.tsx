@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Star, Package, ArrowUpRight } from "lucide-react";
 import { AssetCategoryPill } from "./AssetCategoryPill";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import type { Asset, AssetCategoryKey } from "@/types/assets";
 
 export type AssetCardBadge = {
@@ -76,7 +77,7 @@ export function AssetCard({
   onClick,
   onToggleFavorite,
 }: AssetCardProps) {
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   return (
     <motion.div
@@ -200,7 +201,7 @@ function FavoriteStar({
   active: boolean;
   onClick?: () => void;
 }) {
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
   const interactive = typeof onClick === "function";
 
   const icon = (
@@ -232,7 +233,7 @@ function FavoriteStar({
       aria-pressed={active}
       aria-label={active ? "Remove from favorites" : "Mark as favorite"}
       className={cn(
-        "inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-background/40 backdrop-blur",
+        "inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-background/40 backdrop-blur sm:size-8",
         "transition-colors hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
       )}
     >

@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,7 @@ import { useCreateAsset } from "@/hooks/use-assets";
 import { useAssetAutofill, useGenerateAssetImage } from "@/hooks/use-asset-ai";
 import { useCreateAssetImage } from "@/hooks/use-asset-media";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { getOSBuddyActionLabel } from "@/lib/os-buddy/os-buddy-action-labels";
 import { emitOSBuddyEvent } from "@/lib/os-buddy/os-buddy-events";
 import {
@@ -141,7 +142,7 @@ export function AIAssetCreationWizard({
     }),
     [buddyName, language],
   );
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
 
   const createAsset = useCreateAsset();
   const autofill = useAssetAutofill();
@@ -647,7 +648,7 @@ function InputStep({
 
 function ExtractingStep({ t }: { t: WizardCopy }) {
   const [stageIndex, setStageIndex] = useState(0);
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
   useEffect(() => {
     const id = setInterval(() => {
       setStageIndex((i) => Math.min(i + 1, t.extractStages.length - 1));
@@ -1035,7 +1036,7 @@ function ActionsStep({
   onSave: () => void;
   error: string | null;
 }) {
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useHydrationSafeReducedMotion();
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">{t.nextActionsTitle}</h3>

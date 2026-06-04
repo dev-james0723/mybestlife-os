@@ -76,7 +76,7 @@ function ViewSwitch({
             type="button"
             onClick={() => onChange(option.value)}
             className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors",
+              "inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors sm:h-8 sm:min-w-0 sm:px-2.5 sm:text-xs",
               active
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",

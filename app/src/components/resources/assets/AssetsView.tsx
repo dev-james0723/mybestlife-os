@@ -69,8 +69,9 @@ import { getAssetIntelUiCopy } from "@/lib/i18n/asset-intelligence-ui";
 import { computeDocumentHealth } from "@/lib/assets/asset-intelligence-client";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
+import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { getOSBuddyActionLabel } from "@/lib/os-buddy/os-buddy-action-labels";
 import { AssetCard, type AssetCardBadge } from "./AssetCard";
 import { AssetCategoryPill } from "./AssetCategoryPill";
@@ -144,7 +145,7 @@ export function AssetsView() {
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
   const toggleFavorite = useToggleAssetFavorite();
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useHydrationSafeReducedMotion();
 
   const language = useAppStore((s) => s.language);
   const { name: buddyName } = useOSBuddy();
@@ -532,7 +533,7 @@ export function AssetsView() {
               aria-pressed={favoritesOnly}
               aria-label={copy.assets.favoritesOnly}
               className={cn(
-                "inline-flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors",
+                "inline-flex size-11 shrink-0 items-center justify-center rounded-full border transition-colors sm:size-9",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
                 favoritesOnly
                   ? "border-[var(--accent-pink)]/50 bg-[var(--accent-pink)]/12 text-[var(--accent-pink)]"

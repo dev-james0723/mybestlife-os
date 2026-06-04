@@ -197,7 +197,7 @@ export function VaultView() {
       <div className="flex items-center gap-2">
         <Link
           href={withLocalePrefix(localeSlug, "/career")}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:min-h-0 sm:min-w-0 sm:px-1.5 sm:py-1 sm:text-xs"
           aria-label={copy.breadcrumb.career}
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -210,6 +210,7 @@ export function VaultView() {
         <Button
           variant="outline"
           size="sm"
+          className="h-11 min-w-11 px-3 sm:h-7 sm:min-w-0 sm:px-2.5"
           render={
             <Link
               href={withLocalePrefix(localeSlug, "/career/vault/bundles")}
@@ -223,6 +224,7 @@ export function VaultView() {
         <Button
           variant="outline"
           size="sm"
+          className="h-11 min-w-11 px-3 sm:h-7 sm:min-w-0 sm:px-2.5"
           render={
             <Link
               href={withLocalePrefix(localeSlug, "/career/vault/shares")}
@@ -233,7 +235,7 @@ export function VaultView() {
           <Link2 className="mr-1 h-4 w-4" />
           <span className="hidden sm:inline">{copy.shares.pageTitle}</span>
         </Button>
-        <Button onClick={openUpload} size="sm" className="sm:size-default">
+        <Button onClick={openUpload} size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5">
           <Plus className="mr-1 h-4 w-4" />
           <span className="hidden sm:inline">{copy.uploadButton}</span>
           <span className="sm:hidden">{copy.uploadShort}</span>
@@ -247,7 +249,7 @@ export function VaultView() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={copy.searchPlaceholder}
-          className="pl-9"
+          className="h-11 pl-9 sm:h-9"
           aria-label={copy.searchPlaceholder}
         />
       </div>
@@ -298,7 +300,7 @@ export function VaultView() {
                   value={sortBy}
                   onValueChange={(v) => v && setSortBy(v as VaultSortKey)}
                 >
-                  <SelectTrigger className="h-8 w-auto gap-1 border-none bg-muted/60 px-2 text-xs">
+                  <SelectTrigger className="h-11 w-auto gap-1 border-none bg-muted/60 px-3 text-sm sm:h-8 sm:px-2 sm:text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -399,7 +401,7 @@ function ViewToggle({
         aria-label={copy.view.grid}
         onClick={() => onChange("grid")}
         className={cn(
-          "grid h-7 w-7 place-items-center rounded-[6px] transition-colors",
+          "grid h-11 w-11 place-items-center rounded-[6px] transition-colors sm:h-7 sm:w-7",
           mode === "grid"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground",
@@ -414,7 +416,7 @@ function ViewToggle({
         aria-label={copy.view.list}
         onClick={() => onChange("list")}
         className={cn(
-          "grid h-7 w-7 place-items-center rounded-[6px] transition-colors",
+          "grid h-11 w-11 place-items-center rounded-[6px] transition-colors sm:h-7 sm:w-7",
           mode === "list"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground",

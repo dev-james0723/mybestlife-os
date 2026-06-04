@@ -126,9 +126,9 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
         <div className="mt-6 min-h-[280px]">
           {step === 0 && (
             <div className="space-y-3">
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 {copy.onboarding.promiseTitle}
-              </h2>
+              </h1>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {copy.onboarding.promiseBody}
               </p>
@@ -242,16 +242,16 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={finish}>
+            <Button variant="ghost" size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={finish}>
               {copy.onboarding.skip}
             </Button>
             {step < TOTAL_STEPS - 1 ? (
-              <Button size="sm" onClick={goNext} disabled={!canContinue}>
+              <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={goNext} disabled={!canContinue}>
                 {copy.onboarding.continue}
                 <ArrowRight />
               </Button>
             ) : (
-              <Button size="sm" onClick={finish}>
+              <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={finish}>
                 <Check />
                 {copy.onboarding.finish}
               </Button>
@@ -281,7 +281,7 @@ function SelectChip({
       disabled={disabled}
       aria-pressed={selected}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-40",
+        "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-40 sm:min-h-0 sm:px-3 sm:py-1.5",
         selected
           ? "border-primary/40 bg-primary/10 text-primary"
           : "border-border/60 bg-card/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground",

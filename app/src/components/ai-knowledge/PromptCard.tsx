@@ -131,7 +131,7 @@ function PromptCardImpl({
             }
             aria-pressed={isFavorite}
             className={cn(
-              "shrink-0 rounded-md p-1 transition-colors",
+              "flex size-11 shrink-0 items-center justify-center rounded-md transition-colors sm:size-6 sm:p-1",
               "hover:bg-muted",
               isFavorite ? "text-amber-500" : "text-muted-foreground",
             )}
@@ -181,7 +181,7 @@ function PromptCardImpl({
 
       <div
         className={cn(
-          "mt-4 flex items-center justify-end gap-1 opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity",
+          "mt-4 flex items-center justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus-within:opacity-100",
           selectable && "hidden",
         )}
         onClick={(e) => e.stopPropagation()}
@@ -190,6 +190,7 @@ function PromptCardImpl({
           <Button
             variant="ghost"
             size="xs"
+            className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
             onClick={() => onFork(prompt)}
             aria-label={ui.promptCard.fork}
           >
@@ -201,6 +202,7 @@ function PromptCardImpl({
           <Button
             variant="ghost"
             size="xs"
+            className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
             onClick={() => onEdit(prompt)}
             aria-label={ui.promptCard.edit}
           >
@@ -212,6 +214,7 @@ function PromptCardImpl({
           <Button
             variant="ghost"
             size="xs"
+            className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
             onClick={() => onDelete(prompt)}
             aria-label={ui.promptCard.delete}
           >
@@ -220,6 +223,7 @@ function PromptCardImpl({
         )}
         <Button
           size="xs"
+          className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
           onClick={() => onRun(prompt)}
           aria-label={ui.promptCard.run}
         >
@@ -287,7 +291,7 @@ function PromptListRowImpl({
           }}
           aria-label={isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite}
           className={cn(
-            "shrink-0 rounded-md p-1 transition-colors hover:bg-muted",
+            "flex size-11 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-muted sm:size-6 sm:p-1",
             isFavorite ? "text-amber-500" : "text-muted-foreground",
           )}
         >
@@ -319,7 +323,7 @@ function PromptListRowImpl({
 
       <div
         className={cn(
-          "flex items-center gap-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity",
+          "flex items-center gap-1 shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/row:opacity-100 sm:focus-within:opacity-100",
           selectable && "hidden",
         )}
         onClick={(e) => e.stopPropagation()}
@@ -328,6 +332,7 @@ function PromptListRowImpl({
           <Button
             variant="ghost"
             size="xs"
+            className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
             onClick={() => onFork(prompt)}
             aria-label={ui.promptCard.fork}
           >
@@ -337,12 +342,17 @@ function PromptListRowImpl({
         <Button
           variant="ghost"
           size="xs"
+          className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
           onClick={() => onOpen(prompt)}
           aria-label={ui.detail.copyBody}
         >
           <Copy className="h-3 w-3" />
         </Button>
-        <Button size="xs" onClick={() => onRun(prompt)}>
+        <Button
+          size="xs"
+          className="!h-11 min-w-11 px-3 sm:!h-6 sm:min-w-0 sm:px-2"
+          onClick={() => onRun(prompt)}
+        >
           <Play className="h-3 w-3" />
           {ui.promptCard.run}
         </Button>

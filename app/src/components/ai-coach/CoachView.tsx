@@ -270,11 +270,12 @@ export function CoachView() {
             variant="ghost"
             size="sm"
             render={<Link href={settingsHref} aria-label={copy.settings.title} />}
+            className="h-11 min-w-11 px-3 sm:h-8 sm:min-w-0"
           >
             <Settings2 className="mr-1 h-4 w-4" />
             <span className="hidden sm:inline">{copy.settings.title}</span>
           </Button>
-          <Button size="sm" onClick={openCreateCustom}>
+          <Button size="sm" className="h-11 px-3 sm:h-8" onClick={openCreateCustom}>
             <Plus className="mr-1 h-4 w-4" />
             <span className="hidden sm:inline">{copy.customCta.create.replace(/^\+\s*/, "")}</span>
             <span className="sm:hidden">{copy.customCta.create.replace(/^\+\s*/, "")}</span>
@@ -283,7 +284,7 @@ export function CoachView() {
       }
     >
       <nav className="text-xs text-muted-foreground">
-        <Link href={crumbLink} className="hover:underline">
+        <Link href={crumbLink} className="inline-flex min-h-11 min-w-11 items-center hover:underline sm:min-h-0 sm:min-w-0">
           {copy.breadcrumb.career}
         </Link>{" "}
         / <span className="text-foreground">{copy.breadcrumb.coach}</span>
@@ -297,7 +298,7 @@ export function CoachView() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={copy.searchPlaceholder}
-          className="pl-9"
+          className="h-11 pl-9 sm:h-9"
           aria-label={copy.searchPlaceholder}
         />
       </div>
@@ -306,10 +307,16 @@ export function CoachView() {
         value={lastTab}
         onValueChange={(v) => setTab(v as CareerCoachTab)}
       >
-        <TabsList>
-          <TabsTrigger value="all">{copy.tabs.all}</TabsTrigger>
-          <TabsTrigger value="favorites">{copy.tabs.favorites}</TabsTrigger>
-          <TabsTrigger value="recent">{copy.tabs.recent}</TabsTrigger>
+        <TabsList className="h-12 w-full sm:h-8 sm:w-fit">
+          <TabsTrigger className="h-11 px-3 sm:h-[calc(100%-1px)] sm:px-1.5" value="all">
+            {copy.tabs.all}
+          </TabsTrigger>
+          <TabsTrigger className="h-11 px-3 sm:h-[calc(100%-1px)] sm:px-1.5" value="favorites">
+            {copy.tabs.favorites}
+          </TabsTrigger>
+          <TabsTrigger className="h-11 px-3 sm:h-[calc(100%-1px)] sm:px-1.5" value="recent">
+            {copy.tabs.recent}
+          </TabsTrigger>
         </TabsList>
 
         <div className="my-3">

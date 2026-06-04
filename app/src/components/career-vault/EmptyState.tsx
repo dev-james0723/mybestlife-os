@@ -37,7 +37,7 @@ export function VaultEmptyState({
 
       {!isNoResults ? (
         <>
-          <Button onClick={onUpload} className="mt-6">
+          <Button onClick={onUpload} className="mt-6 h-11 px-4 sm:h-8 sm:px-2.5">
             <Plus className="mr-2 h-4 w-4" />
             {copy.uploadButton}
           </Button>
