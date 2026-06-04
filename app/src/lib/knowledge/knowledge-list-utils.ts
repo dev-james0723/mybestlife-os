@@ -2,6 +2,10 @@ import type { KnowledgeItem, SmartCollection } from "@/types/knowledge";
 import type { KnowledgeQuickFilter } from "@/stores/knowledge-store";
 import type { KnowledgeSortKey } from "@/stores/knowledge-store";
 import { getCategoryLabel, getSourceTypeInfo } from "@/lib/knowledge/labels";
+import {
+  knowledgeSearchScore,
+  matchKnowledgeItems,
+} from "@/lib/knowledgeMatching";
 
 /** Short preview for gallery cards: prefer TLDR, avoid duplicating long AI summary. */
 export function getCardSummaryPreview(item: KnowledgeItem): string | undefined {
@@ -22,6 +26,12 @@ export function itemMatchesSearch(
 ): boolean {
   const needle = q.trim().toLowerCase();
   if (!needle) return true;
+
+  const deterministicMatch = matchKnowledgeItems([item], q, smartCollections, {
+    minScore: 8,
+    limit: 1,
+  });
+  if (deterministicMatch.length > 0) return true;
 
   const hay = (s: string | undefined | null) => Boolean(s && s.toLowerCase().includes(needle));
 
@@ -112,10 +122,14 @@ function publishedOrAddedMs(item: KnowledgeItem): number {
   return new Date(item.dateAdded).getTime();
 }
 
-export function searchRelevanceScore(item: KnowledgeItem, q: string): number {
+export function searchRelevanceScore(
+  item: KnowledgeItem,
+  q: string,
+  smartCollections: SmartCollection[] = [],
+): number {
   const needle = q.trim().toLowerCase();
   if (!needle) return 0;
-  let score = 0;
+  let score = knowledgeSearchScore(item, q, smartCollections);
   const bump = (s: string | undefined, w: number) => {
     if (!s) return;
     const lower = s.toLowerCase();
@@ -137,6 +151,7 @@ export function compareKnowledgeItems(
   b: KnowledgeItem,
   sortBy: KnowledgeSortKey,
   searchQuery: string,
+  smartCollections: SmartCollection[] = [],
 ): number {
   const num = (x: string) => new Date(x).getTime();
   const tieBreak = () => num(b.dateAdded) - num(a.dateAdded);
@@ -155,8 +170,8 @@ export function compareKnowledgeItems(
     case "relevance": {
       const q = searchQuery.trim();
       if (!q) return num(b.dateAdded) - num(a.dateAdded);
-      const ra = searchRelevanceScore(a, q);
-      const rb = searchRelevanceScore(b, q);
+      const ra = searchRelevanceScore(a, q, smartCollections);
+      const rb = searchRelevanceScore(b, q, smartCollections);
       if (rb !== ra) return rb - ra;
       return num(b.dateAdded) - num(a.dateAdded);
     }

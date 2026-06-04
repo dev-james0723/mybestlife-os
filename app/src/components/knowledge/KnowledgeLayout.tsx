@@ -12,6 +12,7 @@ import { KnowledgePageActions } from "./KnowledgePageActions";
 import { KnowledgeTopControlBar } from "./KnowledgeTopControlBar";
 import { KnowledgeActiveFiltersBar } from "./KnowledgeActiveFiltersBar";
 import { KnowledgeContent } from "./KnowledgeContent";
+import { KnowledgeInquiryAgent } from "./KnowledgeInquiryAgent";
 import { KnowledgeAIPanel } from "./KnowledgeAIPanel";
 import { KnowledgeDetailSheet } from "./KnowledgeDetailSheet";
 import { AddKnowledgeModal } from "./AddKnowledgeModal";
@@ -298,18 +299,22 @@ export function KnowledgeLayout({
                 : "lg:min-h-[min(70vh,640px)]"
             }`}
           >
-            <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">
-              <CardContent className="flex flex-1 flex-col gap-0 p-0">
-                {currentView !== "constellation" && (
-                  <>
-                    <KnowledgeTopControlBar />
-                    <KnowledgeActiveFiltersBar />
-                    <Separator />
-                  </>
-                )}
-                <KnowledgeContent userId={userId} />
-              </CardContent>
-            </Card>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+              {currentView !== "constellation" && <KnowledgeInquiryAgent />}
+
+              <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">
+                <CardContent className="flex flex-1 flex-col gap-0 p-0">
+                  {currentView !== "constellation" && (
+                    <>
+                      <KnowledgeTopControlBar />
+                      <KnowledgeActiveFiltersBar />
+                      <Separator />
+                    </>
+                  )}
+                  <KnowledgeContent userId={userId} />
+                </CardContent>
+              </Card>
+            </div>
 
             <AnimatePresence>
               {isAIPanelOpen && (

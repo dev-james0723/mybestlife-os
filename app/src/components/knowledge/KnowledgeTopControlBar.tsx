@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import type { ComponentType } from "react";
 import {
   useKnowledgeStore,
   type KnowledgeView,
@@ -8,10 +8,8 @@ import {
   type KnowledgeSortKey,
 } from "@/stores/knowledge-store";
 import { CONTENT_TYPES, typeColors } from "@/types/knowledge";
-import { Input } from "@/components/ui/input";
 import {
   OSControl,
-  OSPrimaryAction,
   OSSegmentedControl,
 } from "@/components/ui/os-primitives";
 import {
@@ -40,7 +38,6 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   Link2,
-  Search,
   Sparkles,
   Table,
   Users,
@@ -50,14 +47,9 @@ import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
 
-function looksLikeQuestion(q: string): boolean {
-  const lower = q.toLowerCase().trim();
-  return lower.includes("?") || /^(what|how|find|show|list|tell|who|why|when)\b/.test(lower);
-}
-
 const QUICK_ICONS: Record<
   KnowledgeQuickFilter,
-  React.ComponentType<{ className?: string }>
+  ComponentType<{ className?: string }>
 > = {
   recent: Clock,
   social: Users,
@@ -83,8 +75,6 @@ export function KnowledgeTopControlBar() {
   const ui = getKnowledgeUiCopy(language);
   const common = getCommonUiCopy(language);
 
-  const searchQuery = useKnowledgeStore((s) => s.searchQuery);
-  const setSearchQuery = useKnowledgeStore((s) => s.setSearchQuery);
   const activeTypeFilters = useKnowledgeStore((s) => s.activeTypeFilters);
   const toggleTypeFilter = useKnowledgeStore((s) => s.toggleTypeFilter);
   const clearTypeFilters = useKnowledgeStore((s) => s.clearTypeFilters);
@@ -94,29 +84,6 @@ export function KnowledgeTopControlBar() {
   const setSortBy = useKnowledgeStore((s) => s.setSortBy);
   const currentView = useKnowledgeStore((s) => s.currentView);
   const setView = useKnowledgeStore((s) => s.setView);
-  const openAIPanel = useKnowledgeStore((s) => s.openAIPanel);
-
-  const [localQuery, setLocalQuery] = useState(searchQuery);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  useEffect(() => {
-    startTransition(() => {
-      setLocalQuery(searchQuery);
-    });
-  }, [searchQuery]);
-
-  const handleChange = useCallback(
-    (value: string) => {
-      setLocalQuery(value);
-      clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        setSearchQuery(value);
-      }, 300);
-    },
-    [setSearchQuery],
-  );
-
-  const isQuestion = looksLikeQuestion(localQuery);
 
   const viewOptions: Array<{
     id: KnowledgeView;
@@ -152,30 +119,59 @@ export function KnowledgeTopControlBar() {
 
   return (
     <div className="flex shrink-0 flex-col gap-3 border-b border-border/40 bg-muted/10 px-4 py-3 sm:px-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-3">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={localQuery}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={ui.searchKnowledgePlaceholder}
-            className="h-9 border-border/60 bg-background/80 pl-9 pr-24 text-sm shadow-sm"
-            aria-label={ui.searchKnowledgeBase}
-          />
-          {isQuestion && localQuery.trim() ? (
-            <OSPrimaryAction
-              size="sm"
-              osSize="compact"
-              className="absolute right-1 top-1/2 -translate-y-1/2 gap-1 shadow-none"
-              onClick={() => openAIPanel(localQuery)}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 sm:shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <OSControl
+                  size="sm"
+                  osSize="compact"
+                  className="w-full justify-between border-border/60 bg-background/80 font-normal sm:w-[200px]"
+                />
+              }
             >
-              <Sparkles className="h-3 w-3" />
-              {ui.askAi}
-            </OSPrimaryAction>
-          ) : null}
+              <span className="truncate">
+                {activeTypeFilters.length === 0
+                  ? ui.contentTypesMenuTitle
+                  : `${ui.contentTypesMenuTitle} (${activeTypeFilters.length})`}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  {ui.contentTypesMenuTitle}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {CONTENT_TYPES.map((type) => {
+                  const checked = activeTypeFilters.includes(type);
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={type}
+                      checked={checked}
+                      onCheckedChange={() => toggleTypeFilter(type)}
+                      className="text-xs capitalize"
+                    >
+                      <span className="mr-1.5">{typeColors[type].icon}</span>
+                      {ui.typeLabels[type]}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs"
+                disabled={activeTypeFilters.length === 0}
+                onClick={() => clearTypeFilters()}
+              >
+                {ui.clearAllFilters}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as KnowledgeSortKey)}>
             <SelectTrigger className="h-9 w-full min-w-[9.5rem] border-border/60 bg-background/80 text-xs sm:w-[160px]">
               <SelectValue placeholder={ui.sortLabel} />
@@ -201,84 +197,33 @@ export function KnowledgeTopControlBar() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <OSControl
-                size="sm"
-                osSize="compact"
-                className="w-full justify-between border-border/60 bg-background/80 font-normal sm:w-[200px]"
-              />
-            }
-          >
-            <span className="truncate">
-              {activeTypeFilters.length === 0
-                ? ui.contentTypesMenuTitle
-                : `${ui.contentTypesMenuTitle} (${activeTypeFilters.length})`}
-            </span>
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="start">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                {ui.contentTypesMenuTitle}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {CONTENT_TYPES.map((type) => {
-                const checked = activeTypeFilters.includes(type);
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={type}
-                    checked={checked}
-                    onCheckedChange={() => toggleTypeFilter(type)}
-                    className="text-xs capitalize"
-                  >
-                    <span className="mr-1.5">{typeColors[type].icon}</span>
-                    {ui.typeLabels[type]}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-xs"
-              disabled={activeTypeFilters.length === 0}
-              onClick={() => clearTypeFilters()}
+      <div className="flex min-w-0 gap-1 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {(Object.keys(QUICK_ICONS) as KnowledgeQuickFilter[]).map((id) => {
+          const Icon = QUICK_ICONS[id];
+          const isActive = activeQuickFilters.includes(id);
+          const label =
+            ui.quickFilters[id as keyof typeof ui.quickFilters] ?? id;
+          return (
+            <OSControl
+              key={id}
+              type="button"
+              variant={isActive ? "secondary" : "outline"}
+              size="sm"
+              osSize="compact"
+              className={cn(
+                "shrink-0 gap-1 rounded-full border px-2.5 text-[11px] font-normal",
+                isActive
+                  ? "border-transparent bg-foreground/10"
+                  : "border-border/60 bg-background/60 text-muted-foreground hover:text-foreground",
+              )}
+              aria-pressed={isActive}
+              onClick={() => toggleQuickFilter(id)}
             >
-              {ui.clearAllFilters}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <div className="flex flex-wrap gap-1 sm:justify-end">
-          {(Object.keys(QUICK_ICONS) as KnowledgeQuickFilter[]).map((id) => {
-            const Icon = QUICK_ICONS[id];
-            const isActive = activeQuickFilters.includes(id);
-            const label =
-              ui.quickFilters[id as keyof typeof ui.quickFilters] ?? id;
-            return (
-              <OSControl
-                key={id}
-                type="button"
-                variant={isActive ? "secondary" : "outline"}
-                size="sm"
-                osSize="compact"
-                className={cn(
-                  "gap-1 rounded-full border px-2.5 text-[11px] font-normal",
-                  isActive
-                    ? "border-transparent bg-foreground/10"
-                    : "border-border/60 bg-background/60 text-muted-foreground hover:text-foreground",
-                )}
-                aria-pressed={isActive}
-                onClick={() => toggleQuickFilter(id)}
-              >
-                <Icon className="h-3 w-3 shrink-0" />
-                <span className="hidden sm:inline">{label}</span>
-              </OSControl>
-            );
-          })}
-        </div>
+              <Icon className="h-3 w-3 shrink-0" />
+              <span className="hidden sm:inline">{label}</span>
+            </OSControl>
+          );
+        })}
       </div>
     </div>
   );
