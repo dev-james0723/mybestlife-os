@@ -86,7 +86,9 @@ export function useKnowledgeFilteredItems(): {
       );
     }
 
-    result.sort((a, b) => compareKnowledgeItems(a, b, sortBy, searchQuery));
+    result.sort((a, b) =>
+      compareKnowledgeItems(a, b, sortBy, searchQuery, smartCollections),
+    );
     return result;
   }, [
     items,

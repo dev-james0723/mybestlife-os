@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { MbloGardenIcon } from "@/components/icons/my-best-life-os-menu-icons";
 import { navigationCategories, type NavCategory } from "@/lib/constants/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-settings";
@@ -572,9 +573,7 @@ function GardenNavButton({
               isActive && "ring-2 ring-emerald-400/90 ring-offset-2 ring-offset-sidebar"
             )}
           >
-            <span className="select-none text-base leading-none" aria-hidden>
-              🪴
-            </span>
+            <MbloGardenIcon className="h-4 w-4 shrink-0" />
             <span>{getThemedItemLabel("garden", uiTheme, language)}</span>
           </Link>
         </SidebarMenuItem>

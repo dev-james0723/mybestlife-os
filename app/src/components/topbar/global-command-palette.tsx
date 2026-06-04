@@ -25,8 +25,6 @@ import { Command } from "cmdk";
 import {
   Moon,
   Sun,
-  Sprout,
-  type LucideIcon,
 } from "lucide-react";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -38,13 +36,17 @@ import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getThemedCategoryLabel, getThemedItemLabel } from "@/lib/theme-labels";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
+import {
+  MbloGardenIcon,
+  type MyBestLifeOsMenuIcon,
+} from "@/components/icons/my-best-life-os-menu-icons";
 
 type FlatNavItem = {
   key: string;
   label: string;
   url: string;
   category: string;
-  icon: LucideIcon;
+  icon: MyBestLifeOsMenuIcon;
 };
 
 export function GlobalCommandPalette() {
@@ -97,7 +99,7 @@ export function GlobalCommandPalette() {
       label: getThemedItemLabel("garden", uiTheme, language),
       url: "/garden",
       category: "Garden",
-      icon: Sprout,
+      icon: MbloGardenIcon,
     });
     return items;
   }, [language, uiTheme]);

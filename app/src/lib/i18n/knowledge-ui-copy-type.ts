@@ -149,6 +149,48 @@ export type KnowledgeUiCopy = {
   tableDate: string;
   tableProcessing: string;
   tableFailed: string;
+  inquiryAgent: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    inputLabel: string;
+    inputPlaceholder: string;
+    runInquiry: string;
+    clearInquiry: string;
+    startListening: string;
+    stopListening: string;
+    speechUnsupported: string;
+    permissionDenied: string;
+    speechError: string;
+    idleStatus: string;
+    listeningStatus: string;
+    transcribingStatus: string;
+    analyzingStatus: string;
+    matchingStatus: string;
+    resultsReadyStatus: string;
+    noStrongMatchesStatus: string;
+    errorStatus: string;
+    examplesLabel: string;
+    exampleQueries: string[];
+    resultsHeading: (count: number) => string;
+    noStrongMatchesTitle: string;
+    noStrongMatchesDescription: string;
+    relevanceScore: (score: number) => string;
+    confidenceLabels: {
+      "very-high": string;
+      high: string;
+      medium: string;
+      low: string;
+    };
+    whyThisMatches: string;
+    matchedConcepts: string;
+    matchedKeywords: string;
+    suggestedAction: string;
+    openItem: string;
+    askAi: string;
+    copyPrompt: string;
+    promptCopied: string;
+  };
   aiPanel: {
     title: string;
     closePanel: string;

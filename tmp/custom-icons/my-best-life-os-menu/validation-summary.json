@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-06-04T06:06:08.526Z",
+  "iconCount": 48,
+  "artifacts": {
+    "sourceSvg": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/source-images/svg",
+    "sourcePng": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/source-images/png",
+    "croppedPng": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/cropped-png",
+    "pbm": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/pbm",
+    "traced": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/traced-svg-drafts",
+    "optimized": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/optimized-svg",
+    "snapshots": "/Users/ouxianxing/My_life_os/tmp/custom-icons/my-best-life-os-menu/validation-snapshots",
+    "publicIcons": "/Users/ouxianxing/My_life_os/app/public/icons/my-best-life-os-menu",
+    "componentDir": "/Users/ouxianxing/My_life_os/app/src/components/icons"
+  },
+  "passed": true
+}

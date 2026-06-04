@@ -1,0 +1,205 @@
+{
+  "url": "http://127.0.0.1:3000/en/dashboard",
+  "expandedCategories": [
+    {
+      "label": "Command Center",
+      "expanded": "true"
+    },
+    {
+      "label": "Self",
+      "expanded": "true"
+    },
+    {
+      "label": "People",
+      "expanded": "true"
+    },
+    {
+      "label": "Career",
+      "expanded": "true"
+    },
+    {
+      "label": "Build & Execute",
+      "expanded": "true"
+    },
+    {
+      "label": "Resources",
+      "expanded": "true"
+    },
+    {
+      "label": "Knowledge",
+      "expanded": "true"
+    },
+    {
+      "label": "Learning",
+      "expanded": "true"
+    }
+  ],
+  "customIconCount": 48,
+  "totalSvgCount": 58,
+  "labelsWithCustomIcons": [
+    "Command Center",
+    "Dashboard",
+    "Brain",
+    "Daily Planner",
+    "Tasks",
+    "Weekly Review",
+    "Calendar",
+    "Weather",
+    "Signals",
+    "Analytics",
+    "Finance",
+    "Self",
+    "About Me",
+    "Grateful Things",
+    "Quote Library",
+    "Bucket List",
+    "Health",
+    "Habits & Routines",
+    "Journal",
+    "People",
+    "Relationships",
+    "Role Model",
+    "Career",
+    "Home Page",
+    "Compass",
+    "Profile",
+    "Career Vault",
+    "AI Career Coach",
+    "Pipeline",
+    "Timeline",
+    "Network",
+    "Journal",
+    "Analytics",
+    "Build & Execute",
+    "Goals",
+    "Projects",
+    "Resources",
+    "Assets",
+    "Documents",
+    "Software Vault",
+    "Knowledge",
+    "Knowledge Base",
+    "AI Knowledge",
+    "Mind Council",
+    "Idea Capture",
+    "Learning",
+    "Japanese Study",
+    "My Garden"
+  ],
+  "invalidSizes": [],
+  "invisible": [],
+  "sample": [
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Command Center",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Dashboard",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Brain",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Daily Planner",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Tasks",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Weekly Review",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Calendar",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Weather",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Signals",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Analytics",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Finance",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Self",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "About Me",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Grateful Things",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Quote Library",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "label": "Bucket List",
+      "visible": true,
+      "color": "oklch(0 0 none / 0.5)"
+    }
+  ]
+}
