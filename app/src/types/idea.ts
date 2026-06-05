@@ -70,6 +70,8 @@ export type IdeaCaptureMode = "text" | "voice" | "image";
 // Per-attachment state, held in memory during the capture session.
 // `file` is stripped before localStorage persistence (non-serialisable).
 // `preview_url` is an object URL created locally; it is also not persisted.
+// The historical name is image-specific; keep it for compatibility while
+// `IdeaAttachment` is used by newer general file/media intake flows.
 export type ImageAttachment = {
   id: string; // local uuid — stable React key before server id is known
   file?: File; // present client-side before upload completes
@@ -82,6 +84,8 @@ export type ImageAttachment = {
   upload_progress?: number; // 0–100
   error?: string;
 };
+
+export type IdeaAttachment = ImageAttachment;
 
 // Structured output from idea AI assist (Next.js API or legacy Edge Function).
 export type AISuggestions = {

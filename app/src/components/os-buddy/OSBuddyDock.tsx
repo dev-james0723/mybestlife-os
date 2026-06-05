@@ -18,6 +18,7 @@ import { useUserIdleForOSBuddy } from "@/hooks/use-user-idle-for-os-buddy";
 import { useOSBuddyStore, type OSBuddyMiniGame } from "@/stores/os-buddy-store";
 import { OSBuddySprite } from "./OSBuddySprite";
 import { OSBuddyBubble } from "./OSBuddyBubble";
+import { OSBuddyFileDropBubble } from "./OSBuddyFileDropBubble";
 import { OSBuddyAirControlOverlay } from "./OSBuddyAirControlOverlay";
 import {
   getLocalAirControlCalibration,
@@ -45,6 +46,12 @@ import {
   incrementOSBuddyStat,
 } from "@/lib/os-buddy/os-buddy-stats";
 import {
+  createOSBuddyDroppedFileItem,
+  type OSBuddyDropDestination,
+  type OSBuddyDroppedFileItem,
+} from "@/lib/os-buddy/os-buddy-file-drop";
+import { routeOSBuddyDroppedFile } from "@/lib/os-buddy/os-buddy-file-drop-routing";
+import {
   resolveOSBuddyTapSequence,
   type OSBuddyTapSequence,
 } from "@/lib/os-buddy/os-buddy-tap-resolver";
@@ -55,6 +62,8 @@ import {
   setAirPilotHighlightedTarget,
 } from "@/lib/os-buddy/os-buddy-airpilot-page-control";
 import { cn } from "@/lib/utils";
+import { useIdeasStore } from "@/stores/ideas-store";
+import { useKnowledgeStore } from "@/stores/knowledge-store";
 import type { OSBuddyAirControlCommand } from "@/lib/os-buddy/os-buddy-air-control-types";
 import type { OSBuddyMood, OSBuddyPosition } from "@/types/os-buddy";
 
@@ -84,6 +93,7 @@ const PLAY_BALL_MISS_SPEED_PX = 30;
 const PLAY_BALL_CATCH_FORCE_MS = 1_800;
 const PLAY_BALL_MISS_RESOLVE_MS = 1_550;
 const PLAY_BALL_MISS_FORCE_MS = 2_000;
+const FILE_DROP_CATCH_RADIUS_PX = 42;
 const BIRTHDAY_EASTER_EGG_STORAGE_KEY = "mblos:os-buddy-birthday-easter-eggs";
 const AIRPILOT_SESSION_ACTIVE_KEY = "mblos:airpilot-session-active";
 const BIRTHDAY_EASTER_EGG_WINDOW_MS = 5_000;
@@ -225,6 +235,22 @@ function distanceFromPointToDockBox(
   const dy = Math.max(dockPoint.y - point.y, 0, point.y - (dockPoint.y + buddyBox.height));
 
   return Math.hypot(dx, dy);
+}
+
+function hasFileDragData(dataTransfer: DataTransfer | null) {
+  if (!dataTransfer) return false;
+  return Array.from(dataTransfer.types ?? []).includes("Files");
+}
+
+function filesFromDataTransfer(dataTransfer: DataTransfer | null) {
+  if (!dataTransfer) return [];
+  return Array.from(dataTransfer.files ?? []).filter((file) => file.size > 0 || file.name);
+}
+
+function errorMessageFromUnknown(error: unknown) {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  return "Unable to route this file.";
 }
 
 function getFlippedWalkAxisTarget(
@@ -492,6 +518,8 @@ export function OSBuddyDock() {
     useOSBuddyBirthdayProfile();
   const { getCompanionLine } = useOSBuddyCompanion({ locale, buddyName: name });
   const isPlayBallOpen = isMiniGameOpen && activeMiniGame === "play-ball";
+  const upsertKnowledgeItem = useKnowledgeStore((s) => s.upsertItem);
+  const upsertIdea = useIdeasStore((s) => s.upsertIdea);
 
   const [mounted, setMounted] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -506,6 +534,9 @@ export function OSBuddyDock() {
   const [secretModeActive, setSecretModeActive] = useState(false);
   const [playBallCatchSignal, setPlayBallCatchSignal] =
     useState<OSBuddyPlayBallCatchSignal | null>(null);
+  const [fileDropItems, setFileDropItems] = useState<OSBuddyDroppedFileItem[]>([]);
+  const [isFileDragOverBuddy, setIsFileDragOverBuddy] = useState(false);
+  const [isFileDropRouting, setIsFileDropRouting] = useState(false);
 
   useOSBuddyBirthday({
     enabled: mounted && enabled,
@@ -559,6 +590,8 @@ export function OSBuddyDock() {
     isWalkModeActive ||
     isReturningHome ||
     isAirControlActive ||
+    isFileDragOverBuddy ||
+    fileDropItems.length > 0 ||
     focusSession != null ||
     isBirthdayMode ||
     FREE_ROAM_BLOCKING_MOODS.has(mood);
@@ -594,6 +627,7 @@ export function OSBuddyDock() {
   const airGrabOffsetRef = useRef<DockPoint | null>(null);
   const airPilotHoverTargetRef = useRef<HTMLElement | null>(null);
   const restoredAirPilotSessionRef = useRef(false);
+  const fileDragOverBuddyRef = useRef(false);
   const secretModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const birthdayClickBurstRef = useRef<{
     dateKey: string | null;
@@ -715,6 +749,247 @@ export function OSBuddyDock() {
       singleClickTimerRef.current = null;
     }
   }, []);
+
+  const isPointOverFileDropZone = useCallback(
+    (point: DockPoint) => {
+      if (viewport.width <= 0 || viewport.height <= 0) return false;
+      return (
+        distanceFromPointToDockBox(point, dockPointRef.current, buddyBox) <=
+        FILE_DROP_CATCH_RADIUS_PX
+      );
+    },
+    [buddyBox, viewport.height, viewport.width],
+  );
+
+  const setFileDragOverBuddyState = useCallback(
+    (next: boolean) => {
+      if (fileDragOverBuddyRef.current === next) return;
+      fileDragOverBuddyRef.current = next;
+      setIsFileDragOverBuddy(next);
+
+      if (!next) return;
+      interruptFreeRoam("smart-action");
+      setMenuOpen(false);
+      setPetPickerOpen(false);
+      temporarilySetMood("playful", 700);
+      if (fileDropItems.length === 0) {
+        showBubble("I got it", "user-triggered", {
+          force: true,
+          durationMs: 1_000,
+        });
+      }
+    },
+    [
+      fileDropItems.length,
+      interruptFreeRoam,
+      setMenuOpen,
+      setPetPickerOpen,
+      showBubble,
+      temporarilySetMood,
+    ],
+  );
+
+  const beginOSBuddyFileDrop = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) return;
+      const items = files.map((file) => createOSBuddyDroppedFileItem(file));
+
+      interruptFreeRoam("smart-action");
+      setMenuOpen(false);
+      setPetPickerOpen(false);
+      setWalkModeActive(false);
+      setReturningHome(false);
+      clearBubble();
+      setFileDragOverBuddyState(false);
+      setFileDropItems(items);
+      temporarilySetMood("success", 1_400);
+    },
+    [
+      clearBubble,
+      interruptFreeRoam,
+      setFileDragOverBuddyState,
+      setMenuOpen,
+      setPetPickerOpen,
+      setReturningHome,
+      setWalkModeActive,
+      temporarilySetMood,
+    ],
+  );
+
+  const updateFileDropItem = useCallback(
+    (id: string, patch: Partial<OSBuddyDroppedFileItem>) => {
+      setFileDropItems((items) =>
+        items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+      );
+    },
+    [],
+  );
+
+  const handleFileDropDestinationChange = useCallback(
+    (id: string, destination: OSBuddyDropDestination) => {
+      updateFileDropItem(id, { destination });
+    },
+    [updateFileDropItem],
+  );
+
+  const handleRemoveFileDropItem = useCallback((id: string) => {
+    setFileDropItems((items) =>
+      items.filter((item) => {
+        if (item.id !== id) return true;
+        return item.status !== "queued" && item.status !== "failed";
+      }),
+    );
+  }, []);
+
+  const handleCancelFileDrop = useCallback(() => {
+    if (isFileDropRouting) return;
+    setFileDropItems([]);
+    clearBubble();
+    setFileDragOverBuddyState(false);
+  }, [clearBubble, isFileDropRouting, setFileDragOverBuddyState]);
+
+  const handleSaveFileDrop = useCallback(async () => {
+    if (isFileDropRouting) return;
+    const itemsToRoute = fileDropItems.filter(
+      (item) =>
+        item.status !== "done" &&
+        item.status !== "uploading" &&
+        item.status !== "saving",
+    );
+    if (itemsToRoute.length === 0) return;
+
+    setIsFileDropRouting(true);
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (const item of itemsToRoute) {
+      updateFileDropItem(item.id, { status: "uploading", error: null });
+      try {
+        const result = await routeOSBuddyDroppedFile({
+          item: { ...item, status: "queued", error: null },
+          language: locale,
+          onStage: (stage) => {
+            updateFileDropItem(item.id, {
+              status: stage === "uploading" ? "uploading" : "saving",
+            });
+          },
+        });
+
+        if (result.knowledgeItem) upsertKnowledgeItem(result.knowledgeItem);
+        if (result.idea) upsertIdea(result.idea);
+
+        updateFileDropItem(item.id, {
+          status: "done",
+          error: null,
+          knowledgeItemId: result.knowledgeItem?.id ?? null,
+          ideaId: result.idea?.id ?? null,
+        });
+        successCount += 1;
+      } catch (error) {
+        failureCount += 1;
+        updateFileDropItem(item.id, {
+          status: "failed",
+          error: errorMessageFromUnknown(error),
+        });
+      }
+    }
+
+    setIsFileDropRouting(false);
+    if (failureCount > 0) {
+      temporarilySetMood("error", 1_300);
+      toast.error(
+        failureCount === 1
+          ? "OSBuddy could not save 1 file."
+          : `OSBuddy could not save ${failureCount} files.`,
+      );
+      return;
+    }
+
+    if (successCount > 0) {
+      temporarilySetMood("celebrating", 1_400);
+      toast.success(
+        successCount === 1
+          ? "OSBuddy saved 1 file."
+          : `OSBuddy saved ${successCount} files.`,
+      );
+    }
+  }, [
+    fileDropItems,
+    isFileDropRouting,
+    locale,
+    temporarilySetMood,
+    updateFileDropItem,
+    upsertIdea,
+    upsertKnowledgeItem,
+  ]);
+
+  useEffect(() => {
+    if (!mounted || !enabled) return;
+
+    const onDragOver = (event: DragEvent) => {
+      if (!hasFileDragData(event.dataTransfer)) return;
+      const overBuddy = isPointOverFileDropZone({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      if (!overBuddy) {
+        setFileDragOverBuddyState(false);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      setFileDragOverBuddyState(true);
+    };
+
+    const onDrop = (event: DragEvent) => {
+      if (!hasFileDragData(event.dataTransfer)) return;
+      const overBuddy = isPointOverFileDropZone({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      if (!overBuddy) {
+        setFileDragOverBuddyState(false);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      beginOSBuddyFileDrop(filesFromDataTransfer(event.dataTransfer));
+    };
+
+    const onDragLeave = (event: DragEvent) => {
+      if (
+        event.clientX <= 0 ||
+        event.clientY <= 0 ||
+        event.clientX >= window.innerWidth ||
+        event.clientY >= window.innerHeight
+      ) {
+        setFileDragOverBuddyState(false);
+      }
+    };
+
+    const onDragEnd = () => setFileDragOverBuddyState(false);
+
+    window.addEventListener("dragover", onDragOver, true);
+    window.addEventListener("drop", onDrop, true);
+    window.addEventListener("dragleave", onDragLeave, true);
+    window.addEventListener("dragend", onDragEnd, true);
+    return () => {
+      window.removeEventListener("dragover", onDragOver, true);
+      window.removeEventListener("drop", onDrop, true);
+      window.removeEventListener("dragleave", onDragLeave, true);
+      window.removeEventListener("dragend", onDragEnd, true);
+    };
+  }, [
+    beginOSBuddyFileDrop,
+    enabled,
+    isPointOverFileDropZone,
+    mounted,
+    setFileDragOverBuddyState,
+  ]);
 
   const cancelWalkAnimationFrame = useCallback(() => {
     if (walkAnimationFrameRef.current != null) {
@@ -2192,6 +2467,44 @@ export function OSBuddyDock() {
   const airPilotSettingsSnapshot = getLocalOSBuddyAirPilotSettings();
   const bubbleHorizontal = dockPoint.x > viewport.width / 2 ? "left" : "right";
   const bubbleVertical = dockPoint.y < 136 ? "below" : "above";
+  const fileDropBubbleWidth =
+    viewport.width > 0 ? Math.min(420, Math.max(220, viewport.width - 24)) : 320;
+  const fileDropBubbleLeft =
+    viewport.width > 0
+      ? clamp(
+          dockPoint.x + buddyBox.width / 2 - fileDropBubbleWidth / 2,
+          12,
+          Math.max(12, viewport.width - fileDropBubbleWidth - 12),
+        )
+      : 12;
+  const fileDropSpaceAbove = Math.max(0, dockPoint.y - 16);
+  const fileDropSpaceBelow = Math.max(
+    0,
+    viewport.height - (dockPoint.y + buddyBox.height) - 16,
+  );
+  const fileDropBubbleVertical =
+    fileDropSpaceBelow >= 280 || fileDropSpaceBelow >= fileDropSpaceAbove
+      ? "below"
+      : "above";
+  const fileDropAvailableSpace =
+    fileDropBubbleVertical === "below" ? fileDropSpaceBelow : fileDropSpaceAbove;
+  const fileDropBubbleMaxHeight = Math.max(
+    140,
+    Math.min(540, Math.max(140, fileDropAvailableSpace - 8)),
+  );
+  const fileDropBubbleFixedStyle =
+    viewport.width > 0 && viewport.height > 0
+      ? {
+          left: fileDropBubbleLeft,
+          right: "auto",
+          width: fileDropBubbleWidth,
+          maxWidth: fileDropBubbleWidth,
+          maxHeight: fileDropBubbleMaxHeight,
+          ...(fileDropBubbleVertical === "below"
+            ? { top: dockPoint.y + buddyBox.height + 12, bottom: "auto" }
+            : { bottom: viewport.height - dockPoint.y + 12, top: "auto" }),
+        }
+      : undefined;
 
   return (
     <>
@@ -2199,6 +2512,7 @@ export function OSBuddyDock() {
         className={cn(
           "os-buddy-dock fixed z-[2147483000]",
           isFreeRoaming && "os-buddy-dock--free-roaming",
+          isFileDragOverBuddy && "os-buddy-dock--file-catch-ready",
         )}
         style={{
           left: dockPoint.x,
@@ -2207,7 +2521,19 @@ export function OSBuddyDock() {
             (isWalkModeActive && !isAirControlActive) || isReturningHome ? "none" : undefined,
         }}
       >
-        {bubble ? (
+        {fileDropItems.length > 0 ? (
+          <OSBuddyFileDropBubble
+            items={fileDropItems}
+            horizontal="center"
+            vertical={fileDropBubbleVertical}
+            fixedStyle={fileDropBubbleFixedStyle}
+            isRouting={isFileDropRouting}
+            onDestinationChange={handleFileDropDestinationChange}
+            onRemove={handleRemoveFileDropItem}
+            onCancel={handleCancelFileDrop}
+            onSave={handleSaveFileDrop}
+          />
+        ) : bubble ? (
           <OSBuddyBubble
             bubble={bubble}
             horizontal={bubbleHorizontal}

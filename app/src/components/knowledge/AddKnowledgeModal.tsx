@@ -10,16 +10,16 @@ import {
   addKnowledgeFromVoice,
   suggestTitleForTextDraft,
   transcribeVoiceMemo,
-  finalizeKnowledgeFileUpload,
 } from "@/lib/knowledge/mutations";
-import { createClient } from "@/lib/supabase/client";
 import {
-  clientValidateKnowledgeFileBeforeUpload,
-  guessMimeFromExtension,
   isKnowledgePhotoFile,
   KNOWLEDGE_FILE_INPUT_ACCEPT,
 } from "@/lib/knowledge/knowledge-file-upload";
-import { compressImageForKnowledgeThumbnail } from "@/lib/knowledge/compress-knowledge-photo";
+import {
+  finalizeUploadedKnowledgeFile,
+  removeKnowledgeFileObjects,
+  uploadKnowledgeFileToStorage,
+} from "@/lib/knowledge/client-file-upload";
 import {
   Dialog,
   DialogContent,
@@ -235,91 +235,21 @@ export function AddKnowledgeModal() {
 
   const handleSubmitFile = async () => {
     if (!file) return;
-    const preflight = clientValidateKnowledgeFileBeforeUpload(file);
-    if (preflight === "VIDEO_TOO_LARGE") {
-      toast.error(ui.fileVideoTooLarge);
-      return;
-    }
-    if (preflight === "PHOTO_TOO_LARGE") {
-      toast.error(ui.filePhotoTooLarge);
-      return;
-    }
-    if (preflight === "FILE_TOO_LARGE") {
-      toast.error(ui.fileTooLarge);
-      return;
-    }
-
     setIsSubmitting(true);
     cancelPendingFileUploadRef.current = false;
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error(ui.uploadFailed);
-      setIsSubmitting(false);
-      return;
-    }
-
-    const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-    const storagePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
-    const contentType =
-      file.type?.trim() || guessMimeFromExtension(ext) || "application/octet-stream";
-
-    let thumbnailStoragePath: string | undefined;
-
     try {
-      if (isKnowledgePhotoFile(file)) {
-        try {
-          const thumbBlob = await compressImageForKnowledgeThumbnail(file);
-          const thumbId = crypto.randomUUID();
-          thumbnailStoragePath = `${user.id}/${thumbId}_thumb.jpg`;
-          const { error: thumbErr } = await supabase.storage
-            .from("knowledge-files")
-            .upload(thumbnailStoragePath, thumbBlob, {
-              contentType: "image/jpeg",
-              upsert: false,
-            });
-          if (thumbErr) {
-            console.warn("[add-knowledge] thumbnail upload failed, falling back to original:", thumbErr);
-            thumbnailStoragePath = undefined;
-          }
-        } catch (e) {
-          console.warn("[add-knowledge] thumbnail compression skipped:", e);
-          thumbnailStoragePath = undefined;
-        }
-      }
-
-      const { error: uploadError } = await supabase.storage
-        .from("knowledge-files")
-        .upload(storagePath, file, { contentType, upsert: false });
-
-      if (uploadError) {
-        if (thumbnailStoragePath) {
-          await supabase.storage.from("knowledge-files").remove([thumbnailStoragePath]);
-        }
-        console.error("[add-knowledge] storage upload failed:", uploadError);
-        toast.error(ui.uploadFailed);
-        return;
-      }
+      const uploaded = await uploadKnowledgeFileToStorage(file);
 
       if (cancelPendingFileUploadRef.current) {
-        const removePaths = [storagePath];
-        if (thumbnailStoragePath) removePaths.push(thumbnailStoragePath);
-        await supabase.storage.from("knowledge-files").remove(removePaths);
+        await removeKnowledgeFileObjects([uploaded.storagePath, uploaded.thumbnailStoragePath]);
         toast.message(ui.uploadCancelled);
         return;
       }
 
-      const created = await finalizeKnowledgeFileUpload({
-        storagePath,
-        originalFileName: file.name,
-        mimeType: file.type || null,
+      const created = await finalizeUploadedKnowledgeFile(file, uploaded, {
         thumbnailStyle,
         language,
-        byteSizeHint: file.size,
-        thumbnailStoragePath: thumbnailStoragePath ?? null,
       });
       upsertItem(created);
       toast.success(ui.addSuccess);
