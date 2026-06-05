@@ -51,6 +51,7 @@ import { EASE_OUT_EXPO } from "@/lib/animation/easings";
 import { useAppStore } from "@/stores/app-store";
 import { getAssetIntelUiCopy } from "@/lib/i18n/asset-intelligence-ui";
 import { getResourcesUiCopy } from "@/lib/i18n/resources-ui";
+import { toast } from "sonner";
 import { useCreateAsset } from "@/hooks/use-assets";
 import { useAssetAutofill, useGenerateAssetImage } from "@/hooks/use-asset-ai";
 import { useCreateAssetImage } from "@/hooks/use-asset-media";
@@ -237,9 +238,9 @@ export function AIAssetCreationWizard({
       setGeneratedModel(res.modelUsed);
       setVisualChoice("generated");
       emitOSBuddyEvent({ type: "asset:visual:success" });
-    } catch {
+    } catch (e) {
       emitOSBuddyEvent({ type: "asset:visual:error" });
-      setError(t.errorGeneric);
+      setError(e instanceof Error && e.message ? e.message : t.errorGeneric);
     }
   }, [form, generateImage, result, t.errorGeneric]);
 
@@ -265,18 +266,23 @@ export function AIAssetCreationWizard({
         notes: form.notes.trim() || null,
       });
 
-      // Persist chosen visual as the primary image.
+      // Persist chosen visual as the primary image (non-fatal — asset already exists).
+      let imageWarning: string | null = null;
       if (visualChoice === "generated" && generatedImageUrl) {
-        await createImage.mutateAsync({
-          asset_id: asset.id,
-          image_url: generatedImageUrl,
-          storage_path: generatedStoragePath,
-          image_type: "generated_product_image",
-          model_used: generatedModel,
-          is_primary: true,
-        });
+        try {
+          await createImage.mutateAsync({
+            asset_id: asset.id,
+            image_url: generatedImageUrl,
+            storage_path: generatedStoragePath,
+            image_type: "generated_product_image",
+            model_used: generatedModel,
+            is_primary: true,
+          });
+        } catch {
+          imageWarning = t.imageAttachFailed;
+        }
       } else if (visualChoice === "uploaded" && attachment?.isImage) {
-        await fetch("/api/ai/assets/upload-image", {
+        const uploadRes = await fetch("/api/ai/assets/upload-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -286,11 +292,13 @@ export function AIAssetCreationWizard({
             imageType: "uploaded_product_photo",
             makePrimary: true,
           }),
-        }).catch(() => null);
+        });
+        if (!uploadRes.ok) imageWarning = t.imageAttachFailed;
       }
 
       onCreated?.(asset);
       onOpenChange(false);
+      if (imageWarning) toast.warning(imageWarning);
     } catch {
       setError(t.errorGeneric);
     }

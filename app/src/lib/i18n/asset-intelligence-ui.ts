@@ -64,6 +64,7 @@ export type AssetIntelUiCopy = {
     next: string;
     done: string;
     errorGeneric: string;
+    imageAttachFailed: string;
   };
   modal: {
     analyze: string;
@@ -189,6 +190,8 @@ const english: AssetIntelUiCopy = {
     next: "Next",
     done: "Done",
     errorGeneric: "Something went wrong. Please try again.",
+    imageAttachFailed:
+      "Asset was created, but the visual could not be saved. You can add one from the asset detail view.",
   },
   modal: {
     analyze: "Analyze this asset",

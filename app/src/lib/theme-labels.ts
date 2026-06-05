@@ -45,6 +45,7 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
     },
     items: {
       dashboard: { en: "Dashboard", "zh-TW": "儀表板" },
+      "life-agent": { en: "Life Companion", "zh-TW": "人生夥伴" },
       "daily-planner": { en: "Daily Planner", "zh-TW": "每日規劃" },
       tasks: { en: "Tasks", "zh-TW": "任務" },
       "weekly-review": { en: "Weekly Review", "zh-TW": "每週回顧" },
@@ -105,6 +106,7 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
     },
     items: {
       dashboard: { en: "Bridge", "zh-TW": "艦橋" },
+      "life-agent": { en: "Shipmate", "zh-TW": "同行夥伴" },
       "daily-planner": { en: "Flight Plan", "zh-TW": "飛行計劃" },
       tasks: { en: "Missions", "zh-TW": "任務" },
       "weekly-review": { en: "Debrief", "zh-TW": "任務簡報" },
@@ -165,6 +167,7 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
     },
     items: {
       dashboard: { en: "Overview", "zh-TW": "總覽" },
+      "life-agent": { en: "Study Fellow", "zh-TW": "學伴" },
       "daily-planner": { en: "Agenda", "zh-TW": "議程" },
       tasks: { en: "Assignments", "zh-TW": "作業" },
       "weekly-review": { en: "Reflection", "zh-TW": "反思" },
@@ -225,6 +228,7 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
     },
     items: {
       dashboard: { en: "Meadow", "zh-TW": "草地" },
+      "life-agent": { en: "Trail Companion", "zh-TW": "林徑夥伴" },
       "daily-planner": { en: "Day Path", "zh-TW": "日徑" },
       tasks: { en: "Seeds", "zh-TW": "種子" },
       "weekly-review": { en: "Season Review", "zh-TW": "季節回顧" },

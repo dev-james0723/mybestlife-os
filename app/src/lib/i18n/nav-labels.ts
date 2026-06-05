@@ -137,6 +137,17 @@ const item = {
     es: "Cerebro",
     vi: "Bộ não",
   },
+  "life-agent": {
+    en: "Life Companion",
+    "zh-TW": "人生夥伴",
+    "zh-CN": "人生伙伴",
+    ja: "ライフ・コンパニオン",
+    ko: "라이프 컴패니언",
+    fr: "Compagnon de vie",
+    it: "Compagno di vita",
+    es: "Compañero de vida",
+    vi: "Bạn đồng hành cuộc sống",
+  },
   "daily-planner": {
     en: "Daily Planner",
     "zh-TW": "每日規劃",

@@ -39,6 +39,7 @@ import {
   Compass,
   CloudSun,
   Radar,
+  HeartHandshake,
   type LucideIcon,
 } from "lucide-react";
 
@@ -78,6 +79,12 @@ export const navigationCategories: NavCategory[] = [
     items: [
       { itemId: "dashboard", title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { itemId: "brain", title: "Brain", url: "/brain", icon: Brain },
+      {
+        itemId: "life-agent",
+        title: "Life Companion",
+        url: "/life-agent",
+        icon: HeartHandshake,
+      },
       { itemId: "daily-planner", title: "Daily Planner", url: "/daily-planner", icon: CalendarClock },
       { itemId: "tasks", title: "Tasks", url: "/tasks", icon: CheckSquare },
       { itemId: "weekly-review", title: "Weekly Review", url: "/weekly-review", icon: CalendarCheck },

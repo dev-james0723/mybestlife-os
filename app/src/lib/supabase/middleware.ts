@@ -69,6 +69,9 @@ export async function updateSession(request: NextRequest) {
 
   const protectedPrefixes = [
     "/dashboard",
+    "/brain",
+    "/life-agent",
+    "/mind-council",
     "/tasks",
     "/projects",
     "/daily-planner",
