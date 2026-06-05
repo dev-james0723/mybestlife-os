@@ -101,13 +101,17 @@ export type ConstellationRenderQuality = "full" | "interaction";
 
 const NEW_NODE_SPARK_MS = 1800;
 const SEARCH_MATCH_GLOW_MS = 1500;
-const INTERACTION_QUALITY_MS = 260;
+const INTERACTION_QUALITY_MS = 620;
 const DENSE_GRAPH_NODE_COUNT = 320;
 const DENSE_GRAPH_EDGE_COUNT = 850;
 const VERY_DENSE_GRAPH_NODE_COUNT = 460;
 const VERY_DENSE_GRAPH_EDGE_COUNT = 1200;
 const DENSE_GRAPH_ANIMATED_EDGE_BUDGET = 140;
 const VERY_DENSE_GRAPH_ANIMATED_EDGE_BUDGET = 120;
+const DENSE_GRAPH_FULL_LINK_BUDGET = 520;
+const VERY_DENSE_GRAPH_FULL_LINK_BUDGET = 360;
+const DENSE_GRAPH_INTERACTION_LINK_BUDGET = 180;
+const VERY_DENSE_GRAPH_INTERACTION_LINK_BUDGET = 120;
 
 function hashStringUnit(value: string): number {
   let h = 2166136261;
@@ -363,6 +367,35 @@ function linkStrength(link: SimLink): number {
   }
 }
 
+function linkRenderScore(link: SimLink): number {
+  const style =
+    EDGE_STYLE[link.type] ?? EDGE_STYLE["explicit_link" as ConstellationEdgeType];
+  return (
+    style.width * 140 +
+    style.opacity * 90 +
+    (isStrongNeuralEdgeType(link.type) ? 900 : 0) +
+    hashStringUnit(link.id) * 12
+  );
+}
+
+function selectRenderableLinkIds(
+  links: readonly SimLink[],
+  maxEdges: number,
+): Set<string> | null {
+  if (links.length <= maxEdges) return null;
+
+  return new Set(
+    links
+      .map((link) => ({
+        id: link.id,
+        score: linkRenderScore(link),
+      }))
+      .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
+      .slice(0, Math.max(0, maxEdges))
+      .map((link) => link.id),
+  );
+}
+
 /** Label priority used for the screen-space collision pass. Higher wins. */
 function labelPriority(args: {
   node: SimNode;
@@ -459,6 +492,10 @@ export const ConstellationCanvas = forwardRef<
   const denseGraphRef = useRef(false);
   const veryDenseGraphRef = useRef(false);
   const zoomNotifyRafRef = useRef<number | null>(null);
+  const pointerDisableRafRef = useRef<number | null>(null);
+  const pointerRestoreTimerRef = useRef<number | null>(null);
+  const pointerRestoreAtRef = useRef(0);
+  const pointerInteractionEnabledRef = useRef(true);
   const pendingZoomNotifyRef = useRef<number | null>(null);
   const forceZoomNotifyRef = useRef(false);
   const lastNotifiedZoomRef = useRef(1);
@@ -471,6 +508,7 @@ export const ConstellationCanvas = forwardRef<
   });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [pointerInteractionEnabled, setPointerInteractionEnabled] = useState(true);
   const localDepthPinnedIdsRef = useRef<Set<string>>(new Set());
 
   const { mode: graphSurfaceMode, t: graphThemeRow } = useGraphSurface();
@@ -592,14 +630,37 @@ export const ConstellationCanvas = forwardRef<
     ],
   );
 
+  const denseGraph =
+    graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
+    graphData.links.length >= DENSE_GRAPH_EDGE_COUNT;
+  const veryDenseGraph =
+    graphData.nodes.length >= VERY_DENSE_GRAPH_NODE_COUNT ||
+    graphData.links.length >= VERY_DENSE_GRAPH_EDGE_COUNT;
+
   useEffect(() => {
-    denseGraphRef.current =
-      graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
-      graphData.links.length >= DENSE_GRAPH_EDGE_COUNT;
-    veryDenseGraphRef.current =
-      graphData.nodes.length >= VERY_DENSE_GRAPH_NODE_COUNT ||
-      graphData.links.length >= VERY_DENSE_GRAPH_EDGE_COUNT;
-  }, [graphData.links.length, graphData.nodes.length]);
+    denseGraphRef.current = denseGraph;
+    veryDenseGraphRef.current = veryDenseGraph;
+  }, [denseGraph, veryDenseGraph]);
+
+  const fullVisibleLinkIds = useMemo(() => {
+    if (!denseGraph || useDepthVisual) return null;
+    return selectRenderableLinkIds(
+      graphData.links as SimLink[],
+      veryDenseGraph
+        ? VERY_DENSE_GRAPH_FULL_LINK_BUDGET
+        : DENSE_GRAPH_FULL_LINK_BUDGET,
+    );
+  }, [denseGraph, graphData.links, useDepthVisual, veryDenseGraph]);
+
+  const interactionVisibleLinkIds = useMemo(() => {
+    if (!denseGraph || useDepthVisual) return null;
+    return selectRenderableLinkIds(
+      graphData.links as SimLink[],
+      veryDenseGraph
+        ? VERY_DENSE_GRAPH_INTERACTION_LINK_BUDGET
+        : DENSE_GRAPH_INTERACTION_LINK_BUDGET,
+    );
+  }, [denseGraph, graphData.links, useDepthVisual, veryDenseGraph]);
 
   useEffect(() => {
     const now = performance.now();
@@ -760,13 +821,51 @@ export const ConstellationCanvas = forwardRef<
 
   const currentZoomRef = useRef<number>(1);
 
-  const markGraphInteraction = useCallback((durationMs = INTERACTION_QUALITY_MS) => {
-    const now = performance.now();
-    interactionUntilRef.current = Math.max(
-      interactionUntilRef.current,
-      now + durationMs,
-    );
-  }, []);
+  const markGraphInteraction = useCallback(
+    (
+      durationMs = INTERACTION_QUALITY_MS,
+      opts?: { deferPointerHitTest?: boolean },
+    ) => {
+      const now = performance.now();
+      interactionUntilRef.current = Math.max(
+        interactionUntilRef.current,
+        now + durationMs,
+      );
+
+      if (!denseGraphRef.current || opts?.deferPointerHitTest === false) {
+        return;
+      }
+
+      pointerRestoreAtRef.current = Math.max(
+        pointerRestoreAtRef.current,
+        now + durationMs + 140,
+      );
+
+      if (
+        pointerInteractionEnabledRef.current &&
+        pointerDisableRafRef.current === null
+      ) {
+        pointerDisableRafRef.current = window.requestAnimationFrame(() => {
+          pointerDisableRafRef.current = null;
+          if (!pointerInteractionEnabledRef.current) return;
+          pointerInteractionEnabledRef.current = false;
+          setPointerInteractionEnabled(false);
+        });
+      }
+
+      if (pointerRestoreTimerRef.current !== null) {
+        window.clearTimeout(pointerRestoreTimerRef.current);
+      }
+      pointerRestoreTimerRef.current = window.setTimeout(() => {
+        pointerRestoreTimerRef.current = null;
+        pointerRestoreAtRef.current = 0;
+        if (pointerInteractionEnabledRef.current) return;
+        pointerInteractionEnabledRef.current = true;
+        setPointerInteractionEnabled(true);
+      }, Math.max(0, pointerRestoreAtRef.current - performance.now()));
+    },
+    [],
+  );
 
   const notifyZoomChange = useCallback(
     (zoom: number, opts?: { immediate?: boolean }) => {
@@ -799,6 +898,14 @@ export const ConstellationCanvas = forwardRef<
       if (zoomNotifyRafRef.current !== null) {
         cancelAnimationFrame(zoomNotifyRafRef.current);
         zoomNotifyRafRef.current = null;
+      }
+      if (pointerRestoreTimerRef.current !== null) {
+        window.clearTimeout(pointerRestoreTimerRef.current);
+        pointerRestoreTimerRef.current = null;
+      }
+      if (pointerDisableRafRef.current !== null) {
+        cancelAnimationFrame(pointerDisableRafRef.current);
+        pointerDisableRafRef.current = null;
       }
     };
   }, []);
@@ -1343,25 +1450,18 @@ export const ConstellationCanvas = forwardRef<
   );
 
   const animatedEdgeBudget = useMemo(() => {
-    if (
-      graphData.nodes.length >= VERY_DENSE_GRAPH_NODE_COUNT ||
-      graphData.links.length >= VERY_DENSE_GRAPH_EDGE_COUNT
-    ) {
+    if (veryDenseGraph) {
       return VERY_DENSE_GRAPH_ANIMATED_EDGE_BUDGET;
     }
-    if (
-      graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
-      graphData.links.length >= DENSE_GRAPH_EDGE_COUNT
-    ) {
+    if (denseGraph) {
       return DENSE_GRAPH_ANIMATED_EDGE_BUDGET;
     }
     return undefined;
-  }, [graphData.links.length, graphData.nodes.length]);
+  }, [denseGraph, veryDenseGraph]);
 
   const shouldAutoPauseRedraw =
     prefersReducedMotion ||
-    graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
-    graphData.links.length >= DENSE_GRAPH_EDGE_COUNT;
+    denseGraph;
 
   const animatedEdgeIds = useMemo(() => {
     return selectNeuralAnimatedEdgeIds({
@@ -1400,6 +1500,11 @@ export const ConstellationCanvas = forwardRef<
       const isDirect = spotlightDirect?.has(node.id) ?? false;
       const dominant = useDepthVisual ? depth !== null && depth <= 1 : isDirect || isSelected;
       const interactionQuality = interactionQualityRef.current;
+      const denseAnchorType =
+        node.type === "category" ||
+        node.type === "project" ||
+        node.type === "goal" ||
+        node.type === "habit";
 
       if (interactionQuality) {
         const fastR = Math.max(2.2, dominant || isSelected || isHovered ? r : r * 0.72);
@@ -1422,6 +1527,26 @@ export const ConstellationCanvas = forwardRef<
           ctx.stroke();
         }
 
+        ctx.globalAlpha = 1;
+        return;
+      }
+
+      if (
+        denseGraphRef.current &&
+        !useDepthVisual &&
+        !denseAnchorType &&
+        !dominant &&
+        !isSelected &&
+        !isHovered &&
+        !isMatched &&
+        (node.connectionCount ?? 0) < 12
+      ) {
+        const compactR = Math.max(2.1, r * 0.78);
+        ctx.globalAlpha = alpha * 0.76;
+        ctx.fillStyle = palette.core;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, compactR, 0, 2 * Math.PI);
+        ctx.fill();
         ctx.globalAlpha = 1;
         return;
       }
@@ -1607,6 +1732,37 @@ export const ConstellationCanvas = forwardRef<
     [useDepthVisual, localSubgraphMeta],
   );
 
+  const linkVisibility = useCallback(
+    (rawLink: SimLink | unknown) => {
+      const link = rawLink as SimLink;
+      if (useDepthVisual || !denseGraphRef.current) return true;
+
+      const { sourceId, targetId } = linkEndpointIds(link);
+      const highlighted =
+        (hoveredId !== null &&
+          (sourceId === hoveredId || targetId === hoveredId)) ||
+        (selectedNodeId !== null &&
+          (sourceId === selectedNodeId || targetId === selectedNodeId)) ||
+        spotlightDirectEdges?.has(link.id) ||
+        false;
+
+      if (highlighted || isStrongNeuralEdgeType(link.type)) return true;
+
+      const visibleIds = interactionQualityRef.current
+        ? interactionVisibleLinkIds
+        : fullVisibleLinkIds;
+      return visibleIds === null || visibleIds.has(link.id);
+    },
+    [
+      fullVisibleLinkIds,
+      hoveredId,
+      interactionVisibleLinkIds,
+      selectedNodeId,
+      spotlightDirectEdges,
+      useDepthVisual,
+    ],
+  );
+
   const linkCanvasObject = useCallback(
     (rawLink: SimLink | unknown, ctx: CanvasRenderingContext2D, scale: number) => {
       const link = rawLink as SimLink;
@@ -1642,6 +1798,7 @@ export const ConstellationCanvas = forwardRef<
       const cx = crossHemisphere ? 0 : (source.x + target.x) / 2;
       const cy = crossHemisphere ? (source.y + target.y) * 0.16 : (source.y + target.y) / 2;
       const strong = isStrongNeuralEdgeType(link.type);
+      const denseRender = denseGraphRef.current && !useDepthVisual;
 
       if (interactionQualityRef.current) {
         const sampleThreshold = veryDenseGraphRef.current
@@ -1671,7 +1828,12 @@ export const ConstellationCanvas = forwardRef<
       }
 
       const lineColor = resolveEdgeColorRgba(link.type, alpha, graphSurfaceMode);
-      const pulseEligible = animatedEdgeIds.has(link.id);
+      const pulseEligible =
+        animatedEdgeIds.has(link.id) &&
+        (!denseRender ||
+          highlighted ||
+          selectedNodeId !== null ||
+          hoveredId !== null);
       const now = frameNowRef.current || performance.now();
       const pulsePhase = (now / (strong || highlighted ? 1450 : 2400) + hashStringUnit(link.id)) % 1;
 
@@ -1681,7 +1843,7 @@ export const ConstellationCanvas = forwardRef<
       ctx.lineJoin = "round";
       ctx.strokeStyle = lineColor;
       ctx.lineWidth = Math.max(0.25, width);
-      if (highlighted || strong) {
+      if (highlighted || (!denseRender && strong)) {
         ctx.shadowColor = resolveEdgeColorRgba(
           link.type,
           highlighted ? 0.45 : 0.18,
@@ -1699,7 +1861,7 @@ export const ConstellationCanvas = forwardRef<
       }
       ctx.stroke();
 
-      if (crossHemisphere && (highlighted || strong)) {
+      if (crossHemisphere && (highlighted || (!denseRender && strong))) {
         ctx.setLineDash([]);
         ctx.strokeStyle = graphSurfaceMode === "light"
           ? "rgba(14, 116, 144, 0.18)"
@@ -2082,6 +2244,7 @@ export const ConstellationCanvas = forwardRef<
         linkColor={linkColor}
         linkWidth={linkWidth}
         linkLineDash={linkLineDash}
+        linkVisibility={linkVisibility}
         linkCanvasObject={linkCanvasObject}
         linkCanvasObjectMode={() => "replace"}
         linkDirectionalParticles={0}
@@ -2091,6 +2254,7 @@ export const ConstellationCanvas = forwardRef<
         warmupTicks={warmupTicksProp ?? 30}
         d3VelocityDecay={d3VelocityDecayProp ?? 0.32}
         d3AlphaDecay={d3AlphaDecayProp ?? 0.022}
+        enablePointerInteraction={pointerInteractionEnabled}
         enableNodeDrag
         enableZoomInteraction
         enablePanInteraction
@@ -2106,7 +2270,7 @@ export const ConstellationCanvas = forwardRef<
           onNodeClick(rawNode);
         }}
         onNodeDragEnd={(rawNode: SimNode) => {
-          markGraphInteraction(180);
+          markGraphInteraction(180, { deferPointerHitTest: false });
           if (typeof rawNode.x === "number" && typeof rawNode.y === "number") {
             rawNode.fx = rawNode.x;
             rawNode.fy = rawNode.y;
@@ -2133,12 +2297,14 @@ export const ConstellationCanvas = forwardRef<
         }}
         onZoomEnd={(transform: { k: number; x: number; y: number }) => {
           if (!Number.isFinite(transform?.k)) return;
-          markGraphInteraction(120);
+          markGraphInteraction();
           currentZoomRef.current = transform.k;
           notifyZoomChange(transform.k, { immediate: true });
         }}
         onNodeDrag={() => {
-          markGraphInteraction();
+          markGraphInteraction(INTERACTION_QUALITY_MS, {
+            deferPointerHitTest: false,
+          });
         }}
       />
     </div>
