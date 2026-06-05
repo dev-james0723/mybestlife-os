@@ -1,32 +1,120 @@
 "use client";
 
-import type { ReactNode } from "react";
-import {
-  BookOpen,
-  FileText,
-  ImageIcon,
-  Layers,
-  MessageCircle,
-  Sparkles,
-} from "lucide-react";
+import { ImageIcon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DocOracleAnalysis } from "@/components/document-oracle/docOracleWorkspaceTypes";
 import type { KnowledgeItem } from "@/types/knowledge";
 
-const quickBtn =
-  "inline-flex h-12 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-border bg-background/55 px-3 text-center text-[12px] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition-[background,border-color,transform] duration-150 ease-out hover:border-primary/35 hover:bg-primary/8 active:translate-y-px dark:bg-white/[0.035] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]";
+type SignalStat = {
+  label: string;
+  value: number;
+  display: string | number;
+};
 
-function MetaCard(props: { label: string; value: ReactNode; className?: string }) {
-  const { label, value, className } = props;
+function radarPoint(index: number, total: number, radius: number): string {
+  const angle = -Math.PI / 2 + (index / total) * Math.PI * 2;
+  const x = 50 + Math.cos(angle) * radius;
+  const y = 50 + Math.sin(angle) * radius;
+  return `${x.toFixed(1)},${y.toFixed(1)}`;
+}
+
+function SignalRadar({ stats }: { stats: SignalStat[] }) {
+  const numeric = stats.map((s) => Math.max(0, s.value));
+  const max = Math.max(...numeric, 1);
+  const points = stats
+    .map((stat, index) => {
+      const strength = Math.max(0.16, Math.min(1, Math.log1p(stat.value) / Math.log1p(max)));
+      return radarPoint(index, stats.length, 9 + strength * 31);
+    })
+    .join(" ");
+  const rings = [18, 28, 40];
+
   return (
-    <div
-      className={cn(
-        "min-w-0 rounded-xl border border-border bg-muted/35 px-3 py-2.5",
-        className,
+    <div className="grid gap-4 rounded-xl border border-border bg-muted/28 p-4 sm:grid-cols-[170px_minmax(0,1fr)]">
+      <div className="relative mx-auto aspect-square w-full max-w-[170px]">
+        <svg className="h-full w-full overflow-visible" viewBox="0 0 100 100" role="img" aria-label="Document signal radar">
+          {rings.map((radius) => (
+            <polygon
+              key={radius}
+              points={stats.map((_, index) => radarPoint(index, stats.length, radius)).join(" ")}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.6"
+              className="text-border"
+            />
+          ))}
+          {stats.map((_, index) => (
+            <line
+              key={index}
+              x1="50"
+              y1="50"
+              x2={radarPoint(index, stats.length, 42).split(",")[0]}
+              y2={radarPoint(index, stats.length, 42).split(",")[1]}
+              stroke="currentColor"
+              strokeWidth="0.5"
+              className="text-border"
+            />
+          ))}
+          <polygon points={points} className="fill-primary/20 stroke-primary" strokeWidth="1.4" />
+          <circle cx="50" cy="50" r="2.3" className="fill-primary" />
+        </svg>
+      </div>
+
+      <ul className="grid min-w-0 grid-cols-2 gap-2 text-[12px] tabular-nums sm:grid-cols-5 sm:self-center">
+        {stats.map((stat) => {
+          const level = Math.max(0.12, Math.min(1, stat.value / max));
+          return (
+            <li key={stat.label} className="min-w-0 rounded-lg border border-border bg-background/55 p-2.5">
+              <span className="block text-[10px] text-muted-foreground">{stat.label}</span>
+              <span className="mt-1 block text-base font-semibold leading-none text-foreground">{stat.display}</span>
+              <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-muted">
+                <span className="block h-full rounded-full bg-primary/80" style={{ width: `${level * 100}%` }} />
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function DocumentThumbnailPreview(props: {
+  item: KnowledgeItem;
+  title: string;
+  summary: string | null;
+}) {
+  const { item, title, summary } = props;
+  const src = item.thumbnailUrl ?? item.screenshotUrl;
+  const keywords = item.aiTags?.length ? item.aiTags.slice(0, 3) : title.split(/\s+/).filter(Boolean).slice(0, 3);
+
+  return (
+    <div className="relative min-h-[230px] overflow-hidden rounded-2xl border border-border bg-background shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={`${title} thumbnail`} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(86,127,255,0.35),transparent_34%),radial-gradient(circle_at_82%_78%,rgba(190,255,96,0.22),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(22,28,39,0.96))]" />
       )}
-    >
-      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="mt-0.5 min-w-0 break-words font-medium text-foreground">{value}</div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/26 to-black/12" />
+      <div className="relative z-10 flex h-full min-h-[230px] flex-col justify-between p-4 text-white">
+        <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] backdrop-blur-md">
+          <ImageIcon className="h-3.5 w-3.5" aria-hidden />
+          {src ? "Document thumbnail" : "Thumbnail concept"}
+        </div>
+        <div>
+          <p className="text-pretty text-lg font-semibold leading-tight">{title}</p>
+          {summary ? <p className="mt-2 line-clamp-2 text-[12px] leading-relaxed text-white/72">{summary}</p> : null}
+          {keywords.length ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {keywords.map((keyword) => (
+                <span key={keyword} className="rounded-full border border-white/14 bg-white/10 px-2 py-0.5 text-[10px] text-white/82">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -39,27 +127,19 @@ export function DocumentSnapshotCard(props: {
   chunkCount: number;
   glossaryCount: number;
   visualCount: number;
-  onNavigate: (tab: string) => void;
 }) {
-  const { readyAnalysis, pageCount, sectionCount, chunkCount, glossaryCount, visualCount, onNavigate } = props;
+  const { readyAnalysis, item, pageCount, sectionCount, chunkCount, glossaryCount, visualCount } = props;
   const pagesDisplay =
     readyAnalysis.total_pages != null && readyAnalysis.total_pages > 0 ? readyAnalysis.total_pages : pageCount;
 
   const statItems = [
-    ["Pages", pagesDisplay > 0 ? pagesDisplay : "—"],
-    ["Sections", sectionCount],
-    ["Chunks", chunkCount],
-    ["Glossary", glossaryCount],
-    ["Visuals", visualCount],
-  ] as const;
-
-  const quickNavItems = [
-    { tab: "chat", label: "Ask Oracle", ariaLabel: "Ask Doc Oracle about this document", Icon: MessageCircle },
-    { tab: "pages", label: "Pages", ariaLabel: "Browse document pages", Icon: Layers },
-    { tab: "sections", label: "Sections", ariaLabel: "Explore document sections", Icon: BookOpen },
-    { tab: "visuals", label: "Visuals", ariaLabel: "View document visuals", Icon: ImageIcon },
-    { tab: "source", label: "Source", ariaLabel: "Open source document", Icon: FileText },
-  ] as const;
+    { label: "Pages", value: pagesDisplay > 0 ? pagesDisplay : 0, display: pagesDisplay > 0 ? pagesDisplay : "—" },
+    { label: "Sections", value: sectionCount, display: sectionCount },
+    { label: "Chunks", value: chunkCount, display: chunkCount },
+    { label: "Glossary", value: glossaryCount, display: glossaryCount },
+    { label: "Visuals", value: visualCount, display: visualCount },
+  ] satisfies SignalStat[];
+  const summary = readyAnalysis.summary?.trim() || item.aiSummary || item.aiContentOverview || null;
 
   return (
     <section
@@ -67,8 +147,8 @@ export function DocumentSnapshotCard(props: {
         "w-full max-w-full overflow-hidden rounded-2xl border border-border bg-card/82 p-4 shadow-[0_16px_44px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl [-webkit-backdrop-filter:blur(18px)] dark:bg-card/72 dark:shadow-[0_18px_54px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] sm:p-5 md:p-6",
       )}
     >
-      <div className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(260px,0.75fr)] md:items-start md:gap-5">
-        <div className="min-w-0 space-y-3">
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.78fr)] lg:items-stretch lg:gap-6">
+        <div className="min-w-0 space-y-4">
           <div className="flex min-w-0 items-start gap-3">
             <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
               <Sparkles className="h-5 w-5" aria-hidden />
@@ -91,56 +171,23 @@ export function DocumentSnapshotCard(props: {
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
             Start with a grounded answer, then jump into pages, sections, visuals, or the original source.
           </p>
+
+          <div className="flex flex-wrap gap-2 text-[11px]">
+            <span className="rounded-full border border-border bg-muted/45 px-2.5 py-1 text-muted-foreground">
+              Type <span className="font-semibold text-foreground">{readyAnalysis.document_type ?? item.contentType}</span>
+            </span>
+            <span className="rounded-full border border-border bg-muted/45 px-2.5 py-1 text-muted-foreground">
+              Language <span className="font-semibold text-foreground">{readyAnalysis.language ?? "mixed"}</span>
+            </span>
+          </div>
         </div>
 
-        <div className="min-w-0 grid grid-cols-2 gap-3 md:grid-cols-1">
-          <MetaCard label="Type" value={readyAnalysis.document_type ?? "—"} />
-          <MetaCard label="Language" value={readyAnalysis.language ?? "—"} />
-          <MetaCard
-            className="col-span-2 md:col-span-1"
-            label="Parser"
-            value={
-              <>
-                {readyAnalysis.parser ?? "MinerU"}
-                {readyAnalysis.parser_version ? (
-                  <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-                    v{readyAnalysis.parser_version}
-                  </span>
-                ) : null}
-              </>
-            }
-          />
-        </div>
+        <DocumentThumbnailPreview item={item} title={readyAnalysis.document_title ?? item.title} summary={summary} />
       </div>
 
-      <div className="mt-5 rounded-xl border border-border bg-muted/30 p-3 sm:p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Stats</p>
-        <ul className="mt-2 grid min-w-0 grid-cols-2 gap-2 text-[13px] tabular-nums sm:grid-cols-5">
-          {statItems.map(([label, value]) => (
-            <li key={label} className="rounded-lg border border-border bg-background/55 px-3 py-2">
-              <span className="block text-[11px] text-muted-foreground">{label}</span>
-              <span className="mt-0.5 block text-base font-semibold leading-none text-foreground">{value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mt-5 border-t border-border pt-4">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Open</p>
-        <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-5">
-          {quickNavItems.map(({ tab, label, ariaLabel, Icon }, index) => (
-            <button
-              key={tab}
-              type="button"
-              className={cn(quickBtn, index === quickNavItems.length - 1 && "max-sm:col-span-2")}
-              onClick={() => onNavigate(tab)}
-              aria-label={ariaLabel}
-            >
-              <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-              <span className="min-w-0 truncate">{label}</span>
-            </button>
-          ))}
-        </div>
+      <div className="mt-5">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Document signals</p>
+        <SignalRadar stats={statItems} />
       </div>
     </section>
   );

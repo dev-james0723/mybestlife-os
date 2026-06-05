@@ -3,14 +3,7 @@
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
-
-function pageRange(s: DocOracleSectionRow): string {
-  const a = s.page_start;
-  const b = s.page_end;
-  if (a != null && b != null && b !== a) return `p.${a}–${b}`;
-  if (a != null) return `p.${a}`;
-  return "";
-}
+import { formatDocOraclePageRange } from "@/components/document-oracle/docOraclePageRange";
 
 function compactText(value: string | null | undefined): string {
   return (value ?? "")
@@ -44,6 +37,7 @@ export function ClickableTableOfContents(props: {
           const titleKey = compactText(s.title);
           const summary = s.summary?.trim() ?? "";
           const showSummary = summary.length > 0 && compactText(summary) !== titleKey;
+          const pageRange = formatDocOraclePageRange(s);
           return (
             <li key={s.id}>
               <div
@@ -77,12 +71,12 @@ export function ClickableTableOfContents(props: {
                         onClick={() => {
                           openSourceAtPage(s.page_start as number);
                         }}
-                        aria-label={`Open ${pageRange(s) || `p.${s.page_start}`} in source`}
+                        aria-label={`Open ${pageRange || `P.${s.page_start}`} in source`}
                       >
-                        {pageRange(s) || `p.${s.page_start}`}
+                        {pageRange || `P.${s.page_start}`}
                       </button>
                     ) : (
-                      <span className="text-[11px] tabular-nums text-muted-foreground">{pageRange(s)}</span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">{pageRange}</span>
                     )}
                   </div>
                 </div>

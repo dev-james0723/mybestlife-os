@@ -17,24 +17,51 @@ import { cn } from "@/lib/utils";
 import type { SuggestedQuestion, SuggestedQuestionCategory, SuggestedQuestionTone } from "@/lib/document-brain/suggested-questions";
 
 const CATEGORY_SHELL: Record<SuggestedQuestionTone, string> = {
-  lime: "border-border bg-card/65 text-foreground",
-  amber: "border-border bg-card/65 text-foreground",
-  blue: "border-border bg-card/65 text-foreground",
-  violet: "border-border bg-card/65 text-foreground",
-  teal: "border-border bg-card/65 text-foreground",
-  rose: "border-border bg-card/65 text-foreground",
+  lime: "border-lime-400/30 bg-lime-400/10",
+  amber: "border-amber-400/30 bg-amber-400/10",
+  blue: "border-sky-400/30 bg-sky-400/10",
+  violet: "border-violet-400/30 bg-violet-400/10",
+  teal: "border-teal-400/30 bg-teal-400/10",
+  rose: "border-rose-400/30 bg-rose-400/10",
   neutral: "border-border bg-card/65 text-foreground",
 };
 
 const CHIP_SHELL: Record<SuggestedQuestionTone, string> = {
-  lime: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
-  amber: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
-  blue: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
-  violet: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
-  teal: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
-  rose: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
+  lime: "border-lime-400/25 bg-lime-400/10 text-lime-950 hover:border-lime-400/45 hover:bg-lime-400/15 dark:text-lime-50",
+  amber: "border-amber-400/25 bg-amber-400/10 text-amber-950 hover:border-amber-400/45 hover:bg-amber-400/15 dark:text-amber-50",
+  blue: "border-sky-400/25 bg-sky-400/10 text-sky-950 hover:border-sky-400/45 hover:bg-sky-400/15 dark:text-sky-50",
+  violet: "border-violet-400/25 bg-violet-400/10 text-violet-950 hover:border-violet-400/45 hover:bg-violet-400/15 dark:text-violet-50",
+  teal: "border-teal-400/25 bg-teal-400/10 text-teal-950 hover:border-teal-400/45 hover:bg-teal-400/15 dark:text-teal-50",
+  rose: "border-rose-400/25 bg-rose-400/10 text-rose-950 hover:border-rose-400/45 hover:bg-rose-400/15 dark:text-rose-50",
   neutral: "border-border bg-background/45 text-foreground/90 hover:border-primary/35 hover:bg-primary/8",
 };
+
+const ICON_SHELL: Record<SuggestedQuestionTone, string> = {
+  lime: "border-lime-400/25 bg-lime-400/15 text-lime-700 dark:text-lime-200",
+  amber: "border-amber-400/25 bg-amber-400/15 text-amber-700 dark:text-amber-200",
+  blue: "border-sky-400/25 bg-sky-400/15 text-sky-700 dark:text-sky-200",
+  violet: "border-violet-400/25 bg-violet-400/15 text-violet-700 dark:text-violet-200",
+  teal: "border-teal-400/25 bg-teal-400/15 text-teal-700 dark:text-teal-200",
+  rose: "border-rose-400/25 bg-rose-400/15 text-rose-700 dark:text-rose-200",
+  neutral: "border-border bg-muted/45 text-muted-foreground",
+};
+
+const PAGE_PILL: Record<SuggestedQuestionTone, string> = {
+  lime: "border-lime-400/25 bg-lime-400/10 text-lime-700 hover:border-lime-400/45 dark:text-lime-200",
+  amber: "border-amber-400/25 bg-amber-400/10 text-amber-700 hover:border-amber-400/45 dark:text-amber-200",
+  blue: "border-sky-400/25 bg-sky-400/10 text-sky-700 hover:border-sky-400/45 dark:text-sky-200",
+  violet: "border-violet-400/25 bg-violet-400/10 text-violet-700 hover:border-violet-400/45 dark:text-violet-200",
+  teal: "border-teal-400/25 bg-teal-400/10 text-teal-700 hover:border-teal-400/45 dark:text-teal-200",
+  rose: "border-rose-400/25 bg-rose-400/10 text-rose-700 hover:border-rose-400/45 dark:text-rose-200",
+  neutral: "border-border bg-background/45 text-muted-foreground hover:border-primary/35 hover:text-primary",
+};
+
+const FALLBACK_TONES: SuggestedQuestionTone[] = ["lime", "amber", "blue", "violet", "teal", "rose"];
+
+function resolveTone(tone: SuggestedQuestionTone, index: number): SuggestedQuestionTone {
+  if (tone !== "neutral") return tone;
+  return FALLBACK_TONES[index % FALLBACK_TONES.length];
+}
 
 const ICON_MAP: Record<string, LucideIcon> = {
   sparkles: Sparkles,
@@ -87,7 +114,10 @@ function QuestionChip(props: {
                 e.stopPropagation();
                 onOpenSourcePage(p);
               }}
-              className="inline-flex rounded-full border border-border bg-background/45 px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition hover:border-primary/35 hover:text-primary"
+              className={cn(
+                "inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium transition",
+                PAGE_PILL[tone],
+              )}
             >
               p.{p}
             </button>
@@ -116,33 +146,36 @@ export function DocOracleSuggestedQuestions(props: {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {categories.map((cat) => (
-          <section
-            key={cat.id}
-            className={cn(
-              "flex min-w-0 flex-col gap-2.5 rounded-2xl border p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-sm [-webkit-backdrop-filter:blur(10px)] sm:p-4",
-              CATEGORY_SHELL[cat.tone],
-            )}
-          >
-            <div className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-black/20 text-current">
-                <CategoryIcon name={cat.icon} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-[13px] font-semibold tracking-tight text-foreground/95">{cat.label}</h3>
-                {cat.description ? (
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{cat.description}</p>
-                ) : null}
+        {categories.map((cat, index) => {
+          const tone = resolveTone(cat.tone, index);
+          return (
+            <section
+              key={cat.id}
+              className={cn(
+                "flex min-w-0 flex-col gap-2.5 rounded-2xl border p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-sm [-webkit-backdrop-filter:blur(10px)] sm:p-4",
+                CATEGORY_SHELL[tone],
+              )}
+            >
+              <div className="flex items-start gap-2">
+                <span className={cn("mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border", ICON_SHELL[tone])}>
+                  <CategoryIcon name={cat.icon} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-[13px] font-semibold tracking-tight text-foreground/95">{cat.label}</h3>
+                  {cat.description ? (
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{cat.description}</p>
+                  ) : null}
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              {cat.questions.map((q) => (
-                <QuestionChip key={q.id} q={q} tone={cat.tone} onAsk={onAskQuestion} onOpenSourcePage={onOpenSourcePage} />
-              ))}
-            </div>
-          </section>
-        ))}
+              <div className="flex flex-col gap-2">
+                {cat.questions.map((q) => (
+                  <QuestionChip key={q.id} q={q} tone={tone} onAsk={onAskQuestion} onOpenSourcePage={onOpenSourcePage} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );

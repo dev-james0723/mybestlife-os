@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
 import { ChevronDown, ChevronRight, MessageCircle, Search } from "lucide-react";
 import {
   buildSectionTree,
@@ -11,6 +12,7 @@ import {
 } from "@/components/document-oracle/buildSectionTree";
 import { DocOracleRelatedPages } from "@/components/document-oracle/DocOracleRelatedPages";
 import { DocOracleRelatedVisuals } from "@/components/document-oracle/DocOracleRelatedVisuals";
+import { formatDocOraclePageRangeWithLabel } from "@/components/document-oracle/docOraclePageRange";
 import { DocOracleSourcePreview } from "@/components/document-oracle/DocOracleSourcePreview";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import type {
@@ -18,7 +20,11 @@ import type {
   DocOracleSectionRow,
   DocOracleVisualRow,
 } from "@/components/document-oracle/DocOracleWorkspace";
+import { AnimatedCollapse } from "@/components/motion/AnimatedCollapse";
+import { gsap, registerGSAP } from "@/lib/motion/register-gsap";
 import { cn } from "@/lib/utils";
+
+registerGSAP();
 
 const primaryActionBtn =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition-[background,transform] duration-150 ease-out hover:bg-primary/90 active:translate-y-px";
@@ -132,6 +138,8 @@ function SectionNavTree(props: {
                 ? "bg-muted text-foreground"
                 : "text-muted-foreground hover:bg-muted/70",
             )}
+            data-doc-oracle-section-nav-item
+            data-doc-oracle-section-selected={selectedId === node.id ? "true" : undefined}
             style={{ paddingLeft: 8 + depth * 14 }}
           >
             {hasKids ? (
@@ -146,11 +154,7 @@ function SectionNavTree(props: {
             <span className="min-w-0 flex-1">
               <span className="font-medium text-foreground">{node.title}</span>
               <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
-                <span>
-                  {node.page_start != null || node.page_end != null
-                    ? `pp. ${node.page_start ?? "?"}–${node.page_end ?? "?"}`
-                    : "pages n/a"}
-                </span>
+                <span>{formatDocOraclePageRangeWithLabel(node)}</span>
                 {node.children.length > 0 ? (
                   <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
                     {countDescendants(node)} nested
@@ -159,7 +163,7 @@ function SectionNavTree(props: {
               </span>
             </span>
           </button>
-          {hasKids && isOpen ? <div>{renderNodes(node.children, depth + 1)}</div> : null}
+          {hasKids ? <AnimatedCollapse open={isOpen}>{renderNodes(node.children, depth + 1)}</AnimatedCollapse> : null}
         </div>
       );
     });
@@ -191,6 +195,7 @@ export function DocOracleSectionsPanel(props: {
     onOpenPageDetail,
   } = props;
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [manualPreview, setManualPreview] = useState<{ sectionId: string; page: number } | null>(null);
 
@@ -216,6 +221,66 @@ export function DocOracleSectionsPanel(props: {
     [selectedSection, visuals],
   );
 
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      const mm = gsap.matchMedia();
+      mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+        const reduceMotion = Boolean(context.conditions?.reduceMotion);
+        const detailItems = gsap.utils.toArray<HTMLElement>("[data-doc-oracle-section-motion]", root);
+        const selectedItem = root.querySelector<HTMLElement>('[data-doc-oracle-section-selected="true"]');
+
+        if (reduceMotion) {
+          gsap.set(detailItems, { autoAlpha: 1, clearProps: "transform,filter" });
+          gsap.set(selectedItem, { clearProps: "transform,boxShadow" });
+          return;
+        }
+
+        if (selectedItem) {
+          gsap.fromTo(
+            selectedItem,
+            { x: -2, scale: 0.992, boxShadow: "0 0 0 rgba(0,0,0,0)" },
+            {
+              x: 0,
+              scale: 1,
+              boxShadow: "0 10px 28px rgba(0,0,0,0.14)",
+              duration: 0.34,
+              ease: "power3.out",
+              overwrite: "auto",
+              clearProps: "transform,boxShadow",
+            },
+          );
+        }
+
+        if (detailItems.length) {
+          gsap.fromTo(
+            detailItems,
+            { autoAlpha: 0, y: 10, scale: 0.986, filter: "blur(4px)" },
+            {
+              autoAlpha: 1,
+              y: 0,
+              scale: 1,
+              filter: "blur(0px)",
+              duration: 0.32,
+              ease: "power3.out",
+              stagger: 0.045,
+              overwrite: "auto",
+              clearProps: "transform,filter",
+            },
+          );
+        }
+      });
+      return () => mm.revert();
+    },
+    {
+      scope: rootRef,
+      dependencies: [selectedSection?.id, previewPage, relatedPages.length, relatedVisualsList.length],
+      revertOnUpdate: true,
+    },
+  );
+
   const pdfOpenHref =
     filePath && previewPage != null && previewPage > 0
       ? `${knowledgeFilesApiHref(filePath)}#page=${previewPage}`
@@ -224,12 +289,12 @@ export function DocOracleSectionsPanel(props: {
         : null;
 
   const header = selectedSection ? (
-    <div className="rounded-2xl border border-border bg-muted/50 p-4">
+    <div className="rounded-2xl border border-border bg-muted/50 p-4" data-doc-oracle-section-motion>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Selected section</p>
       <p className="mt-1 text-base font-semibold text-foreground">{selectedSection.title}</p>
       <p className="mt-2 text-[12px] text-muted-foreground">{selectedSection.summary}</p>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Pages {selectedSection.page_start ?? "?"} – {selectedSection.page_end ?? "?"}
+        {formatDocOraclePageRangeWithLabel(selectedSection)}
       </p>
       {kwList(selectedSection.keywords).length ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -260,13 +325,13 @@ export function DocOracleSectionsPanel(props: {
       </div>
     </div>
   ) : (
-    <p className="rounded-2xl border border-border bg-muted/40 p-4 text-[13px] text-muted-foreground">
+    <p className="rounded-2xl border border-border bg-muted/40 p-4 text-[13px] text-muted-foreground" data-doc-oracle-section-motion>
       Select a section to see detail, preview, and related pages.
     </p>
   );
 
   return (
-    <div className="flex flex-col gap-4 md:grid md:min-h-[480px] md:grid-cols-[minmax(200px,0.38fr)_minmax(0,1fr)] md:gap-5 lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-6">
+    <div ref={rootRef} className="flex flex-col gap-4 md:grid md:min-h-[480px] md:grid-cols-[minmax(200px,0.38fr)_minmax(0,1fr)] md:gap-5 lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-6">
       {/* Navigator */}
       <div className="flex min-h-0 flex-col gap-2 md:sticky md:top-4 md:max-h-[calc(100dvh-8rem)]">
         <div className="relative">
@@ -321,9 +386,11 @@ export function DocOracleSectionsPanel(props: {
       <div className="flex min-w-0 flex-col gap-4">
         {header}
 
-        <DocOracleSourcePreview filePath={filePath} previewPage={previewPage} />
+        <div data-doc-oracle-section-motion>
+          <DocOracleSourcePreview filePath={filePath} previewPage={previewPage} />
+        </div>
 
-        <div>
+        <div data-doc-oracle-section-motion>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Related pages</p>
           <DocOracleRelatedPages
             pages={relatedPages}
@@ -335,7 +402,7 @@ export function DocOracleSectionsPanel(props: {
           />
         </div>
 
-        <div>
+        <div data-doc-oracle-section-motion>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Related visuals</p>
           <DocOracleRelatedVisuals visuals={relatedVisualsList} onOpen={onOpenVisual} />
         </div>

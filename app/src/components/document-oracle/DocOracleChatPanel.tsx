@@ -9,11 +9,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { ExternalLink, ImageIcon, RefreshCw, Send } from "lucide-react";
+import { useGSAP } from "@gsap/react";
+import { Check, ChevronDown, ExternalLink, ImageIcon, MessageSquarePlus, RefreshCw, Send, Sparkles } from "lucide-react";
 import { DocOracleMarkdown } from "@/components/document-oracle/DocOracleMarkdown";
 import { knowledgeFilesApiHref, sourcePdfHref } from "@/components/document-oracle/docOraclePaths";
 import { displayVisualDescription, displayVisualTitle } from "@/components/document-oracle/docOracleVisualLabels";
+import { gsap, registerGSAP } from "@/lib/motion/register-gsap";
 import { cn } from "@/lib/utils";
+
+registerGSAP();
 
 const primaryActionBtn =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground shadow-sm transition-[background,transform,box-shadow] duration-150 ease-out hover:bg-primary/90 active:translate-y-px disabled:pointer-events-none disabled:opacity-50";
@@ -183,9 +187,105 @@ function BouncingDots({ className }: { className?: string }) {
   );
 }
 
+const VISUAL_EXPLANATION_WORDS = ["Reading pixels", "Finding meaning", "Citing sources", "Composing insight"];
+
+function VisualExplanationGeneratingLabel() {
+  const rootRef = useRef<HTMLSpanElement>(null);
+
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      const mm = gsap.matchMedia();
+      mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+        const reduceMotion = Boolean(context.conditions?.reduceMotion);
+        const words = gsap.utils.toArray<HTMLElement>("[data-visual-gen-word]", root);
+        const dots = gsap.utils.toArray<HTMLElement>("[data-visual-gen-dot]", root);
+        const sheen = root.querySelector<HTMLElement>("[data-visual-gen-sheen]");
+
+        if (!words.length) return;
+
+        if (reduceMotion) {
+          gsap.set(words, { autoAlpha: 0, yPercent: 0 });
+          gsap.set(words[0], { autoAlpha: 1 });
+          gsap.set(dots, { autoAlpha: 0.75, y: 0 });
+          gsap.set(sheen, { autoAlpha: 0 });
+          return;
+        }
+
+        gsap.set(words, { autoAlpha: 0, yPercent: 115 });
+        gsap.set(words[0], { autoAlpha: 1, yPercent: 0 });
+        gsap.to(dots, {
+          autoAlpha: 1,
+          y: -2,
+          duration: 0.42,
+          ease: "sine.inOut",
+          repeat: -1,
+          stagger: 0.12,
+          yoyo: true,
+        });
+        if (sheen) {
+          gsap.fromTo(
+            sheen,
+            { xPercent: -120, autoAlpha: 0 },
+            { xPercent: 320, autoAlpha: 0.75, duration: 1.45, ease: "sine.inOut", repeat: -1, repeatDelay: 0.3 },
+          );
+        }
+
+        const tl = gsap.timeline({ repeat: -1 });
+        words.forEach((word, index) => {
+          const next = words[(index + 1) % words.length];
+          tl.to(word, { autoAlpha: 0, yPercent: -115, duration: 0.34, ease: "power3.in" }, "+=0.82").fromTo(
+            next,
+            { autoAlpha: 0, yPercent: 115 },
+            { autoAlpha: 1, yPercent: 0, duration: 0.42, ease: "power3.out" },
+            "<0.08",
+          );
+        });
+      });
+
+      return () => mm.revert();
+    },
+    { scope: rootRef },
+  );
+
+  return (
+    <span
+      ref={rootRef}
+      className="relative isolate inline-flex min-h-5 items-center gap-2 overflow-hidden rounded-lg text-primary-foreground"
+      aria-label="Generating image explanation"
+      aria-live="polite"
+    >
+      <span
+        data-visual-gen-sheen
+        className="pointer-events-none absolute inset-y-[-55%] left-0 z-0 w-8 rotate-12 bg-white/30 blur-[6px]"
+        aria-hidden
+      />
+      <Sparkles className="relative z-10 h-4 w-4 shrink-0 text-primary-foreground/95" aria-hidden />
+      <span className="relative z-10 h-5 min-w-[116px] overflow-hidden text-left" aria-hidden>
+        {VISUAL_EXPLANATION_WORDS.map((word) => (
+          <span
+            key={word}
+            data-visual-gen-word
+            className="absolute left-0 top-0 whitespace-nowrap bg-gradient-to-r from-primary-foreground via-primary-foreground/80 to-primary-foreground bg-clip-text text-[12px] font-semibold leading-5 text-transparent"
+          >
+            {word}
+          </span>
+        ))}
+      </span>
+      <span className="relative z-10 flex items-center gap-0.5" aria-hidden>
+        {[0, 1, 2].map((dot) => (
+          <span key={dot} data-visual-gen-dot className="h-1 w-1 rounded-full bg-primary-foreground/80" />
+        ))}
+      </span>
+    </span>
+  );
+}
+
 function OracleThinkingBubble() {
   return (
-    <div className="mr-auto flex w-full min-w-0 max-w-full flex-col gap-1.5 md:max-w-[96%] lg:max-w-[92%]">
+    <div className="mr-auto flex w-full min-w-0 max-w-full flex-col gap-1.5 md:max-w-[96%] lg:max-w-[92%]" data-doc-oracle-thinking>
       <ChatBubble role="assistant">
         <BouncingDots />
       </ChatBubble>
@@ -375,7 +475,11 @@ export function DocOracleChatPanel({
   const [error, setError] = useState<string | null>(null);
   const [imgBusyIdx, setImgBusyIdx] = useState<number | null>(null);
   const [imgErrByIdx, setImgErrByIdx] = useState<Record<number, string>>({});
+  const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
   const imgBusyIdxRef = useRef<number | null>(null);
+  const chatRootRef = useRef<HTMLDivElement>(null);
+  const historyMenuRootRef = useRef<HTMLDivElement>(null);
+  const historyMenuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sessionRef = useRef<string | null>(null);
   const messagesRef = useRef<Msg[]>([]);
@@ -676,12 +780,13 @@ export function DocOracleChatPanel({
     setImgErrByIdx({});
   };
 
-  const onSessionSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const sid = e.target.value;
+  const selectSession = (sid: string | null) => {
+    setHistoryMenuOpen(false);
     if (!sid) {
       newChat();
       return;
     }
+    if (sid === sessionId) return;
     void (async () => {
       setHistoryLoading(true);
       try {
@@ -692,8 +797,126 @@ export function DocOracleChatPanel({
     })();
   };
 
+  const selectedSession = sessions.find((s) => s.id === sessionId) ?? null;
+  const historyButtonLabel = historyLoading
+    ? "Loading conversations..."
+    : selectedSession
+      ? selectedSession.title || "Doc Oracle"
+      : sessions.length === 0
+        ? "No saved conversations yet"
+        : "New chat (unsaved)";
+
+  useEffect(() => {
+    if (!historyMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const root = historyMenuRootRef.current;
+      if (!root || root.contains(event.target as Node)) return;
+      setHistoryMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setHistoryMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [historyMenuOpen]);
+
+  useGSAP(
+    () => {
+      const menu = historyMenuRef.current;
+      if (!historyMenuOpen || !menu) return;
+
+      const mm = gsap.matchMedia();
+      mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+        const reduceMotion = Boolean(context.conditions?.reduceMotion);
+        const items = gsap.utils.toArray<HTMLElement>("[data-history-menu-item]", menu);
+
+        if (reduceMotion) {
+          gsap.set(menu, { autoAlpha: 1, height: "auto", y: 0, scaleY: 1 });
+          gsap.set(items, { autoAlpha: 1, y: 0 });
+          return;
+        }
+
+        gsap.fromTo(
+          menu,
+          { autoAlpha: 0, height: 0, y: -6, scaleY: 0.98 },
+          { autoAlpha: 1, height: "auto", y: 0, scaleY: 1, duration: 0.24, ease: "power2.out" },
+        );
+        gsap.fromTo(
+          items,
+          { autoAlpha: 0, y: -4 },
+          { autoAlpha: 1, y: 0, duration: 0.18, ease: "power2.out", stagger: 0.035, delay: 0.06 },
+        );
+      });
+
+      return () => mm.revert();
+    },
+    { dependencies: [historyMenuOpen, sessions.length], scope: historyMenuRootRef, revertOnUpdate: true },
+  );
+
+  useGSAP(
+    () => {
+      const root = chatRootRef.current;
+      if (!root) return;
+
+      const mm = gsap.matchMedia();
+      mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+        const reduceMotion = Boolean(context.conditions?.reduceMotion);
+        const messageEls = gsap.utils.toArray<HTMLElement>("[data-doc-oracle-chat-message]", root);
+        const latestMessage = messageEls.at(-1);
+        const thinking = root.querySelector<HTMLElement>("[data-doc-oracle-thinking]");
+        const target = thinking ?? latestMessage;
+        if (!target) return;
+
+        const revealItems = gsap.utils.toArray<HTMLElement>("[data-doc-oracle-chat-reveal]", target);
+        if (reduceMotion) {
+          gsap.set([target, ...revealItems], { autoAlpha: 1, clearProps: "transform,filter" });
+          return;
+        }
+
+        gsap.fromTo(
+          target,
+          { autoAlpha: 0, y: 10, scale: 0.992, filter: "blur(3px)" },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            filter: "blur(0px)",
+            duration: 0.3,
+            ease: "power3.out",
+            overwrite: "auto",
+            clearProps: "transform,filter",
+          },
+        );
+
+        if (revealItems.length) {
+          gsap.fromTo(
+            revealItems,
+            { autoAlpha: 0, y: 8 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.24,
+              ease: "power2.out",
+              stagger: 0.035,
+              delay: 0.08,
+              overwrite: "auto",
+              clearProps: "transform",
+            },
+          );
+        }
+      });
+
+      return () => mm.revert();
+    },
+    { dependencies: [messages.length, loading], scope: chatRootRef, revertOnUpdate: true },
+  );
+
   return (
-    <div className="flex w-full max-w-none flex-1 flex-col min-h-[72dvh] sm:min-h-[640px]">
+    <div ref={chatRootRef} className="flex w-full max-w-none flex-1 flex-col min-h-[72dvh] sm:min-h-[640px]">
       <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
         <div className="shrink-0 rounded-2xl border border-border bg-card/55 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
           <div className="flex items-center justify-between gap-3">
@@ -704,23 +927,98 @@ export function DocOracleChatPanel({
               New
             </button>
           </div>
-          <label className="mt-2 block text-[11px] font-medium text-muted-foreground">
+          <div ref={historyMenuRootRef} className="relative mt-2">
             <span className="sr-only">Conversation history</span>
-            <select
-              className="h-10 w-full max-w-full rounded-xl border border-border bg-background/55 px-2.5 text-[13px] text-foreground outline-none focus:border-primary/45"
-              value={sessionId ?? ""}
+            <button
+              type="button"
               disabled={historyLoading}
-              onChange={onSessionSelect}
+              aria-haspopup="listbox"
+              aria-expanded={historyMenuOpen}
+              onClick={() => setHistoryMenuOpen((open) => !open)}
+              className={cn(
+                "group flex min-h-11 w-full max-w-full items-center justify-between gap-3 rounded-xl border border-border bg-background/55 px-3 py-2 text-left text-[13px] text-foreground outline-none transition",
+                "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:border-primary/35 hover:bg-primary/8 focus-visible:border-primary/45",
+                historyMenuOpen && "border-primary/35 bg-primary/8",
+                historyLoading && "cursor-wait opacity-70",
+              )}
             >
-              <option value="">{sessions.length === 0 ? "No saved conversations yet" : "New chat (unsaved)"}</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {(s.title || "Doc Oracle").slice(0, 48)}
-                  {s.last_message ? ` — ${s.last_message.slice(0, 56)}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span className="min-w-0 flex-1 truncate">{historyButtonLabel}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:text-foreground",
+                  historyMenuOpen && "rotate-180 text-foreground",
+                )}
+                aria-hidden
+              />
+            </button>
+            {historyMenuOpen ? (
+              <div
+                ref={historyMenuRef}
+                className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[280px] origin-top overflow-hidden rounded-xl border border-border bg-card/95 shadow-[0_18px_48px_rgba(0,0,0,0.28)] backdrop-blur-xl [-webkit-backdrop-filter:blur(18px)]"
+              >
+                <div className="max-h-[280px] overflow-y-auto p-1.5" role="listbox" aria-label="Conversation history">
+                  {sessions.length === 0 ? (
+                    <div
+                      data-history-menu-item
+                      className="rounded-lg px-3 py-2.5 text-[12px] text-muted-foreground"
+                      role="option"
+                      aria-selected="true"
+                    >
+                      No saved conversations yet
+                    </div>
+                  ) : (
+                    <button
+                      data-history-menu-item
+                      type="button"
+                      role="option"
+                      aria-selected={sessionId == null}
+                      onClick={() => selectSession(null)}
+                      className={cn(
+                        "flex w-full min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-[12px] transition hover:bg-primary/8 hover:text-foreground",
+                        sessionId == null ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      {sessionId == null ? (
+                        <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                      ) : (
+                        <MessageSquarePlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                      )}
+                      <span className="truncate">New chat (unsaved)</span>
+                    </button>
+                  )}
+                  {sessions.map((s) => {
+                    const selected = s.id === sessionId;
+                    return (
+                      <button
+                        key={s.id}
+                        data-history-menu-item
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        onClick={() => selectSession(s.id)}
+                        className={cn(
+                          "flex w-full min-w-0 items-start gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-primary/8",
+                          selected ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
+                          {selected ? <Check className="h-3.5 w-3.5 text-primary" aria-hidden /> : null}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12px] font-medium">{s.title || "Doc Oracle"}</span>
+                          {s.last_message ? (
+                            <span className="mt-0.5 block truncate text-[11px] text-muted-foreground/80">
+                              {s.last_message}
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
       {starters.length > 0 && messages.length === 0 && !historyLoading ? (
@@ -752,41 +1050,42 @@ export function DocOracleChatPanel({
           {messages.map((m, i) => {
             const key = m.id ? m.id : `${m.role}-${i}-${m.created_at ?? ""}`;
             return m.role === "user" ? (
-              <div key={key} className="flex w-full justify-end">
+              <div key={key} className="flex w-full justify-end" data-doc-oracle-chat-message data-doc-oracle-chat-role="user">
                 <ChatBubble role="user">
                   <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
                 </ChatBubble>
               </div>
             ) : (
-              <div key={key} className="flex w-full min-w-0 flex-col gap-1">
-                <ChatBubble role="assistant">
-                  <DocOracleMarkdown
-                    className="w-full max-w-none text-[15px] leading-7 sm:text-[15.5px] [&_blockquote]:max-w-none [&_li]:max-w-none [&_ol]:max-w-none [&_p]:max-w-none [&_ul]:max-w-none"
-                    source={m.content}
+              <div key={key} className="flex w-full min-w-0 flex-col gap-1" data-doc-oracle-chat-message data-doc-oracle-chat-role="assistant">
+                <div data-doc-oracle-chat-reveal>
+                  <ChatBubble role="assistant">
+                    <DocOracleMarkdown
+                      className="w-full max-w-none text-[15px] leading-7 sm:text-[15.5px] [&_blockquote]:max-w-none [&_li]:max-w-none [&_ol]:max-w-none [&_p]:max-w-none [&_ul]:max-w-none"
+                      source={m.content}
+                    />
+                  </ChatBubble>
+                </div>
+
+                <div data-doc-oracle-chat-reveal>
+                  <AssistantMeta
+                    citations={m.citations ?? []}
+                    related_pages={m.related_pages}
+                    related_visuals={m.related_visuals}
+                    filePath={filePath}
+                    onOpenSourcePage={onOpenSourcePage}
+                    onOpenVisualById={onOpenVisualById}
                   />
-                </ChatBubble>
+                </div>
 
-                <AssistantMeta
-                  citations={m.citations ?? []}
-                  related_pages={m.related_pages}
-                  related_visuals={m.related_visuals}
-                  filePath={filePath}
-                  onOpenSourcePage={onOpenSourcePage}
-                  onOpenVisualById={onOpenVisualById}
-                />
-
-                <div className="mt-1 flex w-full max-w-full flex-wrap gap-2 md:max-w-[96%] lg:max-w-[92%]">
+                <div className="mt-1 flex w-full max-w-full flex-wrap gap-2 md:max-w-[96%] lg:max-w-[92%]" data-doc-oracle-chat-reveal>
                   <button
                     type="button"
                     disabled={!m.userQuestion || imgBusyIdx !== null || loading}
                     onClick={() => void runVisualExplanation(i)}
-                    className={cn(primaryActionBtn, "text-[12px]")}
+                    className={cn(primaryActionBtn, "text-[12px]", imgBusyIdx === i && "min-w-[190px] disabled:opacity-100")}
                   >
                     {imgBusyIdx === i ? (
-                      <>
-                        <BouncingDots className="py-0" />
-                        Generating…
-                      </>
+                      <VisualExplanationGeneratingLabel />
                     ) : (
                       <>
                         <ImageIcon className="h-4 w-4" aria-hidden />

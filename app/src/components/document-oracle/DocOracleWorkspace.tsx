@@ -26,6 +26,7 @@ import { DocOracleVisualPreviewModal } from "@/components/document-oracle/DocOra
 import { DocOraclePagesPanel } from "@/components/document-oracle/DocOraclePagesPanel";
 import { DocOraclePageDetailModal } from "@/components/document-oracle/DocOraclePageDetailModal";
 import { getPageTitle } from "@/components/document-oracle/docOraclePageHelpers";
+import { formatDocOraclePageRange } from "@/components/document-oracle/docOraclePageRange";
 import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 import { displayVisualTitle, getRelatedSectionTitleForVisual } from "@/components/document-oracle/docOracleVisualLabels";
 import { DocOracleOverviewPanel } from "@/components/document-oracle/overview/DocOracleOverviewPanel";
@@ -142,7 +143,7 @@ export function DocOracleWorkspace(props: {
   const handleAskSection = (s: DocOracleSectionRow) => {
     const prompt = `Please summarize this section with citations:
 Section: ${s.title}
-Page range: ${s.page_start ?? "?"}-${s.page_end ?? "?"}
+Page range: ${formatDocOraclePageRange(s) || "n/a"}
 Focus on key requirements, action items, dates, people, fees, and related visuals.
 Cite only supported document passages and include page numbers where possible.`;
     setTab("chat");
@@ -304,14 +305,39 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
           const panel = workspaceRef.current?.querySelector<HTMLElement>('[data-doc-oracle-tab-panel][data-state="active"]');
           if (!panel) return;
           if (reduceMotion) {
-            gsap.set(panel, { autoAlpha: 1, clearProps: "transform" });
+            gsap.set(panel, { autoAlpha: 1, clearProps: "transform,filter" });
             return;
           }
+          const panelChildren = gsap.utils.toArray<HTMLElement>(":scope > *", panel).slice(0, 8);
           gsap.fromTo(
             panel,
-            { autoAlpha: 0, y: 8 },
-            { autoAlpha: 1, y: 0, duration: 0.28, ease: "power2.out", overwrite: "auto" },
+            { autoAlpha: 0, y: 12, scale: 0.992, filter: "blur(4px)" },
+            {
+              autoAlpha: 1,
+              y: 0,
+              scale: 1,
+              filter: "blur(0px)",
+              duration: 0.32,
+              ease: "power3.out",
+              overwrite: "auto",
+              clearProps: "transform,filter",
+            },
           );
+          if (panelChildren.length) {
+            gsap.fromTo(
+              panelChildren,
+              { autoAlpha: 0, y: 8 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.28,
+                ease: "power2.out",
+                stagger: 0.035,
+                overwrite: "auto",
+                clearProps: "transform",
+              },
+            );
+          }
         },
       );
       return () => mm.revert();

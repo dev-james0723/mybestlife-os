@@ -31,6 +31,7 @@ import {
 import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 import type { DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
 import { knowledgeFilesApiHref, sourcePdfHref } from "@/components/document-oracle/docOraclePaths";
+import { formatDocOraclePageRangeWithLabel } from "@/components/document-oracle/docOraclePageRange";
 import { displayVisualDescription } from "@/components/document-oracle/docOracleVisualLabels";
 import { cn } from "@/lib/utils";
 
@@ -330,10 +331,7 @@ export function DocOraclePageDetailView(props: {
                 >
                   <p className="text-[14px] font-semibold text-foreground">{relatedSection.title}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Pages{" "}
-                    {relatedSection.page_start != null || relatedSection.page_end != null
-                      ? `${relatedSection.page_start ?? "?"}–${relatedSection.page_end ?? "?"}`
-                      : "n/a"}
+                    {formatDocOraclePageRangeWithLabel(relatedSection)}
                   </p>
                   {relatedSection.summary ? (
                     <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{relatedSection.summary}</p>

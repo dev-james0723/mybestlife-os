@@ -13,6 +13,7 @@ import type { DocOracleSectionRow } from "@/components/document-oracle/docOracle
 import { normalizeGlossaryPages, normalizeGlossaryRelatedTerms } from "@/components/document-oracle/glossary/glossaryNormalize";
 import { isGenericGlossaryDefinition } from "@/components/document-oracle/glossary/glossaryCategoryInference";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
+import { formatDocOraclePageRangeWithLabel } from "@/components/document-oracle/docOraclePageRange";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -203,7 +204,7 @@ export function GlossaryTermDetailModal(props: Props) {
                     >
                       <span className="font-semibold text-foreground">{s.title}</span>
                       <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                        pp. {s.page_start ?? "?"}–{s.page_end ?? "?"}
+                        {formatDocOraclePageRangeWithLabel(s)}
                       </span>
                     </button>
                   </li>

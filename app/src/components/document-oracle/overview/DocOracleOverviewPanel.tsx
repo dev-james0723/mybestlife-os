@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Network } from "lucide-react";
+import { ChevronDown, Network } from "lucide-react";
 import { DocOracleMarkdown } from "@/components/document-oracle/DocOracleMarkdown";
 import { DocOracleSuggestedQuestions } from "@/components/document-oracle/DocOracleSuggestedQuestions";
 import type { DocOracleChatRetrievalFocus } from "@/components/document-oracle/DocOracleChatPanel";
@@ -19,6 +19,7 @@ import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document
 import type { KnowledgeItem } from "@/types/knowledge";
 import type { SuggestedQuestionCategory } from "@/lib/document-brain/suggested-questions";
 import { Stagger } from "@/components/motion/Stagger";
+import { AnimatedCollapse } from "@/components/motion/AnimatedCollapse";
 import { cn } from "@/lib/utils";
 
 const TOPICS_ANCHOR = "doc-oracle-overview-key-topics";
@@ -64,7 +65,7 @@ export function DocOracleOverviewPanel(props: {
 
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(true);
 
   const pageCount = useMemo(() => {
     if (readyAnalysis.total_pages != null && readyAnalysis.total_pages > 0) return readyAnalysis.total_pages;
@@ -89,7 +90,6 @@ export function DocOracleOverviewPanel(props: {
         chunkCount={chunkCount}
         glossaryCount={glossary.length}
         visualCount={visuals.length}
-        onNavigate={setTab}
       />
 
       <section className="rounded-2xl border border-border bg-card/80 p-4 shadow-[0_12px_34px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] dark:bg-card/70 dark:shadow-[0_14px_42px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-5">
@@ -97,7 +97,7 @@ export function DocOracleOverviewPanel(props: {
         <p className="mt-1 text-[12px] text-muted-foreground">Synthesized overview from document analysis.</p>
         <div
           className={cn(
-            "mt-3 overflow-y-auto rounded-xl border border-border bg-muted/35 p-4 sm:p-5",
+            "mt-3 overflow-y-auto rounded-xl border border-border bg-muted/35 p-4 transition-[max-height] duration-300 ease-out will-change-[max-height] sm:p-5",
             summaryExpanded ? "max-h-[min(70vh,560px)]" : "max-h-[200px] sm:max-h-[220px]",
           )}
         >
@@ -112,18 +112,13 @@ export function DocOracleOverviewPanel(props: {
             type="button"
             onClick={() => setSummaryExpanded((v) => !v)}
             className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:underline"
+            aria-expanded={summaryExpanded}
           >
-            {summaryExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4" aria-hidden />
-                Collapse summary
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4" aria-hidden />
-                Expand summary
-              </>
-            )}
+            <ChevronDown
+              className={cn("h-4 w-4 transition-transform duration-300 ease-out", summaryExpanded && "rotate-180")}
+              aria-hidden
+            />
+            {summaryExpanded ? "Collapse summary" : "Expand summary"}
           </button>
         ) : null}
 
@@ -132,19 +127,25 @@ export function DocOracleOverviewPanel(props: {
             type="button"
             onClick={() => setPreviewOpen((v) => !v)}
             className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/55 px-4 py-3 text-left text-[12px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/8"
+            aria-expanded={previewOpen}
           >
             <span>{previewOpen ? "Hide extracted source preview" : "Show extracted source preview"}</span>
-            {previewOpen ? <ChevronUp className="h-4 w-4 shrink-0" aria-hidden /> : <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />}
+            <ChevronDown
+              className={cn("h-4 w-4 shrink-0 transition-transform duration-300 ease-out", previewOpen && "rotate-180")}
+              aria-hidden
+            />
           </button>
-          {previewOpen ? (
-            <div className="mt-3 max-h-[min(55vh,480px)] overflow-y-auto rounded-xl border border-border bg-muted/35 p-4 sm:p-5">
-              {overviewBody ? (
-                <DocOracleMarkdown source={overviewBody} />
-              ) : (
-                <p className="text-muted-foreground">No preview text available.</p>
-              )}
+          <AnimatedCollapse open={previewOpen}>
+            <div className="pt-3">
+              <div className="max-h-[min(55vh,480px)] overflow-y-auto rounded-xl border border-border bg-muted/35 p-4 sm:p-5">
+                {overviewBody ? (
+                  <DocOracleMarkdown source={overviewBody} />
+                ) : (
+                  <p className="text-muted-foreground">No preview text available.</p>
+                )}
+              </div>
             </div>
-          ) : null}
+          </AnimatedCollapse>
         </div>
       </section>
 
@@ -166,15 +167,14 @@ export function DocOracleOverviewPanel(props: {
               </span>
             </span>
           </span>
-          {mapOpen ? (
-            <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          ) : (
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          )}
+          <ChevronDown
+            className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ease-out", mapOpen && "rotate-180")}
+            aria-hidden
+          />
         </button>
 
-        {mapOpen ? (
-          <div className="mt-3">
+        <AnimatedCollapse open={mapOpen}>
+          <div className="pt-3">
             <div className="grid gap-2 md:hidden">
               {[
                 { label: "Pages", count: pageCount, tab: "pages" },
@@ -216,7 +216,7 @@ export function DocOracleOverviewPanel(props: {
               />
             </div>
           </div>
-        ) : null}
+        </AnimatedCollapse>
       </section>
 
       <ClickableKeyTopics
