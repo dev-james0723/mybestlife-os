@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FileText } from "lucide-react";
 import type { DocOraclePageRow } from "@/components/document-oracle/docOraclePageTypes";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
@@ -20,14 +20,10 @@ export function PdfPreviewCard(props: {
   const { filePath, pagesSorted, onOpenLightbox } = props;
   const first = useMemo(() => firstPageInOrder(pagesSorted), [pagesSorted]);
   const thumbSrc = useMemo(() => (first ? pageRenderedImageHref(first) : null), [first]);
-  const [thumbFailed, setThumbFailed] = useState(false);
+  const [failedThumbSrc, setFailedThumbSrc] = useState<string | null>(null);
   const pdfSrc = useMemo(() => knowledgeFilesApiHref(filePath), [filePath]);
 
-  useEffect(() => {
-    setThumbFailed(false);
-  }, [thumbSrc]);
-
-  const showImage = Boolean(thumbSrc) && !thumbFailed;
+  const showImage = Boolean(thumbSrc) && failedThumbSrc !== thumbSrc;
 
   return (
     <div className="w-full min-w-0">
@@ -39,7 +35,7 @@ export function PdfPreviewCard(props: {
           "border border-white/[0.12] bg-black/30 shadow-[0_16px_48px_rgba(0,0,0,0.55)]",
           "ring-1 ring-black/40 backdrop-blur-md [-webkit-backdrop-filter:blur(16px)]",
           "transition hover:border-white/[0.18] hover:shadow-[0_20px_56px_rgba(0,0,0,0.6)]",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8E53A]/80",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/80",
         )}
         aria-label="Open document viewer"
       >
@@ -50,7 +46,7 @@ export function PdfPreviewCard(props: {
               src={thumbSrc!}
               alt=""
               className="h-full w-full object-contain object-center"
-              onError={() => setThumbFailed(true)}
+              onError={() => setFailedThumbSrc(thumbSrc)}
             />
           ) : (
             <>

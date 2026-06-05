@@ -50,7 +50,7 @@ export function MindMapNode({ data }: NodeProps<MindMapFlowNode>) {
       className={cn(
         "relative w-[min(100%,200px)] max-w-[180px] rounded-xl border bg-[#0a0a0c]/95 px-2 py-1.5 text-left backdrop-blur-md transition-[opacity,transform,box-shadow] sm:max-w-[220px] sm:px-2.5 sm:py-2",
         accent.border,
-        selected ? cn("ring-2 ring-[#C8E53A]/70", accent.glow) : accent.glow,
+        selected ? cn("ring-2 ring-primary/70", accent.glow) : accent.glow,
         dimmed ? "opacity-35" : "opacity-100",
       )}
     >

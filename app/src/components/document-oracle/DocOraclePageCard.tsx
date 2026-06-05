@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ExternalLink, ImageIcon, MessageCircle } from "lucide-react";
 import type { DocOraclePageRow } from "@/components/document-oracle/docOraclePageTypes";
 import {
@@ -38,23 +38,19 @@ export function DocOraclePageCard(props: {
 }) {
   const { page, filePath, onOpenDetail, onOpen, onOpenSourcePage, onAskAiPage } = props;
   const openDetail = onOpenDetail ?? onOpen;
-  const [thumbFailed, setThumbFailed] = useState(false);
+  const [failedThumbKey, setFailedThumbKey] = useState<string | null>(null);
   const title = useMemo(() => getPageTitle(page), [page]);
   const description = useMemo(() => getPageDescription(page), [page]);
   const badge = useMemo(() => inferPageTypeBadge(page), [page]);
   const { tags, overflow } = useMemo(() => getPageTagsForCard(page, badge), [page, badge]);
   const thumbSrc = useMemo(() => thumbnailHref(page), [page]);
-
-  useEffect(() => {
-    setThumbFailed(false);
-  }, [page.id, page.rendered_image_path, page.rendered_image_url]);
-
-  const showThumb = Boolean(thumbSrc) && !thumbFailed;
+  const thumbKey = `${page.id}:${page.rendered_image_path ?? ""}:${page.rendered_image_url ?? ""}`;
+  const showThumb = Boolean(thumbSrc) && failedThumbKey !== thumbKey;
 
   return (
     <article
       className={cn(
-        "group flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-neutral-950/60 shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition hover:border-white/[0.14] hover:shadow-[0_16px_48px_rgba(0,0,0,0.55)]",
+        "group flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-border bg-card/70 shadow-[0_12px_34px_rgba(0,0,0,0.12)] transition hover:border-primary/25 hover:shadow-[0_16px_42px_rgba(0,0,0,0.16)]",
       )}
     >
       <button
@@ -70,7 +66,7 @@ export function DocOraclePageCard(props: {
               src={thumbSrc!}
               alt=""
               className="h-full w-full object-cover object-top"
-              onError={() => setThumbFailed(true)}
+              onError={() => setFailedThumbKey(thumbKey)}
             />
           ) : (
             <div className="flex h-full w-full flex-col justify-between p-4 text-neutral-800">
@@ -80,12 +76,12 @@ export function DocOraclePageCard(props: {
           )}
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-2 border-t border-white/[0.06] bg-black/35 px-3.5 py-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 border-t border-border bg-background/45 px-3.5 py-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]">
           <div className="flex items-center gap-2">
-            <span className="rounded-md border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/45 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
               p.{page.page_number}
             </span>
-            <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground/90">
+            <span className="rounded-md border border-border bg-muted/35 px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground/90">
               {displayPageTypeLabel(badge)}
             </span>
             <span className="ml-auto flex items-center gap-1">
@@ -103,13 +99,13 @@ export function DocOraclePageCard(props: {
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="max-w-full truncate rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-muted-foreground"
+                  className="max-w-full truncate rounded-full border border-border bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground"
                 >
                   {t}
                 </span>
               ))}
               {overflow > 0 ? (
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-muted-foreground">
+                <span className="rounded-full border border-border bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
                   +{overflow}
                 </span>
               ) : null}
@@ -118,7 +114,7 @@ export function DocOraclePageCard(props: {
         </div>
       </button>
 
-      <div className="flex flex-wrap gap-1.5 border-t border-white/[0.06] bg-black/45 px-3 py-2">
+      <div className="flex flex-wrap gap-1.5 border-t border-border bg-background/55 px-3 py-2">
         {filePath && onOpenSourcePage ? (
           <button
             type="button"
@@ -126,7 +122,7 @@ export function DocOraclePageCard(props: {
               e.stopPropagation();
               onOpenSourcePage(page.page_number);
             }}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1 text-[10.5px] font-medium text-muted-foreground transition hover:bg-white/[0.09] hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/35 px-2 py-1 text-[10.5px] font-medium text-muted-foreground transition hover:border-primary/25 hover:bg-primary/8 hover:text-foreground"
           >
             <ExternalLink className="h-3 w-3" aria-hidden />
             Source
@@ -139,7 +135,7 @@ export function DocOraclePageCard(props: {
               e.stopPropagation();
               onAskAiPage(page);
             }}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1 text-[10.5px] font-medium text-muted-foreground transition hover:bg-white/[0.09] hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/35 px-2 py-1 text-[10.5px] font-medium text-muted-foreground transition hover:border-primary/25 hover:bg-primary/8 hover:text-foreground"
           >
             <MessageCircle className="h-3 w-3" aria-hidden />
             Ask Doc Oracle

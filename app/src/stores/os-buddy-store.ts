@@ -57,6 +57,7 @@ export type OSBuddyRoamInterruptReason =
 interface OSBuddyRuntimeState {
   mood: OSBuddyMood;
   previousMood: OSBuddyMood | null;
+  osBuddyEnabledOverride: boolean | null;
 
   bubble: {
     message: string;
@@ -122,6 +123,7 @@ interface OSBuddyRuntimeState {
 
   setMood: (mood: OSBuddyMood) => void;
   temporarilySetMood: (mood: OSBuddyMood, durationMs?: number) => void;
+  setOSBuddyEnabledOverride: (enabled: boolean | null) => void;
 
   showBubble: (
     message: string,
@@ -202,6 +204,7 @@ function inactiveAirPilotPlusCountdown(durationMs = 0): AIPilotPlusCountdownStat
 export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   mood: "idle",
   previousMood: null,
+  osBuddyEnabledOverride: null,
 
   bubble: null,
 
@@ -275,6 +278,10 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
         };
       });
     }, durationMs);
+  },
+
+  setOSBuddyEnabledOverride: (enabled) => {
+    set({ osBuddyEnabledOverride: enabled });
   },
 
   showBubble: (message, type = "system", options) => {

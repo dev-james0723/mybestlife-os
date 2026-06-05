@@ -23,8 +23,8 @@ export function InfographicStyleSelector(props: {
               className={cn(
                 "touch-manipulation rounded-2xl border p-3 text-left text-[12px] transition",
                 active
-                  ? "border-[#C8E53A]/70 bg-[#C8E53A]/12 text-foreground"
-                  : "border-border bg-muted/35 text-muted-foreground hover:border-white/18",
+                  ? "border-primary/45 bg-primary/10 text-primary"
+                  : "border-border bg-muted/35 text-muted-foreground hover:border-primary/25",
                 props.disabled && "pointer-events-none opacity-50",
               )}
             >

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { useGSAP } from "@gsap/react";
+import { ArrowLeft, FileText, MessageCircle, Sparkles } from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
@@ -40,6 +41,9 @@ import type {
   DocOracleGlossaryRow,
   DocOracleSectionRow,
 } from "@/components/document-oracle/docOracleWorkspaceTypes";
+import { gsap, registerGSAP } from "@/lib/motion/register-gsap";
+
+registerGSAP();
 
 export type { DocOracleAnalysis, DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
 
@@ -76,12 +80,15 @@ export function DocOracleWorkspace(props: {
     prompt: string;
     retrievalFocus: DocOracleChatRetrievalFocus | null;
   } | null>(null);
-  const [displayedCategories, setDisplayedCategories] = useState<SuggestedQuestionCategory[]>(suggestedQuestionCategories);
+  const [enrichedCategories, setEnrichedCategories] = useState<{
+    documentId: string;
+    categories: SuggestedQuestionCategory[];
+  } | null>(null);
   const chatRef = useRef<DocOracleChatPanelHandle>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setDisplayedCategories(suggestedQuestionCategories);
-  }, [suggestedQuestionCategories]);
+  const displayedCategories =
+    enrichedCategories?.documentId === item.id ? enrichedCategories.categories : suggestedQuestionCategories;
 
   useEffect(() => {
     if (!isCompletedAnalysis(analysis)) return;
@@ -100,7 +107,7 @@ export function DocOracleWorkspace(props: {
           const o = data as Record<string, unknown>;
           if (o.source !== "gemini") return;
           const cats = parseSuggestedQuestionCategoriesPayload(data);
-          if (cats.length >= 2) setDisplayedCategories(cats);
+          if (cats.length >= 2) setEnrichedCategories({ documentId: item.id, categories: cats });
         } catch {
           /* optional enrichment — ignore */
         }
@@ -257,13 +264,66 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
     handleTabChange("chat");
   };
 
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(
+        {
+          reduceMotion: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const reduceMotion = Boolean(context.conditions?.reduceMotion);
+          const shellItems = gsap.utils.toArray<HTMLElement>("[data-doc-oracle-shell]", workspaceRef.current);
+          if (reduceMotion) {
+            gsap.set(shellItems, { autoAlpha: 1, clearProps: "transform" });
+            return;
+          }
+          gsap.from(shellItems, {
+            autoAlpha: 0,
+            y: 12,
+            duration: 0.46,
+            ease: "power2.out",
+            stagger: 0.07,
+          });
+        },
+      );
+      return () => mm.revert();
+    },
+    { scope: workspaceRef },
+  );
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(
+        {
+          reduceMotion: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const reduceMotion = Boolean(context.conditions?.reduceMotion);
+          const panel = workspaceRef.current?.querySelector<HTMLElement>('[data-doc-oracle-tab-panel][data-state="active"]');
+          if (!panel) return;
+          if (reduceMotion) {
+            gsap.set(panel, { autoAlpha: 1, clearProps: "transform" });
+            return;
+          }
+          gsap.fromTo(
+            panel,
+            { autoAlpha: 0, y: 8 },
+            { autoAlpha: 1, y: 0, duration: 0.28, ease: "power2.out", overwrite: "auto" },
+          );
+        },
+      );
+      return () => mm.revert();
+    },
+    { scope: workspaceRef, dependencies: [tab], revertOnUpdate: true },
+  );
+
   return (
-    <div className="doc-oracle-workspace relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
-      <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col gap-5 px-3 py-6 sm:px-4 sm:py-8 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+    <div ref={workspaceRef} className="doc-oracle-workspace relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
+      <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col gap-3 px-0 py-3 sm:gap-5 sm:px-4 sm:py-8 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl">
+        <div
+          data-doc-oracle-shell
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0 space-y-2">
@@ -275,14 +335,14 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               Knowledge Base
             </Link>
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted/60 text-[#C8E53A] shadow-inner">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted/60 text-primary shadow-inner">
                 <Sparkles className="h-4 w-4" aria-hidden />
               </span>
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
+                <h1 className="text-pretty break-words text-lg font-semibold leading-tight tracking-tight [overflow-wrap:anywhere] sm:text-xl">
                   {analysis?.document_title ?? item.title}
                 </h1>
-                <p className="text-[12px] text-muted-foreground">
+                <p className="truncate text-[12px] text-muted-foreground">
                   {isReady ? (
                     <>
                       Doc Oracle · {readyAnalysis.parser ?? "MinerU"}
@@ -300,21 +360,42 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               </div>
             </div>
           </div>
-        </motion.div>
+          <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
+            <OSPrimaryAction
+              type="button"
+              osSize="compact"
+              onClick={() => handleTabChange("chat")}
+              disabled={!isReady}
+              aria-label="Ask Doc Oracle"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Ask
+            </OSPrimaryAction>
+            {item.filePath ? (
+              <OSControl
+                type="button"
+                osSize="compact"
+                onClick={() => handleTabChange("source")}
+                aria-label="Open source document"
+              >
+                <FileText className="h-4 w-4" aria-hidden />
+                Source
+              </OSControl>
+            ) : null}
+          </div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.4, ease: "easeOut" }}
-          className={cn("lg-glass-panel flex min-h-[420px] flex-1 flex-col overflow-visible px-0 py-5 sm:px-4 sm:py-6 md:px-5")}
+        <div
+          data-doc-oracle-shell
+          className={cn("lg-glass-panel flex min-h-[420px] flex-1 flex-col overflow-visible rounded-2xl px-2 py-3 sm:rounded-[20px] sm:px-4 sm:py-6 md:px-5")}
         >
           {!isReady ? (
             <div
               role="status"
-              className="mb-4 rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-[13px] leading-relaxed text-amber-50 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]"
+              className="mb-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[13px] leading-relaxed text-amber-950 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] dark:text-amber-50"
             >
-              <p className="font-medium text-amber-100">Workspace shell — extraction not finished</p>
-              <p className="mt-1 text-[12px] text-amber-100/85">
+              <p className="font-medium text-amber-950 dark:text-amber-100">Workspace shell — extraction not finished</p>
+              <p className="mt-1 text-[12px] text-amber-900/85 dark:text-amber-100/85">
                 When MinerU completes and normalizes, every tab fills with structured intelligence. Re-open after the
                 knowledge card shows <strong className="text-foreground">ready</strong>.
               </p>
@@ -328,6 +409,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="overview"
               id="doc-oracle-panel-overview"
               aria-labelledby="doc-oracle-tab-overview"
+              data-doc-oracle-tab-panel
               className="mt-0 min-h-[280px] min-w-0 w-full max-w-full space-y-5 text-[13px] leading-relaxed text-muted-foreground"
             >
               {!isReady ? (
@@ -363,6 +445,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="mindMap"
               id="doc-oracle-panel-mindMap"
               aria-labelledby="doc-oracle-tab-mindMap"
+              data-doc-oracle-tab-panel
               className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
               {!isReady ? (
@@ -399,6 +482,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="chat"
               id="doc-oracle-panel-chat"
               aria-labelledby="doc-oracle-tab-chat"
+              data-doc-oracle-tab-panel
               className="mt-0 flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col text-[13px] text-muted-foreground"
             >
               {isReady ? (
@@ -426,6 +510,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="pages"
               id="doc-oracle-panel-pages"
               aria-labelledby="doc-oracle-tab-pages"
+              data-doc-oracle-tab-panel
               className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
               {pages.length === 0 ? (
@@ -445,6 +530,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="sections"
               id="doc-oracle-panel-sections"
               aria-labelledby="doc-oracle-tab-sections"
+              data-doc-oracle-tab-panel
               className="mt-0 text-[13px] text-muted-foreground"
             >
               {sections.length === 0 ? (
@@ -468,6 +554,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="glossary"
               id="doc-oracle-panel-glossary"
               aria-labelledby="doc-oracle-tab-glossary"
+              data-doc-oracle-tab-panel
               className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
               {!isReady ? (
@@ -495,6 +582,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="visuals"
               id="doc-oracle-panel-visuals"
               aria-labelledby="doc-oracle-tab-visuals"
+              data-doc-oracle-tab-panel
               className="mt-0 text-[13px] text-muted-foreground"
             >
               <DocOracleVisualsPanel sections={sections} visuals={visuals} onOpen={setVisualPreview} />
@@ -504,6 +592,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="infographic"
               id="doc-oracle-panel-infographic"
               aria-labelledby="doc-oracle-tab-infographic"
+              data-doc-oracle-tab-panel
               className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
               <DocOracleInfographicPanel documentId={item.id} enabled={isReady} />
@@ -513,6 +602,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="audio_summary"
               id="doc-oracle-panel-audio_summary"
               aria-labelledby="doc-oracle-tab-audio_summary"
+              data-doc-oracle-tab-panel
               className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
               <DocOracleAudioSummaryPanel
@@ -526,6 +616,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               value="source"
               id="doc-oracle-panel-source"
               aria-labelledby="doc-oracle-tab-source"
+              data-doc-oracle-tab-panel
               className="mt-0 text-[13px] text-muted-foreground"
             >
               <DocOracleSourcePanel
@@ -538,7 +629,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               />
             </TabsContent>
           </Tabs>
-        </motion.div>
+        </div>
       </div>
 
       {pageDetail ? (

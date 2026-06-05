@@ -4,8 +4,8 @@ import { ExternalLink } from "lucide-react";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import { cn } from "@/lib/utils";
 
-const limeBtn =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8E53A] px-3 py-2 text-[12px] font-semibold text-[#0d0d0d] shadow-sm transition-[filter,transform] duration-[120ms] ease-out hover:scale-[1.02] hover:brightness-[1.12]";
+const primaryActionBtn =
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition-[background,transform] duration-150 ease-out hover:bg-primary/90 active:translate-y-px";
 
 export function DocOracleSourcePreview(props: {
   filePath: string | null | undefined;
@@ -34,7 +34,7 @@ export function DocOracleSourcePreview(props: {
           href={openHref}
           target="_blank"
           rel="noreferrer"
-          className={cn(limeBtn, "no-underline")}
+          className={cn(primaryActionBtn, "no-underline")}
         >
           <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           {previewPage != null && previewPage > 0 ? `Open source at page ${previewPage}` : "Open source"}

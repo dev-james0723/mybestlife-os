@@ -21,13 +21,13 @@ export function OverviewVisualHighlights(props: {
     <section>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <ImageIcon className="h-4 w-4 text-[#C8E53A]/80" aria-hidden />
+          <ImageIcon className="h-4 w-4 text-primary" aria-hidden />
           <h3 className="text-[13px] font-semibold tracking-tight text-foreground">Visual highlights</h3>
         </div>
         <button
           type="button"
           onClick={onViewAll}
-          className="rounded-lg border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[11.5px] font-semibold text-foreground/90 transition hover:border-[#C8E53A]/35 hover:bg-[#C8E53A]/10"
+          className="rounded-lg border border-border bg-background/45 px-3 py-1.5 text-[11.5px] font-semibold text-foreground/90 transition hover:border-primary/35 hover:bg-primary/8"
         >
           View all visuals
         </button>
@@ -35,7 +35,7 @@ export function OverviewVisualHighlights(props: {
       <p className="mb-3 text-[12px] text-muted-foreground">Tap a thumbnail for details, source page, and Ask Doc Oracle.</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {withImages.map((v) => (
-          <div key={v.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/25 shadow-inner">
+          <div key={v.id} className="overflow-hidden rounded-2xl border border-border bg-card/60 shadow-inner">
             <button
               type="button"
               onClick={() => onOpenVisual(v)}
@@ -54,12 +54,12 @@ export function OverviewVisualHighlights(props: {
                 </p>
               </div>
             </button>
-            <div className="flex items-center justify-between gap-2 border-t border-white/8 px-2.5 py-1.5">
+            <div className="flex items-center justify-between gap-2 border-t border-border px-2.5 py-1.5">
               {v.source_page_number != null && openSourceAtPage ? (
                 <button
                   type="button"
                   className={cn(
-                    "rounded-full border border-white/12 bg-black/30 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground transition hover:border-[#C8E53A]/40 hover:text-[#d4f06a]",
+                    "rounded-full border border-border bg-background/45 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground transition hover:border-primary/40 hover:text-primary",
                   )}
                   onClick={() => openSourceAtPage(v.source_page_number as number)}
                 >

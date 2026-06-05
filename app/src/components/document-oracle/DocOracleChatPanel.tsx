@@ -15,11 +15,11 @@ import { knowledgeFilesApiHref, sourcePdfHref } from "@/components/document-orac
 import { displayVisualDescription, displayVisualTitle } from "@/components/document-oracle/docOracleVisualLabels";
 import { cn } from "@/lib/utils";
 
-const limeBtn =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8E53A] px-4 py-2 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition-[filter,transform] duration-[120ms] ease-out hover:scale-[1.02] hover:brightness-[1.12] disabled:opacity-50";
+const primaryActionBtn =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground shadow-sm transition-[background,transform,box-shadow] duration-150 ease-out hover:bg-primary/90 active:translate-y-px disabled:pointer-events-none disabled:opacity-50";
 
-const limeGhostBtn =
-  "inline-flex items-center justify-center gap-2 rounded-lg border border-[#C8E53A]/35 bg-transparent px-3 py-2 text-[12px] font-semibold text-[#d4f06a] transition hover:bg-[#C8E53A]/10 disabled:opacity-50";
+const secondaryActionBtn =
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border bg-background/55 px-3 py-2 text-[12px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/8 disabled:pointer-events-none disabled:opacity-50";
 
 export type ChatCitation = {
   chunk_id?: string;
@@ -146,20 +146,20 @@ function ChatBubble({
         className={cn(
           "relative w-full min-w-0 overflow-hidden rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]",
           user
-            ? "rounded-br-sm px-4 py-3 text-[13px] leading-relaxed bg-[#C8E53A] text-[#0d0d0d] dark:bg-[#c5df42] dark:text-[#0d0d0d]"
-            : "rounded-bl-sm border border-white/10 bg-white/[0.05] px-4 py-4 text-[15px] leading-7 text-foreground backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)] sm:px-5 sm:py-5 sm:text-[15.5px]",
+            ? "rounded-br-sm bg-primary px-4 py-3 text-[13px] leading-relaxed text-primary-foreground"
+            : "rounded-bl-sm border border-border bg-card/70 px-4 py-4 text-[15px] leading-7 text-foreground backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)] sm:px-5 sm:py-5 sm:text-[15.5px]",
         )}
       >
         {!user ? (
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#C8E53A]/[0.07] to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] to-transparent"
             aria-hidden
           />
         ) : null}
         <span
           className={cn(
             "pointer-events-none absolute z-0 h-3 w-3 rotate-45 shadow-sm",
-            user ? "bottom-1.5 right-3 bg-[#C8E53A] dark:bg-[#c5df42]" : "bottom-1.5 left-3 border-b border-l border-[#C8E53A]/25 bg-[#121212]/85",
+            user ? "bottom-1.5 right-3 bg-primary" : "bottom-1.5 left-3 border-b border-l border-border bg-card",
           )}
           aria-hidden
         />
@@ -175,7 +175,7 @@ function BouncingDots({ className }: { className?: string }) {
       {[0, 150, 300].map((delay) => (
         <span
           key={delay}
-          className="inline-block h-2 w-2 rounded-full bg-[#C8E53A]/90 motion-safe:animate-bounce"
+          className="inline-block h-2 w-2 rounded-full bg-primary motion-safe:animate-bounce"
           style={{ animationDelay: `${delay}ms` }}
         />
       ))}
@@ -224,7 +224,7 @@ function AssistantMeta(props: {
                 key={p}
                 type="button"
                 onClick={() => openPage(p)}
-                className="rounded-full border border-[#C8E53A]/35 bg-[#C8E53A]/10 px-3 py-1 text-[12px] font-medium text-[#d4f06a] transition hover:bg-[#C8E53A]/18"
+                className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[12px] font-medium text-primary transition hover:bg-primary/15"
               >
                 p.{p}
               </button>
@@ -240,14 +240,14 @@ function AssistantMeta(props: {
             {citations.slice(0, 10).map((c, j) => (
               <li
                 key={j}
-                className="rounded-xl border border-white/5 bg-black/20 px-3 py-2 text-[11.5px] leading-relaxed text-muted-foreground"
+                className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-[11.5px] leading-relaxed text-muted-foreground"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   {c.page != null ? (
                     <button
                       type="button"
                       onClick={() => openPage(c.page as number)}
-                      className="font-semibold text-[#C8E53A] underline-offset-2 hover:underline"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
                     >
                       p.{c.page}
                     </button>
@@ -268,7 +268,7 @@ function AssistantMeta(props: {
                   ) : null}
                 </div>
                 {c.excerpt ? (
-                  <p className="mt-1.5 border-l-2 border-[#C8E53A]/35 pl-2 italic text-muted-foreground/95">
+                  <p className="mt-1.5 border-l-2 border-primary/30 pl-2 italic text-muted-foreground/95">
                     “{c.excerpt}”
                   </p>
                 ) : null}
@@ -287,7 +287,7 @@ function AssistantMeta(props: {
                 key={`r-${p}`}
                 type="button"
                 onClick={() => openPage(p)}
-                className="rounded-lg border border-border bg-muted/30 px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:border-[#C8E53A]/30 hover:text-foreground"
+                className="rounded-lg border border-border bg-muted/30 px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
               >
                 p.{p}
               </button>
@@ -317,8 +317,8 @@ function AssistantMeta(props: {
                   onClick={() => onOpenVisualById?.(v.id)}
                   disabled={!onOpenVisualById}
                   className={cn(
-                    "flex min-w-0 w-full gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/25 p-2 text-left transition",
-                    onOpenVisualById ? "hover:border-[#C8E53A]/35" : "opacity-80",
+                    "flex min-w-0 w-full gap-2 overflow-hidden rounded-xl border border-border bg-muted/30 p-2 text-left transition",
+                    onOpenVisualById ? "hover:border-primary/30" : "opacity-80",
                   )}
                 >
                   {thumb ? (
@@ -695,43 +695,43 @@ export function DocOracleChatPanel({
   return (
     <div className="flex w-full max-w-none flex-1 flex-col min-h-[72dvh] sm:min-h-[640px]">
       <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
-        <p className="shrink-0 text-[12px] leading-relaxed text-muted-foreground">
-          Answers use retrieved passages from this document only. Open the Source tab or a new tab from page chips to
-          jump in the PDF.
-        </p>
-
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-medium text-muted-foreground">
-          <span className="uppercase tracking-wide">Conversation history</span>
-          <select
-            className="h-10 w-full max-w-full rounded-lg border border-border bg-muted/50 px-2 text-[13px] text-foreground outline-none focus:border-[#C8E53A]/45"
-            value={sessionId ?? ""}
-            disabled={historyLoading}
-            onChange={onSessionSelect}
-          >
-            <option value="">{sessions.length === 0 ? "No saved conversations yet" : "New chat (unsaved)"}</option>
-            {sessions.map((s) => (
-              <option key={s.id} value={s.id}>
-                {(s.title || "Doc Oracle").slice(0, 48)}
-                {s.last_message ? ` — ${s.last_message.slice(0, 56)}` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" onClick={newChat} className={cn(limeGhostBtn, "shrink-0 self-start sm:self-center")}>
-          New chat
-        </button>
-      </div>
+        <div className="shrink-0 rounded-2xl border border-border bg-card/55 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 text-[12px] leading-relaxed text-muted-foreground">
+              Grounded answers from this document only.
+            </p>
+            <button type="button" onClick={newChat} className={cn(secondaryActionBtn, "h-9 min-h-9 shrink-0 px-3")}>
+              New
+            </button>
+          </div>
+          <label className="mt-2 block text-[11px] font-medium text-muted-foreground">
+            <span className="sr-only">Conversation history</span>
+            <select
+              className="h-10 w-full max-w-full rounded-xl border border-border bg-background/55 px-2.5 text-[13px] text-foreground outline-none focus:border-primary/45"
+              value={sessionId ?? ""}
+              disabled={historyLoading}
+              onChange={onSessionSelect}
+            >
+              <option value="">{sessions.length === 0 ? "No saved conversations yet" : "New chat (unsaved)"}</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {(s.title || "Doc Oracle").slice(0, 48)}
+                  {s.last_message ? ` — ${s.last_message.slice(0, 56)}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
       {starters.length > 0 && messages.length === 0 && !historyLoading ? (
-        <div className="flex w-full max-w-none shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="flex w-full max-w-none shrink-0 gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {starters.map((s) => (
             <button
               key={s}
               type="button"
               disabled={loading}
               onClick={() => void runSend(s, null)}
-              className="w-full max-w-full min-w-0 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-left text-[12px] leading-snug text-muted-foreground transition hover:border-border hover:bg-muted hover:text-foreground sm:w-auto sm:max-w-[min(100%,28rem)] sm:rounded-full sm:py-1.5 sm:text-[11.5px]"
+              className="min-w-[14rem] max-w-[18rem] shrink-0 rounded-full border border-border bg-muted/40 px-3 py-2 text-left text-[12px] leading-snug text-muted-foreground transition hover:border-primary/25 hover:bg-primary/8 hover:text-foreground sm:min-w-0 sm:max-w-[min(100%,28rem)] sm:py-1.5 sm:text-[11.5px]"
             >
               <span className="line-clamp-2 sm:line-clamp-none">{s}</span>
             </button>
@@ -780,7 +780,7 @@ export function DocOracleChatPanel({
                     type="button"
                     disabled={!m.userQuestion || imgBusyIdx !== null || loading}
                     onClick={() => void runVisualExplanation(i)}
-                    className={cn(limeBtn, "border border-[#C8E53A]/20 bg-[#C8E53A] text-[12px]")}
+                    className={cn(primaryActionBtn, "text-[12px]")}
                   >
                     {imgBusyIdx === i ? (
                       <>
@@ -798,14 +798,14 @@ export function DocOracleChatPanel({
                     <>
                       <button
                         type="button"
-                        className={limeGhostBtn}
+                        className={secondaryActionBtn}
                         onClick={() => window.open(m.generated_image_url ?? "", "_blank", "noopener,noreferrer")}
                       >
                         Open image
                       </button>
                       <button
                         type="button"
-                        className={limeGhostBtn}
+                        className={secondaryActionBtn}
                         disabled={imgBusyIdx !== null || loading}
                         onClick={() => {
                           setMessages((prev) => {
@@ -839,7 +839,7 @@ export function DocOracleChatPanel({
                 ) : null}
 
                 {m.generated_image_url ? (
-                  <div className="mt-2 w-full max-w-full space-y-2 rounded-xl border border-white/10 bg-black/30 p-3 md:max-w-[96%] lg:max-w-[92%]">
+                  <div className="mt-2 w-full max-w-full space-y-2 rounded-xl border border-border bg-muted/30 p-3 md:max-w-[96%] lg:max-w-[92%]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       Image explanation
                     </p>
@@ -861,16 +861,16 @@ export function DocOracleChatPanel({
 
       {error ? <p className="shrink-0 text-[12px] text-rose-600 dark:text-rose-300/90">{error}</p> : null}
 
-      <div className="sticky bottom-0 z-30 w-full shrink-0 border-t border-white/10 bg-black/70 px-3 pt-3 backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] max-sm:pr-[max(0.75rem,calc(env(safe-area-inset-right,0px)+4.75rem))] sm:bg-background/80 sm:px-0 sm:pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:backdrop-blur-sm">
-        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
+      <div className="sticky bottom-0 z-30 w-full shrink-0 border-t border-border bg-background/88 px-3 pt-3 backdrop-blur-xl [-webkit-backdrop-filter:blur(14px)] pb-[calc(env(safe-area-inset-bottom,0px)+0.85rem)] max-sm:pr-[max(0.75rem,calc(env(safe-area-inset-right,0px)+4.75rem))] sm:bg-background/80 sm:px-0 sm:pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:backdrop-blur-sm">
+        <div className="flex w-full min-w-0 items-end gap-2">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            rows={3}
+            rows={2}
             maxLength={12000}
             placeholder="Ask Doc Oracle…"
-            className="min-h-[96px] w-full min-w-0 flex-1 resize-y rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-[#C8E53A]/45"
+            className="min-h-[72px] max-h-[180px] w-full min-w-0 flex-1 resize-y rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-primary/45"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -881,11 +881,11 @@ export function DocOracleChatPanel({
           <button
             type="button"
             disabled={loading}
-            className={cn(limeBtn, "min-h-[44px] w-full shrink-0 sm:w-auto")}
+            className={cn(primaryActionBtn, "h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-4")}
             onClick={() => void runSend(input, null)}
           >
             <Send className="h-4 w-4" aria-hidden />
-            Send
+            <span className="sr-only sm:not-sr-only">Send</span>
           </button>
         </div>
       </div>

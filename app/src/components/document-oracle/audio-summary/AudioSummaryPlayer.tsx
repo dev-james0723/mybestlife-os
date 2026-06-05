@@ -55,7 +55,7 @@ export function AudioSummaryPlayer(props: { src: string }) {
             if (playing) void el.pause();
             else void el.play();
           }}
-          className="inline-flex min-h-[44px] min-w-[88px] items-center justify-center rounded-xl bg-[#C8E53A] px-4 text-[13px] font-semibold text-[#0d0d0d]"
+          className="inline-flex min-h-[44px] min-w-[88px] items-center justify-center rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground"
         >
           {playing ? "Pause" : "Play"}
         </button>
@@ -97,7 +97,7 @@ export function AudioSummaryPlayer(props: { src: string }) {
           el.currentTime = (x / rect.width) * duration;
         }}
       >
-        <div className="h-2 rounded-full bg-[#C8E53A]/80" style={{ width: `${pct}%` }} />
+        <div className="h-2 rounded-full bg-primary" style={{ width: `${pct}%` }} />
       </div>
       <div className="flex flex-wrap gap-2">
         <a

@@ -30,7 +30,7 @@ export function DocOracleRelatedVisuals(props: {
             key={v.id}
             type="button"
             onClick={() => onOpen(v)}
-            className="flex gap-2 overflow-hidden rounded-2xl border border-border bg-muted/40 p-2 text-left transition hover:border-[#C8E53A]/35"
+            className="flex gap-2 overflow-hidden rounded-2xl border border-border bg-muted/40 p-2 text-left transition hover:border-primary/30 hover:bg-primary/5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

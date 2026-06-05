@@ -23,9 +23,12 @@ export function DocOracleSourcePanel(props: {
 
   useEffect(() => {
     if (sourceJumpPage == null) return;
-    setStagedJumpPage(sourceJumpPage);
-    setLightboxOpen(true);
-    onClearSourceJump();
+    const timer = window.setTimeout(() => {
+      setStagedJumpPage(sourceJumpPage);
+      setLightboxOpen(true);
+      onClearSourceJump();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [sourceJumpPage, onClearSourceJump]);
 
   if (!filePath) {
@@ -55,7 +58,7 @@ export function DocOracleSourcePanel(props: {
         <p className="text-[11px] text-muted-foreground">
           Diagnostics:{" "}
           <a
-            className="text-[#C8E53A] underline-offset-4 hover:underline"
+            className="text-primary underline-offset-4 hover:underline"
             href={`/api/document-brain/${encodeURIComponent(item.id)}/debug`}
             target="_blank"
             rel="noreferrer"

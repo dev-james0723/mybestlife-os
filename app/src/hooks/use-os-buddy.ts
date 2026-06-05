@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/use-settings";
 import {
@@ -175,6 +175,8 @@ export function useOSBuddy() {
   const mood = useOSBuddyStore((s) => s.mood);
   const setMood = useOSBuddyStore((s) => s.setMood);
   const showBubble = useOSBuddyStore((s) => s.showBubble);
+  const enabledOverride = useOSBuddyStore((s) => s.osBuddyEnabledOverride);
+  const setOSBuddyEnabledOverride = useOSBuddyStore((s) => s.setOSBuddyEnabledOverride);
 
   const fallback = getFallbackProfile();
   const source = useMemo(() => profileFromSource(profile, fallback), [fallback, profile]);
@@ -182,7 +184,7 @@ export function useOSBuddy() {
   const petId = source.os_buddy_pet_id;
   const pet = getOSBuddyPet(petId);
   const name = source.os_buddy_name || DEFAULT_OS_BUDDY_NAME;
-  const enabled = source.os_buddy_enabled;
+  const enabled = enabledOverride ?? source.os_buddy_enabled;
   const position = source.os_buddy_position;
 
   const animationState: OSBuddyAnimationState = getOSBuddyAnimationState({
@@ -221,8 +223,48 @@ export function useOSBuddy() {
     writeStorageJson(PROFILE_FALLBACK_STORAGE_KEY, merged);
   }, []);
 
+  useEffect(() => {
+    if (enabledOverride === null) return;
+    if (profile?.os_buddy_enabled === enabledOverride) {
+      setOSBuddyEnabledOverride(null);
+    }
+  }, [enabledOverride, profile?.os_buddy_enabled, setOSBuddyEnabledOverride]);
+
   const saveProfilePatch = useCallback(
     async (patch: UpdateProfileInput) => {
+      if (typeof patch.os_buddy_enabled === "boolean") {
+        setOSBuddyEnabledOverride(patch.os_buddy_enabled);
+      }
+
+      persistFallbackProfile({
+        os_buddy_pet_id: normalizePetId(patch.os_buddy_pet_id),
+        os_buddy_name: typeof patch.os_buddy_name === "string" ? patch.os_buddy_name : undefined,
+        os_buddy_enabled:
+          typeof patch.os_buddy_enabled === "boolean" ? patch.os_buddy_enabled : undefined,
+        os_buddy_position: patch.os_buddy_position
+          ? normalizePosition(patch.os_buddy_position)
+          : undefined,
+        os_buddy_onboarding_completed:
+          typeof patch.os_buddy_onboarding_completed === "boolean"
+            ? patch.os_buddy_onboarding_completed
+            : undefined,
+        os_buddy_interaction_stats: patch.os_buddy_interaction_stats
+          ? normalizeInteractionStats(patch.os_buddy_interaction_stats)
+          : undefined,
+        os_buddy_unlocked_pets: patch.os_buddy_unlocked_pets
+          ? normalizeUnlockedPets(patch.os_buddy_unlocked_pets)
+          : undefined,
+      });
+
+      queryClient.setQueryData<UserProfile | undefined>(["profile"], (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          ...(patch as Partial<UserProfile>),
+          updated_at: new Date().toISOString(),
+        };
+      });
+
       try {
         const saved = await settingsRepository.updateProfile(patch);
         queryClient.setQueryData(["profile"], saved);
@@ -237,28 +279,11 @@ export function useOSBuddy() {
           os_buddy_unlocked_pets: normalizeUnlockedPets(saved.os_buddy_unlocked_pets),
         });
       } catch {
-        persistFallbackProfile({
-          os_buddy_pet_id: normalizePetId(patch.os_buddy_pet_id),
-          os_buddy_name: typeof patch.os_buddy_name === "string" ? patch.os_buddy_name : undefined,
-          os_buddy_enabled:
-            typeof patch.os_buddy_enabled === "boolean" ? patch.os_buddy_enabled : undefined,
-          os_buddy_position: patch.os_buddy_position
-            ? normalizePosition(patch.os_buddy_position)
-            : undefined,
-          os_buddy_onboarding_completed:
-            typeof patch.os_buddy_onboarding_completed === "boolean"
-              ? patch.os_buddy_onboarding_completed
-              : undefined,
-          os_buddy_interaction_stats: patch.os_buddy_interaction_stats
-            ? normalizeInteractionStats(patch.os_buddy_interaction_stats)
-            : undefined,
-          os_buddy_unlocked_pets: patch.os_buddy_unlocked_pets
-            ? normalizeUnlockedPets(patch.os_buddy_unlocked_pets)
-            : undefined,
-        });
+        // Keep the optimistic local state. OS Buddy should obey the user's
+        // show/hide action immediately even if profile sync is temporarily down.
       }
     },
-    [persistFallbackProfile, queryClient],
+    [persistFallbackProfile, queryClient, setOSBuddyEnabledOverride],
   );
 
   const savePosition = useCallback(

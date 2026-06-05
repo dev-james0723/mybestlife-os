@@ -5,22 +5,7 @@ import { cn } from "@/lib/utils";
 import { findGlossaryForTopic, findSectionForTopic } from "@/components/document-oracle/overview/overviewHelpers";
 import type { DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
 
-const TONE_CLASSES = [
-  "border-sky-400/25 bg-sky-500/[0.08] text-sky-50/95 hover:border-sky-300/45 hover:bg-sky-500/[0.14]",
-  "border-violet-400/25 bg-violet-500/[0.08] text-violet-50/95 hover:border-violet-300/45 hover:bg-violet-500/[0.14]",
-  "border-teal-400/25 bg-teal-500/[0.08] text-teal-50/95 hover:border-teal-300/45 hover:bg-teal-500/[0.14]",
-  "border-amber-400/25 bg-amber-500/[0.08] text-amber-50/95 hover:border-amber-300/45 hover:bg-amber-500/[0.14]",
-  "border-rose-400/25 bg-rose-500/[0.08] text-rose-50/95 hover:border-rose-300/45 hover:bg-rose-500/[0.14]",
-  "border-lime-400/25 bg-lime-500/[0.08] text-lime-50/95 hover:border-lime-300/45 hover:bg-lime-500/[0.14]",
-];
-
-function toneForTopic(topic: string): string {
-  let h = 0;
-  for (let i = 0; i < topic.length; i++) {
-    h = (h + topic.charCodeAt(i) * (i + 1)) % 1_000_000;
-  }
-  return TONE_CLASSES[h % TONE_CLASSES.length] ?? TONE_CLASSES[0];
-}
+const topicTone = "border-border bg-background/50 text-foreground hover:border-primary/35 hover:bg-primary/8";
 
 export function ClickableKeyTopics(props: {
   topics: string[];
@@ -69,7 +54,7 @@ export function ClickableKeyTopics(props: {
   return (
     <section id={anchorId} className="scroll-mt-24">
       <div className="mb-2 flex items-center gap-2">
-        <Hash className="h-4 w-4 text-[#C8E53A]/80" aria-hidden />
+        <Hash className="h-4 w-4 text-primary" aria-hidden />
         <h3 className="text-[13px] font-semibold tracking-tight text-foreground">Key topics</h3>
       </div>
       <p className="mb-3 text-[12px] text-muted-foreground">
@@ -83,7 +68,7 @@ export function ClickableKeyTopics(props: {
             onClick={() => handleTopicClick(t)}
             className={cn(
               "inline-flex max-w-full min-h-[40px] touch-manipulation items-center gap-2 rounded-full border px-3 py-2 text-left text-[12px] font-medium leading-snug transition active:scale-[0.99]",
-              toneForTopic(t),
+              topicTone,
             )}
           >
             {kindIcon(t)}

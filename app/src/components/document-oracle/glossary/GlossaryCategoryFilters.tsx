@@ -20,8 +20,8 @@ export function GlossaryCategoryFilters(props: Props) {
         className={cn(
           "rounded-full border px-3 py-1 text-[11px] font-semibold transition",
           value === "all"
-            ? "border-[#C8E53A]/55 bg-[#C8E53A]/20 text-foreground"
-            : "border-border/80 bg-black/25 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground",
+            ? "border-primary/45 bg-primary/10 text-primary"
+            : "border-border/80 bg-background/45 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground",
         )}
       >
         {allLabel}
@@ -34,8 +34,8 @@ export function GlossaryCategoryFilters(props: Props) {
           className={cn(
             "max-w-[220px] truncate rounded-full border px-3 py-1 text-[11px] font-semibold transition sm:max-w-xs",
             value === c
-              ? "border-[#C8E53A]/55 bg-[#C8E53A]/20 text-foreground"
-              : "border-border/80 bg-black/25 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground",
+              ? "border-primary/45 bg-primary/10 text-primary"
+              : "border-border/80 bg-background/45 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground",
           )}
           title={c}
         >

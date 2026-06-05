@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, Focus, Loader2, RefreshCw, Search, Shrink, StretchHorizontal, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export type MindMapToolbarProps = {
 };
 
 const btn =
-  "inline-flex touch-manipulation shrink-0 items-center justify-center gap-0.5 rounded-lg border border-white/12 bg-black/50 px-1.5 py-1.5 text-[10px] font-medium text-white/80 transition hover:border-[#C8E53A]/35 hover:text-white sm:gap-1 sm:px-2 sm:py-1.5 sm:text-[11px]";
+  "inline-flex touch-manipulation shrink-0 items-center justify-center gap-0.5 rounded-lg border border-white/12 bg-black/50 px-1.5 py-1.5 text-[10px] font-medium text-white/80 transition hover:border-primary/35 hover:text-white sm:gap-1 sm:px-2 sm:py-1.5 sm:text-[11px]";
 
 export function MindMapToolbar({
   search,
@@ -61,10 +61,7 @@ export function MindMapToolbar({
 }: MindMapToolbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-
-  useEffect(() => {
-    if (search.trim()) setSearchOpen(true);
-  }, [search]);
+  const showSearch = searchOpen || search.trim().length > 0;
 
   return (
     <div className="flex max-w-full flex-col gap-1.5 rounded-xl border border-white/10 bg-black/55 p-1.5 shadow-lg backdrop-blur-md sm:gap-2 sm:p-2">
@@ -72,8 +69,8 @@ export function MindMapToolbar({
         <button
           type="button"
           className={cn(btn, "sm:hidden")}
-          aria-expanded={searchOpen}
-          aria-label={searchOpen ? "Hide search" : "Search"}
+          aria-expanded={showSearch}
+          aria-label={showSearch ? "Hide search" : "Search"}
           onClick={() => setSearchOpen((o) => !o)}
         >
           <Search className="size-3.5" aria-hidden />
@@ -81,7 +78,7 @@ export function MindMapToolbar({
         <div
           className={cn(
             "relative min-w-0 flex-1 basis-[140px] max-sm:order-last max-sm:w-full",
-            !searchOpen && "max-sm:hidden",
+            !showSearch && "max-sm:hidden",
           )}
         >
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-white/35" />
@@ -89,7 +86,7 @@ export function MindMapToolbar({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search…"
-            className="h-8 w-full min-w-0 rounded-lg border border-white/10 bg-black/60 py-1 pl-8 pr-2 text-[11px] text-white placeholder:text-white/35 outline-none focus:border-[#C8E53A]/40"
+            className="h-8 w-full min-w-0 rounded-lg border border-white/10 bg-black/60 py-1 pl-8 pr-2 text-[11px] text-white placeholder:text-white/35 outline-none focus:border-primary/40"
             aria-label="Search concepts"
           />
         </div>
@@ -121,7 +118,7 @@ export function MindMapToolbar({
         </button>
         <button
           type="button"
-          className={cn(btn, "border-[#C8E53A]/30 text-[#d4f06a]")}
+          className={cn(btn, "border-primary/30 text-primary")}
           disabled={regenerateBusy}
           onClick={onRegenerate}
           title="Regenerate mind map"
@@ -151,7 +148,7 @@ export function MindMapToolbar({
             onClick={() => onTypeFilterChange(f.id)}
             className={cn(
               "shrink-0 touch-manipulation rounded-md px-2 py-1 text-[9px] font-medium sm:text-[10px]",
-              typeFilter === f.id ? "bg-[#C8E53A] text-black" : "bg-white/5 text-white/65 hover:bg-white/10",
+              typeFilter === f.id ? "bg-primary text-primary-foreground" : "bg-white/5 text-white/65 hover:bg-white/10",
             )}
           >
             {f.label}

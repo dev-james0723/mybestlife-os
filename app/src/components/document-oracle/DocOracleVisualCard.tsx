@@ -3,7 +3,6 @@
 import type { DocOracleVisualRow } from "@/components/document-oracle/DocOracleWorkspace";
 import { displayVisualDescription, displayVisualTitle } from "@/components/document-oracle/docOracleVisualLabels";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
-import { cn } from "@/lib/utils";
 
 function tagList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 8) : [];
@@ -25,7 +24,7 @@ export function DocOracleVisualCard(props: {
     <button
       type="button"
       onClick={onOpen}
-      className="flex flex-col overflow-hidden rounded-2xl border border-border bg-muted/40 text-left transition hover:border-[#C8E53A]/35"
+      className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card/65 text-left transition hover:border-primary/30 hover:bg-primary/5"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -47,7 +46,7 @@ export function DocOracleVisualCard(props: {
         </div>
         <p className="line-clamp-2 text-[12px] font-semibold text-foreground">{title}</p>
         {relatedSectionTitle ? (
-          <p className="line-clamp-1 text-[10px] text-[#C8E53A]/85">§ {relatedSectionTitle}</p>
+          <p className="line-clamp-1 text-[10px] text-primary">§ {relatedSectionTitle}</p>
         ) : null}
         {desc ? <p className="line-clamp-3 text-[11px] text-muted-foreground">{desc}</p> : null}
         {tagList(visual.retrieval_tags).length ? (

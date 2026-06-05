@@ -115,14 +115,14 @@ export function DocOraclePagesPanel(props: {
         </p>
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-gradient-to-b from-neutral-950/85 to-neutral-950/50 px-3 py-5 sm:px-6">
+      <div className="space-y-4 rounded-2xl border border-border bg-card/70 px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:px-5">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search pages…"
-            className="w-full rounded-xl border border-white/10 bg-black/30 py-2.5 pl-10 pr-3 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-white/20"
+            className="w-full rounded-xl border border-border bg-background/55 py-2.5 pl-10 pr-3 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-primary/40"
             aria-label="Search pages"
           />
         </div>
@@ -137,8 +137,8 @@ export function DocOraclePagesPanel(props: {
                 className={cn(
                   "shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-medium transition",
                   filter === chip.id
-                    ? "border-[#C8E53A]/40 bg-[#C8E53A]/12 text-[#d4f06a]"
-                    : "border-white/10 bg-white/[0.04] text-muted-foreground hover:border-white/20 hover:text-foreground",
+                    ? "border-primary/45 bg-primary/10 text-primary"
+                    : "border-border bg-background/45 text-muted-foreground hover:border-primary/25 hover:text-foreground",
                 )}
               >
                 {chip.label}
@@ -153,7 +153,7 @@ export function DocOraclePagesPanel(props: {
               id="doc-oracle-pages-sort"
               value={sort}
               onChange={(e) => setSort(e.target.value as PageSortId)}
-              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[12px] text-foreground"
+              className="rounded-xl border border-border bg-background/55 px-3 py-2 text-[12px] text-foreground"
             >
               {sortDefs.map((s) => (
                 <option key={s.id} value={s.id}>

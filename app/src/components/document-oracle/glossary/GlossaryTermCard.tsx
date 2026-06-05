@@ -33,14 +33,14 @@ export function GlossaryTermCard(props: Props) {
         }
       }}
       className={cn(
-        "group relative w-full rounded-2xl border border-white/10 bg-black/25 p-4 text-left shadow-sm backdrop-blur-md transition",
-        "hover:border-[#C8E53A]/35 hover:bg-black/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E53A]/40",
+        "group relative w-full rounded-2xl border border-border bg-card/65 p-4 text-left shadow-sm backdrop-blur-md transition",
+        "hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         "[-webkit-backdrop-filter:blur(12px)]",
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-foreground">{term.term}</p>
-        <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+        <span className="shrink-0 rounded-full border border-border bg-muted/35 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           {categoryLabel}
         </span>
       </div>
@@ -85,7 +85,7 @@ export function GlossaryTermCard(props: Props) {
       <div className="mt-4 flex justify-end">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#C8E53A]/40 bg-[#C8E53A]/10 px-2.5 py-1.5 text-[11px] font-semibold text-[#d4f06a] transition hover:bg-[#C8E53A]/20"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/15"
           onClick={(e) => {
             e.stopPropagation();
             onAskAi();

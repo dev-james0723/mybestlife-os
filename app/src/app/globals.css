@@ -2345,11 +2345,11 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
   }
 }
 
-/* Lime focus ring — spec §9; scoped to Doc Oracle workspace only */
+/* Doc Oracle uses the active app theme ring, not its previous standalone lime. */
 .doc-oracle-workspace :is(a, button, [role="tab"]):focus-visible {
-  outline: 2px solid #c8e53a;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 
 /* =========================================================================

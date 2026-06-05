@@ -3,7 +3,7 @@ import type { MindMapDbNode } from "@/lib/document-brain/mind-map/mindMapTypes";
 export function mindMapNodeAccent(nodeType: string): { border: string; glow: string; minimap: string } {
   switch (nodeType) {
     case "document_root":
-      return { border: "border-[#C8E53A]/80", glow: "shadow-[0_0_20px_rgba(200,229,58,0.25)]", minimap: "#C8E53A" };
+      return { border: "border-primary/80", glow: "shadow-[0_0_20px_hsl(var(--primary)_/_0.25)]", minimap: "hsl(var(--primary))" };
     case "concept":
       return { border: "border-violet-400/55", glow: "shadow-[0_0_16px_rgba(167,139,250,0.2)]", minimap: "#a78bfa" };
     case "section":

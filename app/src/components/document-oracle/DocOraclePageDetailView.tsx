@@ -43,13 +43,13 @@ function thumbUrl(page: DocOraclePageRow): string | null {
 }
 
 const cardShell =
-  "rounded-2xl border border-white/[0.08] bg-black/35 px-4 py-4 shadow-inner backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:px-5";
+  "rounded-2xl border border-border bg-card/70 px-4 py-4 shadow-inner backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:px-5";
 
-const limeBtn =
-  "inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#C8E53A] px-4 py-3 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition hover:brightness-[1.08] sm:flex-none sm:py-2.5";
+const primaryBtn =
+  "inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-[13px] font-semibold text-primary-foreground shadow-sm transition hover:brightness-[1.03] sm:flex-none sm:py-2.5";
 
 const ghostBtn =
-  "inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-[13px] font-medium text-foreground transition hover:bg-white/[0.1] sm:flex-none sm:py-2.5";
+  "inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background/60 px-4 py-3 text-[13px] font-medium text-foreground transition hover:border-primary/35 hover:bg-primary/8 sm:flex-none sm:py-2.5";
 
 function pageTypeBadges(page: DocOraclePageRow, badge: ReturnType<typeof inferPageTypeBadge>): string[] {
   const out: string[] = [];
@@ -102,7 +102,7 @@ export function DocOraclePageDetailView(props: {
   } = props;
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [heroFailed, setHeroFailed] = useState(false);
+  const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
   const title = useMemo(() => getPageTitle(page), [page]);
   const badge = useMemo(() => inferPageTypeBadge(page), [page]);
@@ -131,6 +131,7 @@ export function DocOraclePageDetailView(props: {
   const linked = useMemo(() => linkedTermsList(page), [page]);
   const questions = useMemo(() => pageDetailSuggestedQuestions(page), [page]);
   const hero = thumbUrl(page);
+  const heroKey = `${page.id}:${hero ?? ""}`;
   const visualNarrative = useMemo(() => combinedVisualDescription(visualsOnPage), [visualsOnPage]);
 
   const pageIndex = useMemo(
@@ -139,10 +140,6 @@ export function DocOraclePageDetailView(props: {
   );
   const prevPage = pageIndex > 0 ? orderedPages[pageIndex - 1] : null;
   const nextPage = pageIndex >= 0 && pageIndex < orderedPages.length - 1 ? orderedPages[pageIndex + 1] : null;
-
-  useEffect(() => {
-    setHeroFailed(false);
-  }, [page.id]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -161,13 +158,13 @@ export function DocOraclePageDetailView(props: {
   const sourceHref = filePath ? sourcePdfHref(filePath, page.page_number) : null;
 
   return (
-    <div className="flex max-h-[min(92dvh,920px)] min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 text-foreground shadow-2xl">
-      <header className="shrink-0 border-b border-white/10 bg-black/50 px-3 py-3 sm:px-5">
+    <div className="flex max-h-[min(92dvh,920px)] min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-2xl">
+      <header className="shrink-0 border-b border-border bg-background/80 px-3 py-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:px-5">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-[12px] font-medium text-foreground transition hover:bg-white/[0.1]"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-xl border border-border bg-background/60 px-3 py-2 text-[12px] font-medium text-foreground transition hover:border-primary/35 hover:bg-primary/8"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
             <span className="hidden sm:inline">All Pages</span>
@@ -177,19 +174,19 @@ export function DocOraclePageDetailView(props: {
               type="button"
               disabled={!prevPage}
               onClick={() => prevPage && onSelectPage(prevPage)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:bg-white/[0.08] hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background/55 text-muted-foreground transition hover:border-primary/35 hover:bg-primary/8 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-5 w-5" aria-hidden />
             </button>
-            <span className="min-w-[4.5rem] rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-center text-[12px] font-semibold tabular-nums text-foreground">
+            <span className="min-w-[4.5rem] rounded-xl border border-border bg-card/75 px-3 py-2 text-center text-[12px] font-semibold tabular-nums text-foreground">
               p.{page.page_number}
             </span>
             <button
               type="button"
               disabled={!nextPage}
               onClick={() => nextPage && onSelectPage(nextPage)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:bg-white/[0.08] hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background/55 text-muted-foreground transition hover:border-primary/35 hover:bg-primary/8 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
               aria-label="Next page"
             >
               <ChevronRight className="h-5 w-5" aria-hidden />
@@ -198,7 +195,7 @@ export function DocOraclePageDetailView(props: {
           <button
             type="button"
             onClick={() => void copyAll()}
-            className="ml-auto hidden h-10 items-center gap-1.5 rounded-xl border border-white/10 px-3 text-[12px] text-muted-foreground transition hover:bg-white/[0.06] hover:text-foreground sm:inline-flex"
+            className="ml-auto hidden h-10 items-center gap-1.5 rounded-xl border border-border bg-background/45 px-3 text-[12px] text-muted-foreground transition hover:border-primary/35 hover:bg-primary/8 hover:text-foreground sm:inline-flex"
           >
             <Copy className="h-3.5 w-3.5" aria-hidden />
             Copy
@@ -209,18 +206,18 @@ export function DocOraclePageDetailView(props: {
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-3 py-4 sm:px-6 sm:py-6 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
           <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
-            {hero && !heroFailed ? (
+            {hero && failedHeroKey !== heroKey ? (
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-neutral-100 shadow-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={hero}
                   alt=""
                   className="max-h-[min(52vh,560px)] w-full object-contain object-center sm:max-h-[min(60vh,640px)]"
-                  onError={() => setHeroFailed(true)}
+                  onError={() => setFailedHeroKey(heroKey)}
                 />
               </div>
             ) : (
-              <div className={cn(cardShell, "border-dashed border-white/15 bg-black/25")}>
+              <div className={cn(cardShell, "border-dashed bg-card/45")}>
                 <p className="text-[12px] font-medium text-muted-foreground">No full-page screenshot yet</p>
                 <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground/90">
                   This page has no `rendered_image_url` / `rendered_image_path`. Text summary still appears on the
@@ -233,7 +230,7 @@ export function DocOraclePageDetailView(props: {
           <div className="min-w-0 space-y-4">
             <section className={cardShell} aria-labelledby="doc-oracle-page-summary-h">
               <div className="flex flex-wrap items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#C8E53A]" aria-hidden />
+                <Sparkles className="h-4 w-4 text-primary" aria-hidden />
                 <h2 id="doc-oracle-page-summary-h" className="text-[13px] font-semibold text-foreground">
                   Page summary
                 </h2>
@@ -242,7 +239,7 @@ export function DocOraclePageDetailView(props: {
                 {badges.map((b) => (
                   <span
                     key={b}
-                    className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
+                    className="rounded-full border border-border bg-background/55 px-2.5 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
                   >
                     {b}
                   </span>
@@ -276,7 +273,7 @@ export function DocOraclePageDetailView(props: {
                   {keywords.map((k) => (
                     <span
                       key={`k-${k}`}
-                      className="max-w-full truncate rounded-full border border-[#C8E53A]/25 bg-[#C8E53A]/10 px-3 py-1 text-[11.5px] text-[#d4f06a]"
+                      className="max-w-full truncate rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11.5px] text-primary"
                     >
                       {k.startsWith("#") ? k : `#${k.replace(/^#+/, "")}`}
                     </span>
@@ -284,7 +281,7 @@ export function DocOraclePageDetailView(props: {
                   {linked.map((t) => (
                     <span
                       key={`l-${t}`}
-                      className="max-w-full truncate rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] text-muted-foreground"
+                      className="max-w-full truncate rounded-full border border-border bg-background/45 px-3 py-1 text-[11px] text-muted-foreground"
                       title="Linked term"
                     >
                       {t}
@@ -303,11 +300,11 @@ export function DocOraclePageDetailView(props: {
               ) : (
                 <ul className="mt-3 space-y-2">
                   {relatedGlossary.slice(0, 16).map((g) => (
-                    <li key={g.id} className="rounded-xl border border-white/8 bg-black/20 px-3 py-2.5">
+                    <li key={g.id} className="rounded-xl border border-border bg-background/45 px-3 py-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-[13px] font-semibold text-foreground">{g.term}</p>
                         {g.category ? (
-                          <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-muted-foreground">
+                          <span className="shrink-0 rounded-full border border-border bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground">
                             {g.category}
                           </span>
                         ) : null}
@@ -329,7 +326,7 @@ export function DocOraclePageDetailView(props: {
                 <button
                   type="button"
                   onClick={() => onFocusSection(relatedSection)}
-                  className="mt-3 w-full rounded-xl border border-white/10 bg-black/25 p-3 text-left transition hover:border-[#C8E53A]/35 hover:bg-black/35"
+                  className="mt-3 w-full rounded-xl border border-border bg-background/45 p-3 text-left transition hover:border-primary/35 hover:bg-primary/8"
                 >
                   <p className="text-[14px] font-semibold text-foreground">{relatedSection.title}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
@@ -346,14 +343,14 @@ export function DocOraclePageDetailView(props: {
                       {sectionTags.map((t) => (
                         <span
                           key={t}
-                          className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] text-muted-foreground"
+                          className="rounded-full border border-border bg-card/55 px-2 py-0.5 text-[10px] text-muted-foreground"
                         >
                           {t}
                         </span>
                       ))}
                     </div>
                   ) : null}
-                  <p className="mt-2 text-[10px] font-medium text-[#C8E53A]">Open in Sections tab →</p>
+                  <p className="mt-2 text-[10px] font-medium text-primary">Open in Sections tab →</p>
                 </button>
               ) : (
                 <p className="mt-3 text-[12px] text-muted-foreground">No section range matched this page.</p>
@@ -400,12 +397,12 @@ export function DocOraclePageDetailView(props: {
                       <button
                         type="button"
                         onClick={() => onAskQuestion(q, page)}
-                        className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-left text-[12.5px] leading-snug text-muted-foreground transition hover:border-[#C8E53A]/30 hover:text-foreground"
+                        className="w-full rounded-xl border border-border bg-background/45 px-3 py-2.5 text-left text-[12.5px] leading-snug text-muted-foreground transition hover:border-primary/35 hover:bg-primary/8 hover:text-foreground"
                       >
                         {q}
                       </button>
                     ) : (
-                      <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-[12.5px] text-muted-foreground">{q}</div>
+                      <div className="rounded-xl border border-border bg-background/35 px-3 py-2.5 text-[12.5px] text-muted-foreground">{q}</div>
                     )}
                   </li>
                 ))}
@@ -416,7 +413,7 @@ export function DocOraclePageDetailView(props: {
               <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Page markdown
               </summary>
-              <div className="mt-3 max-h-[280px] overflow-y-auto rounded-xl border border-white/8 bg-black/30 p-3">
+              <div className="mt-3 max-h-[280px] overflow-y-auto rounded-xl border border-border bg-background/50 p-3">
                 <DocOracleMarkdown className="text-[12px]" source={page.markdown || ""} />
               </div>
             </details>
@@ -424,11 +421,11 @@ export function DocOraclePageDetailView(props: {
         </div>
       </div>
 
-      <footer className="shrink-0 border-t border-white/10 bg-black/60 px-3 py-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:px-5">
+      <footer className="shrink-0 border-t border-border bg-background/80 px-3 py-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:px-5">
         <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex w-full gap-2 sm:w-auto sm:flex-1">
             {onAskAiPage ? (
-              <button type="button" className={limeBtn} onClick={() => onAskAiPage(page)}>
+              <button type="button" className={primaryBtn} onClick={() => onAskAiPage(page)}>
                 <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
                 Ask Doc Oracle about this page
               </button>

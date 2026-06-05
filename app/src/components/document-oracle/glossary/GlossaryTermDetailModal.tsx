@@ -98,7 +98,7 @@ export function GlossaryTermDetailModal(props: Props) {
         </DialogHeader>
 
         <div className="space-y-4 text-[13px] leading-relaxed text-muted-foreground">
-          <section className="rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm">
+          <section className="rounded-2xl border border-border bg-muted/30 p-4 backdrop-blur-sm">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {zhUi ? "定義" : "Definition"}
             </p>
@@ -130,7 +130,7 @@ export function GlossaryTermDetailModal(props: Props) {
                   <button
                     key={p}
                     type="button"
-                    className="rounded-lg border border-border/70 bg-muted/35 px-2.5 py-1 text-[12px] font-semibold text-foreground transition hover:border-[#C8E53A]/45 hover:bg-muted/55"
+                    className="rounded-lg border border-border/70 bg-muted/35 px-2.5 py-1 text-[12px] font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/8"
                     onClick={() => {
                       onOpenSourcePage?.(p);
                       onOpenChange(false);
@@ -144,7 +144,7 @@ export function GlossaryTermDetailModal(props: Props) {
                     href={`${knowledgeFilesApiHref(filePath)}#page=${pages[0]}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-semibold text-[#d4f06a] no-underline hover:underline"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-semibold text-primary no-underline hover:underline"
                   >
                     <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                     PDF
@@ -166,7 +166,7 @@ export function GlossaryTermDetailModal(props: Props) {
                     <button
                       key={r}
                       type="button"
-                      className="max-w-full truncate rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[12px] font-medium text-foreground transition hover:border-[#C8E53A]/40"
+                      className="max-w-full truncate rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[12px] font-medium text-foreground transition hover:border-primary/35 hover:bg-primary/8"
                       onClick={() => {
                         if (hit) {
                           onOpenRelatedTerm(hit);
@@ -194,7 +194,7 @@ export function GlossaryTermDetailModal(props: Props) {
                   <li key={s.id}>
                     <button
                       type="button"
-                      className="w-full rounded-xl border border-border/50 bg-muted/25 px-3 py-2 text-left text-[12px] transition hover:border-[#C8E53A]/35"
+                      className="w-full rounded-xl border border-border/50 bg-muted/25 px-3 py-2 text-left text-[12px] transition hover:border-primary/35 hover:bg-primary/8"
                       onClick={() => {
                         onFocusSection(s);
                         onSwitchToSections();
@@ -218,7 +218,7 @@ export function GlossaryTermDetailModal(props: Props) {
           <div className="flex flex-col gap-2 border-t border-border/40 pt-4 sm:flex-row sm:flex-wrap">
             <button
               type="button"
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#C8E53A] px-4 py-2.5 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition hover:brightness-110 sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 sm:flex-none"
               onClick={() => {
                 onAskAiAboutTerm(term);
                 onOpenChange(false);

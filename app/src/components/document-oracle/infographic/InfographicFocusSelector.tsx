@@ -34,8 +34,8 @@ export function InfographicFocusSelector(props: {
               className={cn(
                 "touch-manipulation rounded-2xl border p-3 text-left transition",
                 on
-                  ? "border-[#C8E53A]/70 bg-[#C8E53A]/10"
-                  : "border-border bg-muted/35 hover:border-white/15",
+                  ? "border-primary/45 bg-primary/10"
+                  : "border-border bg-muted/35 hover:border-primary/25",
                 props.disabled && "pointer-events-none opacity-50",
               )}
             >
@@ -44,7 +44,7 @@ export function InfographicFocusSelector(props: {
                 <span
                   className={cn(
                     "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
-                    on ? "bg-[#C8E53A]/25 text-foreground" : "bg-muted text-muted-foreground",
+                    on ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
                   )}
                 >
                   {on ? "Selected" : "Tap"}

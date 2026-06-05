@@ -61,15 +61,18 @@ export function OSBuddySettingsSection() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setDraftEnabled(enabled);
+    const frame = window.requestAnimationFrame(() => setDraftEnabled(enabled));
+    return () => window.cancelAnimationFrame(frame);
   }, [enabled]);
 
   useEffect(() => {
-    setDraftPetId(petId);
+    const frame = window.requestAnimationFrame(() => setDraftPetId(petId));
+    return () => window.cancelAnimationFrame(frame);
   }, [petId]);
 
   useEffect(() => {
-    setDraftName(name);
+    const frame = window.requestAnimationFrame(() => setDraftName(name));
+    return () => window.cancelAnimationFrame(frame);
   }, [name]);
 
   const previewSrc = useMemo(

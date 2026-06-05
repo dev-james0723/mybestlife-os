@@ -69,8 +69,12 @@ export function DocOracleInfographicPanel(props: {
   }, [props.documentId, props.enabled]);
 
   useEffect(() => {
-    void loadFocus();
-  }, [loadFocus]);
+    if (!props.enabled) return;
+    const timer = window.setTimeout(() => {
+      void loadFocus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadFocus, props.enabled]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -202,7 +206,7 @@ export function DocOracleInfographicPanel(props: {
         type="button"
         disabled={disabled || genBusy || (selected.size === 0 && !customFocus.trim())}
         onClick={() => void generate()}
-        className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#C8E53A] px-4 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {genBusy ? "Designing document infographic…" : "Generate Infographic"}
       </button>

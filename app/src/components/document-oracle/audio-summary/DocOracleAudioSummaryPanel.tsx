@@ -91,9 +91,13 @@ export function DocOracleAudioSummaryPanel(props: {
   }, [props.documentId, props.enabled]);
 
   useEffect(() => {
-    void loadFocus();
-    void loadHistory();
-  }, [loadFocus, loadHistory]);
+    if (!props.enabled) return;
+    const timer = window.setTimeout(() => {
+      void loadFocus();
+      void loadHistory();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadFocus, loadHistory, props.enabled]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -213,8 +217,8 @@ export function DocOracleAudioSummaryPanel(props: {
                 onClick={() => setFormat(o.id)}
                 className={`rounded-xl border px-3 py-2 text-left text-[12px] font-medium transition ${
                   format === o.id
-                    ? "border-[#C8E53A]/70 bg-[#C8E53A]/12 text-foreground"
-                    : "border-border bg-muted/40 text-muted-foreground hover:border-white/18"
+                    ? "border-primary/45 bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 text-muted-foreground hover:border-primary/25"
                 }`}
               >
                 {o.label}
@@ -239,8 +243,8 @@ export function DocOracleAudioSummaryPanel(props: {
                 onClick={() => setDuration(o.id)}
                 className={`rounded-xl border px-3 py-2 text-left text-[12px] font-medium transition ${
                   duration === o.id
-                    ? "border-[#C8E53A]/70 bg-[#C8E53A]/12 text-foreground"
-                    : "border-border bg-muted/40 text-muted-foreground hover:border-white/18"
+                    ? "border-primary/45 bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 text-muted-foreground hover:border-primary/25"
                 }`}
               >
                 {o.label}
@@ -287,7 +291,7 @@ export function DocOracleAudioSummaryPanel(props: {
         type="button"
         disabled={disabled || busy || (selected.size === 0 && !custom.trim())}
         onClick={() => void generate()}
-        className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#C8E53A] px-4 text-[13px] font-semibold text-[#0d0d0d] shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {busy ? "Writing script and generating audio…" : "Generate Audio Summary"}
       </button>

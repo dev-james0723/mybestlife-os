@@ -3,6 +3,7 @@ import { useOSBuddyStore } from "./os-buddy-store";
 
 function resetAirPilotStoreState() {
   useOSBuddyStore.setState({
+    osBuddyEnabledOverride: null,
     isAirControlActive: false,
     airControlStatus: "idle",
     airControlGesture: null,
@@ -142,5 +143,16 @@ describe("OS Buddy AirPilot lifecycle state", () => {
     expect(useOSBuddyStore.getState().airPilotPlusMode).toBe("off");
     expect(useOSBuddyStore.getState().airPilotPlusCountdown.kind).toBe("inactive");
     expect(useOSBuddyStore.getState().airPilotPlusDomain).toBeNull();
+  });
+
+  it("stores an immediate OS Buddy enabled override for global toggles", () => {
+    useOSBuddyStore.getState().setOSBuddyEnabledOverride(false);
+    expect(useOSBuddyStore.getState().osBuddyEnabledOverride).toBe(false);
+
+    useOSBuddyStore.getState().setOSBuddyEnabledOverride(true);
+    expect(useOSBuddyStore.getState().osBuddyEnabledOverride).toBe(true);
+
+    useOSBuddyStore.getState().setOSBuddyEnabledOverride(null);
+    expect(useOSBuddyStore.getState().osBuddyEnabledOverride).toBeNull();
   });
 });

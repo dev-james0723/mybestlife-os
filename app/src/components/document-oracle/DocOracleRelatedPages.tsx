@@ -31,7 +31,7 @@ export function DocOracleRelatedPages(props: {
             onClick={() => onSelectPage(p)}
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8E53A]">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
                 Page {p.page_number}
               </p>
               {p.has_visual_assets ? (
@@ -57,7 +57,7 @@ export function DocOracleRelatedPages(props: {
           <button
             type="button"
             className={cn(
-              "shrink-0 self-center rounded-lg border border-border px-2 py-1.5 text-[10px] text-muted-foreground transition hover:bg-muted/80",
+              "shrink-0 self-center rounded-lg border border-border px-2 py-1.5 text-[10px] text-muted-foreground transition hover:border-primary/30 hover:bg-primary/8 hover:text-foreground",
             )}
             onClick={() => onOpenPageDetail(p)}
           >

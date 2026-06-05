@@ -27,8 +27,8 @@ export function VoiceSelector(props: {
               className={cn(
                 "min-h-[44px] flex-1 rounded-xl border px-3 py-2 text-[12px] font-medium transition sm:flex-none sm:px-6",
                 active
-                  ? "border-[#C8E53A]/70 bg-[#C8E53A]/12 text-foreground"
-                  : "border-border bg-muted/40 text-muted-foreground hover:border-white/18",
+                  ? "border-primary/45 bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-muted-foreground hover:border-primary/25",
                 props.disabled && "pointer-events-none opacity-50",
               )}
             >

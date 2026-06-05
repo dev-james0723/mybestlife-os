@@ -130,15 +130,6 @@ export function DocOracleMindMapPanel(props: {
     setViewportResetKey((k) => k + 1);
   }, []);
 
-  useEffect(() => {
-    setViewportResetKey(0);
-    autoGenStartedRef.current = false;
-    setGenFailed(false);
-    setFailureKind(null);
-    setDetail(undefined);
-    setCanGenerate(null);
-  }, [documentId]);
-
   const runGenerate = useCallback(
     async (force: boolean) => {
       if (genInFlightRef.current) return;
@@ -243,12 +234,17 @@ export function DocOracleMindMapPanel(props: {
   }, [documentId, bumpViewport]);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => {
+      setViewportResetKey(0);
+      autoGenStartedRef.current = false;
+      setGenFailed(false);
+      setFailureKind(null);
+      setDetail(undefined);
+      setCanGenerate(null);
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
-
-  useEffect(() => {
-    if (selected) setMobileSheet(true);
-  }, [selected]);
 
   const handleRetry = useCallback(async () => {
     if (failureKind === "load") {
@@ -300,7 +296,7 @@ export function DocOracleMindMapPanel(props: {
               <button
                 type="button"
                 onClick={() => void handleRetry()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#C8E53A] px-4 py-2 text-[12px] font-semibold text-black disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[12px] font-semibold text-primary-foreground disabled:opacity-50"
                 disabled={regenBusy}
               >
                 Retry

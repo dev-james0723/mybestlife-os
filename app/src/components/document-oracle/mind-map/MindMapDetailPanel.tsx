@@ -6,8 +6,8 @@ import type { DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/doc
 import type { DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 import { cn } from "@/lib/utils";
 
-const limeBtn =
-  "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#C8E53A] px-3 py-2 text-[12px] font-semibold text-[#0d0d0d] shadow-sm transition hover:brightness-110 disabled:opacity-45";
+const primaryBtn =
+  "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition hover:brightness-[1.03] disabled:opacity-45";
 
 const ghostBtn =
   "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-[11px] font-medium text-white/85 transition hover:bg-white/10";
@@ -101,7 +101,7 @@ export function MindMapDetailPanel(props: {
     <aside className={shell} aria-label="Mind map node details">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#C8E53A]/90">{node.node_type.replace(/_/g, " ")}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/90">{node.node_type.replace(/_/g, " ")}</p>
           <h2 className="mt-1 text-[15px] font-semibold leading-snug text-white">{node.label}</h2>
         </div>
         {onClose ? (
@@ -141,7 +141,7 @@ export function MindMapDetailPanel(props: {
                 key={p}
                 type="button"
                 onClick={() => onOpenPage(p)}
-                className="rounded-md border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-[#C8E53A] hover:bg-white/10"
+                className="rounded-md border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-primary hover:bg-white/10"
               >
                 p.{p}
               </button>
@@ -201,8 +201,8 @@ export function MindMapDetailPanel(props: {
           <ul className="space-y-2">
             {evidence.map((ev, i) => (
               <li key={`${ev.page}-${i}`}>
-                <button type="button" onClick={() => onOpenPage(ev.page)} className="w-full rounded-lg border border-white/10 bg-black/40 p-2 text-left hover:border-[#C8E53A]/35">
-                  <span className="text-[10px] font-semibold text-[#C8E53A]">p.{ev.page}</span>
+                <button type="button" onClick={() => onOpenPage(ev.page)} className="w-full rounded-lg border border-white/10 bg-black/40 p-2 text-left hover:border-primary/35">
+                  <span className="text-[10px] font-semibold text-primary">p.{ev.page}</span>
                   <p className="mt-1 text-[11px] leading-relaxed text-white/65">{ev.quote}</p>
                 </button>
               </li>
@@ -228,7 +228,7 @@ export function MindMapDetailPanel(props: {
       ) : null}
 
       <div className="mt-1 flex flex-col gap-2 border-t border-white/10 pt-3">
-        <button type="button" className={limeBtn} onClick={() => onAskAi(node)}>
+        <button type="button" className={primaryBtn} onClick={() => onAskAi(node)}>
           <MessageCircle className="size-4" aria-hidden />
           Ask Doc Oracle about this
         </button>

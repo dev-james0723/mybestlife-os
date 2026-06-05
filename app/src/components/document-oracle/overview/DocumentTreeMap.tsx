@@ -143,7 +143,7 @@ export function DocumentTreeMap(props: {
   );
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(120%_80%_at_50%_100%,rgba(200,229,58,0.10),rgba(0,0,0,0)_55%),linear-gradient(180deg,rgba(8,10,8,0.55),rgba(0,0,0,0.55))] p-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:p-5 md:p-6">
+    <section className="relative overflow-hidden rounded-3xl border border-border bg-[radial-gradient(120%_80%_at_50%_100%,hsl(var(--primary)/0.10),rgba(0,0,0,0)_55%),linear-gradient(180deg,rgba(8,10,8,0.55),rgba(0,0,0,0.55))] p-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] sm:p-5 md:p-6">
       {/* Header */}
       <div className="relative z-10 mb-3 flex items-start justify-between gap-3 sm:mb-4">
         <div>
@@ -159,7 +159,7 @@ export function DocumentTreeMap(props: {
             type="button"
             onClick={() => setHelpOpen((v) => !v)}
             aria-expanded={helpOpen}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[11.5px] font-medium text-foreground/85 transition hover:border-[#C8E53A]/35 hover:bg-[#C8E53A]/[0.06]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/45 px-3 py-1.5 text-[11.5px] font-medium text-foreground/85 transition hover:border-primary/35 hover:bg-primary/[0.06]"
           >
             <Info className="h-3.5 w-3.5" aria-hidden />
             How to read this map
@@ -177,7 +177,7 @@ export function DocumentTreeMap(props: {
               <button
                 type="button"
                 onClick={() => setHelpOpen(false)}
-                className="mt-2 text-[11px] font-semibold text-[#d4f06a] hover:underline"
+                className="mt-2 text-[11px] font-semibold text-primary hover:underline"
               >
                 Got it
               </button>
@@ -198,9 +198,9 @@ export function DocumentTreeMap(props: {
 
       {/* Section shortcuts band */}
       {topSections.length > 0 ? (
-        <div className="relative z-10 mt-4 rounded-2xl border border-white/10 bg-black/30 p-3 sm:mt-6 sm:p-4">
+        <div className="relative z-10 mt-4 rounded-2xl border border-border bg-background/35 p-3 sm:mt-6 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-foreground/80">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-background/45 text-foreground/80">
               <BookOpen className="h-3.5 w-3.5" aria-hidden />
             </span>
             <p className="text-[12px] font-semibold tracking-tight text-foreground">
@@ -213,10 +213,10 @@ export function DocumentTreeMap(props: {
                 key={s.id}
                 type="button"
                 onClick={() => onFocusSection(s)}
-                className="group inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11.5px] font-medium text-foreground/90 transition hover:border-[#C8E53A]/35 hover:bg-[#C8E53A]/10"
+                className="group inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-border bg-background/45 px-3 py-1.5 text-[11.5px] font-medium text-foreground/90 transition hover:border-primary/35 hover:bg-primary/10"
               >
                 <span className="truncate">{s.title}</span>
-                <LeafGlyph className="h-3 w-3 shrink-0 text-[#C8E53A]/70 transition group-hover:text-[#C8E53A]" />
+                <LeafGlyph className="h-3 w-3 shrink-0 text-primary/70 transition group-hover:text-primary" />
               </button>
             ))}
           </div>
@@ -393,7 +393,7 @@ function TreePlaqueButton(props: {
         <span
           aria-hidden
           className={cn(
-            "pointer-events-none absolute left-1/2 top-1/2 -z-10 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C8E53A]/0 blur-md transition group-hover:bg-[#C8E53A]/20",
+            "pointer-events-none absolute left-1/2 top-1/2 -z-10 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/0 blur-md transition group-hover:bg-primary/20",
             isRoot && "md:h-16 md:w-32",
           )}
         />
@@ -442,9 +442,9 @@ function RealTreeMotionOverlay(props: {
     <svg viewBox="0 0 100 56.28" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
       <defs>
         <radialGradient id={`real-tree-hover-${gid}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#C8E53A" stopOpacity="0.34" />
-          <stop offset="62%" stopColor="#C8E53A" stopOpacity="0.10" />
-          <stop offset="100%" stopColor="#C8E53A" stopOpacity="0" />
+          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.34" />
+          <stop offset="62%" stopColor="hsl(var(--primary))" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -492,7 +492,7 @@ function RealTreeMotionOverlay(props: {
           cx={cx}
           cy={cy}
           r={r}
-          fill="#C8E53A"
+          fill="hsl(var(--primary))"
           initial={reducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: reducedMotion ? 0.3 : [0.22, 0.8, 0.22] }}
           transition={{ duration: 2.4 + i * 0.25, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut", delay: i * 0.2 }}
@@ -530,13 +530,13 @@ function FloatingSvgLeaf(props: {
       >
         <path
           d="M 0 -1.3 C 1 -0.7, 1 0.7, 0 1.5 C -1 0.7, -1 -0.7, 0 -1.3 Z"
-          fill="#C8E53A"
+          fill="hsl(var(--primary))"
           fillOpacity="0.46"
-          stroke="#d9f27b"
+          stroke="hsl(var(--primary))"
           strokeOpacity="0.56"
           strokeWidth="0.12"
         />
-        <line x1="0" y1="-0.9" x2="0" y2="1.1" stroke="#d9f27b" strokeOpacity="0.45" strokeWidth="0.08" />
+        <line x1="0" y1="-0.9" x2="0" y2="1.1" stroke="hsl(var(--primary))" strokeOpacity="0.45" strokeWidth="0.08" />
       </motion.g>
     </g>
   );

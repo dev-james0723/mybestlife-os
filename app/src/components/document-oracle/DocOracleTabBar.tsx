@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   BookOpen,
   FileText,
@@ -8,25 +9,92 @@ import {
   Layers,
   ListTree,
   MessageCircle,
+  MoreHorizontal,
   Network,
   Presentation,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TAB_DEFS = [
+const PRIMARY_TABS = [
   { id: "overview", label: "Overview", Icon: BookOpen },
-  { id: "mindMap", label: "Mind Map", Icon: Network },
   { id: "chat", label: "Chat", Icon: MessageCircle },
   { id: "pages", label: "Pages", Icon: Layers },
   { id: "sections", label: "Sections", Icon: ListTree },
+  { id: "source", label: "Source", Icon: FileText },
+] as const;
+
+const TOOL_TABS = [
+  { id: "mindMap", label: "Mind Map", Icon: Network },
   { id: "glossary", label: "Glossary", Icon: BookOpen },
   { id: "visuals", label: "Visuals", Icon: ImageIcon },
   { id: "infographic", label: "Infographic", Icon: Presentation },
   { id: "audio_summary", label: "Audio Summary", Icon: Headphones },
-  { id: "source", label: "Source", Icon: FileText },
 ] as const;
 
-export type DocOracleTabId = (typeof TAB_DEFS)[number]["id"];
+export type DocOracleTabId = (typeof PRIMARY_TABS)[number]["id"] | (typeof TOOL_TABS)[number]["id"];
+
+function DocOracleTabButton({
+  id,
+  label,
+  Icon,
+  active,
+  compact = false,
+  onSelect,
+}: {
+  id: DocOracleTabId;
+  label: string;
+  Icon: LucideIcon;
+  active: boolean;
+  compact?: boolean;
+  onSelect: (value: DocOracleTabId) => void;
+}) {
+  return (
+    <button
+      key={id}
+      type="button"
+      role="tab"
+      aria-label={label}
+      aria-selected={active}
+      aria-controls={`doc-oracle-panel-${id}`}
+      id={`doc-oracle-tab-${id}`}
+      onClick={() => onSelect(id)}
+      className={cn(
+        "group relative isolate h-11 shrink-0 overflow-hidden rounded-xl",
+        compact ? "min-w-[7.25rem]" : "min-w-[6.5rem] flex-1 sm:min-w-[7rem]",
+        "inline-flex items-center justify-center gap-2 px-3",
+        "touch-manipulation select-none text-[12px] font-semibold leading-tight tracking-tight",
+        "border backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]",
+        "transition-all duration-200 ease-out",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55",
+        "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "before:pointer-events-none before:absolute before:inset-0 before:rounded-xl",
+        "before:bg-gradient-to-br before:from-white/12 before:via-transparent before:to-transparent",
+        active
+          ? [
+              "z-[1] border-primary/45 bg-primary text-primary-foreground",
+              "shadow-[0_12px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.25)]",
+              "before:from-white/30 before:opacity-90",
+            ]
+          : [
+              "z-0 border-border/70 bg-background/35 text-muted-foreground",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+              "hover:border-primary/25 hover:bg-primary/8 hover:text-foreground",
+              "before:opacity-40",
+            ],
+      )}
+    >
+      <Icon
+        className={cn(
+          "relative z-[1] size-[17px] shrink-0",
+          active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
+        )}
+        aria-hidden
+      />
+      <span className="relative z-[1] whitespace-nowrap text-center leading-tight">{label}</span>
+    </button>
+  );
+}
 
 export function DocOracleTabBar({
   value,
@@ -35,87 +103,82 @@ export function DocOracleTabBar({
   value: string;
   onValueChange: (value: string) => void;
 }) {
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const activeTool = TOOL_TABS.some((tab) => tab.id === value);
+  const showTools = toolsOpen || activeTool;
+
+  const handleSelect = (next: DocOracleTabId) => {
+    onValueChange(next);
+    if (TOOL_TABS.some((tab) => tab.id === next)) setToolsOpen(false);
+  };
+
   return (
-    <div className="w-full min-w-0 shrink-0 overflow-visible pb-[env(safe-area-inset-bottom)]">
+    <div className="w-full min-w-0 shrink-0 space-y-2 overflow-visible">
       <div
-        role="tablist"
-        aria-label="Doc Oracle"
         className={cn(
-          "w-full rounded-[28px] border p-2",
-          "border-black/10 bg-black/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_18px_50px_rgba(0,0,0,0.08)]",
+          "-mx-1 rounded-2xl border p-1.5 sm:mx-0 sm:rounded-[20px] sm:p-2",
+          "border-border bg-card/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_14px_34px_rgba(0,0,0,0.08)]",
           "backdrop-blur-[24px] [-webkit-backdrop-filter:blur(24px)]",
-          "supports-[backdrop-filter]:bg-black/[0.028]",
-          "dark:border-white/12 dark:bg-white/[0.055] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_50px_rgba(0,0,0,0.22)]",
-          "supports-[backdrop-filter]:dark:bg-white/[0.05]",
+          "supports-[backdrop-filter]:bg-card/45",
         )}
       >
         <div
-          className={cn(
-            "grid w-full min-w-0 grid-cols-2 gap-2",
-            "md:grid-cols-5",
-            "xl:grid-cols-10",
-          )}
+          role="tablist"
+          aria-label="Doc Oracle primary navigation"
+          className="flex min-w-0 gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {TAB_DEFS.map((t) => {
+          {PRIMARY_TABS.map((t) => {
             const active = value === t.id;
             const { id, label, Icon } = t;
             return (
-              <button
+              <DocOracleTabButton
                 key={id}
-                type="button"
-                role="tab"
-                aria-label={label}
-                aria-selected={active}
-                aria-controls={`doc-oracle-panel-${id}`}
-                id={`doc-oracle-tab-${id}`}
-                tabIndex={active ? 0 : -1}
-                onClick={() => onValueChange(id)}
-                className={cn(
-                  "group relative isolate min-h-[56px] w-full overflow-hidden rounded-2xl",
-                  "md:min-h-[58px]",
-                  "xl:min-h-[48px] xl:py-2.5",
-                  "inline-flex items-center justify-center gap-2 px-3 py-3",
-                  "touch-manipulation select-none text-[13px] font-semibold leading-tight tracking-tight",
-                  "border backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]",
-                  "transition-all duration-200 ease-out",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8E53A]/70",
-                  "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:opacity-100",
-                  "before:bg-gradient-to-br before:from-white/12 before:via-transparent before:to-transparent",
-                  "after:pointer-events-none after:absolute after:inset-x-2 after:top-0 after:h-px after:rounded-full",
-                  "after:bg-gradient-to-r after:from-transparent after:via-white/25 after:to-transparent after:opacity-60",
-                  active
-                    ? [
-                        "z-[1] border-[#C8E53A]/60 bg-[#C8E53A] text-black",
-                        "shadow-[0_14px_34px_rgba(200,229,58,0.28),0_0_0_1px_rgba(200,229,58,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]",
-                        "before:from-white/30 before:opacity-90",
-                        "after:via-white/40",
-                      ]
-                    : [
-                        "z-0 border-black/10 bg-black/[0.035] text-black/[0.65]",
-                        "shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]",
-                        "hover:border-black/15 hover:bg-black/[0.055] hover:text-black",
-                        "dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70",
-                        "dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
-                        "dark:hover:border-white/18 dark:hover:bg-white/[0.075] dark:hover:text-white",
-                        "before:opacity-50 dark:before:from-white/10",
-                        "after:opacity-40 dark:after:via-white/15",
-                      ],
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "relative z-[1] size-[18px] shrink-0",
-                    active ? "text-black" : "text-black/55 dark:text-white/70",
-                  )}
-                  aria-hidden
-                />
-                <span className="relative z-[1] text-center leading-tight whitespace-normal">{label}</span>
-              </button>
+                id={id}
+                label={label}
+                Icon={Icon}
+                active={active}
+                onSelect={handleSelect}
+              />
             );
           })}
+          <button
+            type="button"
+            aria-expanded={showTools}
+            onClick={() => setToolsOpen((open) => !open)}
+            className={cn(
+              "inline-flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border px-3 text-[12px] font-semibold transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              activeTool
+                ? "border-primary/45 bg-primary text-primary-foreground"
+                : "border-border/70 bg-background/35 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground",
+            )}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
+            <span className="ml-1 hidden sm:inline">More</span>
+            <span className="sr-only">More Doc Oracle tools</span>
+          </button>
         </div>
       </div>
+
+      {showTools ? (
+        <div
+          role="tablist"
+          aria-label="Doc Oracle tools"
+          className="flex gap-1.5 overflow-x-auto rounded-2xl border border-border bg-card/35 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {TOOL_TABS.map((t) => (
+            <DocOracleTabButton
+              key={t.id}
+              id={t.id}
+              label={t.label}
+              Icon={t.Icon}
+              active={value === t.id}
+              compact
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

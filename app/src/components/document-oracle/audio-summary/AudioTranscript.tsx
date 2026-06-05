@@ -38,7 +38,7 @@ export function AudioTranscript(props: {
                         type="button"
                         disabled={!props.onOpenSourcePage}
                         onClick={() => props.onOpenSourcePage?.(p)}
-                        className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-foreground hover:border-[#C8E53A]/40 disabled:cursor-default disabled:opacity-60"
+                        className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-foreground hover:border-primary/40 disabled:cursor-default disabled:opacity-60"
                       >
                         p.{p}
                       </button>
@@ -61,7 +61,7 @@ export function AudioTranscript(props: {
                 type="button"
                 disabled={!props.onOpenSourcePage}
                 onClick={() => props.onOpenSourcePage?.(p)}
-                className="rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[11px] text-foreground hover:border-[#C8E53A]/40 disabled:cursor-default disabled:opacity-60"
+                className="rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[11px] text-foreground hover:border-primary/40 disabled:cursor-default disabled:opacity-60"
               >
                 p.{p}
               </button>

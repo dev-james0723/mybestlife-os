@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, MessageCircle, Search } from "lucide-react";
 import {
   buildSectionTree,
@@ -20,8 +20,8 @@ import type {
 } from "@/components/document-oracle/DocOracleWorkspace";
 import { cn } from "@/lib/utils";
 
-const limeBtn =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8E53A] px-3 py-2 text-[12px] font-semibold text-[#0d0d0d] shadow-sm transition-[filter,transform] duration-[120ms] ease-out hover:scale-[1.02] hover:brightness-[1.12]";
+const primaryActionBtn =
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition-[background,transform] duration-150 ease-out hover:bg-primary/90 active:translate-y-px";
 
 function kwList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 12) : [];
@@ -192,19 +192,19 @@ export function DocOracleSectionsPanel(props: {
   } = props;
 
   const [search, setSearch] = useState("");
-  const [previewPage, setPreviewPage] = useState<number | null>(null);
+  const [manualPreview, setManualPreview] = useState<{ sectionId: string; page: number } | null>(null);
 
   const tree = useMemo(() => buildSectionTree(sections), [sections]);
   const flat = useMemo(() => flattenSectionTree(tree), [tree]);
 
-  useEffect(() => {
-    if (!selectedSection) {
-      setPreviewPage(null);
-      return;
-    }
-    const p = selectedSection.page_start;
-    setPreviewPage(p != null && p > 0 ? p : null);
-  }, [selectedSection?.id, selectedSection?.page_start]);
+  const defaultPreviewPage =
+    selectedSection?.page_start != null && selectedSection.page_start > 0 ? selectedSection.page_start : null;
+  const previewPage =
+    selectedSection && manualPreview?.sectionId === selectedSection.id ? manualPreview.page : defaultPreviewPage;
+  const selectSection = (section: DocOracleSectionRow) => {
+    setManualPreview(null);
+    onSelectSection(section);
+  };
 
   const relatedPages = useMemo(
     () => (selectedSection ? relatedPagesForSection(selectedSection, pages) : []),
@@ -246,14 +246,14 @@ export function DocOracleSectionsPanel(props: {
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          className={cn(limeBtn)}
+          className={cn(primaryActionBtn)}
           onClick={() => onAskAiSection(selectedSection)}
         >
           <MessageCircle className="h-4 w-4" aria-hidden />
           Ask Doc Oracle about this section
         </button>
         {pdfOpenHref ? (
-          <a href={pdfOpenHref} target="_blank" rel="noreferrer" className={cn(limeBtn, "no-underline")}>
+          <a href={pdfOpenHref} target="_blank" rel="noreferrer" className={cn(primaryActionBtn, "no-underline")}>
             Open PDF
           </a>
         ) : null}
@@ -291,7 +291,7 @@ export function DocOracleSectionsPanel(props: {
             onChange={(e) => {
               const id = e.target.value;
               const row = sections.find((s) => s.id === id);
-              if (row) onSelectSection(row);
+              if (row) selectSection(row);
             }}
           >
             <option value="">Choose a section…</option>
@@ -310,7 +310,7 @@ export function DocOracleSectionsPanel(props: {
             <SectionNavTree
               nodes={tree}
               selectedId={selectedSection?.id ?? null}
-              onPick={onSelectSection}
+              onPick={selectSection}
               query={search}
             />
           )}
@@ -327,7 +327,10 @@ export function DocOracleSectionsPanel(props: {
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Related pages</p>
           <DocOracleRelatedPages
             pages={relatedPages}
-            onSelectPage={(p) => setPreviewPage(p.page_number)}
+            onSelectPage={(p) => {
+              if (!selectedSection) return;
+              setManualPreview({ sectionId: selectedSection.id, page: p.page_number });
+            }}
             onOpenPageDetail={onOpenPageDetail}
           />
         </div>

@@ -3,7 +3,6 @@
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
-import { kwList } from "@/components/document-oracle/overview/overviewHelpers";
 
 function pageRange(s: DocOracleSectionRow): string {
   const a = s.page_start;
@@ -11,6 +10,14 @@ function pageRange(s: DocOracleSectionRow): string {
   if (a != null && b != null && b !== a) return `p.${a}–${b}`;
   if (a != null) return `p.${a}`;
   return "";
+}
+
+function compactText(value: string | null | undefined): string {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[*_`#>-]/g, "")
+    .replace(/\s+/g, "")
+    .trim();
 }
 
 export function ClickableTableOfContents(props: {
@@ -27,40 +34,50 @@ export function ClickableTableOfContents(props: {
   return (
     <section>
       <div className="mb-2 flex items-center gap-2">
-        <BookOpen className="h-4 w-4 text-[#C8E53A]/80" aria-hidden />
+        <BookOpen className="h-4 w-4 text-primary" aria-hidden />
         <h3 className="text-[13px] font-semibold tracking-tight text-foreground">Table of contents</h3>
       </div>
       <p className="mb-3 text-[12px] text-muted-foreground">Open a section in the Sections tab, or jump to a page in Source.</p>
       <ul className="space-y-2">
         {list.map((s) => {
           const indent = Math.min(Math.max((s.level ?? 1) - 1, 0), 4);
-          const tags = kwList(s.keywords);
+          const titleKey = compactText(s.title);
+          const summary = s.summary?.trim() ?? "";
+          const showSummary = summary.length > 0 && compactText(summary) !== titleKey;
           return (
             <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSectionDetail(s);
-                  setTab("sections");
-                }}
+              <div
                 className={cn(
-                  "w-full rounded-xl border border-white/10 bg-black/25 p-3 text-left transition hover:border-[#C8E53A]/35 hover:bg-[#C8E53A]/[0.06]",
+                  "w-full rounded-xl border border-border bg-card/70 p-3 transition hover:border-primary/25 hover:bg-primary/8",
                   "touch-manipulation",
                 )}
                 style={{ paddingLeft: `${12 + indent * 14}px` }}
               >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <span className="min-w-0 flex-1 text-[13px] font-semibold leading-snug text-foreground">{s.title}</span>
-                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSectionDetail(s);
+                      setTab("sections");
+                    }}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span className="block text-[13px] font-semibold leading-snug text-foreground">{s.title}</span>
+                    {showSummary ? (
+                      <span className="mt-1.5 line-clamp-2 block text-[12px] leading-relaxed text-muted-foreground">
+                        {summary}
+                      </span>
+                    ) : null}
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
                     {s.page_start != null && openSourceAtPage ? (
                       <button
                         type="button"
-                        className="rounded-full border border-white/15 bg-black/35 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground transition hover:border-[#C8E53A]/40 hover:text-[#d4f06a]"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
+                        className="rounded-full border border-border bg-background/55 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground transition hover:border-primary/35 hover:text-primary"
+                        onClick={() => {
                           openSourceAtPage(s.page_start as number);
                         }}
+                        aria-label={`Open ${pageRange(s) || `p.${s.page_start}`} in source`}
                       >
                         {pageRange(s) || `p.${s.page_start}`}
                       </button>
@@ -69,16 +86,7 @@ export function ClickableTableOfContents(props: {
                     )}
                   </div>
                 </div>
-                {s.summary ? (
-                  <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">{s.summary}</p>
-                ) : null}
-                {tags.length > 0 ? (
-                  <p className="mt-2 text-[10.5px] text-muted-foreground/90">
-                    <span className="font-medium text-muted-foreground/80">Keywords: </span>
-                    {tags.slice(0, 6).join(" · ")}
-                  </p>
-                ) : null}
-              </button>
+              </div>
             </li>
           );
         })}

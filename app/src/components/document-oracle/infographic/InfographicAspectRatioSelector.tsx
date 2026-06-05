@@ -29,8 +29,8 @@ export function InfographicAspectRatioSelector(props: {
               className={cn(
                 "touch-manipulation rounded-xl border px-3 py-2 text-left text-[12px] transition",
                 active
-                  ? "border-[#C8E53A]/70 bg-[#C8E53A]/15 text-foreground"
-                  : "border-border bg-muted/40 text-muted-foreground hover:border-white/20",
+                  ? "border-primary/45 bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-muted-foreground hover:border-primary/25",
                 props.disabled && "pointer-events-none opacity-50",
               )}
             >

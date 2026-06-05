@@ -83,9 +83,9 @@ export function GlossaryAlphabetIndex(props: Props) {
       className={cn(
         "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition",
         active
-          ? "border-[#C8E53A]/55 bg-[#C8E53A]/20 text-foreground"
-          : "border-border/80 bg-black/25 text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
-        disabled && "cursor-not-allowed opacity-35 hover:border-border/80 hover:bg-black/25 hover:text-muted-foreground",
+          ? "border-primary/45 bg-primary/10 text-primary"
+          : "border-border/80 bg-background/45 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground",
+        disabled && "cursor-not-allowed opacity-35 hover:border-border/80 hover:bg-background/45 hover:text-muted-foreground",
       )}
     >
       {label}
