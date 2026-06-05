@@ -22,7 +22,6 @@ import {
   Rocket,
   Settings,
   Sprout,
-  Sun,
   Target,
   Users,
   type LucideIcon,
@@ -42,8 +41,11 @@ import { useActiveGarden, useGardenTodayLog } from "@/hooks/use-garden";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
 import { useTodayContext } from "@/hooks/use-today-context";
+import { useWeather } from "@/hooks/use-weather";
+import { WeatherLottie } from "@/components/weather/WeatherLottie";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
+import { resolveWeatherAnimationKey } from "@/lib/weather/lottie-animation";
 import {
   OS_BUDDY_RESTING_SPACE_DROPZONE_ID,
   type OSBuddyRestingState,
@@ -128,6 +130,51 @@ const TODAY_METRIC_OPTIONS: TodayMetricOption[] = [
 
 function isZh(locale: AppLocale) {
   return locale === "zh-TW" || locale === "zh-CN";
+}
+
+function intlLocale(locale: AppLocale) {
+  if (locale === "zh-TW") return "zh-HK";
+  if (locale === "zh-CN") return "zh-CN";
+  if (locale === "ja") return "ja-JP";
+  if (locale === "ko") return "ko-KR";
+  if (locale === "fr") return "fr-FR";
+  if (locale === "it") return "it-IT";
+  if (locale === "es") return "es-ES";
+  if (locale === "vi") return "vi-VN";
+  return "en-US";
+}
+
+function formatTodayPanelDate(locale: AppLocale, date: Date) {
+  const intl = intlLocale(locale);
+  const weekday = new Intl.DateTimeFormat(intl, { weekday: "short" }).format(date);
+  const monthDay = new Intl.DateTimeFormat(intl, {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+  return locale === "en" ? `${weekday}, ${monthDay}` : `${monthDay} ${weekday}`;
+}
+
+function useClientTodayDate() {
+  const [date, setDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    let timer: number | null = null;
+    const scheduleNextTick = () => {
+      const now = new Date();
+      setDate(now);
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      const delay = Math.max(60_000, nextMidnight.getTime() - now.getTime() + 1_000);
+      timer = window.setTimeout(scheduleNextTick, delay);
+    };
+
+    scheduleNextTick();
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
+
+  return date;
 }
 
 function readJson<T>(key: string, fallback: T): T {
@@ -296,16 +343,16 @@ function TodayRow({
   tone?: "default" | "green" | "blue" | "amber";
 }) {
   return (
-    <div className="grid min-h-[22px] grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1 border-b border-white/[0.075] px-1 last:border-b-0">
-      <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] border border-white/[0.08] bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+    <div className="today-companion-row grid min-h-[22px] grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1 border-b border-white/[0.075] px-1 last:border-b-0">
+      <span className="today-companion-row__icon inline-flex size-[18px] items-center justify-center rounded-[5px] border border-white/[0.08] bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
         <Icon className="size-2.5 text-sky-200" aria-hidden />
       </span>
-      <span className="min-w-0 truncate text-[9px] font-medium text-slate-200/90">
+      <span className="today-companion-row__label min-w-0 truncate text-[9px] font-medium text-slate-200/90">
         <span className="truncate">{label}</span>
       </span>
       <span
         className={cn(
-          "max-w-[76px] truncate text-right text-[8px] font-semibold leading-none",
+          "today-companion-row__value max-w-[76px] truncate text-right text-[8px] font-semibold leading-none",
           tone === "green" && "text-emerald-300",
           tone === "blue" && "text-sky-300",
           tone === "amber" && "text-amber-300",
@@ -335,12 +382,40 @@ function QuickLaunchButton({
     <Link
       href={withLocalePrefix(localeSlug, option.href)}
       onClick={onNavigate}
-      className="group flex min-h-[42px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border border-white/[0.09] bg-white/[0.045] px-0.5 text-slate-200/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] transition hover:border-emerald-300/30 hover:bg-emerald-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+      className="today-companion-quick-button group flex min-h-[42px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border border-white/[0.09] bg-white/[0.045] px-0.5 text-slate-200/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] transition hover:border-emerald-300/30 hover:bg-emerald-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
       title={label}
     >
       <Icon className="size-3.5 text-sky-200 transition group-hover:text-emerald-200" aria-hidden />
-      <span className="max-w-full truncate text-[8px] font-medium leading-none">{label}</span>
+      <span className="today-companion-quick-label max-w-full truncate text-[8px] font-medium leading-none">{label}</span>
     </Link>
+  );
+}
+
+function TodayWeatherIcon() {
+  const { result } = useWeather();
+  const animationKey =
+    result?.status === "ok"
+      ? resolveWeatherAnimationKey({
+          weatherId: result.weatherId,
+          icon: result.icon,
+          main: result.main,
+        })
+      : "cloudy";
+  const title =
+    result?.status === "ok"
+      ? result.city
+        ? `${result.city} • ${result.description}`
+        : result.description
+      : "Weather";
+
+  return (
+    <span
+      className="today-companion-weather-icon inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-md border border-amber-200/15 bg-amber-300/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+      title={title}
+      aria-label={title}
+    >
+      <WeatherLottie animationKey={animationKey} className="size-5" />
+    </span>
   );
 }
 
@@ -525,9 +600,9 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
   const title = possessiveRestingTitle(name, locale);
 
   return (
-    <section className="space-y-0.5 border-t border-white/[0.08] pt-0.5">
+    <section className="today-companion-rest-section space-y-0.5 border-t border-white/[0.08] pt-0.5">
       <div className="flex items-center justify-between">
-        <h3 className="min-w-0 truncate text-[9px] font-medium text-slate-100">
+        <h3 className="today-companion-section-title min-w-0 truncate text-[9px] font-medium text-slate-100">
           {title}
         </h3>
         <Info className="size-3 shrink-0 text-slate-500" aria-hidden />
@@ -535,14 +610,14 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
       <div
         id={OS_BUDDY_RESTING_SPACE_DROPZONE_ID}
         className={cn(
-          "relative h-[62px] overflow-hidden rounded-lg border bg-black/25 transition",
+          "today-companion-rest-room relative h-[62px] overflow-hidden rounded-lg border bg-black/25 transition",
           isRestingInSidebar
             ? "border-emerald-300/35 shadow-[inset_0_0_28px_rgba(16,185,129,0.08)]"
             : "border-white/[0.12]",
         )}
       >
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-95"
+          className="today-companion-rest-room__bg absolute inset-0 bg-center bg-no-repeat opacity-95"
           style={{ backgroundImage: `url(${RESTING_ROOM_BACKGROUND})` }}
           aria-hidden
         />
@@ -580,7 +655,7 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
           }
           onClick={() => {
             if (!isRestingInSidebar) {
-              dockInRestingSpace("resting");
+              dockInRestingSpace("sleeping");
               return;
             }
             setRestingState(nextRestingState(restingState));
@@ -615,7 +690,7 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
               </span>
             </span>
           ) : (
-            <span className="absolute left-10 bottom-1.5 inline-flex items-center gap-1 rounded-md bg-black/25 px-1.5 py-0.5 text-[9px] font-medium text-slate-300/80 backdrop-blur-sm">
+            <span className="today-companion-drop-cue absolute left-1/2 bottom-[17px] inline-flex -translate-x-1/2 items-center gap-1 rounded-md bg-black/35 px-1.5 py-0.5 text-[9px] font-medium text-slate-200/90 shadow-[0_0_14px_rgba(16,185,129,0.16)] backdrop-blur-sm">
               <CircleDot className="size-3 text-emerald-300/80" aria-hidden />
               {isZh(locale) ? "拖入休息" : "Drop here"}
             </span>
@@ -649,6 +724,7 @@ export function TodayCompanionPanel() {
   const locale = useAppStore((s) => s.language);
   const localeSlug = useLocaleSlug();
   const pathname = usePathname();
+  const todayDate = useClientTodayDate();
   const today = useTodayContext();
   const { data: garden } = useActiveGarden();
   const { data: gardenTodayLog } = useGardenTodayLog();
@@ -660,6 +736,10 @@ export function TodayCompanionPanel() {
   const [todayMetricIds, setTodayMetricIds] = useState<TodayMetricId[]>(DEFAULT_TODAY_METRICS);
   const [todayCustomizerOpen, setTodayCustomizerOpen] = useState(false);
   const [quickCustomizerOpen, setQuickCustomizerOpen] = useState(false);
+  const todayDateLabel = useMemo(
+    () => (todayDate ? formatTodayPanelDate(locale, todayDate) : ""),
+    [locale, todayDate],
+  );
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -790,14 +870,19 @@ export function TodayCompanionPanel() {
 
   return (
     <div
-      className="mt-auto shrink-0 px-2 pb-1.5 pt-1.5 group-data-[collapsible=icon]:hidden"
+      className="today-companion-panel mt-auto shrink-0 px-2 pb-1.5 pt-1.5 group-data-[collapsible=icon]:hidden"
       data-focus-hideable
     >
-      <div className="relative space-y-1 rounded-xl border border-white/12 bg-slate-950/78 p-1.5 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+      <div className="today-companion-panel__shell relative space-y-1 rounded-xl border border-white/12 bg-slate-950/78 p-1.5 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.24)] backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
-            <Sun className="size-4 shrink-0 text-amber-300" aria-hidden />
-            <h2 className="truncate text-[12px] font-semibold text-slate-100">Today</h2>
+            <TodayWeatherIcon />
+            <div className="min-w-0">
+              <h2 className="today-companion-panel__title truncate text-[12px] font-semibold leading-tight text-slate-100">Today</h2>
+              <p className="today-companion-panel__date truncate text-[8px] font-medium leading-tight text-slate-400">
+                {todayDateLabel}
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -824,7 +909,7 @@ export function TodayCompanionPanel() {
 
         <section className="space-y-0.5 border-t border-white/[0.08] pt-0.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-[9px] font-medium text-slate-100">Quick Launch</h3>
+            <h3 className="today-companion-section-title text-[9px] font-medium text-slate-100">Quick Launch</h3>
             <button
               type="button"
               className="inline-flex size-5 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
@@ -861,7 +946,7 @@ export function TodayCompanionPanel() {
         <div className="grid grid-cols-2 gap-1 border-t border-white/[0.08] pt-0.5">
           <button
             type="button"
-            className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2 text-[10px] font-semibold text-slate-100 transition hover:border-emerald-300/30 hover:bg-emerald-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            className="today-companion-action-button inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2 text-[10px] font-semibold text-slate-100 transition hover:border-emerald-300/30 hover:bg-emerald-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
             onClick={handleCapture}
           >
             <Plus className="size-3.5 text-emerald-300" aria-hidden />
@@ -869,7 +954,7 @@ export function TodayCompanionPanel() {
           </button>
           <Link
             href={withLocalePrefix(localeSlug, "/daily-planner")}
-            className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-sky-300/15 bg-sky-500/10 px-2 text-[10px] font-semibold text-sky-100 transition hover:border-sky-200/35 hover:bg-sky-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
+            className="today-companion-action-button inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-sky-300/15 bg-sky-500/10 px-2 text-[10px] font-semibold text-sky-100 transition hover:border-sky-200/35 hover:bg-sky-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
             onClick={handlePlan}
           >
             <CalendarDays className="size-3.5" aria-hidden />

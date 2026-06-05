@@ -27,6 +27,7 @@ import { forwardRef, useCallback, useMemo } from "react";
 import {
   ConstellationCanvas,
   type ConstellationCanvasHandle,
+  type ConstellationRenderQuality,
   type ForceGraphInstance,
   type LocalSubgraphCanvasMeta,
 } from "@/components/knowledge/constellation/ConstellationCanvas";
@@ -146,7 +147,42 @@ function drawCorticalContours(ctx: CanvasRenderingContext2D, isLight: boolean): 
   ctx.restore();
 }
 
-function drawBrainBackground(ctx: CanvasRenderingContext2D, isLight: boolean): void {
+function drawBrainBackgroundLite(ctx: CanvasRenderingContext2D, isLight: boolean): void {
+  const W = BRAIN_HW;
+  const H = BRAIN_HH;
+  ctx.save();
+  ctx.beginPath();
+  drawSuperellipse(ctx, 0, 0, W * 1.04, H * 1.04, 2.3, 2.1, 72);
+  ctx.fillStyle = isLight ? "rgba(14,116,144,0.055)" : "rgba(125,211,252,0.034)";
+  ctx.fill();
+
+  ctx.beginPath();
+  drawSuperellipse(ctx, 0, 0, W, H, 2.3, 2.1, 72);
+  ctx.strokeStyle = isLight ? "rgba(14,116,144,0.18)" : "rgba(125,211,252,0.08)";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0, -H * 0.62);
+  ctx.bezierCurveTo(9, -H * 0.22, -9, H * 0.20, 0, H * 0.62);
+  ctx.strokeStyle = isLight ? "rgba(15,23,42,0.10)" : "rgba(255,255,255,0.045)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 14]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawBrainBackground(
+  ctx: CanvasRenderingContext2D,
+  isLight: boolean,
+  quality: ConstellationRenderQuality = "full",
+): void {
+  if (quality === "interaction") {
+    drawBrainBackgroundLite(ctx, isLight);
+    return;
+  }
+
   const W = BRAIN_HW;
   const H = BRAIN_HH;
   ctx.save();
@@ -360,8 +396,12 @@ export const BrainCanvas = forwardRef<ConstellationCanvasHandle, BrainCanvasProp
 
     // ── 4. Brain background pre-render ────────────────────────────────
     const onRenderFramePre = useCallback(
-      (ctx: CanvasRenderingContext2D) => {
-        if (brainLayoutEnabled) drawBrainBackground(ctx, isLight);
+      (
+        ctx: CanvasRenderingContext2D,
+        _scale: number,
+        quality: ConstellationRenderQuality,
+      ) => {
+        if (brainLayoutEnabled) drawBrainBackground(ctx, isLight, quality);
       },
       [brainLayoutEnabled, isLight],
     );

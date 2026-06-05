@@ -74,6 +74,8 @@ export type ForceGraphInstance = {
   graph2ScreenCoords?: (x: number, y: number) => { x: number; y: number };
   d3Force: (name: string, force?: unknown) => ForceFn | undefined;
   d3ReheatSimulation: () => void;
+  pauseAnimation?: () => void;
+  resumeAnimation?: () => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,9 +97,17 @@ type SimLink = Omit<ConstellationEdge, "source" | "target"> & {
 };
 
 type WorldBox = { x1: number; y1: number; x2: number; y2: number };
+export type ConstellationRenderQuality = "full" | "interaction";
 
 const NEW_NODE_SPARK_MS = 1800;
 const SEARCH_MATCH_GLOW_MS = 1500;
+const INTERACTION_QUALITY_MS = 260;
+const DENSE_GRAPH_NODE_COUNT = 320;
+const DENSE_GRAPH_EDGE_COUNT = 850;
+const VERY_DENSE_GRAPH_NODE_COUNT = 460;
+const VERY_DENSE_GRAPH_EDGE_COUNT = 1200;
+const DENSE_GRAPH_ANIMATED_EDGE_BUDGET = 140;
+const VERY_DENSE_GRAPH_ANIMATED_EDGE_BUDGET = 120;
 
 function hashStringUnit(value: string): number {
   let h = 2166136261;
@@ -186,7 +196,11 @@ interface ConstellationCanvasProps {
    */
   localSubgraphMeta?: LocalSubgraphCanvasMeta | null;
   /** Optional pre-render hook — drawn before nodes. Used by BrainCanvas for brain silhouette. */
-  onRenderFramePre?: (ctx: CanvasRenderingContext2D, globalScale: number) => void;
+  onRenderFramePre?: (
+    ctx: CanvasRenderingContext2D,
+    globalScale: number,
+    quality: ConstellationRenderQuality,
+  ) => void;
   /**
    * Optional callback to install extra D3 forces after the force-graph instance
    * is ready. Called every time graphData changes. Used by BrainCanvas to
@@ -440,6 +454,14 @@ export const ConstellationCanvas = forwardRef<
   const explodedPositionIdsRef = useRef<Set<string>>(new Set());
   const animationRef = useRef<number | null>(null);
   const frameNowRef = useRef(0);
+  const interactionUntilRef = useRef(0);
+  const interactionQualityRef = useRef(false);
+  const denseGraphRef = useRef(false);
+  const veryDenseGraphRef = useRef(false);
+  const zoomNotifyRafRef = useRef<number | null>(null);
+  const pendingZoomNotifyRef = useRef<number | null>(null);
+  const forceZoomNotifyRef = useRef(false);
+  const lastNotifiedZoomRef = useRef(1);
   const previousNodeIdsRef = useRef<Set<string>>(new Set());
   const newNodeSparkRef = useRef<Map<string, number>>(new Map());
   const matchGlowRef = useRef<Map<string, number>>(new Map());
@@ -569,6 +591,15 @@ export const ConstellationCanvas = forwardRef<
       localSubgraphMeta,
     ],
   );
+
+  useEffect(() => {
+    denseGraphRef.current =
+      graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
+      graphData.links.length >= DENSE_GRAPH_EDGE_COUNT;
+    veryDenseGraphRef.current =
+      graphData.nodes.length >= VERY_DENSE_GRAPH_NODE_COUNT ||
+      graphData.links.length >= VERY_DENSE_GRAPH_EDGE_COUNT;
+  }, [graphData.links.length, graphData.nodes.length]);
 
   useEffect(() => {
     const now = performance.now();
@@ -729,11 +760,55 @@ export const ConstellationCanvas = forwardRef<
 
   const currentZoomRef = useRef<number>(1);
 
+  const markGraphInteraction = useCallback((durationMs = INTERACTION_QUALITY_MS) => {
+    const now = performance.now();
+    interactionUntilRef.current = Math.max(
+      interactionUntilRef.current,
+      now + durationMs,
+    );
+  }, []);
+
+  const notifyZoomChange = useCallback(
+    (zoom: number, opts?: { immediate?: boolean }) => {
+      if (!onZoomChange) return;
+      pendingZoomNotifyRef.current = zoom;
+      if (opts?.immediate) forceZoomNotifyRef.current = true;
+
+      const flush = () => {
+        zoomNotifyRafRef.current = null;
+        const next = pendingZoomNotifyRef.current;
+        pendingZoomNotifyRef.current = null;
+        if (next === null) return;
+        const forceNotify = forceZoomNotifyRef.current;
+        forceZoomNotifyRef.current = false;
+        if (!forceNotify && Math.abs(next - lastNotifiedZoomRef.current) < 0.003) {
+          return;
+        }
+        lastNotifiedZoomRef.current = next;
+        onZoomChange(next);
+      };
+
+      if (zoomNotifyRafRef.current !== null) return;
+      zoomNotifyRafRef.current = requestAnimationFrame(flush);
+    },
+    [onZoomChange],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (zoomNotifyRafRef.current !== null) {
+        cancelAnimationFrame(zoomNotifyRafRef.current);
+        zoomNotifyRafRef.current = null;
+      }
+    };
+  }, []);
+
   useImperativeHandle(
     ref,
     () => ({
       fitGraph: () => {
         const fg = graphRef.current;
+        markGraphInteraction(420);
         if (fg && typeof fg.zoomToFit === "function") {
           try {
             fg.zoomToFit(420, 80);
@@ -744,6 +819,7 @@ export const ConstellationCanvas = forwardRef<
       },
       resetLayout: () => {
         const fg = graphRef.current;
+        markGraphInteraction(560);
         manualNodePositionsRef.current.clear();
         explodedPositionIdsRef.current.clear();
         localDepthPinnedIdsRef.current.clear();
@@ -764,6 +840,7 @@ export const ConstellationCanvas = forwardRef<
         }
       },
       focusNode: (nodeId: string) => {
+        markGraphInteraction(520);
         const node = graphData.nodes.find((n) => n.id === nodeId) as
           | SimNode
           | undefined;
@@ -776,6 +853,7 @@ export const ConstellationCanvas = forwardRef<
       zoomBy: (factor: number, durationMs: number = 220) => {
         const fg = graphRef.current;
         if (!fg || typeof fg.zoom !== "function") return;
+        markGraphInteraction(durationMs + 180);
         const next = Math.max(0.1, Math.min(8, (currentZoomRef.current || 1) * factor));
         try {
           fg.zoom(next, durationMs);
@@ -786,6 +864,7 @@ export const ConstellationCanvas = forwardRef<
       zoomTo100: (durationMs: number = 320) => {
         const fg = graphRef.current;
         if (!fg || typeof fg.zoom !== "function") return;
+        markGraphInteraction(durationMs + 180);
         try {
           fg.zoom(1, durationMs);
         } catch {
@@ -793,7 +872,7 @@ export const ConstellationCanvas = forwardRef<
         }
       },
     }),
-    [fitWorldBoxToViewport, graphData.nodes],
+    [fitWorldBoxToViewport, graphData.nodes, markGraphInteraction],
   );
 
   // Fit spotlight selection (global graph): only the selected node and its
@@ -1263,6 +1342,27 @@ export const ConstellationCanvas = forwardRef<
     ],
   );
 
+  const animatedEdgeBudget = useMemo(() => {
+    if (
+      graphData.nodes.length >= VERY_DENSE_GRAPH_NODE_COUNT ||
+      graphData.links.length >= VERY_DENSE_GRAPH_EDGE_COUNT
+    ) {
+      return VERY_DENSE_GRAPH_ANIMATED_EDGE_BUDGET;
+    }
+    if (
+      graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
+      graphData.links.length >= DENSE_GRAPH_EDGE_COUNT
+    ) {
+      return DENSE_GRAPH_ANIMATED_EDGE_BUDGET;
+    }
+    return undefined;
+  }, [graphData.links.length, graphData.nodes.length]);
+
+  const shouldAutoPauseRedraw =
+    prefersReducedMotion ||
+    graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
+    graphData.links.length >= DENSE_GRAPH_EDGE_COUNT;
+
   const animatedEdgeIds = useMemo(() => {
     return selectNeuralAnimatedEdgeIds({
       links: graphData.links as NeuralAnimationLink<SimNode>[],
@@ -1270,8 +1370,10 @@ export const ConstellationCanvas = forwardRef<
       hoveredNodeId: hoveredId,
       spotlightDirectEdgeIds: spotlightDirectEdges,
       reducedMotion: prefersReducedMotion,
+      maxEdges: animatedEdgeBudget,
     });
   }, [
+    animatedEdgeBudget,
     graphData.links,
     hoveredId,
     prefersReducedMotion,
@@ -1297,6 +1399,33 @@ export const ConstellationCanvas = forwardRef<
       if (depth !== null && depth >= 3) r *= 0.72;
       const isDirect = spotlightDirect?.has(node.id) ?? false;
       const dominant = useDepthVisual ? depth !== null && depth <= 1 : isDirect || isSelected;
+      const interactionQuality = interactionQualityRef.current;
+
+      if (interactionQuality) {
+        const fastR = Math.max(2.2, dominant || isSelected || isHovered ? r : r * 0.72);
+        ctx.globalAlpha = alpha * (dominant || isSelected || isHovered ? 0.95 : 0.72);
+        ctx.fillStyle = palette.core;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, fastR, 0, 2 * Math.PI);
+        ctx.fill();
+
+        if (isSelected || isMatched || isHovered) {
+          ctx.globalAlpha = Math.min(1, alpha * 0.92);
+          ctx.strokeStyle = isSelected
+            ? palette.ring
+            : isHovered
+              ? palette.label
+              : graphShell.matchedRingFallback;
+          ctx.lineWidth = isSelected ? 1.5 : 1;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, fastR + (isSelected ? 3 : 2), 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+        return;
+      }
+
       const now = frameNowRef.current || performance.now();
       const sparkStarted = newNodeSparkRef.current.get(node.id);
       const sparkT =
@@ -1512,11 +1641,39 @@ export const ConstellationCanvas = forwardRef<
         Math.abs(source.x - target.x) > 180;
       const cx = crossHemisphere ? 0 : (source.x + target.x) / 2;
       const cy = crossHemisphere ? (source.y + target.y) * 0.16 : (source.y + target.y) / 2;
-      const pulseEligible = animatedEdgeIds.has(link.id);
       const strong = isStrongNeuralEdgeType(link.type);
+
+      if (interactionQualityRef.current) {
+        const sampleThreshold = veryDenseGraphRef.current
+          ? 0.28
+          : denseGraphRef.current
+            ? 0.46
+            : 1;
+        if (
+          !highlighted &&
+          !strong &&
+          hashStringUnit(link.id) > sampleThreshold
+        ) {
+          return;
+        }
+        const fastAlpha = highlighted ? Math.min(1, alpha + 0.22) : Math.max(0.018, alpha * 0.54);
+        if (fastAlpha <= 0.02 && !highlighted) return;
+        ctx.globalAlpha = 1;
+        ctx.setLineDash([]);
+        ctx.lineCap = "round";
+        ctx.strokeStyle = resolveEdgeColorRgba(link.type, fastAlpha, graphSurfaceMode);
+        ctx.lineWidth = Math.max(highlighted ? 0.85 : 0.22, width * (highlighted ? 0.82 : 0.48));
+        ctx.beginPath();
+        ctx.moveTo(source.x, source.y);
+        ctx.lineTo(target.x, target.y);
+        ctx.stroke();
+        return;
+      }
+
+      const lineColor = resolveEdgeColorRgba(link.type, alpha, graphSurfaceMode);
+      const pulseEligible = animatedEdgeIds.has(link.id);
       const now = frameNowRef.current || performance.now();
       const pulsePhase = (now / (strong || highlighted ? 1450 : 2400) + hashStringUnit(link.id)) % 1;
-      const lineColor = resolveEdgeColorRgba(link.type, alpha, graphSurfaceMode);
 
       ctx.save();
       if (dash.length > 0) ctx.setLineDash(dash);
@@ -1642,8 +1799,14 @@ export const ConstellationCanvas = forwardRef<
 
   const handleRenderFramePre = useCallback(
     (ctx: CanvasRenderingContext2D, scale: number) => {
-      frameNowRef.current = performance.now();
-      onRenderFramePre?.(ctx, scale);
+      const now = performance.now();
+      frameNowRef.current = now;
+      const quality: ConstellationRenderQuality =
+        denseGraphRef.current && now < interactionUntilRef.current
+          ? "interaction"
+          : "full";
+      interactionQualityRef.current = quality === "interaction";
+      onRenderFramePre?.(ctx, scale, quality);
     },
     [onRenderFramePre],
   );
@@ -1655,6 +1818,15 @@ export const ConstellationCanvas = forwardRef<
   const onRenderFramePost = useCallback(
     (ctx: CanvasRenderingContext2D, scale: number) => {
       if (!showLabels) return;
+      const interactionQuality = interactionQualityRef.current;
+      if (
+        interactionQuality &&
+        selectedNodeId === null &&
+        hoveredId === null &&
+        matchedNodeIds.size === 0
+      ) {
+        return;
+      }
 
       // Tier thresholds: at low scale we only label the very high
       // priority items; at high scale we relax. Local orbit uses a high
@@ -1667,6 +1839,9 @@ export const ConstellationCanvas = forwardRef<
         if (scale > 0.9) priorityFloor = 5500; // include collections / direct neighbours
         if (scale > 1.5) priorityFloor = 4000; // include tags / matched
         if (scale > 2.4) priorityFloor = 1200; // include knowledge nodes
+      }
+      if (interactionQuality) {
+        priorityFloor = useDepthVisual ? 7600 : 8800;
       }
       // In Spotlight Mode, always show selected + direct.
       // In Hover, always show hovered.
@@ -1911,7 +2086,7 @@ export const ConstellationCanvas = forwardRef<
         linkCanvasObjectMode={() => "replace"}
         linkDirectionalParticles={0}
         linkCurvature={0}
-        autoPauseRedraw={prefersReducedMotion}
+        autoPauseRedraw={shouldAutoPauseRedraw}
         cooldownTicks={cooldownTicksProp ?? 140}
         warmupTicks={warmupTicksProp ?? 30}
         d3VelocityDecay={d3VelocityDecayProp ?? 0.32}
@@ -1931,6 +2106,7 @@ export const ConstellationCanvas = forwardRef<
           onNodeClick(rawNode);
         }}
         onNodeDragEnd={(rawNode: SimNode) => {
+          markGraphInteraction(180);
           if (typeof rawNode.x === "number" && typeof rawNode.y === "number") {
             rawNode.fx = rawNode.x;
             rawNode.fy = rawNode.y;
@@ -1951,15 +2127,18 @@ export const ConstellationCanvas = forwardRef<
         onNodeDblClick={(rawNode: SimNode) => onNodeDoubleClick(rawNode)}
         onZoom={(transform: { k: number; x: number; y: number }) => {
           if (!Number.isFinite(transform?.k)) return;
+          markGraphInteraction();
           currentZoomRef.current = transform.k;
-          // ForceGraph may invoke onZoom during ForceGraph2D render; defer parent
-          // setState so we don't update ConstellationView while rendering this tree.
-          if (onZoomChange) {
-            const k = transform.k;
-            queueMicrotask(() => {
-              onZoomChange(k);
-            });
-          }
+          notifyZoomChange(transform.k);
+        }}
+        onZoomEnd={(transform: { k: number; x: number; y: number }) => {
+          if (!Number.isFinite(transform?.k)) return;
+          markGraphInteraction(120);
+          currentZoomRef.current = transform.k;
+          notifyZoomChange(transform.k, { immediate: true });
+        }}
+        onNodeDrag={() => {
+          markGraphInteraction();
         }}
       />
     </div>

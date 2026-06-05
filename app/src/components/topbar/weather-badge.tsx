@@ -11,18 +11,7 @@
 
 import Link from "next/link";
 
-import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Sun,
-  Moon,
-  CloudOff,
-} from "lucide-react";
+import { Cloud, CloudOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useWeather } from "@/hooks/use-weather";
@@ -36,32 +25,6 @@ type Props = {
   /** Hide the description on narrow viewports. */
   compact?: boolean;
 };
-
-function WeatherGlyph({ main, icon }: { main: string; icon: string }) {
-  const isNight = icon.endsWith("n");
-  const cls = "h-4 w-4 opacity-85";
-  switch (main) {
-    case "Clear":
-      return isNight ? <Moon className={cls} /> : <Sun className={cls} />;
-    case "Clouds":
-      return isNight ? <Cloud className={cls} /> : <CloudSun className={cls} />;
-    case "Rain":
-      return <CloudRain className={cls} />;
-    case "Drizzle":
-      return <CloudDrizzle className={cls} />;
-    case "Thunderstorm":
-      return <CloudLightning className={cls} />;
-    case "Snow":
-      return <CloudSnow className={cls} />;
-    case "Mist":
-    case "Fog":
-    case "Haze":
-    case "Smoke":
-      return <CloudFog className={cls} />;
-    default:
-      return <Cloud className={cls} />;
-  }
-}
 
 export function WeatherBadge({ className, compact = false }: Props) {
   const { result } = useWeather();
@@ -100,6 +63,12 @@ export function WeatherBadge({ className, compact = false }: Props) {
     );
   }
 
+  const animationKey = resolveWeatherAnimationKey({
+    weatherId: result.weatherId,
+    icon: result.icon,
+    main: result.main,
+  });
+
   return (
     <Link
       href={weatherHref}
@@ -108,18 +77,12 @@ export function WeatherBadge({ className, compact = false }: Props) {
       aria-label={`Weather: ${result.description}, ${result.tempC} degrees Celsius — open Weather page`}
       title={result.city ? `${result.city} • ${result.description}` : result.description}
     >
-      <span className="topbar-weather-badge__anim" aria-hidden>
-        <WeatherLottie
-          mode="background"
-          animationKey={resolveWeatherAnimationKey({
-            weatherId: result.weatherId,
-            icon: result.icon,
-            main: result.main,
-          })}
-        />
-      </span>
       <span className="topbar-weather-badge__fg">
-        <WeatherGlyph main={result.main} icon={result.icon} />
+        <WeatherLottie
+          mode="icon"
+          animationKey={animationKey}
+          className="topbar-weather-badge__icon"
+        />
         <span className="font-semibold tabular-nums">{result.tempC}°C</span>
         {!compact ? (
           <span className="hidden opacity-95 md:inline">{result.description}</span>

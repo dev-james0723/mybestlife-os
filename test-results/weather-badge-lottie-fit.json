@@ -1,0 +1,43 @@
+{
+  "text": "18°CClear sky",
+  "aria": "Weather: Clear sky, 18 degrees Celsius — open Weather page",
+  "title": "Hong Kong • Clear sky",
+  "badgeRect": {
+    "x": 823.796875,
+    "y": 6,
+    "w": 157.96875,
+    "h": 44
+  },
+  "fgRect": {
+    "x": 838.796875,
+    "y": 14,
+    "w": 127.96875,
+    "h": 28
+  },
+  "iconRect": {
+    "x": 834.796875,
+    "y": 14,
+    "w": 28,
+    "h": 28
+  },
+  "canvasRect": {
+    "x": 834.796875,
+    "y": 14,
+    "w": 28,
+    "h": 28
+  },
+  "paintedPixels": 154,
+  "iconStyle": {
+    "width": "28px",
+    "height": "28px",
+    "flexBasis": "28px",
+    "marginLeft": "-4px",
+    "overflow": "visible"
+  },
+  "checks": {
+    "iconInsideBadge": true,
+    "canvasMatchesIcon": true,
+    "iconSizedToPillHeight": true,
+    "canvasPainted": true
+  }
+}

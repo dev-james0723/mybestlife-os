@@ -2466,7 +2466,7 @@ export function OSBuddyDock() {
         );
         dockPointRef.current = returnPoint;
         setDockPoint(returnPoint);
-        dockInRestingSpace("resting");
+        dockInRestingSpace("sleeping");
         clearBubble();
         showBubble(
           locale === "zh-TW"

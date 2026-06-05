@@ -49,6 +49,14 @@ Browser verification:
 - Post-selector smoke on 2026-06-05 repeated desktop, View popover, immersive/Esc, and mobile reduced-motion checks after the selector extraction; `desktopOverflow = 0`, `mobileOverflow = 0`, no page errors, and 20 expected `Auth session missing!` console messages.
 - Graph canvas rendering could not be verified because dev-bypass page auth does not create a Supabase auth session; Brain client queries logged `Auth session missing!` and produced an empty/no-results state.
 
+Mocked Supabase graph verification:
+- Execution state: `mocked_supabase_network`. This is not real signed-in production data. The real `/en/brain` page and Brain components were loaded in Playwright, while Supabase auth and PostgREST responses were fulfilled with a local fixture.
+- Desktop mocked graph rendered a brain-shaped neural field with visible nodes, labels, counts, differentiated links, bridge fibers, and the new canvas background: 8 nodes and 9 edges.
+- Local mocked graph preserved Local mode behavior, selected-node focus, the local ring panel, and counts overlay: 2 nodes and 1 edge.
+- Focused mocked route verified the floating details panel for a selected node.
+- Immersive mocked graph verified app chrome removal while retaining graph counts, zoom controls, and the floating local panel.
+- Mobile reduced-motion mocked graph completed with no page errors, visible counts, and a static brain field: 12 nodes and 12 edges. The client still logged `Auth session missing!` warnings from non-mocked local session checks, so this remains mocked-network evidence only.
+
 Evidence:
 - `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-desktop-3100-patched.png`
 - `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-view-popover-3100-patched.png`
@@ -58,9 +66,17 @@ Evidence:
 - `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-view-popover-3100-post-selector.png`
 - `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-immersive-3100-post-selector.png`
 - `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-mobile-3100-post-selector.png`
+- `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-mocked-graph-desktop.png`
+- `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-mocked-graph-focused-inspector.png`
+- `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-mocked-graph-local.png`
+- `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-mocked-graph-immersive.png`
+- `/Users/ouxianxing/My_life_os/app/test-results/brain-connectome/brain-mocked-graph-mobile-reduced-motion.png`
+
+validation_unavailable:
+- Real authenticated Supabase graph-data browser verification is unavailable in this local context because the dev-bypass server user does not create a browser Supabase auth session, and no safe existing real test credentials/session were available. Creating or mutating Supabase auth users with the service-role key was not attempted because that is an external auth/account action requiring explicit confirmation.
 
 Residual risks:
-- Full graph visuals, animated edge density with large real datasets, live node selection, and details-panel behavior remain unverified in-browser until a real authenticated Supabase session is available.
+- Real RLS-scoped Supabase data, realtime refetches with a real browser auth session, and animated edge density with a large production dataset remain unverified in-browser until a real authenticated Supabase session is available.
 
 Next action:
 - Sign into the app with a real Supabase session, then rerun graph browser verification against real Brain data.

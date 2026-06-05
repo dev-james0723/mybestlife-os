@@ -5,6 +5,7 @@ import { OSBuddySprite } from "@/components/os-buddy/OSBuddySprite";
 import { cn } from "@/lib/utils";
 import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
+import { getFocusTapSpriteScaleClass } from "@/lib/os-buddy/focus-tap-layout";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { OSBuddyMood, OSBuddyPetId } from "@/types/os-buddy";
 import { OSBuddyGameEndButton } from "./OSBuddyGameEndButton";
@@ -185,19 +186,22 @@ export function FocusTapOverlay({
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-x-3 bottom-3 sm:inset-x-6">
-        <div className="pointer-events-auto relative h-[min(62vh,620px)] min-h-[420px] overflow-hidden rounded-2xl border border-white/20 bg-background/70 shadow-2xl backdrop-blur-xl">
+        <div
+          className="pointer-events-auto relative h-[min(48vh,440px)] min-h-[360px] max-h-[calc(100vh-120px)] overflow-hidden rounded-2xl border border-white/20 bg-background/70 shadow-2xl backdrop-blur-xl"
+          data-os-buddy-focus-tap-surface
+        >
           <div
             className="absolute left-3 right-3 top-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/75 px-3 py-2 text-sm shadow-lg backdrop-blur-xl"
             onPointerDown={(event) => event.stopPropagation()}
             onPointerMove={(event) => event.stopPropagation()}
           >
-            <div>
+            <div className="min-w-0">
               <p className="font-black">{zh ? "Focus Tap" : "Focus Tap"}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="hidden text-xs text-muted-foreground sm:block">
                 {zh ? "只在提示出現時點擊紅色按鈕。" : "Tap the red button only when the cue appears."}
               </p>
             </div>
-            <div className="flex items-center gap-3 font-mono text-xs font-bold">
+            <div className="flex items-center gap-2 font-mono text-xs font-bold sm:gap-3">
               <span>{zh ? "回合" : "Round"} {Math.min(round, TOTAL_ROUNDS)} / {TOTAL_ROUNDS}</span>
               <span>{zh ? "分數" : "Score"} {score}</span>
               <OSBuddyGameEndButton
@@ -210,16 +214,13 @@ export function FocusTapOverlay({
 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,hsl(var(--destructive)/0.12),transparent_52%)]" />
 
-          <div className="absolute inset-x-0 top-28 flex h-[min(36vh,360px)] items-end justify-center overflow-visible">
+          <div className="absolute inset-x-0 bottom-[132px] top-20 z-10 flex items-end justify-center overflow-visible sm:bottom-[156px] sm:top-24">
             <div
               className={cn(
-                "origin-bottom",
-                reducedMotion
-                  ? "scale-[2.85] sm:scale-[4.4] lg:scale-[5.2]"
-                  : phase === "active"
-                    ? "scale-[3.05] sm:scale-[4.8] lg:scale-[5.6]"
-                    : "scale-[2.85] sm:scale-[4.6] lg:scale-[5.4]",
+                "origin-bottom will-change-transform",
+                getFocusTapSpriteScaleClass(phase, reducedMotion),
               )}
+              data-os-buddy-focus-tap-sprite
             >
               <OSBuddySprite
                 petId={petId}
@@ -231,7 +232,7 @@ export function FocusTapOverlay({
             </div>
           </div>
 
-          <div className="absolute left-1/2 top-[clamp(154px,29%,178px)] z-30 h-0 w-0">
+          <div className="absolute left-1/2 top-[clamp(118px,31%,144px)] z-30 h-0 w-0 sm:top-[clamp(108px,29%,136px)]">
             <div
               key={`${phase}:${feedback}`}
               className="os-buddy-pixel-bubble pointer-events-none"
@@ -245,11 +246,11 @@ export function FocusTapOverlay({
             </div>
           </div>
 
-          <div className="absolute inset-x-0 bottom-8 z-30 flex justify-center">
+          <div className="absolute inset-x-0 bottom-5 z-30 flex justify-center sm:bottom-6">
             <button
               type="button"
               className={cn(
-                "grid size-28 place-items-center rounded-full border-4 border-red-950 bg-red-600 font-mono text-xl font-black uppercase tracking-normal text-white shadow-[0_10px_0_#7f1d1d] outline-none transition-transform active:translate-y-1 active:shadow-[0_6px_0_#7f1d1d] focus-visible:ring-4 focus-visible:ring-red-500/45 motion-reduce:transition-none sm:size-36 sm:text-2xl",
+                "grid size-[104px] place-items-center rounded-full border-4 border-red-950 bg-red-600 font-mono text-xl font-black uppercase tracking-normal text-white shadow-[0_10px_0_#7f1d1d] outline-none transition-transform active:translate-y-1 active:shadow-[0_6px_0_#7f1d1d] focus-visible:ring-4 focus-visible:ring-red-500/45 motion-reduce:transition-none sm:size-32 sm:text-2xl",
                 phase === "active" && "ring-4 ring-red-400/50",
               )}
               onPointerDown={(event) => {

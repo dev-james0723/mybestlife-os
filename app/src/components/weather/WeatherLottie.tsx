@@ -4,7 +4,7 @@
  * Shared animated weather glyph, powered by Lottie (Meteocons).
  *
  * Used in three places via a single canonical animation key:
- *   - the top-bar pill background  (`mode="background"`)
+ *   - the top-bar pill icon        (`mode="icon"`)
  *   - the dashboard weather widget (`mode="icon"`)
  *   - the weather page hero        (`mode="icon"`)
  *
@@ -36,7 +36,7 @@ interface WeatherLottieProps {
   animationKey: WeatherAnimationKey;
   /**
    * - `icon`: inline square glyph; size it via `className` (e.g. `size-7`).
-   * - `background`: fills its positioned parent and crops to cover.
+   * - `background`: fits inside its positioned parent without cropping.
    */
   mode?: WeatherLottieMode;
   className?: string;
@@ -65,7 +65,7 @@ export function WeatherLottie({
         loop={!reduceMotion}
         backgroundColor="transparent"
         layout={{
-          fit: mode === "background" ? "cover" : "contain",
+          fit: "contain",
           align: [0.5, 0.5],
         }}
         renderConfig={{ autoResize: true, freezeOnOffscreen: true }}

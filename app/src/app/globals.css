@@ -443,6 +443,25 @@ html.focus-mode [data-focus-hideable] {
   user-select: none;
 }
 
+.today-companion-weather-icon {
+  position: relative;
+}
+
+.today-companion-weather-icon canvas,
+.today-companion-weather-icon svg {
+  display: block;
+}
+
+.today-companion-rest-room__bg {
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.today-companion-drop-cue {
+  animation: today-companion-drop-cue-nudge 1.6s ease-in-out infinite;
+}
+
 .today-companion-rest-sprite--sleeping {
   animation-duration: 3.8s;
   filter: saturate(0.9);
@@ -519,11 +538,28 @@ html.focus-mode [data-focus-hideable] {
   }
 }
 
+@keyframes today-companion-drop-cue-nudge {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  18% {
+    transform: translateX(calc(-50% - 1px)) translateY(-1px);
+  }
+  36% {
+    transform: translateX(calc(-50% + 1px)) translateY(0);
+  }
+  54% {
+    transform: translateX(-50%) translateY(-1px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .today-companion-rest-sprite,
   .today-companion-rest-sprite--sleeping,
   .today-companion-rest-sprite--headache,
-  .today-companion-zzz {
+  .today-companion-zzz,
+  .today-companion-drop-cue {
     animation: none !important;
   }
 }
@@ -1214,6 +1250,73 @@ html[data-ui-theme="default"] [data-slot="sidebar-wrapper"] {
   --sidebar-width: 15rem !important;
 }
 
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] {
+  --sidebar-width: min(16.25rem, calc(100vw - 1.25rem)) !important;
+  width: min(16.25rem, calc(100vw - 1.25rem)) !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel {
+  padding-inline: 0.45rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel__shell {
+  border-radius: 0.875rem !important;
+  padding: 0.5rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-weather-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel__title {
+  font-size: 0.82rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel__date,
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-section-title {
+  font-size: 0.64rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row {
+  min-height: 1.65rem !important;
+  grid-template-columns: 1.45rem minmax(0, 1fr) auto !important;
+  gap: 0.35rem !important;
+  padding-inline: 0.35rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row__icon {
+  width: 1.35rem !important;
+  height: 1.35rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row__label {
+  font-size: 0.64rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row__value {
+  max-width: 5rem !important;
+  font-size: 0.6rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-quick-button {
+  min-height: 2.85rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-quick-label,
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-action-button {
+  font-size: 0.66rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-rest-room {
+  height: 4.75rem !important;
+}
+
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-drop-cue {
+  bottom: 1.55rem !important;
+  font-size: 0.62rem !important;
+}
+
 /* Floating-island shell — rounded, detached, glassy. Applied to the
    desktop container + inner panel. Mobile Sheet gets its own treatment
    below. The base shadcn shell uses fixed-edge positioning; we convert
@@ -1637,9 +1740,9 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
     inset 0 1px 0 rgba(255, 255, 255, 0.80);
 }
 
-/* Weather badge — live Lottie condition animation behind the label.
-   Theme-agnostic so it works under every data-ui-theme. The scrim keeps the
-   temperature + description readable over the animation. */
+/* Weather badge — inline Lottie condition icon.
+   The icon slot is fixed so the 128x128 Lottie asset scales to the pill height
+   instead of using the pill width and getting cropped. */
 .topbar-weather-badge {
   display: inline-flex;
   min-width: 44px;
@@ -1650,23 +1753,6 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
   overflow: hidden;
   isolation: isolate;
 }
-.topbar-weather-badge__anim {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.4;
-}
-.topbar-weather-badge__anim::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(17, 18, 22, 0.62) 0%,
-    rgba(17, 18, 22, 0.18) 52%,
-    rgba(17, 18, 22, 0.44) 100%
-  );
-}
 .topbar-weather-badge__fg {
   position: relative;
   z-index: 1;
@@ -1674,21 +1760,13 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
   align-items: center;
   gap: 8px;
 }
-html[data-color-mode="light"] .topbar-weather-badge__anim {
-  opacity: 0.55;
-}
-html[data-color-mode="light"] .topbar-weather-badge__anim::after {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.66) 0%,
-    rgba(255, 255, 255, 0.22) 52%,
-    rgba(255, 255, 255, 0.48) 100%
-  );
-}
-@media (prefers-reduced-motion: reduce) {
-  .topbar-weather-badge__anim {
-    opacity: 0.3;
-  }
+.topbar-weather-badge__icon {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  margin-left: -4px;
+  flex: 0 0 28px;
+  line-height: 0;
 }
 
 /* Utility pill + buttons + divider */

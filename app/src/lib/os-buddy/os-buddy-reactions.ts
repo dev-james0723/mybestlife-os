@@ -9,6 +9,7 @@ import type {
   OSBuddyCompanionCta,
   OSBuddyCompanionKind,
 } from "@/lib/os-buddy/os-buddy-companion";
+import { pickOSBuddyDragEndLine } from "@/lib/os-buddy/os-buddy-drag-lines";
 
 type ShowBubbleOptions = {
   durationMs?: number;
@@ -236,7 +237,7 @@ export function handleOSBuddyReaction(params: {
       return;
     case "buddy:drag:end":
       setMood("idle");
-      showBubble(t(locale, "Nice spot.", "這個位置不錯。"), "user-triggered", {
+      showBubble(pickOSBuddyDragEndLine(locale), "user-triggered", {
         force: true,
         durationMs: 1_700,
       });
