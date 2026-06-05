@@ -15,6 +15,7 @@ import { fetchPageMeta, isValidPublicUrl } from "@/lib/vault/safe-fetch";
 import { resolveIcon } from "@/lib/vault/icon-resolver";
 import { uploadVaultIconFromRemoteUrl } from "@/lib/vault/icon-storage";
 import { buildGitHubVaultContext, GITHUB_VAULT_SYSTEM_PROMPT } from "@/lib/vault/github-autofill";
+import { isLikelyProductCandidate } from "@/lib/vault/identity-resolver";
 import { consumeVaultAutofillQuota } from "@/lib/vault/rate-limit";
 import {
   buildFieldSources,
@@ -28,7 +29,7 @@ import {
   vaultAutofillExtractionSchema,
   type VaultAutofillExtraction,
 } from "@/lib/vault/autofill-v2";
-import type { AppCandidate } from "@/types/vault-smart-autofill";
+import type { AppCandidate, ConfidenceLevel, FieldSource } from "@/types/vault-smart-autofill";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -50,28 +51,26 @@ const requestSchema = z.object({
 });
 
 const RESEARCH_PROMPT = `You are researching a software product for a personal software vault catalog.
-Use web search to find:
+Use official pages, GitHub, and web search to find evidence-backed facts:
 - Official product name and one-line positioning
 - Official website and pricing page URL
-- Public subscription tiers with prices (Free, Plus, Pro, Team, Enterprise, etc.)
-- Top 3-5 competitor alternatives with one-line reasons
+- Public subscription tiers with prices when an official pricing page is found
+- Top competitor alternatives with one-line reasons
 - Platforms supported (macOS, Windows, Web, CLI, etc.)
-- Typical use cases and who it's for
+- Typical public use cases and who it's for
 - Main strengths and honest downsides
-- What workflow or tools it replaces
+- The workflow category it usually replaces
 
-Write structured research notes in plain text. Cite specific plan names and prices when found on official pages. If open-source, state license and that it's free.`;
+Write structured research notes in plain text. Separate verified facts from uncertain or missing information. Do not fill gaps with generic product assumptions.`;
 
-const EXTRACTION_PROMPT = `Extract a complete software vault catalog entry from the research notes.
+const EXTRACTION_PROMPT = `Extract a software vault catalog entry from the research notes.
 Return JSON matching the schema. Rules:
-- Fill EVERY required field with concrete, specific text — no placeholders like "TBD" or "Manual workflow".
-- tags: 5-10 short tags as array (category, tech, use case, platform).
-- pricing_plans: include at least Free when applicable; include paid tiers with price when known from research.
-- alternative_options: 3-5 objects with name and reason; best_alternative must equal the top alternative name.
-- replaces: describe a specific workflow this tool replaces.
-- default_tool_for: one clear job-to-be-done sentence.
-- field_confidence: per-field high/medium/low based on how explicit the research was.
-- status default Active, priority Nice-to-have.
+- Only include a field when the notes provide evidence for that exact product.
+- Leave unknown fields omitted or empty. Never use generic placeholders like "Productivity and workflow", "Core product capabilities", "Comparable tool", or "Manual workflow".
+- Do not fill user-specific fields such as status, priority, or why_i_use_it.
+- pricing_plans: include tiers only when they are found in official pricing or trusted public notes. Do not invent a Free plan.
+- alternative_options: include competitors only when research notes identify them.
+- field_confidence: high for official/GitHub facts, medium for supported search facts, low only when uncertain.
 - Never invent website URLs not supported by research.`;
 
 const FORM_FIELD_KEYS = new Set([
@@ -102,7 +101,9 @@ async function resolveWebsiteFromQuery(query: string): Promise<string | null> {
   if (isValidPublicUrl(withScheme) && /\./.test(query)) return withScheme;
   const hits = await searchDuckDuckGo(`${query} official site`).catch(() => []);
   for (const hit of hits) {
-    if (isValidPublicUrl(hit.url)) return hit.url;
+    if (isValidPublicUrl(hit.url) && isLikelyProductCandidate(query, hit.title, hit.url)) {
+      return hit.url;
+    }
   }
   return null;
 }
@@ -131,6 +132,70 @@ function coerceExtraction(raw: unknown): VaultAutofillExtraction | null {
     if (retry.success) return retry.data;
   }
   return null;
+}
+
+function confidenceForFallbackField(field: string, hasSource: boolean): ConfidenceLevel {
+  if (field === "app_name" && !hasSource) return "user_confirmed";
+  return hasSource ? "high" : "user_confirmed";
+}
+
+function buildMinimalAutofillResponse(params: {
+  query: string;
+  candidate?: AppCandidate;
+  resolvedUrl: string | null;
+  githubUrl: string | null;
+  pageTitle?: string | null;
+}) {
+  const appName =
+    params.candidate?.name ??
+    params.pageTitle?.replace(/\s*[|—–-].*$/, "").trim().slice(0, 80) ??
+    params.query;
+  const websiteUrl =
+    params.candidate?.official_url ??
+    params.resolvedUrl ??
+    params.githubUrl ??
+    "";
+  const hasNameSource = Boolean(params.candidate || params.pageTitle);
+  const fields: Record<string, string> = { app_name: appName };
+  const fieldConfidence: Record<string, ConfidenceLevel> = {
+    app_name: confidenceForFallbackField("app_name", hasNameSource),
+  };
+  const fieldSources: FieldSource[] = [
+    {
+      field: "app_name",
+      source_type: hasNameSource ? "official_site" : "user_input",
+      confidence: fieldConfidence.app_name,
+      fetched_at: new Date().toISOString(),
+    },
+  ];
+
+  if (websiteUrl) {
+    fields.website_url = websiteUrl;
+    fieldConfidence.website_url = "high";
+    fieldSources.push({
+      field: "website_url",
+      source_type: params.githubUrl ? "github" : "official_site",
+      source_url: websiteUrl,
+      confidence: "high",
+      fetched_at: new Date().toISOString(),
+    });
+  }
+
+  const aiGeneratedFields = Object.entries(fieldConfidence)
+    .filter(([, confidence]) => confidence !== "user_confirmed")
+    .map(([field]) => field);
+
+  return {
+    fields,
+    pricing_plans: [],
+    pricing_options: [],
+    alternative_options: [],
+    field_sources: fieldSources,
+    field_confidence: fieldConfidence,
+    needs_user_confirmation: [],
+    ai_generated_fields: aiGeneratedFields,
+    partial: true,
+  };
 }
 
 export async function POST(request: Request) {
@@ -261,24 +326,15 @@ export async function POST(request: Request) {
   }
 
   if (!extraction) {
-    extraction = {
-      app_name: candidate?.name ?? query,
-      category: "Software",
-      platforms: "Web",
-      use_cases: "Productivity and workflow",
-      summary: `${candidate?.name ?? query} is a software tool in your vault.`,
-      best_feature: "Core product capabilities for your workflow",
-      biggest_downside: "Verify pricing and fit before committing",
-      best_alternative: "Comparable tool in the same category",
-      replaces: "A less focused manual workflow",
-      default_tool_for: `Using ${candidate?.name ?? query} for its primary job`,
-      tags: ["Software", candidate?.name ?? query].filter(Boolean) as string[],
-      why_i_use_it: `I'd use ${candidate?.name ?? query} when it fits my workflow best.`,
-      cost_type: "Free",
-      pricing_plans: normalizePricingPlans(undefined),
-      alternative_options: [],
-      field_confidence: {},
-    };
+    return NextResponse.json(
+      buildMinimalAutofillResponse({
+        query,
+        candidate,
+        resolvedUrl,
+        githubUrl: githubContext?.canonicalUrl ?? githubInputUrl,
+        pageTitle: pageMeta?.title,
+      }),
+    );
   }
 
   if (!extraction.website_url) {
@@ -309,7 +365,26 @@ export async function POST(request: Request) {
   extraction.tags = normalizeTags(extraction.tags);
 
   const formFields = extractionToFormFields(extraction, candidate);
+  delete formFields.why_i_use_it;
+  delete formFields.status;
+  delete formFields.priority;
   let fieldConfidence = mergeFieldConfidence(extraction, []);
+  for (const [field, confidence] of Object.entries(fieldConfidence)) {
+    if (confidence === "low" || confidence === "needs_user_confirmation") {
+      delete formFields[field];
+    }
+  }
+  fieldConfidence = Object.fromEntries(
+    Object.entries(fieldConfidence).filter(([field]) => {
+      const value = formFields[field];
+      return value != null && String(value).trim() !== "";
+    }),
+  ) as Record<string, ConfidenceLevel>;
+  for (const [field, value] of Object.entries(formFields)) {
+    if (value != null && String(value).trim() !== "" && !fieldConfidence[field]) {
+      fieldConfidence[field] = "medium";
+    }
+  }
   const needsUserConfirmation = computeNeedsConfirmation(formFields, fieldConfidence);
 
   for (const key of needsUserConfirmation) {
@@ -322,6 +397,7 @@ export async function POST(request: Request) {
     hasGithub: !!githubContext,
     hasOfficialPage: !!pageMeta || !!candidate?.official_url,
     hasPricingSearch: true,
+    hasSearch: true,
   });
 
   let iconUrl: string | null = githubContext?.iconUrl ?? candidate?.icon_url ?? null;

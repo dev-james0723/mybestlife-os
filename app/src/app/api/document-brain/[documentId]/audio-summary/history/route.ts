@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { knowledgeFilesProxyUrlFromStoragePath } from "@/lib/knowledge/storage-thumbnail-url";
 import { requireKnowledgeDocumentAskEnabled } from "@/lib/document-brain/requireKnowledgeDocumentAskEnabled";
+import {
+  getDocOracleFixtureAudioHistory,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 
@@ -9,6 +14,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    return NextResponse.json(getDocOracleFixtureAudioHistory());
   }
 
   const supabase = await createServerSupabaseClient();

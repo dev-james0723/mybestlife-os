@@ -54,6 +54,91 @@ function domainCompany(url: string | null | undefined): string | undefined {
   return undefined;
 }
 
+const GENERIC_PRODUCT_QUERY_WORDS = new Set([
+  "ai",
+  "app",
+  "apps",
+  "software",
+  "tool",
+  "tools",
+  "official",
+  "site",
+  "website",
+  "web",
+  "desktop",
+  "mobile",
+  "platform",
+]);
+
+function compactProductText(input: string): string {
+  return input.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function productTokens(input: string): string[] {
+  return input
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && !GENERIC_PRODUCT_QUERY_WORDS.has(token));
+}
+
+function primaryDomainLabel(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    const parts = host.split(".");
+    return parts.length >= 2 ? parts[parts.length - 2] ?? host : host;
+  } catch {
+    return "";
+  }
+}
+
+export function isLikelyProductCandidate(query: string, title: string, url: string): boolean {
+  const rawWords = query.trim().split(/\s+/).filter(Boolean);
+  if (rawWords.length >= DESCRIPTION_WORD_THRESHOLD) return true;
+
+  const tokens = productTokens(query);
+  if (tokens.length === 0) return false;
+
+  const queryCompact = compactProductText(query);
+  const titleCompact = compactProductText(title);
+  const domainCompact = compactProductText(primaryDomainLabel(url));
+
+  if (
+    queryCompact.length >= 3 &&
+    (titleCompact.startsWith(queryCompact) ||
+      domainCompact === queryCompact ||
+      domainCompact.includes(queryCompact))
+  ) {
+    return true;
+  }
+
+  const allTokensInTitle = tokens.every((token) => titleCompact.includes(token));
+  const allTokensInDomain = tokens.every((token) => domainCompact.includes(token));
+  const anyTokenInDomain = tokens.some(
+    (token) => domainCompact.includes(token) || token.includes(domainCompact),
+  );
+
+  if (tokens.length === 1) return allTokensInTitle || anyTokenInDomain;
+  return allTokensInTitle || allTokensInDomain;
+}
+
+function candidateConfidenceForSearchHit(
+  query: string,
+  title: string,
+  url: string,
+): AppCandidate["confidence"] {
+  const queryCompact = compactProductText(query);
+  const titleCompact = compactProductText(title);
+  const domainCompact = compactProductText(primaryDomainLabel(url));
+  if (
+    queryCompact.length >= 3 &&
+    (domainCompact === queryCompact || titleCompact.startsWith(queryCompact))
+  ) {
+    return "high";
+  }
+  return "medium";
+}
+
 async function candidateFromUrl(url: string): Promise<AppCandidate | null> {
   const gh = parseGitHubRepoUrl(url);
   if (gh) {
@@ -119,6 +204,7 @@ async function candidatesFromSearch(query: string): Promise<AppCandidate[]> {
       .trim()
       .slice(0, 80);
     if (!name || name.length < 2) continue;
+    if (!isLikelyProductCandidate(query, name, hit.url)) continue;
 
     out.push({
       id: slugId(`${name}-${host}`),
@@ -129,7 +215,7 @@ async function candidatesFromSearch(query: string): Promise<AppCandidate[]> {
       company: domainCompany(gh ? undefined : hit.url) ?? (gh ? hit.url.split("/")[3] : undefined),
       software_type: inferSoftwareType(`${name} ${hit.snippet}`, !!gh),
       popularity_signal: hit.snippet?.slice(0, 80),
-      confidence: out.length === 0 ? "medium" : "low",
+      confidence: candidateConfidenceForSearchHit(query, name, hit.url),
       source: gh ? "github" : "search",
     });
     if (out.length >= 5) break;

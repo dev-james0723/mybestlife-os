@@ -116,7 +116,7 @@ const en: VaultSmartAutofillCopy = {
   confidence: {
     levels: {
       high: "Verified",
-      medium: "Inferred",
+      medium: "Found",
       low: "Low confidence",
       user_confirmed: "You confirmed",
       needs_user_confirmation: "Confirm",
@@ -201,7 +201,7 @@ const zhTW: VaultSmartAutofillCopy = {
   confidence: {
     levels: {
       high: "已驗證",
-      medium: "推斷",
+      medium: "已找到",
       low: "低信心",
       user_confirmed: "你已確認",
       needs_user_confirmation: "需確認",

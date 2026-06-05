@@ -61,7 +61,7 @@ const alternativeSchema = z.object({
 });
 
 export const vaultAutofillExtractionSchema = z.object({
-  app_name: z.string().trim().min(1),
+  app_name: z.string().trim().min(1).max(120),
   website_url: z
     .string()
     .trim()
@@ -74,23 +74,23 @@ export const vaultAutofillExtractionSchema = z.object({
     .url()
     .optional()
     .or(z.literal("").transform(() => undefined)),
-  category: z.string().trim().min(1).max(120),
-  platforms: z.string().trim().min(1).max(240),
-  use_cases: z.string().trim().min(1).max(600),
+  category: z.string().trim().max(120).optional(),
+  platforms: z.string().trim().max(240).optional(),
+  use_cases: z.string().trim().max(600).optional(),
   status: z.enum(VAULT_STATUSES).optional(),
   priority: z.enum(VAULT_PRIORITIES).optional(),
-  cost_type: z.enum(VAULT_COST_TYPES),
+  cost_type: z.enum(VAULT_COST_TYPES).optional(),
   cost_amount: z.number().nonnegative().nullable().optional(),
   cost_period: z.string().trim().max(60).optional(),
   cost_currency: z.string().trim().max(12).optional(),
-  summary: z.string().trim().min(1).max(280),
-  best_feature: z.string().trim().min(1).max(400),
-  biggest_downside: z.string().trim().min(1).max(400),
-  best_alternative: z.string().trim().min(1).max(200),
-  replaces: z.string().trim().min(1).max(200),
-  default_tool_for: z.string().trim().min(1).max(200),
-  tags: z.union([z.array(z.string()), z.string()]),
-  why_i_use_it: z.string().trim().min(1).max(800),
+  summary: z.string().trim().max(280).optional(),
+  best_feature: z.string().trim().max(400).optional(),
+  biggest_downside: z.string().trim().max(400).optional(),
+  best_alternative: z.string().trim().max(200).optional(),
+  replaces: z.string().trim().max(200).optional(),
+  default_tool_for: z.string().trim().max(200).optional(),
+  tags: z.union([z.array(z.string()), z.string()]).optional().default([]),
+  why_i_use_it: z.string().trim().max(800).optional(),
   pricing_plans: z.array(pricingPlanSchema).optional(),
   alternative_options: z.array(alternativeSchema).optional(),
   field_confidence: z.record(z.string(), confidenceSchema).optional(),
@@ -98,7 +98,8 @@ export const vaultAutofillExtractionSchema = z.object({
 
 export type VaultAutofillExtraction = z.infer<typeof vaultAutofillExtractionSchema>;
 
-export function normalizeTags(tags: string | string[]): string {
+export function normalizeTags(tags?: string | string[]): string {
+  if (!tags) return "";
   const list = Array.isArray(tags)
     ? tags
     : tags
@@ -121,17 +122,7 @@ export function normalizeTags(tags: string | string[]): string {
 
 export function normalizePricingPlans(raw: PricingPlan[] | undefined): PricingPlan[] {
   if (!raw?.length) {
-    return [
-      {
-        id: "free",
-        name: "Free",
-        price: 0,
-        currency: "USD",
-        billing_cycle: "one-time",
-        cost_type: "Free",
-        confidence: "medium",
-      },
-    ];
+    return [];
   }
   return raw.map((p, i) => ({
     id: p.id?.trim() || `plan-${i}`,
@@ -148,10 +139,10 @@ export function normalizePricingPlans(raw: PricingPlan[] | undefined): PricingPl
 
 export function normalizeAlternatives(
   raw: SoftwareAlternative[] | undefined,
-  bestAlternative: string,
+  bestAlternative?: string,
 ): SoftwareAlternative[] {
   const list = [...(raw ?? [])];
-  const primary = bestAlternative.trim();
+  const primary = bestAlternative?.trim() ?? "";
   if (primary && !list.some((a) => a.name.toLowerCase() === primary.toLowerCase())) {
     list.unshift({ name: primary, confidence: "medium" });
   }
@@ -202,6 +193,7 @@ export function buildFieldSources(params: {
   hasGithub: boolean;
   hasOfficialPage: boolean;
   hasPricingSearch: boolean;
+  hasSearch?: boolean;
 }): FieldSource[] {
   const now = new Date().toISOString();
   const sources: FieldSource[] = [];
@@ -214,6 +206,7 @@ export function buildFieldSources(params: {
       return "github";
     }
     if (params.hasOfficialPage) return "official_site";
+    if (params.hasSearch) return "search";
     return "llm_inference";
   };
 
@@ -240,28 +233,36 @@ export function extractionToFormFields(
     extraction.best_alternative,
   );
   const bestAlt = alternatives[0]?.name ?? extraction.best_alternative;
-
-  return {
+  const fields: Record<string, string | number | null> = {
     app_name: extraction.app_name || candidate?.name || "",
-    website_url: extraction.website_url ?? candidate?.official_url ?? "",
-    category: extraction.category,
-    platforms: extraction.platforms,
-    use_cases: extraction.use_cases,
-    status: extraction.status ?? "Active",
-    priority: extraction.priority ?? "Nice-to-have",
-    cost_type: extraction.cost_type,
-    cost_amount:
-      extraction.cost_amount != null ? String(extraction.cost_amount) : extraction.cost_type === "Free" ? "0" : "",
-    cost_period: extraction.cost_period ?? (extraction.cost_type === "Free" ? "one-time" : ""),
-    why_i_use_it: extraction.why_i_use_it,
-    best_feature: extraction.best_feature,
-    biggest_downside: extraction.biggest_downside,
-    best_alternative: bestAlt,
-    replaces: extraction.replaces,
-    tags,
-    default_tool_for: extraction.default_tool_for,
-    summary: extraction.summary,
   };
+
+  const setIfPresent = (key: string, value: unknown) => {
+    if (value == null) return;
+    const normalized = String(value).trim();
+    if (!normalized) return;
+    fields[key] = normalized;
+  };
+
+  setIfPresent("website_url", extraction.website_url ?? candidate?.official_url);
+  setIfPresent("category", extraction.category);
+  setIfPresent("platforms", extraction.platforms);
+  setIfPresent("use_cases", extraction.use_cases);
+  setIfPresent("status", extraction.status);
+  setIfPresent("priority", extraction.priority);
+  setIfPresent("cost_type", extraction.cost_type);
+  if (extraction.cost_amount != null) setIfPresent("cost_amount", String(extraction.cost_amount));
+  setIfPresent("cost_period", extraction.cost_period);
+  setIfPresent("why_i_use_it", extraction.why_i_use_it);
+  setIfPresent("best_feature", extraction.best_feature);
+  setIfPresent("biggest_downside", extraction.biggest_downside);
+  setIfPresent("best_alternative", bestAlt);
+  setIfPresent("replaces", extraction.replaces);
+  setIfPresent("tags", tags);
+  setIfPresent("default_tool_for", extraction.default_tool_for);
+  setIfPresent("summary", extraction.summary);
+
+  return fields;
 }
 
 export function mergeFieldConfidence(
@@ -271,9 +272,6 @@ export function mergeFieldConfidence(
   const base: Record<string, ConfidenceLevel> = {
     ...(extraction.field_confidence as Record<string, ConfidenceLevel> | undefined),
   };
-  for (const key of REQUIRED_FORM_FIELDS) {
-    if (!base[key]) base[key] = "medium";
-  }
   for (const key of needs) {
     base[key] = "needs_user_confirmation";
   }

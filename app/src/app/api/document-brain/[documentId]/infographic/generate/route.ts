@@ -17,6 +17,11 @@ import type { InfographicStyle } from "@/lib/document-brain/infographicStyles";
 import { INFOGRAPHIC_STYLE_PRESETS } from "@/lib/document-brain/infographicStyles";
 import { loadCompletedDocumentOracleContext } from "@/lib/document-brain/loadDocumentOracleContext";
 import { requireKnowledgeDocumentAskEnabled } from "@/lib/document-brain/requireKnowledgeDocumentAskEnabled";
+import {
+  getDocOracleFixtureGeneratedInfographic,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 import { knowledgeFilesProxyUrlFromStoragePath } from "@/lib/knowledge/storage-thumbnail-url";
 
 export const runtime = "nodejs";
@@ -55,6 +60,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ documentId: st
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    let fixtureBody: Record<string, unknown> = {};
+    try {
+      const raw = (await req.json()) as unknown;
+      fixtureBody = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+    } catch {
+      fixtureBody = {};
+    }
+    const aspectRatio = typeof fixtureBody.aspect_ratio === "string" ? fixtureBody.aspect_ratio : "16:9";
+    const style = typeof fixtureBody.style === "string" ? fixtureBody.style : "executive_brief";
+    return NextResponse.json(getDocOracleFixtureGeneratedInfographic(aspectRatio, style));
   }
 
   const apiKey = getGeminiServerApiKey();

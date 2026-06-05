@@ -18,6 +18,11 @@ import {
   buildCategorizedSuggestedQuestions,
   buildLegacyFallbackPrompts,
 } from "@/lib/document-brain/suggested-questions";
+import {
+  getDocOracleFixtureData,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 type PageProps = { params: Promise<{ locale: string; itemId: string }> };
 
@@ -28,6 +33,24 @@ export default async function DocOraclePage({ params }: PageProps) {
   const supabase = await createServerSupabaseClient();
   const user = await getServerPageUser(supabase);
   if (!user) redirect(withLocalePrefix(locale, "/login"));
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(itemId)) {
+    const fixture = getDocOracleFixtureData(user.id);
+    return (
+      <DocOracleWorkspace
+        locale={locale}
+        item={fixture.item}
+        analysis={fixture.analysis}
+        pages={fixture.pages}
+        sections={fixture.sections}
+        glossary={fixture.glossary}
+        visuals={fixture.visuals}
+        chunkCount={fixture.chunkCount}
+        suggestedQuestionCategories={fixture.suggestedQuestionCategories}
+        showDebugLink={false}
+      />
+    );
+  }
 
   const item = await getKnowledgeItemForUser(itemId, user.id);
   if (!item) notFound();

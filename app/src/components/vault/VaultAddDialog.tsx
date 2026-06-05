@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Loader2, ArrowRight, Search } from "lucide-react";
+import { Loader2, ArrowRight, Search } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
@@ -24,28 +24,12 @@ import {
   type VaultFormState,
 } from "@/components/vault/VaultEntryForm";
 import { AppCandidatePickerModal } from "@/components/vault/AppCandidatePickerModal";
-import { PlanPickerSteps } from "@/components/vault/PlanPickerSteps";
-import { VaultReviewStep } from "@/components/vault/VaultReviewStep";
-import { SoftwareProductResearchDialog } from "@/components/vault/SoftwareProductResearchDialog";
 import { useCreateSoftwareVaultEntry } from "@/hooks/use-software-vault";
 import { toast } from "sonner";
 import type { AppCandidate, ConfidenceLevel, FieldSource, PricingPlan, SoftwareAlternative } from "@/types/vault-smart-autofill";
-import type { ShouldAddResponse } from "@/lib/vault/intelligence-schemas";
-import {
-  applyPlanSelection,
-  applySubscribeChoice,
-  shouldShowPlanPicker,
-  type SubscribeChoice,
-} from "@/lib/vault/plan-picker";
-import type { BillingCycle } from "@/types/vault-smart-autofill";
 
 type Stage =
   | "prompt"
-  | "identify"
-  | "pricing-subscribe"
-  | "pricing-plan"
-  | "pricing-cycle"
-  | "review"
   | "form";
 
 type AutofillResult = {
@@ -74,20 +58,15 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
   const [aiFields, setAiFields] = useState<Set<string>>(new Set());
   const [fieldConfidence, setFieldConfidence] = useState<Record<string, ConfidenceLevel>>({});
   const [fieldSources, setFieldSources] = useState<FieldSource[]>([]);
-  const [needsConfirmation, setNeedsConfirmation] = useState<string[]>([]);
+  const [, setNeedsConfirmation] = useState<string[]>([]);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
   const [alternativeOptions, setAlternativeOptions] = useState<SoftwareAlternative[]>([]);
-  const [shouldAddResult, setShouldAddResult] = useState<ShouldAddResponse | null>(null);
   const [metadata, setMetadata] = useState<VaultFormMetadata>({});
   const [candidates, setCandidates] = useState<AppCandidate[]>([]);
   const [, setSelectedCandidate] = useState<AppCandidate | null>(null);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
-  const [researchOpen, setResearchOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
-  const [subscribeChoice, setSubscribeChoice] = useState<SubscribeChoice | null>(null);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedCycle, setSelectedCycle] = useState<BillingCycle | null>(null);
   const createMutation = useCreateSoftwareVaultEntry();
 
   const resetDialog = () => {
@@ -100,17 +79,12 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
     setNeedsConfirmation([]);
     setPricingPlans([]);
     setAlternativeOptions([]);
-    setShouldAddResult(null);
     setMetadata({});
     setCandidates([]);
     setSelectedCandidate(null);
     setShowCandidateModal(false);
-    setResearchOpen(false);
     setIsFetching(false);
     setIsIdentifying(false);
-    setSubscribeChoice(null);
-    setSelectedPlanId(null);
-    setSelectedCycle(null);
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -147,14 +121,8 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
         await runAutofill(data.auto_select);
         return;
       }
-      if (data.candidates.length > 1) {
+      if (data.candidates.length > 0) {
         setShowCandidateModal(true);
-        setStage("identify");
-        return;
-      }
-      if (data.candidates.length === 1) {
-        setSelectedCandidate(data.candidates[0]!);
-        await runAutofill(data.candidates[0]!);
         return;
       }
       await runAutofill(null);
@@ -162,70 +130,6 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
       await runAutofill(null);
     } finally {
       setIsIdentifying(false);
-    }
-  };
-
-  const runShouldAdd = async () => {
-    if (!query.trim()) return;
-    setIsFetching(true);
-    setShouldAddResult(null);
-    try {
-      const res = await fetch("/api/vault/should-add", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: query.trim() }),
-      });
-      if (res.status === 429) {
-        toast.error(copy.add.errors.rateLimited);
-        return;
-      }
-      if (!res.ok) {
-        toast.error(copy.add.errors.notFound);
-        return;
-      }
-      const data = (await res.json()) as ShouldAddResponse;
-      setShouldAddResult(data);
-      const safePatch = sanitizeVaultFormPatch(data.fields_to_save_if_user_confirms ?? {});
-      setForm(() => ({
-        ...EMPTY_FORM,
-        ...safePatch,
-        app_name: safePatch.app_name || query.trim(),
-      }));
-      const generated = Object.keys(safePatch).filter((key) => {
-        const value = safePatch[key as keyof VaultFormState];
-        return value != null && String(value).trim() !== "";
-      });
-      setAiFields(new Set(generated));
-      setFieldConfidence(
-        Object.fromEntries(generated.map((key) => [key, "medium" as ConfidenceLevel])),
-      );
-      setFieldSources(
-        generated.map((field) => ({
-          field,
-          source_type: "llm_inference",
-          fetched_at: data.generatedAt,
-          confidence: "medium",
-        })),
-      );
-      setNeedsConfirmation([]);
-      setPricingPlans([]);
-      setAlternativeOptions([]);
-      setMetadata({
-        field_sources: generated.map((field) => ({
-          field,
-          source_type: "llm_inference",
-          fetched_at: data.generatedAt,
-          confidence: "medium",
-        })),
-        field_confidence: Object.fromEntries(
-          generated.map((key) => [key, "medium" as ConfidenceLevel]),
-        ),
-      });
-      setStage("review");
-    } catch {
-      toast.error(copy.add.errors.notFound);
-    } finally {
-      setIsFetching(false);
     }
   };
 
@@ -254,12 +158,19 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
         return;
       }
       const data = (await res.json()) as AutofillResult;
-      setShouldAddResult(null);
       const safePatch = sanitizeVaultFormPatch(data.fields ?? {});
       setForm(() => ({ ...EMPTY_FORM, ...safePatch }));
-      setAiFields(new Set(data.ai_generated_fields));
-      setFieldConfidence(data.field_confidence ?? {});
-      setFieldSources(data.field_sources ?? []);
+      const generated = data.ai_generated_fields.filter((key) => {
+        const value = safePatch[key as keyof VaultFormState];
+        return value != null && String(value).trim() !== "";
+      });
+      const nextConfidence = Object.fromEntries(
+        Object.entries(data.field_confidence ?? {}).filter(([key]) => key in safePatch),
+      ) as Record<string, ConfidenceLevel>;
+      const nextSources = (data.field_sources ?? []).filter((source) => source.field in safePatch);
+      setAiFields(new Set(generated));
+      setFieldConfidence(nextConfidence);
+      setFieldSources(nextSources);
       setNeedsConfirmation(data.needs_user_confirmation ?? []);
       const plans = data.pricing_plans ?? [];
       setPricingPlans(plans);
@@ -267,17 +178,13 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
       setMetadata({
         pricing_plans: plans,
         alternative_options: data.alternative_options,
-        field_sources: data.field_sources,
-        field_confidence: data.field_confidence,
+        field_sources: nextSources,
+        field_confidence: nextConfidence,
       });
-      if (data.ai_generated_fields.length === 0) {
+      if (generated.length === 0) {
         toast.warning(copy.add.errors.partial);
       }
-      if (shouldShowPlanPicker(plans)) {
-        setStage("pricing-subscribe");
-      } else {
-        setStage("review");
-      }
+      setStage("form");
     } catch {
       toast.error(copy.add.errors.notFound);
       setStage("form");
@@ -292,6 +199,10 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
     setAiFields(new Set());
     setFieldConfidence({});
     setNeedsConfirmation([]);
+    setFieldSources([]);
+    setPricingPlans([]);
+    setAlternativeOptions([]);
+    setMetadata({});
     setStage("form");
     setShowCandidateModal(false);
   };
@@ -308,57 +219,6 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
   const handleFieldUserEdit = (field: keyof VaultFormState) => {
     setFieldConfidence((prev) => ({ ...prev, [field]: "user_confirmed" }));
     setNeedsConfirmation((prev) => prev.filter((k) => k !== field));
-  };
-
-  const applyPricingMetadata = (
-    patch: Partial<VaultFormState> & {
-      selected_plan_id?: string;
-      billing_cycle?: BillingCycle;
-      cost_currency?: string;
-    },
-  ) => {
-    setForm((f) => ({ ...f, ...patch }));
-    setMetadata((m) => ({
-      ...m,
-      selected_plan_id: patch.selected_plan_id ?? m.selected_plan_id,
-      billing_cycle: patch.billing_cycle ?? m.billing_cycle,
-      cost_currency: patch.cost_currency ?? m.cost_currency,
-    }));
-    for (const key of ["cost_type", "cost_amount", "cost_period"] as const) {
-      handleFieldUserEdit(key);
-    }
-  };
-
-  const handlePricingContinue = () => {
-    if (stage === "pricing-subscribe" && subscribeChoice) {
-      if (subscribeChoice === "subscribed") {
-        setStage("pricing-plan");
-        return;
-      }
-      const patch = applySubscribeChoice(subscribeChoice, pricingPlans);
-      applyPricingMetadata(patch);
-      setStage("review");
-      return;
-    }
-    if (stage === "pricing-plan" && selectedPlanId) {
-      setStage("pricing-cycle");
-      const plan = pricingPlans.find((p) => p.id === selectedPlanId);
-      if (plan) setSelectedCycle(plan.billing_cycle ?? "monthly");
-      return;
-    }
-    if (stage === "pricing-cycle" && selectedPlanId && selectedCycle) {
-      const plan = pricingPlans.find((p) => p.id === selectedPlanId);
-      if (plan) {
-        applyPricingMetadata(applyPlanSelection(plan, selectedCycle));
-      }
-      setStage("review");
-    }
-  };
-
-  const handlePricingBack = () => {
-    if (stage === "pricing-cycle") setStage("pricing-plan");
-    else if (stage === "pricing-plan") setStage("pricing-subscribe");
-    else setStage("prompt");
   };
 
   const handleSave = async () => {
@@ -414,62 +274,16 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
                   {busy ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
+                    <Search className="mr-2 h-4 w-4" />
                   )}
                   {busy ? copy.add.fetching : copy.add.fetchCta}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => void runShouldAdd()} disabled={busy || !query.trim()}>
-                  {busy ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
-                  )}
-                  Should I add this?
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setResearchOpen(true)} disabled={busy || !query.trim()}>
-                  <Search className="mr-2 h-4 w-4" />
-                  Research before adding
-                </Button>
-                <Button type="button" variant="ghost" onClick={handleManualEntry} disabled={busy}>
+                <Button type="button" variant="outline" onClick={handleManualEntry} disabled={busy}>
                   {copy.add.manualEntry}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
-          ) : stage === "pricing-subscribe" || stage === "pricing-plan" || stage === "pricing-cycle" ? (
-            <PlanPickerSteps
-              step={
-                stage === "pricing-subscribe"
-                  ? "subscribe"
-                  : stage === "pricing-plan"
-                    ? "plan"
-                    : "cycle"
-              }
-              plans={pricingPlans}
-              subscribeChoice={subscribeChoice}
-              selectedPlanId={selectedPlanId}
-              selectedCycle={selectedCycle}
-              onSubscribeChoice={setSubscribeChoice}
-              onSelectPlan={setSelectedPlanId}
-              onSelectCycle={setSelectedCycle}
-              onBack={handlePricingBack}
-              onContinue={handlePricingContinue}
-              onSkip={() => setStage("review")}
-            />
-          ) : stage === "review" ? (
-            <VaultReviewStep
-              form={form}
-              fieldConfidence={fieldConfidence}
-              fieldSources={fieldSources}
-              needsConfirmation={needsConfirmation}
-              shouldAddResult={shouldAddResult}
-              onEdit={() => setStage("form")}
-              onDeposit={handleSave}
-              onBack={() =>
-                setStage(shouldShowPlanPicker(pricingPlans) ? "pricing-subscribe" : "prompt")
-              }
-              depositing={createMutation.isPending}
-            />
           ) : (
             <>
               <VaultEntryForm
@@ -482,7 +296,7 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
                 onFieldUserEdit={handleFieldUserEdit}
               />
               <DialogFooter className="mt-4 flex items-center justify-between gap-3">
-                <Button type="button" variant="ghost" onClick={() => setStage("review")} disabled={busy}>
+                <Button type="button" variant="ghost" onClick={() => setStage("prompt")} disabled={busy}>
                   ← {copy.review.back}
                 </Button>
                 <div className="flex gap-2">
@@ -516,12 +330,6 @@ export function VaultAddDialog({ open, onOpenChange }: Props) {
           setShowCandidateModal(false);
           setStage("prompt");
         }}
-      />
-      <SoftwareProductResearchDialog
-        open={researchOpen}
-        onOpenChange={setResearchOpen}
-        initialProductName={query}
-        onApplied={() => handleOpenChange(false)}
       />
     </>
   );

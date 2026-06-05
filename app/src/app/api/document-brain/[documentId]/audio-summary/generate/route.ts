@@ -12,6 +12,11 @@ import {
 import type { FocusSelectionInput } from "@/lib/document-brain/infographicGrounding";
 import { loadCompletedDocumentOracleContext } from "@/lib/document-brain/loadDocumentOracleContext";
 import { requireKnowledgeDocumentAskEnabled } from "@/lib/document-brain/requireKnowledgeDocumentAskEnabled";
+import {
+  getDocOracleFixtureGeneratedAudio,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 import { knowledgeFilesProxyUrlFromStoragePath } from "@/lib/knowledge/storage-thumbnail-url";
 
 export const runtime = "nodejs";
@@ -55,6 +60,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ documentId: st
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    return NextResponse.json(getDocOracleFixtureGeneratedAudio());
   }
 
   if (!isAudioProviderConfigured()) {

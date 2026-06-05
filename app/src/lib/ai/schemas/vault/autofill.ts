@@ -2,24 +2,7 @@ import type { GeminiResponseSchema } from "@/lib/ai/gemini-text";
 
 export const VaultAutofillGeminiSchema: GeminiResponseSchema = {
   type: "object",
-  required: [
-    "app_name",
-    "category",
-    "platforms",
-    "use_cases",
-    "summary",
-    "best_feature",
-    "biggest_downside",
-    "best_alternative",
-    "replaces",
-    "default_tool_for",
-    "tags",
-    "why_i_use_it",
-    "cost_type",
-    "pricing_plans",
-    "alternative_options",
-    "field_confidence",
-  ],
+  required: ["app_name"],
   properties: {
     app_name: { type: "string" },
     website_url: { type: "string" },

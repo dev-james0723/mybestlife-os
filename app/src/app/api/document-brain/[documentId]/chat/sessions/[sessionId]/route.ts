@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  DOC_ORACLE_FIXTURE_CHAT_SESSION_ID,
+  getDocOracleFixtureChatMessages,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 
@@ -78,6 +84,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
   const { documentId, sessionId } = await ctx.params;
   if (!documentId || !sessionId) {
     return NextResponse.json({ error: "invalid_params" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    if (sessionId !== DOC_ORACLE_FIXTURE_CHAT_SESSION_ID) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    return NextResponse.json(getDocOracleFixtureChatMessages());
   }
 
   const supabase = await createServerSupabaseClient();

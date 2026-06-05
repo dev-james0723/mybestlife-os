@@ -577,6 +577,11 @@ export function buildCreatePayload(
   const parsedCost = costAmountStr === "" ? null : Number.parseFloat(costAmountStr);
   const costAmount = parsedCost != null && Number.isFinite(parsedCost) ? parsedCost : null;
   const billing = metadata?.billing_cycle as VaultFormMetadata["billing_cycle"];
+  const hasPricingEvidence =
+    (metadata?.pricing_plans?.length ?? 0) > 0 ||
+    (metadata?.field_sources ?? []).some((source) =>
+      source.field === "pricing_plans" || source.field.startsWith("cost_"),
+    );
   return {
     app_name: trimmed(f.app_name),
     website_url: trimmed(f.website_url) || null,
@@ -608,6 +613,6 @@ export function buildCreatePayload(
     alternative_options: metadata?.alternative_options ?? [],
     field_sources: metadata?.field_sources ?? [],
     field_confidence: metadata?.field_confidence ?? {},
-    pricing_last_checked_at: new Date().toISOString(),
+    pricing_last_checked_at: hasPricingEvidence ? new Date().toISOString() : null,
   };
 }

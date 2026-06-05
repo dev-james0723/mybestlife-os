@@ -1,4 +1,10 @@
+const DOC_ORACLE_FIXTURE_ASSET_PREFIX = "doc-oracle-fixture/";
+
 export function knowledgeFilesApiHref(filePath: string): string {
+  if (filePath.startsWith(DOC_ORACLE_FIXTURE_ASSET_PREFIX)) {
+    const fixturePath = filePath.slice(DOC_ORACLE_FIXTURE_ASSET_PREFIX.length);
+    return `/api/document-brain/fixture-assets/${fixturePath.split("/").map(encodeURIComponent).join("/")}`;
+  }
   return `/api/knowledge-files/${filePath.split("/").map(encodeURIComponent).join("/")}`;
 }
 

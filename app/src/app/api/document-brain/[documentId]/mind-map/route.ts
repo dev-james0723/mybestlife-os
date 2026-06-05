@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { fetchMindMapFromDb } from "@/lib/document-brain/mind-map/generateMindMap";
+import {
+  getDocOracleFixtureMindMap,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 
@@ -13,6 +18,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ documentId: st
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    return NextResponse.json(getDocOracleFixtureMindMap());
   }
 
   const supabase = await createServerSupabaseClient();

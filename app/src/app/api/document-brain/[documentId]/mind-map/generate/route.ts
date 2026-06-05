@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { fetchMindMapFromDb, generateAndPersistMindMap } from "@/lib/document-brain/mind-map/generateMindMap";
+import {
+  getDocOracleFixtureMindMap,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -25,6 +30,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ documentId: st
     }
   } catch {
     force = false;
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    return NextResponse.json(getDocOracleFixtureMindMap());
   }
 
   const supabase = await createServerSupabaseClient();

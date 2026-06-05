@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { detectInputType } from "@/lib/vault/identity-resolver";
+import {
+  detectInputType,
+  isLikelyProductCandidate,
+} from "@/lib/vault/identity-resolver";
 
 describe("detectInputType", () => {
   it("detects GitHub repo URLs", () => {
@@ -23,5 +26,20 @@ describe("detectInputType", () => {
   it("defaults short queries to name", () => {
     expect(detectInputType("Cursor")).toBe("name");
     expect(detectInputType("")).toBe("name");
+  });
+});
+
+describe("isLikelyProductCandidate", () => {
+  it("keeps obvious product matches", () => {
+    expect(isLikelyProductCandidate("Manus", "Manus", "https://manus.im")).toBe(true);
+    expect(
+      isLikelyProductCandidate("Reve Image", "Reve Image", "https://app.reve.com"),
+    ).toBe(true);
+  });
+
+  it("rejects unrelated short-name search hits", () => {
+    expect(
+      isLikelyProductCandidate("Manus", "Screen Studio", "https://screen.studio"),
+    ).toBe(false);
   });
 });

@@ -4,6 +4,11 @@ import { getGeminiServerApiKey } from "@/lib/ai/gemini-text";
 import { generateInfographicFocusOptionsModelJson } from "@/lib/document-brain/infographicFocusGeneration";
 import { loadCompletedDocumentOracleContext } from "@/lib/document-brain/loadDocumentOracleContext";
 import { requireKnowledgeDocumentAskEnabled } from "@/lib/document-brain/requireKnowledgeDocumentAskEnabled";
+import {
+  getDocOracleFixtureInfographicFocusOptions,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -12,6 +17,10 @@ export async function POST(_req: Request, ctx: { params: Promise<{ documentId: s
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    return NextResponse.json(getDocOracleFixtureInfographicFocusOptions());
   }
 
   if (!getGeminiServerApiKey()) {

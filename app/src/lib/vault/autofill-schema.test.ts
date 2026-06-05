@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeNeedsConfirmation,
   mergeFieldConfidence,
+  normalizePricingPlans,
   normalizeTags,
   vaultAutofillExtractionSchema,
 } from "@/lib/vault/autofill-v2";
@@ -28,12 +29,12 @@ describe("vaultAutofillExtractionSchema", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("rejects missing required fields", () => {
+  it("accepts partial evidence-backed extraction payloads", () => {
     const parsed = vaultAutofillExtractionSchema.safeParse({
-      ...baseExtraction,
-      summary: "",
+      app_name: "Manus",
+      website_url: "https://manus.im",
     });
-    expect(parsed.success).toBe(false);
+    expect(parsed.success).toBe(true);
   });
 });
 
@@ -62,5 +63,11 @@ describe("mergeFieldConfidence", () => {
 describe("normalizeTags", () => {
   it("dedupes and joins tag arrays", () => {
     expect(normalizeTags(["IDE", "ide", "AI", "AI"])).toBe("IDE, AI");
+  });
+});
+
+describe("normalizePricingPlans", () => {
+  it("does not invent a free plan when pricing was not found", () => {
+    expect(normalizePricingPlans(undefined)).toEqual([]);
   });
 });

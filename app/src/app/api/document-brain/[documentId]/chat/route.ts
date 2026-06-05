@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { fetchGeminiPlannerJsonText, getGeminiServerApiKey } from "@/lib/ai/gemini-text";
+import {
+  getDocOracleFixtureChatAnswer,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -240,6 +245,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ documentId: st
   const turns = messagesRaw.filter(isChatTurn);
   if (turns.length === 0 || turns[turns.length - 1]!.role !== "user") {
     return NextResponse.json({ error: "invalid_messages" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    return NextResponse.json(getDocOracleFixtureChatAnswer(turns[turns.length - 1]!.content));
   }
 
   const supabase = await createServerSupabaseClient();

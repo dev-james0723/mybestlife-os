@@ -9,6 +9,11 @@ import {
 } from "@/lib/document-brain/suggested-questions";
 import type { DocOracleAnalysis, DocOracleGlossaryRow, DocOracleSectionRow } from "@/components/document-oracle/docOracleWorkspaceTypes";
 import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
+import {
+  getDocOracleFixtureData,
+  isDocOracleFixtureEnabled,
+  isDocOracleFixtureId,
+} from "@/lib/document-oracle/docOracleFixture";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +22,14 @@ export async function POST(_req: Request, ctx: { params: Promise<{ documentId: s
   const { documentId } = await ctx.params;
   if (!documentId) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400 });
+  }
+
+  if (isDocOracleFixtureEnabled() && isDocOracleFixtureId(documentId)) {
+    const fixture = getDocOracleFixtureData();
+    return NextResponse.json({
+      categories: fixture.suggestedQuestionCategories,
+      source: "fixture" as const,
+    });
   }
 
   const supabase = await createServerSupabaseClient();
