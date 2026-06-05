@@ -23,6 +23,7 @@ import type {
   OSBuddyCompanionKind,
   OSBuddyMiniGame,
 } from "@/lib/os-buddy/os-buddy-companion";
+import type { OSBuddyRestingState } from "@/lib/os-buddy/os-buddy-resting-space";
 import type { OSBuddyMood } from "@/types/os-buddy";
 
 const UNSOLICITED_BUBBLE_COOLDOWN_MS = 20_000;
@@ -105,6 +106,8 @@ interface OSBuddyRuntimeState {
     x: number;
     y: number;
   } | null;
+  isRestingInSidebar: boolean;
+  restingState: OSBuddyRestingState;
 
   isPetPickerOpen: boolean;
   isMiniGameOpen: boolean;
@@ -175,6 +178,9 @@ interface OSBuddyRuntimeState {
   }) => void;
   updateFreeRoamPosition: (position: { x: number; y: number }) => void;
   stopFreeRoam: (reason?: OSBuddyRoamInterruptReason) => void;
+  dockInRestingSpace: (state?: OSBuddyRestingState) => void;
+  releaseFromRestingSpace: () => void;
+  setRestingState: (state: OSBuddyRestingState) => void;
 
   setPetPickerOpen: (open: boolean) => void;
 
@@ -239,6 +245,8 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   freeRoamLastEndedAt: null,
   freeRoamSessionTimestamps: [],
   freeRoamRuntimePosition: null,
+  isRestingInSidebar: false,
+  restingState: "resting",
 
   isPetPickerOpen: false,
   isMiniGameOpen: false,
@@ -514,6 +522,42 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       freeRoamRuntimePosition: null,
       previousMood: state.mood,
       mood: state.mood === "playful" ? "idle" : state.mood,
+    }));
+  },
+
+  dockInRestingSpace: (restingState = "resting") => {
+    set((state) => ({
+      isRestingInSidebar: true,
+      restingState,
+      isFreeRoaming: false,
+      freeRoamStartedAt: null,
+      freeRoamUntil: null,
+      freeRoamRuntimePosition: null,
+      isMenuOpen: false,
+      isPetPickerOpen: false,
+      isMiniGameOpen: false,
+      activeMiniGame: null,
+      isWalkModeActive: false,
+      isReturningHome: false,
+      previousMood: state.mood,
+      mood: restingState === "sleeping" ? "sleepy" : restingState === "headache" ? "error" : "idle",
+    }));
+  },
+
+  releaseFromRestingSpace: () => {
+    set((state) => ({
+      isRestingInSidebar: false,
+      restingState: "resting",
+      previousMood: state.mood,
+      mood: state.mood === "sleepy" || state.mood === "error" ? "idle" : state.mood,
+    }));
+  },
+
+  setRestingState: (restingState) => {
+    set((state) => ({
+      restingState,
+      previousMood: state.mood,
+      mood: restingState === "sleeping" ? "sleepy" : restingState === "headache" ? "error" : "idle",
     }));
   },
 

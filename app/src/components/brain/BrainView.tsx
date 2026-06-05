@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Minimize2 } from "lucide-react";
 
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useBrainStore } from "@/stores/brain-store";
@@ -202,6 +202,7 @@ export function BrainView({ userId }: BrainViewProps) {
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false);
   /** iOS / embedded WebViews: fullscreen API missing — fixed overlay fallback. */
   const [pseudoGraphFullscreen, setPseudoGraphFullscreen] = useState(false);
+  const isGraphFullscreenActive = isGraphFullscreen || pseudoGraphFullscreen;
   const isLgUp = useIsConstellationLgUp();
   const isSphere = mode === "sphere_3d";
   const sphereClusterBy = useBrainStore((s) => s.sphereClusterBy);
@@ -227,23 +228,6 @@ export function BrainView({ userId }: BrainViewProps) {
       document.removeEventListener("webkitfullscreenchange", sync);
     };
   }, []);
-
-  useEffect(() => {
-    if (isSphere) return;
-    const fsEl = getDocumentFullscreenElement();
-    const host = graphFullscreenRef.current;
-    if (fsEl && host && fsEl === host) {
-      void exitDocumentFullscreen();
-    }
-    if (!pseudoGraphFullscreen) return;
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (!cancelled) setPseudoGraphFullscreen(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isSphere, pseudoGraphFullscreen]);
 
   useEffect(() => {
     if (isSphere || sphereFocusZoomPct === 0) return;
@@ -613,6 +597,7 @@ export function BrainView({ userId }: BrainViewProps) {
     if (!isSphere) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      if (isGraphFullscreenActive) return;
       if (selectedNodeId !== null) {
         const prev = selectedNodeId;
         setSelectedNodeId(null);
@@ -629,6 +614,7 @@ export function BrainView({ userId }: BrainViewProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [
     isSphere,
+    isGraphFullscreenActive,
     selectedNodeId,
     setFocusState,
     setHoveredNodeId,
@@ -697,18 +683,39 @@ export function BrainView({ userId }: BrainViewProps) {
     if (typeof req === "function") {
       try {
         await Promise.resolve(req());
-        usedNative = true;
+        await new Promise((resolve) => window.setTimeout(resolve, 50));
+        usedNative = getDocumentFullscreenElement() === el;
       } catch {
         /* denied or unsupported */
       }
     }
     if (usedNative) {
-      window.setTimeout(() => sphereRef.current?.fitGraph(), 120);
+      window.setTimeout(() => {
+        if (isSphere) sphereRef.current?.fitGraph();
+        else canvasRef.current?.fitGraph();
+      }, 120);
     } else {
       setPseudoGraphFullscreen(true);
-      window.setTimeout(() => sphereRef.current?.fitGraph(), 120);
+      window.setTimeout(() => {
+        if (isSphere) sphereRef.current?.fitGraph();
+        else canvasRef.current?.fitGraph();
+      }, 120);
     }
-  }, [pseudoGraphFullscreen]);
+  }, [isSphere, pseudoGraphFullscreen]);
+
+  useEffect(() => {
+    if (!isGraphFullscreenActive) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (pseudoGraphFullscreen) {
+        setPseudoGraphFullscreen(false);
+      } else {
+        void exitDocumentFullscreen();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isGraphFullscreenActive, pseudoGraphFullscreen]);
 
   const handleRefreshData = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["brain"] });
@@ -910,7 +917,6 @@ export function BrainView({ userId }: BrainViewProps) {
 
   const { t: graphT } = useGraphSurface();
   const graphShell = graphT.shell;
-  const isGraphFullscreenActive = isGraphFullscreen || pseudoGraphFullscreen;
 
   useEffect(() => {
     if (!pseudoGraphFullscreen) return;
@@ -932,42 +938,45 @@ export function BrainView({ userId }: BrainViewProps) {
       style={{ background: graphShell.pageBg }}
     >
       {/* Left: Filters (desktop) */}
-      <div
-        className="hidden lg:block"
-        aria-hidden={!filtersOpen}
-        style={{ display: filtersOpen ? "block" : "none" }}
-      >
-        <BrainFilters
-          nodes={builtGraph.nodes}
-          variant="panel"
-          onClose={() => setFiltersOpen(false)}
-        />
-      </div>
+      {!isGraphFullscreenActive && (
+        <div
+          className="hidden lg:block"
+          aria-hidden={!filtersOpen}
+          style={{ display: filtersOpen ? "block" : "none" }}
+        >
+          <BrainFilters
+            nodes={builtGraph.nodes}
+            variant="panel"
+            onClose={() => setFiltersOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Center: Header + Toolbar + graph column */}
       <div className="relative flex min-w-0 flex-1 flex-col">
-        {!(isSphere && isGraphFullscreenActive) && (
+        {!isGraphFullscreenActive && (
           <GraphPageHeader
             title="Brain"
-            subtitle="A living map of your knowledge, projects, tasks, relationships, journals, goals, and personal systems — connected like a second brain."
+            subtitle="Knowledge, work, routines, relationships, and goals in one living graph."
+            className="mt-2 px-3 py-2 sm:px-4 sm:py-2"
           />
         )}
 
-        <BrainToolbar
-          nodes={visibleGraph.nodes}
-          nodeCount={visibleGraph.nodes.length}
-          edgeCount={visibleGraph.edges.length}
-          onRefreshData={handleRefreshData}
-          onResetLayout={handleResetLayout}
-          onFitGraph={handleFitGraph}
-          onFocusNode={handleFocusNode}
-          sphereFullscreenActive={isGraphFullscreenActive}
-          onToggleSphereFullscreen={
-            isSphere ? handleToggleGraphFullscreen : undefined
-          }
-        />
+        {!isGraphFullscreenActive && (
+          <BrainToolbar
+            nodes={visibleGraph.nodes}
+            nodeCount={visibleGraph.nodes.length}
+            edgeCount={visibleGraph.edges.length}
+            onRefreshData={handleRefreshData}
+            onResetLayout={handleResetLayout}
+            onFitGraph={handleFitGraph}
+            onFocusNode={handleFocusNode}
+            fullscreenActive={isGraphFullscreenActive}
+            onToggleFullscreen={handleToggleGraphFullscreen}
+          />
+        )}
 
-        {showErrorBanner && (
+        {showErrorBanner && !isGraphFullscreenActive && (
           <div className="pointer-events-auto flex items-center gap-2 border-b border-amber-300/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-100">
             <span className="font-medium">Partial sync</span>
             <span className="text-amber-100/80">
@@ -1080,13 +1089,65 @@ export function BrainView({ userId }: BrainViewProps) {
               />
             )}
 
+            {!isEmpty && hasResults && (
+              <div
+                className={cn(
+                  "pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 px-3 py-1 text-[10px] uppercase text-muted-foreground backdrop-blur-md",
+                  graphT.glass.pill,
+                )}
+              >
+                <span>
+                  <span className="font-mono text-foreground/90">
+                    {visibleGraph.nodes.length}
+                  </span>{" "}
+                  nodes
+                </span>
+                <span className={cn("h-3 w-px border-l", graphT.glass.divider)} />
+                <span>
+                  <span className="font-mono text-foreground/90">
+                    {visibleGraph.edges.length}
+                  </span>{" "}
+                  edges
+                </span>
+              </div>
+            )}
+
+            {isGraphFullscreenActive && (
+              <div
+                className={cn(
+                  "pointer-events-auto absolute right-3 top-3 z-40 flex items-center gap-2 px-2.5 py-1.5",
+                  graphT.glass.pill,
+                )}
+              >
+                <span className={cn("hidden text-xs sm:inline", graphT.tone.muted)}>
+                  Immersive Brain
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleToggleGraphFullscreen()}
+                  className={cn(
+                    "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                    graphT.tone.ghostBtn,
+                  )}
+                  aria-label="Exit immersive view"
+                  title="Exit immersive view"
+                >
+                  <Minimize2 className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            )}
+
             {/* Subtle hint when nothing is selected — replaces the
                 previously-large empty Details panel that wasted real
                 estate. Pointer-events disabled so the canvas behind
                 still handles clicks/drags. */}
-            {!isEmpty && hasResults && !selectedNodeId && !inspectorOpen && (
+            {!isEmpty && hasResults && !selectedNodeId && (
               <div
-                className={`pointer-events-none absolute right-3 top-3 z-20 hidden rounded-full px-3 py-1 text-[11px] backdrop-blur-md sm:inline-flex ${graphT.banner.wrap}`}
+                className={cn(
+                  "pointer-events-none absolute right-3 top-14 z-20 hidden rounded-full px-3 py-1 text-[11px] backdrop-blur-md sm:inline-flex",
+                  isGraphFullscreenActive && "right-3 top-14",
+                  graphT.banner.wrap,
+                )}
               >
                 <span className={graphT.banner.subText}>
                   Click a node to inspect details
@@ -1116,6 +1177,61 @@ export function BrainView({ userId }: BrainViewProps) {
             />
             {/* Dev-only: ?brainDebug=1 shows live diagnostics. */}
             <BrainDiagnosticsOverlay graph={richGraph} />
+
+            {isLgUp &&
+              selectedNode &&
+              hasResults &&
+              !showSpinner &&
+              !isEmpty &&
+              inspectorOpen &&
+              !(orphanResolverOpen && richGraph) && (
+                <div
+                  className={cn(
+                    "pointer-events-auto absolute bottom-3 right-3 top-16 z-30 hidden w-[min(22rem,calc(100%-1.5rem))] overflow-hidden rounded-2xl lg:flex",
+                    graphT.glass.panel,
+                    "[&>aside]:!h-full [&>aside]:!w-full [&>aside]:!border-0 [&>aside]:!bg-transparent",
+                    isGraphFullscreenActive && "top-14",
+                  )}
+                >
+                  {mode === "local" && selectedNodeId ? (
+                    <BrainLocalOrbitView
+                      localOrbit={localOrbitState}
+                      onFocusNode={handleFocusNode}
+                    />
+                  ) : (
+                    <BrainDetailPanel
+                      selectedNode={selectedNode}
+                      incidentEdges={incidentEdges}
+                      nodeIndex={nodeIndex}
+                      onClose={() => {
+                        if (isSphere) {
+                          handleBackgroundClick();
+                        } else {
+                          setSelectedNodeId(null);
+                        }
+                        setInspectorOpen(false);
+                      }}
+                      onFocusNode={handleFocusNode}
+                    />
+                  )}
+                </div>
+              )}
+
+            {isLgUp && orphanResolverOpen && richGraph && !isGraphFullscreenActive && (
+              <div
+                className={cn(
+                  "pointer-events-auto absolute bottom-3 right-3 top-16 z-30 hidden w-[min(24rem,calc(100%-1.5rem))] overflow-hidden rounded-2xl lg:flex",
+                  graphT.glass.panel,
+                  "[&>*]:!h-full [&>*]:!w-full [&>*]:!border-0 [&>*]:!bg-transparent",
+                )}
+              >
+                <BrainOrphanResolver
+                  graph={richGraph}
+                  rejectedHashes={rejectedHashes}
+                  onFocusNode={handleFocusNode}
+                />
+              </div>
+            )}
           </div>
 
           {/* Mobile / tablet (below lg breakpoint): docked inspector under graph */}
@@ -1148,47 +1264,6 @@ export function BrainView({ userId }: BrainViewProps) {
             )}
         </div>
       </div>
-
-      {/* Right: Detail / Orphan Resolver / Local Orbit (desktop)
-          — Closed by default. Opens automatically once a node is
-          selected (see effect above) or the user clicks the
-          "Details" toggle on the toolbar. The Orphan Resolver
-          ignores `inspectorOpen` because it is its own first-class
-          mode; if the user enabled it via the chip, we always show it. */}
-      {(inspectorOpen || (orphanResolverOpen && richGraph)) && (
-        <div className="hidden w-80 shrink-0 lg:block">
-          {orphanResolverOpen && richGraph ? (
-            <BrainOrphanResolver
-              graph={richGraph}
-              rejectedHashes={rejectedHashes}
-              onFocusNode={handleFocusNode}
-            />
-          ) : mode === "local" && selectedNodeId ? (
-            <BrainLocalOrbitView
-              localOrbit={localOrbitState}
-              onFocusNode={handleFocusNode}
-            />
-          ) : (
-            <BrainDetailPanel
-              selectedNode={selectedNode}
-              incidentEdges={incidentEdges}
-              nodeIndex={nodeIndex}
-              onClose={() => {
-                // In sphere mode, closing the panel should also fly
-                // the camera back out — the panel and the sphere are
-                // a coordinated pair (Spec F).
-                if (isSphere) {
-                  handleBackgroundClick();
-                } else {
-                  setSelectedNodeId(null);
-                }
-                setInspectorOpen(false);
-              }}
-              onFocusNode={handleFocusNode}
-            />
-          )}
-        </div>
-      )}
 
       {/* Mobile: Filters drawer */}
       <Sheet

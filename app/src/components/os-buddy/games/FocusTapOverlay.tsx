@@ -7,6 +7,7 @@ import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { OSBuddyMood, OSBuddyPetId } from "@/types/os-buddy";
+import { OSBuddyGameEndButton } from "./OSBuddyGameEndButton";
 
 type FocusTapOverlayProps = {
   locale: AppLocale;
@@ -182,10 +183,14 @@ export function FocusTapOverlay({
   }, [enterFeedback, zh]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[118] overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-x-3 bottom-3 sm:inset-x-6">
         <div className="pointer-events-auto relative h-[min(62vh,620px)] min-h-[420px] overflow-hidden rounded-2xl border border-white/20 bg-background/70 shadow-2xl backdrop-blur-xl">
-          <div className="absolute left-3 right-3 top-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/75 px-3 py-2 text-sm shadow-lg backdrop-blur-xl">
+          <div
+            className="absolute left-3 right-3 top-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/75 px-3 py-2 text-sm shadow-lg backdrop-blur-xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerMove={(event) => event.stopPropagation()}
+          >
             <div>
               <p className="font-black">{zh ? "Focus Tap" : "Focus Tap"}</p>
               <p className="text-xs text-muted-foreground">
@@ -195,13 +200,11 @@ export function FocusTapOverlay({
             <div className="flex items-center gap-3 font-mono text-xs font-bold">
               <span>{zh ? "回合" : "Round"} {Math.min(round, TOTAL_ROUNDS)} / {TOTAL_ROUNDS}</span>
               <span>{zh ? "分數" : "Score"} {score}</span>
-              <button
-                type="button"
-                className="rounded-md border border-border bg-background/80 px-2 py-1 font-sans text-xs"
-                onClick={onClose}
-              >
-                {phase === "result" ? (zh ? "關閉" : "Close") : zh ? "結束" : "End"}
-              </button>
+              <OSBuddyGameEndButton
+                locale={locale}
+                isFinished={phase === "result"}
+                onClose={onClose}
+              />
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { OSBuddyMood, OSBuddyPetId } from "@/types/os-buddy";
+import { OSBuddyGameEndButton } from "./OSBuddyGameEndButton";
 
 type CleanDeskOverlayProps = {
   locale: AppLocale;
@@ -182,7 +183,7 @@ export function CleanDeskOverlay({
   }, [finish]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[118] overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-x-3 bottom-3 sm:inset-x-6">
         <div
           ref={surfaceRef}
@@ -204,7 +205,11 @@ export function CleanDeskOverlay({
           />
           <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px]" />
 
-          <div className="absolute left-3 right-3 top-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/75 px-3 py-2 text-sm shadow-lg backdrop-blur-xl">
+          <div
+            className="absolute left-3 right-3 top-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/75 px-3 py-2 text-sm shadow-lg backdrop-blur-xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerMove={(event) => event.stopPropagation()}
+          >
             <div>
               <p className="font-black">{zh ? "Clean the Desk" : "Clean the Desk"}</p>
               <p className="text-xs text-muted-foreground">
@@ -214,13 +219,11 @@ export function CleanDeskOverlay({
             <div className="flex items-center gap-3 font-mono text-xs font-bold">
               <span>{zh ? "進度" : "Progress"} {progress}%</span>
               <span>{secondsLeft}s</span>
-              <button
-                type="button"
-                className="rounded-md border border-border bg-background/80 px-2 py-1 font-sans text-xs"
-                onClick={onClose}
-              >
-                {phase === "playing" ? (zh ? "結束" : "End") : zh ? "關閉" : "Close"}
-              </button>
+              <OSBuddyGameEndButton
+                locale={locale}
+                isFinished={phase === "result"}
+                onClose={onClose}
+              />
             </div>
           </div>
 

@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { TodayCompanionPanel } from "@/components/sidebar/TodayCompanionPanel";
 import { navigationCategories, type NavCategory } from "@/lib/constants/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-settings";
@@ -49,6 +50,7 @@ import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
 import { cn } from "@/lib/utils";
 import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
+import { useCurrentTime } from "@/hooks/use-current-time";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { UiTheme } from "@/types/database";
 
@@ -155,6 +157,7 @@ export function AppSidebar() {
   const footer = getSidebarFooterCopy(language);
   const tui = getThemeUiCopy(language);
   const prefersReducedMotion = useSsrSafeReducedMotion();
+  const currentTime = useCurrentTime();
   // Motion wrappers only engage under the `default` theme. Other themes
   // get the plain Fragment/div fallback so their existing visuals and
   // layout are literally byte-identical to before.
@@ -163,14 +166,12 @@ export function AppSidebar() {
     ? navItemVariantsReduced
     : navItemVariants;
 
-  const isNewUser = useMemo(() => {
-    if (!profile?.created_at) return true;
-    return Date.now() - new Date(profile.created_at).getTime() < SEVEN_DAYS_MS;
-  }, [profile?.created_at]);
-
-  const focusAreas = profile?.focus_areas ?? [];
+  const isNewUser =
+    !profile?.created_at ||
+    currentTime.getTime() - new Date(profile.created_at).getTime() < SEVEN_DAYS_MS;
 
   const { priorityCategories, secondaryCategories } = useMemo(() => {
+    const focusAreas = profile?.focus_areas ?? [];
     const categoryMatchesFocus = (c: (typeof navigationCategories)[number]) =>
       focusAreas.some(
         (fa) =>
@@ -184,7 +185,7 @@ export function AppSidebar() {
     const priorityIds = new Set(priority.map((c) => c.categoryId));
     const secondary = navigationCategories.filter((c) => !priorityIds.has(c.categoryId));
     return { priorityCategories: priority, secondaryCategories: secondary };
-  }, [focusAreas]);
+  }, [profile?.focus_areas]);
 
   const [showMore, setShowMore] = useState(!isNewUser);
   const toggleShowMore = useCallback(() => setShowMore((prev) => !prev), []);
@@ -296,9 +297,11 @@ export function AppSidebar() {
             )}
           </>
         )}
+
+        <TodayCompanionPanel />
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="hidden">
         <SidebarSeparator className="my-1" />
         <SidebarMenu>
           <SidebarMenuItem>

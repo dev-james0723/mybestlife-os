@@ -425,6 +425,109 @@ html.focus-mode [data-focus-hideable] {
   user-select: none;
 }
 
+.today-companion-rest-sprite {
+  position: relative;
+  display: inline-flex;
+  width: 58px;
+  transform-origin: 50% 100%;
+  animation: today-companion-breathe 2.8s ease-in-out infinite;
+}
+
+.today-companion-rest-gif {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  user-select: none;
+}
+
+.today-companion-rest-sprite--sleeping {
+  animation-duration: 3.8s;
+  filter: saturate(0.9);
+}
+
+.today-companion-rest-sprite--headache {
+  width: 42px;
+  animation: today-companion-headache-pulse 840ms ease-in-out infinite;
+}
+
+.today-companion-zzz,
+.today-companion-headache {
+  position: absolute;
+  right: -0.15rem;
+  top: -0.2rem;
+  display: inline-flex;
+  min-width: 1rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklch, white 28%, transparent);
+  background: color-mix(in oklch, var(--popover) 82%, transparent);
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: color-mix(in oklch, white 88%, #86efac 12%);
+  box-shadow: 0 0 12px color-mix(in oklch, #22c55e 28%, transparent);
+}
+
+.today-companion-zzz {
+  animation: today-companion-zzz-float 2.4s ease-in-out infinite;
+}
+
+.today-companion-headache {
+  color: color-mix(in oklch, white 82%, #fbbf24 18%);
+  box-shadow: 0 0 12px color-mix(in oklch, #f59e0b 34%, transparent);
+}
+
+@keyframes today-companion-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(1px) scale(0.985, 1.015);
+  }
+}
+
+@keyframes today-companion-zzz-float {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes today-companion-headache-pulse {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  30% {
+    transform: translateX(-1px) rotate(-1deg);
+  }
+  60% {
+    transform: translateX(1px) rotate(1deg);
+    filter: drop-shadow(0 0 8px color-mix(in oklch, #f59e0b 32%, transparent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .today-companion-rest-sprite,
+  .today-companion-rest-sprite--sleeping,
+  .today-companion-rest-sprite--headache,
+  .today-companion-zzz {
+    animation: none !important;
+  }
+}
+
 .os-buddy-dock > button {
   display: inline-flex;
   min-width: 2.75rem;

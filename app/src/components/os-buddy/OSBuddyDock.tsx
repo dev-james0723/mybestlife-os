@@ -61,6 +61,7 @@ import {
   scrollAirPilotTargetAtPoint,
   setAirPilotHighlightedTarget,
 } from "@/lib/os-buddy/os-buddy-airpilot-page-control";
+import { isPointInsideOSBuddyRestingSpace } from "@/lib/os-buddy/os-buddy-resting-space";
 import { cn } from "@/lib/utils";
 import { useIdeasStore } from "@/stores/ideas-store";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
@@ -224,6 +225,19 @@ function resolveAnchorPosition(
     default:
       return clampDockPoint({ x: leftX, y: bottomY }, viewport, buddyBox);
   }
+}
+
+function avoidDesktopSidebarForDefaultHome(
+  point: DockPoint,
+  position: OSBuddyPosition,
+  viewport: { width: number; height: number },
+  buddyBox: { width: number; height: number },
+  sidebarSafeLeft: number,
+): DockPoint {
+  const isDefaultBottomLeft =
+    position.anchor === "bottom-left" && position.x == null && position.y == null;
+  if (!isDefaultBottomLeft || viewport.width < 1024 || sidebarSafeLeft <= 24) return point;
+  return clampDockPoint({ ...point, x: sidebarSafeLeft }, viewport, buddyBox);
 }
 
 function distanceFromPointToDockBox(
@@ -514,15 +528,20 @@ export function OSBuddyDock() {
   const isBirthdayMode = useOSBuddyStore((s) => s.isBirthdayMode);
   const setBirthdayMode = useOSBuddyStore((s) => s.setBirthdayMode);
   const isFreeRoaming = useOSBuddyStore((s) => s.isFreeRoaming);
+  const isRestingInSidebar = useOSBuddyStore((s) => s.isRestingInSidebar);
+  const dockInRestingSpace = useOSBuddyStore((s) => s.dockInRestingSpace);
   const { profile: birthdayProfile, saveProfile: saveBirthdayProfile } =
     useOSBuddyBirthdayProfile();
   const { getCompanionLine } = useOSBuddyCompanion({ locale, buddyName: name });
   const isPlayBallOpen = isMiniGameOpen && activeMiniGame === "play-ball";
+  const isOverlayMiniGameOpen =
+    isMiniGameOpen && activeMiniGame != null && activeMiniGame !== "play-ball";
   const upsertKnowledgeItem = useKnowledgeStore((s) => s.upsertItem);
   const upsertIdea = useIdeasStore((s) => s.upsertIdea);
 
   const [mounted, setMounted] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [sidebarSafeLeft, setSidebarSafeLeft] = useState(24);
   const [activePosition, setActivePosition] = useState<OSBuddyPosition>({
     x: null,
     y: null,
@@ -534,9 +553,22 @@ export function OSBuddyDock() {
   const [secretModeActive, setSecretModeActive] = useState(false);
   const [playBallCatchSignal, setPlayBallCatchSignal] =
     useState<OSBuddyPlayBallCatchSignal | null>(null);
+  const [isOverlayMiniGamePresent, setOverlayMiniGamePresent] = useState(false);
   const [fileDropItems, setFileDropItems] = useState<OSBuddyDroppedFileItem[]>([]);
   const [isFileDragOverBuddy, setIsFileDragOverBuddy] = useState(false);
   const [isFileDropRouting, setIsFileDropRouting] = useState(false);
+
+  const handleOverlayMiniGameExitComplete = useCallback(() => {
+    if (!isOverlayMiniGameOpen) setOverlayMiniGamePresent(false);
+  }, [isOverlayMiniGameOpen]);
+
+  const openMiniGameWithPresence = useCallback(
+    (game: OSBuddyMiniGame) => {
+      if (game !== "play-ball") setOverlayMiniGamePresent(true);
+      openMiniGame(game);
+    },
+    [openMiniGame],
+  );
 
   useOSBuddyBirthday({
     enabled: mounted && enabled,
@@ -580,8 +612,15 @@ export function OSBuddyDock() {
   );
   const resolvedHomePosition = useMemo<DockPoint | null>(() => {
     if (!mounted || viewport.width <= 0 || viewport.height <= 0) return null;
-    return resolveAnchorPosition(restingPosition, viewport, buddyBox);
-  }, [buddyBox, mounted, restingPosition, viewport]);
+    const target = resolveAnchorPosition(restingPosition, viewport, buddyBox);
+    return avoidDesktopSidebarForDefaultHome(
+      target,
+      restingPosition,
+      viewport,
+      buddyBox,
+      sidebarSafeLeft,
+    );
+  }, [buddyBox, mounted, restingPosition, sidebarSafeLeft, viewport]);
   const isFreeRoamBlocked =
     isMenuOpen ||
     isPetPickerOpen ||
@@ -594,6 +633,7 @@ export function OSBuddyDock() {
     fileDropItems.length > 0 ||
     focusSession != null ||
     isBirthdayMode ||
+    isRestingInSidebar ||
     FREE_ROAM_BLOCKING_MOODS.has(mood);
   const { runtimePosition: freeRoamRuntimePosition, interruptFreeRoam } =
     useOSBuddyFreeRoam({
@@ -671,6 +711,13 @@ export function OSBuddyDock() {
 
     const syncViewport = () => {
       setViewport({ width: window.innerWidth, height: window.innerHeight });
+      const sidebar = document.querySelector<HTMLElement>('[data-sidebar="sidebar"]');
+      const rect = sidebar?.getBoundingClientRect();
+      setSidebarSafeLeft(
+        rect && window.innerWidth >= 1024 && rect.left < 80 && rect.width > 120
+          ? Math.ceil(rect.right + 24)
+          : 24,
+      );
     };
 
     syncViewport();
@@ -690,9 +737,16 @@ export function OSBuddyDock() {
     if (dragSessionRef.current) return;
     if (isWalkModeActive || isReturningHome) return;
 
+    const anchoredPosition = resolveAnchorPosition(activePosition, viewport, buddyBox);
     const next = freeRoamRuntimePosition
       ? clampDockPoint(freeRoamRuntimePosition, viewport, buddyBox)
-      : resolveAnchorPosition(activePosition, viewport, buddyBox);
+      : avoidDesktopSidebarForDefaultHome(
+          anchoredPosition,
+          activePosition,
+          viewport,
+          buddyBox,
+          sidebarSafeLeft,
+        );
 
     const frame = window.requestAnimationFrame(() => {
       setDockPoint(next);
@@ -705,6 +759,7 @@ export function OSBuddyDock() {
     isReturningHome,
     isWalkModeActive,
     mounted,
+    sidebarSafeLeft,
     viewport,
   ]);
 
@@ -716,19 +771,27 @@ export function OSBuddyDock() {
         setMood,
         temporarilySetMood,
         showBubble,
-        openMiniGame,
+        openMiniGame: openMiniGameWithPresence,
         setFocusSession,
       },
     });
-  }, [locale, name, openMiniGame, setFocusSession, setMood, showBubble, temporarilySetMood]);
+  }, [
+    locale,
+    name,
+    openMiniGameWithPresence,
+    setFocusSession,
+    setMood,
+    showBubble,
+    temporarilySetMood,
+  ]);
 
-  useUserIdleForOSBuddy(mounted && enabled && !onSignalsRoute);
+  useUserIdleForOSBuddy(mounted && enabled && !onSignalsRoute && !isRestingInSidebar);
   useOSBuddyContextHints({
-    enabled: mounted && enabled && !onSignalsRoute,
+    enabled: mounted && enabled && !onSignalsRoute && !isRestingInSidebar,
     buddyName: name,
     locale,
   });
-  useOSBuddyTimeMood({ enabled: mounted && enabled && !onSignalsRoute, locale });
+  useOSBuddyTimeMood({ enabled: mounted && enabled && !onSignalsRoute && !isRestingInSidebar, locale });
 
   useEffect(() => {
     if (!onSignalsRoute) return;
@@ -1037,10 +1100,16 @@ export function OSBuddyDock() {
   );
 
   const resolveRestingTarget = useCallback(() => {
-    const target = resolveAnchorPosition(restingPosition, viewport, buddyBox);
+    const target = avoidDesktopSidebarForDefaultHome(
+      resolveAnchorPosition(restingPosition, viewport, buddyBox),
+      restingPosition,
+      viewport,
+      buddyBox,
+      sidebarSafeLeft,
+    );
     restingTargetRef.current = target;
     return target;
-  }, [buddyBox, restingPosition, viewport]);
+  }, [buddyBox, restingPosition, sidebarSafeLeft, viewport]);
 
   const applyWalkMood = useCallback(
     (direction: WalkDirection, stationaryMood: "idle" | "playful" = "playful") => {
@@ -1377,7 +1446,13 @@ export function OSBuddyDock() {
       y: null,
       anchor: "bottom-left",
     };
-    const target = resolveAnchorPosition(defaultPosition, viewport, buddyBox);
+    const target = avoidDesktopSidebarForDefaultHome(
+      resolveAnchorPosition(defaultPosition, viewport, buddyBox),
+      defaultPosition,
+      viewport,
+      buddyBox,
+      sidebarSafeLeft,
+    );
 
     clearLongPressTimer();
     clearSingleClickTimer();
@@ -1402,6 +1477,7 @@ export function OSBuddyDock() {
     clearSingleClickTimer,
     closeMiniGame,
     resetPlayBallRuntime,
+    sidebarSafeLeft,
     setMenuOpen,
     setPetPickerOpen,
     setReturningHome,
@@ -1502,7 +1578,7 @@ export function OSBuddyDock() {
       setPetPickerOpen(false);
       clearBubble();
       resetPlayBallRuntime();
-      openMiniGame(game);
+      openMiniGameWithPresence(game);
       setMood(game === "clean-desk" ? "reading" : game === "focus-tap" ? "focused" : "playful");
       emitOSBuddyEvent({ type: "game:start", game });
     },
@@ -1510,7 +1586,7 @@ export function OSBuddyDock() {
       clearBubble,
       clearSingleClickTimer,
       interruptFreeRoam,
-      openMiniGame,
+      openMiniGameWithPresence,
       resetPlayBallRuntime,
       setMenuOpen,
       setMood,
@@ -2373,6 +2449,35 @@ export function OSBuddyDock() {
         y: Math.round(dockPoint.y),
         anchor: "custom",
       };
+
+      const buddyCenter = {
+        x: dockPoint.x + buddyBox.width / 2,
+        y: dockPoint.y + buddyBox.height / 2,
+      };
+
+      if (isPointInsideOSBuddyRestingSpace(buddyCenter)) {
+        const returnPoint = clampDockPoint(
+          {
+            x: session.startDockX,
+            y: session.startDockY,
+          },
+          viewport,
+          buddyBox,
+        );
+        dockPointRef.current = returnPoint;
+        setDockPoint(returnPoint);
+        dockInRestingSpace("resting");
+        clearBubble();
+        showBubble(
+          locale === "zh-TW"
+            ? `${name} 入咗 resting space。`
+            : `${name} is resting in the sidebar.`,
+          "success",
+          { force: true, durationMs: 1800 },
+        );
+        return;
+      }
+
       setActivePosition(finalPosition);
       await savePosition(finalPosition);
       return;
@@ -2463,6 +2568,10 @@ export function OSBuddyDock() {
 
   if (!mounted || !enabled) return null;
 
+  if (isRestingInSidebar) {
+    return null;
+  }
+
   const airPilotRuntimeEnabled = isAirControlActive;
   const airPilotSettingsSnapshot = getLocalOSBuddyAirPilotSettings();
   const bubbleHorizontal = dockPoint.x > viewport.width / 2 ? "left" : "right";
@@ -2505,9 +2614,23 @@ export function OSBuddyDock() {
             : { bottom: viewport.height - dockPoint.y + 12, top: "auto" }),
         }
       : undefined;
+  const shouldHideDockForOverlayMiniGame = isOverlayMiniGameOpen || isOverlayMiniGamePresent;
 
   return (
     <>
+      <OSBuddyGameOverlayHost
+        open={isOverlayMiniGameOpen}
+        activeGame={activeMiniGame}
+        locale={locale}
+        petId={petId}
+        buddyName={name}
+        onClose={closeMiniGame}
+        onComplete={handleMiniGameComplete}
+        onExitComplete={handleOverlayMiniGameExitComplete}
+      />
+
+      {!shouldHideDockForOverlayMiniGame ? (
+        <>
       <div
         className={cn(
           "os-buddy-dock fixed z-[2147483000]",
@@ -2643,16 +2766,6 @@ export function OSBuddyDock() {
         }}
       />
 
-      <OSBuddyGameOverlayHost
-        open={isMiniGameOpen}
-        activeGame={activeMiniGame}
-        locale={locale}
-        petId={petId}
-        buddyName={name}
-        onClose={closeMiniGame}
-        onComplete={handleMiniGameComplete}
-      />
-
       <OSBuddyPlayBallOverlay
         open={isPlayBallOpen}
         locale={locale}
@@ -2666,6 +2779,8 @@ export function OSBuddyDock() {
         onBallMove={trackPlayBall}
         onCommandZoneHit={handlePlayBallCommandZone}
       />
+        </>
+      ) : null}
     </>
   );
 }

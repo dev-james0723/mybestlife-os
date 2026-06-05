@@ -17,8 +17,8 @@
  * initial x/y near their hub and let the simulation settle them.
  *
  * World coordinate system:
- *   Brain half-width  ≈ 450  (so full brain ~900 wide)
- *   Brain half-height ≈ 285  (so full brain ~570 tall)
+ *   Brain half-width  ≈ 560  (so full brain ~1120 wide)
+ *   Brain half-height ≈ 330  (so full brain ~660 tall)
  *   Origin at center (0, 0)
  *
  * All returned nodes have extra properties (x, y, fx?, fy?) that
@@ -33,8 +33,8 @@ import type {
 // ────────────────────────────────────────────────────────────────────────────
 // World-space scale
 // ────────────────────────────────────────────────────────────────────────────
-export const BRAIN_HW = 450; // half-width
-export const BRAIN_HH = 285; // half-height
+export const BRAIN_HW = 560; // half-width
+export const BRAIN_HH = 330; // half-height
 
 /** Convert normalized [-1,1] coordinates to world space. */
 export function norm2world(nx: number, ny: number): [number, number] {
@@ -420,14 +420,14 @@ export function generateBrainShapedLayout(
 
     // Base radius depends on child count — more children → larger spread.
     const baseR = Math.max(
-      40,
-      Math.min(160, 35 + Math.sqrt(childCount + 1) * 18),
+      48,
+      Math.min(205, 42 + Math.sqrt(childCount + 1) * 22),
     );
     // Fibonacci spiral radius grows with index.
-    const spiralR = baseR + Math.sqrt(childIndex + 1) * 22;
+    const spiralR = baseR + Math.sqrt(childIndex + 1) * 25;
     const angle = childIndex * GOLDEN_ANGLE + rng() * 0.28;
     // Slight random radial jitter for organic feel.
-    const radJitter = (rng() - 0.5) * 28;
+    const radJitter = (rng() - 0.5) * 34;
     const r = spiralR + radJitter;
 
     const candX = hwx + Math.cos(angle) * r;

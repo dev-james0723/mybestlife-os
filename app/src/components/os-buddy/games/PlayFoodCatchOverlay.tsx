@@ -5,6 +5,7 @@ import { OSBuddySprite } from "@/components/os-buddy/OSBuddySprite";
 import { getOSBuddyAssetSrc } from "@/lib/os-buddy/os-buddy-assets";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { OSBuddyMood, OSBuddyPetId } from "@/types/os-buddy";
+import { OSBuddyGameEndButton } from "./OSBuddyGameEndButton";
 
 type PlayFoodCatchOverlayProps = {
   locale: AppLocale;
@@ -240,7 +241,7 @@ export function PlayFoodCatchOverlay({
   const buddyScale = Math.min(1.35, 1 + caughtCount * 0.018);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[118] overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-x-3 bottom-3 sm:inset-x-6">
         <div
           ref={surfaceRef}
@@ -259,7 +260,11 @@ export function PlayFoodCatchOverlay({
             }
           }}
         >
-          <div className="absolute left-3 right-3 top-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/70 px-3 py-2 text-sm shadow-lg backdrop-blur-xl">
+          <div
+            className="absolute left-3 right-3 top-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-background/70 px-3 py-2 text-sm shadow-lg backdrop-blur-xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerMove={(event) => event.stopPropagation()}
+          >
             <div>
               <p className="font-black">{zh ? "Play Food Catch" : "Play Food Catch"}</p>
               <p className="text-xs text-muted-foreground">
@@ -270,13 +275,11 @@ export function PlayFoodCatchOverlay({
               <span>{zh ? "分數" : "Score"} {score}</span>
               <span>{zh ? "連擊" : "Combo"} {combo}</span>
               <span>{secondsLeft}s</span>
-              <button
-                type="button"
-                className="rounded-md border border-border bg-background/80 px-2 py-1 font-sans text-xs"
-                onClick={onClose}
-              >
-                {phase === "playing" ? (zh ? "結束" : "End") : zh ? "關閉" : "Close"}
-              </button>
+              <OSBuddyGameEndButton
+                locale={locale}
+                isFinished={phase === "result"}
+                onClose={onClose}
+              />
             </div>
           </div>
 

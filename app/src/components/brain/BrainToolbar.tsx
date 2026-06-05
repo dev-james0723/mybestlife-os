@@ -1,19 +1,9 @@
 /**
- * Brain Toolbar — search, mode switch, depth, view toggles, and panel
- * triggers for the global Life OS graph.
+ * Brain Toolbar — compact primary controls for the Brain graph.
  *
- * Mirrors `ConstellationToolbar` but reads/writes the Brain-specific
- * `useBrainStore` (UI state only; server data lives in TanStack Query).
- *
- * Responsive philosophy:
- *   • Toolbar uses `flex flex-wrap` so groups wrap into multiple rows
- *     before any control is clipped or pushed off-screen.
- *   • Search placeholder shrinks to a single word on small viewports.
- *   • Density / Mode chips always stay visible (primary controls).
- *   • Camera-fit and zoom-percentage live on the floating
- *     `GraphZoomControls` widget — not duplicated here.
- *   • Refresh, Reset Layout, Filters, Legend, Inspector toggle are
- *     primary toolbar buttons that group cleanly on every breakpoint.
+ * Primary controls stay visible: search, mode, fit/reset/fullscreen,
+ * and details. Secondary view controls live in the View popover so the
+ * canvas can read as the page's main surface.
  */
 
 "use client";
@@ -35,22 +25,29 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  SlidersHorizontal,
   Sparkles,
   Target,
 } from "lucide-react";
-import type {
-  ConstellationClusterBy,
-} from "@/types/constellation";
+import type { ConstellationClusterBy } from "@/types/constellation";
 import type { SphereRotationSpeed } from "@/types/brain-sphere";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useBrainStore } from "@/stores/brain-store";
 import type {
   ConstellationDepth,
   ConstellationNode,
 } from "@/types/constellation";
-import { NODE_COLORS, NODE_TYPE_LABEL } from "@/lib/knowledge/constellation/constants";
+import {
+  NODE_COLORS,
+  NODE_TYPE_LABEL,
+} from "@/lib/knowledge/constellation/constants";
 import { useGraphSurface } from "@/lib/knowledge/constellation/useGraphSurface";
 import {
   DENSITY_MODE_LABEL,
@@ -65,9 +62,8 @@ interface BrainToolbarProps {
   onResetLayout: () => void;
   onFitGraph: () => void;
   onFocusNode: (nodeId: string) => void;
-  /** When set, shows a fullscreen toggle for 3D Sphere mode only. */
-  sphereFullscreenActive?: boolean;
-  onToggleSphereFullscreen?: () => void | Promise<void>;
+  fullscreenActive?: boolean;
+  onToggleFullscreen?: () => void | Promise<void>;
 }
 
 const DEPTHS: ConstellationDepth[] = [1, 2, 3];
@@ -77,11 +73,11 @@ export function BrainToolbar({
   nodeCount,
   edgeCount,
   onRefreshData,
-  // onFitGraph is now exposed only via GraphZoomControls
   onResetLayout,
+  onFitGraph,
   onFocusNode,
-  sphereFullscreenActive = false,
-  onToggleSphereFullscreen,
+  fullscreenActive = false,
+  onToggleFullscreen,
 }: BrainToolbarProps) {
   const mode = useBrainStore((s) => s.mode);
   const setMode = useBrainStore((s) => s.setMode);
@@ -100,8 +96,6 @@ export function BrainToolbar({
     (s) => s.setSphereShowConnections,
   );
   const isSphere = mode === "sphere_3d";
-  // In sphere mode the labels button reads/writes the sphere-specific
-  // toggle so the 2D mode keeps its independent default.
   const labelsOn = isSphere ? sphereShowLabels : showLabels;
   const setLabelsOn = isSphere ? setSphereShowLabels : setShowLabels;
   const search = useBrainStore((s) => s.search);
@@ -121,7 +115,11 @@ export function BrainToolbar({
   const setInspectorOpen = useBrainStore((s) => s.setInspectorOpen);
 
   const [localSearch, setLocalSearch] = useState(() => search);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { t: graphT } = useGraphSurface();
+
   const handleChange = (v: string) => {
     setLocalSearch(v);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -136,15 +134,26 @@ export function BrainToolbar({
       .slice(0, 10);
   }, [localSearch, nodes]);
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const { t: graphT } = useGraphSurface();
+  const primaryButtonClass =
+    "!h-10 min-w-10 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-8 sm:min-w-0";
+  const iconButtonClass =
+    "!size-10 text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!size-8";
+  const chipClass =
+    "min-h-9 rounded-lg border px-2.5 text-[11px] font-medium transition-colors sm:min-h-0";
+  const sectionClass = cn(
+    "space-y-2 rounded-lg border p-2.5",
+    graphT.tone.borderSoft,
+    graphT.tone.inset,
+  );
 
   return (
-    <div className={graphT.toolbar.wrap}>
-      {/* Search — owns the leading flex slot, shrinks to fit but enforces
-          a sensible minimum width on desktop so the placeholder never gets
-          clipped mid-word. */}
+    <div
+      className={cn(
+        graphT.toolbar.wrap,
+        "mx-3 my-2 rounded-2xl border py-1.5 shadow-[0_12px_36px_-24px_rgba(0,0,0,0.55)]",
+        graphT.tone.borderSoft,
+      )}
+    >
       <div className="relative min-w-[180px] flex-1 sm:min-w-[240px] sm:max-w-md">
         <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${graphT.toolbar.meta}`} />
         <Input
@@ -152,15 +161,12 @@ export function BrainToolbar({
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setDropdownOpen(true)}
           onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
-          placeholder="Search…"
+          placeholder="Search..."
           aria-label="Search the Brain graph"
-          className={cn(graphT.toolbar.input, "!h-11 sm:!h-9")}
+          className={cn(graphT.toolbar.input, "!h-10 sm:!h-8")}
         />
         {dropdownOpen && matches.length > 0 && (
-          <ul
-            role="listbox"
-            className={graphT.toolbar.dropdown}
-          >
+          <ul role="listbox" className={graphT.toolbar.dropdown}>
             {matches.map((n) => (
               <li key={n.id}>
                 <button
@@ -191,55 +197,6 @@ export function BrainToolbar({
         )}
       </div>
 
-      {/* Density chips — primary connection-density controls */}
-      <div
-        role="group"
-        aria-label="Connection density"
-        className="flex shrink-0 items-center gap-1"
-      >
-        {DENSITY_MODE_ORDER.map((m) => {
-          const active = densityMode === m;
-          const isOrphan = m === "orphans_only";
-          return (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setDensityMode(m);
-                if (isOrphan) setOrphanResolverOpen(true);
-              }}
-              aria-pressed={active}
-              className={cn(
-                "min-h-11 rounded-full border px-3 text-[11px] font-medium transition-colors sm:min-h-7 sm:px-2.5",
-                active
-                  ? "border-amber-300/40 bg-amber-500/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.25)]"
-                  : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-              )}
-            >
-              {DENSITY_MODE_LABEL[m]}
-            </button>
-          );
-        })}
-        {/* Orphan resolver toggle (kept after the chips so users can
-            reopen the resolver without changing density mode) */}
-        <button
-          type="button"
-          aria-pressed={orphanResolverOpen}
-          onClick={() => setOrphanResolverOpen(!orphanResolverOpen)}
-          className={cn(
-            "min-h-11 rounded-full border px-3 text-[11px] font-medium transition-colors sm:min-h-7 sm:px-2.5",
-            orphanResolverOpen
-              ? "border-emerald-300/40 bg-emerald-500/10 text-emerald-100"
-              : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
-          )}
-          title="Orphan Resolver — find disconnected nodes and suggest connections"
-        >
-          <Sparkles className="mr-1 inline h-3 w-3" aria-hidden />
-          Resolve
-        </button>
-      </div>
-
-      {/* Mode toggle */}
       <div
         role="group"
         aria-label="Graph mode"
@@ -251,7 +208,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={mode === "global"}
           className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2.5",
+            primaryButtonClass,
             mode === "global" &&
               "bg-cyan-400/15 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.3)]",
           )}
@@ -266,7 +223,7 @@ export function BrainToolbar({
           size="sm"
           aria-pressed={mode === "local"}
           className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2.5",
+            primaryButtonClass,
             mode === "local" &&
               "bg-violet-400/15 text-violet-200 shadow-[inset_0_0_0_1px_rgba(196,181,253,0.3)]",
           )}
@@ -280,9 +237,9 @@ export function BrainToolbar({
           variant="ghost"
           size="sm"
           aria-pressed={isSphere}
-          title="3D Sphere — slowly rotating second-brain planet"
+          title="3D Sphere"
           className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2.5",
+            primaryButtonClass,
             isSphere &&
               "bg-fuchsia-400/15 text-fuchsia-200 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.35)]",
           )}
@@ -290,298 +247,340 @@ export function BrainToolbar({
         >
           <Globe className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Sphere</span>
-          <span
-            aria-hidden
-            className="ml-0.5 hidden rounded-sm border border-fuchsia-300/25 bg-fuchsia-300/10 px-1 text-[9px] font-medium uppercase leading-[14px] tracking-wider text-fuchsia-200/90 sm:inline"
-          >
-            3D
-          </span>
         </Button>
       </div>
 
-      {isSphere && onToggleSphereFullscreen && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={sphereFullscreenActive}
-          title={
-            sphereFullscreenActive
-              ? "Exit fullscreen (Esc)"
-              : "Fullscreen — maximum space for the 3D sphere"
-          }
-          className={cn(
-            "!h-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:px-2.5",
-            sphereFullscreenActive &&
-              "bg-fuchsia-400/15 text-fuchsia-100 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.35)]",
-          )}
-          onClick={() => void onToggleSphereFullscreen()}
-        >
-          {sphereFullscreenActive ? (
-            <Minimize2 className="h-3.5 w-3.5" aria-hidden />
-          ) : (
-            <Maximize2 className="h-3.5 w-3.5" aria-hidden />
-          )}
-          <span className="hidden sm:inline">
-            {sphereFullscreenActive ? "Exit" : "Fullscreen"}
-          </span>
-        </Button>
-      )}
-
-      {/* Sphere-mode-only controls — Cluster By + Auto Rotate. Both
-          map to sphere store keys; switching modes leaves them
-          configured for the user's next visit. */}
-      {isSphere && (
-        <div className="flex shrink-0 items-center gap-1.5" title="Group sphere nodes by category, type, or library">
-          <span className="hidden text-xs text-muted-foreground sm:inline">Cluster</span>
-          <div className="relative">
-            <select
-              aria-label="Cluster by"
-              value={sphereClusterBy}
-              onChange={(e) =>
-                setSphereClusterBy(e.target.value as ConstellationClusterBy)
-              }
-              className="h-11 appearance-none rounded-lg border border-border/60 bg-muted/40 pl-3 pr-8 text-xs text-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-fuchsia-300/40 sm:h-7 sm:pl-2.5 sm:pr-7"
-            >
-              <option value="category">Category</option>
-              <option value="node_type">Type</option>
-              <option value="collection">Collection</option>
-              <option value="project">Project</option>
-              <option value="source_type">Source</option>
-              <option value="none">None</option>
-            </select>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground"
-            >
-              ▾
-            </span>
-          </div>
-        </div>
-      )}
-
-      {isSphere && (
-        <div
-          role="group"
-          aria-label="Auto rotate speed"
-          className="flex shrink-0 items-center gap-1"
-          title="Auto-rotation speed — pauses while you drag, resumes after a moment"
-        >
-          <span className="hidden text-xs text-muted-foreground sm:inline">Rotate</span>
-          <div className="flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
-            {(["off", "slow", "normal"] as const satisfies readonly SphereRotationSpeed[]).map(
-              (s) => {
-                const active = sphereRotationSpeed === s;
-                return (
-                  <Button
-                    key={s}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-pressed={active}
-                    className={cn(
-                      "!h-11 px-3 text-[11px] capitalize text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-6 sm:px-2",
-                      active &&
-                        "bg-fuchsia-400/15 text-fuchsia-100 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.3)]",
-                    )}
-                    onClick={() => setSphereRotationSpeed(s)}
-                  >
-                    {s}
-                  </Button>
-                );
-              },
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Depth control — only meaningful in 2D Local mode. Sphere
-          shows the whole graph at once. */}
-      {mode === "local" && (
-        <div
-          role="group"
-          aria-label="Depth"
-          className="flex shrink-0 items-center gap-1"
-        >
-          <span className="hidden text-xs text-muted-foreground sm:inline">Depth</span>
-          <div className="flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
-            {DEPTHS.map((d) => (
-              <Button
-                key={d}
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-pressed={depth === d}
-                className={cn(
-                  "!h-11 !w-11 p-0 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:!w-7",
-                  depth === d &&
-                    "bg-violet-400/20 text-violet-100 shadow-[inset_0_0_0_1px_rgba(196,181,253,0.3)]",
-                )}
-                onClick={() => setDepth(d)}
-              >
-                {d}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Display toggles */}
-      <div className="flex shrink-0 items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={labelsOn}
-          className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
-            labelsOn && "text-foreground",
-          )}
-          onClick={() => setLabelsOn(!labelsOn)}
-          aria-label="Toggle labels"
-          title={
-            isSphere
-              ? "Show all node labels in the sphere (off by default)"
-              : "Toggle node labels"
-          }
-        >
-          {labelsOn ? (
-            <Eye className="h-3.5 w-3.5" />
-          ) : (
-            <EyeOff className="h-3.5 w-3.5" />
-          )}
-          <span className="hidden sm:inline">Labels</span>
-        </Button>
-        {isSphere && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-pressed={sphereShowConnections}
-            className={cn(
-              "!h-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:px-2",
-              sphereShowConnections && "text-foreground",
-            )}
-            onClick={() => setSphereShowConnections(!sphereShowConnections)}
-            aria-label="Toggle connection lines in the sphere"
-            title="Show or hide global connection lines between notes (focus tentacles stay visible when a node is selected)"
-          >
-            {sphereShowConnections ? (
-              <Link2 className="h-3.5 w-3.5" />
-            ) : (
-              <Link2Off className="h-3.5 w-3.5" />
-            )}
-            <span className="hidden sm:inline">Links</span>
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={hideOrphans}
-          className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
-            hideOrphans && "text-foreground",
-          )}
-          onClick={() =>
-            setFilters({ hideOrphanNodes: !hideOrphans })
-          }
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Hide orphans</span>
-        </Button>
-      </div>
-
-      {/* Data / camera — only the controls that don't live on the
-          floating zoom widget. Refresh data + Reset node positions are
-          distinct semantically (Refresh = data, Reset = layout). */}
       <div className="flex shrink-0 items-center gap-1">
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="!size-11 text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!size-7"
-          aria-label="Refresh data"
-          title="Refresh data — reload graph from the database"
-          onClick={() => void onRefreshData()}
+          className={iconButtonClass}
+          aria-label="Fit graph to view"
+          title="Fit graph to view"
+          onClick={onFitGraph}
         >
-          <RefreshCw className="h-3.5 w-3.5" />
+          <Target className="h-3.5 w-3.5" />
         </Button>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="!size-11 text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!size-7"
+          className={iconButtonClass}
           aria-label="Reset layout"
-          title="Reset layout — clear manual node positions"
+          title="Reset layout"
           onClick={onResetLayout}
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </Button>
+        {onToggleFullscreen && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-pressed={fullscreenActive}
+            title={
+              fullscreenActive
+                ? "Exit immersive view (Esc)"
+                : "Immersive view"
+            }
+            className={cn(
+              iconButtonClass,
+              fullscreenActive &&
+                "bg-cyan-400/15 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.32)]",
+            )}
+            onClick={() => void onToggleFullscreen()}
+            aria-label={fullscreenActive ? "Exit immersive view" : "Enter immersive view"}
+          >
+            {fullscreenActive ? (
+              <Minimize2 className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+            )}
+          </Button>
+        )}
       </div>
 
-      {/* Filters + Legend + Details panel toggle */}
-      <div className="flex shrink-0 items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={filtersOpen}
-          className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
-            filtersOpen && "text-foreground",
-          )}
-          onClick={() => setFiltersOpen(!filtersOpen)}
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={cn(primaryButtonClass, "px-3")}
+              aria-label="Open graph settings"
+            />
+          }
         >
-          <Filter className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Filters</span>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={legendOpen}
-          className={cn(
-            "!h-11 min-w-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:min-w-0 sm:px-2",
-            legendOpen && "text-foreground",
-          )}
-          onClick={() => setLegendOpen(!legendOpen)}
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">View</span>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          className="max-h-[min(78dvh,620px)] w-[min(22rem,calc(100vw-1rem))] overflow-y-auto p-3"
         >
-          <Info className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Legend</span>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={inspectorOpen}
-          className={cn(
-            "hidden !h-11 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-7 sm:px-2 lg:inline-flex",
-            inspectorOpen && "text-foreground",
-          )}
-          onClick={() => setInspectorOpen(!inspectorOpen)}
-          title={inspectorOpen ? "Hide details panel" : "Show details panel"}
-        >
-          {inspectorOpen ? (
-            <PanelRightClose className="h-3.5 w-3.5" />
-          ) : (
-            <PanelRight className="h-3.5 w-3.5" />
-          )}
-          <span className="hidden xl:inline">
-            {inspectorOpen ? "Hide details" : "Details"}
-          </span>
-        </Button>
-      </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className={cn("text-sm font-medium", graphT.tone.title)}>
+                Graph settings
+              </p>
+              <p className={cn("text-xs tabular-nums", graphT.tone.muted)}>
+                {nodeCount} nodes / {edgeCount} edges
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className={graphT.tone.ghostBtn}
+              aria-label="Refresh data"
+              title="Refresh data"
+              onClick={() => void onRefreshData()}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+          </div>
 
-      {/* Counts */}
-      <div className="ml-auto hidden shrink-0 items-center gap-3 text-[10px] uppercase tracking-wider text-muted-foreground lg:flex">
-        <span>
-          <span className="font-mono text-foreground/90">{nodeCount}</span> nodes
+          <div className={sectionClass}>
+            <p className={cn("text-[11px] font-medium uppercase", graphT.tone.heading)}>
+              Density
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {DENSITY_MODE_ORDER.map((m) => {
+                const active = densityMode === m;
+                const isOrphan = m === "orphans_only";
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setDensityMode(m);
+                      if (isOrphan) setOrphanResolverOpen(true);
+                    }}
+                    aria-pressed={active}
+                    className={cn(
+                      chipClass,
+                      active
+                        ? "border-amber-300/40 bg-amber-500/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.25)]"
+                        : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                    )}
+                  >
+                    {DENSITY_MODE_LABEL[m]}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              aria-pressed={orphanResolverOpen}
+              onClick={() => setOrphanResolverOpen(!orphanResolverOpen)}
+              className={cn(
+                "flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-medium transition-colors",
+                orphanResolverOpen
+                  ? "border-emerald-300/40 bg-emerald-500/10 text-emerald-100"
+                  : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5" aria-hidden />
+              Orphan resolver
+            </button>
+          </div>
+
+          <div className={sectionClass}>
+            <p className={cn("text-[11px] font-medium uppercase", graphT.tone.heading)}>
+              Display
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                aria-pressed={labelsOn}
+                onClick={() => setLabelsOn(!labelsOn)}
+                className={cn(
+                  chipClass,
+                  labelsOn
+                    ? "border-cyan-300/40 bg-cyan-500/10 text-cyan-100"
+                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
+                )}
+              >
+                {labelsOn ? (
+                  <Eye className="mr-1 inline h-3.5 w-3.5" />
+                ) : (
+                  <EyeOff className="mr-1 inline h-3.5 w-3.5" />
+                )}
+                Labels
+              </button>
+              <button
+                type="button"
+                aria-pressed={hideOrphans}
+                onClick={() => setFilters({ hideOrphanNodes: !hideOrphans })}
+                className={cn(
+                  chipClass,
+                  hideOrphans
+                    ? "border-emerald-300/40 bg-emerald-500/10 text-emerald-100"
+                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
+                )}
+              >
+                <Sparkles className="mr-1 inline h-3.5 w-3.5" />
+                Orphans
+              </button>
+              {isSphere && (
+                <button
+                  type="button"
+                  aria-pressed={sphereShowConnections}
+                  onClick={() => setSphereShowConnections(!sphereShowConnections)}
+                  className={cn(
+                    chipClass,
+                    sphereShowConnections
+                      ? "border-fuchsia-300/40 bg-fuchsia-500/10 text-fuchsia-100"
+                      : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
+                  )}
+                >
+                  {sphereShowConnections ? (
+                    <Link2 className="mr-1 inline h-3.5 w-3.5" />
+                  ) : (
+                    <Link2Off className="mr-1 inline h-3.5 w-3.5" />
+                  )}
+                  Sphere links
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                aria-pressed={filtersOpen}
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className={cn(
+                  chipClass,
+                  filtersOpen
+                    ? "border-cyan-300/40 bg-cyan-500/10 text-cyan-100"
+                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
+                )}
+              >
+                <Filter className="mr-1 inline h-3.5 w-3.5" />
+                Filters
+              </button>
+              <button
+                type="button"
+                aria-pressed={legendOpen}
+                onClick={() => setLegendOpen(!legendOpen)}
+                className={cn(
+                  chipClass,
+                  legendOpen
+                    ? "border-cyan-300/40 bg-cyan-500/10 text-cyan-100"
+                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",
+                )}
+              >
+                <Info className="mr-1 inline h-3.5 w-3.5" />
+                Legend
+              </button>
+            </div>
+          </div>
+
+          {mode === "local" && (
+            <div className={sectionClass}>
+              <p className={cn("text-[11px] font-medium uppercase", graphT.tone.heading)}>
+                Local depth
+              </p>
+              <div className="flex items-center gap-1.5">
+                {DEPTHS.map((d) => (
+                  <Button
+                    key={d}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={depth === d}
+                    className={cn(
+                      "h-8 flex-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                      depth === d &&
+                        "bg-violet-400/20 text-violet-100 shadow-[inset_0_0_0_1px_rgba(196,181,253,0.3)]",
+                    )}
+                    onClick={() => setDepth(d)}
+                  >
+                    {d}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isSphere && (
+            <div className={sectionClass}>
+              <p className={cn("text-[11px] font-medium uppercase", graphT.tone.heading)}>
+                Sphere
+              </p>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Cluster
+                <select
+                  aria-label="Cluster by"
+                  value={sphereClusterBy}
+                  onChange={(e) =>
+                    setSphereClusterBy(e.target.value as ConstellationClusterBy)
+                  }
+                  className="h-9 appearance-none rounded-lg border border-border/60 bg-muted/40 px-2.5 text-xs text-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-fuchsia-300/40"
+                >
+                  <option value="category">Category</option>
+                  <option value="node_type">Type</option>
+                  <option value="collection">Collection</option>
+                  <option value="project">Project</option>
+                  <option value="source_type">Source</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
+              <div
+                role="group"
+                aria-label="Auto rotate speed"
+                className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 p-0.5"
+              >
+                {(["off", "slow", "normal"] as const satisfies readonly SphereRotationSpeed[]).map(
+                  (s) => {
+                    const active = sphereRotationSpeed === s;
+                    return (
+                      <Button
+                        key={s}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-pressed={active}
+                        className={cn(
+                          "h-8 flex-1 text-[11px] capitalize text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                          active &&
+                            "bg-fuchsia-400/15 text-fuchsia-100 shadow-[inset_0_0_0_1px_rgba(232,121,249,0.3)]",
+                        )}
+                        onClick={() => setSphereRotationSpeed(s)}
+                      >
+                        {s}
+                      </Button>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-pressed={inspectorOpen}
+        className={cn(
+          "hidden !h-10 gap-1.5 px-3 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground sm:!h-8 sm:px-2 lg:inline-flex",
+          inspectorOpen && "text-foreground",
+        )}
+        onClick={() => setInspectorOpen(!inspectorOpen)}
+        title={inspectorOpen ? "Hide details" : "Show details"}
+      >
+        {inspectorOpen ? (
+          <PanelRightClose className="h-3.5 w-3.5" />
+        ) : (
+          <PanelRight className="h-3.5 w-3.5" />
+        )}
+        <span className="hidden xl:inline">
+          {inspectorOpen ? "Hide details" : "Details"}
         </span>
-        <span>
-          <span className="font-mono text-foreground/90">{edgeCount}</span> edges
-        </span>
-      </div>
+      </Button>
     </div>
   );
 }

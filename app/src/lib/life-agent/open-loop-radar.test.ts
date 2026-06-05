@@ -13,6 +13,8 @@ describe("categorizeOpenLoop", () => {
       id: "t1",
       kind: "overdue_task",
       title: "Pay rent",
+      sourceType: "task",
+      sourceId: "t1",
       priority: "high",
     };
     expect(categorizeOpenLoop(loop)).toBe("urgent");
@@ -23,7 +25,8 @@ describe("categorizeOpenLoop", () => {
       id: "r1",
       kind: "relationship_follow_up",
       title: "Call Alex",
-      priority: null,
+      sourceType: "relationship",
+      sourceId: "r1",
     };
     expect(categorizeOpenLoop(loop)).toBe("relationship");
   });
@@ -36,6 +39,8 @@ describe("groupOpenLoops", () => {
         id: "1",
         kind: "overdue_task" as const,
         title: "A",
+        sourceType: "task",
+        sourceId: "1",
         priority: "high" as const,
         category: "urgent" as const,
       },
@@ -43,7 +48,8 @@ describe("groupOpenLoops", () => {
         id: "2",
         kind: "relationship_follow_up" as const,
         title: "B",
-        priority: null,
+        sourceType: "relationship",
+        sourceId: "2",
         category: "relationship" as const,
       },
     ];

@@ -20,6 +20,13 @@ import {
   resolveEdgeColorRgba,
   resolveNodeVisuals,
 } from "@/lib/knowledge/constellation/graphThemeTokens";
+import {
+  isStrongNeuralEdgeType,
+  linkEndpointIds,
+  linkEndpointNodes,
+  selectNeuralAnimatedEdgeIds,
+  type NeuralAnimationLink,
+} from "@/lib/knowledge/constellation/neuralAnimation";
 import { useGraphSurface } from "@/lib/knowledge/constellation/useGraphSurface";
 import { computeLocalSubgraphRingLayout } from "@/lib/knowledge/constellation/computeLocalSubgraphRingLayout";
 import { isLocalOrbitMajorHub } from "@/lib/knowledge/constellation/readableLocalSubgraph";
@@ -88,6 +95,56 @@ type SimLink = Omit<ConstellationEdge, "source" | "target"> & {
 };
 
 type WorldBox = { x1: number; y1: number; x2: number; y2: number };
+
+const NEW_NODE_SPARK_MS = 1800;
+const SEARCH_MATCH_GLOW_MS = 1500;
+
+function hashStringUnit(value: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h = Math.imul(h ^ value.charCodeAt(i), 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
+function quadraticPoint(
+  sx: number,
+  sy: number,
+  cx: number,
+  cy: number,
+  tx: number,
+  ty: number,
+  t: number,
+): { x: number; y: number } {
+  const mt = 1 - t;
+  return {
+    x: mt * mt * sx + 2 * mt * t * cx + t * t * tx,
+    y: mt * mt * sy + 2 * mt * t * cy + t * t * ty,
+  };
+}
+
+function strokeQuadraticSegment(
+  ctx: CanvasRenderingContext2D,
+  sx: number,
+  sy: number,
+  cx: number,
+  cy: number,
+  tx: number,
+  ty: number,
+  from: number,
+  to: number,
+): void {
+  const steps = 9;
+  const start = quadraticPoint(sx, sy, cx, cy, tx, ty, from);
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  for (let i = 1; i <= steps; i++) {
+    const t = from + ((to - from) * i) / steps;
+    const p = quadraticPoint(sx, sy, cx, cy, tx, ty, t);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+}
 
 /** When set, node/edge styling, labels, camera, and layout follow BFS depth (local graph). */
 export type LocalSubgraphCanvasMeta = {
@@ -382,11 +439,16 @@ export const ConstellationCanvas = forwardRef<
   >(new Map());
   const explodedPositionIdsRef = useRef<Set<string>>(new Set());
   const animationRef = useRef<number | null>(null);
+  const frameNowRef = useRef(0);
+  const previousNodeIdsRef = useRef<Set<string>>(new Set());
+  const newNodeSparkRef = useRef<Map<string, number>>(new Map());
+  const matchGlowRef = useRef<Map<string, number>>(new Map());
   const [size, setSize] = useState<{ w: number; h: number }>({
     w: 600,
     h: 400,
   });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const localDepthPinnedIdsRef = useRef<Set<string>>(new Set());
 
   const { mode: graphSurfaceMode, t: graphThemeRow } = useGraphSurface();
@@ -446,6 +508,15 @@ export const ConstellationCanvas = forwardRef<
   const orbitViewDepth: ConstellationDepth = localSubgraphMeta?.viewDepth ?? 1;
   const matchActive = matchedNodeIds.size > 0;
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setPrefersReducedMotion(media.matches);
+    sync();
+    media.addEventListener?.("change", sync);
+    return () => media.removeEventListener?.("change", sync);
+  }, []);
+
   // Force-graph mutates the arrays it gets — pass fresh copies whenever
   // the underlying data changes.
   const graphData = useMemo(
@@ -498,6 +569,33 @@ export const ConstellationCanvas = forwardRef<
       localSubgraphMeta,
     ],
   );
+
+  useEffect(() => {
+    const now = performance.now();
+    const previous = previousNodeIdsRef.current;
+    const next = new Set(graphData.nodes.map((n) => n.id));
+    if (previous.size > 0) {
+      for (const id of next) {
+        if (!previous.has(id)) newNodeSparkRef.current.set(id, now);
+      }
+    }
+    for (const id of Array.from(newNodeSparkRef.current.keys())) {
+      if (!next.has(id) || now - (newNodeSparkRef.current.get(id) ?? now) > NEW_NODE_SPARK_MS) {
+        newNodeSparkRef.current.delete(id);
+      }
+    }
+    previousNodeIdsRef.current = next;
+  }, [graphData.nodes]);
+
+  useEffect(() => {
+    const now = performance.now();
+    for (const id of matchedNodeIds) {
+      if (!matchGlowRef.current.has(id)) matchGlowRef.current.set(id, now);
+    }
+    for (const id of Array.from(matchGlowRef.current.keys())) {
+      if (!matchedNodeIds.has(id)) matchGlowRef.current.delete(id);
+    }
+  }, [matchedNodeIds]);
 
   // ── Force tuning ──────────────────────────────────────────────────
   // Bigger picture: replace the library defaults with per-type
@@ -1165,6 +1263,22 @@ export const ConstellationCanvas = forwardRef<
     ],
   );
 
+  const animatedEdgeIds = useMemo(() => {
+    return selectNeuralAnimatedEdgeIds({
+      links: graphData.links as NeuralAnimationLink<SimNode>[],
+      selectedNodeId,
+      hoveredNodeId: hoveredId,
+      spotlightDirectEdgeIds: spotlightDirectEdges,
+      reducedMotion: prefersReducedMotion,
+    });
+  }, [
+    graphData.links,
+    hoveredId,
+    prefersReducedMotion,
+    selectedNodeId,
+    spotlightDirectEdges,
+  ]);
+
   // ── Renderers ────────────────────────────────────────────────────
   const nodeCanvasObject = useCallback(
     (rawNode: SimNode | unknown, ctx: CanvasRenderingContext2D) => {
@@ -1183,6 +1297,17 @@ export const ConstellationCanvas = forwardRef<
       if (depth !== null && depth >= 3) r *= 0.72;
       const isDirect = spotlightDirect?.has(node.id) ?? false;
       const dominant = useDepthVisual ? depth !== null && depth <= 1 : isDirect || isSelected;
+      const now = frameNowRef.current || performance.now();
+      const sparkStarted = newNodeSparkRef.current.get(node.id);
+      const sparkT =
+        sparkStarted === undefined
+          ? 0
+          : Math.max(0, 1 - (now - sparkStarted) / NEW_NODE_SPARK_MS);
+      const matchStarted = matchGlowRef.current.get(node.id);
+      const matchT =
+        matchStarted === undefined
+          ? 0
+          : Math.max(0, 1 - (now - matchStarted) / SEARCH_MATCH_GLOW_MS);
 
       // Outer glow.
       const glowR =
@@ -1236,6 +1361,22 @@ export const ConstellationCanvas = forwardRef<
         ctx.stroke();
       }
 
+      if (sparkT > 0 || matchT > 0) {
+        const pulse = Math.max(sparkT, matchT);
+        ctx.globalAlpha = prefersReducedMotion ? alpha * 0.75 : alpha * pulse * 0.65;
+        ctx.strokeStyle = sparkT > matchT ? palette.ring : graphShell.matchedRingFallback;
+        ctx.lineWidth = (sparkT > matchT ? 1.4 : 1.1) / Math.max(0.85, ctx.getTransform().a);
+        ctx.beginPath();
+        ctx.arc(
+          node.x,
+          node.y,
+          r + 4 + (prefersReducedMotion ? 2 : (1 - pulse) * 18),
+          0,
+          2 * Math.PI,
+        );
+        ctx.stroke();
+      }
+
       ctx.globalAlpha = 1;
     },
     [
@@ -1247,6 +1388,7 @@ export const ConstellationCanvas = forwardRef<
       isGraphLight,
       localSubgraphMeta,
       matchedNodeIds,
+      prefersReducedMotion,
       selectedNodeId,
       spotlightDirect,
       useDepthVisual,
@@ -1334,6 +1476,176 @@ export const ConstellationCanvas = forwardRef<
       return EDGE_STYLE[link.type]?.dashed ? [4, 4] : [];
     },
     [useDepthVisual, localSubgraphMeta],
+  );
+
+  const linkCanvasObject = useCallback(
+    (rawLink: SimLink | unknown, ctx: CanvasRenderingContext2D, scale: number) => {
+      const link = rawLink as SimLink;
+      const { source, target } = linkEndpointNodes(link);
+      if (
+        !source ||
+        !target ||
+        typeof source.x !== "number" ||
+        typeof source.y !== "number" ||
+        typeof target.x !== "number" ||
+        typeof target.y !== "number"
+      ) {
+        return;
+      }
+
+      const style =
+        EDGE_STYLE[link.type] ?? EDGE_STYLE["explicit_link" as ConstellationEdgeType];
+      const alpha = computeEdgeAlpha(link, style.opacity);
+      const width = Number(linkWidth(link));
+      const dash = linkLineDash(link);
+      const { sourceId, targetId } = linkEndpointIds(link);
+      const touchesHover =
+        hoveredId !== null && (sourceId === hoveredId || targetId === hoveredId);
+      const touchesSelection =
+        selectedNodeId !== null &&
+        (sourceId === selectedNodeId || targetId === selectedNodeId);
+      const highlighted =
+        touchesHover || touchesSelection || spotlightDirectEdges?.has(link.id) || false;
+      const crossHemisphere =
+        !useDepthVisual &&
+        source.x * target.x < 0 &&
+        Math.abs(source.x - target.x) > 180;
+      const cx = crossHemisphere ? 0 : (source.x + target.x) / 2;
+      const cy = crossHemisphere ? (source.y + target.y) * 0.16 : (source.y + target.y) / 2;
+      const pulseEligible = animatedEdgeIds.has(link.id);
+      const strong = isStrongNeuralEdgeType(link.type);
+      const now = frameNowRef.current || performance.now();
+      const pulsePhase = (now / (strong || highlighted ? 1450 : 2400) + hashStringUnit(link.id)) % 1;
+      const lineColor = resolveEdgeColorRgba(link.type, alpha, graphSurfaceMode);
+
+      ctx.save();
+      if (dash.length > 0) ctx.setLineDash(dash);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = Math.max(0.25, width);
+      if (highlighted || strong) {
+        ctx.shadowColor = resolveEdgeColorRgba(
+          link.type,
+          highlighted ? 0.45 : 0.18,
+          graphSurfaceMode,
+        );
+        ctx.shadowBlur = (highlighted ? 8 : 4) / Math.max(0.75, scale);
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(source.x, source.y);
+      if (crossHemisphere) {
+        ctx.quadraticCurveTo(cx, cy, target.x, target.y);
+      } else {
+        ctx.lineTo(target.x, target.y);
+      }
+      ctx.stroke();
+
+      if (crossHemisphere && (highlighted || strong)) {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = graphSurfaceMode === "light"
+          ? "rgba(14, 116, 144, 0.18)"
+          : "rgba(165, 243, 252, 0.16)";
+        ctx.lineWidth = Math.max(0.55, width * 0.55);
+        ctx.beginPath();
+        ctx.moveTo(source.x, source.y);
+        ctx.quadraticCurveTo(0, 0, target.x, target.y);
+        ctx.stroke();
+      }
+
+      if (pulseEligible && !prefersReducedMotion) {
+        const pulseWidth = Math.max(1.1, width + (highlighted ? 1.6 : 0.45));
+        const segment = highlighted ? 0.16 : 0.08;
+        const from = Math.max(0, pulsePhase - segment);
+        const to = Math.min(1, pulsePhase + segment * 0.35);
+        const pulseColor =
+          graphSurfaceMode === "light"
+            ? `rgba(14, 116, 144, ${highlighted ? 0.62 : 0.24})`
+            : `rgba(165, 243, 252, ${highlighted ? 0.78 : 0.24})`;
+
+        ctx.setLineDash([]);
+        ctx.shadowBlur = (highlighted ? 12 : 7) / Math.max(0.75, scale);
+        ctx.shadowColor = pulseColor;
+        ctx.strokeStyle = pulseColor;
+        ctx.lineWidth = pulseWidth;
+        if (crossHemisphere) {
+          strokeQuadraticSegment(
+            ctx,
+            source.x,
+            source.y,
+            cx,
+            cy,
+            target.x,
+            target.y,
+            from,
+            to,
+          );
+        } else {
+          const sx = source.x + (target.x - source.x) * from;
+          const sy = source.y + (target.y - source.y) * from;
+          const tx = source.x + (target.x - source.x) * to;
+          const ty = source.y + (target.y - source.y) * to;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+        }
+
+        const particle = crossHemisphere
+          ? quadraticPoint(source.x, source.y, cx, cy, target.x, target.y, pulsePhase)
+          : {
+              x: source.x + (target.x - source.x) * pulsePhase,
+              y: source.y + (target.y - source.y) * pulsePhase,
+            };
+        ctx.fillStyle = pulseColor;
+        ctx.beginPath();
+        ctx.arc(
+          particle.x,
+          particle.y,
+          (highlighted ? 2.7 : 1.7) / Math.max(0.8, scale * 0.65),
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+
+      if (prefersReducedMotion && highlighted) {
+        ctx.setLineDash([]);
+        ctx.strokeStyle =
+          graphSurfaceMode === "light"
+            ? "rgba(14, 116, 144, 0.30)"
+            : "rgba(165, 243, 252, 0.34)";
+        ctx.lineWidth = Math.max(0.8, width * 0.55);
+        ctx.beginPath();
+        ctx.moveTo(source.x, source.y);
+        if (crossHemisphere) ctx.quadraticCurveTo(cx, cy, target.x, target.y);
+        else ctx.lineTo(target.x, target.y);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    },
+    [
+      animatedEdgeIds,
+      computeEdgeAlpha,
+      graphSurfaceMode,
+      hoveredId,
+      linkLineDash,
+      linkWidth,
+      prefersReducedMotion,
+      selectedNodeId,
+      spotlightDirectEdges,
+      useDepthVisual,
+    ],
+  );
+
+  const handleRenderFramePre = useCallback(
+    (ctx: CanvasRenderingContext2D, scale: number) => {
+      frameNowRef.current = performance.now();
+      onRenderFramePre?.(ctx, scale);
+    },
+    [onRenderFramePre],
   );
 
   // ── Label pass with screen-space collision detection ─────────────
@@ -1595,8 +1907,11 @@ export const ConstellationCanvas = forwardRef<
         linkColor={linkColor}
         linkWidth={linkWidth}
         linkLineDash={linkLineDash}
+        linkCanvasObject={linkCanvasObject}
+        linkCanvasObjectMode={() => "replace"}
         linkDirectionalParticles={0}
         linkCurvature={0}
+        autoPauseRedraw={prefersReducedMotion}
         cooldownTicks={cooldownTicksProp ?? 140}
         warmupTicks={warmupTicksProp ?? 30}
         d3VelocityDecay={d3VelocityDecayProp ?? 0.32}
@@ -1604,11 +1919,12 @@ export const ConstellationCanvas = forwardRef<
         enableNodeDrag
         enableZoomInteraction
         enablePanInteraction
-        onRenderFramePre={onRenderFramePre}
+        onRenderFramePre={handleRenderFramePre}
         onRenderFramePost={onRenderFramePost}
         onNodeHover={(rawNode: SimNode | null) => {
           const node = rawNode ?? null;
-          setHoveredId(node ? node.id : null);
+          const nextId = node ? node.id : null;
+          setHoveredId((prev) => (prev === nextId ? prev : nextId));
           onNodeHover(node);
         }}
         onNodeClick={(rawNode: SimNode) => {

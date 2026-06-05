@@ -88,6 +88,64 @@ function drawSuperellipse(
   ctx.closePath();
 }
 
+function drawCorticalContours(ctx: CanvasRenderingContext2D, isLight: boolean): void {
+  const W = BRAIN_HW;
+  const H = BRAIN_HH;
+  const contour = isLight
+    ? "rgba(15, 23, 42, 0.075)"
+    : "rgba(226, 232, 240, 0.045)";
+  const contourAccent = isLight
+    ? "rgba(14, 116, 144, 0.12)"
+    : "rgba(125, 211, 252, 0.075)";
+
+  ctx.save();
+  ctx.beginPath();
+  drawSuperellipse(ctx, 0, 0, W * 1.1, H * 1.1, 2.3, 2.1);
+  ctx.clip();
+  ctx.lineCap = "round";
+
+  for (const side of [-1, 1] as const) {
+    for (let i = 0; i < 7; i++) {
+      const y = -H * 0.56 + i * H * 0.17;
+      const x0 = side * (W * (0.14 + i * 0.018));
+      const x1 = side * (W * (0.74 - i * 0.026));
+      const sag = Math.sin(i * 1.7) * H * 0.07;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.bezierCurveTo(
+        side * W * 0.32,
+        y - H * 0.12 + sag,
+        side * W * 0.56,
+        y + H * 0.12 - sag,
+        x1,
+        y + H * 0.04,
+      );
+      ctx.strokeStyle = i % 3 === 0 ? contourAccent : contour;
+      ctx.lineWidth = i % 3 === 0 ? 1.05 : 0.72;
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < 5; i++) {
+      const x = side * (W * (0.24 + i * 0.105));
+      ctx.beginPath();
+      ctx.moveTo(x, -H * 0.60);
+      ctx.bezierCurveTo(
+        x + side * W * 0.08,
+        -H * 0.34,
+        x - side * W * 0.10,
+        H * 0.18,
+        x + side * W * 0.03,
+        H * 0.58,
+      );
+      ctx.strokeStyle = contour;
+      ctx.lineWidth = 0.64;
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawBrainBackground(ctx: CanvasRenderingContext2D, isLight: boolean): void {
   const W = BRAIN_HW;
   const H = BRAIN_HH;
@@ -153,6 +211,22 @@ function drawBrainBackground(ctx: CanvasRenderingContext2D, isLight: boolean): v
   ctx.arc(0, H * 0.50, W * 0.52, 0, Math.PI * 2);
   ctx.fill();
 
+  // Faint cortical contour lines: enough anatomical signal without
+  // becoming decorative animation or competing with labels.
+  drawCorticalContours(ctx, isLight);
+
+  // Soft corpus-callosum bridge glow through the middle.
+  const bridgeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, W * 0.34);
+  bridgeGrad.addColorStop(
+    0,
+    isLight ? "rgba(14,116,144,0.12)" : "rgba(125,211,252,0.07)",
+  );
+  bridgeGrad.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = bridgeGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, H * 0.03, W * 0.32, H * 0.16, -0.03, 0, Math.PI * 2);
+  ctx.fill();
+
   // Brain outline.
   ctx.beginPath();
   drawSuperellipse(ctx, 0, 0, W, H, 2.3, 2.1);
@@ -180,6 +254,14 @@ function drawBrainBackground(ctx: CanvasRenderingContext2D, isLight: boolean): v
   ctx.setLineDash([4, 14]);
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(0, H * 0.05, W * 0.20, H * 0.08, -0.05, 0, Math.PI * 2);
+  ctx.strokeStyle = isLight ? "rgba(14,116,144,0.16)" : "rgba(165,243,252,0.10)";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
   ctx.restore();
 
   ctx.restore();
