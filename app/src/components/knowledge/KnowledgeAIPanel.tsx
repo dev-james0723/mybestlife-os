@@ -1,21 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, X, Send, ArrowRight, Trash2 } from "lucide-react";
+import {
+  Sparkles,
+  X,
+  Send,
+  ArrowRight,
+  Trash2,
+  Copy,
+  ExternalLink,
+  BookOpen,
+  Search,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import type { KnowledgeItem } from "@/types/knowledge";
 import { friendlyAuthError } from "@/lib/knowledge/auth-error-copy";
+import type { RetrievalCitation, RetrievalResult } from "@/lib/retrieval/types";
 
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  retrievalRunId?: string | null;
+  citations?: RetrievalCitation[];
+  sources?: RetrievalResult[];
+  warnings?: string[];
 };
 
 function storageKey(userId: string) {
@@ -38,7 +54,20 @@ function loadStoredMessages(userId: string): Message[] {
         (o.role === "user" || o.role === "assistant") &&
         typeof o.content === "string"
       ) {
-        out.push({ id: o.id, role: o.role, content: o.content });
+        out.push({
+          id: o.id,
+          role: o.role,
+          content: o.content,
+          retrievalRunId:
+            typeof o.retrievalRunId === "string" ? o.retrievalRunId : null,
+          citations: Array.isArray(o.citations)
+            ? (o.citations as RetrievalCitation[])
+            : [],
+          sources: Array.isArray(o.sources) ? (o.sources as RetrievalResult[]) : [],
+          warnings: Array.isArray(o.warnings)
+            ? o.warnings.filter((x): x is string => typeof x === "string")
+            : [],
+        });
       }
     }
     return out.slice(-80);
@@ -160,13 +189,32 @@ interface KnowledgeAIPanelProps {
   userId: string;
 }
 
+type RetrieveResponse = {
+  retrievalRunId?: string | null;
+  results?: RetrievalResult[];
+  warnings?: string[];
+};
+
+type AssistantResponse = {
+  reply?: string;
+  retrievalRunId?: string | null;
+  citations?: RetrievalCitation[];
+  sources?: RetrievalResult[];
+  warnings?: string[];
+  error?: string;
+  reason?: string;
+  detail?: string;
+};
+
 export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language).aiPanel;
   const knowledgeUi = getKnowledgeUiCopy(language);
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const aiPanelQuery = useKnowledgeStore((s) => s.aiPanelQuery);
+  const aiPanelRetrievalRunId = useKnowledgeStore((s) => s.aiPanelRetrievalRunId);
   const items = useKnowledgeStore((s) => s.items);
+  const selectItem = useKnowledgeStore((s) => s.selectItem);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -221,14 +269,60 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
       };
 
       try {
+        let retrievalRunId: string | null =
+          aiPanelRetrievalRunId && q === aiPanelQuery ? aiPanelRetrievalRunId : null;
+        let retrievalSources: RetrievalResult[] = [];
+        let retrievalWarnings: string[] = [];
+
+        const retrieveRes = retrievalRunId
+          ? null
+          : await fetch("/api/knowledge/retrieve", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                query: q,
+                mode: "hybrid",
+                limit: 12,
+                locale: language,
+                referenceDateIso: payload.referenceDateIso,
+              }),
+            });
+
+        if (retrieveRes?.status === 401) {
+          const data = (await retrieveRes.json().catch(() => ({}))) as AssistantResponse;
+          const friendly = friendlyAuthError(data, knowledgeUi.detail);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: friendly ?? data.detail ?? ui.genericError,
+            },
+          ]);
+          setIsThinking(false);
+          return;
+        }
+
+        if (retrieveRes?.ok) {
+          const retrieveData = (await retrieveRes.json()) as RetrieveResponse;
+          retrievalRunId = retrieveData.retrievalRunId ?? null;
+          retrievalSources = retrieveData.results ?? [];
+          retrievalWarnings = retrieveData.warnings ?? [];
+        }
+
         const res = await fetch("/api/knowledge/assistant", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            ...payload,
+            retrievalRunId,
+            mode: "hybrid",
+            limit: 12,
+          }),
         });
 
         if (res.ok) {
-          const data = (await res.json()) as { reply?: string };
+          const data = (await res.json()) as AssistantResponse;
           const reply = typeof data.reply === "string" ? data.reply : "";
           if (!reply) {
             setMessages((prev) => [
@@ -238,7 +332,15 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
           } else {
             setMessages((prev) => [
               ...prev,
-              { id: crypto.randomUUID(), role: "assistant", content: reply },
+              {
+                id: crypto.randomUUID(),
+                role: "assistant",
+                content: reply,
+                retrievalRunId: data.retrievalRunId ?? retrievalRunId,
+                citations: data.citations ?? [],
+                sources: data.sources ?? retrievalSources,
+                warnings: [...retrievalWarnings, ...(data.warnings ?? [])],
+              },
             ]);
           }
           setIsThinking(false);
@@ -260,11 +362,7 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
         }
 
         if (res.status === 401) {
-          const data = (await res.json().catch(() => ({}))) as {
-            error?: string;
-            reason?: string;
-            detail?: string;
-          };
+          const data = (await res.json().catch(() => ({}))) as AssistantResponse;
           const friendly = friendlyAuthError(data, knowledgeUi.detail);
           setMessages((prev) => [
             ...prev,
@@ -301,7 +399,16 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
         setIsThinking(false);
       }
     },
-    [input, items, knowledgeUi, language, messages, ui],
+    [
+      aiPanelQuery,
+      aiPanelRetrievalRunId,
+      input,
+      items,
+      knowledgeUi,
+      language,
+      messages,
+      ui,
+    ],
   );
 
   return (
@@ -363,16 +470,120 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
               <div
                 key={msg.id}
                 className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words",
+                  "max-w-[88%] rounded-lg px-3 py-2 text-sm break-words",
                   msg.role === "user"
                     ? "ml-auto bg-primary text-primary-foreground"
                     : "bg-muted",
                 )}
               >
-                {msg.role === "assistant" && (
-                  <Sparkles className="h-3 w-3 text-primary inline mr-1.5 -mt-0.5" />
+                {msg.role === "user" ? (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Sparkles className="mt-1 h-3 w-3 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed [&_a]:underline [&_code]:rounded [&_code]:bg-background/70 [&_code]:px-1 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_ul]:list-disc">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    </div>
+
+                    {msg.citations && msg.citations.length > 0 && (
+                      <div className="space-y-1.5">
+                        {msg.citations.slice(0, 4).map((citation) => (
+                          <div
+                            key={`${msg.id}:${citation.resultId}:${citation.quote ?? ""}`}
+                            className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-[11px] leading-snug"
+                          >
+                            <div className="flex items-center gap-1.5 font-medium">
+                              <BookOpen className="h-3 w-3 text-primary" />
+                              <span>{citation.resultId}</span>
+                              <span className="truncate text-muted-foreground">
+                                {citation.title}
+                              </span>
+                            </div>
+                            {citation.quote && (
+                              <p className="mt-1 text-muted-foreground">
+                                {citation.quote}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="space-y-1.5">
+                        {msg.sources.slice(0, 3).map((source) => (
+                          <div
+                            key={`${msg.id}:${source.id}:${source.sourceId}`}
+                            className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">
+                                    {source.id}
+                                  </span>
+                                  <span className="truncate">{source.title}</span>
+                                </div>
+                                <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                                  {source.snippet}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 shrink-0 p-0"
+                                aria-label="Open source"
+                                onClick={() => {
+                                  if (source.knowledgeItemId) {
+                                    selectItem(source.knowledgeItemId);
+                                    return;
+                                  }
+                                  if (source.sourceUrl) {
+                                    window.open(source.sourceUrl, "_blank", "noopener,noreferrer");
+                                  }
+                                }}
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => void navigator.clipboard?.writeText(msg.content)}
+                      >
+                        <Copy className="mr-1 h-3 w-3" />
+                        Copy
+                      </Button>
+                      {msg.retrievalRunId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => {
+                            window.location.href = `/${language}/ai-knowledge?retrievalRunId=${encodeURIComponent(
+                              msg.retrievalRunId ?? "",
+                            )}`;
+                          }}
+                        >
+                          <Search className="mr-1 h-3 w-3" />
+                          AI Knowledge
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )}
-                {msg.content}
               </div>
             ))}
             {isThinking && (
@@ -406,7 +617,7 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
             size="sm"
             disabled={!input.trim() || isThinking}
             aria-label={ui.sendAria}
-            className="h-9 shrink-0 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700 disabled:opacity-50"
+            className="h-9 shrink-0 border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
           </Button>

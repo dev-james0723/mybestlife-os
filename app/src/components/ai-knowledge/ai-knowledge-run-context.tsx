@@ -16,6 +16,8 @@ type AnyPrompt = LibraryPrompt | CustomPrompt;
 export type OpenRunOptions = {
   /** Pre-fill variable fields (e.g. re-run from Activity log). */
   initialVariables?: Record<string, string>;
+  /** Ground this run in an Ask Your KB evidence set. */
+  retrievalRunId?: string | null;
 };
 
 type AiKnowledgeRunContextValue = {
@@ -44,8 +46,15 @@ export function AiKnowledgeRunProvider({ children }: { children: ReactNode }) {
   const [runOptions, setRunOptions] = useState<OpenRunOptions>({});
 
   const openRun = useCallback((prompt: AnyPrompt, options?: OpenRunOptions) => {
+    const currentRetrievalRunId =
+      typeof window === "undefined"
+        ? null
+        : new URLSearchParams(window.location.search).get("retrievalRunId");
     setRunPrompt(prompt);
-    setRunOptions(options ?? {});
+    setRunOptions({
+      ...(options ?? {}),
+      retrievalRunId: options?.retrievalRunId ?? currentRetrievalRunId,
+    });
   }, []);
 
   const closeRun = useCallback(() => {
@@ -61,6 +70,7 @@ export function AiKnowledgeRunProvider({ children }: { children: ReactNode }) {
       <PromptRunDialog
         prompt={runPrompt}
         initialVariables={runOptions.initialVariables}
+        retrievalRunId={runOptions.retrievalRunId}
         onClose={closeRun}
       />
     </AiKnowledgeRunContext.Provider>

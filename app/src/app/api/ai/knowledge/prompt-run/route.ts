@@ -8,6 +8,8 @@ import {
   getGeminiPlannerTextModel,
   getGeminiServerApiKey,
 } from "@/lib/ai/gemini-text";
+import { loadRetrievalRunEvidence } from "@/lib/retrieval/service";
+import type { RetrievalResult } from "@/lib/retrieval/types";
 import {
   effectiveVariableSpecs,
   interpolatePromptBody,
@@ -25,6 +27,7 @@ const bodySchema = z
     locale: z.string().optional(),
     libraryPromptId: z.string().uuid().optional(),
     customPromptId: z.string().uuid().optional(),
+    retrievalRunId: z.string().uuid().optional(),
     variables: z.record(z.string(), z.string()).optional().default({}),
   })
   .refine(
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
 
   const { libraryPromptId, customPromptId, variables, locale: localeRaw } =
     parsed.data;
+  const retrievalRunId = parsed.data.retrievalRunId ?? null;
   const locale = parseAppLocale(localeRaw);
   const languageRule = getLlmResponseLanguageDirective(locale);
 
@@ -146,6 +150,28 @@ export async function POST(request: Request) {
 
   const interpolated = interpolatePromptBody(body, variables);
 
+  let retrievalEvidence: {
+    query: string | null;
+    warnings: string[];
+    results: RetrievalResult[];
+  } | null = null;
+
+  if (retrievalRunId) {
+    const evidence = await loadRetrievalRunEvidence({
+      supabase,
+      userId: user.id,
+      retrievalRunId,
+      limit: 16,
+    });
+    if (evidence.results.length === 0) {
+      return NextResponse.json(
+        { error: "retrieval_run_not_found_or_empty" },
+        { status: 404 },
+      );
+    }
+    retrievalEvidence = evidence;
+  }
+
   const { data: runRow, error: insertErr } = await supabase
     .from("ai_prompt_runs")
     .insert({
@@ -154,6 +180,23 @@ export async function POST(request: Request) {
       provider: "gemini",
       model: getGeminiPlannerTextModel(),
       variables,
+      retrieval_run_id: retrievalRunId,
+      retrieval_evidence: retrievalEvidence
+        ? {
+            query: retrievalEvidence.query,
+            warnings: retrievalEvidence.warnings,
+            results: retrievalEvidence.results.map((result) => ({
+              id: result.id,
+              retrievalDocumentId: result.retrievalDocumentId,
+              sourceDomain: result.sourceDomain,
+              sourceId: result.sourceId,
+              title: result.title,
+              snippet: result.snippet,
+              pageNumber: result.pageNumber,
+              sectionPath: result.sectionPath,
+            })),
+          }
+        : {},
       status: "running",
       result_snippet: null,
       error_message: null,
@@ -173,9 +216,30 @@ export async function POST(request: Request) {
   const systemInstruction = `You are a capable assistant inside a personal productivity app.
 
 Language (critical): ${languageRule}
-Follow the user's instructions in the prompt below precisely. If the prompt asks for a specific format, honor it. Use Markdown when it improves readability unless the prompt forbids it.`;
+Follow the user's instructions in the prompt below precisely. If the prompt asks for a specific format, honor it. Use Markdown when it improves readability unless the prompt forbids it.
+If an ASK YOUR KB EVIDENCE block is present, ground factual claims in that evidence and cite source ids inline, for example [R1].`;
 
-  const userMessage = interpolated;
+  const evidenceBlock = retrievalEvidence
+    ? retrievalEvidence.results
+        .slice(0, 16)
+        .map((result) =>
+          [
+            `[${result.id}] ${result.title}`,
+            `source_domain: ${result.sourceDomain}`,
+            `source_id: ${result.sourceId}`,
+            result.pageNumber != null ? `page: ${result.pageNumber}` : null,
+            result.sectionPath ? `section: ${result.sectionPath}` : null,
+            `excerpt: ${result.snippet || result.bodyPreview}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        )
+        .join("\n\n---\n\n")
+    : "";
+
+  const userMessage = retrievalEvidence
+    ? `${interpolated}\n\n---\nASK YOUR KB EVIDENCE:\n${evidenceBlock}`
+    : interpolated;
 
   try {
     const { text, modelUsed } = await fetchGeminiChatText({
@@ -227,6 +291,7 @@ Follow the user's instructions in the prompt below precisely. If the prompt asks
       model: modelUsed,
       resultText: text,
       resultSnippet: snippet,
+      retrievalRunId,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

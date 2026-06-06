@@ -28,12 +28,15 @@ interface PromptRunDialogProps {
   prompt: AnyPrompt | null;
   /** When opening for a re-run, seed variable fields from a prior execution. */
   initialVariables?: Record<string, string>;
+  /** Optional Ask Your KB retrieval run whose evidence should ground the prompt. */
+  retrievalRunId?: string | null;
   onClose: () => void;
 }
 
 export function PromptRunDialog({
   prompt,
   initialVariables,
+  retrievalRunId,
   onClose,
 }: PromptRunDialogProps) {
   const language = useAppStore((s) => s.language);
@@ -92,6 +95,7 @@ export function PromptRunDialog({
             prompt.source === "library" ? prompt.id : undefined,
           customPromptId:
             prompt.source === "custom" ? prompt.id : undefined,
+          retrievalRunId: retrievalRunId ?? undefined,
           variables: values,
         }),
       });
@@ -129,6 +133,7 @@ export function PromptRunDialog({
     ui.toast,
     fetchRecentRuns,
     fetchUserPrompts,
+    retrievalRunId,
   ]);
 
   return (
@@ -142,6 +147,13 @@ export function PromptRunDialog({
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle>{ui.run.title}</DialogTitle>
           <DialogDescription>{ui.run.description}</DialogDescription>
+          {retrievalRunId ? (
+            <div className="pt-2">
+              <Badge variant="outline" className="w-fit text-[11px]">
+                Use current Ask Your KB evidence
+              </Badge>
+            </div>
+          ) : null}
         </DialogHeader>
 
         {prompt && (

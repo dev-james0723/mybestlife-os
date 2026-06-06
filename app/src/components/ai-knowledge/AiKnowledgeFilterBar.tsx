@@ -113,7 +113,7 @@ export function AiKnowledgeFilterBar({
             type="button"
             onClick={onOpenPalette}
             aria-label={ui.header.commandPaletteHint}
-            className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/70"
+            className="absolute right-2 top-1/2 hidden min-h-8 min-w-11 -translate-y-1/2 items-center justify-center gap-0.5 rounded border bg-muted px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted/70 sm:inline-flex"
           >
             {ui.header.commandPaletteShortcut}
           </button>

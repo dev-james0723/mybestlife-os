@@ -61,6 +61,7 @@ interface KnowledgeStore {
   isAddModalOpen: boolean;
   isMobileSidebarOpen: boolean;
   aiPanelQuery: string;
+  aiPanelRetrievalRunId: string | null;
   sortBy: KnowledgeSortKey;
 
   // ── Constellation View state (Phase 7+) ───────────────────────────
@@ -101,7 +102,7 @@ interface KnowledgeStore {
   setSortBy: (sort: KnowledgeSortKey) => void;
   /** Clears search, types, categories, quick filters, collection, and tag filter. */
   clearAllListFilters: () => void;
-  openAIPanel: (query?: string) => void;
+  openAIPanel: (query?: string, retrievalRunId?: string | null) => void;
   closeAIPanel: () => void;
   openAddModal: () => void;
   closeAddModal: () => void;
@@ -143,6 +144,7 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
   isAddModalOpen: false,
   isMobileSidebarOpen: false,
   aiPanelQuery: "",
+  aiPanelRetrievalRunId: null,
   sortBy: "latest",
 
   constellationMode: "global",
@@ -226,8 +228,12 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
       activeTagId: null,
     }),
 
-  openAIPanel: (query) =>
-    set({ isAIPanelOpen: true, aiPanelQuery: query ?? "" }),
+  openAIPanel: (query, retrievalRunId) =>
+    set({
+      isAIPanelOpen: true,
+      aiPanelQuery: query ?? "",
+      aiPanelRetrievalRunId: retrievalRunId ?? null,
+    }),
   closeAIPanel: () => set({ isAIPanelOpen: false }),
 
   openAddModal: () => set({ isAddModalOpen: true }),

@@ -10,6 +10,7 @@ import { useAppStore } from "@/stores/app-store";
 import { formatKnowledgeDate, getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { getCategoryLabel } from "@/lib/knowledge/labels";
 import { collectionNamesForItem } from "@/lib/knowledge/knowledge-list-utils";
+import { scoreKnowledgeItem } from "@/lib/knowledgeMatching";
 
 interface KnowledgeTableViewProps {
   items: KnowledgeItem[];
@@ -22,6 +23,7 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
   const sortBy = useKnowledgeStore((s) => s.sortBy);
   const setSortBy = useKnowledgeStore((s) => s.setSortBy);
   const smartCollections = useKnowledgeStore((s) => s.smartCollections);
+  const searchQuery = useKnowledgeStore((s) => s.searchQuery);
 
   const SortHead = ({
     sk,
@@ -87,6 +89,9 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
                 const colors = typeColors[item.contentType];
                 const allTags = [...item.aiTags, ...item.manualTags];
                 const collections = collectionNamesForItem(item, smartCollections);
+                const relevance = searchQuery.trim()
+                  ? scoreKnowledgeItem(item, searchQuery, smartCollections)
+                  : null;
                 return (
                   <tr
                     key={item.id}
@@ -110,6 +115,12 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
                     </td>
                     <td className="py-2 align-top font-medium">
                       <span className="line-clamp-2">{item.title}</span>
+                      {relevance ? (
+                        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-primary">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+                          <span className="tabular-nums">{relevance.normalizedScore}% match</span>
+                        </div>
+                      ) : null}
                     </td>
                     <td className="hidden py-2 align-top text-xs text-muted-foreground lg:table-cell">
                       <span className="line-clamp-1" title={item.category ? getCategoryLabel(item.category) : ""}>

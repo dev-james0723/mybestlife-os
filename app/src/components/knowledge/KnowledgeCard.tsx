@@ -19,6 +19,7 @@ import { KnowledgeThumbnailLightbox } from "./KnowledgeThumbnailLightbox";
 import { SourceTypeBadge } from "./source/SourceTypeBadge";
 import { SocialEmbed } from "./source/SocialEmbed";
 import { getCardSummaryPreview } from "@/lib/knowledge/knowledge-list-utils";
+import { scoreKnowledgeItem } from "@/lib/knowledgeMatching";
 import type { PreviewStatus, RenderMode } from "@/types/knowledge-source";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -45,6 +46,8 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
   const showDocOracleRegion = oracleEligible || Boolean(item.documentBrainJob);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const selectItem = useKnowledgeStore((s) => s.selectItem);
+  const activeSearchQuery = useKnowledgeStore((s) => s.searchQuery);
+  const smartCollections = useKnowledgeStore((s) => s.smartCollections);
   const legacyColors = typeColors[item.contentType];
   const isProcessing = item.status === "processing";
   const isError = item.status === "error";
@@ -61,6 +64,9 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
   const allTags = [...item.aiTags, ...item.manualTags];
   const visibleTags = allTags.slice(0, TAG_VISIBLE);
   const extraTagCount = Math.max(0, allTags.length - TAG_VISIBLE);
+  const relevance = activeSearchQuery.trim()
+    ? scoreKnowledgeItem(item, activeSearchQuery, smartCollections)
+    : null;
 
   return (
     <>
@@ -165,6 +171,13 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
         <h3 className="line-clamp-2 min-h-0 break-words text-[13px] font-semibold leading-snug text-foreground">
           {item.title}
         </h3>
+
+        {relevance ? (
+          <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+            <span className="tabular-nums">{relevance.normalizedScore}% match</span>
+          </div>
+        ) : null}
 
         {isError ? (
           <p className="flex items-center gap-1 text-[11px] text-destructive">
