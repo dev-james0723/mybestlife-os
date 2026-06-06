@@ -35,11 +35,41 @@ export type IdeasUiCopy = {
     "latest" | "updated" | "titleAZ" | "status" | "category" | "sourceType",
     string
   >;
-  viewLabels: Record<"gallery" | "board" | "table", string>;
+  viewLabels: Record<"gallery" | "board" | "table" | "constellation", string>;
+  constellation: {
+    searchPlaceholder: string;
+    mode: string;
+    globalMode: string;
+    localMode: string;
+    depth: string;
+    showLabels: string;
+    hideUnconnected: string;
+    resetLayout: string;
+    enterFullscreen: string;
+    exitFullscreen: string;
+    legend: string;
+    details: string;
+    hideDetails: string;
+    nodes: string;
+    edges: string;
+    ideaNode: string;
+    selectHint: string;
+    localNeedsSelection: string;
+    noSelection: string;
+    noSelectionHint: string;
+    exploreLocal: string;
+    connections: string;
+    noConnections: string;
+    noVisibleNodesTitle: string;
+    noVisibleNodesDescription: string;
+    edgeLabels: Partial<Record<import("@/types/constellation").ConstellationEdgeType, string>>;
+  };
   filtersMenu: string;
   filterSource: string;
   filterCategory: string;
   clearFilters: string;
+  tagSearchPlaceholder: string;
+  noTagsFound: string;
   boardGroupBy: string;
   groupByStatus: string;
   groupByCategory: string;
@@ -193,11 +223,50 @@ const en: IdeasUiCopy = {
     gallery: "Gallery",
     board: "Board",
     table: "Table",
+    constellation: "Constellation",
+  },
+  constellation: {
+    searchPlaceholder: "Search idea graph…",
+    mode: "Graph mode",
+    globalMode: "Global",
+    localMode: "Local",
+    depth: "Depth",
+    showLabels: "Labels",
+    hideUnconnected: "Hide unconnected",
+    resetLayout: "Reset layout",
+    enterFullscreen: "Enter fullscreen",
+    exitFullscreen: "Exit fullscreen",
+    legend: "Legend",
+    details: "Details",
+    hideDetails: "Hide details",
+    nodes: "nodes",
+    edges: "edges",
+    ideaNode: "Idea",
+    selectHint: "Click an idea to inspect connections",
+    localNeedsSelection: "Select an idea to see its local network",
+    noSelection: "No idea selected",
+    noSelectionHint: "Select a node to inspect its captured idea and related connections.",
+    exploreLocal: "Explore local",
+    connections: "Connections",
+    noConnections: "This idea has no visible connections yet.",
+    noVisibleNodesTitle: "No visible idea connections",
+    noVisibleNodesDescription:
+      "Try showing unconnected ideas or clearing the graph search.",
+    edgeLabels: {
+      manual_link: "Direct idea link",
+      ai_suggested_link: "AI related idea",
+      shared_tag: "Shared tag",
+      idea_project: "Shared project",
+      idea_knowledge: "Shared knowledge",
+      domain_tag: "Shared reference",
+    },
   },
   filtersMenu: "Filters",
   filterSource: "Source type",
   filterCategory: "Category",
   clearFilters: "Clear filters",
+  tagSearchPlaceholder: "Search tags…",
+  noTagsFound: "No matching tags",
   boardGroupBy: "Group board by",
   groupByStatus: "Status",
   groupByCategory: "Category",
@@ -284,8 +353,8 @@ const en: IdeasUiCopy = {
   cancel: "Cancel",
   save: "Save",
   saving: "Saving…",
-  manualTags: "Manual tags",
-  aiTags: "AI tags",
+  manualTags: "Your tags",
+  aiTags: "Tags",
   addTagPlaceholder: "Add a tag…",
   addTag: "Add",
   removeAiTag: "Remove tag",

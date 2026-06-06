@@ -135,6 +135,13 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
       <Separator />
 
       <div className="space-y-1">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{ui.tags}</p>
+        <IdeasTagTaxonomyPanel onAfterSelect={closeMobileSidebar} />
+      </div>
+
+      <Separator />
+
+      <div className="space-y-1">
         <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {ui.relatedFilters}
         </p>
@@ -151,13 +158,6 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
             {row.label}
           </button>
         ))}
-      </div>
-
-      <Separator />
-
-      <div className="space-y-1">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{ui.tags}</p>
-        <IdeasTagTaxonomyPanel onAfterSelect={closeMobileSidebar} />
       </div>
     </div>
   );

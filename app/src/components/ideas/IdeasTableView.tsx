@@ -4,7 +4,7 @@ import type { Idea } from "@/types/database";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { formatDateShort } from "@/lib/utils/date";
-import { displayCategory, ideaRelatedResourceCount, previewIdeaTitle } from "@/lib/ideas/idea-helpers";
+import { displayCategory, ideaRelatedResourceCount, ideaTags, previewIdeaTitle } from "@/lib/ideas/idea-helpers";
 import { cn } from "@/lib/utils";
 
 export function IdeasTableView({
@@ -35,7 +35,7 @@ export function IdeasTableView({
         </thead>
         <tbody>
           {items.map((idea) => {
-            const tags = (idea.ai_tags ?? []).slice(0, 4).join(", ");
+            const tags = ideaTags(idea).slice(0, 4).join(", ");
             const rel = ideaRelatedResourceCount(idea);
             return (
               <tr

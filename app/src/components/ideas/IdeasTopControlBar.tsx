@@ -29,6 +29,7 @@ import {
   LayoutGrid,
   Link2,
   Search,
+  Sparkles,
   Table,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,7 @@ export function IdeasTopControlBar() {
     { id: "gallery" as const, label: ui.viewLabels.gallery, icon: LayoutGrid },
     { id: "board" as const, label: ui.viewLabels.board, icon: Columns3 },
     { id: "table" as const, label: ui.viewLabels.table, icon: Table },
+    { id: "constellation" as const, label: ui.viewLabels.constellation, icon: Sparkles },
   ];
 
   return (

@@ -1,6 +1,6 @@
 import type { Idea } from "@/types/database";
 
-export type IdeasView = "gallery" | "board" | "table";
+export type IdeasView = "gallery" | "board" | "table" | "constellation";
 
 export type IdeasSortKey =
   | "latest"

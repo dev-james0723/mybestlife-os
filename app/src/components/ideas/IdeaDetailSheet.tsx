@@ -49,6 +49,7 @@ import {
   ideaAiSummary,
   ideaCardVisual,
   ideaStructuredSuggestions,
+  ideaTags,
   type IdeaStructuredSuggestion,
 } from "@/lib/ideas/idea-helpers";
 import { IdeaCategoryBadge } from "./IdeaCategoryBadge";
@@ -152,6 +153,7 @@ function IdeaDetailInner({
 
   const suggestions = ideaStructuredSuggestions(idea);
   const cardVisual = ideaCardVisual(idea);
+  const displayTags = ideaTags(idea);
   const brainHref = withAppLocalePrefix(
     language,
     `/brain?focus=idea:${encodeURIComponent(idea.id)}`,
@@ -429,7 +431,7 @@ function IdeaDetailInner({
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.aiTags}</p>
                   <div className="flex flex-wrap gap-1">
-                    {(idea.ai_tags ?? []).map((t) => (
+                    {displayTags.map((t) => (
                       <span
                         key={t}
                         className="max-w-full break-words rounded-md border border-dashed px-2 py-0.5 text-xs text-muted-foreground"
@@ -437,7 +439,7 @@ function IdeaDetailInner({
                         {t}
                       </span>
                     ))}
-                    {(idea.ai_tags ?? []).length === 0 ? <span className="text-xs text-muted-foreground">—</span> : null}
+                    {displayTags.length === 0 ? <span className="text-xs text-muted-foreground">—</span> : null}
                   </div>
                 </div>
                 <Separator />

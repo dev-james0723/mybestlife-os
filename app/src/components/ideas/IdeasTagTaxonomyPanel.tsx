@@ -1,25 +1,41 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useIdeasStore } from "@/stores/ideas-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
+import { ideaTags } from "@/lib/ideas/idea-helpers";
+import { Search } from "lucide-react";
 
 function tagCounts(
   items: { manual_tags: string[]; ai_tags: string[] }[],
-): Map<string, number> {
-  const ai = new Map<string, number>();
+): Array<[string, number]> {
+  const tags = new Map<string, { label: string; count: number }>();
   for (const it of items) {
-    for (const t of it.ai_tags ?? []) {
-      const k = t.trim();
-      if (!k) continue;
-      ai.set(k, (ai.get(k) ?? 0) + 1);
+    for (const tag of ideaTags(it)) {
+      const key = tag.toLocaleLowerCase();
+      const current = tags.get(key);
+      if (current) {
+        current.count += 1;
+      } else {
+        tags.set(key, { label: tag, count: 1 });
+      }
     }
   }
-  return ai;
+  return [...tags.values()]
+    .map(({ label, count }) => [label, count] as [string, number])
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
+function activeTagValue(token: string | null): string | null {
+  if (!token) return null;
+  const [kind, ...rest] = token.split(":");
+  if (kind !== "tag" && kind !== "ai" && kind !== "manual") return null;
+  return rest.join(":");
 }
 
 export function IdeasTagTaxonomyPanel({
@@ -34,27 +50,42 @@ export function IdeasTagTaxonomyPanel({
   const items = useIdeasStore((s) => s.items);
   const activeTagToken = useIdeasStore((s) => s.activeTagToken);
   const setActiveTagToken = useIdeasStore((s) => s.setActiveTagToken);
+  const [tagQuery, setTagQuery] = useState("");
 
-  const ai = useMemo(() => tagCounts(items), [items]);
-  const aiList = useMemo(
-    () => [...ai.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
-    [ai],
+  const allTags = useMemo(() => tagCounts(items), [items]);
+  const normalizedQuery = tagQuery.trim().toLocaleLowerCase();
+  const visibleTags = useMemo(
+    () =>
+      normalizedQuery
+        ? allTags.filter(([tag]) => tag.toLocaleLowerCase().includes(normalizedQuery))
+        : allTags,
+    [allTags, normalizedQuery],
   );
+  const selectedTag = activeTagValue(activeTagToken);
 
   return (
     <div className={cn("space-y-4", className)}>
       <div className="space-y-2">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {ui.aiTags}
-        </p>
-        {aiList.length === 0 ? (
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={tagQuery}
+            onChange={(e) => setTagQuery(e.target.value)}
+            placeholder={ui.tagSearchPlaceholder}
+            className="h-8 border-border/60 bg-background/70 pl-8 text-xs"
+            aria-label={ui.tagSearchPlaceholder}
+          />
+        </div>
+        {allTags.length === 0 ? (
           <p className="text-xs text-muted-foreground">—</p>
+        ) : visibleTags.length === 0 ? (
+          <p className="px-2 py-1 text-xs text-muted-foreground">{ui.noTagsFound}</p>
         ) : (
           <ScrollArea className="max-h-72 pr-2">
             <div className="space-y-0.5">
-              {aiList.map(([tag, count]) => {
-                const token = `ai:${tag}`;
-                const active = activeTagToken === token;
+              {visibleTags.map(([tag, count]) => {
+                const token = `tag:${tag}`;
+                const active = selectedTag === tag;
                 return (
                   <button
                     key={token}

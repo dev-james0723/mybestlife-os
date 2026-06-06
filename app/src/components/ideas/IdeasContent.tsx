@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { IdeasGalleryView } from "./IdeasGalleryView";
 import { IdeasBoardView } from "./IdeasBoardView";
 import { IdeasTableView } from "./IdeasTableView";
+import { IdeasConstellationView } from "./IdeasConstellationView";
 import type { Idea } from "@/types/database";
 
 export function IdeasContent() {
@@ -49,6 +50,14 @@ export function IdeasContent() {
     filterState.relatedScopeFilter !== "none";
 
   const onOpen = (idea: Idea) => setSelectedIdeaId(idea.id);
+
+  if (currentView === "constellation") {
+    return (
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <IdeasConstellationView items={filtered} />
+      </div>
+    );
+  }
 
   if (filtered.length === 0) {
     return (

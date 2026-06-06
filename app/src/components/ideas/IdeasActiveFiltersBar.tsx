@@ -30,10 +30,10 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
 
   const tagLabel = useMemo(() => {
     if (!activeTagToken) return "";
-    const [kind, ...rest] = activeTagToken.split(":");
+    const [, ...rest] = activeTagToken.split(":");
     const tag = rest.join(":");
-    return `${kind === "ai" ? ui.aiTags : ui.manualTags}: ${tag}`;
-  }, [activeTagToken, ui.aiTags, ui.manualTags]);
+    return `${ui.tags}: ${tag}`;
+  }, [activeTagToken, ui.tags]);
 
   const relatedLabel = useMemo(() => {
     switch (relatedScopeFilter) {

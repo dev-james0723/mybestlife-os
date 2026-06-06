@@ -3,6 +3,7 @@ import type { Idea } from "@/types/database";
 import {
   ideaHasAnyLinks,
   ideaRelatedResources,
+  ideaTags,
   previewIdeaBody,
   previewIdeaTitle,
   displayCategory,
@@ -27,7 +28,7 @@ function matchesSearch(idea: Idea, q: string): boolean {
     idea.title ?? "",
     stripHtml(idea.content),
     idea.voice_transcript ?? "",
-    ...(idea.ai_tags ?? []),
+    ...ideaTags(idea),
     displayCategory(idea.category),
     previewIdeaTitle(idea, 500),
     previewIdeaBody(idea, 2000),
@@ -41,7 +42,7 @@ function matchesQuickFilter(idea: Idea, f: IdeasQuickFilter): boolean {
   const now = Date.now();
   const recentMs = 14 * 24 * 60 * 60 * 1000;
   const created = new Date(idea.created_at).getTime();
-  const tagCount = idea.ai_tags?.length ?? 0;
+  const tagCount = ideaTags(idea).length;
   const linked = ideaHasAnyLinks(idea);
 
   switch (f) {
@@ -93,7 +94,7 @@ export type IdeaListFilterState = {
   ideaStatusScope: IdeasLibraryScope;
   activeSourceFilters: Idea["source_type"][];
   activeCategoryFilters: string[];
-  /** `manual:tag` or `ai:tag` */
+  /** `tag:tag`; legacy `manual:tag` and `ai:tag` are still accepted. */
   activeTagToken: string | null;
   activeQuickFilters: IdeasQuickFilter[];
   relatedScopeFilter: IdeasRelatedScopeFilter;
@@ -124,7 +125,9 @@ export function filterIdeas(items: Idea[], state: IdeaListFilterState): Idea[] {
     if (state.activeTagToken) {
       const [kind, ...rest] = state.activeTagToken.split(":");
       const tag = rest.join(":");
-      if (kind === "manual") {
+      if (kind === "tag") {
+        if (!ideaTags(idea).includes(tag)) return false;
+      } else if (kind === "manual") {
         if (!idea.manual_tags?.includes(tag)) return false;
       } else if (kind === "ai") {
         if (!idea.ai_tags?.includes(tag)) return false;

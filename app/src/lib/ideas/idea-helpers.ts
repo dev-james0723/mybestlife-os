@@ -37,6 +37,20 @@ export function previewIdeaBody(idea: Idea, max = 140): string {
   return `${plain.slice(0, max)}…`;
 }
 
+export function ideaTags(idea: Pick<Idea, "manual_tags" | "ai_tags">): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of [...(idea.manual_tags ?? []), ...(idea.ai_tags ?? [])]) {
+    const tag = raw.trim().replace(/\s+/g, " ");
+    if (!tag) continue;
+    const key = tag.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tag);
+  }
+  return out;
+}
+
 function isScope(value: unknown): value is IdeaRelatedScope {
   return (
     value === "idea" ||
