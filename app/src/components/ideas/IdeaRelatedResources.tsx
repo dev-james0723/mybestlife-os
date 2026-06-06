@@ -245,58 +245,70 @@ export function IdeaRelatedResources({
         return (
           <li
             key={r.key}
-            className="flex min-w-0 flex-col gap-2 rounded-lg border border-border/50 bg-muted/10 px-3 py-2 text-sm sm:flex-row sm:items-start"
+            className={cn(
+              "min-w-0 rounded-xl border border-border/50 bg-muted/10 p-3 text-sm",
+              "transition-colors hover:border-border/70 hover:bg-muted/15",
+            )}
           >
-            <div className="flex min-w-0 items-start gap-2 sm:flex-1">
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                {r.category ? (
-                  <span
-                    className={cn(
-                      "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium backdrop-blur-xl",
-                      IDEA_RELATED_CATEGORY_PILL[r.category],
-                    )}
-                  >
-                    {ui.relatedCategoryLabels[r.category]}
-                  </span>
+            <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2.5">
+              <Icon className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div className="min-w-0">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  {r.category ? (
+                    <span
+                      className={cn(
+                        "inline-flex max-w-full shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium backdrop-blur-xl",
+                        IDEA_RELATED_CATEGORY_PILL[r.category],
+                      )}
+                    >
+                      {ui.relatedCategoryLabels[r.category]}
+                    </span>
+                  ) : null}
+                  <p className="min-w-[8rem] flex-1 break-words font-medium leading-tight text-foreground [overflow-wrap:anywhere]">
+                    {r.title}
+                  </p>
+                </div>
+                {r.subtitle ? (
+                  <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">{r.subtitle}</p>
                 ) : null}
-                <p className="min-w-0 flex-1 break-words font-medium leading-tight [overflow-wrap:anywhere] sm:truncate">
-                  {r.title}
-                </p>
+                {r.explanation ? (
+                  <p className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-muted-foreground sm:line-clamp-2">
+                    {r.explanation}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
                 {typeof r.percentage === "number" && r.percentage > 0 ? (
-                  <span className="shrink-0 rounded-md border border-border/50 bg-background/70 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
+                  <span className="rounded-full border border-border/50 bg-background/75 px-2 py-0.5 font-mono text-[10px] text-foreground">
                     {r.percentage}%
                   </span>
                 ) : null}
+                {r.href ? (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-7 min-h-0 min-w-0 gap-1 rounded-full px-2 text-[11px]"
+                    render={
+                      <Link
+                        href={r.href}
+                        target={r.external ? "_blank" : undefined}
+                        rel={r.external ? "noreferrer" : undefined}
+                      />
+                    }
+                  >
+                    {r.scope === "knowledge" ? (
+                      <>
+                        <span className="sm:hidden">{ui.openRelated}</span>
+                        <span className="hidden sm:inline">{ui.openInKnowledge}</span>
+                      </>
+                    ) : (
+                      ui.openRelated
+                    )}
+                    {r.external ? <ExternalLink className="h-3 w-3" aria-hidden /> : null}
+                  </Button>
+                ) : null}
               </div>
-              {r.subtitle ? (
-                <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">{r.subtitle}</p>
-              ) : null}
-              {r.explanation ? (
-                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                  {r.explanation}
-                </p>
-              ) : null}
             </div>
-            </div>
-            {r.href ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-full shrink-0 gap-1 px-2 text-xs sm:w-auto sm:self-start"
-                render={
-                  <Link
-                    href={r.href}
-                    target={r.external ? "_blank" : undefined}
-                    rel={r.external ? "noreferrer" : undefined}
-                  />
-                }
-              >
-                {r.scope === "knowledge" ? ui.openInKnowledge : ui.openRelated}
-                {r.external ? <ExternalLink className="h-3 w-3" aria-hidden /> : null}
-              </Button>
-            ) : null}
           </li>
         );
       })}

@@ -317,7 +317,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     return (
       <div
         className={cn(
-          "overflow-hidden rounded-xl border border-border bg-muted/30 shadow-sm",
+          "min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-muted/30 shadow-sm",
           className
         )}
       >
@@ -329,8 +329,8 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
           onChange={(e) => insertImageFromFile(e.target.files)}
         />
 
-        <div className="flex flex-col gap-1 border-b border-border bg-muted/40 px-1.5 py-1.5 sm:px-2">
-          <div className="flex flex-wrap items-center gap-1 sm:gap-0.5">
+        <div className="flex min-w-0 flex-col gap-1 border-b border-border bg-muted/40 px-1.5 py-1.5 sm:px-2">
+          <div className="flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 sm:gap-0.5">
             <ToolbarIcon aria-label="Undo" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("undo")}>
               <Undo2 className="size-3.5" />
             </ToolbarIcon>
@@ -446,7 +446,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             </ToolbarIcon>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1 border-t border-border pt-1 sm:border-t-0 sm:pt-0">
+          <div className="flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain border-t border-border pt-1 sm:border-t-0 sm:pt-0">
             <Select
               value={blockType}
               onValueChange={(v) => {
@@ -537,7 +537,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
               ))}
             </div>
 
-            <label className="ml-auto flex min-h-11 cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:bg-muted/60 sm:min-h-0 sm:px-2">
+            <label className="flex min-h-11 shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:bg-muted/60 sm:ml-auto sm:min-h-0 sm:px-2">
               <span>Custom</span>
               <input
                 type="color"

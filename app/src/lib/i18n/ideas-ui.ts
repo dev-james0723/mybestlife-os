@@ -176,13 +176,23 @@ export type IdeasUiCopy = {
   detailCancelEdit: string;
   contentSection: string;
   aiSuggestionsSection: string;
+  aiSuggestionsGenerate: string;
+  aiSuggestionsGenerating: string;
+  aiSuggestionsReveal: string;
+  aiSuggestionsRegenerate: string;
+  aiSuggestionsGenerateDescription: string;
+  aiSuggestionsGenerateError: string;
+  aiSuggestionsEmpty: string;
   coreInsightLabel: string;
   nextStepLabel: string;
   possibleUseLabel: string;
   clarifyingQuestionLabel: string;
   accessBrain: string;
   visualPreviewSection: string;
+  visualPreviewGenerating: string;
+  visualPreviewFailed: string;
   visualPending: string;
+  metadataPrefilling: string;
   relatedSection: string;
   attachmentsSection: string;
   destinationsSection: string;
@@ -485,13 +495,24 @@ const en: IdeasUiCopy = {
   detailCancelEdit: "Cancel",
   contentSection: "Content",
   aiSuggestionsSection: "AI suggestions",
+  aiSuggestionsGenerate: "Generate AI suggestions",
+  aiSuggestionsGenerating: "Generating...",
+  aiSuggestionsReveal: "Show AI suggestions",
+  aiSuggestionsRegenerate: "Regenerate",
+  aiSuggestionsGenerateDescription:
+    "Generate optional next-step thinking only when you want it.",
+  aiSuggestionsGenerateError: "Could not generate AI suggestions.",
+  aiSuggestionsEmpty: "No AI suggestions were generated for this idea yet.",
   coreInsightLabel: "Core insight",
   nextStepLabel: "Suggested next step",
   possibleUseLabel: "Possible use",
   clarifyingQuestionLabel: "Question to clarify",
   accessBrain: "Access My Brain",
   visualPreviewSection: "Visual",
+  visualPreviewGenerating: "Generating visual...",
+  visualPreviewFailed: "Visual preview could not be generated yet.",
   visualPending: "Visual is being generated…",
+  metadataPrefilling: "AI is pre-filling metadata...",
   relatedSection: "Related resources",
   attachmentsSection: "Attachments",
   destinationsSection: "Destinations",

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { Brain, Pencil, Trash2, X } from "lucide-react";
+import { Brain, Loader2, Pencil, Sparkles, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
 import { useIdeasStore } from "@/stores/ideas-store";
@@ -37,6 +37,7 @@ import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
 import { useKnowledgeItemsPickList } from "@/hooks/use-knowledge-items-pick";
 import { formatDateTime } from "@/lib/utils/date";
+import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
 import {
   RichTextEditor,
   type RichTextEditorHandle,
@@ -90,6 +91,9 @@ function IdeaDetailInner({
   const [linkedKnowledgeIds, setLinkedKnowledgeIds] = useState(() => [
     ...(idea.linked_knowledge_item_ids ?? []),
   ]);
+  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
+  const [aiSuggestionsLoading, setAiSuggestionsLoading] = useState(false);
+  const [aiSuggestionsError, setAiSuggestionsError] = useState<string | null>(null);
 
   const editorRef = useRef<RichTextEditorHandle>(null);
 
@@ -163,6 +167,32 @@ function IdeaDetailInner({
     suggestedNextStep: ui.nextStepLabel,
     possibleUse: ui.possibleUseLabel,
     clarifyingQuestion: ui.clarifyingQuestionLabel,
+  };
+  const hasSuggestions = suggestions.length > 0;
+
+  const handleGenerateAiSuggestions = async () => {
+    if (hasSuggestions && !showAiSuggestions) {
+      setShowAiSuggestions(true);
+      return;
+    }
+    setAiSuggestionsError(null);
+    setAiSuggestionsLoading(true);
+    try {
+      const enriched = await fetchIdeaAutoEnrich({
+        ideaId: idea.id,
+        includeVisual: false,
+      });
+      upsertIdea(enriched);
+      setShowAiSuggestions(true);
+    } catch (err) {
+      setAiSuggestionsError(
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : ui.aiSuggestionsGenerateError,
+      );
+    } finally {
+      setAiSuggestionsLoading(false);
+    }
   };
 
   return (
@@ -399,21 +429,6 @@ function IdeaDetailInner({
                     </div>
                   </div>
                 ) : null}
-                {suggestions.length > 0 ? (
-                  <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/10 p-3.5">
-                    <p className="text-xs font-semibold text-foreground">{ui.aiSuggestionsSection}</p>
-                    <div className="space-y-2.5">
-                      {suggestions.map((s) => (
-                        <div key={s.label}>
-                          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-                            {suggestionLabels[s.label]}
-                          </p>
-                          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{s.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
                 <div>
                   <p className="mb-1 text-xs font-medium text-muted-foreground">{ui.contentSection}</p>
                   <RichTextReadOnly
@@ -428,6 +443,58 @@ function IdeaDetailInner({
                     <p className="whitespace-pre-wrap text-sm">{idea.voice_transcript}</p>
                   </div>
                 ) : null}
+                <div className="space-y-3 rounded-xl border border-border/50 bg-muted/10 p-3.5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">{ui.aiSuggestionsSection}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {ui.aiSuggestionsGenerateDescription}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 sm:w-auto"
+                      onClick={handleGenerateAiSuggestions}
+                      disabled={aiSuggestionsLoading}
+                    >
+                      {aiSuggestionsLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      {aiSuggestionsLoading
+                        ? ui.aiSuggestionsGenerating
+                        : hasSuggestions
+                          ? showAiSuggestions
+                            ? ui.aiSuggestionsRegenerate
+                            : ui.aiSuggestionsReveal
+                          : ui.aiSuggestionsGenerate}
+                    </Button>
+                  </div>
+                  {aiSuggestionsError ? (
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                      {aiSuggestionsError}
+                    </p>
+                  ) : null}
+                  {showAiSuggestions ? (
+                    suggestions.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {suggestions.map((s) => (
+                          <div key={s.label}>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
+                              {suggestionLabels[s.label]}
+                            </p>
+                            <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{s.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">{ui.aiSuggestionsEmpty}</p>
+                    )
+                  ) : null}
+                </div>
               </div>
               <div className="min-w-0 space-y-4">
                 <Button
