@@ -43,8 +43,8 @@ export function OpportunityCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group space-y-2 rounded-lg border bg-card p-3 text-xs shadow-sm transition",
-        isDragging ? "opacity-50 ring-1 ring-primary" : "hover:border-primary/50",
+        "group space-y-2 rounded-lg border border-white/55 bg-white/78 p-3 text-xs shadow-sm shadow-slate-900/5 transition dark:border-white/10 dark:bg-slate-950/72",
+        isDragging ? "opacity-50 ring-1 ring-lime-300/70" : "hover:border-lime-300/60",
       )}
       {...listeners}
       {...attributes}

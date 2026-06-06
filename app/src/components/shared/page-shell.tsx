@@ -5,8 +5,7 @@ import { usePathname } from "next/navigation";
 import { OSPageHeader } from "@/components/ui/os-primitives";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
-import { getThemedCategoryLabel, getThemedItemLabel } from "@/lib/theme-labels";
-import { stripLeadingLocaleFromPathname } from "@/lib/i18n/locale-path";
+import { resolveThemedPageTitle } from "@/lib/navigation/page-title";
 
 interface PageShellProps {
   title: string;
@@ -22,18 +21,12 @@ function useThemedTitle(fallbackTitle: string): string {
   const { uiTheme } = useTheme();
   const language = useAppStore((s) => s.language);
 
-  const pathWithoutLocale = stripLeadingLocaleFromPathname(pathname);
-  const pageId = pathWithoutLocale.split("/").filter(Boolean)[0] ?? "";
-  if (!pageId) return fallbackTitle;
-
-  // `/relationship` is a hub: the H1 should match the nav category ("People"),
-  // not the first child item ("Relationships" / themed equivalents).
-  if (pageId === "relationship") {
-    return getThemedCategoryLabel("relationship", uiTheme, language);
-  }
-
-  const themedLabel = getThemedItemLabel(pageId, uiTheme, language);
-  return themedLabel !== pageId ? themedLabel : fallbackTitle;
+  return resolveThemedPageTitle({
+    pathname,
+    fallbackTitle,
+    uiTheme,
+    language,
+  });
 }
 
 export function PageShell({ title, description, actions, preHeader, children }: PageShellProps) {

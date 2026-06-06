@@ -233,7 +233,7 @@ export type AICoachCopy = {
 const base: AICoachCopy = {
   pageTitle: "AI Career Coach",
   pageDescription:
-    "A curated prompt library that connects your Vault files to any AI tool.",
+    "A prompt, template, and action library for resumes, interviews, transitions, branding, applications, and career growth.",
   landing: {
     coachCardTitle: "AI Career Coach",
     coachCardDescription:

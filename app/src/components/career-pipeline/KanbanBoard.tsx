@@ -9,9 +9,25 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Briefcase,
+  CalendarClock,
+  ClipboardList,
+  Info,
+  Plus,
+  Trophy,
+} from "lucide-react";
+import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import {
+  CareerEmptyState,
+  CareerHelpPanel,
+  CareerMetricCard,
+  CareerMetricGrid,
+  CareerSectionPanel,
+} from "@/components/career/career-page-ui";
 import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
@@ -37,6 +53,10 @@ export function KanbanBoard() {
   const setStageMutation = useSetOpportunityStage();
   const [newOpen, setNewOpen] = useState(false);
 
+  const opportunities = useMemo(
+    () => opportunitiesQuery.data ?? [],
+    [opportunitiesQuery.data],
+  );
   const careerHref = withLocalePrefix(localeSlug, "/career");
   const buildDetailHref = (opportunityId: string) =>
     withLocalePrefix(localeSlug, `/career/pipeline/${opportunityId}`);
@@ -56,11 +76,38 @@ export function KanbanBoard() {
       rejected: [],
       withdrawn: [],
     };
-    for (const o of opportunitiesQuery.data ?? []) {
+    for (const o of opportunities) {
       (map[o.stage] ??= []).push(o);
     }
     return map;
-  }, [opportunitiesQuery.data]);
+  }, [opportunities]);
+
+  const activeCount = useMemo(
+    () =>
+      opportunities.filter((o) =>
+        ["researching", "applied", "phone_screen", "interviewing", "offer"].includes(o.stage),
+      ).length,
+    [opportunities],
+  );
+  const interviewCount = useMemo(
+    () =>
+      opportunities.filter((o) => o.stage === "phone_screen" || o.stage === "interviewing")
+        .length,
+    [opportunities],
+  );
+  const offerCount = useMemo(
+    () => opportunities.filter((o) => o.stage === "offer").length,
+    [opportunities],
+  );
+  const followUpsDue = useMemo(() => {
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return opportunities.filter((o) => {
+      if (!o.next_action_date) return false;
+      const due = new Date(`${o.next_action_date}T23:59:59`);
+      return !Number.isNaN(due.getTime()) && due.getTime() <= endOfToday.getTime();
+    }).length;
+  }, [opportunities]);
 
   if (opportunitiesQuery.isLoading) return <LoadingPage />;
 
@@ -70,62 +117,96 @@ export function KanbanBoard() {
     const opportunityId = String(active.id);
     const nextStage = String(over.id) as OpportunityStage;
     if (!STAGE_ORDER.includes(nextStage)) return;
-    const opp = (opportunitiesQuery.data ?? []).find(
-      (o) => o.id === opportunityId,
-    );
+    const opp = opportunities.find((o) => o.id === opportunityId);
     if (!opp || opp.stage === nextStage) return;
     setStageMutation.mutate({ id: opportunityId, stage: nextStage });
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-11 px-4 sm:h-7 sm:px-2.5"
-          render={<Link href={careerHref} />}
+    <PageShell
+      title={copy.pipeline.pageTitle}
+      description={copy.pipeline.pageDescription}
+      actions={
+        <>
+          <OSControl render={<Link href={careerHref} />} className="gap-2">
+            <ArrowLeft className="size-4" aria-hidden />
+            Career
+          </OSControl>
+          <OSPrimaryAction onClick={() => setNewOpen(true)} className="gap-2">
+            <Plus className="size-4" aria-hidden />
+            {copy.pipeline.newButton}
+          </OSPrimaryAction>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        <CareerMetricGrid>
+          <CareerMetricCard
+            icon={Briefcase}
+            label="Active opportunities"
+            value={activeCount}
+            description="Roles still moving from research through offer."
+          />
+          <CareerMetricCard
+            icon={ClipboardList}
+            label="Interviews"
+            value={interviewCount}
+            description="Screens and interview loops that need preparation."
+          />
+          <CareerMetricCard
+            icon={Trophy}
+            label="Offers"
+            value={offerCount}
+            description="Negotiations or final choices waiting on you."
+          />
+          <CareerMetricCard
+            icon={CalendarClock}
+            label="Follow-ups due"
+            value={followUpsDue}
+            description="Next actions with a date due today or earlier."
+          />
+        </CareerMetricGrid>
+
+        <CareerHelpPanel icon={Info} title="How to use this workspace">
+          Drag an opportunity when the stage changes. Open a card to attach Vault files,
+          log interviews, track next actions, and keep the story of each role in one place.
+        </CareerHelpPanel>
+
+        {opportunities.length === 0 ? (
+          <CareerEmptyState
+            icon={Briefcase}
+            title="Start your first opportunity"
+            description="Add one role you are researching, applying to, interviewing for, or deciding on."
+            actionLabel={copy.pipeline.newButton}
+            onAction={() => setNewOpen(true)}
+          />
+        ) : null}
+
+        <CareerSectionPanel
+          title="Opportunity board"
+          description="Each column is a stage. The board scrolls horizontally on small screens so drag-and-drop stays usable."
         >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {copy.pipeline.breadcrumb}
-        </Button>
-        <span className="text-xs text-muted-foreground">/</span>
-        <h1 className="flex-1 truncate text-lg font-semibold sm:text-xl">
-          {copy.pipeline.pageTitle}
-        </h1>
-        <Button
-          size="sm"
-          className="h-11 px-4 sm:h-7 sm:px-2.5"
-          onClick={() => setNewOpen(true)}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          {copy.pipeline.newButton}
-        </Button>
+          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            <div className="-mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-3">
+              {STAGE_ORDER.map((s) => (
+                <StageColumn
+                  key={s}
+                  stage={s}
+                  opportunities={grouped[s] ?? []}
+                  copy={copy}
+                  buildHref={buildDetailHref}
+                />
+              ))}
+            </div>
+          </DndContext>
+        </CareerSectionPanel>
       </div>
-
-      <p className="text-sm text-muted-foreground">
-        {copy.pipeline.pageDescription}
-      </p>
-
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="-mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
-          {STAGE_ORDER.map((s) => (
-            <StageColumn
-              key={s}
-              stage={s}
-              opportunities={grouped[s] ?? []}
-              copy={copy}
-              buildHref={buildDetailHref}
-            />
-          ))}
-        </div>
-      </DndContext>
 
       <NewOpportunityModal
         open={newOpen}
         onOpenChange={setNewOpen}
         copy={copy}
       />
-    </div>
+    </PageShell>
   );
 }

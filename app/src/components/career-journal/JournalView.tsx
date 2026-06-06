@@ -1,8 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Edit2, Trash2, ClipboardCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  CalendarCheck,
+  ClipboardCheck,
+  Edit2,
+  Plus,
+  Scale,
+  Trash2,
+  TrendingUp,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -16,6 +23,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSControl, OSIconControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import {
+  CareerEmptyState,
+  CareerMetricCard,
+  CareerMetricGrid,
+  CareerSectionPanel,
+} from "@/components/career/career-page-ui";
 import { useAppStore } from "@/stores/app-store";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
 import {
@@ -61,6 +75,28 @@ export function JournalView() {
   const [deleteTarget, setDeleteTarget] = useState<CareerDecision | null>(null);
 
   const decisions = useMemo(() => q.data ?? [], [q.data]);
+  const reviewDueCount = useMemo(
+    () => decisions.filter((decision) => needsReview(decision)).length,
+    [decisions],
+  );
+  const reviewed = useMemo(
+    () =>
+      decisions.filter(
+        (decision) =>
+          decision.decision_quality_score !== null &&
+          decision.decision_quality_score !== undefined,
+      ),
+    [decisions],
+  );
+  const averageQuality =
+    reviewed.length > 0
+      ? Math.round(
+          reviewed.reduce(
+            (sum, decision) => sum + (decision.decision_quality_score ?? 0),
+            0,
+          ) / reviewed.length,
+        )
+      : null;
 
   if (q.isLoading) return <LoadingPage />;
 
@@ -69,124 +105,163 @@ export function JournalView() {
       title={copy.pageTitle}
       description={copy.pageDescription}
       actions={
-        <Button
-          className="h-11 px-4 sm:h-8 sm:px-2.5"
+        <OSPrimaryAction
+          className="gap-2"
           onClick={() => {
             setEditing(null);
             setFormOpen(true);
           }}
         >
-          <Plus className="mr-2 h-4 w-4" aria-hidden />
+          <Plus className="size-4" aria-hidden />
           {copy.newDecision}
-        </Button>
+        </OSPrimaryAction>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
+        <CareerMetricGrid>
+          <CareerMetricCard
+            icon={Scale}
+            label="Decisions"
+            value={decisions.length}
+            description="Career calls captured with context and assumptions."
+          />
+          <CareerMetricCard
+            icon={CalendarCheck}
+            label="Reviews due"
+            value={reviewDueCount}
+            description="Decisions ready for outcome review."
+          />
+          <CareerMetricCard
+            icon={ClipboardCheck}
+            label="Reviewed"
+            value={reviewed.length}
+            description="Closed feedback loops in your judgment system."
+          />
+          <CareerMetricCard
+            icon={TrendingUp}
+            label="Avg. quality"
+            value={averageQuality === null ? "—" : `${averageQuality}/10`}
+            description="Average score after reviewing the decision process."
+          />
+        </CareerMetricGrid>
+
         {decisions.length === 0 ? (
-          <p className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">
-            {copy.empty}
-          </p>
+          <CareerEmptyState
+            icon={Scale}
+            title="Capture your first career decision"
+            description={copy.empty}
+            actionLabel={copy.newDecision}
+            onAction={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          />
         ) : (
-          <ul className="space-y-3">
-            {decisions.map((d) => (
-              <li
-                key={d.id}
-                className="space-y-2 rounded-2xl border bg-card p-4"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold">{d.title}</h3>
-                      {d.decision_type && (
-                        <Badge variant="outline" className="text-[10px]">
-                          {copy.decisionTypes[d.decision_type] ??
-                            d.decision_type}
-                        </Badge>
-                      )}
-                      {d.framework && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {copy.frameworks[d.framework]}
-                        </Badge>
-                      )}
-                      {needsReview(d) && (
-                        <Badge className="bg-amber-500 text-[10px] text-white hover:bg-amber-500">
-                          {copy.reviewDue(
-                            formatDate(
-                              d.review_reminder_date ?? d.decided_at,
-                              language,
-                            ),
-                          )}
-                        </Badge>
-                      )}
-                      {d.decision_quality_score && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {copy.qualityScore(d.decision_quality_score)}
-                        </Badge>
-                      )}
+          <CareerSectionPanel
+            title="Decision log"
+            description="Each card keeps the decision, framework, review date, and outcome quality visible."
+          >
+            <ul className="space-y-3">
+              {decisions.map((d) => (
+                <li
+                  key={d.id}
+                  className="space-y-3 rounded-xl border border-white/55 bg-white/74 p-4 shadow-sm shadow-slate-900/5 dark:border-white/10 dark:bg-slate-950/72"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold">{d.title}</h3>
+                        {d.decision_type && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {copy.decisionTypes[d.decision_type] ??
+                              d.decision_type}
+                          </Badge>
+                        )}
+                        {d.framework && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {copy.frameworks[d.framework]}
+                          </Badge>
+                        )}
+                        {needsReview(d) && (
+                          <Badge className="bg-amber-500 text-[10px] text-white hover:bg-amber-500">
+                            {copy.reviewDue(
+                              formatDate(
+                                d.review_reminder_date ?? d.decided_at,
+                                language,
+                              ),
+                            )}
+                          </Badge>
+                        )}
+                        {d.decision_quality_score !== null &&
+                        d.decision_quality_score !== undefined ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {copy.qualityScore(d.decision_quality_score)}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {copy.decidedOn(formatDate(d.decided_at, language))}
+                      </p>
+                      {d.decision ? (
+                        <p className="mt-2 line-clamp-2 text-sm leading-6">
+                          {d.decision}
+                        </p>
+                      ) : null}
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {copy.decidedOn(formatDate(d.decided_at, language))}
-                    </p>
-                    {d.decision && (
-                      <p className="mt-2 line-clamp-2 text-sm">{d.decision}</p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    {needsReview(d) && (
-                      <Button
-                        size="sm"
-                        variant="outline"
+                    <div className="flex shrink-0 items-center gap-1">
+                      {needsReview(d) ? (
+                        <OSControl
+                          osSize="compact"
+                          className="gap-1"
+                          onClick={() => {
+                            setReviewing(d);
+                            setReviewOpen(true);
+                          }}
+                        >
+                          <ClipboardCheck className="h-3.5 w-3.5" aria-hidden />
+                          {copy.reviewNow}
+                        </OSControl>
+                      ) : null}
+                      <OSIconControl
+                        osSize="compact"
+                        variant="ghost"
                         onClick={() => {
-                          setReviewing(d);
-                          setReviewOpen(true);
+                          setEditing(d);
+                          setFormOpen(true);
                         }}
+                        aria-label={copy.form.title}
                       >
-                        <ClipboardCheck
-                          className="mr-1 h-3.5 w-3.5"
-                          aria-hidden
-                        />
-                        {copy.reviewNow}
-                      </Button>
-                    )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditing(d);
-                        setFormOpen(true);
-                      }}
-                      aria-label={copy.form.title}
-                    >
-                      <Edit2 className="h-4 w-4" aria-hidden />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setDeleteTarget(d)}
-                      aria-label={copy.form.remove}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden />
-                    </Button>
-                  </div>
-                </div>
-                {d.options.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {d.options.slice(0, 6).map((o, idx) => (
-                      <span
-                        key={idx}
-                        className="rounded-full border bg-background px-2 py-0.5 text-[11px] text-muted-foreground"
+                        <Edit2 className="h-4 w-4" aria-hidden />
+                      </OSIconControl>
+                      <OSIconControl
+                        osSize="compact"
+                        variant="ghost"
+                        onClick={() => setDeleteTarget(d)}
+                        aria-label={copy.form.remove}
                       >
-                        {o.name}
-                        {o.score !== null && o.score !== undefined
-                          ? ` · ${o.score}/10`
-                          : ""}
-                      </span>
-                    ))}
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </OSIconControl>
+                    </div>
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                  {d.options.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {d.options.slice(0, 6).map((o, idx) => (
+                        <span
+                          key={idx}
+                          className="rounded-lg border border-white/50 bg-white/58 px-2 py-1 text-[11px] text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]"
+                        >
+                          {o.name}
+                          {o.score !== null && o.score !== undefined
+                            ? ` · ${o.score}/10`
+                            : ""}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </CareerSectionPanel>
         )}
 
         <DecisionQualityChart decisions={decisions} />

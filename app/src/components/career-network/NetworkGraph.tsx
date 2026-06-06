@@ -1,10 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Link2, Users, Building2, Lightbulb, Briefcase } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, Link2, Users, Building2, Lightbulb, Briefcase, Info } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import {
+  CareerEmptyState,
+  CareerFilterChips,
+  CareerHelpPanel,
+  CareerMetricCard,
+  CareerMetricGrid,
+  CareerSectionPanel,
+} from "@/components/career/career-page-ui";
 import { useAppStore } from "@/stores/app-store";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
 import {
@@ -23,6 +31,8 @@ import { AddEdgeModal } from "./AddEdgeModal";
 import { NodeDetailPanel } from "./NodeDetailPanel";
 
 type FilterKey = "all" | "people" | "organizations" | "projects" | "opportunities";
+
+const FILTER_KEYS: FilterKey[] = ["all", "people", "organizations", "projects", "opportunities"];
 
 const NODE_COLORS: Record<NetworkNodeType, string> = {
   person: "#60a5fa",
@@ -88,6 +98,25 @@ export function NetworkGraph() {
     return m;
   }, [layout]);
 
+  const filterItems = useMemo(
+    () =>
+      FILTER_KEYS.map((id) => {
+        const typeByFilter: Record<FilterKey, NetworkNodeType | null> = {
+          all: null,
+          people: "person",
+          organizations: "organization",
+          projects: "project",
+          opportunities: "opportunity",
+        };
+        const nodeType = typeByFilter[id];
+        const count = nodeType
+          ? (nodesQ.data ?? []).filter((node) => node.node_type === nodeType).length
+          : (nodesQ.data ?? []).length;
+        return { id, label: copy.filters[id], count };
+      }),
+    [copy.filters, nodesQ.data],
+  );
+
   if (nodesQ.isLoading || edgesQ.isLoading) return <LoadingPage />;
 
   const hotCount = (nodesQ.data ?? []).filter(
@@ -103,130 +132,136 @@ export function NetworkGraph() {
       title={copy.pageTitle}
       description={copy.pageDescription}
       actions={
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-11 px-4 sm:h-7 sm:px-2.5"
-            onClick={() => setAddEdgeOpen(true)}
-          >
-            <Link2 className="mr-1 h-4 w-4" />
+        <>
+          <OSControl className="gap-2" onClick={() => setAddEdgeOpen(true)}>
+            <Link2 className="size-4" aria-hidden />
             {copy.addEdge}
-          </Button>
-          <Button
-            size="sm"
-            className="h-11 px-4 sm:h-7 sm:px-2.5"
-            onClick={() => setAddNodeOpen(true)}
-          >
-            <Plus className="mr-1 h-4 w-4" />
+          </OSControl>
+          <OSPrimaryAction className="gap-2" onClick={() => setAddNodeOpen(true)}>
+            <Plus className="size-4" aria-hidden />
             {copy.addNode}
-          </Button>
-        </div>
+          </OSPrimaryAction>
+        </>
       }
     >
-      <section className="grid grid-cols-3 gap-2 sm:grid-cols-3">
-        <StatBlock
-          icon={<Users className="h-4 w-4" />}
-          label={copy.stats.total}
-          value={(nodesQ.data ?? []).length}
-        />
-        <StatBlock
-          icon={<Building2 className="h-4 w-4" />}
-          label={copy.stats.hot}
-          value={hotCount}
-        />
-        <StatBlock
-          icon={<Lightbulb className="h-4 w-4" />}
-          label={copy.stats.needReconnect}
-          value={coldCount}
-        />
-      </section>
+      <div className="space-y-5">
+        <CareerHelpPanel icon={Info} title="What the graph means">
+          Nodes are people, organizations, projects, and opportunities. Ring color
+          shows relationship warmth so you can see where a reconnect or new link matters.
+        </CareerHelpPanel>
 
-      <nav className="flex flex-wrap gap-2">
-        {(["all", "people", "organizations", "projects", "opportunities"] as FilterKey[]).map(
-          (k) => (
-            <button
-              key={k}
-              onClick={() => setFilter(k)}
-              className={`min-h-11 min-w-11 rounded-full border px-4 py-2 text-sm transition-colors sm:min-h-0 sm:min-w-0 sm:px-3 sm:py-1 sm:text-xs ${
-                filter === k
-                  ? "bg-foreground text-background"
-                  : "bg-background hover:bg-accent/40"
-              }`}
-            >
-              {copy.filters[k]}
-            </button>
-          ),
-        )}
-      </nav>
+        <CareerMetricGrid className="xl:grid-cols-3">
+          <CareerMetricCard
+            icon={Users}
+            label={copy.stats.total}
+            value={(nodesQ.data ?? []).length}
+          />
+          <CareerMetricCard
+            icon={Building2}
+            label={copy.stats.hot}
+            value={hotCount}
+          />
+          <CareerMetricCard
+            icon={Lightbulb}
+            label={copy.stats.needReconnect}
+            value={coldCount}
+          />
+        </CareerMetricGrid>
 
-      {filteredNodes.length === 0 ? (
-        <p className="rounded-xl border bg-card py-16 text-center text-sm text-muted-foreground">
-          {copy.empty}
-        </p>
-      ) : (
-        <div className="overflow-hidden rounded-2xl border bg-card">
-          <svg
-            viewBox="0 0 800 600"
-            className="h-[70vh] w-full touch-none"
-            role="img"
-            aria-label={copy.pageTitle}
+        <CareerFilterChips
+          items={filterItems}
+          value={filter}
+          onChange={setFilter}
+          ariaLabel="Filter career network"
+        />
+
+        <LegendPanel copy={copy} />
+
+        {filteredNodes.length === 0 ? (
+          <CareerEmptyState
+            icon={Users}
+            title="Map your first career connection"
+            description={copy.empty}
+            actionLabel={copy.addNode}
+            onAction={() => setAddNodeOpen(true)}
+          />
+        ) : (
+          <CareerSectionPanel
+            title="Relationship map"
+            description="Select any node to inspect notes, last interaction, related opportunities, and next actions."
           >
-            {filteredEdges.map((e) => {
-              const a = positions.get(e.source_node_id);
-              const b = positions.get(e.target_node_id);
-              if (!a || !b) return null;
-              const opacity = 0.2 + Math.min(5, e.strength ?? 2) * 0.14;
-              return (
-                <line
-                  key={e.id}
-                  x1={a.x}
-                  y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
-                  stroke="currentColor"
-                  strokeOpacity={opacity}
-                  strokeWidth={1.2}
-                />
-              );
-            })}
-            {filteredNodes.map((n) => {
-              const p = positions.get(n.id);
-              if (!p) return null;
-              const r = 10 + Math.min(4, Math.max(0, (n.size ?? 1) - 1)) * 2;
-              const warmth = computeWarmth(n.last_interaction_date);
-              return (
-                <g
-                  key={n.id}
-                  transform={`translate(${p.x},${p.y})`}
-                  className="cursor-pointer"
-                  onClick={() => setActiveNode(n)}
-                >
-                  <circle
-                    r={r + 3}
-                    fill="none"
-                    stroke={WARMTH_RING[warmth] ?? WARMTH_RING.unknown}
-                    strokeWidth={2}
-                    opacity={0.7}
-                  />
-                  <circle r={r} fill={NODE_COLORS[n.node_type]} opacity={0.9} />
-                  <text
-                    y={r + 14}
-                    textAnchor="middle"
-                    className="fill-foreground text-[10px]"
-                    style={{ pointerEvents: "none" }}
-                  >
-                    {n.name.length > 20 ? `${n.name.slice(0, 20)}…` : n.name}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-      )}
+            <div className="overflow-hidden rounded-xl border border-white/55 bg-white/70 shadow-sm dark:border-white/10 dark:bg-slate-950/70">
+              <svg
+                viewBox="0 0 800 600"
+                className="h-[70vh] min-h-[420px] w-full touch-none"
+                role="img"
+                aria-label={copy.pageTitle}
+              >
+                {filteredEdges.map((e) => {
+                  const a = positions.get(e.source_node_id);
+                  const b = positions.get(e.target_node_id);
+                  if (!a || !b) return null;
+                  const opacity = 0.2 + Math.min(5, e.strength ?? 2) * 0.14;
+                  return (
+                    <line
+                      key={e.id}
+                      x1={a.x}
+                      y1={a.y}
+                      x2={b.x}
+                      y2={b.y}
+                      stroke="currentColor"
+                      strokeOpacity={opacity}
+                      strokeWidth={1.2}
+                    />
+                  );
+                })}
+                {filteredNodes.map((n) => {
+                  const p = positions.get(n.id);
+                  if (!p) return null;
+                  const r = 10 + Math.min(4, Math.max(0, (n.size ?? 1) - 1)) * 2;
+                  const warmth = computeWarmth(n.last_interaction_date);
+                  return (
+                    <g
+                      key={n.id}
+                      transform={`translate(${p.x},${p.y})`}
+                      className="cursor-pointer focus:outline-none"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Open ${n.name}`}
+                      onClick={() => setActiveNode(n)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setActiveNode(n);
+                        }
+                      }}
+                    >
+                      <circle
+                        r={r + 3}
+                        fill="none"
+                        stroke={WARMTH_RING[warmth] ?? WARMTH_RING.unknown}
+                        strokeWidth={2}
+                        opacity={0.7}
+                      />
+                      <circle r={r} fill={NODE_COLORS[n.node_type]} opacity={0.9} />
+                      <text
+                        y={r + 14}
+                        textAnchor="middle"
+                        className="fill-foreground text-[10px]"
+                        style={{ pointerEvents: "none" }}
+                      >
+                        {n.name.length > 20 ? `${n.name.slice(0, 20)}…` : n.name}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </CareerSectionPanel>
+        )}
 
-      {/* Rekindle suggestions */}
-      <ReconnectSuggestions nodes={nodesQ.data ?? []} />
+        <ReconnectSuggestions nodes={nodesQ.data ?? []} />
+      </div>
 
       <AddNodeModal open={addNodeOpen} onOpenChange={setAddNodeOpen} />
       <AddEdgeModal
@@ -239,25 +274,47 @@ export function NetworkGraph() {
   );
 }
 
-function StatBlock({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
+function LegendPanel({ copy }: { copy: ReturnType<typeof getCareerPhase5Copy>["network"] }) {
+  const nodeItems: Array<{ label: string; color: string }> = [
+    { label: copy.form.nodeTypes.person, color: NODE_COLORS.person },
+    { label: copy.form.nodeTypes.organization, color: NODE_COLORS.organization },
+    { label: copy.form.nodeTypes.project, color: NODE_COLORS.project },
+    { label: copy.form.nodeTypes.opportunity, color: NODE_COLORS.opportunity },
+  ];
+  const warmthItems = Object.entries(copy.warmth).map(([key, label]) => ({
+    label,
+    color: WARMTH_RING[key] ?? WARMTH_RING.unknown,
+  }));
+
   return (
-    <div className="rounded-xl border bg-card p-3 text-center">
-      <div className="mx-auto mb-1 grid h-6 w-6 place-items-center text-muted-foreground">
-        {icon}
+    <section className="grid gap-3 rounded-xl border border-white/55 bg-white/58 p-4 text-xs dark:border-white/10 dark:bg-white/[0.04] md:grid-cols-2">
+      <div>
+        <h2 className="font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Node types
+        </h2>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {nodeItems.map((item) => (
+            <span key={item.label} className="inline-flex items-center gap-2">
+              <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+              {item.label}
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="text-lg font-bold tabular-nums">{value}</div>
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-        {label}
+      <div>
+        <h2 className="font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Warmth rings
+        </h2>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {warmthItems.map((item) => (
+            <span key={item.label} className="inline-flex items-center gap-2">
+              <span className="size-2.5 rounded-full border-2" style={{ borderColor: item.color }} />
+              {item.label}
+            </span>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 

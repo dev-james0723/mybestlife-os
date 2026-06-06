@@ -26,21 +26,26 @@ export function StageColumn({
     <section
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[280px] w-[280px] flex-shrink-0 flex-col gap-2 rounded-xl border-2 bg-muted/30 p-2 transition snap-start",
+        "flex min-h-[320px] w-[286px] flex-shrink-0 snap-start flex-col gap-3 rounded-xl border bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition dark:bg-white/[0.04]",
         STAGE_ACCENT[stage],
-        isOver && "ring-2 ring-primary/40",
+        isOver && "ring-2 ring-lime-300/60",
       )}
     >
-      <header className="flex items-center justify-between px-1">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {copy.pipeline.stages[stage]}
-        </h2>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground">
-          {opportunities.length}
-        </span>
+      <header className="space-y-2 px-1">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            {copy.pipeline.stages[stage]}
+          </h2>
+          <span className="rounded-full border border-white/50 bg-white/64 px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]">
+            {opportunities.length}
+          </span>
+        </div>
+        <p className="text-xs leading-5 text-muted-foreground">
+          {copy.pipeline.stageDescriptions[stage]}
+        </p>
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-auto">
+      <div className="flex flex-1 flex-col gap-2 overflow-auto pr-1">
         {opportunities.map((o) => (
           <OpportunityCard
             key={o.id}

@@ -16,8 +16,8 @@ import {
   BookOpen,
   Star,
   Link2,
+  Info,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSIconControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import {
+  CareerEmptyState,
+  CareerFilterChips,
+  CareerHelpPanel,
+  CareerSectionPanel,
+} from "@/components/career/career-page-ui";
 import { useAppStore } from "@/stores/app-store";
 import { getCareerPhase5Copy } from "@/lib/i18n/career-phase5-ui";
 import {
@@ -55,6 +62,16 @@ type TimelineRow =
   | { kind: "file"; date: string; file: CareerVaultFile }
   | { kind: "share"; date: string; share: CareerVaultShare }
   | { kind: "opportunity"; date: string; opportunity: CareerOpportunity; stage: string };
+
+const FILTER_KEYS: FilterKey[] = [
+  "all",
+  "education",
+  "jobs",
+  "files",
+  "events",
+  "shares",
+  "opportunities",
+];
 
 const ICONS: Record<CareerEventType, React.ReactNode> = {
   job_started: <Briefcase className="h-4 w-4" />,
@@ -126,33 +143,18 @@ export function CareerTimeline() {
   }, [eventsQ.data, filesQ.data, sharesQ.data, oppsQ.data]);
 
   const filtered = useMemo(() => {
-    if (filter === "all") return rows;
-    if (filter === "files") return rows.filter((r) => r.kind === "file");
-    if (filter === "shares") return rows.filter((r) => r.kind === "share");
-    if (filter === "opportunities")
-      return rows.filter((r) => r.kind === "opportunity");
-    if (filter === "events")
-      return rows.filter(
-        (r) => r.kind === "event" && r.event.event_type !== "milestone",
-      );
-    if (filter === "education")
-      return rows.filter(
-        (r) =>
-          r.kind === "event" &&
-          (r.event.event_type === "education_started" ||
-            r.event.event_type === "education_completed" ||
-            r.event.event_type === "certification_earned"),
-      );
-    if (filter === "jobs")
-      return rows.filter(
-        (r) =>
-          r.kind === "event" &&
-          (r.event.event_type === "job_started" ||
-            r.event.event_type === "job_ended" ||
-            r.event.event_type === "promotion"),
-      );
-    return rows;
+    return rows.filter((row) => rowMatchesFilter(row, filter));
   }, [rows, filter]);
+
+  const filterItems = useMemo(
+    () =>
+      FILTER_KEYS.map((id) => ({
+        id,
+        label: copy.filters[id],
+        count: rows.filter((row) => rowMatchesFilter(row, id)).length,
+      })),
+    [copy.filters, rows],
+  );
 
   const grouped = useMemo(() => {
     const map = new Map<string, TimelineRow[]>();
@@ -172,130 +174,131 @@ export function CareerTimeline() {
       title={copy.pageTitle}
       description={copy.pageDescription}
       actions={
-        <Button
-          className="h-11 px-4 sm:h-8 sm:px-2.5"
+        <OSPrimaryAction
+          className="gap-2"
           onClick={() => {
             setEditing(null);
             setFormOpen(true);
           }}
         >
-          <Plus className="mr-1 h-4 w-4" />
+          <Plus className="size-4" aria-hidden />
           {copy.newEvent}
-        </Button>
+        </OSPrimaryAction>
       }
     >
-      <nav className="flex flex-wrap gap-2">
-        {(
-          [
-            "all",
-            "education",
-            "jobs",
-            "files",
-            "events",
-            "shares",
-            "opportunities",
-          ] as FilterKey[]
-        ).map((k) => (
-          <button
-            key={k}
-            onClick={() => setFilter(k)}
-            className={`min-h-11 min-w-11 rounded-full border px-4 py-2 text-sm transition-colors sm:min-h-0 sm:min-w-0 sm:px-3 sm:py-1 sm:text-xs ${
-              filter === k
-                ? "bg-foreground text-background"
-                : "bg-background hover:bg-accent/40"
-            }`}
-          >
-            {copy.filters[k]}
-          </button>
-        ))}
-      </nav>
+      <div className="space-y-5">
+        <CareerHelpPanel icon={Info} title="What appears here?">
+          Manual milestones, Career Vault files, shared files, applications,
+          education, jobs, awards, projects, speaking, publications, and other
+          career events are merged into one dated thread.
+        </CareerHelpPanel>
 
-      {grouped.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted-foreground">
-          {copy.empty}
-        </p>
-      ) : (
-        <div className="space-y-6">
-          {grouped.map(([year, items]) => (
-            <section key={year}>
-              <div className="mb-2 flex items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {year}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <ol className="relative space-y-3 border-l pl-5">
-                {items.map((row, idx) => (
-                  <li key={rowKey(row, idx)} className="relative">
-                    <span
-                      className="absolute -left-[27px] top-2 grid h-5 w-5 place-items-center rounded-full border bg-background text-muted-foreground"
-                      aria-hidden
-                    >
-                      {iconFor(row)}
+        <CareerFilterChips
+          items={filterItems}
+          value={filter}
+          onChange={setFilter}
+          ariaLabel="Filter career timeline"
+        />
+
+        {grouped.length === 0 ? (
+          <CareerEmptyState
+            icon={History}
+            title="Add your first milestone"
+            description={copy.empty}
+            actionLabel="Add your first milestone"
+            onAction={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          />
+        ) : (
+          <CareerSectionPanel
+            title="Career history thread"
+            description="Auto-generated items are labeled quietly so your timeline stays useful without becoming noisy."
+          >
+            <div className="space-y-6">
+              {grouped.map(([year, items]) => (
+                <section key={year}>
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      {year}
                     </span>
-                    <div className="flex items-start justify-between gap-2 rounded-xl border bg-card p-3">
-                      <div className="min-w-0">
-                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {formatMonthDay(row.date, language)}
-                          {row.kind === "event" && row.event.auto_generated ? (
-                            <span className="ml-2 rounded-full border border-amber-400/40 bg-amber-50/40 px-1.5 py-0.5 text-[9px] font-medium uppercase text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
-                              {copy.autoGenerated}
-                            </span>
+                    <div className="h-px flex-1 bg-border/70" />
+                  </div>
+                  <ol className="relative space-y-3 border-l border-border/70 pl-5">
+                    {items.map((row, idx) => (
+                      <li key={rowKey(row, idx)} className="relative">
+                        <span
+                          className="absolute -left-[27px] top-3 grid h-5 w-5 place-items-center rounded-full border border-white/50 bg-white/80 text-muted-foreground shadow-sm dark:border-white/10 dark:bg-slate-950"
+                          aria-hidden
+                        >
+                          {iconFor(row)}
+                        </span>
+                        <div className="flex items-start justify-between gap-3 rounded-xl border border-white/55 bg-white/74 p-3 shadow-sm shadow-slate-900/5 dark:border-white/10 dark:bg-slate-950/72">
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                              {formatMonthDay(row.date, language)}
+                              {row.kind === "event" && row.event.auto_generated ? (
+                                <span className="ml-2 rounded-md border border-amber-400/40 bg-amber-50/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                                  {copy.autoGenerated}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="mt-1 text-sm font-semibold">
+                              {titleFor(row)}
+                            </div>
+                            {subtitleFor(row) ? (
+                              <div className="text-xs text-muted-foreground">
+                                {subtitleFor(row)}
+                              </div>
+                            ) : null}
+                            {row.kind === "event" && row.event.description ? (
+                              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                                {row.event.description}
+                              </p>
+                            ) : null}
+                            {row.kind === "event" &&
+                            row.event.related_file_ids.length > 0 ? (
+                              <p className="mt-2 text-[11px] text-muted-foreground">
+                                <Link2 className="mr-1 inline h-3 w-3" />
+                                {copy.relatedFiles}:{" "}
+                                {row.event.related_file_ids.length}
+                              </p>
+                            ) : null}
+                          </div>
+                          {row.kind === "event" ? (
+                            <div className="flex shrink-0 gap-1">
+                              <OSIconControl
+                                osSize="compact"
+                                variant="ghost"
+                                aria-label={copy.editEvent}
+                                onClick={() => {
+                                  setEditing(row.event);
+                                  setFormOpen(true);
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </OSIconControl>
+                              <OSIconControl
+                                osSize="compact"
+                                variant="ghost"
+                                aria-label={copy.deleteEvent}
+                                onClick={() => setConfirmId(row.event.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </OSIconControl>
+                            </div>
                           ) : null}
                         </div>
-                        <div className="mt-0.5 text-sm font-semibold">
-                          {titleFor(row)}
-                        </div>
-                        {subtitleFor(row) ? (
-                          <div className="text-xs text-muted-foreground">
-                            {subtitleFor(row)}
-                          </div>
-                        ) : null}
-                        {row.kind === "event" && row.event.description ? (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {row.event.description}
-                          </p>
-                        ) : null}
-                        {row.kind === "event" &&
-                        row.event.related_file_ids.length > 0 ? (
-                          <p className="mt-1 text-[11px] text-muted-foreground">
-                            <Link2 className="mr-1 inline h-3 w-3" />
-                            {copy.relatedFiles}:{" "}
-                            {row.event.related_file_ids.length}
-                          </p>
-                        ) : null}
-                      </div>
-                      {row.kind === "event" ? (
-                        <div className="flex shrink-0 gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={copy.editEvent}
-                            onClick={() => {
-                              setEditing(row.event);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={copy.deleteEvent}
-                            onClick={() => setConfirmId(row.event.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
-        </div>
-      )}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+            </div>
+          </CareerSectionPanel>
+        )}
+      </div>
 
       <EventFormModal
         open={formOpen}
@@ -329,6 +332,33 @@ export function CareerTimeline() {
       </AlertDialog>
     </PageShell>
   );
+}
+
+function rowMatchesFilter(row: TimelineRow, filter: FilterKey): boolean {
+  if (filter === "all") return true;
+  if (filter === "files") return row.kind === "file";
+  if (filter === "shares") return row.kind === "share";
+  if (filter === "opportunities") return row.kind === "opportunity";
+  if (filter === "events") {
+    return row.kind === "event" && row.event.event_type !== "milestone";
+  }
+  if (filter === "education") {
+    return (
+      row.kind === "event" &&
+      (row.event.event_type === "education_started" ||
+        row.event.event_type === "education_completed" ||
+        row.event.event_type === "certification_earned")
+    );
+  }
+  if (filter === "jobs") {
+    return (
+      row.kind === "event" &&
+      (row.event.event_type === "job_started" ||
+        row.event.event_type === "job_ended" ||
+        row.event.event_type === "promotion")
+    );
+  }
+  return true;
 }
 
 function rowKey(r: TimelineRow, idx: number): string {

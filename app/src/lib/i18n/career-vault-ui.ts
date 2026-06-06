@@ -507,6 +507,16 @@ export type CareerVaultCopy = {
       rejected: string;
       withdrawn: string;
     };
+    stageDescriptions: {
+      researching: string;
+      applied: string;
+      phone_screen: string;
+      interviewing: string;
+      offer: string;
+      accepted: string;
+      rejected: string;
+      withdrawn: string;
+    };
     stageCount: (n: number) => string;
     card: {
       location: string;
@@ -602,7 +612,7 @@ export type CareerVaultCopy = {
 const en: CareerVaultCopy = {
   pageTitle: "Career Vault",
   pageDescription:
-    "Centralized storage for resumes, bios, photos, portfolios, and other career documents.",
+    "Store, organize, version, and reuse resumes, portfolios, certificates, references, and career assets.",
   landing: {
     title: "Career",
     description:
@@ -1125,9 +1135,9 @@ Option B — SQL Editor
     coverFilename: "00_Cover",
   },
   pipeline: {
-    pageTitle: "Opportunity pipeline",
+    pageTitle: "Career Pipeline",
     pageDescription:
-      "Track every role from first research to final decision. Attach files straight from your vault.",
+      "Track opportunities from research to offer, with follow-ups and next actions.",
     breadcrumb: "Pipeline",
     newButton: "New opportunity",
     filters: {
@@ -1142,6 +1152,16 @@ Option B — SQL Editor
       accepted: "Accepted",
       rejected: "Rejected",
       withdrawn: "Withdrawn",
+    },
+    stageDescriptions: {
+      researching: "Roles worth learning more about before you apply.",
+      applied: "Applications sent and waiting for a response.",
+      phone_screen: "Recruiter or hiring-manager screens in motion.",
+      interviewing: "Active interview loops and prep work.",
+      offer: "Offers, negotiations, and final decision work.",
+      accepted: "Won opportunities you chose to take.",
+      rejected: "Closed loops that did not move forward.",
+      withdrawn: "Roles you intentionally stepped away from.",
     },
     stageCount: (n) => `${n}`,
     card: {

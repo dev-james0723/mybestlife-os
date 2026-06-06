@@ -4,7 +4,9 @@ import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft,
+  Archive,
+  FolderOpen,
+  HardDrive,
   LayoutGrid,
   Link2,
   List,
@@ -14,7 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -22,7 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import {
+  CareerMetricCard,
+  CareerMetricGrid,
+  CareerSectionPanel,
+} from "@/components/career/career-page-ui";
 import { useAppStore } from "@/stores/app-store";
 import { useCareerVaultStore } from "@/stores/career-vault-store";
 import {
@@ -163,170 +171,143 @@ export function VaultView() {
       error instanceof Error ? error.message : String(error ?? "");
     const missingMigrations = isMissingCareerVaultTableError(error);
     return (
-      <div className="mx-auto flex max-w-lg flex-col items-center gap-4 py-16 text-center">
-        <p className="text-sm font-medium text-destructive">
-          {copy.errors.fetchFailed}
-        </p>
-        {missingMigrations ? (
-          <div className="w-full rounded-lg border bg-muted/30 p-4 text-left">
-            <p className="text-sm font-medium text-foreground">
-              {copy.errors.migrationTitle}
+      <PageShell title={copy.pageTitle} description={copy.pageDescription}>
+        <CareerSectionPanel>
+          <div className="mx-auto flex max-w-lg flex-col items-center gap-4 py-8 text-center">
+            <p className="text-sm font-medium text-destructive">
+              {copy.errors.fetchFailed}
             </p>
-            <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-muted-foreground">
-              {copy.errors.migrationSteps}
-            </pre>
+            {missingMigrations ? (
+              <div className="w-full rounded-lg border bg-muted/30 p-4 text-left">
+                <p className="text-sm font-medium text-foreground">
+                  {copy.errors.migrationTitle}
+                </p>
+                <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-muted-foreground">
+                  {copy.errors.migrationSteps}
+                </pre>
+              </div>
+            ) : detail ? (
+              <p className="break-words text-xs text-muted-foreground">{detail}</p>
+            ) : null}
+            {!missingMigrations ? (
+              <p className="text-xs text-muted-foreground">{copy.errors.fetchHint}</p>
+            ) : null}
+            <OSControl type="button" onClick={() => void refetch()}>
+              {copy.errors.retry}
+            </OSControl>
           </div>
-        ) : detail ? (
-          <p className="text-xs text-muted-foreground break-words">{detail}</p>
-        ) : null}
-        {!missingMigrations ? (
-          <p className="text-xs text-muted-foreground">{copy.errors.fetchHint}</p>
-        ) : null}
-        <Button type="button" variant="outline" onClick={() => void refetch()}>
-          {copy.errors.retry}
-        </Button>
-      </div>
+        </CareerSectionPanel>
+      </PageShell>
     );
   }
 
   const hasAny = files.length > 0;
+  const categoryTotal = new Set(files.map((file) => file.category)).size;
 
   return (
-    <div className="space-y-6">
-      {/* Header: breadcrumb + upload */}
-      <div className="flex items-center gap-2">
-        <Link
-          href={withLocalePrefix(localeSlug, "/career")}
-          className="inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:min-h-0 sm:min-w-0 sm:px-1.5 sm:py-1 sm:text-xs"
-          aria-label={copy.breadcrumb.career}
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          {copy.breadcrumb.career}
-        </Link>
-        <span className="text-xs text-muted-foreground">/</span>
-        <h1 className="flex-1 truncate text-lg font-semibold sm:text-xl">
-          {copy.pageTitle}
-        </h1>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-11 min-w-11 px-3 sm:h-7 sm:min-w-0 sm:px-2.5"
-          render={
-            <Link
-              href={withLocalePrefix(localeSlug, "/career/vault/bundles")}
-              aria-label={copy.bundles.pageTitle}
-            />
-          }
-        >
-          <Package className="mr-1 h-4 w-4" />
-          <span className="hidden sm:inline">{copy.bundles.pageTitle}</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-11 min-w-11 px-3 sm:h-7 sm:min-w-0 sm:px-2.5"
-          render={
-            <Link
-              href={withLocalePrefix(localeSlug, "/career/vault/shares")}
-              aria-label={copy.shares.pageTitle}
-            />
-          }
-        >
-          <Link2 className="mr-1 h-4 w-4" />
-          <span className="hidden sm:inline">{copy.shares.pageTitle}</span>
-        </Button>
-        <Button onClick={openUpload} size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5">
-          <Plus className="mr-1 h-4 w-4" />
-          <span className="hidden sm:inline">{copy.uploadButton}</span>
-          <span className="sm:hidden">{copy.uploadShort}</span>
-        </Button>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={copy.searchPlaceholder}
-          className="h-11 pl-9 sm:h-9"
-          aria-label={copy.searchPlaceholder}
-        />
-      </div>
-
-      {/* Stats */}
-      {hasAny ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{copy.stats.filesCount(files.length)}</span>
-          <span aria-hidden>·</span>
-          <span>{copy.stats.totalSize(formatFileSize(totalBytes))}</span>
-        </div>
-      ) : null}
-
-      {/* Category pills */}
-      {hasAny ? (
-        <CategoryFilter
-          value={selectedCategory}
-          onChange={setSelectedCategory}
-          copy={copy}
-          counts={categoryCounts}
-        />
-      ) : null}
-
-      {/* Body */}
-      {!hasAny ? (
-        <VaultEmptyState copy={copy} onUpload={openUpload} />
-      ) : (
+    <PageShell
+      title={copy.pageTitle}
+      description={copy.pageDescription}
+      actions={
         <>
-          {starred.length > 0 && selectedCategory === "all" && !searchQuery.trim() ? (
-            <QuickAccessSection
-              files={starred}
-              copy={copy}
-              detailHref={detailHref}
-              onToggleStar={toggleStar}
-              onDownload={handleDownload}
-              onEdit={handleEdit}
-              onRequestDelete={(f) => setDeleteTargetId(f.id)}
+          <OSControl
+            render={
+              <Link
+                href={withLocalePrefix(localeSlug, "/career/vault/bundles")}
+                aria-label={copy.bundles.pageTitle}
+              />
+            }
+            className="gap-2"
+          >
+            <Package className="size-4" aria-hidden />
+            <span className="hidden sm:inline">{copy.bundles.pageTitle}</span>
+            <span className="sm:hidden">Bundles</span>
+          </OSControl>
+          <OSControl
+            render={
+              <Link
+                href={withLocalePrefix(localeSlug, "/career/vault/shares")}
+                aria-label={copy.shares.pageTitle}
+              />
+            }
+            className="gap-2"
+          >
+            <Link2 className="size-4" aria-hidden />
+            <span className="hidden sm:inline">{copy.shares.pageTitle}</span>
+            <span className="sm:hidden">Shares</span>
+          </OSControl>
+          <OSPrimaryAction onClick={openUpload} className="gap-2">
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden sm:inline">{copy.uploadButton}</span>
+            <span className="sm:hidden">{copy.uploadShort}</span>
+          </OSPrimaryAction>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        {hasAny ? (
+          <CareerMetricGrid>
+            <CareerMetricCard
+              icon={Archive}
+              label="Total assets"
+              value={files.length}
+              description="Reusable resumes, portfolios, credentials, references, and career files."
             />
-          ) : null}
+            <CareerMetricCard
+              icon={FolderOpen}
+              label="Quick access"
+              value={starred.length}
+              description="Starred files that are ready to reuse."
+            />
+            <CareerMetricCard
+              icon={HardDrive}
+              label="Storage"
+              value={formatFileSize(totalBytes)}
+              description="Total size across the files in this vault."
+            />
+            <CareerMetricCard
+              icon={Package}
+              label="Categories"
+              value={categoryTotal}
+              description="Asset groups represented in your library."
+            />
+          </CareerMetricGrid>
+        ) : null}
 
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {copy.sections.allFiles}
-              </h2>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={sortBy}
-                  onValueChange={(v) => v && setSortBy(v as VaultSortKey)}
-                >
-                  <SelectTrigger className="h-11 w-auto gap-1 border-none bg-muted/60 px-3 text-sm sm:h-8 sm:px-2 sm:text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">{copy.sort.recent}</SelectItem>
-                    <SelectItem value="name">{copy.sort.name}</SelectItem>
-                    <SelectItem value="size">{copy.sort.size}</SelectItem>
-                    <SelectItem value="category">{copy.sort.category}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <ViewToggle
-                  mode={viewMode}
-                  onChange={setViewMode}
-                  copy={copy}
-                />
-              </div>
+        <CareerSectionPanel
+          title="Find and organize assets"
+          description="Search by file name, tag, or description; then narrow the library by category, sort order, and view."
+        >
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={copy.searchPlaceholder}
+                className="h-11 rounded-xl border-white/50 bg-white/68 pl-9 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+                aria-label={copy.searchPlaceholder}
+              />
             </div>
 
-            {sortedFiles.length === 0 ? (
-              <VaultEmptyState
+            {hasAny ? (
+              <CategoryFilter
+                value={selectedCategory}
+                onChange={setSelectedCategory}
                 copy={copy}
-                onUpload={openUpload}
-                variant="noResults"
+                counts={categoryCounts}
               />
-            ) : viewMode === "grid" ? (
-              <FileGrid
-                files={sortedFiles}
+            ) : null}
+          </div>
+        </CareerSectionPanel>
+
+        {!hasAny ? (
+          <VaultEmptyState copy={copy} onUpload={openUpload} />
+        ) : (
+          <>
+            {starred.length > 0 && selectedCategory === "all" && !searchQuery.trim() ? (
+              <QuickAccessSection
+                files={starred}
                 copy={copy}
                 detailHref={detailHref}
                 onToggleStar={toggleStar}
@@ -334,20 +315,72 @@ export function VaultView() {
                 onEdit={handleEdit}
                 onRequestDelete={(f) => setDeleteTargetId(f.id)}
               />
-            ) : (
-              <FileList
-                files={sortedFiles}
-                copy={copy}
-                detailHref={detailHref}
-                onToggleStar={toggleStar}
-                onDownload={handleDownload}
-                onEdit={handleEdit}
-                onRequestDelete={(f) => setDeleteTargetId(f.id)}
-              />
-            )}
-          </section>
-        </>
-      )}
+            ) : null}
+
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    {copy.sections.allFiles}
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {copy.stats.filesCount(sortedFiles.length)} shown
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={sortBy}
+                    onValueChange={(v) => v && setSortBy(v as VaultSortKey)}
+                  >
+                    <SelectTrigger className="h-11 w-auto gap-1 rounded-xl border-white/50 bg-white/68 px-3 text-sm shadow-sm sm:h-9 sm:px-2 sm:text-xs dark:border-white/10 dark:bg-white/[0.04]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recent">{copy.sort.recent}</SelectItem>
+                      <SelectItem value="name">{copy.sort.name}</SelectItem>
+                      <SelectItem value="size">{copy.sort.size}</SelectItem>
+                      <SelectItem value="category">{copy.sort.category}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <ViewToggle
+                    mode={viewMode}
+                    onChange={setViewMode}
+                    copy={copy}
+                  />
+                </div>
+              </div>
+
+              {sortedFiles.length === 0 ? (
+                <VaultEmptyState
+                  copy={copy}
+                  onUpload={openUpload}
+                  variant="noResults"
+                />
+              ) : viewMode === "grid" ? (
+                <FileGrid
+                  files={sortedFiles}
+                  copy={copy}
+                  detailHref={detailHref}
+                  onToggleStar={toggleStar}
+                  onDownload={handleDownload}
+                  onEdit={handleEdit}
+                  onRequestDelete={(f) => setDeleteTargetId(f.id)}
+                />
+              ) : (
+                <FileList
+                  files={sortedFiles}
+                  copy={copy}
+                  detailHref={detailHref}
+                  onToggleStar={toggleStar}
+                  onDownload={handleDownload}
+                  onEdit={handleEdit}
+                  onRequestDelete={(f) => setDeleteTargetId(f.id)}
+                />
+              )}
+            </section>
+          </>
+        )}
+      </div>
 
       <UploadModal
         open={uploadOpen}
@@ -375,7 +408,7 @@ export function VaultView() {
           }
         }}
       />
-    </div>
+    </PageShell>
   );
 }
 

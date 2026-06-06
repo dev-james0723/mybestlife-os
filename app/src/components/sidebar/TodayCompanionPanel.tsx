@@ -886,7 +886,7 @@ export function TodayCompanionPanel() {
           </div>
           <button
             type="button"
-            className="inline-flex size-5 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
             aria-label={isZh(locale) ? "自訂 Today panel" : "Customize Today panel"}
             title={isZh(locale) ? "自訂 Today panel" : "Customize Today panel"}
             onClick={() => setTodayCustomizerOpen(true)}
@@ -912,7 +912,7 @@ export function TodayCompanionPanel() {
             <h3 className="today-companion-section-title text-[9px] font-medium text-slate-100">Quick Launch</h3>
             <button
               type="button"
-              className="inline-flex size-5 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+              className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
               aria-label={isZh(locale) ? "自訂 Quick Launch" : "Customize Quick Launch"}
               title={isZh(locale) ? "自訂 Quick Launch" : "Customize Quick Launch"}
               onClick={() => setQuickCustomizerOpen(true)}

@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Plus, Settings2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Library, Search, Plus, Settings2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Tabs,
@@ -14,6 +13,8 @@ import {
 } from "@/components/ui/tabs";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import { CareerHelpPanel, CareerSectionPanel } from "@/components/career/career-page-ui";
 import { useAppStore } from "@/stores/app-store";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
@@ -265,43 +266,52 @@ export function CoachView() {
       title={copy.pageTitle}
       description={copy.pageDescription}
       actions={
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+        <>
+          <OSControl
             render={<Link href={settingsHref} aria-label={copy.settings.title} />}
-            className="h-11 min-w-11 px-3 sm:h-8 sm:min-w-0"
+            className="gap-2"
           >
-            <Settings2 className="mr-1 h-4 w-4" />
+            <Settings2 className="size-4" aria-hidden />
             <span className="hidden sm:inline">{copy.settings.title}</span>
-          </Button>
-          <Button size="sm" className="h-11 px-3 sm:h-8" onClick={openCreateCustom}>
-            <Plus className="mr-1 h-4 w-4" />
+            <span className="sm:hidden">Settings</span>
+          </OSControl>
+          <OSPrimaryAction className="gap-2" onClick={openCreateCustom}>
+            <Plus className="size-4" aria-hidden />
             <span className="hidden sm:inline">{copy.customCta.create.replace(/^\+\s*/, "")}</span>
             <span className="sm:hidden">{copy.customCta.create.replace(/^\+\s*/, "")}</span>
-          </Button>
-        </div>
+          </OSPrimaryAction>
+        </>
       }
     >
       <nav className="text-xs text-muted-foreground">
-        <Link href={crumbLink} className="inline-flex min-h-11 min-w-11 items-center hover:underline sm:min-h-0 sm:min-w-0">
+        <Link href={crumbLink} className="inline-flex min-h-11 min-w-11 items-center rounded-md hover:underline sm:min-h-6 sm:min-w-6 sm:px-1">
           {copy.breadcrumb.career}
         </Link>{" "}
         / <span className="text-foreground">{copy.breadcrumb.coach}</span>
       </nav>
 
+      <CareerHelpPanel icon={Library} title="Prompt library, not a chat room">
+        Choose a proven career workflow, attach context from your profile or Vault,
+        then dispatch the finished prompt to the AI tool you prefer.
+      </CareerHelpPanel>
+
       {profileIsThin ? <ProfileBanner copy={copy} editHref={profileHref} /> : null}
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={copy.searchPlaceholder}
-          className="h-11 pl-9 sm:h-9"
-          aria-label={copy.searchPlaceholder}
-        />
-      </div>
+      <CareerSectionPanel
+        title="Find the right career action"
+        description="Search by use case or filter by resume, interview, discovery, transition, growth, branding, and application work."
+      >
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={copy.searchPlaceholder}
+            className="h-11 rounded-xl border-white/50 bg-white/68 pl-9 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+            aria-label={copy.searchPlaceholder}
+          />
+        </div>
+      </CareerSectionPanel>
 
       <Tabs
         value={lastTab}

@@ -434,7 +434,7 @@ const en: CareerPhase5Copy = {
   timeline: {
     pageTitle: "Career Timeline",
     pageDescription:
-      "Everything that happened to your career, in one thread.",
+      "A career history thread generated from milestones, Vault files, shared files, applications, education, jobs, awards, and projects.",
     filters: {
       all: "All",
       education: "Education",
@@ -484,7 +484,7 @@ const en: CareerPhase5Copy = {
 
   network: {
     pageTitle: "Career Network",
-    pageDescription: "Your people, places, and moving pieces — in one map.",
+    pageDescription: "Map the people, organizations, projects, and opportunities around your career, then decide who to reconnect with next.",
     filters: {
       all: "All",
       people: "People",
@@ -554,7 +554,7 @@ const en: CareerPhase5Copy = {
 
   analytics: {
     pageTitle: "Career Analytics",
-    pageDescription: "Signal from the noise of your job search.",
+    pageDescription: "Understand what your pipeline, resume versions, Vault assets, and quarterly progress are telling you.",
     funnel: {
       title: "Application funnel",
       stages: {
@@ -604,9 +604,9 @@ const en: CareerPhase5Copy = {
   },
 
   journal: {
-    pageTitle: "Decision Journal",
+    pageTitle: "Career Decision Journal",
     pageDescription:
-      "Make the call, write it down, review it later. Get better at deciding.",
+      "Capture career decisions, assumptions, expected outcomes, and review whether your judgment improved.",
     newDecision: "New decision",
     empty: "No decisions yet. Start one the next time you're weighing a move.",
     decidedOn: (date) => `Decided ${date}`,
