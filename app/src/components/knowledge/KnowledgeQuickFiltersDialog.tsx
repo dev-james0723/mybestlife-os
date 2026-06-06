@@ -241,6 +241,7 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
                   index={index}
                   total={draft.length}
                   copy={copy}
+                  typeLabels={ui.typeLabels}
                   builtInLabels={ui.quickFilters}
                   onUpdate={(updater) => updateDefinition(def.id, updater)}
                   onMove={moveDefinition}
@@ -293,6 +294,7 @@ function QuickFilterDefinitionEditor({
   index,
   total,
   copy,
+  typeLabels,
   builtInLabels,
   onUpdate,
   onMove,
@@ -305,6 +307,7 @@ function QuickFilterDefinitionEditor({
   index: number;
   total: number;
   copy: ReturnType<typeof getKnowledgeUiCopy>["quickFilterManager"];
+  typeLabels: Record<ContentType, string>;
   builtInLabels: Record<KnowledgeBuiltinQuickFilterId, string>;
   onUpdate: (
     updater: (def: KnowledgeQuickFilterDefinition) => KnowledgeQuickFilterDefinition,
@@ -455,6 +458,7 @@ function QuickFilterDefinitionEditor({
               key={rule.id}
               rule={rule}
               copy={copy}
+              typeLabels={typeLabels}
               builtInLabels={builtInLabels}
               onUpdate={(updater) => onUpdateRule(rule.id, updater)}
               onRemove={() => onRemoveRule(rule.id)}
@@ -469,18 +473,20 @@ function QuickFilterDefinitionEditor({
 function QuickFilterRuleEditor({
   rule,
   copy,
+  typeLabels,
   builtInLabels,
   onUpdate,
   onRemove,
 }: {
   rule: KnowledgeQuickFilterRule;
   copy: ReturnType<typeof getKnowledgeUiCopy>["quickFilterManager"];
+  typeLabels: Record<ContentType, string>;
   builtInLabels: Record<KnowledgeBuiltinQuickFilterId, string>;
   onUpdate: (updater: (rule: KnowledgeQuickFilterRule) => KnowledgeQuickFilterRule) => void;
   onRemove: () => void;
 }) {
   const complete = isKnowledgeQuickFilterRuleComplete(rule);
-  const valueControl = renderValueControl(rule, copy, ui.typeLabels, builtInLabels, onUpdate);
+  const valueControl = renderValueControl(rule, copy, typeLabels, builtInLabels, onUpdate);
   const operatorControl = renderOperatorControl(rule, copy, onUpdate);
 
   return (
