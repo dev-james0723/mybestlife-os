@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useIdeasStore } from "@/stores/ideas-store";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { filterIdeas, sortIdeas } from "@/lib/ideas/filter-sort-ideas";
+import { ideaQuickFiltersNeedMinuteTicker } from "@/lib/ideas/quick-filters";
 import { Button } from "@/components/ui/button";
 import { IdeasGalleryView } from "./IdeasGalleryView";
 import { IdeasBoardView } from "./IdeasBoardView";
@@ -21,6 +22,7 @@ export function IdeasContent() {
   const openAddModal = useIdeasStore((s) => s.openAddModal);
   const setSelectedIdeaId = useIdeasStore((s) => s.setSelectedIdeaId);
   const clearAllListFilters = useIdeasStore((s) => s.clearAllListFilters);
+  const [minuteTick, setMinuteTick] = useState(0);
 
   const filterState = useIdeasStore(
     useShallow((s) => ({
@@ -30,14 +32,28 @@ export function IdeasContent() {
       activeCategoryFilters: s.activeCategoryFilters,
       activeTagToken: s.activeTagToken,
       activeQuickFilters: s.activeQuickFilters,
+      quickFilterDefinitions: s.quickFilterDefinitions,
       relatedScopeFilter: s.relatedScopeFilter,
     })),
   );
   const sortBy = useIdeasStore((s) => s.sortBy);
 
+  useEffect(() => {
+    if (
+      !ideaQuickFiltersNeedMinuteTicker(
+        filterState.activeQuickFilters,
+        filterState.quickFilterDefinitions,
+      )
+    ) {
+      return;
+    }
+    const interval = window.setInterval(() => setMinuteTick((tick) => tick + 1), 60_000);
+    return () => window.clearInterval(interval);
+  }, [filterState.activeQuickFilters, filterState.quickFilterDefinitions]);
+
   const filtered = useMemo(
     () => sortIdeas(filterIdeas(items, filterState), sortBy),
-    [items, filterState, sortBy],
+    [items, filterState, sortBy, minuteTick],
   );
 
   const hasAnyFilter =

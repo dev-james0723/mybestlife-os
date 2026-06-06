@@ -385,6 +385,20 @@ function IdeaDetailInner({
           ) : (
             <div className="grid min-w-0 gap-6 pb-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
               <div className="min-w-0 space-y-4">
+                {cardVisual?.imageUrl ? (
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.visualPreviewSection}</p>
+                    <div className="overflow-hidden rounded-xl border border-border/50 bg-muted/15">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
+                      <img
+                        src={cardVisual.imageUrl}
+                        alt=""
+                        className="h-[220px] w-full object-contain sm:h-[300px]"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                ) : null}
                 {suggestions.length > 0 ? (
                   <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/10 p-3.5">
                     <p className="text-xs font-semibold text-foreground">{ui.aiSuggestionsSection}</p>
@@ -447,23 +461,6 @@ function IdeaDetailInner({
                   <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.relatedSection}</p>
                   <IdeaRelatedResources idea={idea} language={language} />
                 </div>
-                {cardVisual?.imageUrl ? (
-                  <>
-                    <Separator />
-                    <div>
-                      <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.visualPreviewSection}</p>
-                      <div className="overflow-hidden rounded-lg border border-border/50">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
-                        <img
-                          src={cardVisual.imageUrl}
-                          alt=""
-                          className="aspect-[3/4] w-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    </div>
-                  </>
-                ) : null}
               </div>
             </div>
           )}

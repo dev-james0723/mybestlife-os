@@ -79,6 +79,48 @@ export type IdeasUiCopy = {
     "recent" | "unreviewed" | "hasTags" | "noTags" | "linked" | "unlinked" | "archived",
     string
   >;
+  quickFilterManager: {
+    manageButton: string;
+    title: string;
+    description: string;
+    addFilter: string;
+    resetDefaults: string;
+    save: string;
+    saving: string;
+    cancel: string;
+    filterLabel: string;
+    filterNamePlaceholder: string;
+    iconLabel: string;
+    visibleLabel: string;
+    matchLabel: string;
+    matchAll: string;
+    matchAny: string;
+    builtInBadge: string;
+    customBadge: string;
+    moveUp: string;
+    moveDown: string;
+    hide: string;
+    delete: string;
+    rulesHeading: string;
+    addRule: string;
+    removeRule: string;
+    fieldLabel: string;
+    operatorLabel: string;
+    valueLabel: string;
+    present: string;
+    missing: string;
+    selectValue: string;
+    incompleteDraft: string;
+    noFilters: string;
+    savedToast: string;
+    saveFailedToast: string;
+    textValuePlaceholder: string;
+    tagValuePlaceholder: string;
+    daysValuePlaceholder: string;
+    iconLabels: Record<string, string>;
+    ruleFields: Record<string, string>;
+    ruleOperators: Record<string, string>;
+  };
   activeFiltersHeading: string;
   emptyNoIdeasTitle: string;
   emptyNoIdeasDescription: string;
@@ -280,6 +322,84 @@ const en: IdeasUiCopy = {
     linked: "Linked",
     unlinked: "Unlinked",
     archived: "Archived",
+  },
+  quickFilterManager: {
+    manageButton: "Manage quick filters",
+    title: "Manage idea quick filters",
+    description:
+      "Create personal filter buttons from source, category, status, tags, links, attachments, dates, and text rules.",
+    addFilter: "Add filter",
+    resetDefaults: "Reset defaults",
+    save: "Save filters",
+    saving: "Saving...",
+    cancel: "Cancel",
+    filterLabel: "Label",
+    filterNamePlaceholder: "Filter name",
+    iconLabel: "Icon",
+    visibleLabel: "Show in row",
+    matchLabel: "Match",
+    matchAll: "All rules",
+    matchAny: "Any rule",
+    builtInBadge: "Built-in",
+    customBadge: "Custom",
+    moveUp: "Move up",
+    moveDown: "Move down",
+    hide: "Hide",
+    delete: "Delete",
+    rulesHeading: "Rules",
+    addRule: "Add rule",
+    removeRule: "Remove rule",
+    fieldLabel: "Field",
+    operatorLabel: "Operator",
+    valueLabel: "Value",
+    present: "Present",
+    missing: "Missing",
+    selectValue: "Select value",
+    incompleteDraft:
+      "Name every filter and complete every rule before saving.",
+    noFilters: "No quick filters configured.",
+    savedToast: "Idea quick filters saved",
+    saveFailedToast: "Could not save idea quick filters",
+    textValuePlaceholder: "Words to find",
+    tagValuePlaceholder: "Tag text",
+    daysValuePlaceholder: "Days",
+    iconLabels: {
+      clock: "Clock",
+      alertCircle: "Alert",
+      tag: "Tag",
+      tagOff: "No tag",
+      link: "Link",
+      unlink: "Unlink",
+      archive: "Archive",
+      filter: "Filter",
+      file: "File",
+      sparkles: "Sparkles",
+      bookmark: "Bookmark",
+      star: "Star",
+      lightbulb: "Lightbulb",
+      mic: "Mic",
+      share: "Share",
+      paperclip: "Attachment",
+    },
+    ruleFields: {
+      builtin: "Built-in predicate",
+      sourceType: "Source type",
+      category: "Category",
+      status: "Status",
+      captureKind: "Capture kind",
+      tag: "Tag contains",
+      related: "Related resources",
+      attachments: "Attachments",
+      dateAdded: "Added within",
+      text: "Text contains",
+    },
+    ruleOperators: {
+      is: "is",
+      contains: "contains",
+      present: "is present",
+      missing: "is missing",
+      withinDays: "within days",
+    },
   },
   activeFiltersHeading: "Active filters",
   emptyNoIdeasTitle: "No ideas yet",

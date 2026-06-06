@@ -7,6 +7,11 @@ import { useIdeasStore } from "@/stores/ideas-store";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { cn } from "@/lib/utils";
+import {
+  getActiveIdeaQuickFilterDefinitions,
+  getIdeaQuickFilterDisplayLabel,
+  type IdeaBuiltinQuickFilterId,
+} from "@/lib/ideas/quick-filters";
 
 export function IdeasActiveFiltersBar({ className }: { className?: string }) {
   const language = useAppStore((s) => s.language);
@@ -23,7 +28,8 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
   const activeTagToken = useIdeasStore((s) => s.activeTagToken);
   const setActiveTagToken = useIdeasStore((s) => s.setActiveTagToken);
   const activeQuickFilters = useIdeasStore((s) => s.activeQuickFilters);
-  const clearQuickFilters = useIdeasStore((s) => s.clearQuickFilters);
+  const quickFilterDefinitions = useIdeasStore((s) => s.quickFilterDefinitions);
+  const toggleQuickFilter = useIdeasStore((s) => s.toggleQuickFilter);
   const relatedScopeFilter = useIdeasStore((s) => s.relatedScopeFilter);
   const setRelatedScopeFilter = useIdeasStore((s) => s.setRelatedScopeFilter);
   const clearAllListFilters = useIdeasStore((s) => s.clearAllListFilters);
@@ -65,13 +71,18 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
     ui.noRelatedResource,
   ]);
 
+  const activeQuickFilterDefinitions = useMemo(
+    () => getActiveIdeaQuickFilterDefinitions(activeQuickFilters, quickFilterDefinitions),
+    [activeQuickFilters, quickFilterDefinitions],
+  );
+
   const hasFilters =
     searchQuery.trim().length > 0 ||
     ideaStatusScope !== "all" ||
     activeSourceFilters.length > 0 ||
     activeCategoryFilters.length > 0 ||
     Boolean(activeTagToken) ||
-    activeQuickFilters.length > 0 ||
+    activeQuickFilterDefinitions.length > 0 ||
     relatedScopeFilter !== "none";
 
   if (!hasFilters) return null;
@@ -110,12 +121,16 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
         {activeTagToken ? (
           <FilterChip label={tagLabel} onRemove={() => setActiveTagToken(null)} />
         ) : null}
-        {activeQuickFilters.length > 0 ? (
+        {activeQuickFilterDefinitions.map((def) => (
           <FilterChip
-            label={`${ui.quickFilters} (${activeQuickFilters.length})`}
-            onRemove={() => clearQuickFilters()}
+            key={def.id}
+            label={getIdeaQuickFilterDisplayLabel(
+              def,
+              ui.quickLabels as Record<IdeaBuiltinQuickFilterId, string>,
+            )}
+            onRemove={() => toggleQuickFilter(def.id)}
           />
-        ) : null}
+        ))}
         {relatedScopeFilter !== "none" ? (
           <FilterChip label={relatedLabel} onRemove={() => setRelatedScopeFilter("none")} />
         ) : null}

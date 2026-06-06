@@ -13,9 +13,11 @@ import {
   OSSolidPanel,
 } from "@/components/ui/os-primitives";
 import { useIdeas } from "@/hooks/use-ideas";
+import { useProfile } from "@/hooks/use-settings";
 import { useIdeasStore } from "@/stores/ideas-store";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
+import { normalizeIdeaQuickFilters } from "@/lib/ideas/quick-filters";
 import { IdeasSidebar, IdeasSidebarMobileMenuButton } from "./IdeasSidebar";
 import { IdeasTopControlBar } from "./IdeasTopControlBar";
 import { IdeasActiveFiltersBar } from "./IdeasActiveFiltersBar";
@@ -41,12 +43,22 @@ export function IdeasLayout({ initialIdeas }: { initialIdeas: Idea[] }) {
   const language = useAppStore((s) => s.language);
   const ui = getIdeasUiCopy(language);
   const { data, error, isError, refetch } = useIdeas({ initialData: initialIdeas });
+  const profile = useProfile();
   const hydrate = useIdeasStore((s) => s.hydrate);
+  const setQuickFilterDefinitions = useIdeasStore(
+    (s) => s.setQuickFilterDefinitions,
+  );
   const openAddModal = useIdeasStore((s) => s.openAddModal);
 
   useEffect(() => {
     if (data) hydrate(data);
   }, [data, hydrate]);
+
+  useEffect(() => {
+    setQuickFilterDefinitions(
+      normalizeIdeaQuickFilters(profile.data?.idea_quick_filters),
+    );
+  }, [profile.data?.idea_quick_filters, setQuickFilterDefinitions]);
 
   if (isError && error) {
     return (

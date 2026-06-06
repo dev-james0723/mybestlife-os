@@ -8,9 +8,15 @@ import {
   previewIdeaTitle,
   displayCategory,
 } from "./idea-helpers";
+import {
+  getActiveIdeaQuickFilterDefinitions,
+  matchesBuiltInIdeaQuickFilter,
+  matchesIdeaQuickFilterDefinition,
+  type IdeaBuiltinQuickFilterId,
+  type IdeaQuickFilterDefinition,
+} from "./quick-filters";
 import type {
   IdeasLibraryScope,
-  IdeasQuickFilter,
   IdeasRelatedScopeFilter,
   IdeasSortKey,
 } from "./ideas-list-types";
@@ -36,33 +42,6 @@ function matchesSearch(idea: Idea, q: string): boolean {
     .join("\n")
     .toLowerCase();
   return hay.includes(needle);
-}
-
-function matchesQuickFilter(idea: Idea, f: IdeasQuickFilter): boolean {
-  const now = Date.now();
-  const recentMs = 14 * 24 * 60 * 60 * 1000;
-  const created = new Date(idea.created_at).getTime();
-  const tagCount = ideaTags(idea).length;
-  const linked = ideaHasAnyLinks(idea);
-
-  switch (f) {
-    case "recent":
-      return now - created <= recentMs;
-    case "unreviewed":
-      return idea.status === "captured";
-    case "hasTags":
-      return tagCount > 0;
-    case "noTags":
-      return tagCount === 0;
-    case "linked":
-      return linked;
-    case "unlinked":
-      return !linked;
-    case "archived":
-      return idea.status === "archived";
-    default:
-      return true;
-  }
 }
 
 function matchesRelatedScope(idea: Idea, scope: IdeasRelatedScopeFilter): boolean {
@@ -96,11 +75,26 @@ export type IdeaListFilterState = {
   activeCategoryFilters: string[];
   /** `tag:tag`; legacy `manual:tag` and `ai:tag` are still accepted. */
   activeTagToken: string | null;
-  activeQuickFilters: IdeasQuickFilter[];
+  activeQuickFilters: string[];
+  quickFilterDefinitions: IdeaQuickFilterDefinition[];
   relatedScopeFilter: IdeasRelatedScopeFilter;
 };
 
+export function matchesQuickFilter(
+  idea: Idea,
+  f: IdeaBuiltinQuickFilterId,
+  nowMs: number = Date.now(),
+): boolean {
+  return matchesBuiltInIdeaQuickFilter(idea, f, nowMs);
+}
+
 export function filterIdeas(items: Idea[], state: IdeaListFilterState): Idea[] {
+  const activeQuickFilterDefinitions = getActiveIdeaQuickFilterDefinitions(
+    state.activeQuickFilters,
+    state.quickFilterDefinitions,
+  );
+  const nowMs = Date.now();
+
   return items.filter((idea) => {
     if (!matchesSearch(idea, state.searchQuery.trim())) return false;
 
@@ -134,8 +128,8 @@ export function filterIdeas(items: Idea[], state: IdeaListFilterState): Idea[] {
       }
     }
 
-    for (const qf of state.activeQuickFilters) {
-      if (!matchesQuickFilter(idea, qf)) return false;
+    for (const qf of activeQuickFilterDefinitions) {
+      if (!matchesIdeaQuickFilterDefinition(idea, qf, nowMs)) return false;
     }
 
     if (!matchesRelatedScope(idea, state.relatedScopeFilter)) return false;

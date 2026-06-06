@@ -88,9 +88,9 @@ export function IdeaCard({
               loading="lazy"
             />
           </div>
-          <div className="absolute inset-0 bg-black/65" aria-hidden />
+          <div className="absolute inset-0 bg-black/45" aria-hidden />
           <div
-            className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/85"
+            className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/10 to-black/70"
             aria-hidden
           />
           <div className="absolute inset-0 ring-1 ring-inset ring-white/10" aria-hidden />

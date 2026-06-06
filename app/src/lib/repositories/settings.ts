@@ -11,6 +11,7 @@ import {
   validateOSBuddyBirthdayProfile,
   type OSBuddyBirthdayProfile,
 } from "@/lib/os-buddy/os-buddy-birthday";
+import { normalizeIdeaQuickFilters } from "@/lib/ideas/quick-filters";
 import { normalizeKnowledgeQuickFilters } from "@/lib/knowledge/quick-filters";
 
 export type UpdateProfileInput = Partial<
@@ -41,6 +42,7 @@ export type UpdateProfileInput = Partial<
     | "block_minutes"
     | "quick_tasks"
     | "knowledge_quick_filters"
+    | "idea_quick_filters"
     | "display_currency"
     | "quick_save_enabled"
     | "quick_save_default_destination"
@@ -93,6 +95,7 @@ const OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS = [
 ] as const;
 const OS_BUDDY_SHORTCUT_PROFILE_COLUMNS = ["os_buddy_shortcut_settings"] as const;
 const KNOWLEDGE_QUICK_FILTER_PROFILE_COLUMNS = ["knowledge_quick_filters"] as const;
+const IDEA_QUICK_FILTER_PROFILE_COLUMNS = ["idea_quick_filters"] as const;
 
 export type UpdateNotificationPreferencesInput = Partial<
   Pick<NotificationPreferences, "task_reminders" | "daily_summary" | "study_streak_reminders">
@@ -232,6 +235,7 @@ function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
   return {
     ...base,
     knowledge_quick_filters: normalizeKnowledgeQuickFilters(row.knowledge_quick_filters),
+    idea_quick_filters: normalizeIdeaQuickFilters(row.idea_quick_filters),
     display_currency,
     weather_lat: coerceNumOrNull(row.weather_lat),
     weather_lon: coerceNumOrNull(row.weather_lon),
@@ -423,6 +427,15 @@ export const settingsRepository = {
         isMissingProfilesColumnError(error, "knowledge_quick_filters")
       ) {
         payload = omitKeys(payload, KNOWLEDGE_QUICK_FILTER_PROFILE_COLUMNS);
+        continue;
+      }
+
+      if (
+        error &&
+        "idea_quick_filters" in payload &&
+        isMissingProfilesColumnError(error, "idea_quick_filters")
+      ) {
+        payload = omitKeys(payload, IDEA_QUICK_FILTER_PROFILE_COLUMNS);
         continue;
       }
 

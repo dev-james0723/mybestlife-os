@@ -1,8 +1,13 @@
 import { create } from "zustand";
 import type { Idea } from "@/types/database";
+import {
+  cleanActiveIdeaQuickFilterIds,
+  getDefaultIdeaQuickFilters,
+  normalizeIdeaQuickFilters,
+  type IdeaQuickFilterDefinition,
+} from "@/lib/ideas/quick-filters";
 import type {
   IdeasLibraryScope,
-  IdeasQuickFilter,
   IdeasRelatedScopeFilter,
   IdeasSortKey,
   IdeasView,
@@ -10,11 +15,12 @@ import type {
 
 export type {
   IdeasLibraryScope,
-  IdeasQuickFilter,
   IdeasRelatedScopeFilter,
   IdeasSortKey,
   IdeasView,
 } from "@/lib/ideas/ideas-list-types";
+
+export type IdeaQuickFilterId = string;
 
 interface IdeasStore {
   items: Idea[];
@@ -25,7 +31,8 @@ interface IdeasStore {
   activeSourceFilters: Idea["source_type"][];
   activeCategoryFilters: string[];
   activeTagToken: string | null;
-  activeQuickFilters: IdeasQuickFilter[];
+  activeQuickFilters: IdeaQuickFilterId[];
+  quickFilterDefinitions: IdeaQuickFilterDefinition[];
   relatedScopeFilter: IdeasRelatedScopeFilter;
   searchQuery: string;
   sortBy: IdeasSortKey;
@@ -44,7 +51,8 @@ interface IdeasStore {
   toggleCategoryFilter: (slug: string) => void;
   clearCategoryFilters: () => void;
   setActiveTagToken: (token: string | null) => void;
-  toggleQuickFilter: (f: IdeasQuickFilter) => void;
+  setQuickFilterDefinitions: (defs: IdeaQuickFilterDefinition[]) => void;
+  toggleQuickFilter: (id: IdeaQuickFilterId) => void;
   clearQuickFilters: () => void;
   setRelatedScopeFilter: (f: IdeasRelatedScopeFilter) => void;
   setSearchQuery: (q: string) => void;
@@ -66,6 +74,7 @@ export const useIdeasStore = create<IdeasStore>()((set) => ({
   activeCategoryFilters: [],
   activeTagToken: null,
   activeQuickFilters: [],
+  quickFilterDefinitions: getDefaultIdeaQuickFilters(),
   relatedScopeFilter: "none",
   searchQuery: "",
   sortBy: "latest",
@@ -125,13 +134,33 @@ export const useIdeasStore = create<IdeasStore>()((set) => ({
 
   setActiveTagToken: (activeTagToken) => set({ activeTagToken }),
 
-  toggleQuickFilter: (f) =>
+  setQuickFilterDefinitions: (defs) =>
     set((state) => {
-      const has = state.activeQuickFilters.includes(f);
+      const normalized = normalizeIdeaQuickFilters(defs);
+      return {
+        quickFilterDefinitions: normalized,
+        activeQuickFilters: cleanActiveIdeaQuickFilterIds(
+          state.activeQuickFilters,
+          normalized,
+        ),
+      };
+    }),
+
+  toggleQuickFilter: (id) =>
+    set((state) => {
+      const normalized = cleanActiveIdeaQuickFilterIds(
+        state.activeQuickFilters,
+        state.quickFilterDefinitions,
+      );
+      const visible = state.quickFilterDefinitions.some(
+        (def) => def.id === id && def.visible,
+      );
+      if (!visible) return { activeQuickFilters: normalized };
+      const has = normalized.includes(id);
       return {
         activeQuickFilters: has
-          ? state.activeQuickFilters.filter((x) => x !== f)
-          : [...state.activeQuickFilters, f],
+          ? normalized.filter((x) => x !== id)
+          : [...normalized, id],
       };
     }),
 

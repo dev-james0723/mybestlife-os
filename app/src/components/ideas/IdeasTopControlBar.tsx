@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useIdeasStore,
-  type IdeasQuickFilter,
   type IdeasSortKey,
 } from "@/stores/ideas-store";
 import { Input } from "@/components/ui/input";
@@ -24,11 +23,10 @@ import {
 } from "@/components/ui/select";
 import {
   ChevronDown,
-  Clock,
   Columns3,
   LayoutGrid,
-  Link2,
   Search,
+  SlidersHorizontal,
   Sparkles,
   Table,
 } from "lucide-react";
@@ -37,21 +35,12 @@ import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
 import { IDEA_CATEGORIES } from "@/lib/ideas/constants";
-
-const QUICK_ORDER: IdeasQuickFilter[] = [
-  "recent",
-  "unreviewed",
-  "hasTags",
-  "noTags",
-  "linked",
-  "unlinked",
-  "archived",
-];
-
-const QUICK_ICONS: Partial<Record<IdeasQuickFilter, React.ComponentType<{ className?: string }>>> = {
-  recent: Clock,
-  linked: Link2,
-};
+import {
+  getIdeaQuickFilterDisplayLabel,
+  type IdeaBuiltinQuickFilterId,
+} from "@/lib/ideas/quick-filters";
+import { IDEA_QUICK_FILTER_ICON_COMPONENTS } from "./ideaQuickFilterIcons";
+import { IdeasQuickFiltersDialog } from "./IdeasQuickFiltersDialog";
 
 const SORT_KEYS: IdeasSortKey[] = [
   "latest",
@@ -76,6 +65,7 @@ export function IdeasTopControlBar() {
   const toggleCategoryFilter = useIdeasStore((s) => s.toggleCategoryFilter);
   const clearCategoryFilters = useIdeasStore((s) => s.clearCategoryFilters);
   const activeQuickFilters = useIdeasStore((s) => s.activeQuickFilters);
+  const quickFilterDefinitions = useIdeasStore((s) => s.quickFilterDefinitions);
   const toggleQuickFilter = useIdeasStore((s) => s.toggleQuickFilter);
   const sortBy = useIdeasStore((s) => s.sortBy);
   const setSortBy = useIdeasStore((s) => s.setSortBy);
@@ -85,6 +75,7 @@ export function IdeasTopControlBar() {
   const setBoardGroupBy = useIdeasStore((s) => s.setBoardGroupBy);
 
   const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [manageQuickFiltersOpen, setManageQuickFiltersOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
@@ -110,6 +101,7 @@ export function IdeasTopControlBar() {
     { id: "table" as const, label: ui.viewLabels.table, icon: Table },
     { id: "constellation" as const, label: ui.viewLabels.constellation, icon: Sparkles },
   ];
+  const visibleQuickFilters = quickFilterDefinitions.filter((def) => def.visible);
 
   return (
     <div className="flex shrink-0 flex-col gap-3 border-b border-border/40 bg-muted/10 px-4 py-3 sm:px-5">
@@ -232,26 +224,44 @@ export function IdeasTopControlBar() {
         ) : null}
 
         <div className="flex flex-wrap gap-1.5">
-          {QUICK_ORDER.map((f) => {
-            const active = activeQuickFilters.includes(f);
-            const Icon = QUICK_ICONS[f];
+          {visibleQuickFilters.map((def) => {
+            const active = activeQuickFilters.includes(def.id);
+            const Icon = IDEA_QUICK_FILTER_ICON_COMPONENTS[def.icon];
             return (
               <Button
-                key={f}
+                key={def.id}
                 type="button"
                 variant={active ? "secondary" : "outline"}
                 size="sm"
                 className={cn("h-7 rounded-full px-2.5 text-[11px]", active && "border-transparent")}
-                onClick={() => toggleQuickFilter(f)}
+                onClick={() => toggleQuickFilter(def.id)}
                 aria-pressed={active}
               >
                 {Icon ? <Icon className="mr-1 h-3 w-3" /> : null}
-                {ui.quickLabels[f]}
+                {getIdeaQuickFilterDisplayLabel(
+                  def,
+                  ui.quickLabels as Record<IdeaBuiltinQuickFilterId, string>,
+                )}
               </Button>
             );
           })}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+            onClick={() => setManageQuickFiltersOpen(true)}
+            aria-label={ui.quickFilterManager.manageButton}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="hidden xl:inline">{ui.quickFilterManager.manageButton}</span>
+          </Button>
         </div>
       </div>
+      <IdeasQuickFiltersDialog
+        open={manageQuickFiltersOpen}
+        onOpenChange={setManageQuickFiltersOpen}
+      />
     </div>
   );
 }

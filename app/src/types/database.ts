@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type { IdeaQuickFilterDefinition } from "@/lib/ideas/quick-filters";
 import type { KnowledgeQuickFilterDefinition } from "@/lib/knowledge/quick-filters";
 import type { OSBuddyShortcutSettings } from "@/lib/os-buddy/os-buddy-shortcuts";
 import type { OSBuddyFreeRoamIntensity } from "@/lib/os-buddy/os-buddy-free-roam";
@@ -74,6 +75,7 @@ export type UserProfile = {
   block_minutes: BlockMinutesOption;
   quick_tasks: QuickTaskDef[] | null;
   knowledge_quick_filters: KnowledgeQuickFilterDefinition[];
+  idea_quick_filters: IdeaQuickFilterDefinition[];
   /** ISO 4217 (uppercase). Finance display + FX base. */
   display_currency: string;
   quick_save_enabled: boolean;
