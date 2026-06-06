@@ -124,9 +124,7 @@ export function CardSelect({
             onKeyDown={(e) => onKeyDown(e, index)}
             whileHover={prefersReduced ? undefined : { y: -1 }}
             whileTap={prefersReduced ? undefined : { scale: 0.99 }}
-            animate={
-              prefersReduced ? undefined : { scale: selected ? 1.005 : 1 }
-            }
+            animate={prefersReduced ? undefined : { scale: 1 }}
             transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
             className={cn(
               "group/card relative flex min-h-[4rem] w-full items-center gap-3 overflow-hidden rounded-xl border px-4 py-3.5 text-left",

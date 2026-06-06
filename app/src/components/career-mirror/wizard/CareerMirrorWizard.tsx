@@ -387,13 +387,18 @@ export function CareerMirrorWizard({
   ) : null;
 
   const inner = (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-x-hidden">
       {finish.status !== "done" ? (
-        <WizardProgress current={stepIndex + 1} total={totalSteps} ui={ui} />
+        <WizardProgress
+          current={stepIndex + 1}
+          total={totalSteps}
+          ui={ui}
+          className={!isDesktop ? "pr-12" : undefined}
+        />
       ) : null}
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pb-4"
       >
         {body}
       </div>
@@ -406,7 +411,7 @@ export function CareerMirrorWizard({
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent
           side="bottom-card"
-          className="h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] p-4 pt-5"
+          className="data-[side=bottom-card]:left-3 data-[side=bottom-card]:right-3 h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] overflow-hidden p-4 pt-5"
         >
           <SheetTitle className="sr-only">{ui.hero.title}</SheetTitle>
           <SheetDescription className="sr-only">
