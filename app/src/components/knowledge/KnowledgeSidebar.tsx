@@ -22,7 +22,7 @@ import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { TagTaxonomyPanel } from "./tags/TagTaxonomyPanel";
 
-const KB_DIRECTORY_WIDTH = 220;
+const KB_DIRECTORY_WIDTH = 248;
 const kbDirectoryTransition = { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const };
 
 function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) {
@@ -96,31 +96,33 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
             <span className="tabular-nums text-[10px] text-muted-foreground">{items.length}</span>
           </button>
 
-          {CONTENT_TYPES.map((type) => {
-            const colors = typeColors[type];
-            const isActive = activeTypeFilters.includes(type);
-            return (
-              <button
-                type="button"
-                key={type}
-                className={cn(
-                  "flex items-center justify-between w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors capitalize",
-                  isActive && "bg-accent font-medium",
-                )}
-                onClick={() => handleTypeClick(type)}
-              >
-                <span className="flex items-center gap-2">
-                  <span>{colors.icon}</span>
-                  <span>{ui.typeLabels[type]}</span>
-                </span>
-                {(typeCounts[type] || 0) > 0 && (
-                  <span className="tabular-nums text-[10px] text-muted-foreground">
-                    {typeCounts[type]}
+          <div className="grid grid-cols-2 gap-1">
+            {CONTENT_TYPES.map((type) => {
+              const colors = typeColors[type];
+              const isActive = activeTypeFilters.includes(type);
+              return (
+                <button
+                  type="button"
+                  key={type}
+                  className={cn(
+                    "flex min-h-8 min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-[11px] leading-tight hover:bg-accent transition-colors",
+                    isActive && "bg-accent font-medium",
+                  )}
+                  onClick={() => handleTypeClick(type)}
+                >
+                  <span className="shrink-0">{colors.icon}</span>
+                  <span className="min-w-0 flex-1 whitespace-normal break-words">
+                    {ui.typeLabels[type]}
                   </span>
-                )}
-              </button>
-            );
-          })}
+                  {(typeCounts[type] || 0) > 0 && (
+                    <span className="shrink-0 tabular-nums text-[10px] text-muted-foreground">
+                      {typeCounts[type]}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <Separator />
@@ -192,7 +194,7 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
 
         <TagTaxonomyPanel onAfterSelect={closeMobileSidebar} />
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-4 lg:hidden">
           <button
             type="button"
             className="w-full rounded-lg border border-border/70 bg-background/80 p-3 text-left shadow-sm transition-colors hover:bg-muted/50 dark:bg-background/40"
@@ -202,7 +204,7 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
             }}
           >
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+              <Sparkles className="h-4 w-4 text-primary" />
               {ui.askKnowledgeBase}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -267,7 +269,7 @@ export function KnowledgeSidebar() {
         >
           <motion.aside
             className={cn(
-              "box-border flex h-full min-h-0 w-[220px] max-w-[220px] flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/25 shadow-sm",
+              "box-border flex h-full min-h-0 w-[248px] max-w-[248px] flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/25 shadow-sm",
               !isDirectoryOpen && "pointer-events-none",
             )}
             style={{ willChange: "transform" }}
@@ -300,7 +302,7 @@ export function KnowledgeSidebar() {
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="flex w-[260px] flex-col gap-0 overflow-hidden p-0"
+          className="flex w-[280px] flex-col gap-0 overflow-hidden p-0"
         >
           <div className="flex shrink-0 items-center justify-between border-b p-4">
             <h2 className="text-sm font-medium">{ui.sidebarTitle}</h2>

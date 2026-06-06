@@ -732,8 +732,9 @@ export function TodayCompanionPanel() {
   const openCaptureSheet = useIdeaCaptureStore((s) => s.openSheet);
   const showBubble = useOSBuddyStore((s) => s.showBubble);
   const isRestingInSidebar = useOSBuddyStore((s) => s.isRestingInSidebar);
-  const [shortcutIds, setShortcutIds] = useState<QuickLaunchId[]>(DEFAULT_QUICK_LAUNCH);
-  const [todayMetricIds, setTodayMetricIds] = useState<TodayMetricId[]>(DEFAULT_TODAY_METRICS);
+  const [shortcutIds, setShortcutIds] = useState<QuickLaunchId[]>([]);
+  const [todayMetricIds, setTodayMetricIds] = useState<TodayMetricId[]>([]);
+  const [panelPreferencesReady, setPanelPreferencesReady] = useState(false);
   const [todayCustomizerOpen, setTodayCustomizerOpen] = useState(false);
   const [quickCustomizerOpen, setQuickCustomizerOpen] = useState(false);
   const todayDateLabel = useMemo(
@@ -745,6 +746,7 @@ export function TodayCompanionPanel() {
     const frame = window.requestAnimationFrame(() => {
       setShortcutIds(resolveShortcutIds());
       setTodayMetricIds(resolveTodayMetricIds());
+      setPanelPreferencesReady(true);
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -809,7 +811,8 @@ export function TodayCompanionPanel() {
     [focusValue, gardenValue, locale, nextValue, taskValue, today.context?.load],
   );
 
-  const todayRows = todayMetricIds
+  const activeTodayMetricIds = panelPreferencesReady ? todayMetricIds : DEFAULT_TODAY_METRICS;
+  const todayRows = activeTodayMetricIds
     .map(metricById)
     .filter((option): option is TodayMetricOption => Boolean(option))
     .map((option) => ({
@@ -835,7 +838,8 @@ export function TodayCompanionPanel() {
     return isZh(locale) ? `${name} 喺度陪你。` : `${name} is here with you.`;
   }, [locale, name, nextItem, today.context?.free_windows, today.context?.overdue_count]);
 
-  const quickLaunchOptions = shortcutIds
+  const activeShortcutIds = panelPreferencesReady ? shortcutIds : DEFAULT_QUICK_LAUNCH;
+  const quickLaunchOptions = activeShortcutIds
     .map(optionById)
     .filter((option): option is QuickLaunchOption => Boolean(option));
 
@@ -867,6 +871,10 @@ export function TodayCompanionPanel() {
       { durationMs: 1800, force: true },
     );
   };
+
+  if (!panelPreferencesReady) {
+    return null;
+  }
 
   return (
     <div
@@ -965,18 +973,18 @@ export function TodayCompanionPanel() {
       </div>
 
       <TodayPanelCustomizer
-        key={todayMetricIds.join(":")}
+        key={activeTodayMetricIds.join(":")}
         open={todayCustomizerOpen}
-        selected={todayMetricIds}
+        selected={activeTodayMetricIds}
         locale={locale}
         onOpenChange={setTodayCustomizerOpen}
         onSave={saveTodayMetrics}
       />
 
       <QuickLaunchCustomizer
-        key={shortcutIds.join(":")}
+        key={activeShortcutIds.join(":")}
         open={quickCustomizerOpen}
-        selected={shortcutIds}
+        selected={activeShortcutIds}
         locale={locale}
         onOpenChange={setQuickCustomizerOpen}
         onSave={saveShortcuts}

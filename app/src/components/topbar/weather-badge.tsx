@@ -24,22 +24,38 @@ type Props = {
   className?: string;
   /** Hide the description on narrow viewports. */
   compact?: boolean;
+  /** Phone-sized badge: icon + terse value only. */
+  mobile?: boolean;
 };
 
-export function WeatherBadge({ className, compact = false }: Props) {
+export function WeatherBadge({
+  className,
+  compact = false,
+  mobile = false,
+}: Props) {
   const { result } = useWeather();
   const localeSlug = useLocaleSlug();
   const weatherHref = withLocalePrefix(localeSlug, "/weather");
+  const badgeClassName = cn(
+    "topbar-weather-badge",
+    mobile && "topbar-weather-badge--mobile",
+    className
+  );
 
   if (!result) {
     return (
       <Link
         href={weatherHref}
         prefetch={false}
-        className={cn("topbar-weather-badge", className)}
+        className={badgeClassName}
         aria-label="Weather loading — open Weather page"
       >
-        <span className="inline-flex items-center gap-2 animate-pulse">
+        <span
+          className={cn(
+            "inline-flex items-center animate-pulse",
+            mobile ? "gap-1" : "gap-2"
+          )}
+        >
           <Cloud className="h-4 w-4 opacity-85" />
           <span className="opacity-85">—</span>
         </span>
@@ -52,13 +68,21 @@ export function WeatherBadge({ className, compact = false }: Props) {
       <Link
         href={weatherHref}
         prefetch={false}
-        className={cn("topbar-weather-badge", className)}
+        className={badgeClassName}
         aria-label="Weather unavailable — open Weather page"
         title="Weather unavailable"
       >
         <CloudOff className="h-4 w-4 opacity-85" />
-        <span className="hidden opacity-90 sm:inline">Weather unavailable</span>
-        <span className="opacity-90 sm:hidden">N/A</span>
+        {mobile ? (
+          <span className="opacity-90">N/A</span>
+        ) : (
+          <>
+            <span className="hidden opacity-90 sm:inline">
+              Weather unavailable
+            </span>
+            <span className="opacity-90 sm:hidden">N/A</span>
+          </>
+        )}
       </Link>
     );
   }
@@ -73,7 +97,7 @@ export function WeatherBadge({ className, compact = false }: Props) {
     <Link
       href={weatherHref}
       prefetch={false}
-      className={cn("topbar-weather-badge", className)}
+      className={badgeClassName}
       aria-label={`Weather: ${result.description}, ${result.tempC} degrees Celsius — open Weather page`}
       title={result.city ? `${result.city} • ${result.description}` : result.description}
     >

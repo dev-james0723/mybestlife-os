@@ -282,6 +282,237 @@ export function buildDocOracleChunkRetrievalDocuments(params: {
     .filter((doc): doc is RetrievalDocumentInput => Boolean(doc));
 }
 
+export type DocOracleAnalysisRow = {
+  id: string;
+  document_id: string;
+  document_title?: string | null;
+  document_type?: string | null;
+  language?: string | null;
+  total_pages?: number | null;
+  visual_density?: string | null;
+  extraction_risk?: string | null;
+  summary?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type DocOraclePageRow = {
+  id: string;
+  document_id: string;
+  analysis_id: string;
+  page_number: number;
+  page_label?: string | null;
+  page_type?: string | null;
+  raw_text?: string | null;
+  markdown?: string | null;
+  page_summary?: string | null;
+  interpreted_page_meaning?: string | null;
+  keywords?: unknown;
+  linked_terms?: unknown;
+  linked_sections?: unknown;
+  has_visual_assets?: boolean | null;
+  suggested_questions?: unknown;
+  extraction_risk?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type DocOracleSectionRow = {
+  id: string;
+  document_id: string;
+  analysis_id: string;
+  title: string;
+  level?: number | null;
+  page_start?: number | null;
+  page_end?: number | null;
+  summary?: string | null;
+  keywords?: unknown;
+  representative_pages?: unknown;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type DocOracleVisualAssetRow = {
+  id: string;
+  document_id: string;
+  analysis_id: string;
+  source_page_number?: number | null;
+  type?: string | null;
+  semantic_category?: string | null;
+  title?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  extracted_labels?: unknown;
+  retrieval_tags?: unknown;
+  related_terms?: unknown;
+  related_sections?: unknown;
+  confidence?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export function buildDocOracleRetrievalDocuments(params: {
+  userId: string;
+  item: KnowledgeItem;
+  analyses?: DocOracleAnalysisRow[];
+  pages?: DocOraclePageRow[];
+  sections?: DocOracleSectionRow[];
+  visualAssets?: DocOracleVisualAssetRow[];
+}): RetrievalDocumentInput[] {
+  const docs: RetrievalDocumentInput[] = [];
+
+  for (const analysis of params.analyses ?? []) {
+    docs.push(
+      ...buildGenericRetrievalDocuments({
+        userId: params.userId,
+        sourceDomain: "doc_oracle",
+        sourceTable: "document_analyses",
+        sourceId: analysis.id,
+        documentKind: "doc_oracle_analysis_summary",
+        title: analysis.document_title ?? params.item.title,
+        body: [
+          analysis.document_title ? `Document: ${analysis.document_title}` : null,
+          analysis.document_type ? `Type: ${analysis.document_type}` : null,
+          analysis.language ? `Language: ${analysis.language}` : null,
+          analysis.total_pages != null ? `Pages: ${analysis.total_pages}` : null,
+          analysis.visual_density ? `Visual density: ${analysis.visual_density}` : null,
+          analysis.extraction_risk ? `Extraction risk: ${analysis.extraction_risk}` : null,
+          analysis.summary ? `Summary:\n${analysis.summary}` : null,
+        ]
+          .filter((line): line is string => Boolean(line))
+          .join("\n"),
+        sourceMetadata: {
+          documentId: analysis.document_id,
+          status: analysis.status,
+          createdAt: analysis.created_at,
+          updatedAt: analysis.updated_at,
+        },
+      }),
+    );
+  }
+
+  for (const page of params.pages ?? []) {
+    const tags = uniq([
+      ...jsonStringArray(page.keywords),
+      ...jsonStringArray(page.linked_terms),
+      ...jsonStringArray(page.linked_sections),
+    ]);
+    docs.push(
+      ...buildGenericRetrievalDocuments({
+        userId: params.userId,
+        sourceDomain: "doc_oracle",
+        sourceTable: "document_pages",
+        sourceId: page.id,
+        documentKind: "doc_oracle_page",
+        title: `${params.item.title} - page ${page.page_number}`,
+        body: [
+          page.page_label ? `Page label: ${page.page_label}` : null,
+          page.page_type ? `Page type: ${page.page_type}` : null,
+          page.page_summary ? `Summary:\n${page.page_summary}` : null,
+          page.interpreted_page_meaning
+            ? `Meaning:\n${page.interpreted_page_meaning}`
+            : null,
+          page.markdown ? `Markdown:\n${page.markdown}` : null,
+          page.raw_text ? `Raw text:\n${page.raw_text}` : null,
+          jsonStringArray(page.suggested_questions).length
+            ? `Suggested questions:\n${jsonStringArray(page.suggested_questions).join("\n")}`
+            : null,
+        ]
+          .filter((line): line is string => Boolean(line))
+          .join("\n\n"),
+        pageNumber: page.page_number,
+        sectionPath: page.page_label ?? null,
+        sourceMetadata: {
+          analysisId: page.analysis_id,
+          documentId: page.document_id,
+          pageType: page.page_type,
+          hasVisualAssets: Boolean(page.has_visual_assets),
+          extractionRisk: page.extraction_risk,
+          createdAt: page.created_at,
+          updatedAt: page.updated_at,
+        },
+        tags,
+      }),
+    );
+  }
+
+  for (const section of params.sections ?? []) {
+    docs.push(
+      ...buildGenericRetrievalDocuments({
+        userId: params.userId,
+        sourceDomain: "doc_oracle",
+        sourceTable: "document_sections",
+        sourceId: section.id,
+        documentKind: "doc_oracle_section",
+        title: section.title || params.item.title,
+        body: [
+          `Section: ${section.title}`,
+          section.level != null ? `Level: ${section.level}` : null,
+          section.page_start != null ? `Starts page: ${section.page_start}` : null,
+          section.page_end != null ? `Ends page: ${section.page_end}` : null,
+          section.summary ? `Summary:\n${section.summary}` : null,
+          jsonStringArray(section.representative_pages).length
+            ? `Representative pages: ${jsonStringArray(section.representative_pages).join(", ")}`
+            : null,
+        ]
+          .filter((line): line is string => Boolean(line))
+          .join("\n"),
+        pageNumber: section.page_start ?? null,
+        sectionPath: section.title,
+        sourceMetadata: {
+          analysisId: section.analysis_id,
+          documentId: section.document_id,
+          pageEnd: section.page_end,
+          createdAt: section.created_at,
+          updatedAt: section.updated_at,
+        },
+        tags: jsonStringArray(section.keywords),
+      }),
+    );
+  }
+
+  for (const visual of params.visualAssets ?? []) {
+    const tags = uniq([
+      ...jsonStringArray(visual.retrieval_tags),
+      ...jsonStringArray(visual.extracted_labels),
+      ...jsonStringArray(visual.related_terms),
+      ...jsonStringArray(visual.related_sections),
+    ]);
+    docs.push(
+      ...buildGenericRetrievalDocuments({
+        userId: params.userId,
+        sourceDomain: "doc_oracle",
+        sourceTable: "document_visual_assets",
+        sourceId: visual.id,
+        documentKind: "doc_oracle_visual",
+        title: visual.title ?? `${params.item.title} visual`,
+        body: [
+          visual.title ? `Visual: ${visual.title}` : null,
+          visual.type ? `Type: ${visual.type}` : null,
+          visual.semantic_category ? `Category: ${visual.semantic_category}` : null,
+          visual.description ? `Description:\n${visual.description}` : null,
+          tags.length ? `Retrieval tags: ${tags.join(", ")}` : null,
+        ]
+          .filter((line): line is string => Boolean(line))
+          .join("\n"),
+        sourceUrl: visual.image_url ?? params.item.sourceUrl ?? null,
+        pageNumber: visual.source_page_number ?? null,
+        sourceMetadata: {
+          analysisId: visual.analysis_id,
+          documentId: visual.document_id,
+          confidence: visual.confidence,
+          createdAt: visual.created_at,
+          updatedAt: visual.updated_at,
+        },
+        tags,
+      }),
+    );
+  }
+
+  return docs;
+}
+
 export type GenericRetrievalDocumentSource = {
   userId: string;
   sourceDomain: RetrievalSourceDomain;

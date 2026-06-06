@@ -131,7 +131,7 @@ function TopbarInnerRow() {
       <div className="flex min-h-0 min-w-0 flex-1 items-center gap-1.5 overflow-x-hidden px-3">
         <Link
           href={dashboardHref}
-          className="flex min-h-11 min-w-0 items-center gap-2 text-foreground"
+          className="topbar-brand-pill flex min-h-11 min-w-0 items-center gap-2 text-foreground"
         >
           <LifeOsLogo size="sm" className="shrink-0" />
           <span className="truncate text-sm font-bold tracking-tight sm:text-base">
@@ -140,12 +140,9 @@ function TopbarInnerRow() {
         </Link>
         <div className="flex-1" />
         <EnterStagger enabled={isGlass}>
-          {/* Weather: on very narrow phones we hide the badge entirely to
-              avoid wrapping — reappears from the `sm:` breakpoint. */}
+          {/* Phone weather stays terse: condition icon + temperature only. */}
           <EnterItem enabled={isGlass}>
-            <div className="hidden sm:block">
-              <WeatherBadge compact />
-            </div>
+            <WeatherBadge compact mobile />
           </EnterItem>
           <EnterItem enabled={isGlass}>
             <SearchIconTrigger />

@@ -43,7 +43,7 @@ export async function ingestGitHubRepo(url: string): Promise<NormalizedIngest> {
       domain: "github.com",
       extractionStatus: "failed",
       askEnabled: true,
-      contentType: "file",
+      contentType: "repository",
     });
   }
 
@@ -108,7 +108,7 @@ export async function ingestGitHubRepo(url: string): Promise<NormalizedIngest> {
     extractionStatus,
     transcriptStatus: "not_applicable",
     askEnabled: true,
-    contentType: "file",
+    contentType: "repository",
     displayModeDefault: "preview",
   };
 }

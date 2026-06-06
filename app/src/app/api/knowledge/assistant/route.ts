@@ -143,6 +143,7 @@ Rules:
 - Use only the ASK YOUR KB RETRIEVED EVIDENCE in the user message.
 - Cite only evidence IDs that appear in the evidence block, such as R1 or R2.
 - If evidence is insufficient, say that clearly and suggest how to narrow the search or add sources.
+- If sources outside Knowledge Base or Doc Oracle materially change the answer, include a short "Connected context" section naming those source domains.
 - Do not invent titles, URLs, dates, page numbers, or source domains.
 - Return strict JSON only: {"answer":"markdown string","citations":[{"resultId":"R1","quote":"short exact supporting phrase"}]}.`;
 }
@@ -279,6 +280,7 @@ export async function POST(req: Request) {
         limit: retrieveBody.limit,
         sourceDomains: retrieveBody.sourceDomains,
         sessionGrantedDomains: retrieveBody.sessionGrantedDomains,
+        knowledgeItemIds: retrieveBody.knowledgeItemIds,
         referenceDateIso,
         persistRun: true,
       });

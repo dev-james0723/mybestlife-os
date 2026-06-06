@@ -140,7 +140,7 @@ export async function ingestSocialPost(
     extractionStatus,
     transcriptStatus: "not_applicable",
     askEnabled: false, // social posts never expose AI Ask
-    contentType: "article",
+    contentType: "social",
   };
 }
 

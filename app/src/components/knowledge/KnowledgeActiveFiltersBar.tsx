@@ -9,6 +9,11 @@ import { getTagBreadcrumb } from "@/lib/knowledge/tags/build-tree";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import {
+  getActiveKnowledgeQuickFilterDefinitions,
+  getKnowledgeQuickFilterDisplayLabel,
+  type KnowledgeBuiltinQuickFilterId,
+} from "@/lib/knowledge/quick-filters";
 
 export function KnowledgeActiveFiltersBar({ className }: { className?: string }) {
   const language = useAppStore((s) => s.language);
@@ -21,7 +26,8 @@ export function KnowledgeActiveFiltersBar({ className }: { className?: string })
   const activeCategoryFilters = useKnowledgeStore((s) => s.activeCategoryFilters);
   const clearCategoryFilters = useKnowledgeStore((s) => s.clearCategoryFilters);
   const activeQuickFilters = useKnowledgeStore((s) => s.activeQuickFilters);
-  const clearQuickFilters = useKnowledgeStore((s) => s.clearQuickFilters);
+  const quickFilterDefinitions = useKnowledgeStore((s) => s.quickFilterDefinitions);
+  const toggleQuickFilter = useKnowledgeStore((s) => s.toggleQuickFilter);
   const activeSmartCollectionId = useKnowledgeStore((s) => s.activeSmartCollectionId);
   const setActiveSmartCollectionId = useKnowledgeStore((s) => s.setActiveSmartCollectionId);
   const smartCollections = useKnowledgeStore((s) => s.smartCollections);
@@ -47,12 +53,17 @@ export function KnowledgeActiveFiltersBar({ className }: { className?: string })
     Boolean(activeSmartCollectionId) ||
     Boolean(activeTagId);
 
+  const activeQuickFilterDefinitions = getActiveKnowledgeQuickFilterDefinitions(
+    activeQuickFilters,
+    quickFilterDefinitions,
+  );
+
   if (!hasFilters) return null;
 
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 border-b border-border/50 bg-muted/15 px-4 py-2.5 sm:px-5",
+        "flex flex-wrap items-center gap-2 border-b border-border/50 bg-muted/15 py-2.5 pl-4 pr-20 sm:px-5",
         className,
       )}
       role="region"
@@ -87,13 +98,17 @@ export function KnowledgeActiveFiltersBar({ className }: { className?: string })
           />
         ) : null}
 
-        {activeQuickFilters.length > 0 ? (
+        {activeQuickFilterDefinitions.map((def) => (
           <FilterChip
-            label={ui.formatActiveQuick(activeQuickFilters.length)}
-            onRemove={() => clearQuickFilters()}
+            key={def.id}
+            label={getKnowledgeQuickFilterDisplayLabel(
+              def,
+              ui.quickFilters as Record<KnowledgeBuiltinQuickFilterId, string>,
+            )}
+            onRemove={() => toggleQuickFilter(def.id)}
             removeAriaLabel={ui.clearAllFilters}
           />
-        ) : null}
+        ))}
 
         {activeCollection ? (
           <FilterChip

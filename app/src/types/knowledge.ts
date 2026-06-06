@@ -1,4 +1,20 @@
-export type ContentType = "podcast" | "article" | "video" | "file" | "photo" | "note";
+export type ContentType =
+  | "article"
+  | "link"
+  | "video"
+  | "social"
+  | "podcast"
+  | "document"
+  | "paper"
+  | "book"
+  | "code"
+  | "repository"
+  | "dataset"
+  | "presentation"
+  | "photo"
+  | "quote"
+  | "note"
+  | "file";
 
 export type {
   ThumbnailStyle,
@@ -144,15 +160,150 @@ export function mapRowToCollection(row: Record<string, unknown>): SmartCollectio
   };
 }
 
-export const CONTENT_TYPES: ContentType[] = ["podcast", "article", "video", "file", "photo", "note"];
+export const CONTENT_TYPES: ContentType[] = [
+  "article",
+  "link",
+  "video",
+  "social",
+  "podcast",
+  "document",
+  "paper",
+  "book",
+  "code",
+  "repository",
+  "dataset",
+  "presentation",
+  "photo",
+  "quote",
+  "note",
+  "file",
+];
+
+export function isContentType(value: unknown): value is ContentType {
+  return typeof value === "string" && (CONTENT_TYPES as readonly string[]).includes(value);
+}
+
+export function normalizeContentType(value: unknown): ContentType {
+  return isContentType(value) ? value : "file";
+}
+
+export function contentTypeForSourceType(sourceType: SourceType | undefined | null): ContentType {
+  switch (sourceType) {
+    case "youtube_video":
+    case "youtube_shorts":
+      return "video";
+    case "social_x_post":
+    case "social_facebook_post":
+    case "social_facebook_video_post":
+    case "social_instagram_post":
+    case "social_instagram_reel":
+    case "social_threads_post":
+    case "social_reddit_post":
+      return "social";
+    case "github_repository":
+      return "repository";
+    case "html_input":
+    case "code_python":
+    case "code_javascript":
+    case "code_typescript":
+    case "code_java":
+    case "code_php":
+    case "code_css":
+    case "code_sql":
+    case "code_bash":
+    case "code_json":
+      return "code";
+    case "markdown_input":
+    case "plain_text":
+      return "note";
+    case "voice_memo":
+      return "podcast";
+    case "url_other":
+      return "link";
+    case "article_url":
+      return "article";
+    case "file_upload":
+    default:
+      return "file";
+  }
+}
+
+export function contentTypeForUrlHint(rawUrl: string, fallback: ContentType = "article"): ContentType {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return fallback;
+  }
+
+  const domain = url.hostname.replace(/^www\./, "").toLowerCase();
+  const lower = url.toString().toLowerCase();
+
+  if (
+    domain.includes("arxiv.org") ||
+    domain.includes("doi.org") ||
+    domain.includes("pubmed.ncbi.nlm.nih.gov") ||
+    domain.includes("semanticscholar.org") ||
+    domain.includes("biorxiv.org") ||
+    domain.includes("medrxiv.org") ||
+    domain.includes("ssrn.com")
+  ) {
+    return "paper";
+  }
+  if (domain.includes("books.google.") || domain.includes("goodreads.com")) {
+    return "book";
+  }
+  if (domain.includes("docs.google.com")) {
+    if (lower.includes("/presentation/")) return "presentation";
+    if (lower.includes("/spreadsheets/")) return "dataset";
+    return "document";
+  }
+  if (
+    domain.includes("youtube.com") ||
+    domain.includes("youtu.be") ||
+    domain.includes("vimeo.com")
+  ) {
+    return "video";
+  }
+  if (
+    domain.includes("spotify.com") ||
+    domain.includes("podcasts.apple.com") ||
+    domain.includes("overcast.fm")
+  ) {
+    return "podcast";
+  }
+  if (/\.(mp4|mov|avi|webm|mkv|m4v|mpeg|mpg)(\?|$)/.test(lower)) return "video";
+  if (/\.(mp3|wav|ogg|m4a|aac|flac|opus)(\?|$)/.test(lower)) return "podcast";
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|svg|heic|heif|tif|tiff)(\?|$)/.test(lower)) return "photo";
+  if (/\.(pdf|doc|docx|rtf|txt|md|markdown)(\?|$)/.test(lower)) return "document";
+  if (/\.(ppt|pptx|key)(\?|$)/.test(lower)) return "presentation";
+  if (/\.(csv|tsv|xls|xlsx|numbers|jsonl)(\?|$)/.test(lower)) return "dataset";
+  if (/\.(epub|mobi|azw3)(\?|$)/.test(lower)) return "book";
+  if (/\.(js|jsx|ts|tsx|py|rb|go|rs|java|php|css|sql|sh|bash|json|yaml|yml)(\?|$)/.test(lower)) {
+    return "code";
+  }
+  if (/\.(zip|rar|7z|tar|gz|tgz)(\?|$)/.test(lower)) return "file";
+
+  return fallback;
+}
 
 export const typeColors: Record<ContentType, {
   bg: string; text: string; border: string; darkBg: string; darkText: string; icon: string;
 }> = {
-  podcast:  { bg: "bg-violet-50",  text: "text-violet-700",  border: "border-violet-200",  darkBg: "dark:bg-violet-900/40",  darkText: "dark:text-violet-300",  icon: "🎙️" },
   article:  { bg: "bg-teal-50",    text: "text-teal-700",    border: "border-teal-200",    darkBg: "dark:bg-teal-900/40",    darkText: "dark:text-teal-300",    icon: "📄" },
+  link:     { bg: "bg-sky-50",     text: "text-sky-700",     border: "border-sky-200",     darkBg: "dark:bg-sky-900/40",     darkText: "dark:text-sky-300",     icon: "🔗" },
   video:    { bg: "bg-orange-50",   text: "text-orange-700",  border: "border-orange-200",  darkBg: "dark:bg-orange-900/40",  darkText: "dark:text-orange-300",  icon: "🎬" },
-  file:     { bg: "bg-blue-50",     text: "text-blue-700",    border: "border-blue-200",    darkBg: "dark:bg-blue-900/40",    darkText: "dark:text-blue-300",    icon: "📁" },
+  social:   { bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-200",    darkBg: "dark:bg-rose-900/40",    darkText: "dark:text-rose-300",    icon: "💬" },
+  podcast:  { bg: "bg-violet-50",  text: "text-violet-700",  border: "border-violet-200",  darkBg: "dark:bg-violet-900/40",  darkText: "dark:text-violet-300",  icon: "🎙️" },
+  document: { bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200",    darkBg: "dark:bg-blue-900/40",    darkText: "dark:text-blue-300",    icon: "📑" },
+  paper:    { bg: "bg-cyan-50",    text: "text-cyan-700",    border: "border-cyan-200",    darkBg: "dark:bg-cyan-900/40",    darkText: "dark:text-cyan-300",    icon: "🔬" },
+  book:     { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", darkBg: "dark:bg-emerald-900/40", darkText: "dark:text-emerald-300", icon: "📚" },
+  code:     { bg: "bg-indigo-50",  text: "text-indigo-700",  border: "border-indigo-200",  darkBg: "dark:bg-indigo-900/40",  darkText: "dark:text-indigo-300",  icon: "💻" },
+  repository: { bg: "bg-zinc-100", text: "text-zinc-700", border: "border-zinc-200", darkBg: "dark:bg-zinc-800/60", darkText: "dark:text-zinc-200", icon: "🧩" },
+  dataset:  { bg: "bg-lime-50",    text: "text-lime-700",    border: "border-lime-200",    darkBg: "dark:bg-lime-900/40",    darkText: "dark:text-lime-300",    icon: "📊" },
+  presentation: { bg: "bg-fuchsia-50", text: "text-fuchsia-700", border: "border-fuchsia-200", darkBg: "dark:bg-fuchsia-900/40", darkText: "dark:text-fuchsia-300", icon: "📽️" },
   photo:    { bg: "bg-amber-50",    text: "text-amber-700",   border: "border-amber-200",   darkBg: "dark:bg-amber-900/40",   darkText: "dark:text-amber-300",   icon: "📷" },
+  quote:    { bg: "bg-stone-100",   text: "text-stone-700",   border: "border-stone-200",   darkBg: "dark:bg-stone-800/60",   darkText: "dark:text-stone-200",   icon: "❞" },
   note:     { bg: "bg-gray-50",     text: "text-gray-600",    border: "border-gray-200",    darkBg: "dark:bg-gray-800/40",    darkText: "dark:text-gray-400",    icon: "📝" },
+  file:     { bg: "bg-slate-50",    text: "text-slate-700",   border: "border-slate-200",   darkBg: "dark:bg-slate-800/60",   darkText: "dark:text-slate-300",   icon: "📁" },
 };

@@ -18,12 +18,13 @@ import { KnowledgeDetailSheet } from "./KnowledgeDetailSheet";
 import { AddKnowledgeModal } from "./AddKnowledgeModal";
 import { PageShell } from "@/components/shared/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { OSControl, OSIconControl } from "@/components/ui/os-primitives";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Sparkles } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import { useProfile } from "@/hooks/use-settings";
+import { normalizeKnowledgeQuickFilters } from "@/lib/knowledge/quick-filters";
 
 interface KnowledgeLayoutProps {
   initialItems: KnowledgeItem[];
@@ -51,6 +52,9 @@ export function KnowledgeLayout({
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
   const hydrate = useKnowledgeStore((s) => s.hydrate);
+  const setQuickFilterDefinitions = useKnowledgeStore(
+    (s) => s.setQuickFilterDefinitions,
+  );
   const isAIPanelOpen = useKnowledgeStore((s) => s.isAIPanelOpen);
   const isAddModalOpen = useKnowledgeStore((s) => s.isAddModalOpen);
   const selectedItemId = useKnowledgeStore((s) => s.selectedItemId);
@@ -59,10 +63,17 @@ export function KnowledgeLayout({
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const toggleMobileSidebar = useKnowledgeStore((s) => s.toggleMobileSidebar);
   const currentView = useKnowledgeStore((s) => s.currentView);
+  const profile = useProfile();
 
   useEffect(() => {
     hydrate(initialItems, initialCollections);
   }, [hydrate, initialItems, initialCollections]);
+
+  useEffect(() => {
+    setQuickFilterDefinitions(
+      normalizeKnowledgeQuickFilters(profile.data?.knowledge_quick_filters),
+    );
+  }, [profile.data?.knowledge_quick_filters, setQuickFilterDefinitions]);
 
   useEffect(() => {
     // Constellation View has manual node dragging / firework layout.
@@ -308,7 +319,6 @@ export function KnowledgeLayout({
                     <>
                       <KnowledgeTopControlBar />
                       <KnowledgeActiveFiltersBar />
-                      <Separator />
                     </>
                   )}
                   <KnowledgeContent userId={userId} />

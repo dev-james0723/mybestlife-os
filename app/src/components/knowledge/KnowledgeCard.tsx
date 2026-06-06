@@ -67,6 +67,11 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
   const relevance = activeSearchQuery.trim()
     ? scoreKnowledgeItem(item, activeSearchQuery, smartCollections)
     : null;
+  const relevanceReason =
+    relevance?.reasons[0] ??
+    relevance?.matchedConcepts[0] ??
+    relevance?.matchedKeywords[0] ??
+    null;
 
   return (
     <>
@@ -173,9 +178,16 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
         </h3>
 
         {relevance ? (
-          <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-            <span className="tabular-nums">{relevance.normalizedScore}% match</span>
+          <div className="space-y-0.5 rounded-md border border-primary/15 bg-primary/5 px-2 py-1 text-[10px] leading-4 text-primary">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+              <span className="tabular-nums">{relevance.normalizedScore}% match</span>
+            </div>
+            {relevanceReason ? (
+              <p className="line-clamp-1 text-primary/80">
+                {ui.inquiryAgent.matchedBecause}: {relevanceReason}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

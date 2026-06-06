@@ -101,7 +101,7 @@ export function ClockPill({ className }: { className?: string }) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "topbar-clock-trigger",
-          isMobile && "!h-11 !w-11 justify-center !px-0"
+          isMobile && "topbar-mobile-icon-trigger"
         )}
       >
         <Clock className="h-4 w-4 opacity-85" />

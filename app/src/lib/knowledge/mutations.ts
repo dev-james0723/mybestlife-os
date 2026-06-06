@@ -7,6 +7,7 @@ import {
   type ContentType,
   type KnowledgeItem,
   type ThumbnailStyle,
+  contentTypeForSourceType,
   normalizeThumbnailStyle,
   parseThumbnailStyle,
 } from "@/types/knowledge";
@@ -711,7 +712,7 @@ export async function addKnowledgeFromUserSnapshot(
     extractionStatus: "success",
     transcriptStatus: "not_applicable",
     askEnabled: false,
-    contentType: "article",
+    contentType: contentTypeForSourceType(classification.sourceType),
     renderMode: "user_snapshot",
     previewStatus: "user_snapshot_success",
     checkedAt: new Date().toISOString(),
@@ -1889,13 +1890,41 @@ function inferContentType(ext: string): import("@/types/knowledge").ContentType 
     svg: "photo",
     heic: "photo",
     heif: "photo",
-    pdf: "file",
-    doc: "file",
-    docx: "file",
-    txt: "file",
-    md: "file",
-    csv: "file",
-    xlsx: "file",
+    pdf: "document",
+    doc: "document",
+    docx: "document",
+    rtf: "document",
+    txt: "document",
+    md: "document",
+    markdown: "document",
+    epub: "book",
+    mobi: "book",
+    azw3: "book",
+    csv: "dataset",
+    tsv: "dataset",
+    xls: "dataset",
+    xlsx: "dataset",
+    numbers: "dataset",
+    ppt: "presentation",
+    pptx: "presentation",
+    key: "presentation",
+    js: "code",
+    jsx: "code",
+    ts: "code",
+    tsx: "code",
+    py: "code",
+    rb: "code",
+    go: "code",
+    rs: "code",
+    java: "code",
+    php: "code",
+    css: "code",
+    sql: "code",
+    sh: "code",
+    bash: "code",
+    json: "code",
+    yaml: "code",
+    yml: "code",
   };
   return map[ext] ?? "file";
 }
@@ -1905,15 +1934,28 @@ function mapContentTypeToCategory(
 ): import("@/types/knowledge-source").KnowledgeCategory {
   switch (contentType) {
     case "article":
+    case "link":
+    case "paper":
+    case "book":
       return "article";
     case "video":
       return "video";
+    case "social":
+      return "social_media";
     case "podcast":
       return "audio";
     case "photo":
       return "image";
+    case "code":
+      return "code";
+    case "repository":
+      return "repository";
+    case "document":
+    case "dataset":
+    case "presentation":
     case "file":
       return "file";
+    case "quote":
     case "note":
     default:
       return "note";

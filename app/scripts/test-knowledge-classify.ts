@@ -31,6 +31,10 @@ import {
   parseKnowledgeRawContent,
   encodeCodeContent,
 } from "../src/lib/knowledge/code-content.ts";
+import {
+  contentTypeForSourceType,
+  contentTypeForUrlHint,
+} from "../src/types/knowledge.ts";
 
 // ── Tiny harness ─────────────────────────────────────────────────────────
 
@@ -314,6 +318,24 @@ group("labels", () => {
     assert.equal(getCategoryLabel("social_media"), "Social Media");
     assert.equal(getCategoryLabel("repository"), "Repositories");
     assert.equal(getCategoryLabel(undefined), "Notes");
+  });
+});
+
+group("content type routing", () => {
+  check("source types route into broader upload-style buckets", () => {
+    assert.equal(contentTypeForSourceType("social_x_post"), "social");
+    assert.equal(contentTypeForSourceType("github_repository"), "repository");
+    assert.equal(contentTypeForSourceType("code_python"), "code");
+    assert.equal(contentTypeForSourceType("youtube_video"), "video");
+    assert.equal(contentTypeForSourceType("voice_memo"), "podcast");
+  });
+
+  check("URL hints route common user uploads into useful buckets", () => {
+    assert.equal(contentTypeForUrlHint("https://arxiv.org/abs/1706.03762"), "paper");
+    assert.equal(contentTypeForUrlHint("https://example.com/report.pdf"), "document");
+    assert.equal(contentTypeForUrlHint("https://example.com/model.py"), "code");
+    assert.equal(contentTypeForUrlHint("https://example.com/metrics.csv"), "dataset");
+    assert.equal(contentTypeForUrlHint("https://docs.google.com/presentation/d/abc"), "presentation");
   });
 });
 

@@ -425,6 +425,66 @@ html.focus-mode [data-focus-hideable] {
   user-select: none;
 }
 
+.today-companion-panel {
+  animation: today-companion-panel-enter 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: 50% 100%;
+}
+
+.today-companion-panel__shell {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.today-companion-panel__shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.today-companion-panel__shell::before,
+.today-companion-panel__shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.today-companion-panel__shell::before {
+  z-index: 0;
+  background:
+    linear-gradient(to right, rgba(34, 211, 238, 0.62) 0 1.1rem, transparent 1.1rem) left top / 2.6rem 1px no-repeat,
+    linear-gradient(to bottom, rgba(34, 211, 238, 0.62) 0 1.1rem, transparent 1.1rem) left top / 1px 2.6rem no-repeat,
+    linear-gradient(to left, rgba(16, 185, 129, 0.55) 0 1.1rem, transparent 1.1rem) right top / 2.6rem 1px no-repeat,
+    linear-gradient(to bottom, rgba(16, 185, 129, 0.55) 0 1.1rem, transparent 1.1rem) right top / 1px 2.6rem no-repeat,
+    linear-gradient(to right, rgba(16, 185, 129, 0.42) 0 1rem, transparent 1rem) left bottom / 2.5rem 1px no-repeat,
+    linear-gradient(to top, rgba(16, 185, 129, 0.42) 0 1rem, transparent 1rem) left bottom / 1px 2.5rem no-repeat,
+    linear-gradient(to left, rgba(34, 211, 238, 0.44) 0 1rem, transparent 1rem) right bottom / 2.5rem 1px no-repeat,
+    linear-gradient(to top, rgba(34, 211, 238, 0.44) 0 1rem, transparent 1rem) right bottom / 1px 2.5rem no-repeat,
+    linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px) 0 0 / 100% 0.9rem,
+    linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px) 0 0 / 0.9rem 100%,
+    radial-gradient(circle at 15% 8%, rgba(34, 211, 238, 0.2), transparent 32%),
+    radial-gradient(circle at 85% 92%, rgba(16, 185, 129, 0.18), transparent 34%);
+  opacity: 0;
+  animation: today-companion-grid-arm 820ms ease-out 80ms both;
+}
+
+.today-companion-panel__shell::after {
+  z-index: 2;
+  top: -24%;
+  bottom: auto;
+  height: 2rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.15), transparent),
+    linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.95), rgba(16, 185, 129, 0.8), transparent);
+  box-shadow:
+    0 0 18px rgba(34, 211, 238, 0.3),
+    0 0 32px rgba(16, 185, 129, 0.18);
+  opacity: 0;
+  transform: translateY(-120%);
+  animation: today-companion-scan-beam 820ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
+}
+
 .today-companion-rest-sprite {
   position: relative;
   display: inline-flex;
@@ -554,13 +614,77 @@ html.focus-mode [data-focus-hideable] {
   }
 }
 
+@keyframes today-companion-panel-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(0.65rem) scale(0.985);
+    filter: saturate(1.2) brightness(1.1);
+  }
+  56% {
+    opacity: 1;
+    transform: translateY(-0.05rem) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+}
+
+@keyframes today-companion-grid-arm {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.96);
+  }
+  32% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0.58;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes today-companion-scan-beam {
+  0% {
+    opacity: 0;
+    transform: translateY(-140%);
+  }
+  18% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.88;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(760%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .today-companion-panel,
+  .today-companion-panel__shell::before,
+  .today-companion-panel__shell::after,
   .today-companion-rest-sprite,
   .today-companion-rest-sprite--sleeping,
   .today-companion-rest-sprite--headache,
   .today-companion-zzz,
   .today-companion-drop-cue {
     animation: none !important;
+  }
+
+  .today-companion-panel {
+    opacity: 1;
+    transform: none;
+  }
+
+  .today-companion-panel__shell::before {
+    opacity: 0.38;
+  }
+
+  .today-companion-panel__shell::after {
+    opacity: 0;
   }
 }
 
@@ -1261,12 +1385,12 @@ html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .toda
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel__shell {
   border-radius: 0.875rem !important;
-  padding: 0.5rem !important;
+  padding: 0.4rem !important;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-weather-icon {
-  width: 1.55rem;
-  height: 1.55rem;
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel__title {
@@ -1279,15 +1403,15 @@ html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .toda
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row {
-  min-height: 1.65rem !important;
-  grid-template-columns: 1.45rem minmax(0, 1fr) auto !important;
-  gap: 0.35rem !important;
-  padding-inline: 0.35rem !important;
+  min-height: 1.42rem !important;
+  grid-template-columns: 1.3rem minmax(0, 1fr) auto !important;
+  gap: 0.3rem !important;
+  padding-inline: 0.3rem !important;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row__icon {
-  width: 1.35rem !important;
-  height: 1.35rem !important;
+  width: 1.18rem !important;
+  height: 1.18rem !important;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-row__label {
@@ -1300,20 +1424,24 @@ html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .toda
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-quick-button {
-  min-height: 2.85rem !important;
+  min-height: 2.35rem !important;
 }
 
-html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-quick-label,
+html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-quick-label {
+  font-size: 0.66rem !important;
+}
+
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-action-button {
+  min-height: 1.8rem !important;
   font-size: 0.66rem !important;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-rest-room {
-  height: 4.75rem !important;
+  height: 3.65rem !important;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-drop-cue {
-  bottom: 1.55rem !important;
+  bottom: 1.05rem !important;
   font-size: 0.62rem !important;
 }
 
@@ -1640,6 +1768,56 @@ html[data-ui-theme="default"] .topbar-glass.topbar-scrolled {
   box-shadow: none;
 }
 
+/* Mobile brand pill — keeps the fixed logo readable over scrolled content. */
+html[data-ui-theme="default"] .topbar-brand-pill {
+  position: relative;
+  isolation: isolate;
+  height: 44px;
+  padding: 0 12px 0 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  transition:
+    background 160ms ease-out,
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-brand-pill {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.10);
+  color: rgba(15, 23, 42, 0.92);
+  box-shadow:
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+html[data-ui-theme="default"] .topbar-brand-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-brand-pill:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+html[data-ui-theme="default"] .topbar-brand-pill:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent),
+    0 2px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+html[data-ui-theme="default"][data-color-mode="light"] .topbar-brand-pill:focus-visible {
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent),
+    0 2px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
 /* Search pill — glass shell matches `.topbar-clock-trigger` (time pill). */
 html[data-ui-theme="default"] .topbar-search-pill {
   display: inline-flex;
@@ -1767,6 +1945,25 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge {
   margin-left: -4px;
   flex: 0 0 28px;
   line-height: 0;
+}
+html[data-ui-theme="default"] .topbar-weather-badge--mobile,
+html:not([data-ui-theme="default"]) .topbar-weather-badge--mobile {
+  width: 68px;
+  min-width: 68px;
+  max-width: 68px;
+  height: 44px;
+  padding: 0 8px;
+  flex: 0 0 68px;
+  justify-content: center;
+}
+.topbar-weather-badge--mobile .topbar-weather-badge__fg {
+  gap: 5px;
+}
+.topbar-weather-badge--mobile .topbar-weather-badge__icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  margin-left: -2px;
 }
 
 /* Utility pill + buttons + divider */
@@ -1983,12 +2180,14 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-palette {
   html[data-ui-theme="default"][data-color-mode="light"] .topbar-glass {
     background: transparent;
   }
+  html[data-ui-theme="default"] .topbar-brand-pill,
   html[data-ui-theme="default"] .topbar-pill,
   html[data-ui-theme="default"] .topbar-weather-badge,
   html[data-ui-theme="default"] .topbar-search-pill,
   html[data-ui-theme="default"] .topbar-clock-trigger {
     background: rgba(30, 28, 26, 0.82);
   }
+  html[data-ui-theme="default"][data-color-mode="light"] .topbar-brand-pill,
   html[data-ui-theme="default"][data-color-mode="light"] .topbar-pill,
   html[data-ui-theme="default"][data-color-mode="light"] .topbar-weather-badge,
   html[data-ui-theme="default"][data-color-mode="light"] .topbar-search-pill,
@@ -2012,6 +2211,7 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-palette {
 /* Reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   html[data-ui-theme="default"] .topbar-glass,
+  html[data-ui-theme="default"] .topbar-brand-pill,
   html[data-ui-theme="default"] .topbar-search-pill,
   html[data-ui-theme="default"] .topbar-weather-badge,
   html[data-ui-theme="default"] .topbar-pill,
@@ -2026,6 +2226,15 @@ html[data-ui-theme="default"][data-color-mode="light"] .topbar-palette {
 /* Non-default themes — neutral fallbacks so the NEW layout still
    reads coherently under academia/astronaut/forest. No glass, just
    subtle border + background from existing tokens. */
+html:not([data-ui-theme="default"]) .topbar-brand-pill {
+  height: 44px;
+  padding: 0 12px 0 10px;
+  border-radius: 9999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
 html:not([data-ui-theme="default"]) .topbar-search-pill {
   display: inline-flex;
   align-items: center;
@@ -2097,6 +2306,16 @@ html:not([data-ui-theme="default"]) .topbar-pill-divider {
   margin: 0 4px;
   background: var(--border);
   flex-shrink: 0;
+}
+html[data-ui-theme="default"] .topbar-mobile-icon-trigger,
+html:not([data-ui-theme="default"]) .topbar-mobile-icon-trigger {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  height: 44px;
+  padding: 0;
+  flex: 0 0 44px;
+  justify-content: center;
 }
 html:not([data-ui-theme="default"]) .topbar-clock-panel {
   width: min(320px, calc(100vw - 24px));

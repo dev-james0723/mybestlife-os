@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useKnowledgeStore, type KnowledgeSortKey } from "@/stores/knowledge-store";
 import { typeColors, type KnowledgeItem } from "@/types/knowledge";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,37 @@ interface KnowledgeTableViewProps {
   items: KnowledgeItem[];
 }
 
+function KnowledgeSortHead({
+  sortBy,
+  setSortBy,
+  sk,
+  children,
+  className,
+}: {
+  sortBy: KnowledgeSortKey;
+  setSortBy: (sortKey: KnowledgeSortKey) => void;
+  sk: KnowledgeSortKey;
+  children: ReactNode;
+  className?: string;
+}) {
+  const active = sortBy === sk;
+  return (
+    <th className={cn("pb-2 font-medium text-muted-foreground", className)}>
+      <button
+        type="button"
+        className={cn(
+          "flex max-w-full items-center gap-1 truncate text-left hover:text-foreground",
+          active && "text-foreground",
+        )}
+        onClick={() => setSortBy(sk)}
+      >
+        <span className="truncate">{children}</span>
+        {active ? <ArrowUpDown className="h-3 w-3 shrink-0 opacity-70" /> : null}
+      </button>
+    </th>
+  );
+}
+
 export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
@@ -25,33 +57,6 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
   const smartCollections = useKnowledgeStore((s) => s.smartCollections);
   const searchQuery = useKnowledgeStore((s) => s.searchQuery);
 
-  const SortHead = ({
-    sk,
-    children,
-    className,
-  }: {
-    sk: KnowledgeSortKey;
-    children: React.ReactNode;
-    className?: string;
-  }) => {
-    const active = sortBy === sk;
-    return (
-      <th className={cn("pb-2 font-medium text-muted-foreground", className)}>
-        <button
-          type="button"
-          className={cn(
-            "flex max-w-full items-center gap-1 truncate text-left hover:text-foreground",
-            active && "text-foreground",
-          )}
-          onClick={() => setSortBy(sk)}
-        >
-          <span className="truncate">{children}</span>
-          {active ? <ArrowUpDown className="h-3 w-3 shrink-0 opacity-70" /> : null}
-        </button>
-      </th>
-    );
-  };
-
   return (
     <>
       <div className="hidden md:block">
@@ -59,12 +64,12 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-border/60 text-left text-muted-foreground">
-                <SortHead sk="contentType" className="w-[100px]">
+                <KnowledgeSortHead sortBy={sortBy} setSortBy={setSortBy} sk="contentType" className="w-[100px]">
                   {ui.tableType}
-                </SortHead>
-                <SortHead sk="titleAZ" className="min-w-[140px]">
+                </KnowledgeSortHead>
+                <KnowledgeSortHead sortBy={sortBy} setSortBy={setSortBy} sk="titleAZ" className="min-w-[140px]">
                   {ui.tableTitle}
-                </SortHead>
+                </KnowledgeSortHead>
                 <th className="hidden pb-2 font-medium lg:table-cell xl:w-[120px]">
                   {ui.tableCategory}
                 </th>
@@ -76,12 +81,12 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
                 <th className="hidden pb-2 font-medium lg:table-cell xl:max-w-[200px]">
                   {ui.tableAiSummary}
                 </th>
-                <SortHead sk="latest" className="w-[100px] whitespace-nowrap">
+                <KnowledgeSortHead sortBy={sortBy} setSortBy={setSortBy} sk="latest" className="w-[100px] whitespace-nowrap">
                   {ui.tableAdded}
-                </SortHead>
-                <SortHead sk="updated" className="w-[100px] whitespace-nowrap">
+                </KnowledgeSortHead>
+                <KnowledgeSortHead sortBy={sortBy} setSortBy={setSortBy} sk="updated" className="w-[100px] whitespace-nowrap">
                   {ui.tableUpdated}
-                </SortHead>
+                </KnowledgeSortHead>
               </tr>
             </thead>
             <tbody>
@@ -92,6 +97,11 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
                 const relevance = searchQuery.trim()
                   ? scoreKnowledgeItem(item, searchQuery, smartCollections)
                   : null;
+                const relevanceReason =
+                  relevance?.reasons[0] ??
+                  relevance?.matchedConcepts[0] ??
+                  relevance?.matchedKeywords[0] ??
+                  null;
                 return (
                   <tr
                     key={item.id}
@@ -116,9 +126,16 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
                     <td className="py-2 align-top font-medium">
                       <span className="line-clamp-2">{item.title}</span>
                       {relevance ? (
-                        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-primary">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-                          <span className="tabular-nums">{relevance.normalizedScore}% match</span>
+                        <div className="mt-1 max-w-[280px] rounded-md border border-primary/15 bg-primary/5 px-2 py-1 text-[10px] leading-4 text-primary">
+                          <div className="flex items-center gap-1.5 font-semibold">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+                            <span className="tabular-nums">{relevance.normalizedScore}% match</span>
+                          </div>
+                          {relevanceReason ? (
+                            <p className="line-clamp-1 text-primary/80">
+                              {ui.inquiryAgent.matchedBecause}: {relevanceReason}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
                     </td>

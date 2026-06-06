@@ -68,24 +68,23 @@ export function UtilityPill({ className }: { className?: string }) {
   // placeholder takes up room without earning it.
   if (isMobile) {
     return (
-      <div
-        className={cn("topbar-pill", className)}
-        role="group"
-        aria-label="App utilities"
+      <button
+        type="button"
+        className={cn(
+          "topbar-clock-trigger topbar-mobile-icon-trigger",
+          className
+        )}
+        aria-label={
+          colorMode === "light" ? ui.switchToDarkMode : ui.switchToLightMode
+        }
+        onClick={toggleColorMode}
       >
-        <PillButton
-          label={
-            colorMode === "light" ? ui.switchToDarkMode : ui.switchToLightMode
-          }
-          onClick={toggleColorMode}
-        >
-          {colorMode === "light" ? (
-            <Moon className="h-4 w-4" />
-          ) : (
-            <Sun className="h-4 w-4" />
-          )}
-        </PillButton>
-      </div>
+        {colorMode === "light" ? (
+          <Moon className="h-4 w-4" />
+        ) : (
+          <Sun className="h-4 w-4" />
+        )}
+      </button>
     );
   }
 

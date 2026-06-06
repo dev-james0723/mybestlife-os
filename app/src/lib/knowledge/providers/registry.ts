@@ -16,6 +16,7 @@
  */
 
 import type { ClassifyResult } from "@/lib/knowledge/classify";
+import { contentTypeForSourceType, contentTypeForUrlHint } from "@/types/knowledge";
 import type {
   PreviewStatus,
   RenderMode,
@@ -285,7 +286,7 @@ export const ScreenshotSnapshotProvider: SocialProvider = {
       extractionStatus: "success",
       transcriptStatus: "not_applicable",
       askEnabled: ctx.classification.askEnabled,
-      contentType: "article",
+      contentType: contentTypeForUrlHint(url, contentTypeForSourceType(ctx.classification.sourceType)),
       renderMode: "auto_snapshot",
       previewStatus: "auto_snapshot_success",
       checkedAt: new Date().toISOString(),
@@ -383,7 +384,7 @@ export function makeFailureResult(args: {
     extractionStatus: deriveLegacyExtractionStatus(previewStatus),
     transcriptStatus: "not_applicable",
     askEnabled: classification.askEnabled,
-    contentType: "article",
+    contentType: contentTypeForSourceType(classification.sourceType),
     renderMode: "unavailable",
     previewStatus,
     checkedAt: nowIso(),

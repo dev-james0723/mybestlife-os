@@ -76,7 +76,7 @@ export async function ingestArticle(url: string): Promise<NormalizedIngest> {
     extractionStatus,
     transcriptStatus: "not_applicable",
     askEnabled: hasBody || hasMeta,
-    contentType: "article",
+    contentType: urlMeta.contentType,
   };
 }
 

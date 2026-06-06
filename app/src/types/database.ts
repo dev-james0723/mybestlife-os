@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
+import type { KnowledgeQuickFilterDefinition } from "@/lib/knowledge/quick-filters";
 import type { OSBuddyShortcutSettings } from "@/lib/os-buddy/os-buddy-shortcuts";
 import type { OSBuddyFreeRoamIntensity } from "@/lib/os-buddy/os-buddy-free-roam";
 import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
@@ -72,6 +73,7 @@ export type UserProfile = {
   onboarding_completed: boolean;
   block_minutes: BlockMinutesOption;
   quick_tasks: QuickTaskDef[] | null;
+  knowledge_quick_filters: KnowledgeQuickFilterDefinition[];
   /** ISO 4217 (uppercase). Finance display + FX base. */
   display_currency: string;
   quick_save_enabled: boolean;

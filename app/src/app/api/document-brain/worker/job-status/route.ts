@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { applyWorkerJobStatus, type WorkerJobStatusPayload } from "@/lib/document-brain/jobs/extractionJobService";
 import { autoGenerateMindMapForDocument } from "@/lib/document-brain/mind-map/autoGenerateMindMap";
+import { indexDocOracleRetrievalForDocument } from "@/lib/retrieval/doc-oracle-indexer";
 import type { ExtractionJobStatus } from "@/lib/document-brain/jobs/extractionJobStatus";
 import { EXTRACTION_JOB_STATUSES } from "@/lib/document-brain/jobs/extractionJobStatus";
 
@@ -106,6 +107,23 @@ export async function POST(req: Request) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error(
           `${TAG} mind_map_auto_generation_exception document_id=${payload.document_id} error=${msg.slice(0, 400)}`,
+        );
+      }
+
+      try {
+        const indexed = await indexDocOracleRetrievalForDocument({
+          userId: payload.user_id,
+          documentId: payload.document_id,
+        });
+        if (!indexed.ok) {
+          console.error(
+            `${TAG} retrieval_index_failed document_id=${payload.document_id} indexed=${indexed.indexed} failed=${indexed.failed} error=${indexed.error ?? indexed.warnings[0] ?? "unknown"}`,
+          );
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(
+          `${TAG} retrieval_index_exception document_id=${payload.document_id} error=${msg.slice(0, 400)}`,
         );
       }
     });

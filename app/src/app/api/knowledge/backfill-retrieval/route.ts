@@ -8,10 +8,15 @@ import { getKnowledgeItems } from "@/lib/knowledge/queries";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   buildDocOracleChunkRetrievalDocuments,
+  buildDocOracleRetrievalDocuments,
   buildGenericRetrievalDocuments,
   buildKnowledgeRetrievalDocuments,
   buildLifeAgentContextRetrievalDocuments,
+  type DocOracleAnalysisRow,
   type DocOracleChunkRow,
+  type DocOraclePageRow,
+  type DocOracleSectionRow,
+  type DocOracleVisualAssetRow,
 } from "@/lib/retrieval/documents";
 import {
   composeRetrievalEmbeddingText,
@@ -158,6 +163,95 @@ async function loadDocOracleChunks(params: {
   }
 
   return { chunksByItemId };
+}
+
+async function loadDocOracleRows(params: {
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+  userId: string;
+  itemIds: string[];
+  warnings: string[];
+}): Promise<{
+  analysesByItemId: Map<string, DocOracleAnalysisRow[]>;
+  pagesByItemId: Map<string, DocOraclePageRow[]>;
+  sectionsByItemId: Map<string, DocOracleSectionRow[]>;
+  visualsByItemId: Map<string, DocOracleVisualAssetRow[]>;
+}> {
+  const analysesByItemId = new Map<string, DocOracleAnalysisRow[]>();
+  const pagesByItemId = new Map<string, DocOraclePageRow[]>();
+  const sectionsByItemId = new Map<string, DocOracleSectionRow[]>();
+  const visualsByItemId = new Map<string, DocOracleVisualAssetRow[]>();
+  if (params.itemIds.length === 0) {
+    return { analysesByItemId, pagesByItemId, sectionsByItemId, visualsByItemId };
+  }
+
+  const [analyses, pages, sections, visuals] = await Promise.all([
+    params.supabase
+      .from("document_analyses")
+      .select(
+        "id,document_id,document_title,document_type,language,total_pages,visual_density,extraction_risk,summary,status,created_at,updated_at",
+      )
+      .eq("user_id", params.userId)
+      .in("document_id", params.itemIds)
+      .limit(1000),
+    params.supabase
+      .from("document_pages")
+      .select(
+        "id,document_id,analysis_id,page_number,page_label,page_type,raw_text,markdown,page_summary,interpreted_page_meaning,keywords,linked_terms,linked_sections,has_visual_assets,suggested_questions,extraction_risk,created_at,updated_at",
+      )
+      .eq("user_id", params.userId)
+      .in("document_id", params.itemIds)
+      .order("page_number", { ascending: true })
+      .limit(2000),
+    params.supabase
+      .from("document_sections")
+      .select(
+        "id,document_id,analysis_id,title,level,page_start,page_end,summary,keywords,representative_pages,created_at,updated_at",
+      )
+      .eq("user_id", params.userId)
+      .in("document_id", params.itemIds)
+      .order("page_start", { ascending: true })
+      .limit(2000),
+    params.supabase
+      .from("document_visual_assets")
+      .select(
+        "id,document_id,analysis_id,source_page_number,type,semantic_category,title,description,image_url,extracted_labels,retrieval_tags,related_terms,related_sections,confidence,created_at,updated_at",
+      )
+      .eq("user_id", params.userId)
+      .in("document_id", params.itemIds)
+      .limit(2000),
+  ]);
+
+  const addWarning = (label: string, error: { message?: string } | null) => {
+    if (!error || isMissingTableError(error)) return;
+    params.warnings.push(`${label}_unavailable:${error.message ?? "unknown"}`);
+  };
+  addWarning("doc_oracle_analyses", analyses.error);
+  addWarning("doc_oracle_pages", pages.error);
+  addWarning("doc_oracle_sections", sections.error);
+  addWarning("doc_oracle_visuals", visuals.error);
+
+  for (const row of (analyses.data ?? []) as DocOracleAnalysisRow[]) {
+    const list = analysesByItemId.get(row.document_id) ?? [];
+    list.push(row);
+    analysesByItemId.set(row.document_id, list);
+  }
+  for (const row of (pages.data ?? []) as DocOraclePageRow[]) {
+    const list = pagesByItemId.get(row.document_id) ?? [];
+    list.push(row);
+    pagesByItemId.set(row.document_id, list);
+  }
+  for (const row of (sections.data ?? []) as DocOracleSectionRow[]) {
+    const list = sectionsByItemId.get(row.document_id) ?? [];
+    list.push(row);
+    sectionsByItemId.set(row.document_id, list);
+  }
+  for (const row of (visuals.data ?? []) as DocOracleVisualAssetRow[]) {
+    const list = visualsByItemId.get(row.document_id) ?? [];
+    list.push(row);
+    visualsByItemId.set(row.document_id, list);
+  }
+
+  return { analysesByItemId, pagesByItemId, sectionsByItemId, visualsByItemId };
 }
 
 async function buildCrossOsDocuments(params: {
@@ -419,10 +513,31 @@ export async function POST(request: Request) {
     ? await loadDocOracleChunks({ supabase, userId: auth.user.id, itemIds })
     : { chunksByItemId: new Map<string, DocOracleChunkRow[]>() };
   if (chunks.warning) warnings.push(chunks.warning);
+  const docOracleRows = body.includeDocOracle
+    ? await loadDocOracleRows({
+        supabase,
+        userId: auth.user.id,
+        itemIds,
+        warnings,
+      })
+    : {
+        analysesByItemId: new Map<string, DocOracleAnalysisRow[]>(),
+        pagesByItemId: new Map<string, DocOraclePageRow[]>(),
+        sectionsByItemId: new Map<string, DocOracleSectionRow[]>(),
+        visualsByItemId: new Map<string, DocOracleVisualAssetRow[]>(),
+      };
 
   const knowledgeDocs = items
     .flatMap((item) => [
       ...buildKnowledgeRetrievalDocuments({ userId: auth.user.id, item }),
+      ...buildDocOracleRetrievalDocuments({
+        userId: auth.user.id,
+        item,
+        analyses: docOracleRows.analysesByItemId.get(item.id) ?? [],
+        pages: docOracleRows.pagesByItemId.get(item.id) ?? [],
+        sections: docOracleRows.sectionsByItemId.get(item.id) ?? [],
+        visualAssets: docOracleRows.visualsByItemId.get(item.id) ?? [],
+      }),
       ...buildDocOracleChunkRetrievalDocuments({
         userId: auth.user.id,
         item,

@@ -185,6 +185,10 @@ function buildLocalFallbackReply(
   return ui.noMatchesFound(q);
 }
 
+function isConnectedContextSource(source: RetrievalResult): boolean {
+  return source.sourceDomain !== "knowledge" && source.sourceDomain !== "doc_oracle";
+}
+
 interface KnowledgeAIPanelProps {
   userId: string;
 }
@@ -223,8 +227,10 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMessages(loadStoredMessages(userId));
-    setHydrated(true);
+    queueMicrotask(() => {
+      setMessages(loadStoredMessages(userId));
+      setHydrated(true);
+    });
   }, [userId]);
 
   useEffect(() => {
@@ -234,7 +240,7 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
 
   useEffect(() => {
     if (aiPanelQuery && messages.length === 0) {
-      setInput(aiPanelQuery);
+      queueMicrotask(() => setInput(aiPanelQuery));
     }
   }, [aiPanelQuery, messages.length]);
 
@@ -513,6 +519,17 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
 
                     {msg.sources && msg.sources.length > 0 && (
                       <div className="space-y-1.5">
+                        {msg.sources.some(isConnectedContextSource) ? (
+                          <div className="rounded-md border border-primary/20 bg-primary/10 px-2.5 py-2 text-[11px] leading-snug">
+                            <div className="flex items-center gap-1.5 font-medium text-primary">
+                              <Search className="h-3 w-3" />
+                              {ui.connectedContextTitle}
+                            </div>
+                            <p className="mt-1 text-muted-foreground">
+                              {ui.connectedContextDescription}
+                            </p>
+                          </div>
+                        ) : null}
                         {msg.sources.slice(0, 3).map((source) => (
                           <div
                             key={`${msg.id}:${source.id}:${source.sourceId}`}

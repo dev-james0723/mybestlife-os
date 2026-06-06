@@ -18,8 +18,12 @@ import { useTagFilter } from "@/hooks/use-tag-taxonomy";
 import {
   compareKnowledgeItems,
   itemMatchesSearch,
-  matchesQuickFilter,
 } from "@/lib/knowledge/knowledge-list-utils";
+import {
+  getActiveKnowledgeQuickFilterDefinitions,
+  knowledgeQuickFiltersNeedMinuteTicker,
+  matchesKnowledgeQuickFilterDefinition,
+} from "@/lib/knowledge/quick-filters";
 
 export type KnowledgeFilterSummary = {
   hasAnyFilter: boolean;
@@ -37,6 +41,9 @@ export function useKnowledgeFilteredItems(): {
     (s) => s.activeCategoryFilters,
   );
   const activeQuickFilters = useKnowledgeStore((s) => s.activeQuickFilters);
+  const quickFilterDefinitions = useKnowledgeStore(
+    (s) => s.quickFilterDefinitions,
+  );
   const activeSmartCollectionId = useKnowledgeStore(
     (s) => s.activeSmartCollectionId,
   );
@@ -45,21 +52,34 @@ export function useKnowledgeFilteredItems(): {
   const sortBy = useKnowledgeStore((s) => s.sortBy);
   const { activeTagId, predicate: tagPredicate } = useTagFilter();
 
-  // The "Recent" quick filter needs a wall-clock reference. Re-tick once
-  // a minute when it's active so cards roll out of the recent window.
+  const activeQuickFilterDefinitions = useMemo(
+    () =>
+      getActiveKnowledgeQuickFilterDefinitions(
+        activeQuickFilters,
+        quickFilterDefinitions,
+      ),
+    [activeQuickFilters, quickFilterDefinitions],
+  );
+
+  // Date-sensitive quick filters need a wall-clock reference. Re-tick once
+  // a minute when one is active so cards roll out of the active window.
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
-    if (!activeQuickFilters.includes("recent")) return;
+    if (!knowledgeQuickFiltersNeedMinuteTicker(activeQuickFilters, quickFilterDefinitions)) {
+      return;
+    }
     const id = setInterval(() => setNowMs(Date.now()), 60_000);
     return () => clearInterval(id);
-  }, [activeQuickFilters]);
+  }, [activeQuickFilters, quickFilterDefinitions]);
 
   const filteredItems = useMemo(() => {
     let result: KnowledgeItem[] = [...items];
 
-    if (activeQuickFilters.length > 0) {
+    if (activeQuickFilterDefinitions.length > 0) {
       result = result.filter((i) =>
-        activeQuickFilters.every((flag) => matchesQuickFilter(i, flag, nowMs)),
+        activeQuickFilterDefinitions.every((def) =>
+          matchesKnowledgeQuickFilterDefinition(i, def, nowMs),
+        ),
       );
     }
     if (activeTypeFilters.length > 0) {
@@ -94,7 +114,7 @@ export function useKnowledgeFilteredItems(): {
     items,
     activeTypeFilters,
     activeCategoryFilters,
-    activeQuickFilters,
+    activeQuickFilterDefinitions,
     activeSmartCollectionId,
     smartCollections,
     activeTagId,

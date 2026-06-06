@@ -1,11 +1,11 @@
 import { normalizeThumbnailStyle } from "@/lib/knowledge/thumbnail-style-config";
 import { rewriteStoredKnowledgeThumbnailUrl } from "@/lib/knowledge/storage-thumbnail-url";
 import type {
-  ContentType,
   DepthIndicator,
   ItemStatus,
   KnowledgeItem,
 } from "@/types/knowledge";
+import { normalizeContentType } from "@/types/knowledge";
 import type {
   DisplayMode,
   ExtractionStatus,
@@ -31,7 +31,7 @@ export function mapRowToItem(row: Record<string, unknown>): KnowledgeItem {
     id: row.id as string,
     userId: row.user_id as string,
     title: row.title as string,
-    contentType: row.content_type as ContentType,
+    contentType: normalizeContentType(row.content_type),
     sourceUrl: (row.source_url as string) || undefined,
     sourceDomain: (row.source_domain as string) || undefined,
     filePath: (row.file_path as string) || undefined,

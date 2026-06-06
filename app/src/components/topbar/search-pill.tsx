@@ -63,7 +63,7 @@ export function SearchIconTrigger({ className }: SearchPillProps) {
       data-open={open ? "true" : undefined}
       onClick={() => setOpen(true)}
       className={cn(
-        "topbar-clock-trigger !h-11 !w-11 justify-center !px-0 flex-shrink-0",
+        "topbar-clock-trigger topbar-mobile-icon-trigger flex-shrink-0",
         className
       )}
     >

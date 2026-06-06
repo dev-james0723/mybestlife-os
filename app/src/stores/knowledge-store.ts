@@ -12,20 +12,13 @@ import type {
   ConstellationGraphMode,
 } from "@/types/constellation";
 import { DEFAULT_FILTERS } from "@/lib/knowledge/constellation/constants";
+import {
+  cleanActiveKnowledgeQuickFilterIds,
+  getDefaultKnowledgeQuickFilters,
+  type KnowledgeQuickFilterDefinition,
+} from "@/lib/knowledge/quick-filters";
 
-/**
- * Quick filter pills shown at the top of the filter bar. They are
- * orthogonal to the per-content-type and per-category filters and apply
- * additional predicates on top.
- */
-export type KnowledgeQuickFilter =
-  | "recent"
-  | "social"
-  | "github"
-  | "hasMedia"
-  | "hasSource"
-  | "aiGenerated"
-  | "needsReview";
+export type KnowledgeQuickFilterId = string;
 
 /** Global list sort; `relevance` uses search text when non-empty, else latest. */
 export type KnowledgeSortKey =
@@ -46,7 +39,8 @@ interface KnowledgeStore {
   boardGroupBy: "type" | "collection" | "tag";
   activeTypeFilters: ContentType[];
   activeCategoryFilters: KnowledgeCategory[];
-  activeQuickFilters: KnowledgeQuickFilter[];
+  quickFilterDefinitions: KnowledgeQuickFilterDefinition[];
+  activeQuickFilters: KnowledgeQuickFilterId[];
   /** When set, main list shows only items in this smart collection. */
   activeSmartCollectionId: string | null;
   /**
@@ -93,7 +87,8 @@ interface KnowledgeStore {
   clearTypeFilters: () => void;
   toggleCategoryFilter: (category: KnowledgeCategory) => void;
   clearCategoryFilters: () => void;
-  toggleQuickFilter: (filter: KnowledgeQuickFilter) => void;
+  setQuickFilterDefinitions: (defs: KnowledgeQuickFilterDefinition[]) => void;
+  toggleQuickFilter: (filter: KnowledgeQuickFilterId) => void;
   clearQuickFilters: () => void;
   setActiveSmartCollectionId: (id: string | null) => void;
   setActiveTagId: (id: string | null) => void;
@@ -135,6 +130,7 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
   boardGroupBy: "type",
   activeTypeFilters: [],
   activeCategoryFilters: [],
+  quickFilterDefinitions: getDefaultKnowledgeQuickFilters(),
   activeQuickFilters: [],
   activeSmartCollectionId: null,
   activeTagId: null,
@@ -200,12 +196,26 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
 
   clearCategoryFilters: () => set({ activeCategoryFilters: [] }),
 
+  setQuickFilterDefinitions: (defs) =>
+    set((state) => ({
+      quickFilterDefinitions: defs,
+      activeQuickFilters: cleanActiveKnowledgeQuickFilterIds(
+        state.activeQuickFilters,
+        defs,
+      ),
+    })),
+
   toggleQuickFilter: (filter) =>
     set((state) => {
       const filters = state.activeQuickFilters.includes(filter)
         ? state.activeQuickFilters.filter((f) => f !== filter)
         : [...state.activeQuickFilters, filter];
-      return { activeQuickFilters: filters };
+      return {
+        activeQuickFilters: cleanActiveKnowledgeQuickFilterIds(
+          filters,
+          state.quickFilterDefinitions,
+        ),
+      };
     }),
 
   clearQuickFilters: () => set({ activeQuickFilters: [] }),

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useCallback, useMemo, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
@@ -139,6 +139,9 @@ const PRIORITY_CATEGORIES: string[] = [
   "learning",
 ];
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const NAV_STAGGER_DELAY_MS = 150;
+const NAV_STAGGER_CHILD_MS = 60;
+const NAV_STAGGER_ITEM_MS = 300;
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -150,8 +153,8 @@ export function AppSidebar() {
   const localeSlug = useLocaleSlug();
   const pathWithoutLocale = stripLeadingLocaleFromPathname(pathname);
   const { setOpenMobile } = useSidebar();
-  const { user, signOut } = useAuth();
-  const { data: profile } = useProfile();
+  const { user, signOut, isLoading: authLoading } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfile();
   const language = useAppStore((s) => s.language);
   const { uiTheme } = useTheme();
   const footer = getSidebarFooterCopy(language);
@@ -188,7 +191,35 @@ export function AppSidebar() {
   }, [profile?.focus_areas]);
 
   const [showMore, setShowMore] = useState(!isNewUser);
+  const [showCompanionPanel, setShowCompanionPanel] = useState(false);
   const toggleShowMore = useCallback(() => setShowMore((prev) => !prev), []);
+  const menuItemsReady = !authLoading && (!user || !profileLoading);
+  const visibleStaggerItemCount = priorityCategories.length + (showMore ? secondaryCategories.length : 0);
+  const companionRevealDelayMs =
+    isGlassTheme && !prefersReducedMotion
+      ? NAV_STAGGER_DELAY_MS +
+        Math.max(0, visibleStaggerItemCount - 1) * NAV_STAGGER_CHILD_MS +
+        NAV_STAGGER_ITEM_MS
+      : 0;
+
+  useEffect(() => {
+    if (!menuItemsReady) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- visibility mirrors async menu readiness.
+      setShowCompanionPanel(false);
+      return;
+    }
+
+    if (companionRevealDelayMs === 0) {
+      setShowCompanionPanel(true);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowCompanionPanel(true);
+    }, companionRevealDelayMs);
+
+    return () => window.clearTimeout(timer);
+  }, [companionRevealDelayMs, menuItemsReady]);
 
   const closeMobileSidebar = () => setOpenMobile(false);
 
@@ -298,7 +329,7 @@ export function AppSidebar() {
           </>
         )}
 
-        <TodayCompanionPanel />
+        {showCompanionPanel ? <TodayCompanionPanel /> : null}
       </SidebarContent>
 
       <SidebarFooter className="hidden">

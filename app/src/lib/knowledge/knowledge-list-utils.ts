@@ -1,7 +1,10 @@
 import type { KnowledgeItem, SmartCollection } from "@/types/knowledge";
-import type { KnowledgeQuickFilter } from "@/stores/knowledge-store";
 import type { KnowledgeSortKey } from "@/stores/knowledge-store";
 import { getCategoryLabel, getSourceTypeInfo } from "@/lib/knowledge/labels";
+import {
+  matchesBuiltInKnowledgeQuickFilter,
+  type KnowledgeBuiltinQuickFilterId,
+} from "@/lib/knowledge/quick-filters";
 import {
   knowledgeSearchScore,
   matchKnowledgeItems,
@@ -75,42 +78,10 @@ export function itemMatchesSearch(
 
 export function matchesQuickFilter(
   item: KnowledgeItem,
-  f: KnowledgeQuickFilter,
+  f: KnowledgeBuiltinQuickFilterId,
   nowMs: number = Date.now(),
 ): boolean {
-  const recentCutoffMs = nowMs - 7 * 24 * 60 * 60 * 1000;
-  switch (f) {
-    case "recent": {
-      const ts = new Date(item.dateAdded).getTime();
-      return Number.isFinite(ts) && ts >= recentCutoffMs;
-    }
-    case "social":
-      return (
-        item.category === "social_media" || (item.sourceType?.startsWith("social_") ?? false)
-      );
-    case "github":
-      return (
-        item.provider === "github" ||
-        item.sourceType === "github_repository" ||
-        item.category === "repository"
-      );
-    case "hasMedia":
-      return Boolean(
-        item.thumbnailUrl?.trim() ||
-          (item.category === "social_media" && Boolean(item.embedHtml?.trim())),
-      );
-    case "hasSource":
-      return Boolean(item.sourceUrl?.trim());
-    case "aiGenerated":
-      return item.aiTags.length > 0;
-    case "needsReview":
-      return (
-        item.status === "error" ||
-        Boolean(item.extractionStatus && item.extractionStatus !== "success")
-      );
-    default:
-      return true;
-  }
+  return matchesBuiltInKnowledgeQuickFilter(item, f, nowMs);
 }
 
 function publishedOrAddedMs(item: KnowledgeItem): number {

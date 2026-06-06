@@ -217,7 +217,7 @@ export const MetaEmbedProviderImpl: SocialProvider = {
       extractionStatus: "success",
       transcriptStatus: "not_applicable",
       askEnabled: false,
-      contentType: "article",
+      contentType: "social",
       // Cascade-aware fields
       renderMode: "authenticated_preview",
       previewStatus: "authenticated_data_success",

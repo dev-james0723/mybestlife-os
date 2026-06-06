@@ -280,14 +280,24 @@ export async function runAskKbRetrieval(input: AskKbRetrievalInput): Promise<Ret
   ]);
   const itemsById = new Map(items.map((item) => [item.id, item]));
 
-  const keywordResults = buildKeywordRetrievalResults({
-    query,
-    items,
-    smartCollections,
-    connections,
-    limit: Math.max(limit, 24),
-    referenceDate,
-  });
+  const scopedKnowledgeItems =
+    input.knowledgeItemIds && input.knowledgeItemIds.length > 0
+      ? items.filter((item) => input.knowledgeItemIds?.includes(item.id))
+      : items;
+  const canUseKnowledgeKeywordFallback = scope.sourceDomains.includes("knowledge");
+  const keywordResults = canUseKnowledgeKeywordFallback
+    ? buildKeywordRetrievalResults({
+        query,
+        items: scopedKnowledgeItems,
+        smartCollections,
+        connections,
+        limit: Math.max(limit, 24),
+        referenceDate,
+      })
+    : [];
+  if (!canUseKnowledgeKeywordFallback && mode === "keyword") {
+    warnings.push("keyword_retrieval_scope_excludes_knowledge");
+  }
 
   let semanticResults: RetrievalResult[] = [];
   const apiKey = getGeminiServerApiKey();
@@ -364,6 +374,7 @@ export function parseRetrieveRequestBody(body: unknown): {
   limit: number;
   sourceDomains: RetrievalSourceDomain[];
   sessionGrantedDomains: unknown;
+  knowledgeItemIds: string[];
   referenceDateIso?: string;
 } {
   const obj = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
@@ -373,6 +384,9 @@ export function parseRetrieveRequestBody(body: unknown): {
     limit: clampLimit(obj.limit),
     sourceDomains: parseRetrievalSourceDomains(obj.sourceDomains),
     sessionGrantedDomains: obj.sessionGrantedDomains,
+    knowledgeItemIds: Array.isArray(obj.knowledgeItemIds)
+      ? obj.knowledgeItemIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+      : [],
     referenceDateIso:
       typeof obj.referenceDateIso === "string" ? obj.referenceDateIso : undefined,
   };

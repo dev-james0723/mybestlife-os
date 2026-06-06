@@ -12,7 +12,7 @@ import {
   type KnowledgeContentLanguage,
 } from "@/lib/knowledge/code-content";
 import { getSourceTypeInfo } from "@/lib/knowledge/labels";
-import type { ContentType } from "@/types/knowledge";
+import { contentTypeForSourceType } from "@/types/knowledge";
 import type { SourceType } from "@/types/knowledge-source";
 import type { NormalizedIngest } from "./types";
 
@@ -46,7 +46,7 @@ const CODE_LANGUAGE_MAP: Partial<Record<SourceType, KnowledgeContentLanguage>> =
 
 export function ingestMarkupInput(input: MarkupIngestInput): NormalizedIngest {
   const info = getSourceTypeInfo(input.sourceType);
-  const contentType: ContentType = "note";
+  const contentType = contentTypeForSourceType(input.sourceType);
 
   const language = CODE_LANGUAGE_MAP[input.sourceType];
   const isEncoded = Boolean(language);

@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       limit: body.limit,
       sourceDomains: body.sourceDomains,
       sessionGrantedDomains: body.sessionGrantedDomains,
+      knowledgeItemIds: body.knowledgeItemIds,
       referenceDateIso: body.referenceDateIso,
       persistRun: true,
     });

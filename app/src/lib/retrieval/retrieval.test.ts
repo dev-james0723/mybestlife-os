@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { matchKnowledgeItems } from "@/lib/knowledgeMatching";
 import {
   buildLifeAgentContextRetrievalDocuments,
+  buildDocOracleRetrievalDocuments,
   buildKnowledgeRetrievalDocuments,
   chunkText,
 } from "@/lib/retrieval/documents";
 import { emptyLifeAgentContextSources } from "@/lib/life-agent/context-fetchers";
 import { sanitizeRetrievalCitations } from "@/lib/retrieval/citations";
 import { hybridScore } from "@/lib/retrieval/rank";
+import { runAskKbRetrieval } from "@/lib/retrieval/service";
 import { resolveAskKbRetrievalScope } from "@/lib/retrieval/scope";
 import type { KnowledgeItem } from "@/types/knowledge";
 import type { LifeAgentPermission } from "@/types/life-agent";
@@ -97,6 +99,71 @@ describe("Ask Your KB retrieval", () => {
     expect(first.some((doc) => doc.document_kind === "knowledge_raw_content")).toBe(true);
   });
 
+  it("builds Doc Oracle retrieval documents beyond raw chunks", () => {
+    const source = item({
+      id: "doc-oracle-1",
+      title: "Doc Oracle strategy PDF",
+      sourceUrl: "https://example.com/strategy.pdf",
+    });
+
+    const docs = buildDocOracleRetrievalDocuments({
+      userId: "user-1",
+      item: source,
+      analyses: [
+        {
+          id: "analysis-1",
+          document_id: source.id,
+          document_title: "Strategy PDF",
+          summary: "A document about retrieval, citations, and project plans.",
+          status: "completed",
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          document_id: source.id,
+          analysis_id: "analysis-1",
+          page_number: 3,
+          page_summary: "The retrieval plan introduces cited answer cards.",
+          keywords: ["retrieval", "citations"],
+        },
+      ],
+      sections: [
+        {
+          id: "section-1",
+          document_id: source.id,
+          analysis_id: "analysis-1",
+          title: "Implementation roadmap",
+          page_start: 3,
+          page_end: 5,
+          summary: "The section describes the implementation sequence.",
+        },
+      ],
+      visualAssets: [
+        {
+          id: "visual-1",
+          document_id: source.id,
+          analysis_id: "analysis-1",
+          source_page_number: 4,
+          title: "Retrieval architecture diagram",
+          description: "A diagram linking Ask Your KB to cited sources.",
+          retrieval_tags: ["architecture", "ask-kb"],
+        },
+      ],
+    });
+
+    expect(docs.map((doc) => doc.document_kind)).toEqual(
+      expect.arrayContaining([
+        "doc_oracle_analysis_summary",
+        "doc_oracle_page",
+        "doc_oracle_section",
+        "doc_oracle_visual",
+      ]),
+    );
+    expect(docs.every((doc) => doc.source_domain === "doc_oracle")).toBe(true);
+    expect(docs.find((doc) => doc.document_kind === "doc_oracle_page")?.page_number).toBe(3);
+  });
+
   it("builds cross-OS retrieval documents for readable context sources", () => {
     const sources = emptyLifeAgentContextSources();
     sources.projects = [
@@ -162,6 +229,42 @@ describe("Ask Your KB retrieval", () => {
     expect(scope.sourceDomains).not.toContain("journal");
     expect(scope.sourceDomains).not.toContain("finance");
     expect(scope.excludedSourceDomains).toEqual(["journal", "finance"]);
+  });
+
+  it("does not return Knowledge keyword fallback when scope excludes Knowledge", async () => {
+    const fakeSupabase = {
+      from: () => ({
+        select: () => ({
+          eq: async () => ({
+            data: [permission("projects", "read_only")],
+            error: null,
+          }),
+        }),
+      }),
+    };
+
+    const run = await runAskKbRetrieval({
+      supabase: fakeSupabase as never,
+      userId: "user-1",
+      query: "stripe checkout billing",
+      mode: "keyword",
+      sourceDomains: ["projects"],
+      items: [
+        item({
+          id: "stripe",
+          title: "Stripe checkout implementation notes",
+          aiTags: ["payments", "checkout"],
+          aiSummary: "SaaS billing and Stripe checkout UX.",
+        }),
+      ],
+      smartCollections: [],
+      connections: [],
+      persistRun: false,
+    });
+
+    expect(run.scope.sourceDomains).toEqual(["projects"]);
+    expect(run.results).toHaveLength(0);
+    expect(run.warnings).toContain("keyword_retrieval_scope_excludes_knowledge");
   });
 
   it("rejects citations that are not present in retrieved evidence", () => {

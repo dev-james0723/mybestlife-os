@@ -1,4 +1,4 @@
-import type { ContentType } from "@/types/knowledge";
+import { contentTypeForUrlHint, type ContentType } from "@/types/knowledge";
 import { extractArticleBody } from "./extractContent";
 
 export type UrlMetadata = {
@@ -13,7 +13,7 @@ export type UrlMetadata = {
 export async function processUrl(url: string): Promise<UrlMetadata> {
   const parsed = new URL(url);
   const domain = parsed.hostname.replace(/^www\./, "");
-  const contentType = detectContentType(url, domain);
+  const contentType = contentTypeForUrlHint(url);
 
   let title = domain;
   let description = "";
@@ -46,31 +46,6 @@ export async function processUrl(url: string): Promise<UrlMetadata> {
   }
 
   return { title, description, bodyText, ogImage, domain, contentType };
-}
-
-function detectContentType(url: string, domain: string): ContentType {
-  const lower = url.toLowerCase();
-
-  if (
-    domain.includes("youtube.com") ||
-    domain.includes("youtu.be") ||
-    domain.includes("vimeo.com")
-  ) {
-    return "video";
-  }
-  if (
-    domain.includes("spotify.com") ||
-    domain.includes("podcasts.apple.com") ||
-    domain.includes("overcast.fm")
-  ) {
-    return "podcast";
-  }
-  if (/\.(mp4|mov|avi|webm)(\?|$)/.test(lower)) return "video";
-  if (/\.(mp3|wav|ogg|m4a)(\?|$)/.test(lower)) return "podcast";
-  if (/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/.test(lower)) return "photo";
-  if (/\.(pdf|doc|docx|txt|md|csv|xlsx)(\?|$)/.test(lower)) return "file";
-
-  return "article";
 }
 
 function extractTitle(html: string): string {
