@@ -28,9 +28,9 @@ export type WizardFooterProps = {
 };
 
 /**
- * Sticky footer that lives INSIDE the dialog/sheet scroll container
- * (`position: sticky; bottom: 0`) — never page-fixed — so it stays above the
- * device keyboard. Includes safe-area bottom padding for notched devices.
+ * Anchored wizard action bar. It sits outside the scroll pane so lower answers
+ * never disappear behind the controls, while safe-area padding keeps it usable
+ * on notched mobile devices.
  */
 export function WizardFooter({
   ui,
@@ -50,7 +50,7 @@ export function WizardFooter({
     <div
       data-slot="wizard-footer"
       className={cn(
-        "sticky bottom-0 z-10 -mx-4 mt-2 flex items-center gap-2 border-t border-black/8 bg-background/85 px-4 pt-3 backdrop-blur-md dark:border-white/10",
+        "z-10 -mx-4 flex shrink-0 items-center gap-2 border-t border-foreground/8 bg-background/95 px-4 pt-3 shadow-[0_-18px_30px_-26px_rgba(0,0,0,0.75)] backdrop-blur-xl",
         "pb-[max(theme(spacing.4),env(safe-area-inset-bottom))]",
         className,
       )}
@@ -78,6 +78,7 @@ export function WizardFooter({
             size="sm"
             onClick={onSkip}
             disabled={finishing}
+            className="border-foreground/12 bg-foreground/[0.035] hover:bg-foreground/[0.07]"
           >
             {ui.buttons.skip}
           </Button>

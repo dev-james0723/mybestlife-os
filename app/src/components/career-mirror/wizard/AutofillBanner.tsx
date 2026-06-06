@@ -79,7 +79,7 @@ export function AutofillBanner({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border p-3.5 [background:var(--surface-glass)] [border-color:var(--border-glass)] [box-shadow:var(--shadow-glass)]",
+        "flex flex-col gap-3 rounded-xl border border-foreground/10 bg-foreground/[0.035] p-3.5 shadow-none",
         className,
       )}
     >
@@ -94,7 +94,12 @@ export function AutofillBanner({
           <p className="text-xs text-muted-foreground">{ui.aiSuggestion.helper}</p>
         </div>
         {(phase === "idle" || phase === "empty" || phase === "error") && (
-          <Button variant="outline" size="sm" onClick={run}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={run}
+            className="border-foreground/12 bg-foreground/[0.035] hover:bg-foreground/[0.07]"
+          >
             <Sparkles />
             {ui.aiSuggestion.accept}
           </Button>
@@ -135,7 +140,7 @@ export function AutofillBanner({
             return (
               <li
                 key={s.field}
-                className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 px-3 py-2"
+                className="flex items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium text-foreground">

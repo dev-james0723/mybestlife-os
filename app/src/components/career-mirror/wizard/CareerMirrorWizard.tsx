@@ -43,7 +43,6 @@ import type {
 import {
   CAREER_BANNER_STYLES,
   CAREER_BANNER_STYLE_DEFAULT_LABELS,
-  normalizeCareerBannerStyle,
   type CareerBannerStyle,
 } from "@/lib/career-mirror/banner/career-banner-style-config";
 import { BannerStylePicker } from "@/components/career-mirror/profile/BannerStylePicker";
@@ -372,6 +371,20 @@ export function CareerMirrorWizard({
 
   const showFooter = finish.status !== "done";
   const finishing = finish.status === "working";
+  const footer = showFooter ? (
+    <WizardFooter
+      ui={ui}
+      canBack={canBack}
+      canSkip={canSkip}
+      isLast={isLast}
+      finishing={finishing}
+      onBack={goBack}
+      onSkip={skipStep}
+      onNext={goNext}
+      onSaveAndExit={saveAndExit}
+      onFinish={handleFinish}
+    />
+  ) : null;
 
   const inner = (
     <div className="flex h-full min-h-0 flex-col gap-3">
@@ -380,24 +393,11 @@ export function CareerMirrorWizard({
       ) : null}
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4"
       >
         {body}
-        {showFooter ? (
-          <WizardFooter
-            ui={ui}
-            canBack={canBack}
-            canSkip={canSkip}
-            isLast={isLast}
-            finishing={finishing}
-            onBack={goBack}
-            onSkip={skipStep}
-            onNext={goNext}
-            onSaveAndExit={saveAndExit}
-            onFinish={handleFinish}
-          />
-        ) : null}
       </div>
+      {footer}
     </div>
   );
 
@@ -406,7 +406,7 @@ export function CareerMirrorWizard({
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent
           side="bottom-card"
-          className="max-h-[calc(100dvh-3rem)] p-4 pt-5"
+          className="h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] p-4 pt-5"
         >
           <SheetTitle className="sr-only">{ui.hero.title}</SheetTitle>
           <SheetDescription className="sr-only">
@@ -425,7 +425,7 @@ export function CareerMirrorWizard({
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
-            "glass-modal-surface fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl p-5 text-sm text-popover-foreground outline-none isolate scheme-light dark:scheme-dark sm:max-w-3xl",
+            "glass-modal-surface fixed top-1/2 left-1/2 z-50 flex h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl p-5 text-sm text-popover-foreground outline-none isolate scheme-light dark:scheme-dark sm:max-w-3xl",
             "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           )}
         >

@@ -24,12 +24,12 @@ export type CardSelectProps = {
 };
 
 /**
- * CardSelect — grid of selectable glass cards.
+ * CardSelect — grid of selectable cards.
  *
  * Single-select renders as role="radiogroup"/"radio"; multi-select renders as
  * role="listbox"/"option" with aria-multiselectable. Roving focus + arrow keys
  * (incl. Home/End) move between cards; Enter/Space toggle the focused card. The
- * selected card gains an accent ring, a subtle scale, and a check badge.
+ * selected card gains an accent treatment, a subtle scale, and a check badge.
  */
 export function CardSelect({
   options,
@@ -103,7 +103,7 @@ export function CardSelect({
       role={multi ? "listbox" : "radiogroup"}
       aria-multiselectable={multi ? true : undefined}
       className={cn(
-        "grid grid-cols-1 gap-2 sm:grid-cols-2",
+        "grid grid-cols-1 gap-2.5 sm:grid-cols-2",
         className,
       )}
     >
@@ -122,33 +122,27 @@ export function CardSelect({
             tabIndex={multi ? 0 : index === activeIndex ? 0 : -1}
             onClick={() => select(option.id)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            whileHover={prefersReduced ? undefined : { y: -2 }}
+            whileHover={prefersReduced ? undefined : { y: -1 }}
             whileTap={prefersReduced ? undefined : { scale: 0.99 }}
             animate={
-              prefersReduced ? undefined : { scale: selected ? 1.01 : 1 }
+              prefersReduced ? undefined : { scale: selected ? 1.005 : 1 }
             }
             transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
             className={cn(
-              "group/card relative flex w-full items-start gap-3 overflow-hidden rounded-2xl border p-4 text-left",
-              "[background:var(--surface-glass)] [box-shadow:var(--shadow-glass)] [backdrop-filter:blur(var(--glass-blur,20px))_saturate(var(--glass-saturation,135%))] [-webkit-backdrop-filter:blur(var(--glass-blur,20px))_saturate(var(--glass-saturation,135%))]",
-              "transition-[border-color,box-shadow] duration-200",
+              "group/card relative flex min-h-[4rem] w-full items-center gap-3 overflow-hidden rounded-xl border px-4 py-3.5 text-left",
+              "transition-[background-color,border-color,box-shadow,transform] duration-200",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
               selected
-                ? "border-[var(--accent-pink)]/60 ring-2 ring-[var(--accent-pink)]/40"
-                : "[border-color:var(--border-glass)] hover:[border-color:var(--border-glass-strong)]",
+                ? "border-[var(--accent-pink)]/70 bg-[var(--accent-pink)]/12 shadow-[0_12px_28px_-22px_var(--accent-pink)]"
+                : "border-foreground/10 bg-foreground/[0.035] shadow-none hover:border-foreground/20 hover:bg-foreground/[0.055]",
             )}
           >
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100",
-              )}
-              style={{
-                background:
-                  "linear-gradient(135deg, transparent 40%, var(--accent-pink-from) 100%)",
-                mixBlendMode: "soft-light",
-              }}
-            />
+            {selected ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-3 left-0 w-0.5 rounded-r-full bg-[var(--accent-pink)]"
+              />
+            ) : null}
 
             {option.icon ? (
               <span className="relative mt-0.5 inline-flex size-5 shrink-0 items-center justify-center text-foreground [&_svg]:size-5">
