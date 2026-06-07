@@ -192,6 +192,217 @@ CREATE TABLE IF NOT EXISTS daily_plans (
   CONSTRAINT daily_plans_mode_check CHECK (mode IN ('time-block', 'free'))
 );
 
+-- ============================================================
+-- FOCUS & REALITY LAYER
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS focus_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+  low_stimulation_mode_enabled BOOLEAN NOT NULL DEFAULT true,
+  distraction_gate_enabled BOOLEAN NOT NULL DEFAULT true,
+  urge_surfing_delay_seconds INTEGER NOT NULL DEFAULT 10
+    CHECK (urge_surfing_delay_seconds BETWEEN 0 AND 60),
+  default_focus_minutes INTEGER NOT NULL DEFAULT 50
+    CHECK (default_focus_minutes BETWEEN 5 AND 240),
+  break_reminder_minutes INTEGER NOT NULL DEFAULT 50
+    CHECK (break_reminder_minutes BETWEEN 5 AND 240),
+  high_stimulation_routes TEXT[] NOT NULL DEFAULT ARRAY[
+    '/youtube-radar',
+    '/ai-assistant',
+    '/business-analyst',
+    '/ideas',
+    '/idea-capture',
+    '/vault',
+    '/software-vault'
+  ]::TEXT[],
+  ai_access_requires_intention BOOLEAN NOT NULL DEFAULT true,
+  show_actual_timeline_overlay BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT focus_preferences_user_unique UNIQUE (user_id)
+);
+
+CREATE INDEX IF NOT EXISTS focus_preferences_user_id_idx
+  ON focus_preferences (user_id);
+
+CREATE TABLE IF NOT EXISTS planner_focus_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+  daily_plan_id UUID REFERENCES daily_plans(id) ON DELETE CASCADE,
+  planner_task_id TEXT,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
+  plan_date DATE NOT NULL,
+  task_title TEXT NOT NULL,
+  session_type TEXT NOT NULL DEFAULT 'deep_work'
+    CHECK (session_type IN (
+      'deep_work',
+      'admin',
+      'learning',
+      'creative',
+      'meeting',
+      'recovery',
+      'personal'
+    )),
+  status TEXT NOT NULL DEFAULT 'planned'
+    CHECK (status IN ('planned', 'running', 'paused', 'completed', 'abandoned')),
+  planned_start_at TIMESTAMPTZ,
+  planned_end_at TIMESTAMPTZ,
+  actual_start_at TIMESTAMPTZ,
+  actual_end_at TIMESTAMPTZ,
+  win_condition TEXT,
+  allowed_tools TEXT[] NOT NULL DEFAULT '{}',
+  blocked_routes TEXT[] NOT NULL DEFAULT '{}',
+  blocked_domains TEXT[] NOT NULL DEFAULT '{}',
+  interruption_count INTEGER NOT NULL DEFAULT 0 CHECK (interruption_count >= 0),
+  stimulation_leak_count INTEGER NOT NULL DEFAULT 0 CHECK (stimulation_leak_count >= 0),
+  energy_before INTEGER CHECK (energy_before BETWEEN 1 AND 5),
+  energy_after INTEGER CHECK (energy_after BETWEEN 1 AND 5),
+  focus_rating INTEGER CHECK (focus_rating BETWEEN 1 AND 5),
+  completion_state TEXT CHECK (
+    completion_state IS NULL OR completion_state IN ('completed', 'partial', 'not_completed')
+  ),
+  completion_note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS planner_focus_sessions_user_plan_date_idx
+  ON planner_focus_sessions (user_id, plan_date);
+CREATE INDEX IF NOT EXISTS planner_focus_sessions_user_task_idx
+  ON planner_focus_sessions (user_id, planner_task_id)
+  WHERE planner_task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS planner_focus_sessions_user_status_idx
+  ON planner_focus_sessions (user_id, status);
+CREATE UNIQUE INDEX IF NOT EXISTS planner_focus_sessions_one_active_per_user_idx
+  ON planner_focus_sessions (user_id)
+  WHERE status IN ('running', 'paused');
+
+CREATE TABLE IF NOT EXISTS planner_stimulation_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+  focus_session_id UUID REFERENCES planner_focus_sessions(id) ON DELETE CASCADE,
+  plan_date DATE NOT NULL,
+  event_type TEXT NOT NULL
+    CHECK (event_type IN (
+      'route_gate',
+      'urge_surfing',
+      'manual_interrupt',
+      'focus_exit_attempt',
+      'ai_access',
+      'high_stimulation_route'
+    )),
+  route TEXT,
+  domain TEXT,
+  decision TEXT
+    CHECK (decision IS NULL OR decision IN (
+      'returned_to_focus',
+      'continued_intentionally',
+      'captured_and_returned',
+      'abandoned_session'
+    )),
+  reason TEXT,
+  delay_seconds INTEGER NOT NULL DEFAULT 0 CHECK (delay_seconds >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS planner_stimulation_events_user_plan_date_idx
+  ON planner_stimulation_events (user_id, plan_date);
+CREATE INDEX IF NOT EXISTS planner_stimulation_events_session_idx
+  ON planner_stimulation_events (focus_session_id);
+
+CREATE TABLE IF NOT EXISTS daily_plan_quality_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+  daily_plan_id UUID REFERENCES daily_plans(id) ON DELETE CASCADE,
+  plan_date DATE NOT NULL,
+  score INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
+  risk_level TEXT NOT NULL CHECK (risk_level IN ('low', 'medium', 'high')),
+  summary TEXT NOT NULL,
+  top_issue TEXT,
+  focus_target_minutes INTEGER NOT NULL DEFAULT 0 CHECK (focus_target_minutes >= 0),
+  break_status TEXT NOT NULL DEFAULT 'unknown'
+    CHECK (break_status IN ('good', 'thin', 'missing', 'unknown')),
+  stimulation_risk TEXT NOT NULL DEFAULT 'medium'
+    CHECK (stimulation_risk IN ('low', 'medium', 'high')),
+  issues JSONB NOT NULL DEFAULT '[]'::JSONB,
+  suggested_changes JSONB NOT NULL DEFAULT '[]'::JSONB,
+  source_hash TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT daily_plan_quality_reports_user_plan_date_unique UNIQUE (user_id, plan_date)
+);
+
+CREATE INDEX IF NOT EXISTS daily_plan_quality_reports_user_plan_date_idx
+  ON daily_plan_quality_reports (user_id, plan_date);
+
+CREATE TABLE IF NOT EXISTS daily_plan_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+  daily_plan_id UUID REFERENCES daily_plans(id) ON DELETE SET NULL,
+  plan_date DATE NOT NULL,
+  planned_minutes INTEGER NOT NULL DEFAULT 0 CHECK (planned_minutes >= 0),
+  actual_focus_minutes INTEGER NOT NULL DEFAULT 0 CHECK (actual_focus_minutes >= 0),
+  deep_work_minutes INTEGER NOT NULL DEFAULT 0 CHECK (deep_work_minutes >= 0),
+  meeting_minutes INTEGER NOT NULL DEFAULT 0 CHECK (meeting_minutes >= 0),
+  recovery_minutes INTEGER NOT NULL DEFAULT 0 CHECK (recovery_minutes >= 0),
+  interruption_count INTEGER NOT NULL DEFAULT 0 CHECK (interruption_count >= 0),
+  stimulation_leak_count INTEGER NOT NULL DEFAULT 0 CHECK (stimulation_leak_count >= 0),
+  plan_completion_ratio NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (plan_completion_ratio >= 0),
+  plan_accuracy_ratio NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (plan_accuracy_ratio >= 0),
+  focus_integrity_score INTEGER NOT NULL DEFAULT 0 CHECK (focus_integrity_score BETWEEN 0 AND 100),
+  stimulation_load_score INTEGER NOT NULL DEFAULT 0 CHECK (stimulation_load_score BETWEEN 0 AND 100),
+  recovery_ratio NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (recovery_ratio >= 0),
+  best_focus_window JSONB,
+  top_failure_pattern TEXT,
+  tomorrow_suggestion TEXT,
+  ai_summary TEXT,
+  saved_to_journal_entry_id UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT daily_plan_reviews_user_plan_date_unique UNIQUE (user_id, plan_date)
+);
+
+CREATE INDEX IF NOT EXISTS daily_plan_reviews_user_plan_date_idx
+  ON daily_plan_reviews (user_id, plan_date);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON focus_preferences TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON planner_focus_sessions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON planner_stimulation_events TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON daily_plan_quality_reports TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON daily_plan_reviews TO authenticated;
+
+CREATE OR REPLACE FUNCTION tg_focus_reality_set_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS focus_preferences_touch_updated_at ON focus_preferences;
+CREATE TRIGGER focus_preferences_touch_updated_at
+  BEFORE UPDATE ON focus_preferences
+  FOR EACH ROW EXECUTE FUNCTION tg_focus_reality_set_updated_at();
+
+DROP TRIGGER IF EXISTS planner_focus_sessions_touch_updated_at ON planner_focus_sessions;
+CREATE TRIGGER planner_focus_sessions_touch_updated_at
+  BEFORE UPDATE ON planner_focus_sessions
+  FOR EACH ROW EXECUTE FUNCTION tg_focus_reality_set_updated_at();
+
+DROP TRIGGER IF EXISTS daily_plan_quality_reports_touch_updated_at ON daily_plan_quality_reports;
+CREATE TRIGGER daily_plan_quality_reports_touch_updated_at
+  BEFORE UPDATE ON daily_plan_quality_reports
+  FOR EACH ROW EXECUTE FUNCTION tg_focus_reality_set_updated_at();
+
+DROP TRIGGER IF EXISTS daily_plan_reviews_touch_updated_at ON daily_plan_reviews;
+CREATE TRIGGER daily_plan_reviews_touch_updated_at
+  BEFORE UPDATE ON daily_plan_reviews
+  FOR EACH ROW EXECUTE FUNCTION tg_focus_reality_set_updated_at();
+
 CREATE TABLE IF NOT EXISTS weekly_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
@@ -826,7 +1037,9 @@ BEGIN
   FOR tbl IN
     SELECT unnest(ARRAY[
       'projects', 'project_resources', 'tasks', 'goals', 'key_results', 'schedule_templates',
-      'daily_plans', 'weekly_reviews', 'notes', 'knowledge_entries', 'ideas',
+      'daily_plans', 'focus_preferences', 'planner_focus_sessions',
+      'planner_stimulation_events', 'daily_plan_quality_reports', 'daily_plan_reviews',
+      'weekly_reviews', 'notes', 'knowledge_entries', 'ideas',
       'quick_save_captures',
       'about_me', 'journal_entries', 'grateful_things', 'habits', 'routines',
       'habit_logs', 'sleep_logs', 'exercise_logs', 'nutrition_logs',

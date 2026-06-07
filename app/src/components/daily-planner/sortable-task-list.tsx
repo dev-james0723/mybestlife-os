@@ -51,6 +51,7 @@ import {
   ChevronRight,
   GripVertical,
   Minus,
+  Play,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -91,6 +92,7 @@ interface SortableTaskListProps {
   onDelete: (index: number) => void;
   onRitual: (index: number) => void;
   onTaskClick: (index: number) => void;
+  onStartFocus?: (index: number) => void;
 }
 
 /* ─────────────────────── swipe panel constants ─────────────────────── */
@@ -163,6 +165,7 @@ export function SortableTaskList({
   onDelete,
   onRitual,
   onTaskClick,
+  onStartFocus,
 }: SortableTaskListProps) {
   const ids = useMemo(
     () => tasks.map((t, i) => t._uid ?? `dp-row-${i}`),
@@ -257,6 +260,7 @@ export function SortableTaskList({
               onDelete={onDelete}
               onRitual={onRitual}
               onTaskClick={onTaskClick}
+              onStartFocus={onStartFocus}
             />
           ))}
         </ul>
@@ -297,6 +301,7 @@ interface SortableRowProps {
   onDelete: (index: number) => void;
   onRitual: (index: number) => void;
   onTaskClick: (index: number) => void;
+  onStartFocus?: (index: number) => void;
 }
 
 function SortableRow({
@@ -314,6 +319,7 @@ function SortableRow({
   onDelete,
   onRitual,
   onTaskClick,
+  onStartFocus,
 }: SortableRowProps) {
   const {
     attributes,
@@ -358,6 +364,7 @@ function SortableRow({
         onDelete={onDelete}
         onRitual={onRitual}
         onTaskClick={onTaskClick}
+        onStartFocus={onStartFocus}
       />
     </li>
   );
@@ -388,6 +395,7 @@ interface TaskRowContentProps {
   onDelete: (index: number) => void;
   onRitual: (index: number) => void;
   onTaskClick: (index: number) => void;
+  onStartFocus?: (index: number) => void;
 }
 
 function TaskRowContent({
@@ -409,6 +417,7 @@ function TaskRowContent({
   onDelete,
   onRitual,
   onTaskClick,
+  onStartFocus,
 }: TaskRowContentProps) {
   const { color, blocks, durationLabel, timeRangeLabel } = meta;
 
@@ -868,6 +877,23 @@ function TaskRowContent({
           </button>
         )}
 
+        {isMobile && onStartFocus && !isPlaceholder && (
+          <button
+            type="button"
+            aria-label={copy.startFocus}
+            className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 active:bg-emerald-500/20 dark:text-emerald-200"
+            onPointerDown={stopDragActivation}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartFocus(index);
+              setOpenRowId(null);
+            }}
+          >
+            <Play className="h-3.5 w-3.5" />
+          </button>
+        )}
+
         {/* Desktop inline action buttons. */}
         {!isMobile && (
           <div
@@ -876,6 +902,28 @@ function TaskRowContent({
             onMouseDown={stopDragActivation}
             onTouchStart={(e) => e.stopPropagation()}
           >
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-emerald-700 dark:text-emerald-300"
+                      disabled={!onStartFocus}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStartFocus?.(index);
+                      }}
+                    />
+                  }
+                >
+                  <Play className="h-3 w-3" />
+                </TooltipTrigger>
+                <TooltipContent>{copy.startFocus}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger

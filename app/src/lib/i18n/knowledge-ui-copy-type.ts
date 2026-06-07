@@ -324,6 +324,10 @@ export type KnowledgeUiCopy = {
     uploadFileAria: string;
     dropFileOrBrowse: string;
     supportedFileFormats: string;
+    multipleFilesDetectedTitle: string;
+    multipleFilesDetectedDescription: (count: number) => string;
+    fileQueuePosition: (current: number, total: number) => string;
+    skipFile: string;
     uploading: string;
     upload: string;
     quickTipTitle: string;

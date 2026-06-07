@@ -21,6 +21,14 @@ import {
   uploadKnowledgeFileToStorage,
 } from "@/lib/knowledge/client-file-upload";
 import {
+  advanceKnowledgeFileQueue,
+  createKnowledgeFileQueue,
+  getCurrentKnowledgeFile,
+  getKnowledgeFileQueuePosition,
+  skipCurrentKnowledgeFile,
+  type KnowledgeFileQueueState,
+} from "@/lib/knowledge/knowledge-file-queue";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -72,29 +80,111 @@ function resolveTextSourceType(text: string): {
   };
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function plainTextToEditorHtml(value: string): string {
+  const blocks = value
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  if (blocks.length === 0) return "";
+  return blocks
+    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+function describeDroppedFile(file: File): string {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const mime = file.type.toLowerCase();
+  if (mime === "application/pdf" || ext === "pdf") return "PDF";
+  if (
+    mime.startsWith("image/") ||
+    ["jpg", "jpeg", "png", "gif", "webp", "svg", "heic", "heif"].includes(ext)
+  ) {
+    return "Image";
+  }
+  if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "m4a", "flac", "aac"].includes(ext)) {
+    return "Audio";
+  }
+  if (mime.startsWith("video/") || ["mp4", "mov", "webm", "avi", "mkv", "m4v"].includes(ext)) {
+    return "Video";
+  }
+  if (["xls", "xlsx", "csv", "tsv", "numbers"].includes(ext)) return "Spreadsheet";
+  if (["ppt", "pptx", "key"].includes(ext)) return "Presentation";
+  if (["doc", "docx", "rtf"].includes(ext)) return "Document";
+  if (
+    ["js", "jsx", "ts", "tsx", "py", "rb", "go", "rs", "java", "php", "css", "sql", "sh", "bash", "json", "yaml", "yml"].includes(ext)
+  ) {
+    return "Code";
+  }
+  if (["txt", "md", "markdown"].includes(ext) || mime.startsWith("text/")) return "Text";
+  return "File";
+}
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  const precision = unitIndex === 0 || value >= 10 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
+}
+
+function getInitialPendingKnowledgeAdd() {
+  return useKnowledgeStore.getState().pendingKnowledgeAdd;
+}
+
 export function AddKnowledgeModal() {
   const language = useAppStore((s) => s.language);
   const knowledgeUi = getKnowledgeUiCopy(language);
   const ui = knowledgeUi.addModal;
   const closeAddModal = useKnowledgeStore((s) => s.closeAddModal);
-  const [activeTab, setActiveTab] = useState("url");
+  const [activeTab, setActiveTab] = useState(() => getInitialPendingKnowledgeAdd()?.tab ?? "url");
   const [thumbnailStyle, setThumbnailStyle] = useState<ThumbnailStyle>("minimal");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // URL tab
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(() => {
+    const pending = getInitialPendingKnowledgeAdd();
+    return pending?.tab === "url" ? pending.url : "";
+  });
   const [withYouTubeTranscript, setWithYouTubeTranscript] = useState(false);
 
   // File tab
-  const [file, setFile] = useState<File | null>(null);
+  const [fileQueue, setFileQueue] = useState<KnowledgeFileQueueState<File>>(() => {
+    const pending = getInitialPendingKnowledgeAdd();
+    return createKnowledgeFileQueue(pending?.tab === "file" ? pending.files : []);
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const cancelPendingFileUploadRef = useRef(false);
 
   // Text tab
   const [textTitle, setTextTitle] = useState("");
+  const [textInitialHtml] = useState(() => {
+    const pending = getInitialPendingKnowledgeAdd();
+    return pending?.tab === "text" ? plainTextToEditorHtml(pending.text) : "";
+  });
   const textEditorRef = useRef<RichTextEditorHandle>(null);
-  const [textDraft, setTextDraft] = useState({ html: "", text: "" });
+  const [textDraft, setTextDraft] = useState(() => {
+    const pending = getInitialPendingKnowledgeAdd();
+    const html = pending?.tab === "text" ? plainTextToEditorHtml(pending.text) : "";
+    return {
+      html,
+      text: pending?.tab === "text" ? pending.text.trim() : "",
+    };
+  });
   const [allowAutoTitleGeneration, setAllowAutoTitleGeneration] = useState(true);
   const [showGeneratingTitleHint, setShowGeneratingTitleHint] = useState(false);
   const [textDisplayMode, setTextDisplayMode] = useState<"preview" | "source" | null>(null);
@@ -128,6 +218,10 @@ export function AddKnowledgeModal() {
     return resolveTextSourceType(sampleText);
   }, [textDraft]);
 
+  const file = getCurrentKnowledgeFile(fileQueue);
+  const fileQueuePosition = getKnowledgeFileQueuePosition(fileQueue);
+  const hasMultipleQueuedFiles = fileQueue.totalCount > 1;
+
   const selectedKnowledgeFileIsPhoto = useMemo(
     () => (file ? isKnowledgePhotoFile(file) : false),
     [file],
@@ -135,15 +229,17 @@ export function AddKnowledgeModal() {
 
   // Auto-init display mode when text classification changes.
   useEffect(() => {
-    if (!textClassification) {
-      setTextDisplayMode(null);
-      return;
-    }
-    if (textClassification.supportsPreview) {
-      setTextDisplayMode((prev) => prev ?? textClassification.defaultDisplayMode);
-    } else {
-      setTextDisplayMode("source");
-    }
+    queueMicrotask(() => {
+      if (!textClassification) {
+        setTextDisplayMode(null);
+        return;
+      }
+      if (textClassification.supportsPreview) {
+        setTextDisplayMode((prev) => prev ?? textClassification.defaultDisplayMode);
+      } else {
+        setTextDisplayMode("source");
+      }
+    });
   }, [textClassification]);
 
   useEffect(() => {
@@ -156,6 +252,12 @@ export function AddKnowledgeModal() {
       if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
     };
   }, [audioPreviewUrl]);
+
+  const setSelectedKnowledgeFiles = useCallback((nextFiles: File[]) => {
+    cancelPendingFileUploadRef.current = false;
+    setFileQueue(createKnowledgeFileQueue(nextFiles));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "text" || !allowAutoTitleGeneration) return;
@@ -216,7 +318,7 @@ export function AddKnowledgeModal() {
 
   const clearSelectedKnowledgeFile = useCallback(() => {
     cancelPendingFileUploadRef.current = false;
-    setFile(null);
+    setFileQueue(createKnowledgeFileQueue([]));
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -228,10 +330,36 @@ export function AddKnowledgeModal() {
         cancelPendingFileUploadRef.current = true;
         return;
       }
+      if (file && hasMultipleQueuedFiles) {
+        const nextQueue = skipCurrentKnowledgeFile(fileQueue);
+        setFileQueue(nextQueue);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        if (nextQueue.files.length === 0) {
+          closeAddModal();
+        }
+        return;
+      }
       clearSelectedKnowledgeFile();
     },
-    [clearSelectedKnowledgeFile, isSubmitting],
+    [
+      clearSelectedKnowledgeFile,
+      closeAddModal,
+      file,
+      fileQueue,
+      hasMultipleQueuedFiles,
+      isSubmitting,
+    ],
   );
+
+  const handleSkipCurrentFile = useCallback(() => {
+    if (!file) return;
+    const nextQueue = skipCurrentKnowledgeFile(fileQueue);
+    setFileQueue(nextQueue);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (nextQueue.files.length === 0) {
+      closeAddModal();
+    }
+  }, [closeAddModal, file, fileQueue]);
 
   const handleSubmitFile = async () => {
     if (!file) return;
@@ -253,7 +381,12 @@ export function AddKnowledgeModal() {
       });
       upsertItem(created);
       toast.success(ui.addSuccess);
-      closeAddModal();
+      const nextQueue = advanceKnowledgeFileQueue(fileQueue);
+      setFileQueue(nextQueue);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (nextQueue.files.length === 0) {
+        closeAddModal();
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[add-knowledge] file knowledge failed:", err);
@@ -421,9 +554,9 @@ export function AddKnowledgeModal() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) setFile(droppedFile);
-  }, []);
+    const droppedFiles = Array.from(e.dataTransfer.files ?? []);
+    if (droppedFiles.length > 0) setSelectedKnowledgeFiles(droppedFiles);
+  }, [setSelectedKnowledgeFiles]);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -553,6 +686,19 @@ export function AddKnowledgeModal() {
 
           {/* File Tab */}
           <TabsContent value="file" className="space-y-4 mt-4">
+            {hasMultipleQueuedFiles && fileQueuePosition ? (
+              <div className="rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-amber-950 shadow-sm dark:border-amber-300/25 dark:bg-amber-950/30 dark:text-amber-50">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">{ui.multipleFilesDetectedTitle}</p>
+                  <span className="rounded-full border border-amber-400/60 bg-white/70 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:border-amber-200/30 dark:bg-black/20 dark:text-amber-50">
+                    {ui.fileQueuePosition(fileQueuePosition.current, fileQueuePosition.total)}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-amber-900/80 dark:text-amber-50/78">
+                  {ui.multipleFilesDetectedDescription(fileQueuePosition.total)}
+                </p>
+              </div>
+            ) : null}
             <div
               className={cn(
                 "relative border-2 border-dashed rounded-lg min-h-[120px] flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer px-4 py-6",
@@ -586,9 +732,17 @@ export function AddKnowledgeModal() {
               )}
               <Upload className="h-6 w-6 text-muted-foreground shrink-0" />
               {file ? (
-                <span className="text-sm font-medium text-center break-all line-clamp-2 px-2">
-                  {file.name}
-                </span>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                    {describeDroppedFile(file)}
+                  </span>
+                  <span className="text-sm font-medium break-all line-clamp-2 px-2">
+                    {file.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatFileSize(file.size)}
+                  </span>
+                </div>
               ) : (
                 <>
                   <span className="text-sm text-muted-foreground text-center">
@@ -605,7 +759,8 @@ export function AddKnowledgeModal() {
               type="file"
               className="hidden"
               accept={KNOWLEDGE_FILE_INPUT_ACCEPT}
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              multiple
+              onChange={(e) => setSelectedKnowledgeFiles(Array.from(e.target.files ?? []))}
             />
             {!selectedKnowledgeFileIsPhoto ? (
               <ThumbnailStylePicker
@@ -625,6 +780,11 @@ export function AddKnowledgeModal() {
               <Button variant="outline" onClick={closeAddModal}>
                 {ui.cancel}
               </Button>
+              {file && hasMultipleQueuedFiles ? (
+                <Button variant="outline" onClick={handleSkipCurrentFile} disabled={isSubmitting}>
+                  {ui.skipFile}
+                </Button>
+              ) : null}
               <Button onClick={handleSubmitFile} disabled={!file || isSubmitting}>
                 {isSubmitting ? ui.uploading : ui.upload}
               </Button>
@@ -662,7 +822,7 @@ export function AddKnowledgeModal() {
               <Label>{ui.contentLabel}</Label>
               <RichTextEditor
                 ref={textEditorRef}
-                initialHtml=""
+                initialHtml={textInitialHtml}
                 placeholder={ui.contentPlaceholder}
                 minHeightClass="min-h-[180px]"
                 onChange={syncTextDraft}

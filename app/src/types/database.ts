@@ -279,6 +279,225 @@ export type DailyPlan = {
   updated_at: string;
 };
 
+export type FocusSessionType =
+  | "deep_work"
+  | "admin"
+  | "learning"
+  | "creative"
+  | "meeting"
+  | "recovery"
+  | "personal";
+
+export type FocusSessionStatus =
+  | "planned"
+  | "running"
+  | "paused"
+  | "completed"
+  | "abandoned";
+
+export type StimulationRisk = "low" | "medium" | "high";
+export type PlanQualityRiskLevel = "low" | "medium" | "high";
+export type BreakStatus = "good" | "thin" | "missing" | "unknown";
+
+export type FocusPreference = {
+  id: string;
+  user_id: string;
+  low_stimulation_mode_enabled: boolean;
+  distraction_gate_enabled: boolean;
+  urge_surfing_delay_seconds: number;
+  default_focus_minutes: number;
+  break_reminder_minutes: number;
+  high_stimulation_routes: string[];
+  ai_access_requires_intention: boolean;
+  show_actual_timeline_overlay: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PlannerFocusSessionCompletionState =
+  | "completed"
+  | "partial"
+  | "not_completed";
+
+export type PlannerFocusSession = {
+  id: string;
+  user_id: string;
+  daily_plan_id: string | null;
+  planner_task_id: string | null;
+  task_id: string | null;
+  project_id: string | null;
+  plan_date: string;
+  task_title: string;
+  session_type: FocusSessionType;
+  status: FocusSessionStatus;
+  planned_start_at: string | null;
+  planned_end_at: string | null;
+  actual_start_at: string | null;
+  actual_end_at: string | null;
+  win_condition: string | null;
+  allowed_tools: string[];
+  blocked_routes: string[];
+  blocked_domains: string[];
+  interruption_count: number;
+  stimulation_leak_count: number;
+  energy_before: number | null;
+  energy_after: number | null;
+  focus_rating: number | null;
+  completion_state: PlannerFocusSessionCompletionState | null;
+  completion_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PlannerStimulationEventType =
+  | "route_gate"
+  | "urge_surfing"
+  | "manual_interrupt"
+  | "focus_exit_attempt"
+  | "ai_access"
+  | "high_stimulation_route";
+
+export type StimulationDecision =
+  | "returned_to_focus"
+  | "continued_intentionally"
+  | "captured_and_returned"
+  | "abandoned_session";
+
+export type PlannerStimulationEvent = {
+  id: string;
+  user_id: string;
+  focus_session_id: string | null;
+  plan_date: string;
+  event_type: PlannerStimulationEventType;
+  route: string | null;
+  domain: string | null;
+  decision: StimulationDecision | null;
+  reason: string | null;
+  delay_seconds: number;
+  created_at: string;
+};
+
+export type PlanQualityIssueType =
+  | "overload"
+  | "calendar_conflict"
+  | "missing_break"
+  | "long_work_run"
+  | "context_switching"
+  | "high_stimulation"
+  | "weak_deep_work_protection";
+
+export type PlanQualityIssueSeverity = "info" | "warning" | "critical";
+
+export type PlanQualityIssue = {
+  id: string;
+  severity: PlanQualityIssueSeverity;
+  type: PlanQualityIssueType;
+  title: string;
+  description: string;
+  affectedPlannerTaskIds: string[];
+};
+
+export type PlanQualitySuggestedChangeType =
+  | "add_break"
+  | "move_task"
+  | "merge_admin"
+  | "protect_deep_work"
+  | "reduce_scope"
+  | "convert_to_low_stim";
+
+export type PlanQualitySuggestedChangePatch =
+  | {
+      action: "add_break";
+      afterPlannerTaskId?: string;
+      blocks?: number;
+      title?: string;
+    }
+  | {
+      action: "move_task";
+      plannerTaskId: string;
+      targetOrder?: number;
+      targetStartTime?: string;
+    }
+  | {
+      action: "merge_admin";
+      plannerTaskIds: string[];
+    }
+  | {
+      action: "protect_deep_work";
+      plannerTaskId?: string;
+      minMinutes?: number;
+    }
+  | {
+      action: "reduce_scope";
+      plannerTaskId: string;
+      targetBlocks?: number;
+    }
+  | {
+      action: "convert_to_low_stim";
+      plannerTaskId: string;
+      note?: string;
+    };
+
+export type PlanQualitySuggestedChange = {
+  id: string;
+  type: PlanQualitySuggestedChangeType;
+  title: string;
+  description: string;
+  patch: PlanQualitySuggestedChangePatch;
+  safeToAutoApply: boolean;
+};
+
+export type DailyPlanQualityReport = {
+  id: string;
+  user_id: string;
+  daily_plan_id: string | null;
+  plan_date: string;
+  score: number;
+  risk_level: PlanQualityRiskLevel;
+  summary: string;
+  top_issue: string | null;
+  focus_target_minutes: number;
+  break_status: BreakStatus;
+  stimulation_risk: StimulationRisk;
+  issues: PlanQualityIssue[];
+  suggested_changes: PlanQualitySuggestedChange[];
+  source_hash: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BestFocusWindow = {
+  start: string;
+  end: string;
+  label: string;
+};
+
+export type DailyPlanReview = {
+  id: string;
+  user_id: string;
+  daily_plan_id: string | null;
+  plan_date: string;
+  planned_minutes: number;
+  actual_focus_minutes: number;
+  deep_work_minutes: number;
+  meeting_minutes: number;
+  recovery_minutes: number;
+  interruption_count: number;
+  stimulation_leak_count: number;
+  plan_completion_ratio: number;
+  plan_accuracy_ratio: number;
+  focus_integrity_score: number;
+  stimulation_load_score: number;
+  recovery_ratio: number;
+  best_focus_window: BestFocusWindow | null;
+  top_failure_pattern: string | null;
+  tomorrow_suggestion: string | null;
+  ai_summary: string | null;
+  saved_to_journal_entry_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ScheduleTemplate = {
   id: string;
   user_id: string;

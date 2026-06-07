@@ -57,7 +57,7 @@ export function ConstellationEmptyState({ variant }: ConstellationEmptyStateProp
           <Button
             type="button"
             size="sm"
-            onClick={openAddModal}
+            onClick={() => openAddModal()}
             className="mt-2 h-9 gap-2 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700"
           >
             {ui.addKnowledge}

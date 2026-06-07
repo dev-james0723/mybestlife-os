@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type MouseEvent } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { TodayCompanionPanel } from "@/components/sidebar/TodayCompanionPanel";
+import { useFocusNavigation } from "@/components/daily-planner/focus/focus-reality-boundary";
 import { navigationCategories, type NavCategory } from "@/lib/constants/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-settings";
@@ -157,6 +158,7 @@ export function AppSidebar() {
   const { data: profile, isLoading: profileLoading } = useProfile();
   const language = useAppStore((s) => s.language);
   const { uiTheme } = useTheme();
+  const focusNavigation = useFocusNavigation();
   const footer = getSidebarFooterCopy(language);
   const tui = getThemeUiCopy(language);
   const prefersReducedMotion = useSsrSafeReducedMotion();
@@ -221,7 +223,14 @@ export function AppSidebar() {
     return () => window.clearTimeout(timer);
   }, [companionRevealDelayMs, menuItemsReady]);
 
-  const closeMobileSidebar = () => setOpenMobile(false);
+  const closeMobileSidebar = useCallback(() => setOpenMobile(false), [setOpenMobile]);
+  const handleSidebarNavigate = useCallback(
+    (href: string, event: MouseEvent<HTMLElement>) => {
+      if (focusNavigation?.handleLinkClick(href, event) === false) return;
+      closeMobileSidebar();
+    },
+    [closeMobileSidebar, focusNavigation],
+  );
 
   const userInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name
@@ -266,13 +275,13 @@ export function AppSidebar() {
                 currentSearch={currentSearch}
                 uiTheme={uiTheme}
                 language={language}
-                onNavigate={closeMobileSidebar}
+                onNavigate={handleSidebarNavigate}
               />
               {category.categoryId === "learning" ? (
                 <GardenNavButton
                   localeSlug={localeSlug}
                   pathWithoutLocale={pathWithoutLocale}
-                  onNavigate={closeMobileSidebar}
+                  onNavigate={handleSidebarNavigate}
                   uiTheme={uiTheme}
                   language={language}
                 />
@@ -311,13 +320,13 @@ export function AppSidebar() {
                       currentSearch={currentSearch}
                       uiTheme={uiTheme}
                       language={language}
-                      onNavigate={closeMobileSidebar}
+                      onNavigate={handleSidebarNavigate}
                     />
                     {category.categoryId === "learning" ? (
                       <GardenNavButton
                         localeSlug={localeSlug}
                         pathWithoutLocale={pathWithoutLocale}
-                        onNavigate={closeMobileSidebar}
+                        onNavigate={handleSidebarNavigate}
                         uiTheme={uiTheme}
                         language={language}
                       />
@@ -396,7 +405,7 @@ type CategoryGroupProps = {
   currentSearch: Record<string, string>;
   uiTheme: UiTheme;
   language: AppLocale;
-  onNavigate: () => void;
+  onNavigate: (href: string, event: MouseEvent<HTMLElement>) => void;
 };
 
 function buildHrefWithSearch(
@@ -445,7 +454,7 @@ function CategoryGroup({
             <SidebarMenuButton
               render={<Link href={href} />}
               isActive={isActive}
-              onClick={onNavigate}
+              onClick={(event) => onNavigate(href, event)}
             >
               <IconWell icon={category.icon} />
               <span className="font-semibold">{label}</span>
@@ -476,7 +485,7 @@ function CategoryGroup({
               <SidebarMenuButton
                 render={<Link href={href} />}
                 isActive={isActive}
-                onClick={onNavigate}
+                onClick={(event) => onNavigate(href, event)}
                 className="flex-1"
               >
                 <IconWell icon={category.icon} />
@@ -510,7 +519,7 @@ function CategoryGroup({
                     <SidebarMenuSubButton
                       render={<Link href={sublinkHref} />}
                       isActive={itemActive}
-                      onClick={onNavigate}
+                      onClick={(event) => onNavigate(sublinkHref, event)}
                     >
                       <IconWell icon={item.icon} />
                       <span>
@@ -556,7 +565,7 @@ function CategoryGroup({
                   <SidebarMenuSubButton
                     render={<Link href={href} />}
                     isActive={isActive}
-                    onClick={onNavigate}
+                    onClick={(event) => onNavigate(href, event)}
                   >
                     <IconWell icon={item.icon} />
                     <span>
@@ -576,7 +585,7 @@ function CategoryGroup({
 type GardenNavButtonProps = {
   localeSlug: LocaleUrlSlug;
   pathWithoutLocale: string;
-  onNavigate: () => void;
+  onNavigate: (href: string, event: MouseEvent<HTMLElement>) => void;
   uiTheme: UiTheme;
   language: AppLocale;
 };
@@ -598,7 +607,7 @@ function GardenNavButton({
         <SidebarMenuItem>
           <Link
             href={href}
-            onClick={onNavigate}
+            onClick={(event) => onNavigate(href, event)}
             data-glass-garden-cta
             className={cn(
               "flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-sm font-semibold transition-colors",

@@ -6,6 +6,7 @@ import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
 import { IdeaCaptureSheet } from "@/components/idea-capture/IdeaCaptureSheet";
 import { OSBuddyDock } from "@/components/os-buddy/OSBuddyDock";
 import { OSBuddyShortcutController } from "@/components/os-buddy/OSBuddyShortcutController";
+import { FocusRealityBoundary } from "@/components/daily-planner/focus/focus-reality-boundary";
 
 export default function ProtectedLayout({
   children,
@@ -14,15 +15,17 @@ export default function ProtectedLayout({
 }) {
   return (
     <SidebarProvider>
-      <SyncThemeFromProfile />
-      <OnboardingGate />
-      <AppSidebar />
-      <SidebarInset>
-        <ProtectedScrollLayout>{children}</ProtectedScrollLayout>
-      </SidebarInset>
-      <IdeaCaptureSheet />
-      <OSBuddyShortcutController />
-      <OSBuddyDock />
+      <FocusRealityBoundary>
+        <SyncThemeFromProfile />
+        <OnboardingGate />
+        <AppSidebar />
+        <SidebarInset>
+          <ProtectedScrollLayout>{children}</ProtectedScrollLayout>
+        </SidebarInset>
+        <IdeaCaptureSheet />
+        <OSBuddyShortcutController />
+        <OSBuddyDock />
+      </FocusRealityBoundary>
     </SidebarProvider>
   );
 }

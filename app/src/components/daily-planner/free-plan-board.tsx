@@ -36,6 +36,7 @@ import {
   ChevronUp,
   GripVertical,
   ListChecks,
+  Play,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -197,6 +198,7 @@ export interface FreePlanBoardProps {
   onChange: (next: FreePlanTask[]) => void;
   /** Optional secondary actions slot (Create Task with AI / Import from Tasks). */
   secondaryActions?: React.ReactNode;
+  onStartFocus?: (task: FreePlanTask) => void;
 }
 
 /**
@@ -211,6 +213,7 @@ export function FreePlanBoard({
   tasks,
   onChange,
   secondaryActions,
+  onStartFocus,
 }: FreePlanBoardProps) {
   const prefersReduced = useReducedMotion();
   const [draftTitle, setDraftTitle] = useState("");
@@ -599,6 +602,7 @@ export function FreePlanBoard({
                 onDelete={handleDelete}
                 onMoveWithinBucket={handleMoveWithinBucket}
                 onOpenTask={handleOpenTask}
+                onStartFocus={onStartFocus}
               />
             </motion.div>
           ))}
@@ -619,6 +623,7 @@ export function FreePlanBoard({
               onDelete={() => undefined}
               onMoveWithinBucket={() => undefined}
               onOpenTask={undefined}
+              onStartFocus={undefined}
               isOverlay
             />
           ) : null}
@@ -634,6 +639,7 @@ export function FreePlanBoard({
         }}
         onSave={handleSaveTaskDetails}
         onDelete={handleDeleteFromDetail}
+        onStartFocus={onStartFocus}
       />
     </div>
   );
@@ -699,6 +705,7 @@ function FreePriorityColumn({
   onDelete,
   onMoveWithinBucket,
   onOpenTask,
+  onStartFocus,
 }: {
   copy: DailyPlannerUiCopy;
   priority: FreePlanTask["priority"];
@@ -709,6 +716,7 @@ function FreePriorityColumn({
   onDelete: (id: string) => void;
   onMoveWithinBucket: (id: string, delta: -1 | 1) => void;
   onOpenTask: (id: string) => void;
+  onStartFocus?: (task: FreePlanTask) => void;
 }) {
   const label = priorityLabel(copy, priority);
   const ids = useMemo(() => tasks.map((t) => t.id), [tasks]);
@@ -783,6 +791,7 @@ function FreePriorityColumn({
                     onDelete={onDelete}
                     onMoveWithinBucket={onMoveWithinBucket}
                     onOpenTask={onOpenTask}
+                    onStartFocus={onStartFocus}
                   />
                 </motion.div>
               ))}
@@ -817,6 +826,7 @@ interface FreeTaskCardCommonProps {
   onDelete: (id: string) => void;
   onMoveWithinBucket: (id: string, delta: -1 | 1) => void;
   onOpenTask?: (id: string) => void;
+  onStartFocus?: (task: FreePlanTask) => void;
 }
 
 function SortableFreeTaskCard(props: FreeTaskCardCommonProps) {
@@ -876,6 +886,7 @@ function FreeTaskCardShell({
   onDelete,
   onMoveWithinBucket,
   onOpenTask,
+  onStartFocus,
 }: FreeTaskCardShellProps) {
   const isDone = task.priority === "done";
   const preview = notePreviewText(task.notes);
@@ -966,6 +977,20 @@ function FreeTaskCardShell({
       {/* Action cluster: Up arrow · Down arrow · Section switcher · Trash.
        *  All chevrons here are arrows (move actions); no six-dot icons. */}
       <div className="flex shrink-0 items-center gap-1">
+        {onStartFocus ? (
+          <button
+            type="button"
+            aria-label={copy.startFocus}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-emerald-700 transition-colors hover:bg-emerald-500/15 hover:text-emerald-800 disabled:opacity-30 dark:text-emerald-300 dark:hover:text-emerald-200"
+            disabled={isOverlay}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartFocus(task);
+            }}
+          >
+            <Play className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label={copy.ariaHoldToReorder + " (up)"}

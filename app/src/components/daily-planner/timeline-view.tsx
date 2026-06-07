@@ -2,10 +2,13 @@
 
 import { useMemo } from "react";
 import { format } from "date-fns";
+import { Play } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { computeSequentialSchedule } from "@/lib/daily-planner/plan-schedule-math";
-import type { DailyPlanTask, Task } from "@/types/database";
+import { getSessionActualMinutes } from "@/lib/daily-planner/focus/review-metrics";
+import type { DailyPlanTask, PlannerFocusSession, Task } from "@/types/database";
 import type { DailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
 import { PlannerGoogleSyncDot } from "@/components/daily-planner/PlannerGoogleSyncDot";
 
@@ -69,9 +72,13 @@ export interface TimelineViewProps {
   untitledTask: string;
   taskCardBlockCount: (blocks: number) => string;
   onTaskClick?: (planTask: DailyPlanTask) => void;
+  onStartFocus?: (planTask: DailyPlanTask) => void;
   blockMinutes?: number;
   /** When set with `plannerCopy`, shows subtle Google Calendar sync dots on task cards. */
   taskSyncStatusByPlannerId?: Record<string, string>;
+  focusSessionsByPlannerTaskId?: Record<string, PlannerFocusSession[]>;
+  activeFocusSessionId?: string | null;
+  showActualOverlay?: boolean;
   plannerCopy?: DailyPlannerUiCopy;
   /**
    * `1` when End Time wraps past midnight, `0` otherwise. Used to size the timeline so
@@ -109,6 +116,10 @@ export function TimelineView({
   nextDayBadge,
   taskSyncStatusByPlannerId,
   plannerCopy,
+  focusSessionsByPlannerTaskId,
+  activeFocusSessionId,
+  showActualOverlay = false,
+  onStartFocus,
 }: TimelineViewProps) {
   const blockMinutes = blockMinutesProp ?? DEFAULT_BLOCK_MINUTES;
   const sortedTasks = useMemo(
@@ -225,11 +236,19 @@ export function TimelineView({
               const blocks = layout.task.blocks ?? 0;
               const isCompactBlock = blocks <= 1;
               const durLabel = fmtBlocks(blocks);
+              const plannerTaskId = layout.task.plannerTaskId;
+              const focusSessions =
+                plannerTaskId ? focusSessionsByPlannerTaskId?.[plannerTaskId] ?? [] : [];
+              const activeForTask = focusSessions.some((session) => session.id === activeFocusSessionId);
+              const actualMinutes = focusSessions.reduce(
+                (sum, session) => sum + getSessionActualMinutes(session),
+                0,
+              );
+              const plannedMinutes = Math.max(1, blocks) * blockMinutes;
 
               return (
-                <button
+                <div
                   key={`${layout.task.taskName}-${layout.index}-${layout.startMin}`}
-                  type="button"
                   className={cn(
                     "absolute left-2.5 right-2.5 z-[1] flex min-h-0 min-w-0 flex-col items-center justify-center rounded-xl border text-center transition-[box-shadow,transform]",
                     isCompactBlock
@@ -237,6 +256,7 @@ export function TimelineView({
                       : "gap-1.5 px-4 py-3.5",
                     onTaskClick &&
                       "cursor-pointer hover:shadow-md hover:ring-1 hover:ring-ring/40 active:scale-[0.99]",
+                    activeForTask && "ring-2 ring-emerald-400/70",
                   )}
                   style={{
                     top: layout.topPx + BLOCK_INSET_PX,
@@ -248,8 +268,32 @@ export function TimelineView({
                     backgroundColor: `${layout.color}12`,
                     boxShadow: `0 0 0 1px ${layout.color}33`,
                   }}
+                  role={onTaskClick ? "button" : undefined}
+                  tabIndex={onTaskClick ? 0 : undefined}
                   onClick={() => onTaskClick?.(layout.task)}
+                  onKeyDown={(event) => {
+                    if (!onTaskClick) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onTaskClick(layout.task);
+                    }
+                  }}
                 >
+                  {onStartFocus ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon-xs"
+                      className="absolute right-2 top-2 h-8 min-h-8 w-8 rounded-lg bg-background/80"
+                      aria-label={plannerCopy?.startFocus}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onStartFocus(layout.task);
+                      }}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                    </Button>
+                  ) : null}
                   <span className="flex w-full min-w-0 items-center justify-center gap-1.5">
                     {plannerCopy ? (
                       <PlannerGoogleSyncDot
@@ -292,7 +336,15 @@ export function TimelineView({
                       </span>
                     </>
                   )}
-                </button>
+                  {showActualOverlay && plannerCopy && actualMinutes > 0 ? (
+                    <span className="mt-1 max-w-full truncate rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {plannerCopy.actualPlannedLabel(
+                        plannerCopy.formatMinutes(actualMinutes),
+                        plannerCopy.formatMinutes(plannedMinutes),
+                      )}
+                    </span>
+                  ) : null}
+                </div>
               );
             })}
           </div>

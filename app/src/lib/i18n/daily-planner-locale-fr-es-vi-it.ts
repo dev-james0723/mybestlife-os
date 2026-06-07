@@ -1,6 +1,7 @@
+import type { DeepPartial } from "./copy-helpers";
 import type { DailyPlannerUiCopy } from "./daily-planner-ui";
 
-export const dailyPlannerFr: DailyPlannerUiCopy = {
+export const dailyPlannerFr: DeepPartial<DailyPlannerUiCopy> = {
   pageTitle: "Planificateur quotidien",
   pageDescription: "Composez votre journée idéale, bloc par bloc",
   aiSuggestions: "Obtenir des suggestions IA",
@@ -288,7 +289,7 @@ export const dailyPlannerFr: DailyPlannerUiCopy = {
   quickTaskAiIconsToastNone: "Aucune tâche rapide.",
 };
 
-export const dailyPlannerEs: DailyPlannerUiCopy = {
+export const dailyPlannerEs: DeepPartial<DailyPlannerUiCopy> = {
   pageTitle: "Planificador diario",
   pageDescription: "Construye tu día perfecto, bloque a bloque",
   aiSuggestions: "Obtener sugerencias de IA",
@@ -576,7 +577,7 @@ export const dailyPlannerEs: DailyPlannerUiCopy = {
   quickTaskAiIconsToastNone: "No hay tareas rápidas.",
 };
 
-export const dailyPlannerVi: DailyPlannerUiCopy = {
+export const dailyPlannerVi: DeepPartial<DailyPlannerUiCopy> = {
   pageTitle: "Lập kế hoạch hàng ngày",
   pageDescription: "Xây dựng ngày hoàn hảo của bạn, từng khối thời gian",
   aiSuggestions: "Nhận gợi ý AI",
@@ -861,7 +862,7 @@ export const dailyPlannerVi: DailyPlannerUiCopy = {
   quickTaskAiIconsToastNone: "Chưa có việc nhanh.",
 };
 
-export const dailyPlannerIt: DailyPlannerUiCopy = {
+export const dailyPlannerIt: DeepPartial<DailyPlannerUiCopy> = {
   pageTitle: "Pianificatore giornaliero",
   pageDescription: "Costruisci la giornata perfetta, un blocco alla volta",
   aiSuggestions: "Suggerimenti IA",

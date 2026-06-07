@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -1005,12 +1006,6 @@ function RetrievalTriggerButton({
   panelId: string;
   onOpen: () => void;
 }) {
-  const sparkles = [
-    { top: "20%", right: "15%", delay: 0 },
-    { top: "58%", right: "7%", delay: 0.55 },
-    { top: "36%", right: "27%", delay: 1.05 },
-  ];
-
   return (
     <motion.button
       type="button"
@@ -1020,53 +1015,42 @@ function RetrievalTriggerButton({
       whileHover={reduceMotion ? undefined : { y: -1 }}
       whileTap={reduceMotion ? undefined : { scale: 0.995 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
-      className="group relative flex min-h-[76px] w-full overflow-hidden rounded-xl border border-lime-300/24 bg-[linear-gradient(135deg,#10140b_0%,#1c2a10_52%,#4f661a_100%)] p-3 text-left text-lime-50 shadow-[0_18px_44px_rgba(57,80,21,0.28)] outline-none transition-[border-color,box-shadow,filter] hover:border-lime-200/45 hover:shadow-[0_20px_52px_rgba(69,96,24,0.36)] focus-visible:ring-2 focus-visible:ring-lime-300/50 sm:p-3.5"
+      className="group relative flex min-h-[86px] w-full overflow-hidden rounded-xl border border-lime-300/55 bg-[linear-gradient(135deg,#fbfdf5_0%,#eef7da_52%,#d9ebb1_100%)] p-3 text-left text-slate-900 shadow-[0_14px_34px_rgba(79,103,34,0.13)] outline-none transition-[border-color,box-shadow,filter] hover:border-lime-400/65 hover:shadow-[0_18px_42px_rgba(79,103,34,0.18)] focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/24 dark:bg-[linear-gradient(135deg,#10140b_0%,#1c2a10_52%,#4f661a_100%)] dark:text-lime-50 dark:shadow-[0_18px_44px_rgba(57,80,21,0.28)] dark:hover:border-lime-200/45 dark:hover:shadow-[0_20px_52px_rgba(69,96,24,0.36)] sm:p-3.5"
       aria-expanded="false"
       aria-controls={panelId}
       onClick={onOpen}
     >
       <span
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(217,249,157,0.2),transparent_28%),linear-gradient(90deg,transparent,rgba(190,242,100,0.12),transparent)] opacity-75 transition-opacity group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(132,204,22,0.16),transparent_28%),linear-gradient(90deg,transparent,rgba(132,204,22,0.12),transparent)] opacity-70 transition-opacity group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_18%_20%,rgba(217,249,157,0.2),transparent_28%),linear-gradient(90deg,transparent,rgba(190,242,100,0.12),transparent)] dark:opacity-75"
         aria-hidden
       />
-      {!reduceMotion ? (
-        <span className="pointer-events-none absolute inset-0" aria-hidden>
-          {sparkles.map((sparkle) => (
-            <motion.span
-              key={`${sparkle.top}-${sparkle.right}`}
-              className="absolute h-1.5 w-1.5 rounded-full bg-lime-200/90 shadow-[0_0_14px_rgba(190,242,100,0.9)]"
-              style={{ top: sparkle.top, right: sparkle.right }}
-              animate={{ opacity: [0.25, 1, 0.25], scale: [0.75, 1.35, 0.75] }}
-              transition={{
-                duration: 1.9,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: sparkle.delay,
-              }}
-            />
-          ))}
-        </span>
-      ) : null}
       <span className="relative z-10 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="flex min-w-0 items-start gap-3">
-          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-lime-200/20 bg-black/25 text-lime-200 shadow-inner">
-            <Sparkles className="h-4 w-4" aria-hidden />
+          <span className="mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-lime-300/60 bg-white/72 shadow-inner dark:border-lime-200/20 dark:bg-black/28">
+            <Image
+              src="/images/knowledge/source-retrieval-mark.png"
+              alt=""
+              width={88}
+              height={88}
+              className="h-full w-full object-cover"
+              aria-hidden
+            />
           </span>
           <span className="min-w-0">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-lime-100/70">
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-lime-700/85 dark:text-lime-100/70">
               {ui.eyebrow}
             </span>
-            <span className="mt-0.5 block text-base font-semibold leading-tight text-lime-50">
+            <span className="mt-0.5 block text-base font-semibold leading-tight text-slate-950 dark:text-lime-50">
               {ui.openRetrieval}
             </span>
-            <span className="mt-1 block max-w-2xl text-xs leading-5 text-lime-50/75 sm:text-sm">
+            <span className="mt-1 block max-w-2xl text-xs leading-5 text-slate-600 dark:text-lime-50/75 sm:text-sm">
               {hasActivity
                 ? `${status}. ${ui.openRetrievalDescription}`
                 : ui.openRetrievalDescription}
             </span>
           </span>
         </span>
-        <span className="inline-flex h-9 max-w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-lime-200/25 bg-black/20 px-3 text-xs font-semibold text-lime-50/90 sm:self-center">
+        <span className="inline-flex h-9 max-w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-lime-300/60 bg-white/70 px-3 text-xs font-semibold text-lime-800 shadow-sm dark:border-lime-200/25 dark:bg-black/20 dark:text-lime-50/90 sm:self-center">
           <span className="truncate">{status}</span>
           <ChevronDown className="h-3.5 w-3.5 -rotate-90 opacity-75" aria-hidden />
         </span>

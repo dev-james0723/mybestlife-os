@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Play } from "lucide-react";
 
 import {
   Sheet,
@@ -52,6 +52,7 @@ export interface FreePlanTaskDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onSave: (updatedTask: FreePlanTask) => void;
   onDelete: (taskId: string) => void;
+  onStartFocus?: (task: FreePlanTask) => void;
 }
 
 export function FreePlanTaskDetailSheet({
@@ -61,6 +62,7 @@ export function FreePlanTaskDetailSheet({
   onOpenChange,
   onSave,
   onDelete,
+  onStartFocus,
 }: FreePlanTaskDetailSheetProps) {
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -218,6 +220,17 @@ export function FreePlanTaskDetailSheet({
               >
                 {copy.freeTaskDelete}
               </Button>
+              {onStartFocus ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="order-1 flex-1 gap-1.5 sm:order-2 sm:flex-none"
+                  onClick={() => onStartFocus(task)}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  {copy.startFocus}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"

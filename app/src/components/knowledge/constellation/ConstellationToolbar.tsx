@@ -13,12 +13,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Columns3,
   Eye,
   EyeOff,
   Filter,
   Globe2,
   Globe,
   Info,
+  LayoutGrid,
   Maximize2,
   PanelRight,
   PanelRightClose,
@@ -26,14 +28,16 @@ import {
   RotateCcw,
   Search,
   Sparkles,
+  Table,
   Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useKnowledgeStore } from "@/stores/knowledge-store";
+import { useKnowledgeStore, type KnowledgeView } from "@/stores/knowledge-store";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import { getCommonUiCopy } from "@/lib/i18n/common-ui";
 import type {
   ConstellationClusterBy,
   ConstellationDepth,
@@ -102,8 +106,11 @@ export function ConstellationToolbar({
 }: ConstellationToolbarProps) {
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
+  const common = getCommonUiCopy(language);
   const c = ui.constellation;
 
+  const currentView = useKnowledgeStore((s) => s.currentView);
+  const setView = useKnowledgeStore((s) => s.setView);
   const mode = useKnowledgeStore((s) => s.constellationMode);
   const depth = useKnowledgeStore((s) => s.constellationDepth);
   const showLabels = useKnowledgeStore((s) => s.constellationShowLabels);
@@ -131,6 +138,17 @@ export function ConstellationToolbar({
   const setClusterBy = useKnowledgeStore((s) => s.setConstellationClusterBy);
 
   const isSphere = mode === "sphere_3d";
+
+  const viewOptions: Array<{
+    id: KnowledgeView;
+    label: string;
+    icon: typeof LayoutGrid;
+  }> = [
+    { id: "gallery", label: ui.viewLabels.gallery, icon: LayoutGrid },
+    { id: "board", label: ui.viewLabels.board, icon: Columns3 },
+    { id: "table", label: ui.viewLabels.table, icon: Table },
+    { id: "constellation", label: ui.viewLabels.constellation, icon: Sparkles },
+  ];
 
   const clusterByLabel: Record<ConstellationClusterBy, string> = {
     category: c.clusterByCategory,
@@ -221,6 +239,38 @@ export function ConstellationToolbar({
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Knowledge view switcher — parent toolbar is hidden in Constellation
+          view, so this is the escape hatch back to Gallery / Board / Table. */}
+      <div
+        role="group"
+        aria-label={ui.pageTitle}
+        className="flex shrink-0 items-center rounded-lg border border-border/60 bg-muted/40 p-0.5"
+      >
+        {viewOptions.map(({ id, label, icon: Icon }) => {
+          const active = currentView === id;
+          return (
+            <Button
+              key={id}
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={active}
+              aria-label={common.switchToView(label)}
+              title={common.switchToView(label)}
+              className={cn(
+                "h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                active &&
+                  "bg-cyan-400/15 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.3)]",
+              )}
+              onClick={() => setView(id)}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden 2xl:inline">{label}</span>
+            </Button>
+          );
+        })}
       </div>
 
       {/* Mode toggle */}

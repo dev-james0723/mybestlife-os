@@ -5,6 +5,7 @@ import { AIInterventionPanel } from "./AIInterventionPanel";
 import { AudioOverviewPanel } from "./AudioOverviewPanel";
 import { BrainHealthPanel } from "./BrainHealthPanel";
 import { EmotionExecutionHeatmap } from "./EmotionExecutionHeatmap";
+import { FocusRealityAnalyticsPanel } from "./FocusRealityAnalyticsPanel";
 import { LifeDomainRadar } from "./LifeDomainRadar";
 import { LivingStatusHeader } from "./LivingStatusHeader";
 import { MomentumWaveChart } from "./MomentumWaveChart";
@@ -44,6 +45,7 @@ export function AnalyticsControlCenter({
 
       <div className="space-y-5">
         <AudioOverviewPanel metrics={analytics.aiContext} />
+        <FocusRealityAnalyticsPanel range={analytics.range} />
         <AIInterventionPanel insight={analytics.aiInsight} />
       </div>
 

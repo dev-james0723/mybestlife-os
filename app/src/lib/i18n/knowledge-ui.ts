@@ -409,6 +409,11 @@ const en: KnowledgeUiCopy = {
     uploadFileAria: "Upload file",
     dropFileOrBrowse: "Drop a file or click to browse",
     supportedFileFormats: "Photos up to 25 MB; PDF, audio, video, other files up to limits shown on upload errors.",
+    multipleFilesDetectedTitle: "Multiple files detected",
+    multipleFilesDetectedDescription: (count) =>
+      `${count} files are ready. Review and add each file one by one before it enters your KB.`,
+    fileQueuePosition: (current, total) => `${current} of ${total}`,
+    skipFile: "Skip file",
     uploading: "Uploading...",
     upload: "Upload",
     quickTipTitle: "Quick tip",

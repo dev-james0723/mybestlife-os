@@ -188,6 +188,105 @@ export type DailyPlannerUiCopy = {
   toastGoogleSyncFailed: string;
   toastGoogleReauthorize: string;
   toastFocusActivated: string;
+  focusRealityTitle: string;
+  todayFocus: string;
+  planQuality: string;
+  planQualityScore: (score: number) => string;
+  analyzePlan: string;
+  improvePlan: string;
+  startFirstFocus: string;
+  startFocus: string;
+  finishFocus: string;
+  pause: string;
+  resume: string;
+  distracted: string;
+  reviewDay: string;
+  openReview: string;
+  openDetails: string;
+  noPlanFocusHint: string;
+  planQualityUnchecked: string;
+  noQualityIssue: string;
+  deepWorkLabel: string;
+  focusTargetLabel: (value: string) => string;
+  breaksLabel: string;
+  breakStatusLabel: (status: string) => string;
+  stimulationRisk: string;
+  riskLabel: (risk: string) => string;
+  activeFocus: string;
+  runningTimerLabel: string;
+  winCondition: string;
+  winConditionPlaceholder: string;
+  allowedTools: string;
+  allowedToolsPlaceholder: string;
+  blockedRoutes: string;
+  blockedRoutesPlaceholder: string;
+  energyBefore: string;
+  energyAfter: string;
+  focusRating: string;
+  completionState: string;
+  completionCompleted: string;
+  completionPartial: string;
+  completionNotCompleted: string;
+  completionNote: string;
+  completionNotePlaceholder: string;
+  actualTimeline: string;
+  actualPlannedLabel: (actual: string, planned: string) => string;
+  interruptionCountLabel: (count: number) => string;
+  completedLabel: string;
+  activeLabel: string;
+  abandonedLabel: string;
+  endOfDayReview: string;
+  plannedVsActual: string;
+  focusIntegrity: string;
+  planAccuracy: string;
+  stimulationLoad: string;
+  stimulationLeak: string;
+  recoveryRatio: string;
+  bestFocusWindow: string;
+  tomorrowSuggestion: string;
+  saveReview: string;
+  regenerateAiInsight: string;
+  createTomorrowImprovement: string;
+  sendSummaryToJournal: string;
+  pinInsightWeeklyReview: string;
+  unavailableAction: string;
+  lowStimulationMode: string;
+  distractionGate: string;
+  aiAccessRequiresIntention: string;
+  urgeSurfing: string;
+  returnToFocus: string;
+  continueIntentionally: string;
+  captureNoteAndReturn: string;
+  abandonSession: string;
+  gateTitle: string;
+  gateDescription: (taskTitle: string, route: string) => string;
+  gateReasonPlaceholder: string;
+  gateCountdownLabel: (seconds: number) => string;
+  focusPrivacyNote: string;
+  calendarConstraintsUnavailable: string;
+  planQualityDrawerTitle: string;
+  detectedIssues: string;
+  recommendedChanges: string;
+  applyChange: string;
+  applyAllSafeChanges: string;
+  startFocusSheetTitle: string;
+  finishFocusSheetTitle: string;
+  focusSessionType: string;
+  focusSessionDeepWork: string;
+  focusSessionAdmin: string;
+  focusSessionLearning: string;
+  focusSessionCreative: string;
+  focusSessionMeeting: string;
+  focusSessionRecovery: string;
+  focusSessionPersonal: string;
+  meetingLabel: string;
+  topFailurePattern: string;
+  reviewNotGenerated: string;
+  noBestFocusWindow: string;
+  safeChangeLabel: string;
+  focusSessionStartedToast: string;
+  focusSessionFinishedToast: string;
+  focusReviewSavedToast: string;
   ariaBackToTop: string;
   detailDialogTitle: string;
   detailDuePrefix: string;
@@ -459,6 +558,107 @@ const en: DailyPlannerUiCopy = {
   calendarSyncTooltipConflict: "Google Calendar: conflict — resolve in Settings or retry",
   calendarSyncTooltipRemoteDeleted: "Removed in Google Calendar — choose next step in Settings",
   toastFocusActivated: "Focus mode activated!",
+  focusRealityTitle: "Focus & Reality",
+  todayFocus: "Today Focus",
+  planQuality: "Plan Quality",
+  planQualityScore: (score) => `Plan Quality ${score}`,
+  analyzePlan: "Analyze Plan",
+  improvePlan: "Improve Plan",
+  startFirstFocus: "Start First Focus",
+  startFocus: "Start Focus",
+  finishFocus: "Finish",
+  pause: "Pause",
+  resume: "Resume",
+  distracted: "I'm distracted",
+  reviewDay: "Review Day",
+  openReview: "Open Review",
+  openDetails: "Open Details",
+  noPlanFocusHint: "Create a plan to unlock Focus & Reality insights.",
+  planQualityUnchecked: "Plan Quality not checked yet.",
+  noQualityIssue: "No major issue detected.",
+  deepWorkLabel: "Deep Work",
+  focusTargetLabel: (value) => `Deep Work ${value}`,
+  breaksLabel: "Breaks",
+  breakStatusLabel: (status) => `Breaks ${status}`,
+  stimulationRisk: "Stimulation Risk",
+  riskLabel: (risk) => `Risk ${risk}`,
+  activeFocus: "Active Focus",
+  runningTimerLabel: "Running timer",
+  winCondition: "Win condition",
+  winConditionPlaceholder: "What would make this session a win?",
+  allowedTools: "Allowed tools",
+  allowedToolsPlaceholder: "Docs, editor, notebook",
+  blockedRoutes: "Blocked routes",
+  blockedRoutesPlaceholder: "/youtube-radar, /ai-assistant",
+  energyBefore: "Energy before",
+  energyAfter: "Energy after",
+  focusRating: "Focus rating",
+  completionState: "Completion state",
+  completionCompleted: "Completed",
+  completionPartial: "Partial",
+  completionNotCompleted: "Not completed",
+  completionNote: "What actually happened?",
+  completionNotePlaceholder: "Capture the reality of the session.",
+  actualTimeline: "Actual timeline",
+  actualPlannedLabel: (actual, planned) => `Actual ${actual} / Planned ${planned}`,
+  interruptionCountLabel: (count) => `Interrupted ${count}x`,
+  completedLabel: "Completed",
+  activeLabel: "Active",
+  abandonedLabel: "Abandoned",
+  endOfDayReview: "End-of-day review",
+  plannedVsActual: "Planned vs actual",
+  focusIntegrity: "Focus Integrity",
+  planAccuracy: "Plan Accuracy",
+  stimulationLoad: "Stimulation Load",
+  stimulationLeak: "Stimulation Leak",
+  recoveryRatio: "Recovery Ratio",
+  bestFocusWindow: "Best Focus Window",
+  tomorrowSuggestion: "Tomorrow suggestion",
+  saveReview: "Save review",
+  regenerateAiInsight: "Regenerate AI insight",
+  createTomorrowImprovement: "Create tomorrow improvement",
+  sendSummaryToJournal: "Send summary to Journal",
+  pinInsightWeeklyReview: "Pin insight to Weekly Review",
+  unavailableAction: "Available after the core review is saved.",
+  lowStimulationMode: "Low-Stimulation Mode",
+  distractionGate: "Distraction Gate",
+  aiAccessRequiresIntention: "AI access requires intention",
+  urgeSurfing: "Urge Surfing",
+  returnToFocus: "Return to focus",
+  continueIntentionally: "Continue intentionally",
+  captureNoteAndReturn: "Capture note and return",
+  abandonSession: "Abandon session",
+  gateTitle: "Pause before switching",
+  gateDescription: (taskTitle, route) =>
+    `You are in a focus session for: ${taskTitle}. Opening ${route} might help, or it might become an escape loop.`,
+  gateReasonPlaceholder: "Why is this switch intentional?",
+  gateCountdownLabel: (seconds) => `Continue intentionally in ${seconds}s`,
+  focusPrivacyNote:
+    "Focus & Reality only uses your planner, focus sessions, calendar constraints, and in-app navigation choices during active focus. It does not monitor your device.",
+  calendarConstraintsUnavailable: "Calendar constraints unavailable",
+  planQualityDrawerTitle: "Plan Quality Details",
+  detectedIssues: "Detected issues",
+  recommendedChanges: "Recommended changes",
+  applyChange: "Apply change",
+  applyAllSafeChanges: "Apply all safe changes",
+  startFocusSheetTitle: "Start focus session",
+  finishFocusSheetTitle: "Finish focus session",
+  focusSessionType: "Session type",
+  focusSessionDeepWork: "Deep work",
+  focusSessionAdmin: "Admin",
+  focusSessionLearning: "Learning",
+  focusSessionCreative: "Creative",
+  focusSessionMeeting: "Meeting",
+  focusSessionRecovery: "Recovery",
+  focusSessionPersonal: "Personal",
+  meetingLabel: "Meetings",
+  topFailurePattern: "Top failure pattern",
+  reviewNotGenerated: "Generate a review after your focus sessions to see reality metrics.",
+  noBestFocusWindow: "No best window yet",
+  safeChangeLabel: "Safe",
+  focusSessionStartedToast: "Focus session started.",
+  focusSessionFinishedToast: "Focus session saved.",
+  focusReviewSavedToast: "Daily focus review saved.",
   ariaBackToTop: "Back to the top",
   detailDialogTitle: "Task details",
   detailDuePrefix: "Due:",
@@ -693,6 +893,107 @@ const zhTW: DailyPlannerUiCopy = {
   calendarSyncTooltipConflict: "Google 日曆：衝突 — 請在設定或重試流程中處理",
   calendarSyncTooltipRemoteDeleted: "已在 Google 日曆刪除此事件 — 請在設定決定下一步",
   toastFocusActivated: "專注模式已啟動！",
+  focusRealityTitle: "專注與現實",
+  todayFocus: "今日專注",
+  planQuality: "規劃品質",
+  planQualityScore: (score) => `規劃品質 ${score}`,
+  analyzePlan: "分析規劃",
+  improvePlan: "改善規劃",
+  startFirstFocus: "開始第一段專注",
+  startFocus: "開始專注",
+  finishFocus: "完成",
+  pause: "暫停",
+  resume: "繼續",
+  distracted: "我分心了",
+  reviewDay: "回顧今天",
+  openReview: "開啟回顧",
+  openDetails: "查看詳情",
+  noPlanFocusHint: "建立規劃後即可解鎖專注與現實洞察。",
+  planQualityUnchecked: "尚未檢查規劃品質。",
+  noQualityIssue: "未偵測到主要問題。",
+  deepWorkLabel: "深度工作",
+  focusTargetLabel: (value) => `深度工作 ${value}`,
+  breaksLabel: "休息",
+  breakStatusLabel: (status) => `休息 ${status}`,
+  stimulationRisk: "刺激風險",
+  riskLabel: (risk) => `風險 ${risk}`,
+  activeFocus: "專注進行中",
+  runningTimerLabel: "計時中",
+  winCondition: "勝利條件",
+  winConditionPlaceholder: "完成什麼才算這段專注成功？",
+  allowedTools: "允許工具",
+  allowedToolsPlaceholder: "文件、編輯器、筆記本",
+  blockedRoutes: "高刺激路徑",
+  blockedRoutesPlaceholder: "/youtube-radar, /ai-assistant",
+  energyBefore: "開始前能量",
+  energyAfter: "結束後能量",
+  focusRating: "專注評分",
+  completionState: "完成狀態",
+  completionCompleted: "已完成",
+  completionPartial: "部分完成",
+  completionNotCompleted: "未完成",
+  completionNote: "實際發生了什麼？",
+  completionNotePlaceholder: "記錄這段專注的真實狀況。",
+  actualTimeline: "實際時間線",
+  actualPlannedLabel: (actual, planned) => `實際 ${actual} / 原定 ${planned}`,
+  interruptionCountLabel: (count) => `中斷 ${count} 次`,
+  completedLabel: "已完成",
+  activeLabel: "進行中",
+  abandonedLabel: "已放棄",
+  endOfDayReview: "日末回顧",
+  plannedVsActual: "原定 vs 實際",
+  focusIntegrity: "專注完整度",
+  planAccuracy: "規劃準確度",
+  stimulationLoad: "刺激負荷",
+  stimulationLeak: "刺激外洩",
+  recoveryRatio: "恢復比例",
+  bestFocusWindow: "最佳專注時段",
+  tomorrowSuggestion: "明日建議",
+  saveReview: "儲存回顧",
+  regenerateAiInsight: "重新生成 AI 洞察",
+  createTomorrowImprovement: "建立明日改善",
+  sendSummaryToJournal: "送到日記",
+  pinInsightWeeklyReview: "釘選到週回顧",
+  unavailableAction: "儲存核心回顧後可用。",
+  lowStimulationMode: "低刺激模式",
+  distractionGate: "分心閘門",
+  aiAccessRequiresIntention: "使用 AI 前先確認意圖",
+  urgeSurfing: "衝動衝浪",
+  returnToFocus: "回到專注",
+  continueIntentionally: "有意識地繼續",
+  captureNoteAndReturn: "記下原因並返回",
+  abandonSession: "放棄專注",
+  gateTitle: "切換前先停一下",
+  gateDescription: (taskTitle, route) =>
+    `你正在專注於：${taskTitle}。開啟 ${route} 可能有幫助，也可能變成逃避迴圈。`,
+  gateReasonPlaceholder: "這次切換的意圖是什麼？",
+  gateCountdownLabel: (seconds) => `${seconds} 秒後可有意識地繼續`,
+  focusPrivacyNote:
+    "專注與現實只使用你的每日規劃、專注段落、日曆限制，以及專注期間的站內導航選擇；不會監控你的裝置。",
+  calendarConstraintsUnavailable: "無法取得日曆限制",
+  planQualityDrawerTitle: "規劃品質詳情",
+  detectedIssues: "偵測到的問題",
+  recommendedChanges: "建議調整",
+  applyChange: "套用調整",
+  applyAllSafeChanges: "套用全部安全調整",
+  startFocusSheetTitle: "開始專注段落",
+  finishFocusSheetTitle: "完成專注段落",
+  focusSessionType: "段落類型",
+  focusSessionDeepWork: "深度工作",
+  focusSessionAdmin: "行政處理",
+  focusSessionLearning: "學習",
+  focusSessionCreative: "創作",
+  focusSessionMeeting: "會議",
+  focusSessionRecovery: "恢復",
+  focusSessionPersonal: "個人事項",
+  meetingLabel: "會議",
+  topFailurePattern: "主要失效模式",
+  reviewNotGenerated: "完成專注段落後產生回顧，查看實際執行指標。",
+  noBestFocusWindow: "尚未找到最佳窗口",
+  safeChangeLabel: "安全",
+  focusSessionStartedToast: "專注段落已開始。",
+  focusSessionFinishedToast: "專注段落已儲存。",
+  focusReviewSavedToast: "每日專注回顧已儲存。",
   ariaBackToTop: "回到頂端",
   detailDialogTitle: "任務詳情",
   detailDuePrefix: "到期：",
@@ -963,6 +1264,107 @@ const zhCN: DailyPlannerUiCopy = {
   calendarSyncTooltipConflict: "Google 日历：冲突 — 请在设置或重试流程中处理",
   calendarSyncTooltipRemoteDeleted: "该事件已在 Google 日历删除 — 请在设置决定下一步",
   toastFocusActivated: "专注模式已启动！",
+  focusRealityTitle: "专注与现实",
+  todayFocus: "今日专注",
+  planQuality: "规划质量",
+  planQualityScore: (score) => `规划质量 ${score}`,
+  analyzePlan: "分析规划",
+  improvePlan: "改善规划",
+  startFirstFocus: "开始第一段专注",
+  startFocus: "开始专注",
+  finishFocus: "完成",
+  pause: "暂停",
+  resume: "继续",
+  distracted: "我分心了",
+  reviewDay: "回顾今天",
+  openReview: "打开回顾",
+  openDetails: "查看详情",
+  noPlanFocusHint: "创建规划后即可解锁专注与现实洞察。",
+  planQualityUnchecked: "尚未检查规划质量。",
+  noQualityIssue: "未检测到主要问题。",
+  deepWorkLabel: "深度工作",
+  focusTargetLabel: (value) => `深度工作 ${value}`,
+  breaksLabel: "休息",
+  breakStatusLabel: (status) => `休息 ${status}`,
+  stimulationRisk: "刺激风险",
+  riskLabel: (risk) => `风险 ${risk}`,
+  activeFocus: "专注进行中",
+  runningTimerLabel: "计时中",
+  winCondition: "胜利条件",
+  winConditionPlaceholder: "完成什么才算这段专注成功？",
+  allowedTools: "允许工具",
+  allowedToolsPlaceholder: "文档、编辑器、笔记本",
+  blockedRoutes: "高刺激路径",
+  blockedRoutesPlaceholder: "/youtube-radar, /ai-assistant",
+  energyBefore: "开始前能量",
+  energyAfter: "结束后能量",
+  focusRating: "专注评分",
+  completionState: "完成状态",
+  completionCompleted: "已完成",
+  completionPartial: "部分完成",
+  completionNotCompleted: "未完成",
+  completionNote: "实际发生了什么？",
+  completionNotePlaceholder: "记录这段专注的真实情况。",
+  actualTimeline: "实际时间线",
+  actualPlannedLabel: (actual, planned) => `实际 ${actual} / 原定 ${planned}`,
+  interruptionCountLabel: (count) => `中断 ${count} 次`,
+  completedLabel: "已完成",
+  activeLabel: "进行中",
+  abandonedLabel: "已放弃",
+  endOfDayReview: "日末回顾",
+  plannedVsActual: "原定 vs 实际",
+  focusIntegrity: "专注完整度",
+  planAccuracy: "规划准确度",
+  stimulationLoad: "刺激负荷",
+  stimulationLeak: "刺激外泄",
+  recoveryRatio: "恢复比例",
+  bestFocusWindow: "最佳专注时段",
+  tomorrowSuggestion: "明日建议",
+  saveReview: "保存回顾",
+  regenerateAiInsight: "重新生成 AI 洞察",
+  createTomorrowImprovement: "创建明日改善",
+  sendSummaryToJournal: "发送到日记",
+  pinInsightWeeklyReview: "固定到周回顾",
+  unavailableAction: "保存核心回顾后可用。",
+  lowStimulationMode: "低刺激模式",
+  distractionGate: "分心闸门",
+  aiAccessRequiresIntention: "使用 AI 前先确认意图",
+  urgeSurfing: "冲动冲浪",
+  returnToFocus: "回到专注",
+  continueIntentionally: "有意识地继续",
+  captureNoteAndReturn: "记下原因并返回",
+  abandonSession: "放弃专注",
+  gateTitle: "切换前先停一下",
+  gateDescription: (taskTitle, route) =>
+    `你正在专注于：${taskTitle}。打开 ${route} 可能有帮助，也可能变成逃避循环。`,
+  gateReasonPlaceholder: "这次切换的意图是什么？",
+  gateCountdownLabel: (seconds) => `${seconds} 秒后可有意识地继续`,
+  focusPrivacyNote:
+    "专注与现实只使用你的每日规划、专注段落、日历限制，以及专注期间的站内导航选择；不会监控你的设备。",
+  calendarConstraintsUnavailable: "无法获取日历限制",
+  planQualityDrawerTitle: "规划质量详情",
+  detectedIssues: "检测到的问题",
+  recommendedChanges: "建议调整",
+  applyChange: "应用调整",
+  applyAllSafeChanges: "应用全部安全调整",
+  startFocusSheetTitle: "开始专注段落",
+  finishFocusSheetTitle: "完成专注段落",
+  focusSessionType: "段落类型",
+  focusSessionDeepWork: "深度工作",
+  focusSessionAdmin: "行政处理",
+  focusSessionLearning: "学习",
+  focusSessionCreative: "创作",
+  focusSessionMeeting: "会议",
+  focusSessionRecovery: "恢复",
+  focusSessionPersonal: "个人事项",
+  meetingLabel: "会议",
+  topFailurePattern: "主要失效模式",
+  reviewNotGenerated: "完成专注段落后生成回顾，查看实际执行指标。",
+  noBestFocusWindow: "尚未找到最佳窗口",
+  safeChangeLabel: "安全",
+  focusSessionStartedToast: "专注段落已开始。",
+  focusSessionFinishedToast: "专注段落已保存。",
+  focusReviewSavedToast: "每日专注回顾已保存。",
   ariaBackToTop: "回到顶部",
   detailDialogTitle: "任务详情",
   detailDuePrefix: "截止：",

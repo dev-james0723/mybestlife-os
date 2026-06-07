@@ -97,7 +97,7 @@ export function KnowledgeBoardView({ items }: KnowledgeBoardViewProps) {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={openAddModal}
+              onClick={() => openAddModal()}
               aria-label={ui.formatAddToColumn(col.label)}
             >
               <Plus className="h-3.5 w-3.5" />

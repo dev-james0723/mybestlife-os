@@ -32,6 +32,11 @@ export type KnowledgeSortKey =
 
 export type KnowledgeView = "gallery" | "board" | "table" | "constellation";
 
+export type PendingKnowledgeAdd =
+  | { tab: "file"; files: File[] }
+  | { tab: "url"; url: string }
+  | { tab: "text"; text: string };
+
 export const KNOWLEDGE_CARDS_PER_PAGE_OPTIONS = [
   10,
   15,
@@ -84,6 +89,7 @@ interface KnowledgeStore {
   isAIPanelOpen: boolean;
   isAddModalOpen: boolean;
   isMobileSidebarOpen: boolean;
+  pendingKnowledgeAdd: PendingKnowledgeAdd | null;
   aiPanelQuery: string;
   aiPanelRetrievalRunId: string | null;
   sortBy: KnowledgeSortKey;
@@ -131,7 +137,7 @@ interface KnowledgeStore {
   clearAllListFilters: () => void;
   openAIPanel: (query?: string, retrievalRunId?: string | null) => void;
   closeAIPanel: () => void;
-  openAddModal: () => void;
+  openAddModal: (pending?: PendingKnowledgeAdd | null) => void;
   closeAddModal: () => void;
   selectItem: (id: string | null) => void;
   toggleMobileSidebar: () => void;
@@ -173,6 +179,7 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
   isAIPanelOpen: false,
   isAddModalOpen: false,
   isMobileSidebarOpen: false,
+  pendingKnowledgeAdd: null,
   aiPanelQuery: "",
   aiPanelRetrievalRunId: null,
   sortBy: "latest",
@@ -290,8 +297,12 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
     }),
   closeAIPanel: () => set({ isAIPanelOpen: false }),
 
-  openAddModal: () => set({ isAddModalOpen: true }),
-  closeAddModal: () => set({ isAddModalOpen: false }),
+  openAddModal: (pending) =>
+    set({
+      isAddModalOpen: true,
+      pendingKnowledgeAdd: pending ?? null,
+    }),
+  closeAddModal: () => set({ isAddModalOpen: false, pendingKnowledgeAdd: null }),
 
   selectItem: (id) => set({ selectedItemId: id }),
 

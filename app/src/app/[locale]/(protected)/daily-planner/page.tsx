@@ -46,6 +46,29 @@ import {
   usePlannerGcalLastPushAt,
   usePlannerGcalPushPending,
 } from "@/hooks/use-google-calendar-planner";
+import { useItemsForDate } from "@/hooks/use-calendar";
+import { useFocusPreferences } from "@/hooks/use-focus-preferences";
+import { useActiveFocusSession } from "@/hooks/use-active-focus-session";
+import {
+  usePlannerFocusSessions,
+  useStartPlannerFocusSession,
+  usePausePlannerFocusSession,
+  useResumePlannerFocusSession,
+  useCompletePlannerFocusSession,
+  useIncrementFocusInterruption,
+} from "@/hooks/use-planner-focus-sessions";
+import {
+  usePlannerStimulationEvents,
+  useLogPlannerStimulationEvent,
+} from "@/hooks/use-planner-stimulation-events";
+import {
+  useDailyPlanQuality,
+  useAnalyzeDailyPlanQuality,
+} from "@/hooks/use-daily-plan-quality";
+import {
+  useDailyPlanReview,
+  useGenerateDailyPlanReview,
+} from "@/hooks/use-daily-plan-review";
 import { useQueryClient } from "@tanstack/react-query";
 import { CALENDAR_QUERY_KEY } from "@/lib/calendar/query-keys";
 import { ensurePlannerTaskIds } from "@/lib/normalize-plan-tasks";
@@ -62,12 +85,22 @@ import {
 import { resolveQuickTaskRaster } from "@/lib/daily-planner/quick-task-preset-meta";
 import type { QuickTaskPresetKey } from "@/lib/daily-planner/quick-task-preset-meta";
 import { normalizeQuickTasksJson } from "@/lib/daily-planner/normalize-quick-task";
+import { applyPlanQualitySuggestedChange } from "@/lib/daily-planner/focus/plan-quality";
+import {
+  categoryToFocusSessionType,
+  classifiableFromDailyPlanTask,
+  classifiableFromFreePlanTask,
+  classifyPlannerTask,
+} from "@/lib/daily-planner/focus/task-classification";
 
 import type { LucideIcon } from "lucide-react";
 import type {
   DailyPlanTask,
+  FocusSessionType,
   FreePlanTask,
+  PlanQualitySuggestedChange,
   PlanningMode,
+  PlannerFocusSession,
   Task,
   ScheduleTemplate,
   QuickTaskDef,
@@ -118,6 +151,14 @@ import { TimeSummaryCard } from "@/components/daily-planner/time-summary-card";
 import { FreePlanBoard } from "@/components/daily-planner/free-plan-board";
 import { FreePlanSummary } from "@/components/daily-planner/free-plan-summary";
 import { PlanningModeToggle } from "@/components/daily-planner/planning-mode-toggle";
+import { TodayFocusStrip } from "@/components/daily-planner/focus/today-focus-strip";
+import { PlanQualityDrawer } from "@/components/daily-planner/focus/plan-quality-drawer";
+import {
+  StartFocusSessionSheet,
+  type FocusStartDraft,
+} from "@/components/daily-planner/focus/start-focus-session-sheet";
+import { FinishFocusSessionSheet } from "@/components/daily-planner/focus/finish-focus-session-sheet";
+import { EndOfDayReviewDrawer } from "@/components/daily-planner/focus/end-of-day-review-drawer";
 import {
   SortableTaskList,
   type LocalPlanTask,
@@ -352,23 +393,57 @@ function resolvePlanRange(startTime: string, endTime: string): {
   return { startMin, endMin, durationMin: endMin - startMin, endDayOffset };
 }
 
+function isoFromPlanMinute(planDate: string, minuteFromPlanMidnight: number): string {
+  const date = new Date(`${planDate}T00:00:00`);
+  date.setMinutes(date.getMinutes() + minuteFromPlanMidnight);
+  return date.toISOString();
+}
+
+function normalizeFocusType(type: FocusSessionType | undefined): FocusSessionType {
+  return type ?? "deep_work";
+}
+
+function focusTypeForDailyTask(task: DailyPlanTask, linkedTasks: Task[]): FocusSessionType {
+  return normalizeFocusType(
+    categoryToFocusSessionType(
+      classifyPlannerTask(classifiableFromDailyPlanTask(task, linkedTasks)),
+    ),
+  );
+}
+
+function focusTypeForFreeTask(task: FreePlanTask, linkedTasks: Task[]): FocusSessionType {
+  return normalizeFocusType(
+    categoryToFocusSessionType(
+      classifyPlannerTask(classifiableFromFreePlanTask(task, linkedTasks)),
+    ),
+  );
+}
+
 /** Stable client-only id used by dnd-kit to identify rows across re-renders. */
 function newUid(): string {
   return `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function newPlannerTaskId(): string {
+  return `pt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /** Ensure a plan task has a client-only `_uid`. The field is stripped before
  *  the plan is persisted (see `stripUid`). */
 function withUid(t: DailyPlanTask): LocalPlanTask {
   const local = t as LocalPlanTask;
-  return local._uid ? local : { ...t, _uid: newUid() };
+  return {
+    ...t,
+    plannerTaskId: t.plannerTaskId ?? newPlannerTaskId(),
+    _uid: local._uid ?? newUid(),
+  };
 }
 
 /** Drop the in-memory `_uid` field before persisting; ensure stable planner ids for Google sync. */
 function persistTask(t: LocalPlanTask, order: number): DailyPlanTask {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _uid, ...rest } = t;
-  return { ...rest, order };
+  return { ...rest, plannerTaskId: rest.plannerTaskId ?? newPlannerTaskId(), order };
 }
 
 function persistTasks(tasks: LocalPlanTask[]): DailyPlanTask[] {
@@ -882,6 +957,7 @@ export default function DailyPlannerPage() {
 
   // ── data hooks ──
   const { data: plan } = useDailyPlan(dateStr);
+  const currentDailyPlanId = plan?.id ?? null;
   const { data: tomorrowPlan } = useDailyPlan(tomorrowStr);
   const upsertPlan = useUpsertDailyPlan();
   const { data: allTasks = [] } = useTasks();
@@ -911,6 +987,21 @@ export default function DailyPlannerPage() {
   const [googleSyncBusy, setGoogleSyncBusy] = useState(false);
   const gcalPushPending = usePlannerGcalPushPending();
   const plannerGcalLastPushIso = usePlannerGcalLastPushAt(dateStr);
+  const { items: calendarItemsForDate } = useItemsForDate(dateStr);
+  const { data: focusPreferences } = useFocusPreferences();
+  const { data: activeFocusSession } = useActiveFocusSession();
+  const { data: focusSessions = [] } = usePlannerFocusSessions(dateStr);
+  const { data: stimulationEvents = [] } = usePlannerStimulationEvents(dateStr);
+  const { data: qualityReport } = useDailyPlanQuality(dateStr);
+  const { data: dailyReview } = useDailyPlanReview(dateStr);
+  const analyzeQuality = useAnalyzeDailyPlanQuality();
+  const startFocusSession = useStartPlannerFocusSession();
+  const pauseFocusSession = usePausePlannerFocusSession();
+  const resumeFocusSession = useResumePlannerFocusSession();
+  const completeFocusSession = useCompletePlannerFocusSession();
+  const incrementFocusInterruption = useIncrementFocusInterruption();
+  const logStimulationEvent = useLogPlannerStimulationEvent();
+  const generateDailyReview = useGenerateDailyPlanReview();
 
   const gcalSilentPullGuardsRef = useRef({
     upsertPending: false,
@@ -1159,6 +1250,36 @@ export default function DailyPlannerPage() {
     return { totalBlocks, plannedMin, availableMin, remainingMin };
   }, [tasks, planRange.durationMin, blockMinutes]);
 
+  const focusSessionsByPlannerTaskId = useMemo(() => {
+    const grouped: Record<string, PlannerFocusSession[]> = {};
+    for (const session of focusSessions) {
+      if (!session.planner_task_id) continue;
+      grouped[session.planner_task_id] = [
+        ...(grouped[session.planner_task_id] ?? []),
+        session,
+      ];
+    }
+    return grouped;
+  }, [focusSessions]);
+
+  const calendarExternalEvents = useMemo(
+    () => calendarItemsForDate.filter((item) => item.source_type === "external"),
+    [calendarItemsForDate],
+  );
+
+  const focusTargetText = useMemo(
+    () => copy.formatMinutes(qualityReport?.focus_target_minutes ?? 0),
+    [copy, qualityReport?.focus_target_minutes],
+  );
+
+  const reviewPlannedMinutes = useMemo(() => {
+    if (mode === "time-block") return summary.plannedMin;
+    return freeTasks.reduce(
+      (sum, task) => sum + (task.estimatedMinutes ?? focusPreferences?.default_focus_minutes ?? 50),
+      0,
+    );
+  }, [focusPreferences?.default_focus_minutes, freeTasks, mode, summary.plannedMin]);
+
   /**
    * Human-readable description of the loose planning window for Free Mode. Cross-day plans
    * include both calendar dates so users see clearly when the boundary spills past midnight.
@@ -1199,6 +1320,11 @@ export default function DailyPlannerPage() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailIndex, setDetailIndex] = useState(-1);
+  const [qualityDrawerOpen, setQualityDrawerOpen] = useState(false);
+  const [startFocusOpen, setStartFocusOpen] = useState(false);
+  const [focusDraft, setFocusDraft] = useState<FocusStartDraft | null>(null);
+  const [finishFocusOpen, setFinishFocusOpen] = useState(false);
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
 
   // ── ritual ──
   const [ritualOpen, setRitualOpen] = useState(false);
@@ -1750,6 +1876,259 @@ export default function DailyPlannerPage() {
     upsertPlan,
   ]);
 
+  const handleAnalyzePlanQuality = useCallback(async () => {
+    if (!focusPreferences) {
+      toast.message(copy.calendarConstraintsUnavailable);
+      return;
+    }
+    try {
+      await analyzeQuality.mutateAsync({
+        dailyPlanId: currentDailyPlanId,
+        planDate: dateStr,
+        startTime,
+        endTime,
+        blockMinutes,
+        tasks: persistTasks(tasks),
+        freeTasks,
+        mode,
+        linkedTasks: allTasks,
+        calendarEvents: calendarExternalEvents,
+        focusPreferences,
+      });
+      setQualityDrawerOpen(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+    }
+  }, [
+    allTasks,
+    analyzeQuality,
+    blockMinutes,
+    calendarExternalEvents,
+    copy,
+    dateStr,
+    endTime,
+    focusPreferences,
+    freeTasks,
+    mode,
+    currentDailyPlanId,
+    startTime,
+    tasks,
+  ]);
+
+  const handleApplyQualityChange = useCallback(
+    (change: PlanQualitySuggestedChange) => {
+      if (!change.safeToAutoApply || mode !== "time-block") return;
+      const next = applyPlanQualitySuggestedChange(persistTasks(tasks), change).map(withUid);
+      updateTasks(next);
+    },
+    [mode, tasks, updateTasks],
+  );
+
+  const handleApplyAllSafeQualityChanges = useCallback(() => {
+    if (!qualityReport || mode !== "time-block") return;
+    const next = qualityReport.suggested_changes
+      .filter((change) => change.safeToAutoApply)
+      .reduce(
+        (acc, change) => applyPlanQualitySuggestedChange(acc, change),
+        persistTasks(tasks) as DailyPlanTask[],
+      )
+      .map(withUid);
+    updateTasks(next);
+  }, [mode, qualityReport, tasks, updateTasks]);
+
+  const buildTimeBlockFocusDraft = useCallback(
+    (index: number): FocusStartDraft | null => {
+      const task = tasks[index];
+      if (!task) return null;
+      let offsetMin = 0;
+      for (let i = 0; i < index; i += 1) {
+        offsetMin += (tasks[i].blocks ?? 1) * blockMinutes;
+      }
+      const startMin = parseTimeToMinutes(startTime) + offsetMin;
+      const endMin = startMin + (task.blocks ?? 1) * blockMinutes;
+      return {
+        taskTitle: task.taskName ?? copy.untitledTask,
+        plannerTaskId: task.plannerTaskId ?? null,
+        taskId: task.taskId ?? null,
+        planDate: dateStr,
+        dailyPlanId: currentDailyPlanId,
+        plannedStartAt: isoFromPlanMinute(dateStr, startMin),
+        plannedEndAt: isoFromPlanMinute(dateStr, endMin),
+        sessionType: focusTypeForDailyTask(task, allTasks),
+      };
+    },
+    [allTasks, blockMinutes, copy.untitledTask, currentDailyPlanId, dateStr, startTime, tasks],
+  );
+
+  const openStartFocusForTaskIndex = useCallback(
+    (index: number) => {
+      const draft = buildTimeBlockFocusDraft(index);
+      if (!draft) return;
+      setFocusDraft(draft);
+      setStartFocusOpen(true);
+    },
+    [buildTimeBlockFocusDraft],
+  );
+
+  const openStartFocusForPlanTask = useCallback(
+    (planTask: DailyPlanTask) => {
+      const index = tasks.findIndex(
+        (task) =>
+          task.plannerTaskId === planTask.plannerTaskId ||
+          (task.taskName === planTask.taskName && task.order === planTask.order),
+      );
+      if (index >= 0) openStartFocusForTaskIndex(index);
+    },
+    [openStartFocusForTaskIndex, tasks],
+  );
+
+  const openStartFocusForFreeTask = useCallback(
+    (task: FreePlanTask) => {
+      setFocusDraft({
+        taskTitle: task.title,
+        plannerTaskId: task.id,
+        taskId: task.taskId ?? null,
+        planDate: dateStr,
+        dailyPlanId: currentDailyPlanId,
+        plannedStartAt: null,
+        plannedEndAt: null,
+        sessionType: focusTypeForFreeTask(task, allTasks),
+      });
+      setStartFocusOpen(true);
+    },
+    [allTasks, currentDailyPlanId, dateStr],
+  );
+
+  const handleStartFirstFocus = useCallback(() => {
+    if (mode === "time-block") {
+      if (tasks.length === 0) {
+        toast.info(copy.noTasksYet);
+        return;
+      }
+      openStartFocusForTaskIndex(0);
+      return;
+    }
+    const firstFree = [...freeTasks]
+      .filter((task) => task.priority !== "done")
+      .sort((a, b) => a.order - b.order)[0];
+    if (!firstFree) {
+      toast.info(copy.noTasksYet);
+      return;
+    }
+    openStartFocusForFreeTask(firstFree);
+  }, [
+    copy.noTasksYet,
+    freeTasks,
+    mode,
+    openStartFocusForFreeTask,
+    openStartFocusForTaskIndex,
+    tasks.length,
+  ]);
+
+  const handleStartFocusSession = useCallback(
+    async (input: {
+      sessionType: FocusSessionType;
+      winCondition: string | null;
+      allowedTools: string[];
+      blockedRoutes: string[];
+      energyBefore: number | null;
+    }) => {
+      if (!focusDraft) return;
+      try {
+        await startFocusSession.mutateAsync({
+          daily_plan_id: focusDraft.dailyPlanId,
+          planner_task_id: focusDraft.plannerTaskId,
+          task_id: focusDraft.taskId,
+          plan_date: focusDraft.planDate,
+          task_title: focusDraft.taskTitle,
+          planned_start_at: focusDraft.plannedStartAt,
+          planned_end_at: focusDraft.plannedEndAt,
+          session_type: input.sessionType,
+          win_condition: input.winCondition,
+          allowed_tools: input.allowedTools,
+          blocked_routes: input.blockedRoutes,
+          energy_before: input.energyBefore,
+        });
+        setStartFocusOpen(false);
+        setFocusDraft(null);
+        toast.success(copy.focusSessionStartedToast);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+      }
+    },
+    [copy, focusDraft, startFocusSession],
+  );
+
+  const handlePauseFocus = useCallback(() => {
+    if (!activeFocusSession) return;
+    pauseFocusSession.mutate(activeFocusSession.id);
+  }, [activeFocusSession, pauseFocusSession]);
+
+  const handleResumeFocus = useCallback(() => {
+    if (!activeFocusSession) return;
+    resumeFocusSession.mutate(activeFocusSession.id);
+  }, [activeFocusSession, resumeFocusSession]);
+
+  const handleDistracted = useCallback(() => {
+    if (!activeFocusSession) return;
+    incrementFocusInterruption.mutate(activeFocusSession.id);
+    logStimulationEvent.mutate({
+      focus_session_id: activeFocusSession.id,
+      plan_date: activeFocusSession.plan_date,
+      event_type: "manual_interrupt",
+    });
+  }, [activeFocusSession, incrementFocusInterruption, logStimulationEvent]);
+
+  const handleCompleteFocus = useCallback(
+    async (input: {
+      energyAfter: number | null;
+      focusRating: number | null;
+      completionState: "completed" | "partial" | "not_completed";
+      completionNote: string | null;
+    }) => {
+      if (!activeFocusSession) return;
+      try {
+        await completeFocusSession.mutateAsync({
+          id: activeFocusSession.id,
+          input: {
+            energy_after: input.energyAfter,
+            focus_rating: input.focusRating,
+            completion_state: input.completionState,
+            completion_note: input.completionNote,
+          },
+        });
+        setFinishFocusOpen(false);
+        toast.success(copy.focusSessionFinishedToast);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+      }
+    },
+    [activeFocusSession, completeFocusSession, copy],
+  );
+
+  const handleGenerateDailyReview = useCallback(async () => {
+    try {
+      await generateDailyReview.mutateAsync({
+        dailyPlanId: currentDailyPlanId,
+        planDate: dateStr,
+        plannedMinutes: reviewPlannedMinutes,
+        sessions: focusSessions,
+        stimulationEvents,
+      });
+      setReviewDrawerOpen(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+    }
+  }, [
+    copy.toastDailyPlanUpdateFailed,
+    dateStr,
+    focusSessions,
+    generateDailyReview,
+    currentDailyPlanId,
+    reviewPlannedMinutes,
+    stimulationEvents,
+  ]);
+
   const plannerGcalPushSpinning =
     googleSyncBusy || gcalPushPending || (mode === "time-block" && upsertPlan.isPending);
   const lastGcalStamp =
@@ -2003,6 +2382,25 @@ export default function DailyPlannerPage() {
         </CardContent>
       </Card>
 
+      <TodayFocusStrip
+        copy={copy}
+        planExists={mode === "time-block" ? tasks.length > 0 : freeTasks.length > 0}
+        qualityReport={qualityReport}
+        activeSession={activeFocusSession}
+        review={dailyReview}
+        focusTargetText={focusTargetText}
+        analyzing={analyzeQuality.isPending}
+        onAnalyze={() => void handleAnalyzePlanQuality()}
+        onImprove={() => setQualityDrawerOpen(true)}
+        onStartFirstFocus={handleStartFirstFocus}
+        onOpenDetails={() => setQualityDrawerOpen(true)}
+        onOpenReview={() => void handleGenerateDailyReview()}
+        onPause={handlePauseFocus}
+        onResume={handleResumeFocus}
+        onFinish={() => setFinishFocusOpen(true)}
+        onDistracted={handleDistracted}
+      />
+
       {/* ─── Main grid (Time Block mode only) ─── */}
       {mode === "time-block" && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2147,6 +2545,7 @@ export default function DailyPlannerPage() {
                   onDelete={handleDelete}
                   onRitual={handleRitual}
                   onTaskClick={handleTaskClick}
+                  onStartFocus={openStartFocusForTaskIndex}
                 />
               )}
             </div>
@@ -2198,6 +2597,10 @@ export default function DailyPlannerPage() {
             fmtBlocks={fmtBlocks}
             untitledTask={copy.untitledTask}
             taskCardBlockCount={copy.taskCardBlockCount}
+            focusSessionsByPlannerTaskId={focusSessionsByPlannerTaskId}
+            activeFocusSessionId={activeFocusSession?.id ?? null}
+            showActualOverlay={focusPreferences?.show_actual_timeline_overlay ?? true}
+            onStartFocus={openStartFocusForPlanTask}
             onTaskClick={(planTask) => {
               const idx = tasks.findIndex(
                 (t) =>
@@ -2221,6 +2624,7 @@ export default function DailyPlannerPage() {
             copy={copy}
             tasks={freeTasks}
             onChange={updateFreeTasks}
+            onStartFocus={openStartFocusForFreeTask}
             secondaryActions={
               <>
                 <Button
@@ -2619,6 +3023,46 @@ export default function DailyPlannerPage() {
         taskTitle={ritualTaskName}
         copy={ritualCopy}
         onBeginTask={() => toast.success(copy.toastFocusActivated)}
+      />
+
+      <PlanQualityDrawer
+        copy={copy}
+        open={qualityDrawerOpen}
+        onOpenChange={setQualityDrawerOpen}
+        report={qualityReport}
+        onApplyChange={handleApplyQualityChange}
+        onApplyAllSafe={handleApplyAllSafeQualityChanges}
+      />
+
+      <StartFocusSessionSheet
+        copy={copy}
+        open={startFocusOpen}
+        draft={focusDraft}
+        pending={startFocusSession.isPending}
+        onOpenChange={setStartFocusOpen}
+        onStart={(input) => void handleStartFocusSession(input)}
+      />
+
+      <FinishFocusSessionSheet
+        copy={copy}
+        open={finishFocusOpen}
+        session={activeFocusSession}
+        pending={completeFocusSession.isPending}
+        onOpenChange={setFinishFocusOpen}
+        onFinish={(input) => void handleCompleteFocus(input)}
+      />
+
+      <EndOfDayReviewDrawer
+        copy={copy}
+        open={reviewDrawerOpen}
+        review={dailyReview}
+        pending={generateDailyReview.isPending}
+        onOpenChange={setReviewDrawerOpen}
+        onRegenerate={() => void handleGenerateDailyReview()}
+        onSave={() => {
+          setReviewDrawerOpen(false);
+          toast.success(copy.focusReviewSavedToast);
+        }}
       />
       </div>
     </PageShell>

@@ -211,15 +211,15 @@ export function KnowledgeTopControlBar() {
 
   return (
     <div className="flex shrink-0 flex-col gap-2.5 border-b border-border/40 bg-muted/10 px-4 py-3 sm:px-5">
-      <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="grid min-w-0 gap-2 lg:grid-cols-[auto_auto] lg:items-center lg:justify-start lg:gap-3">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <OSControl
                   size="sm"
                   osSize="compact"
-                  className="w-full justify-between border-border/60 bg-background/80 font-normal sm:w-[200px] lg:w-[160px] 2xl:w-[200px]"
+                  className="w-full justify-between border-border/60 bg-background/80 font-normal sm:w-[160px] lg:w-[128px] 2xl:w-[140px]"
                 />
               }
             >
@@ -263,7 +263,7 @@ export function KnowledgeTopControlBar() {
           </DropdownMenu>
 
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as KnowledgeSortKey)}>
-            <SelectTrigger className="h-9 w-full min-w-[8.5rem] border-border/60 bg-background/80 text-xs sm:w-[160px] lg:w-[140px] 2xl:w-[160px]">
+            <SelectTrigger className="h-9 w-full min-w-[7rem] border-border/60 bg-background/80 text-xs sm:w-[132px] lg:w-[108px] 2xl:w-[120px]">
               <SelectValue placeholder={ui.sortLabel} />
             </SelectTrigger>
             <SelectContent>
@@ -275,11 +275,11 @@ export function KnowledgeTopControlBar() {
             </SelectContent>
           </Select>
 
-          <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto">
+          <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto sm:shrink-0">
             <Select value={pageSizeSelectValue} onValueChange={handlePageSizeChange}>
               <SelectTrigger
                 aria-label={ui.cardsPerPageLabel}
-                className="h-9 w-full min-w-[8.5rem] border-border/60 bg-background/80 text-xs sm:w-[132px] lg:w-[124px] 2xl:w-[132px]"
+                className="h-9 w-full min-w-[7rem] border-border/60 bg-background/80 text-xs sm:w-[112px] lg:w-[96px] 2xl:w-[104px]"
               >
                 <SelectValue placeholder={ui.cardsPerPageLabel} />
               </SelectTrigger>
@@ -333,7 +333,7 @@ export function KnowledgeTopControlBar() {
           value={currentView}
           onValueChange={setView}
           ariaLabel={ui.pageTitle}
-          className="max-sm:[&>button]:min-w-0 max-sm:[&>button]:flex-1 lg:justify-self-end"
+          className="max-sm:[&>button]:min-w-0 max-sm:[&>button]:flex-1 lg:justify-self-end lg:[&>button]:min-h-8 lg:[&>button]:min-w-8 lg:[&>button]:rounded-lg lg:[&>button]:px-2 lg:[&>button]:text-xs lg:[&_svg]:size-3.5 lg:max-xl:[&>button>span:last-child]:sr-only"
           labelMode="desktop"
           layoutId="knowledge-view-active-pill"
         />

@@ -343,20 +343,20 @@ function TodayRow({
   tone?: "default" | "green" | "blue" | "amber";
 }) {
   return (
-    <div className="today-companion-row grid min-h-[22px] grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1 border-b border-white/[0.075] px-1 last:border-b-0">
-      <span className="today-companion-row__icon inline-flex size-[18px] items-center justify-center rounded-[5px] border border-white/[0.08] bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-        <Icon className="size-2.5 text-sky-200" aria-hidden />
+    <div className="today-companion-row grid min-h-[22px] grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1 border-b border-slate-200/80 px-1 last:border-b-0 dark:border-white/[0.075]">
+      <span className="today-companion-row__icon inline-flex size-[18px] items-center justify-center rounded-[5px] border border-slate-200/80 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/[0.08] dark:bg-white/[0.055] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <Icon className="size-2.5 text-sky-600 dark:text-sky-200" aria-hidden />
       </span>
-      <span className="today-companion-row__label min-w-0 truncate text-[9px] font-medium text-slate-200/90">
+      <span className="today-companion-row__label min-w-0 truncate text-[9px] font-medium text-slate-600 dark:text-slate-200/90">
         <span className="truncate">{label}</span>
       </span>
       <span
         className={cn(
           "today-companion-row__value max-w-[76px] truncate text-right text-[8px] font-semibold leading-none",
-          tone === "green" && "text-emerald-300",
-          tone === "blue" && "text-sky-300",
-          tone === "amber" && "text-amber-300",
-          tone === "default" && "text-slate-100",
+          tone === "green" && "text-emerald-700 dark:text-emerald-300",
+          tone === "blue" && "text-sky-700 dark:text-sky-300",
+          tone === "amber" && "text-amber-700 dark:text-amber-300",
+          tone === "default" && "text-slate-700 dark:text-slate-100",
         )}
       >
         {value}
@@ -382,10 +382,10 @@ function QuickLaunchButton({
     <Link
       href={withLocalePrefix(localeSlug, option.href)}
       onClick={onNavigate}
-      className="today-companion-quick-button group flex min-h-[42px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border border-white/[0.09] bg-white/[0.045] px-0.5 text-slate-200/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] transition hover:border-emerald-300/30 hover:bg-emerald-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+      className="today-companion-quick-button group flex min-h-[42px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border border-slate-200/85 bg-white/68 px-0.5 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)] transition hover:border-emerald-300/55 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:border-white/[0.09] dark:bg-white/[0.045] dark:text-slate-200/85 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] dark:hover:border-emerald-300/30 dark:hover:bg-emerald-400/10 dark:hover:text-white"
       title={label}
     >
-      <Icon className="size-3.5 text-sky-200 transition group-hover:text-emerald-200" aria-hidden />
+      <Icon className="size-3.5 text-sky-600 transition group-hover:text-emerald-600 dark:text-sky-200 dark:group-hover:text-emerald-200" aria-hidden />
       <span className="today-companion-quick-label max-w-full truncate text-[8px] font-medium leading-none">{label}</span>
     </Link>
   );
@@ -410,7 +410,7 @@ function TodayWeatherIcon() {
 
   return (
     <span
-      className="today-companion-weather-icon inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-md border border-amber-200/15 bg-amber-300/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+      className="today-companion-weather-icon inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-md border border-amber-200/70 bg-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-amber-200/15 dark:bg-amber-300/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       title={title}
       aria-label={title}
     >
@@ -600,20 +600,20 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
   const title = possessiveRestingTitle(name, locale);
 
   return (
-    <section className="today-companion-rest-section space-y-0.5 border-t border-white/[0.08] pt-0.5">
+    <section className="today-companion-rest-section space-y-0.5 border-t border-slate-200/80 pt-0.5 dark:border-white/[0.08]">
       <div className="flex items-center justify-between">
-        <h3 className="today-companion-section-title min-w-0 truncate text-[9px] font-medium text-slate-100">
+        <h3 className="today-companion-section-title min-w-0 truncate text-[9px] font-medium text-slate-700 dark:text-slate-100">
           {title}
         </h3>
-        <Info className="size-3 shrink-0 text-slate-500" aria-hidden />
+        <Info className="size-3 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden />
       </div>
       <div
         id={OS_BUDDY_RESTING_SPACE_DROPZONE_ID}
         className={cn(
-          "today-companion-rest-room relative h-[62px] overflow-hidden rounded-lg border bg-black/25 transition",
+          "today-companion-rest-room relative h-[62px] overflow-hidden rounded-lg border bg-white/55 transition dark:bg-black/25",
           isRestingInSidebar
-            ? "border-emerald-300/35 shadow-[inset_0_0_28px_rgba(16,185,129,0.08)]"
-            : "border-white/[0.12]",
+            ? "border-emerald-300/55 shadow-[inset_0_0_28px_rgba(16,185,129,0.08)] dark:border-emerald-300/35"
+            : "border-slate-200/80 dark:border-white/[0.12]",
         )}
       >
         <div
@@ -621,11 +621,11 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
           style={{ backgroundImage: `url(${RESTING_ROOM_BACKGROUND})` }}
           aria-hidden
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_72%,rgba(34,197,94,0.08),transparent_45%),linear-gradient(90deg,rgba(2,6,23,0.08),rgba(2,6,23,0.2))]" aria-hidden />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_72%,rgba(34,197,94,0.08),transparent_45%),linear-gradient(90deg,rgba(255,255,255,0.22),rgba(15,23,42,0.06))] dark:bg-[radial-gradient(circle_at_48%_72%,rgba(34,197,94,0.08),transparent_45%),linear-gradient(90deg,rgba(2,6,23,0.08),rgba(2,6,23,0.2))]" aria-hidden />
         {isRestingInSidebar ? (
           <button
             type="button"
-            className="absolute left-1 top-1 z-30 inline-flex size-5 items-center justify-center rounded-md border border-white/10 bg-black/25 text-slate-300/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            className="absolute left-1 top-1 z-30 inline-flex size-5 items-center justify-center rounded-md border border-slate-200/75 bg-white/75 text-slate-600 transition hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:border-white/10 dark:bg-black/25 dark:text-slate-300/75 dark:hover:bg-white/10 dark:hover:text-white"
             title={isZh(locale) ? `召回 ${name}` : `Call ${name} out`}
             onClick={() => {
               releaseFromRestingSpace();
@@ -690,8 +690,8 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
               </span>
             </span>
           ) : (
-            <span className="today-companion-drop-cue absolute left-1/2 bottom-[17px] inline-flex -translate-x-1/2 items-center gap-1 rounded-md bg-black/35 px-1.5 py-0.5 text-[9px] font-medium text-slate-200/90 shadow-[0_0_14px_rgba(16,185,129,0.16)] backdrop-blur-sm">
-              <CircleDot className="size-3 text-emerald-300/80" aria-hidden />
+            <span className="today-companion-drop-cue absolute left-1/2 bottom-[17px] inline-flex -translate-x-1/2 items-center gap-1 rounded-md border border-emerald-200/70 bg-white/80 px-1.5 py-0.5 text-[9px] font-medium text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.12)] backdrop-blur-sm dark:border-transparent dark:bg-black/35 dark:text-slate-200/90 dark:shadow-[0_0_14px_rgba(16,185,129,0.16)]">
+              <CircleDot className="size-3 text-emerald-600/80 dark:text-emerald-300/80" aria-hidden />
               {isZh(locale) ? "拖入休息" : "Drop here"}
             </span>
           )}
@@ -703,14 +703,14 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
               className={cn(
                 "absolute right-1.5 top-1.5 z-20 inline-flex min-h-4 items-center justify-center gap-1 rounded-md border px-1.5 text-[7px] font-semibold",
                 restingState === "headache"
-                  ? "border-amber-300/35 bg-amber-400/20 text-amber-100"
-                  : "border-emerald-300/25 bg-emerald-400/20 text-emerald-100",
+                  ? "border-amber-300/55 bg-amber-50/90 text-amber-800 dark:border-amber-300/35 dark:bg-amber-400/20 dark:text-amber-100"
+                  : "border-emerald-300/50 bg-emerald-50/90 text-emerald-800 dark:border-emerald-300/25 dark:bg-emerald-400/20 dark:text-emerald-100",
               )}
             >
               <span className="size-1 rounded-full bg-current" aria-hidden />
               {restStateLabel(restingState, locale)}
             </span>
-            <div className="absolute right-1.5 bottom-1 z-20 w-[56px] rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 text-[7px] leading-snug text-slate-100/90 backdrop-blur-sm">
+            <div className="absolute right-1.5 bottom-1 z-20 w-[56px] rounded-md border border-slate-200/75 bg-white/80 px-1.5 py-0.5 text-[7px] leading-snug text-slate-700 backdrop-blur-sm dark:border-white/10 dark:bg-black/35 dark:text-slate-100/90">
               <span className="line-clamp-2">{buddyLine}</span>
             </div>
           </>
@@ -881,20 +881,20 @@ export function TodayCompanionPanel() {
       className="today-companion-panel mt-auto shrink-0 px-2 pb-1.5 pt-1.5 group-data-[collapsible=icon]:hidden"
       data-focus-hideable
     >
-      <div className="today-companion-panel__shell relative space-y-1 rounded-xl border border-white/12 bg-slate-950/78 p-1.5 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+      <div className="today-companion-panel__shell relative space-y-1 rounded-xl border border-slate-200/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(241,245,249,0.84))] p-1.5 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_14px_30px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-white/12 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.78))] dark:text-slate-100 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.24)]">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <TodayWeatherIcon />
             <div className="min-w-0">
-              <h2 className="today-companion-panel__title truncate text-[12px] font-semibold leading-tight text-slate-100">Today</h2>
-              <p className="today-companion-panel__date truncate text-[8px] font-medium leading-tight text-slate-400">
+              <h2 className="today-companion-panel__title truncate text-[12px] font-semibold leading-tight text-slate-900 dark:text-slate-100">Today</h2>
+              <p className="today-companion-panel__date truncate text-[8px] font-medium leading-tight text-slate-500 dark:text-slate-400">
                 {todayDateLabel}
               </p>
             </div>
           </div>
           <button
             type="button"
-            className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            className="inline-flex size-6 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
             aria-label={isZh(locale) ? "自訂 Today panel" : "Customize Today panel"}
             title={isZh(locale) ? "自訂 Today panel" : "Customize Today panel"}
             onClick={() => setTodayCustomizerOpen(true)}
@@ -903,7 +903,7 @@ export function TodayCompanionPanel() {
           </button>
         </div>
 
-        <section className="overflow-hidden rounded-xl border border-white/[0.08] bg-black/15">
+        <section className="overflow-hidden rounded-xl border border-slate-200/85 bg-white/58 dark:border-white/[0.08] dark:bg-black/15">
           {todayRows.map((row) => (
             <TodayRow
               key={row.id}
@@ -915,12 +915,12 @@ export function TodayCompanionPanel() {
           ))}
         </section>
 
-        <section className="space-y-0.5 border-t border-white/[0.08] pt-0.5">
+        <section className="space-y-0.5 border-t border-slate-200/80 pt-0.5 dark:border-white/[0.08]">
           <div className="flex items-center justify-between">
-            <h3 className="today-companion-section-title text-[9px] font-medium text-slate-100">Quick Launch</h3>
+            <h3 className="today-companion-section-title text-[9px] font-medium text-slate-700 dark:text-slate-100">Quick Launch</h3>
             <button
               type="button"
-              className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+              className="inline-flex size-6 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
               aria-label={isZh(locale) ? "自訂 Quick Launch" : "Customize Quick Launch"}
               title={isZh(locale) ? "自訂 Quick Launch" : "Customize Quick Launch"}
               onClick={() => setQuickCustomizerOpen(true)}
@@ -951,18 +951,18 @@ export function TodayCompanionPanel() {
 
         <OSBuddyRestingSpace buddyLine={buddyLine} />
 
-        <div className="grid grid-cols-2 gap-1 border-t border-white/[0.08] pt-0.5">
+        <div className="grid grid-cols-2 gap-1 border-t border-slate-200/80 pt-0.5 dark:border-white/[0.08]">
           <button
             type="button"
-            className="today-companion-action-button inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2 text-[10px] font-semibold text-slate-100 transition hover:border-emerald-300/30 hover:bg-emerald-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            className="today-companion-action-button inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-emerald-200/80 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-800 transition hover:border-emerald-300/80 hover:bg-emerald-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-100 dark:hover:border-emerald-300/30 dark:hover:bg-emerald-400/10"
             onClick={handleCapture}
           >
-            <Plus className="size-3.5 text-emerald-300" aria-hidden />
+            <Plus className="size-3.5 text-emerald-600 dark:text-emerald-300" aria-hidden />
             Capture
           </button>
           <Link
             href={withLocalePrefix(localeSlug, "/daily-planner")}
-            className="today-companion-action-button inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-sky-300/15 bg-sky-500/10 px-2 text-[10px] font-semibold text-sky-100 transition hover:border-sky-200/35 hover:bg-sky-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
+            className="today-companion-action-button inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-sky-200/80 bg-sky-50/90 px-2 text-[10px] font-semibold text-sky-800 transition hover:border-sky-300/80 hover:bg-sky-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 dark:border-sky-300/15 dark:bg-sky-500/10 dark:text-sky-100 dark:hover:border-sky-200/35 dark:hover:bg-sky-400/15"
             onClick={handlePlan}
           >
             <CalendarDays className="size-3.5" aria-hidden />

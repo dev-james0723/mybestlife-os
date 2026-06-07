@@ -1,0 +1,75 @@
+{
+  "packId": "pack-c-liquid-glass",
+  "name": "Pack C Liquid Glass",
+  "status": "review_ready",
+  "canonicalAssets": "review_sheets",
+  "croppedAssets": "provisional_only",
+  "modes": {
+    "day": {
+      "reviewSheets": [
+        "/images/liquid-icons/pack-c/review/day-sheet-1.png",
+        "/images/liquid-icons/pack-c/review/day-sheet-2.png"
+      ],
+      "provisionalAssetBase": "/images/liquid-icons/pack-c/provisional-day"
+    },
+    "dark": {
+      "reviewSheets": [
+        "/images/liquid-icons/pack-c/review/dark-sheet-1.png",
+        "/images/liquid-icons/pack-c/review/dark-sheet-2.png"
+      ],
+      "provisionalAssetBase": "/images/liquid-icons/pack-c/provisional-dark"
+    }
+  },
+  "targets": [
+    { "assetId": "category-command-center", "targetType": "category", "targetId": "commandCenter", "label": "Command Center", "sheet": 1, "cell": 1 },
+    { "assetId": "dashboard", "targetType": "nav_item", "targetId": "dashboard", "label": "Dashboard", "sheet": 1, "cell": 2 },
+    { "assetId": "brain", "targetType": "nav_item", "targetId": "brain", "label": "Brain", "sheet": 1, "cell": 3 },
+    { "assetId": "life-agent", "targetType": "nav_item", "targetId": "life-agent", "label": "Life Companion", "sheet": 1, "cell": 4 },
+    { "assetId": "daily-planner", "targetType": "nav_item", "targetId": "daily-planner", "label": "Daily Planner", "sheet": 1, "cell": 5 },
+    { "assetId": "tasks", "targetType": "nav_item", "targetId": "tasks", "label": "Tasks", "sheet": 1, "cell": 6 },
+    { "assetId": "weekly-review", "targetType": "nav_item", "targetId": "weekly-review", "label": "Weekly Review", "sheet": 1, "cell": 7 },
+    { "assetId": "calendar", "targetType": "nav_item", "targetId": "calendar", "label": "Calendar", "sheet": 1, "cell": 8 },
+    { "assetId": "weather", "targetType": "nav_item", "targetId": "weather", "label": "Weather", "sheet": 1, "cell": 9 },
+    { "assetId": "signals", "targetType": "nav_item", "targetId": "signals", "label": "Signals", "sheet": 1, "cell": 10 },
+    { "assetId": "analytics", "targetType": "nav_item", "targetId": "analytics", "label": "Analytics", "sheet": 1, "cell": 11 },
+    { "assetId": "finance", "targetType": "nav_item", "targetId": "finance", "label": "Finance", "sheet": 1, "cell": 12 },
+    { "assetId": "category-self", "targetType": "category", "targetId": "self", "label": "Self", "sheet": 1, "cell": 13 },
+    { "assetId": "about-me", "targetType": "nav_item", "targetId": "about-me", "label": "About Me", "sheet": 1, "cell": 14 },
+    { "assetId": "grateful-things", "targetType": "nav_item", "targetId": "grateful-things", "label": "Grateful Things", "sheet": 1, "cell": 15 },
+    { "assetId": "quote-library", "targetType": "nav_item", "targetId": "quote-library", "label": "Quote Library", "sheet": 1, "cell": 16 },
+    { "assetId": "bucket-list", "targetType": "nav_item", "targetId": "bucket-list", "label": "Bucket List", "sheet": 1, "cell": 17 },
+    { "assetId": "health", "targetType": "nav_item", "targetId": "health", "label": "Health", "sheet": 1, "cell": 18 },
+    { "assetId": "habits", "targetType": "nav_item", "targetId": "habits", "label": "Habits & Routines", "sheet": 1, "cell": 19 },
+    { "assetId": "journal", "targetType": "nav_item", "targetId": "journal", "label": "Journal", "sheet": 1, "cell": 20 },
+    { "assetId": "category-people", "targetType": "category", "targetId": "relationship", "label": "People", "sheet": 1, "cell": 21 },
+    { "assetId": "relationship", "targetType": "nav_item", "targetId": "relationship", "label": "Relationships", "sheet": 1, "cell": 22 },
+    { "assetId": "role-model", "targetType": "nav_item", "targetId": "role-model", "label": "Role Model", "sheet": 1, "cell": 23 },
+    { "assetId": "category-career", "targetType": "category", "targetId": "career", "label": "Career", "sheet": 1, "cell": 24 },
+    { "assetId": "career", "targetType": "nav_item", "targetId": "career", "label": "Career Home", "sheet": 1, "cell": 25 },
+    { "assetId": "career-compass", "targetType": "nav_item", "targetId": "career-compass", "label": "Career Compass", "sheet": 2, "cell": 1 },
+    { "assetId": "career-profile", "targetType": "nav_item", "targetId": "career-profile", "label": "Career Profile", "sheet": 2, "cell": 2 },
+    { "assetId": "career-vault", "targetType": "nav_item", "targetId": "career-vault", "label": "Career Vault", "sheet": 2, "cell": 3 },
+    { "assetId": "career-coach", "targetType": "nav_item", "targetId": "career-coach", "label": "AI Career Coach", "sheet": 2, "cell": 4 },
+    { "assetId": "career-pipeline", "targetType": "nav_item", "targetId": "career-pipeline", "label": "Career Pipeline", "sheet": 2, "cell": 5 },
+    { "assetId": "career-timeline", "targetType": "nav_item", "targetId": "career-timeline", "label": "Career Timeline", "sheet": 2, "cell": 6 },
+    { "assetId": "career-network", "targetType": "nav_item", "targetId": "career-network", "label": "Career Network", "sheet": 2, "cell": 7 },
+    { "assetId": "career-journal", "targetType": "nav_item", "targetId": "career-journal", "label": "Career Journal", "sheet": 2, "cell": 8 },
+    { "assetId": "career-analytics", "targetType": "nav_item", "targetId": "career-analytics", "label": "Career Analytics", "sheet": 2, "cell": 9 },
+    { "assetId": "category-goals-execution", "targetType": "category", "targetId": "goalsExecution", "label": "Build & Execute", "sheet": 2, "cell": 10 },
+    { "assetId": "goals", "targetType": "nav_item", "targetId": "goals", "label": "Goals", "sheet": 2, "cell": 11 },
+    { "assetId": "projects", "targetType": "nav_item", "targetId": "projects", "label": "Projects", "sheet": 2, "cell": 12 },
+    { "assetId": "category-resources", "targetType": "category", "targetId": "resources", "label": "Resources", "sheet": 2, "cell": 13 },
+    { "assetId": "assets", "targetType": "nav_item", "targetId": "assets", "label": "Assets", "sheet": 2, "cell": 14 },
+    { "assetId": "documents", "targetType": "nav_item", "targetId": "documents", "label": "Documents", "sheet": 2, "cell": 15 },
+    { "assetId": "software-vault", "targetType": "nav_item", "targetId": "software-vault", "label": "Software Vault", "sheet": 2, "cell": 16 },
+    { "assetId": "category-knowledge", "targetType": "category", "targetId": "knowledge", "label": "Knowledge", "sheet": 2, "cell": 17 },
+    { "assetId": "knowledge-base", "targetType": "nav_item", "targetId": "knowledge-base", "label": "Knowledge Base", "sheet": 2, "cell": 18 },
+    { "assetId": "ai-knowledge", "targetType": "nav_item", "targetId": "ai-knowledge", "label": "AI Knowledge", "sheet": 2, "cell": 19 },
+    { "assetId": "mind-council", "targetType": "nav_item", "targetId": "mind-council", "label": "Mind Council", "sheet": 2, "cell": 20 },
+    { "assetId": "ideas", "targetType": "nav_item", "targetId": "ideas", "label": "Idea Capture", "sheet": 2, "cell": 21 },
+    { "assetId": "category-learning", "targetType": "category", "targetId": "learning", "label": "Learning", "sheet": 2, "cell": 22 },
+    { "assetId": "japanese-study", "targetType": "nav_item", "targetId": "japanese-study", "label": "Japanese Study", "sheet": 2, "cell": 23 },
+    { "assetId": "garden", "targetType": "cta", "targetId": "garden", "label": "Garden", "sheet": 2, "cell": 24 },
+    { "assetId": "settings-reserved", "targetType": "reserved", "targetId": "settings", "label": "Settings Reserved", "sheet": 2, "cell": 25 }
+  ]
+}

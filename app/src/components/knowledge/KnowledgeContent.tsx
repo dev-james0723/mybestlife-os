@@ -65,7 +65,7 @@ export function KnowledgeContent({ userId }: KnowledgeContentProps) {
           {items.length === 0 ? (
             <Button
               size="sm"
-              onClick={openAddModal}
+              onClick={() => openAddModal()}
               className="mt-1 h-9 gap-2 border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700"
             >
               {ui.addKnowledge}

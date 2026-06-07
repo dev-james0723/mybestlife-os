@@ -22,11 +22,22 @@ import { resolveIdeaRelatedCategory } from "@/lib/ideas/idea-related-display";
 
 const TAG_CAP = 3;
 
-function IdeaVisual({ pendingLabel }: { pendingLabel: string }) {
+function IdeaVisual({
+  pendingLabel,
+  className,
+}: {
+  pendingLabel: string;
+  className?: string;
+}) {
   // Deterministic "visual pending" placeholder — never random line art. Tuned
   // to the warm ivory paper of the real generated illustrations.
   return (
-    <div className="relative flex h-full min-h-[168px] flex-col items-center justify-center gap-2 overflow-hidden bg-gradient-to-b from-sky-200/80 via-rose-100/60 to-blue-300/70 text-sky-900/70 dark:from-slate-800 dark:via-violet-950/40 dark:to-slate-900 dark:text-slate-300/80">
+    <div
+      className={cn(
+        "relative flex h-full min-h-[168px] flex-col items-center justify-center gap-2 overflow-hidden bg-gradient-to-b from-sky-200/80 via-rose-100/60 to-blue-300/70 text-sky-900/70 dark:from-slate-800 dark:via-violet-950/40 dark:to-slate-900 dark:text-slate-300/80",
+        className,
+      )}
+    >
       <Sparkles className="h-6 w-6 opacity-70" aria-hidden />
       <span className="px-3 text-center text-[10px] font-medium leading-tight opacity-80">
         {pendingLabel}
@@ -40,11 +51,13 @@ export function IdeaCard({
   language,
   className,
   onOpen,
+  variant = "gallery",
 }: {
   idea: Idea;
   language: AppLocale;
   className?: string;
   onOpen: (idea: Idea) => void;
+  variant?: "gallery" | "board";
 }) {
   const ui = getIdeasUiCopy(language);
   const title = previewIdeaTitle(idea);
@@ -54,6 +67,95 @@ export function IdeaCard({
   const topRelated = ideaRelatedResources(idea)[0];
   const visual = ideaCardVisual(idea);
   const hasVisualBackground = Boolean(visual?.imageUrl);
+  const handleOpen = () => onOpen(idea);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpen(idea);
+    }
+  };
+
+  if (variant === "board") {
+    const boardTags = topTags.slice(0, 2);
+
+    return (
+      <motion.article
+        layout
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        whileHover={{ y: -2 }}
+        className={cn(
+          "group flex min-h-[232px] w-full cursor-pointer flex-col overflow-hidden rounded-lg border border-border/65 bg-card/95 shadow-sm ring-1 ring-transparent transition-[border-color,box-shadow] hover:border-primary/35 hover:shadow-md hover:ring-primary/10",
+          className,
+        )}
+        role="button"
+        tabIndex={0}
+        onClick={handleOpen}
+        onKeyDown={handleKeyDown}
+      >
+        <div className="relative h-[88px] shrink-0 overflow-hidden border-b border-border/50 bg-muted/20">
+          {hasVisualBackground && visual?.imageUrl ? (
+            <>
+              <OptimizedThumbnailImage
+                src={visual.imageUrl}
+                alt=""
+                className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+                sizes="320px"
+                variant="card"
+              />
+              <div
+                className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/25"
+                aria-hidden
+              />
+            </>
+          ) : (
+            <IdeaVisual
+              pendingLabel={ui.visualPending}
+              className="min-h-0 text-sky-900/65 dark:text-slate-300/75 [&_svg]:h-5 [&_svg]:w-5"
+            />
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col p-3">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+            <IdeaCategoryBadge category={idea.category} language={language} />
+            <Badge variant="outline" className="text-[10px] font-medium capitalize">
+              {ui.statusLabels[idea.status]}
+            </Badge>
+          </div>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+            {title}
+          </h3>
+          {body ? (
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {body}
+            </p>
+          ) : null}
+          {boardTags.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {boardTags.map((t) => (
+                <span
+                  key={t}
+                  className="max-w-full truncate rounded-md border border-border/50 bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[10px] text-muted-foreground">
+            <span className="min-w-0 truncate">
+              {topRelated
+                ? `${ui.relatedCategoryLabels[resolveIdeaRelatedCategory(topRelated)]} · ${topRelated.percentage}%`
+                : ui.relatedCount(rel)}
+            </span>
+            <span className="shrink-0 tabular-nums">{formatDateShort(idea.updated_at)}</span>
+          </div>
+        </div>
+      </motion.article>
+    );
+  }
 
   return (
     <motion.div
@@ -70,13 +172,8 @@ export function IdeaCard({
       )}
       role="button"
       tabIndex={0}
-      onClick={() => onOpen(idea)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen(idea);
-        }
-      }}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
     >
       {hasVisualBackground && visual?.imageUrl ? (
         <>

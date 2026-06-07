@@ -20,6 +20,7 @@ import {
   Type,
   User,
   MapPin,
+  Gauge,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ import {
 } from "@/components/ui/os-primitives";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -57,6 +59,10 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from "@/hooks/use-settings";
+import {
+  useFocusPreferences,
+  useUpdateFocusPreferences,
+} from "@/hooks/use-focus-preferences";
 import { ProfileAvatarField } from "@/components/settings/profile-avatar-field";
 import { SocialIntegrationsSection } from "@/components/settings/social-integrations-section";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
@@ -74,6 +80,7 @@ import {
   parseAppLocale,
 } from "@/lib/i18n/app-locale";
 import { getSettingsUiCopy } from "@/lib/i18n/settings-ui";
+import { getDailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
 import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
@@ -176,6 +183,8 @@ export default function SettingsPage() {
   } = useNotificationPreferences();
   const updateNotifications = useUpdateNotificationPreferences();
   const { data: gcalStatus, refetch: refetchGcal } = useGoogleCalendarPlannerStatus();
+  const { data: focusPreferences } = useFocusPreferences();
+  const updateFocusPreferences = useUpdateFocusPreferences();
   const [googleCalendarBusy, setGoogleCalendarBusy] = useState(false);
 
   const locale = useAppStore((s) => s.language);
@@ -183,6 +192,7 @@ export default function SettingsPage() {
   const { colorMode, setColorMode } = useTheme();
   const ui = useMemo(() => getSettingsUiCopy(locale), [locale]);
   const tui = useMemo(() => getThemeUiCopy(locale), [locale]);
+  const focusUi = useMemo(() => getDailyPlannerUiCopy(locale), [locale]);
 
   const [language, setLanguage] = useState<UserProfile["language"]>("en");
   const [timezone, setTimezone] = useState(PROFILE_TIMEZONE_AUTO);
@@ -196,6 +206,14 @@ export default function SettingsPage() {
   const [quickSaveDestination, setQuickSaveDestination] =
     useState<QuickSaveDefaultDestination>("review");
   const [quickSaveRequireReview, setQuickSaveRequireReview] = useState(true);
+  const [lowStimulationModeEnabled, setLowStimulationModeEnabled] = useState(true);
+  const [distractionGateEnabled, setDistractionGateEnabled] = useState(true);
+  const [urgeSurfingDelaySeconds, setUrgeSurfingDelaySeconds] = useState("10");
+  const [defaultFocusMinutes, setDefaultFocusMinutes] = useState("50");
+  const [breakReminderMinutes, setBreakReminderMinutes] = useState("50");
+  const [aiAccessRequiresIntention, setAiAccessRequiresIntention] = useState(true);
+  const [showActualTimelineOverlay, setShowActualTimelineOverlay] = useState(true);
+  const [highStimulationRoutesText, setHighStimulationRoutesText] = useState("");
 
   useEffect(() => {
     if (!profile) return;
@@ -212,6 +230,20 @@ export default function SettingsPage() {
       setQuickSaveRequireReview(profile.quick_save_require_review);
     });
   }, [profile]);
+
+  useEffect(() => {
+    if (!focusPreferences) return;
+    startTransition(() => {
+      setLowStimulationModeEnabled(focusPreferences.low_stimulation_mode_enabled);
+      setDistractionGateEnabled(focusPreferences.distraction_gate_enabled);
+      setUrgeSurfingDelaySeconds(String(focusPreferences.urge_surfing_delay_seconds));
+      setDefaultFocusMinutes(String(focusPreferences.default_focus_minutes));
+      setBreakReminderMinutes(String(focusPreferences.break_reminder_minutes));
+      setAiAccessRequiresIntention(focusPreferences.ai_access_requires_intention);
+      setShowActualTimelineOverlay(focusPreferences.show_actual_timeline_overlay);
+      setHighStimulationRoutesText(focusPreferences.high_stimulation_routes.join("\n"));
+    });
+  }, [focusPreferences]);
 
   const tzList = useMemo(() => timezoneChoices(profile?.timezone), [profile?.timezone]);
 
@@ -278,6 +310,24 @@ export default function SettingsPage() {
       quick_save_default_destination: quickSaveDestination,
       quick_save_require_review: quickSaveRequireReview,
     });
+  };
+
+  const handleSaveFocusPreferences = async () => {
+    const routes = highStimulationRoutesText
+      .split(/[\n,]/)
+      .map((route) => route.trim())
+      .filter(Boolean);
+    await updateFocusPreferences.mutateAsync({
+      low_stimulation_mode_enabled: lowStimulationModeEnabled,
+      distraction_gate_enabled: distractionGateEnabled,
+      urge_surfing_delay_seconds: Math.max(0, Math.round(Number(urgeSurfingDelaySeconds) || 0)),
+      default_focus_minutes: Math.max(5, Math.round(Number(defaultFocusMinutes) || 50)),
+      break_reminder_minutes: Math.max(5, Math.round(Number(breakReminderMinutes) || 50)),
+      ai_access_requires_intention: aiAccessRequiresIntention,
+      show_actual_timeline_overlay: showActualTimelineOverlay,
+      high_stimulation_routes: routes,
+    });
+    toast.success(ui.toastPreferencesSaved);
   };
 
   const handleNotifChange = async (
@@ -582,6 +632,121 @@ export default function SettingsPage() {
             <div className="flex justify-end">
               <OSPrimaryAction onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? ui.saving : ui.savePreferences}
+              </OSPrimaryAction>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Gauge className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <CardTitle>{focusUi.focusRealityTitle}</CardTitle>
+                <CardDescription>{focusUi.focusPrivacyNote}</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="font-medium">{focusUi.lowStimulationMode}</p>
+              </div>
+              <Checkbox
+                checked={lowStimulationModeEnabled}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === "boolean") setLowStimulationModeEnabled(checked);
+                }}
+              />
+            </label>
+
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="font-medium">{focusUi.distractionGate}</p>
+              </div>
+              <Checkbox
+                checked={distractionGateEnabled}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === "boolean") setDistractionGateEnabled(checked);
+                }}
+              />
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FieldRow icon={Shield} label={focusUi.urgeSurfing}>
+                <Input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={urgeSurfingDelaySeconds}
+                  onChange={(event) => setUrgeSurfingDelaySeconds(event.target.value)}
+                  className="max-w-md tabular-nums"
+                />
+              </FieldRow>
+              <FieldRow icon={Clock} label={focusUi.deepWorkLabel}>
+                <Input
+                  type="number"
+                  min={5}
+                  inputMode="numeric"
+                  value={defaultFocusMinutes}
+                  onChange={(event) => setDefaultFocusMinutes(event.target.value)}
+                  className="max-w-md tabular-nums"
+                />
+              </FieldRow>
+              <FieldRow icon={Clock} label={focusUi.breaksLabel}>
+                <Input
+                  type="number"
+                  min={5}
+                  inputMode="numeric"
+                  value={breakReminderMinutes}
+                  onChange={(event) => setBreakReminderMinutes(event.target.value)}
+                  className="max-w-md tabular-nums"
+                />
+              </FieldRow>
+            </div>
+
+            <FieldRow icon={Shield} label={focusUi.blockedRoutes}>
+              <Textarea
+                value={highStimulationRoutesText}
+                onChange={(event) => setHighStimulationRoutesText(event.target.value)}
+                placeholder={focusUi.blockedRoutesPlaceholder}
+                rows={5}
+                className="max-w-md"
+              />
+            </FieldRow>
+
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="font-medium">{focusUi.aiAccessRequiresIntention}</p>
+              </div>
+              <Checkbox
+                checked={aiAccessRequiresIntention}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === "boolean") setAiAccessRequiresIntention(checked);
+                }}
+              />
+            </label>
+
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="font-medium">{focusUi.actualTimeline}</p>
+              </div>
+              <Checkbox
+                checked={showActualTimelineOverlay}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === "boolean") setShowActualTimelineOverlay(checked);
+                }}
+              />
+            </label>
+
+            <Separator />
+            <div className="flex justify-end">
+              <OSPrimaryAction
+                type="button"
+                onClick={() => void handleSaveFocusPreferences()}
+                disabled={updateFocusPreferences.isPending}
+              >
+                {updateFocusPreferences.isPending ? ui.saving : ui.savePreferences}
               </OSPrimaryAction>
             </div>
           </CardContent>

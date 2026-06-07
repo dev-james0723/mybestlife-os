@@ -200,6 +200,7 @@ function isConnectedContextSource(source: RetrievalResult): boolean {
 interface KnowledgeAIPanelProps {
   userId: string;
   layout?: "drawer" | "top";
+  hideHeader?: boolean;
 }
 
 type RetrieveResponse = {
@@ -219,7 +220,7 @@ type AssistantResponse = {
   detail?: string;
 };
 
-export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanelProps) {
+export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false }: KnowledgeAIPanelProps) {
   const isTopLayout = layout === "top";
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language).aiPanel;
@@ -792,7 +793,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
   );
 
   const topLayoutRail = (
-    <aside className="hidden min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] lg:flex">
+    <aside className="flex max-h-60 min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] lg:max-h-none">
       <div className="rounded-[1.05rem] border border-white/10 bg-black/20 p-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-black/40">
@@ -805,7 +806,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
             />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight text-foreground">Ask My KB</p>
+            <p className="text-sm font-semibold leading-tight text-foreground">Workspace</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">Evidence console</p>
           </div>
         </div>
@@ -965,6 +966,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
 
   return (
     <div className={cn("flex h-full min-w-0 flex-col", isTopLayout && "bg-[radial-gradient(circle_at_12%_8%,rgba(77,151,255,0.12),transparent_34%),radial-gradient(circle_at_94%_22%,rgba(190,242,100,0.10),transparent_32%)]")}>
+      {!hideHeader ? (
       <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border/70 p-4", isTopLayout && "border-white/10 px-4 py-3")}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3 text-sm font-medium">
@@ -1009,6 +1011,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
           <p className="text-[10px] leading-snug text-muted-foreground">{ui.historyPersistHint}</p>
         ) : null}
       </div>
+      ) : null}
 
       <ScrollArea className={cn("flex-1 p-4", isTopLayout && "px-4 py-3 sm:px-5")} ref={scrollRef}>
         {panelBody}

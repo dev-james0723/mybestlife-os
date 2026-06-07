@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useMemo } from "react";
+import { Fragment, useCallback, useMemo, type MouseEvent } from "react";
 import { LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getThemedCategoryLabel, getThemedItemLabel } from "@/lib/theme-labels";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
+import { useFocusNavigation } from "@/components/daily-planner/focus/focus-reality-boundary";
 
 function hrefWithSearch(
   localizedBase: string,
@@ -36,7 +37,14 @@ export function AppMainNavMenu() {
   const localeSlug = useLocaleSlug();
   const language = useAppStore((s) => s.language);
   const { uiTheme } = useTheme();
+  const focusNavigation = useFocusNavigation();
   const ui = useMemo(() => getCommonUiCopy(language), [language]);
+  const handleNavClick = useCallback(
+    (href: string, event: MouseEvent<HTMLElement>) => {
+      focusNavigation?.handleLinkClick(href, event);
+    },
+    [focusNavigation],
+  );
 
   return (
     <DropdownMenu>
@@ -73,7 +81,13 @@ export function AppMainNavMenu() {
                 {isLeaf && category.url ? (
                   <DropdownMenuItem
                     render={
-                      <Link href={withLocalePrefix(localeSlug, category.url)} prefetch={false} />
+                      <Link
+                        href={withLocalePrefix(localeSlug, category.url!)}
+                        prefetch={false}
+                        onClick={(event) =>
+                          handleNavClick(withLocalePrefix(localeSlug, category.url!), event)
+                        }
+                      />
                     }
                   >
                     <category.icon className="size-4 shrink-0 opacity-80" />
@@ -85,7 +99,13 @@ export function AppMainNavMenu() {
                   <>
                     <DropdownMenuItem
                       render={
-                        <Link href={withLocalePrefix(localeSlug, category.url)} prefetch={false} />
+                        <Link
+                          href={withLocalePrefix(localeSlug, category.url!)}
+                          prefetch={false}
+                          onClick={(event) =>
+                            handleNavClick(withLocalePrefix(localeSlug, category.url!), event)
+                          }
+                        />
                       }
                     >
                       <category.icon className="size-4 shrink-0 opacity-80" />
@@ -98,7 +118,13 @@ export function AppMainNavMenu() {
                         <DropdownMenuItem
                           key={item.itemId}
                           className="pl-6"
-                          render={<Link href={href} prefetch={false} />}
+                          render={
+                            <Link
+                              href={href}
+                              prefetch={false}
+                              onClick={(event) => handleNavClick(href, event)}
+                            />
+                          }
                         >
                           <item.icon className="size-4 shrink-0 opacity-80" />
                           <span className="truncate">
@@ -118,7 +144,13 @@ export function AppMainNavMenu() {
                       return (
                         <DropdownMenuItem
                           key={item.itemId}
-                          render={<Link href={href} prefetch={false} />}
+                          render={
+                            <Link
+                              href={href}
+                              prefetch={false}
+                              onClick={(event) => handleNavClick(href, event)}
+                            />
+                          }
                         >
                           <item.icon className="size-4 shrink-0 opacity-80" />
                           <span className="truncate">

@@ -3511,3 +3511,38 @@ html.weather-immersive.weather-immersive-light [data-slot="sidebar-inner"],
 html.weather-immersive.weather-immersive-light [data-slot="sidebar"] {
   background: rgba(255, 255, 255, 0.55) !important;
 }
+
+/* Focus & Reality — low-stimulation mode while a focus session is active. */
+html.mylifeos-low-stimulation-mode [data-high-stimulus="true"],
+html.mylifeos-low-stimulation-mode [data-focus-hideable] {
+  opacity: 0.42;
+  filter: saturate(0.68) contrast(0.94);
+}
+
+html.mylifeos-low-stimulation-mode [data-nonessential-badge="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.mylifeos-low-stimulation-mode [data-reduced-during-focus="true"],
+html.mylifeos-low-stimulation-mode [data-reduced-during-focus="true"] * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 80ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
+  --sidebar-accent: hsl(var(--muted));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.mylifeos-low-stimulation-mode *,
+  html.mylifeos-low-stimulation-mode *::before,
+  html.mylifeos-low-stimulation-mode *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

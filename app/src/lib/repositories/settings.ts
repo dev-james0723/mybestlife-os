@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 import { ensureError } from "@/lib/utils/ensure-error";
 import type { NotificationPreferences, UserProfile } from "@/types/database";
 import type { OSBuddyPetId, OSBuddyPosition } from "@/types/os-buddy";
@@ -96,6 +97,9 @@ const OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS = [
 const OS_BUDDY_SHORTCUT_PROFILE_COLUMNS = ["os_buddy_shortcut_settings"] as const;
 const KNOWLEDGE_QUICK_FILTER_PROFILE_COLUMNS = ["knowledge_quick_filters"] as const;
 const IDEA_QUICK_FILTER_PROFILE_COLUMNS = ["idea_quick_filters"] as const;
+const LOCAL_SETTINGS_PROFILE_KEY = "mylifeos:settings-profile:v1";
+const LOCAL_NOTIFICATION_PREFERENCES_KEY = "mylifeos:notification-preferences:v1";
+const LOCAL_SETTINGS_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 export type UpdateNotificationPreferencesInput = Partial<
   Pick<NotificationPreferences, "task_reminders" | "daily_summary" | "study_streak_reminders">
@@ -125,6 +129,139 @@ function omitKeys(
     if (!drop.has(k)) out[k] = v;
   }
   return out;
+}
+
+function isBrowserLocalSettingsMode(): boolean {
+  return typeof window !== "undefined" && hasDevLoginBypassCookie();
+}
+
+function defaultLocalProfile(now = new Date().toISOString()): UserProfile {
+  return normalizeUserProfile({
+    id: LOCAL_SETTINGS_USER_ID,
+    email: "dev-bypass@mylifeos.local",
+    full_name: "Dev Bypass",
+    avatar_url: null,
+    language: "en",
+    timezone:
+      typeof Intl !== "undefined"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : "UTC",
+    weather_lat: null,
+    weather_lon: null,
+    weather_city: null,
+    theme: "light",
+    ui_theme: "default",
+    color_mode: "light",
+    focus_areas: [],
+    motto: null,
+    dashboard_cover_url: null,
+    dashboard_widgets: {},
+    widget_density: "comfortable",
+    focus_mode: false,
+    font_size_pref: "medium",
+    greeting_tone: "friendly",
+    accent_color_hex: null,
+    sidebar_width: "default",
+    sidebar_mobile_auto_collapse: true,
+    ui_copy_mode: "en",
+    onboarding_completed: true,
+    block_minutes: 10,
+    quick_tasks: null,
+    knowledge_quick_filters: [],
+    idea_quick_filters: [],
+    display_currency: "USD",
+    quick_save_enabled: false,
+    quick_save_default_destination: "review",
+    quick_save_require_review: true,
+    os_buddy_pet_id: "xiaoba",
+    os_buddy_name: "Xiaoba",
+    os_buddy_enabled: true,
+    os_buddy_position: { x: null, y: null, anchor: "bottom-left" },
+    os_buddy_onboarding_completed: false,
+    os_buddy_interaction_stats: {},
+    os_buddy_unlocked_pets: ["xiaoba", "doge"],
+    os_buddy_birthday_enabled: false,
+    os_buddy_birthday_month: null,
+    os_buddy_birthday_day: null,
+    os_buddy_birthday_year: null,
+    os_buddy_birthday_show_age: false,
+    os_buddy_birthday_reminder_enabled: true,
+    os_buddy_birthday_timezone: null,
+    os_buddy_birthday_last_celebrated_on: null,
+    os_buddy_birthday_last_reminder_on: null,
+    os_buddy_free_roam_enabled: false,
+    os_buddy_free_roam_intensity: "balanced",
+    os_buddy_free_roam_return_home: true,
+    os_buddy_free_roam_near_home_only: true,
+    os_buddy_shortcut_settings: coerceOSBuddyShortcutSettings(null),
+    created_at: now,
+    updated_at: now,
+  });
+}
+
+function readLocalProfile(): UserProfile {
+  if (typeof window === "undefined") return defaultLocalProfile();
+  try {
+    const raw = window.localStorage.getItem(LOCAL_SETTINGS_PROFILE_KEY);
+    if (!raw) return defaultLocalProfile();
+    return normalizeUserProfile(JSON.parse(raw) as Record<string, unknown>);
+  } catch {
+    return defaultLocalProfile();
+  }
+}
+
+function writeLocalProfile(profile: UserProfile): UserProfile {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(LOCAL_SETTINGS_PROFILE_KEY, JSON.stringify(profile));
+  }
+  return profile;
+}
+
+function defaultLocalNotificationPreferences(now = new Date().toISOString()): NotificationPreferences {
+  return {
+    id: "local-notification-preferences",
+    user_id: LOCAL_SETTINGS_USER_ID,
+    task_reminders: true,
+    daily_summary: true,
+    study_streak_reminders: true,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+function readLocalNotificationPreferences(): NotificationPreferences {
+  if (typeof window === "undefined") return defaultLocalNotificationPreferences();
+  try {
+    const raw = window.localStorage.getItem(LOCAL_NOTIFICATION_PREFERENCES_KEY);
+    if (!raw) return defaultLocalNotificationPreferences();
+    const value = JSON.parse(raw) as Partial<NotificationPreferences>;
+    const fallback = defaultLocalNotificationPreferences();
+    return {
+      id: typeof value.id === "string" ? value.id : fallback.id,
+      user_id: typeof value.user_id === "string" ? value.user_id : fallback.user_id,
+      task_reminders:
+        typeof value.task_reminders === "boolean" ? value.task_reminders : fallback.task_reminders,
+      daily_summary:
+        typeof value.daily_summary === "boolean" ? value.daily_summary : fallback.daily_summary,
+      study_streak_reminders:
+        typeof value.study_streak_reminders === "boolean"
+          ? value.study_streak_reminders
+          : fallback.study_streak_reminders,
+      created_at: typeof value.created_at === "string" ? value.created_at : fallback.created_at,
+      updated_at: typeof value.updated_at === "string" ? value.updated_at : fallback.updated_at,
+    };
+  } catch {
+    return defaultLocalNotificationPreferences();
+  }
+}
+
+function writeLocalNotificationPreferences(
+  preferences: NotificationPreferences,
+): NotificationPreferences {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(LOCAL_NOTIFICATION_PREFERENCES_KEY, JSON.stringify(preferences));
+  }
+  return preferences;
 }
 
 function coerceNumOrNull(v: unknown): number | null {
@@ -302,6 +439,12 @@ function isMissingProfilesColumnError(err: unknown, column: string): boolean {
 
 export const settingsRepository = {
   async getProfile(): Promise<UserProfile> {
+    if (isBrowserLocalSettingsMode()) {
+      const local = readLocalProfile();
+      writeLocalProfile(local);
+      return local;
+    }
+
     const supabase = createClient();
     const {
       data: { user },
@@ -349,6 +492,15 @@ export const settingsRepository = {
   },
 
   async updateProfile(input: UpdateProfileInput): Promise<UserProfile> {
+    if (isBrowserLocalSettingsMode()) {
+      const next = normalizeUserProfile({
+        ...readLocalProfile(),
+        ...(input as Record<string, unknown>),
+        updated_at: new Date().toISOString(),
+      });
+      return writeLocalProfile(next);
+    }
+
     const supabase = createClient();
     const {
       data: { user },
@@ -592,6 +744,12 @@ export const settingsRepository = {
   },
 
   async getNotificationPreferences(): Promise<NotificationPreferences> {
+    if (isBrowserLocalSettingsMode()) {
+      const local = readLocalNotificationPreferences();
+      writeLocalNotificationPreferences(local);
+      return local;
+    }
+
     const supabase = createClient();
     const {
       data: { user },
@@ -631,6 +789,14 @@ export const settingsRepository = {
   async updateNotificationPreferences(
     input: UpdateNotificationPreferencesInput
   ): Promise<NotificationPreferences> {
+    if (isBrowserLocalSettingsMode()) {
+      return writeLocalNotificationPreferences({
+        ...readLocalNotificationPreferences(),
+        ...input,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
     const supabase = createClient();
     const {
       data: { user },

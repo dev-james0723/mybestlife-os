@@ -1,7 +1,8 @@
+import type { DeepPartial } from "./copy-helpers";
 import type { DailyPlannerUiCopy } from "./daily-planner-ui";
 
 /** Full Japanese UI for Daily Planner (no English fallbacks). */
-export const dailyPlannerJa: DailyPlannerUiCopy = {
+export const dailyPlannerJa: DeepPartial<DailyPlannerUiCopy> = {
   pageTitle: "デイリープランナー",
   pageDescription: "理想の一日を、ブロック単位で組み立てましょう",
   aiSuggestions: "AI の提案を見る",
@@ -286,7 +287,7 @@ export const dailyPlannerJa: DailyPlannerUiCopy = {
   freeGoogleNoTasksToast: "同期するものがまだありません。先にタスクを追加してください。",
 };
 
-export const dailyPlannerKo: DailyPlannerUiCopy = {
+export const dailyPlannerKo: DeepPartial<DailyPlannerUiCopy> = {
   pageTitle: "일일 플래너",
   pageDescription: "완벽한 하루를 블록 단위로 설계하세요",
   aiSuggestions: "AI 제안 받기",
