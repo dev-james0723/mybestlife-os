@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,13 @@ import {
   ExternalLink,
   BookOpen,
   Search,
+  BrainCircuit,
+  FolderKanban,
+  History,
+  Layers3,
+  MessageSquarePlus,
+  Route,
+  WandSparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -232,6 +240,28 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
     () => messages.filter((msg) => msg.role === "user").slice(-6).reverse(),
     [messages],
   );
+  const recentKnowledgeItems = useMemo(
+    () =>
+      [...items]
+        .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+        .slice(0, 4),
+    [items],
+  );
+  const sourceDomainCount = useMemo(
+    () => new Set(items.map((item) => item.sourceDomain).filter(Boolean)).size,
+    [items],
+  );
+  const evidenceReadyCount = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.aiSummary ||
+          item.aiTldr ||
+          item.aiKeyInsights.length > 0 ||
+          item.rawContent,
+      ).length,
+    [items],
+  );
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -276,6 +306,40 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
   const seedCollectionPrompt = useCallback((name: string) => {
     setInput(`Focus this Ask Your KB answer on "${name}". `);
   }, []);
+
+  const seedWorkflowPrompt = useCallback((workflow: string) => {
+    setInput(workflow);
+  }, []);
+
+  const workflowPrompts = useMemo(
+    () => [
+      {
+        label: "Synthesize",
+        description: "Turn related sources into one cited brief.",
+        prompt:
+          "Synthesize the most relevant saved knowledge into a concise brief. Group the answer by themes, cite the strongest sources, and call out uncertainty.",
+      },
+      {
+        label: "Contradictions",
+        description: "Find tension, disagreement, and weak evidence.",
+        prompt:
+          "Find contradictions, tensions, and weak evidence across my saved knowledge. Separate strong contradictions from softer disagreements and cite each point.",
+      },
+      {
+        label: "Action plan",
+        description: "Convert evidence into next steps.",
+        prompt:
+          "Using my saved knowledge, turn the useful findings into a practical action plan with priorities, next steps, and source-backed rationale.",
+      },
+      {
+        label: "Study pack",
+        description: "Create notes and recall questions.",
+        prompt:
+          "Build a compact study pack from my saved knowledge with key ideas, source-backed notes, recall questions, and citations.",
+      },
+    ],
+    [],
+  );
 
   const handleSend = useCallback(
     async (query?: string) => {
@@ -442,42 +506,130 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
       className={cn(
         "space-y-4",
         isTopLayout &&
-          "grid gap-4 space-y-0 md:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)] md:items-center",
+          "grid gap-5 space-y-0 xl:grid-cols-[minmax(280px,0.78fr)_minmax(0,1.22fr)] xl:items-stretch",
       )}
     >
-      <div className={cn("py-6 text-center", isTopLayout && "py-3 text-left")}>
-        <Sparkles
-          className={cn(
-            "mx-auto mb-3 h-8 w-8 text-primary opacity-60",
-            isTopLayout && "mx-0 mb-2 h-7 w-7",
-          )}
-        />
+      <div
+        className={cn(
+          "py-6 text-center",
+          isTopLayout &&
+            "relative overflow-hidden rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_24%_18%,rgba(119,170,255,0.16),transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]",
+        )}
+      >
         {isTopLayout ? (
           <>
-            <h3 className="mb-1 text-sm font-medium">Start with your saved knowledge</h3>
-            <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
+            <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
+            <div className="flex items-start gap-3">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-[0_18px_48px_rgba(38,88,160,0.28),inset_0_1px_0_rgba(255,255,255,0.14)]">
+                <Image
+                  src="/images/knowledge/ask-my-kb-mark.png"
+                  alt="Ask My KB knowledge core mark"
+                  width={96}
+                  height={96}
+                  className="h-full w-full object-cover"
+                  priority={false}
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-cyan-200/80">
+                  Knowledge intelligence
+                </p>
+                <h3 className="text-balance text-lg font-semibold leading-tight text-foreground">
+                  Ask across memory, evidence, and projects
+                </h3>
+                <p className="mt-2 max-w-[36rem] text-xs leading-5 text-muted-foreground">
+                  {ui.welcomeDescription}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { label: "Items", value: items.length },
+                { label: "Evidence", value: evidenceReadyCount },
+                { label: "Domains", value: sourceDomainCount },
+              ].map((metric) => (
+                <div
+                  key={metric.label}
+                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                >
+                  <div className="text-base font-semibold tabular-nums text-foreground">
+                    {metric.value}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {metric.label}
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         ) : (
           <>
+            <div className="mx-auto mb-3 h-12 w-12 overflow-hidden rounded-xl">
+              <Image
+                src="/images/knowledge/ask-my-kb-mark.png"
+                alt="Ask My KB knowledge core mark"
+                width={96}
+                height={96}
+                className="h-full w-full object-cover"
+              />
+            </div>
             <h3 className="text-sm font-medium mb-1">{ui.welcomeTitle}</h3>
             <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
           </>
         )}
       </div>
-      <div className={cn("space-y-2", isTopLayout && "grid gap-2 space-y-0 sm:grid-cols-2")}>
-        {ui.suggestedQueries.map((sq) => (
-          <button
-            key={sq}
-            type="button"
-            className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
-            onClick={() => handleSend(sq)}
-            disabled={isThinking}
-          >
-            <span>{sq}</span>
-            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
-        ))}
-      </div>
+      {isTopLayout ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {workflowPrompts.map((workflow) => (
+            <button
+              key={workflow.label}
+              type="button"
+              className="group relative overflow-hidden rounded-[1.1rem] border border-border/60 bg-background/64 p-3 text-left shadow-[0_14px_36px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-background/90"
+              onClick={() => seedWorkflowPrompt(workflow.prompt)}
+              disabled={isThinking}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-foreground">{workflow.label}</div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {workflow.description}
+                  </p>
+                </div>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/40 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-cyan-200">
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </div>
+            </button>
+          ))}
+          {ui.suggestedQueries.slice(0, 2).map((sq) => (
+            <button
+              key={sq}
+              type="button"
+              className="group flex w-full items-center justify-between rounded-[1.1rem] border border-border/60 bg-muted/25 px-3 py-2.5 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
+              onClick={() => handleSend(sq)}
+              disabled={isThinking}
+            >
+              <span>{sq}</span>
+              <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {ui.suggestedQueries.map((sq) => (
+            <button
+              key={sq}
+              type="button"
+              className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
+              onClick={() => handleSend(sq)}
+              disabled={isThinking}
+            >
+              <span>{sq}</span>
+              <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -502,7 +654,19 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
           ) : (
             <div className="space-y-3">
               <div className="flex gap-2">
-                <Sparkles className="mt-1 h-3 w-3 shrink-0 text-primary" />
+                {isTopLayout ? (
+                  <div className="mt-0.5 h-5 w-5 shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/30">
+                    <Image
+                      src="/images/knowledge/ask-my-kb-mark.png"
+                      alt="Ask My KB knowledge core mark"
+                      width={40}
+                      height={40}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <Sparkles className="mt-1 h-3 w-3 shrink-0 text-primary" />
+                )}
                 <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed [&_a]:underline [&_code]:rounded [&_code]:bg-background/70 [&_code]:px-1 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_ul]:list-disc">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
@@ -628,87 +792,166 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
   );
 
   const topLayoutRail = (
-    <aside className="hidden min-h-0 flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 lg:flex">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          History
-        </p>
+    <aside className="hidden min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] lg:flex">
+      <div className="rounded-[1.05rem] border border-white/10 bg-black/20 p-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-black/40">
+            <Image
+              src="/images/knowledge/ask-my-kb-mark.png"
+              alt="Ask My KB knowledge core mark"
+              width={80}
+              height={80}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight text-foreground">Ask My KB</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">Evidence console</p>
+          </div>
+        </div>
         <button
           type="button"
-          className="rounded-md px-2 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+          className="mt-3 flex w-full items-center justify-between rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-xs font-medium text-cyan-50 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-cyan-300/16"
           onClick={startNewConversation}
         >
-          New
+          <span className="inline-flex items-center gap-2">
+            <MessageSquarePlus className="h-3.5 w-3.5" />
+            New inquiry
+          </span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="min-h-0 space-y-1 overflow-y-auto pr-1">
-        {recentUserMessages.length > 0 ? (
-          recentUserMessages.map((msg) => (
-            <button
-              key={msg.id}
-              type="button"
-              className="block w-full rounded-md border border-transparent px-2 py-1.5 text-left text-xs leading-4 text-muted-foreground transition-colors hover:border-border/70 hover:bg-background/70 hover:text-foreground"
-              onClick={() => seedPrompt(msg.content)}
-              title={msg.content}
-            >
-              <span className="line-clamp-2">{msg.content}</span>
-            </button>
-          ))
-        ) : (
-          <p className="rounded-md border border-dashed border-border/60 px-2 py-2 text-xs leading-5 text-muted-foreground">
-            Recent questions will appear here.
-          </p>
-        )}
-      </div>
-
-      <div className="border-t border-border/50 pt-3">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          Context
-        </p>
-        <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
-          <div className="rounded-md bg-background/60 px-2 py-1.5">
-            {items.length} saved items available
-          </div>
-          <div className="rounded-md bg-background/60 px-2 py-1.5">
-            {aiPanelRetrievalRunId ? "Retrieved evidence attached" : "Hybrid retrieval ready"}
-          </div>
-          {aiPanelQuery ? (
-            <button
-              type="button"
-              className="block w-full rounded-md bg-background/60 px-2 py-1.5 text-left transition-colors hover:bg-background"
-              onClick={() => seedPrompt(aiPanelQuery)}
-            >
-              <span className="line-clamp-2">{aiPanelQuery}</span>
-            </button>
-          ) : null}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2">
+          <p className="text-base font-semibold tabular-nums">{messages.length}</p>
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Turns</p>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2">
+          <p className="text-base font-semibold tabular-nums">{smartCollections.length}</p>
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Projects</p>
         </div>
       </div>
 
-      {smartCollections.length > 0 ? (
-        <div className="border-t border-border/50 pt-3">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Projects
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {smartCollections.slice(0, 6).map((collection) => (
+      <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+        <section>
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <History className="h-3.5 w-3.5" />
+            History
+          </div>
+          <div className="space-y-1">
+            {recentUserMessages.length > 0 ? (
+              recentUserMessages.map((msg) => (
+                <button
+                  key={msg.id}
+                  type="button"
+                  className="block w-full rounded-xl border border-transparent bg-background/30 px-2.5 py-2 text-left text-xs leading-4 text-muted-foreground transition-colors hover:border-border/70 hover:bg-background/70 hover:text-foreground"
+                  onClick={() => seedPrompt(msg.content)}
+                  title={msg.content}
+                >
+                  <span className="line-clamp-2">{msg.content}</span>
+                </button>
+              ))
+            ) : (
+              <p className="rounded-xl border border-dashed border-border/60 bg-background/25 px-2.5 py-2 text-xs leading-5 text-muted-foreground">
+                Recent questions will appear here.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <BrainCircuit className="h-3.5 w-3.5" />
+            Context
+          </div>
+          <div className="space-y-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between rounded-xl bg-background/35 px-2.5 py-2">
+              <span className="inline-flex items-center gap-1.5">
+                <Layers3 className="h-3.5 w-3.5" />
+                Saved items
+              </span>
+              <span className="font-medium tabular-nums text-foreground">{items.length}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-background/35 px-2.5 py-2">
+              <span className="inline-flex items-center gap-1.5">
+                <Route className="h-3.5 w-3.5" />
+                Evidence
+              </span>
+              <span className="font-medium tabular-nums text-foreground">{evidenceReadyCount}</span>
+            </div>
+            <div className="rounded-xl bg-background/35 px-2.5 py-2">
+              {aiPanelRetrievalRunId ? "Retrieved evidence attached" : "Hybrid retrieval ready"}
+            </div>
+            {aiPanelQuery ? (
               <button
-                key={collection.id}
                 type="button"
-                className="rounded-full border border-border/60 bg-background/60 px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                onClick={() => seedCollectionPrompt(collection.name)}
+                className="block w-full rounded-xl bg-background/35 px-2.5 py-2 text-left transition-colors hover:bg-background/70"
+                onClick={() => seedPrompt(aiPanelQuery)}
               >
-                {collection.name}
+                <span className="line-clamp-2">{aiPanelQuery}</span>
               </button>
-            ))}
+            ) : null}
           </div>
-        </div>
-      ) : null}
+        </section>
+
+        <section>
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <WandSparkles className="h-3.5 w-3.5" />
+            Recent knowledge
+          </div>
+          <div className="space-y-1">
+            {recentKnowledgeItems.length > 0 ? (
+              recentKnowledgeItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="block w-full rounded-xl border border-transparent bg-background/30 px-2.5 py-2 text-left transition-colors hover:border-border/70 hover:bg-background/70"
+                  onClick={() => seedPrompt(`Use "${item.title}" as the starting point. `)}
+                  title={item.title}
+                >
+                  <span className="line-clamp-1 text-xs font-medium text-foreground">
+                    {item.title}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                    {knowledgeUi.typeLabels[item.contentType]}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="rounded-xl border border-dashed border-border/60 bg-background/25 px-2.5 py-2 text-xs leading-5 text-muted-foreground">
+                Add knowledge to unlock source-aware prompts.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {smartCollections.length > 0 ? (
+          <section>
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <FolderKanban className="h-3.5 w-3.5" />
+              Projects
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {smartCollections.slice(0, 8).map((collection) => (
+                <button
+                  key={collection.id}
+                  type="button"
+                  className="rounded-full border border-border/60 bg-background/45 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-cyan-300/40 hover:text-foreground"
+                  onClick={() => seedCollectionPrompt(collection.name)}
+                >
+                  {collection.name}
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </aside>
   );
 
   const panelBody = isTopLayout ? (
-    <div className="grid min-h-full min-w-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+    <div className="grid min-h-full min-w-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
       {topLayoutRail}
       <div className="min-w-0">
         {messages.length === 0 ? emptyState : messageList}
@@ -721,12 +964,27 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
   );
 
   return (
-    <div className="flex h-full min-w-0 flex-col">
-      <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border/70 p-4", isTopLayout && "px-4 py-3")}>
+    <div className={cn("flex h-full min-w-0 flex-col", isTopLayout && "bg-[radial-gradient(circle_at_12%_8%,rgba(77,151,255,0.12),transparent_34%),radial-gradient(circle_at_94%_22%,rgba(190,242,100,0.10),transparent_32%)]")}>
+      <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border/70 p-4", isTopLayout && "border-white/10 px-4 py-3")}>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-sm font-medium min-w-0">
-            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate">{ui.title}</span>
+          <div className="flex min-w-0 items-center gap-3 text-sm font-medium">
+            <div className={cn("relative h-8 w-8 shrink-0 overflow-hidden rounded-lg", isTopLayout && "h-9 w-9 rounded-xl border border-white/10 bg-black/30 shadow-[0_10px_28px_rgba(30,90,170,0.24)]")}>
+              <Image
+                src="/images/knowledge/ask-my-kb-mark.png"
+                alt="Ask My KB knowledge core mark"
+                width={72}
+                height={72}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate">{ui.title}</span>
+              {isTopLayout ? (
+                <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
+                  {aiPanelRetrievalRunId ? "Answering with selected evidence" : "Cited answers over saved knowledge"}
+                </span>
+              ) : null}
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {messages.length > 0 && (
@@ -747,26 +1005,36 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
             </Button>
           </div>
         </div>
-        <p className="text-[10px] leading-snug text-muted-foreground">{ui.historyPersistHint}</p>
+        {!isTopLayout ? (
+          <p className="text-[10px] leading-snug text-muted-foreground">{ui.historyPersistHint}</p>
+        ) : null}
       </div>
 
       <ScrollArea className={cn("flex-1 p-4", isTopLayout && "px-4 py-3 sm:px-5")} ref={scrollRef}>
         {panelBody}
       </ScrollArea>
 
-      <div className={cn("shrink-0 border-t border-border/70 p-4", isTopLayout && "p-3 sm:p-4")}>
+      <div className={cn("shrink-0 border-t border-border/70 p-4", isTopLayout && "border-white/10 p-3 sm:p-4")}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleSend();
           }}
-          className="flex gap-2"
+          className={cn(
+            "flex gap-2",
+            isTopLayout &&
+              "rounded-2xl border border-white/10 bg-black/20 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+          )}
         >
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={ui.inputPlaceholder}
-            className="flex-1 border-border/70 bg-muted/25 text-sm shadow-sm"
+            className={cn(
+              "flex-1 border-border/70 bg-muted/25 text-sm shadow-sm",
+              isTopLayout &&
+                "h-10 border-transparent bg-transparent shadow-none focus-visible:ring-cyan-300/35",
+            )}
             disabled={isThinking}
             aria-label={ui.inputAria}
           />
@@ -775,7 +1043,11 @@ export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanel
             size="sm"
             disabled={!input.trim() || isThinking}
             aria-label={ui.sendAria}
-            className="h-9 shrink-0 border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            className={cn(
+              "h-9 shrink-0 border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50",
+              isTopLayout &&
+                "h-10 rounded-xl bg-cyan-300 text-slate-950 shadow-[0_10px_24px_rgba(103,232,249,0.18)] hover:bg-cyan-200",
+            )}
           >
             <Send className="h-4 w-4" />
           </Button>

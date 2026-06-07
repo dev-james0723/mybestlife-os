@@ -325,8 +325,10 @@ export function KnowledgeLayout({
                   transition={{ type: "spring", damping: 30, stiffness: 300 }}
                   className="hidden min-w-0 overflow-hidden lg:block"
                 >
-                  <div className="flex min-h-[320px] h-[min(58dvh,560px)] min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
-                    <KnowledgeAIPanel userId={userId} layout="top" />
+                  <div className="rounded-[1.65rem] border border-white/10 bg-white/[0.035] p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                    <div className="flex h-[min(68dvh,680px)] min-h-[460px] min-w-0 flex-col overflow-hidden rounded-[1.25rem] border border-border/70 bg-card shadow-sm">
+                      <KnowledgeAIPanel userId={userId} layout="top" />
+                    </div>
                   </div>
                 </motion.div>
               )}
