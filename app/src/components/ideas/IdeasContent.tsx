@@ -13,6 +13,7 @@ import { IdeasBoardView } from "./IdeasBoardView";
 import { IdeasTableView } from "./IdeasTableView";
 import { IdeasConstellationView } from "./IdeasConstellationView";
 import type { Idea } from "@/types/database";
+import { BoardLandscapeMode } from "@/components/shared/board-landscape-mode";
 
 export function IdeasContent() {
   const language = useAppStore((s) => s.language);
@@ -52,7 +53,10 @@ export function IdeasContent() {
   }, [filterState.activeQuickFilters, filterState.quickFilterDefinitions]);
 
   const filtered = useMemo(
-    () => sortIdeas(filterIdeas(items, filterState), sortBy),
+    () => {
+      void minuteTick;
+      return sortIdeas(filterIdeas(items, filterState), sortBy);
+    },
     [items, filterState, sortBy, minuteTick],
   );
 
@@ -102,7 +106,25 @@ export function IdeasContent() {
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
       {currentView === "gallery" && <IdeasGalleryView items={filtered} language={language} onOpen={onOpen} />}
-      {currentView === "board" && <IdeasBoardView items={filtered} language={language} onOpen={onOpen} />}
+      {currentView === "board" && (
+        <BoardLandscapeMode
+          title={ui.boardLandscape.title}
+          description={ui.boardLandscape.description}
+          enterLabel={ui.boardLandscape.enter}
+          exitLabel={ui.boardLandscape.exit}
+          rotateHint={ui.boardLandscape.rotateHint}
+          landscapeChildren={
+            <IdeasBoardView
+              items={filtered}
+              language={language}
+              onOpen={onOpen}
+              isLandscapeMode
+            />
+          }
+        >
+          <IdeasBoardView items={filtered} language={language} onOpen={onOpen} />
+        </BoardLandscapeMode>
+      )}
       {currentView === "table" && <IdeasTableView items={filtered} language={language} onOpen={onOpen} />}
     </div>
   );

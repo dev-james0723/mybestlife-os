@@ -8,6 +8,7 @@ import { useIdeasStore } from "@/stores/ideas-store";
 import { displayCategory } from "@/lib/ideas/idea-helpers";
 import { IDEA_CATEGORIES } from "@/lib/ideas/constants";
 import { IdeaCard } from "./IdeaCard";
+import { cn } from "@/lib/utils";
 
 const STATUS_COLUMNS = ["captured", "reviewed", "archived"] satisfies Idea["status"][];
 const SOURCE_COLUMNS = ["text", "voice", "share"] satisfies Idea["source_type"][];
@@ -22,10 +23,12 @@ export function IdeasBoardView({
   items,
   language,
   onOpen,
+  isLandscapeMode = false,
 }: {
   items: Idea[];
   language: AppLocale;
   onOpen: (idea: Idea) => void;
+  isLandscapeMode?: boolean;
 }) {
   const ui = getIdeasUiCopy(language);
   const boardGroupBy = useIdeasStore((s) => s.boardGroupBy);
@@ -74,11 +77,19 @@ export function IdeasBoardView({
   };
 
   return (
-    <div className="flex min-w-0 gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
+    <div
+      className={cn(
+        "flex min-h-0 min-w-0 gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]",
+        isLandscapeMode && "h-full pb-1",
+      )}
+    >
       {columns.map(([key, list]) => (
         <div
           key={key}
-          className="flex h-[min(72vh,620px)] w-[min(84vw,320px)] shrink-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-background/45 shadow-sm sm:w-[320px]"
+          className={cn(
+            "flex h-[min(72vh,620px)] w-[min(84vw,320px)] shrink-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-background/45 shadow-sm sm:w-[320px]",
+            isLandscapeMode && "h-full w-[clamp(300px,42vw,360px)] sm:w-[clamp(300px,42vw,360px)]",
+          )}
         >
           <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-muted/15 px-3.5 py-3">
             <p className="min-w-0 truncate text-sm font-semibold tracking-tight">

@@ -25,6 +25,13 @@ const en: KnowledgeUiCopy = {
     table: "Table",
     constellation: "Constellation",
   },
+  boardLandscape: {
+    title: "Open board in landscape",
+    description: "Tap to open a wider board, then rotate your phone sideways.",
+    enter: "Enter landscape",
+    exit: "Exit",
+    rotateHint: "Rotate your phone sideways for the wide board.",
+  },
   typeLabels: {
     article: "Article",
     link: "Link",

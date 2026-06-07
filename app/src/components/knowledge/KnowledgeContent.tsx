@@ -12,6 +12,7 @@ import { Brain, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { useKnowledgeFilteredItems } from "@/hooks/use-knowledge-filtered-items";
+import { BoardLandscapeMode } from "@/components/shared/board-landscape-mode";
 
 interface KnowledgeContentProps {
   userId: string;
@@ -88,7 +89,18 @@ export function KnowledgeContent({ userId }: KnowledgeContentProps) {
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
       {currentView === "gallery" && <KnowledgeGalleryView items={pagedItems} />}
-      {currentView === "board" && <KnowledgeBoardView items={pagedItems} />}
+      {currentView === "board" && (
+        <BoardLandscapeMode
+          title={ui.boardLandscape.title}
+          description={ui.boardLandscape.description}
+          enterLabel={ui.boardLandscape.enter}
+          exitLabel={ui.boardLandscape.exit}
+          rotateHint={ui.boardLandscape.rotateHint}
+          landscapeChildren={<KnowledgeBoardView items={pagedItems} isLandscapeMode />}
+        >
+          <KnowledgeBoardView items={pagedItems} />
+        </BoardLandscapeMode>
+      )}
       {currentView === "table" && <KnowledgeTableView items={pagedItems} />}
 
       <div className="mt-4 flex min-w-0 flex-col gap-2 border-t border-border/50 pt-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">

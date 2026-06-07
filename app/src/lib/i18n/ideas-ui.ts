@@ -36,6 +36,13 @@ export type IdeasUiCopy = {
     string
   >;
   viewLabels: Record<"gallery" | "board" | "table" | "constellation", string>;
+  boardLandscape: {
+    title: string;
+    description: string;
+    enter: string;
+    exit: string;
+    rotateHint: string;
+  };
   constellation: {
     searchPlaceholder: string;
     mode: string;
@@ -276,6 +283,13 @@ const en: IdeasUiCopy = {
     board: "Board",
     table: "Table",
     constellation: "Constellation",
+  },
+  boardLandscape: {
+    title: "Open board in landscape",
+    description: "Tap to open a wider idea board, then rotate your phone sideways.",
+    enter: "Enter landscape",
+    exit: "Exit",
+    rotateHint: "Rotate your phone sideways for the wide idea board.",
   },
   constellation: {
     searchPlaceholder: "Search idea graph…",

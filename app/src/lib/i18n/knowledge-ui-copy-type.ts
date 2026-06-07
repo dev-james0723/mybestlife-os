@@ -17,6 +17,13 @@ export type KnowledgeUiCopy = {
     table: string;
     constellation: string;
   };
+  boardLandscape: {
+    title: string;
+    description: string;
+    enter: string;
+    exit: string;
+    rotateHint: string;
+  };
   typeLabels: Record<ContentType, string>;
   /** Upload-specific badges on cards (Image, PDF File, Word File, …). */
   uploadKindLabels: {

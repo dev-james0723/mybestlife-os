@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
-import { CONTENT_TYPES, typeColors, type KnowledgeItem, type ContentType } from "@/types/knowledge";
+import { CONTENT_TYPES, typeColors, type KnowledgeItem } from "@/types/knowledge";
 import { KnowledgeCard } from "./KnowledgeCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import { cn } from "@/lib/utils";
 
 interface KnowledgeBoardViewProps {
   items: KnowledgeItem[];
+  isLandscapeMode?: boolean;
 }
 
 type BoardColumn = {
@@ -22,7 +24,10 @@ type BoardColumn = {
   color?: string;
 };
 
-export function KnowledgeBoardView({ items }: KnowledgeBoardViewProps) {
+export function KnowledgeBoardView({
+  items,
+  isLandscapeMode = false,
+}: KnowledgeBoardViewProps) {
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
   const boardGroupBy = useKnowledgeStore((s) => s.boardGroupBy);
@@ -79,11 +84,19 @@ export function KnowledgeBoardView({ items }: KnowledgeBoardViewProps) {
   }, [boardGroupBy, items, smartCollections, ui.typeLabels, ui.uncategorized, ui.untagged]);
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory md:snap-none">
+    <div
+      className={cn(
+        "flex min-h-0 gap-3 overflow-x-auto pb-4 snap-x snap-mandatory md:snap-none",
+        isLandscapeMode && "h-full snap-none pb-1 [scrollbar-width:thin]",
+      )}
+    >
       {columns.map((col) => (
         <div
           key={col.key}
-          className="flex flex-col min-w-[280px] w-[280px] shrink-0 snap-center md:snap-align-none"
+          className={cn(
+            "flex min-w-[280px] w-[280px] shrink-0 snap-center flex-col md:snap-align-none",
+            isLandscapeMode && "h-full min-w-[300px] w-[clamp(300px,42vw,360px)] snap-none",
+          )}
         >
           {/* Column header */}
           <div className="flex items-center justify-between mb-3 px-1">
@@ -105,7 +118,7 @@ export function KnowledgeBoardView({ items }: KnowledgeBoardViewProps) {
           </div>
 
           {/* Column cards */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-2 pr-2">
               {col.items.map((item) => (
                 <KnowledgeCard key={item.id} item={item} />
