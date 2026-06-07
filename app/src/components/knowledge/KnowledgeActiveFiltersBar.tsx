@@ -119,7 +119,10 @@ export function KnowledgeActiveFiltersBar({ className }: { className?: string })
         ) : null}
 
         {activeTagId && tagTrail.length > 0 ? (
-          <div className="flex max-w-full min-w-0 items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm">
+          <div
+            data-selection-glow="static"
+            className="flex max-w-full min-w-0 items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm"
+          >
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto scrollbar-none">
               {tagTrail.map((crumb, idx) => {
                 const isLast = idx === tagTrail.length - 1;
@@ -184,7 +187,10 @@ function FilterChip({
   removeAriaLabel: string;
 }) {
   return (
-    <span className="inline-flex max-w-[min(100%,220px)] items-center gap-0.5 rounded-full border border-border/70 bg-background/90 pl-2.5 pr-1 text-[11px] text-foreground shadow-sm">
+    <span
+      data-selection-glow="static"
+      className="inline-flex max-w-[min(100%,220px)] items-center gap-0.5 rounded-full border border-border/70 bg-background/90 pl-2.5 pr-1 text-[11px] text-foreground shadow-sm"
+    >
       <span className="min-w-0 truncate font-medium">{label}</span>
       <button
         type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { Button } from "@/components/ui/button";
@@ -191,6 +191,7 @@ function isConnectedContextSource(source: RetrievalResult): boolean {
 
 interface KnowledgeAIPanelProps {
   userId: string;
+  layout?: "drawer" | "top";
 }
 
 type RetrieveResponse = {
@@ -210,7 +211,8 @@ type AssistantResponse = {
   detail?: string;
 };
 
-export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
+export function KnowledgeAIPanel({ userId, layout = "drawer" }: KnowledgeAIPanelProps) {
+  const isTopLayout = layout === "top";
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language).aiPanel;
   const knowledgeUi = getKnowledgeUiCopy(language);
@@ -218,6 +220,7 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
   const aiPanelQuery = useKnowledgeStore((s) => s.aiPanelQuery);
   const aiPanelRetrievalRunId = useKnowledgeStore((s) => s.aiPanelRetrievalRunId);
   const items = useKnowledgeStore((s) => s.items);
+  const smartCollections = useKnowledgeStore((s) => s.smartCollections);
   const selectItem = useKnowledgeStore((s) => s.selectItem);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -225,6 +228,10 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
   const [input, setInput] = useState(aiPanelQuery);
   const [isThinking, setIsThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recentUserMessages = useMemo(
+    () => messages.filter((msg) => msg.role === "user").slice(-6).reverse(),
+    [messages],
+  );
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -256,6 +263,19 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
       /* ignore */
     }
   }, [userId]);
+
+  const startNewConversation = useCallback(() => {
+    clearConversation();
+    setInput("");
+  }, [clearConversation]);
+
+  const seedPrompt = useCallback((prompt: string) => {
+    setInput(prompt);
+  }, []);
+
+  const seedCollectionPrompt = useCallback((name: string) => {
+    setInput(`Focus this Ask Your KB answer on "${name}". `);
+  }, []);
 
   const handleSend = useCallback(
     async (query?: string) => {
@@ -417,9 +437,292 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
     ],
   );
 
+  const emptyState = (
+    <div
+      className={cn(
+        "space-y-4",
+        isTopLayout &&
+          "grid gap-4 space-y-0 md:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)] md:items-center",
+      )}
+    >
+      <div className={cn("py-6 text-center", isTopLayout && "py-3 text-left")}>
+        <Sparkles
+          className={cn(
+            "mx-auto mb-3 h-8 w-8 text-primary opacity-60",
+            isTopLayout && "mx-0 mb-2 h-7 w-7",
+          )}
+        />
+        {isTopLayout ? (
+          <>
+            <h3 className="mb-1 text-sm font-medium">Start with your saved knowledge</h3>
+            <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
+          </>
+        ) : (
+          <>
+            <h3 className="text-sm font-medium mb-1">{ui.welcomeTitle}</h3>
+            <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
+          </>
+        )}
+      </div>
+      <div className={cn("space-y-2", isTopLayout && "grid gap-2 space-y-0 sm:grid-cols-2")}>
+        {ui.suggestedQueries.map((sq) => (
+          <button
+            key={sq}
+            type="button"
+            className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
+            onClick={() => handleSend(sq)}
+            disabled={isThinking}
+          >
+            <span>{sq}</span>
+            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const messageList = (
+    <div className="space-y-3">
+      {messages.map((msg) => (
+        <div
+          key={msg.id}
+          className={cn(
+            "max-w-[88%] rounded-lg px-3 py-2 text-sm break-words",
+            isTopLayout && "max-w-[min(860px,92%)]",
+            msg.role === "user"
+              ? "ml-auto bg-primary text-primary-foreground"
+              : "bg-muted",
+            isTopLayout &&
+              msg.role === "user" &&
+              "max-w-[min(680px,82%)]",
+          )}
+        >
+          {msg.role === "user" ? (
+            <div className="whitespace-pre-wrap">{msg.content}</div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Sparkles className="mt-1 h-3 w-3 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed [&_a]:underline [&_code]:rounded [&_code]:bg-background/70 [&_code]:px-1 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_ul]:list-disc">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              </div>
+
+              {msg.citations && msg.citations.length > 0 && (
+                <div className={cn("space-y-1.5", isTopLayout && "grid gap-1.5 space-y-0 md:grid-cols-2")}>
+                  {msg.citations.slice(0, 4).map((citation) => (
+                    <div
+                      key={`${msg.id}:${citation.resultId}:${citation.quote ?? ""}`}
+                      className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-[11px] leading-snug"
+                    >
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <BookOpen className="h-3 w-3 text-primary" />
+                        <span>{citation.resultId}</span>
+                        <span className="truncate text-muted-foreground">
+                          {citation.title}
+                        </span>
+                      </div>
+                      {citation.quote && (
+                        <p className="mt-1 text-muted-foreground">
+                          {citation.quote}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {msg.sources && msg.sources.length > 0 && (
+                <div className={cn("space-y-1.5", isTopLayout && "grid gap-1.5 space-y-0 md:grid-cols-3")}>
+                  {msg.sources.some(isConnectedContextSource) ? (
+                    <div className={cn("rounded-md border border-primary/20 bg-primary/10 px-2.5 py-2 text-[11px] leading-snug", isTopLayout && "md:col-span-3")}>
+                      <div className="flex items-center gap-1.5 font-medium text-primary">
+                        <Search className="h-3 w-3" />
+                        {ui.connectedContextTitle}
+                      </div>
+                      <p className="mt-1 text-muted-foreground">
+                        {ui.connectedContextDescription}
+                      </p>
+                    </div>
+                  ) : null}
+                  {msg.sources.slice(0, 3).map((source) => (
+                    <div
+                      key={`${msg.id}:${source.id}:${source.sourceId}`}
+                      className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">
+                              {source.id}
+                            </span>
+                            <span className="truncate">{source.title}</span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                            {source.snippet}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 shrink-0 p-0"
+                          aria-label="Open source"
+                          onClick={() => {
+                            if (source.knowledgeItemId) {
+                              selectItem(source.knowledgeItemId);
+                              return;
+                            }
+                            if (source.sourceUrl) {
+                              window.open(source.sourceUrl, "_blank", "noopener,noreferrer");
+                            }
+                          }}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[11px]"
+                  onClick={() => void navigator.clipboard?.writeText(msg.content)}
+                >
+                  <Copy className="mr-1 h-3 w-3" />
+                  Copy
+                </Button>
+                {msg.retrievalRunId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => {
+                      window.location.href = `/${language}/ai-knowledge?retrievalRunId=${encodeURIComponent(
+                        msg.retrievalRunId ?? "",
+                      )}`;
+                    }}
+                  >
+                    <Search className="mr-1 h-3 w-3" />
+                    AI Knowledge
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+      {isThinking && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Sparkles className="h-3 w-3 animate-pulse text-primary" />
+          {ui.thinking}
+        </div>
+      )}
+    </div>
+  );
+
+  const topLayoutRail = (
+    <aside className="hidden min-h-0 flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 lg:flex">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          History
+        </p>
+        <button
+          type="button"
+          className="rounded-md px-2 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+          onClick={startNewConversation}
+        >
+          New
+        </button>
+      </div>
+
+      <div className="min-h-0 space-y-1 overflow-y-auto pr-1">
+        {recentUserMessages.length > 0 ? (
+          recentUserMessages.map((msg) => (
+            <button
+              key={msg.id}
+              type="button"
+              className="block w-full rounded-md border border-transparent px-2 py-1.5 text-left text-xs leading-4 text-muted-foreground transition-colors hover:border-border/70 hover:bg-background/70 hover:text-foreground"
+              onClick={() => seedPrompt(msg.content)}
+              title={msg.content}
+            >
+              <span className="line-clamp-2">{msg.content}</span>
+            </button>
+          ))
+        ) : (
+          <p className="rounded-md border border-dashed border-border/60 px-2 py-2 text-xs leading-5 text-muted-foreground">
+            Recent questions will appear here.
+          </p>
+        )}
+      </div>
+
+      <div className="border-t border-border/50 pt-3">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Context
+        </p>
+        <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+          <div className="rounded-md bg-background/60 px-2 py-1.5">
+            {items.length} saved items available
+          </div>
+          <div className="rounded-md bg-background/60 px-2 py-1.5">
+            {aiPanelRetrievalRunId ? "Retrieved evidence attached" : "Hybrid retrieval ready"}
+          </div>
+          {aiPanelQuery ? (
+            <button
+              type="button"
+              className="block w-full rounded-md bg-background/60 px-2 py-1.5 text-left transition-colors hover:bg-background"
+              onClick={() => seedPrompt(aiPanelQuery)}
+            >
+              <span className="line-clamp-2">{aiPanelQuery}</span>
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {smartCollections.length > 0 ? (
+        <div className="border-t border-border/50 pt-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Projects
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {smartCollections.slice(0, 6).map((collection) => (
+              <button
+                key={collection.id}
+                type="button"
+                className="rounded-full border border-border/60 bg-background/60 px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                onClick={() => seedCollectionPrompt(collection.name)}
+              >
+                {collection.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </aside>
+  );
+
+  const panelBody = isTopLayout ? (
+    <div className="grid min-h-full min-w-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+      {topLayoutRail}
+      <div className="min-w-0">
+        {messages.length === 0 ? emptyState : messageList}
+      </div>
+    </div>
+  ) : messages.length === 0 ? (
+    emptyState
+  ) : (
+    messageList
+  );
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex shrink-0 flex-col gap-1 border-b border-border/70 p-4">
+    <div className="flex h-full min-w-0 flex-col">
+      <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border/70 p-4", isTopLayout && "px-4 py-3")}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm font-medium min-w-0">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
@@ -447,173 +750,11 @@ export function KnowledgeAIPanel({ userId }: KnowledgeAIPanelProps) {
         <p className="text-[10px] leading-snug text-muted-foreground">{ui.historyPersistHint}</p>
       </div>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        {messages.length === 0 ? (
-          <div className="space-y-4">
-            <div className="text-center py-6">
-              <Sparkles className="h-8 w-8 text-primary mx-auto mb-3 opacity-60" />
-              <h3 className="text-sm font-medium mb-1">{ui.welcomeTitle}</h3>
-              <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
-            </div>
-            <div className="space-y-2">
-              {ui.suggestedQueries.map((sq) => (
-                <button
-                  key={sq}
-                  type="button"
-                  className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
-                  onClick={() => handleSend(sq)}
-                  disabled={isThinking}
-                >
-                  <span>{sq}</span>
-                  <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn(
-                  "max-w-[88%] rounded-lg px-3 py-2 text-sm break-words",
-                  msg.role === "user"
-                    ? "ml-auto bg-primary text-primary-foreground"
-                    : "bg-muted",
-                )}
-              >
-                {msg.role === "user" ? (
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <Sparkles className="mt-1 h-3 w-3 shrink-0 text-primary" />
-                      <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed [&_a]:underline [&_code]:rounded [&_code]:bg-background/70 [&_code]:px-1 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_ul]:list-disc">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
-                    </div>
-
-                    {msg.citations && msg.citations.length > 0 && (
-                      <div className="space-y-1.5">
-                        {msg.citations.slice(0, 4).map((citation) => (
-                          <div
-                            key={`${msg.id}:${citation.resultId}:${citation.quote ?? ""}`}
-                            className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-[11px] leading-snug"
-                          >
-                            <div className="flex items-center gap-1.5 font-medium">
-                              <BookOpen className="h-3 w-3 text-primary" />
-                              <span>{citation.resultId}</span>
-                              <span className="truncate text-muted-foreground">
-                                {citation.title}
-                              </span>
-                            </div>
-                            {citation.quote && (
-                              <p className="mt-1 text-muted-foreground">
-                                {citation.quote}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="space-y-1.5">
-                        {msg.sources.some(isConnectedContextSource) ? (
-                          <div className="rounded-md border border-primary/20 bg-primary/10 px-2.5 py-2 text-[11px] leading-snug">
-                            <div className="flex items-center gap-1.5 font-medium text-primary">
-                              <Search className="h-3 w-3" />
-                              {ui.connectedContextTitle}
-                            </div>
-                            <p className="mt-1 text-muted-foreground">
-                              {ui.connectedContextDescription}
-                            </p>
-                          </div>
-                        ) : null}
-                        {msg.sources.slice(0, 3).map((source) => (
-                          <div
-                            key={`${msg.id}:${source.id}:${source.sourceId}`}
-                            className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 text-[11px] font-medium">
-                                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">
-                                    {source.id}
-                                  </span>
-                                  <span className="truncate">{source.title}</span>
-                                </div>
-                                <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                                  {source.snippet}
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 shrink-0 p-0"
-                                aria-label="Open source"
-                                onClick={() => {
-                                  if (source.knowledgeItemId) {
-                                    selectItem(source.knowledgeItemId);
-                                    return;
-                                  }
-                                  if (source.sourceUrl) {
-                                    window.open(source.sourceUrl, "_blank", "noopener,noreferrer");
-                                  }
-                                }}
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap gap-1.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-[11px]"
-                        onClick={() => void navigator.clipboard?.writeText(msg.content)}
-                      >
-                        <Copy className="mr-1 h-3 w-3" />
-                        Copy
-                      </Button>
-                      {msg.retrievalRunId && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-[11px]"
-                          onClick={() => {
-                            window.location.href = `/${language}/ai-knowledge?retrievalRunId=${encodeURIComponent(
-                              msg.retrievalRunId ?? "",
-                            )}`;
-                          }}
-                        >
-                          <Search className="mr-1 h-3 w-3" />
-                          AI Knowledge
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-            {isThinking && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Sparkles className="h-3 w-3 animate-pulse text-primary" />
-                {ui.thinking}
-              </div>
-            )}
-          </div>
-        )}
+      <ScrollArea className={cn("flex-1 p-4", isTopLayout && "px-4 py-3 sm:px-5")} ref={scrollRef}>
+        {panelBody}
       </ScrollArea>
 
-      <div className="shrink-0 border-t border-border/70 p-4">
+      <div className={cn("shrink-0 border-t border-border/70 p-4", isTopLayout && "p-3 sm:p-4")}>
         <form
           onSubmit={(e) => {
             e.preventDefault();

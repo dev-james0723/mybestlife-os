@@ -71,6 +71,7 @@ import type {
   Task,
   ScheduleTemplate,
   QuickTaskDef,
+  UserProfile,
   Idea,
   Note,
 } from "@/types/database";
@@ -203,6 +204,41 @@ const BUILTIN_QUICK_TASK_DEFS: {
   { nameKey: "quickBreak", icon: Timer, blocks: 1, iconClass: "text-amber-800/90 dark:text-amber-200/90", presetKey: "break" },
   { nameKey: "quickRest", icon: Moon, blocks: 2, iconClass: "text-slate-600 dark:text-slate-300", presetKey: "rest" },
 ];
+
+function buildDefaultQuickTasks(copy: DailyPlannerUiCopy): QuickTaskDef[] {
+  return BUILTIN_QUICK_TASK_DEFS.map((qt) => ({
+    name: copy[qt.nameKey],
+    icon: lucideIconToQuickTaskKey(qt.icon),
+    blocks: qt.blocks,
+    iconClass: qt.iconClass,
+    presetKey: qt.presetKey,
+    iconUrl: null,
+  }));
+}
+
+function quickTaskIdentity(task: Pick<QuickTaskDef, "name" | "blocks" | "presetKey">): string {
+  return `${task.name}\u0001${task.blocks}\u0001${task.presetKey ?? ""}`;
+}
+
+function quickTaskJobKey(task: Pick<QuickTaskDef, "name" | "blocks" | "presetKey">, index: number): string {
+  return `${index}\u0001${quickTaskIdentity(task)}`;
+}
+
+async function requestQuickTaskIcon(task: Pick<QuickTaskDef, "name" | "presetKey">): Promise<string> {
+  const res = await fetch("/api/quick-tasks/generate-icon", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      taskLabel: task.name,
+      ...(task.presetKey ? { presetKey: task.presetKey } : {}),
+    }),
+  });
+  const data = (await res.json()) as { iconUrl?: string; error?: string; detail?: string };
+  if (!res.ok || !data.iconUrl) {
+    throw new Error(data.detail || data.error || "quick_task_icon_generation_failed");
+  }
+  return data.iconUrl;
+}
 
 /* ─────────────────────── helpers ─────────────────────── */
 
@@ -645,6 +681,8 @@ function QuickTaskButton({
   task,
   onAdd,
   onDelete,
+  onRegenerateIcon,
+  isIconGenerating = false,
 }: {
   task: {
     name: string;
@@ -656,11 +694,12 @@ function QuickTaskButton({
   };
   onAdd: (blocks: number) => void;
   onDelete?: () => void;
+  onRegenerateIcon?: () => void;
+  isIconGenerating?: boolean;
 }) {
   const { fmtBlocks, copy } = usePlannerLocale();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [rasterFailed, setRasterFailed] = useState(false);
-  const [urlIdx, setUrlIdx] = useState(0);
+  const [rasterState, setRasterState] = useState({ key: "", urlIdx: 0, failed: false });
 
   const rasterUrls = useMemo(
     () => [task.iconSrc, task.iconRasterFallback].filter(Boolean) as string[],
@@ -669,6 +708,9 @@ function QuickTaskButton({
 
   const duration = fmtBlocks(task.blocks);
   const TaskIcon = task.icon;
+  const rasterKey = rasterUrls.join("\u0001");
+  const urlIdx = rasterState.key === rasterKey ? rasterState.urlIdx : 0;
+  const rasterFailed = rasterState.key === rasterKey ? rasterState.failed : false;
   const activeRasterSrc = rasterUrls[urlIdx];
   const showRaster = rasterUrls.length > 0 && !rasterFailed && Boolean(activeRasterSrc);
 
@@ -680,21 +722,36 @@ function QuickTaskButton({
           className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-l-xl border border-r-0 px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/50 touch-manipulation"
           onClick={() => onAdd(task.blocks)}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/70 ring-1 ring-border/40">
+          <span
+            className={cn(
+              "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[9px]",
+              showRaster
+                ? "bg-[#15120f] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_5px_16px_rgba(0,0,0,0.22)] ring-1 ring-white/15"
+                : "bg-muted/70 ring-1 ring-border/40",
+            )}
+          >
             {showRaster ? (
               <img
                 src={activeRasterSrc}
                 alt=""
-                className="size-4 object-contain rounded-[4px]"
+                className="h-full w-full object-cover"
                 loading="lazy"
                 onError={() => {
-                  if (urlIdx < rasterUrls.length - 1) setUrlIdx((i) => i + 1);
-                  else setRasterFailed(true);
+                  if (urlIdx < rasterUrls.length - 1) {
+                    setRasterState({ key: rasterKey, urlIdx: urlIdx + 1, failed: false });
+                  } else {
+                    setRasterState({ key: rasterKey, urlIdx, failed: true });
+                  }
                 }}
               />
             ) : (
               <TaskIcon className={cn("size-4", task.iconClass)} strokeWidth={2} />
             )}
+            {isIconGenerating ? (
+              <span className="absolute inset-0 flex items-center justify-center bg-background/45 backdrop-blur-[2px]">
+                <Loader2 className="size-3.5 animate-spin text-foreground/80" aria-hidden />
+              </span>
+            ) : null}
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium">{task.name}</p>
@@ -722,6 +779,27 @@ function QuickTaskButton({
           onChange={(blocks) => onAdd(blocks)}
           onClose={() => setPickerOpen(false)}
         />
+        {onRegenerateIcon && (
+          <>
+            <Separator />
+            <button
+              type="button"
+              className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isIconGenerating}
+              onClick={() => {
+                onRegenerateIcon();
+                setPickerOpen(false);
+              }}
+            >
+              {isIconGenerating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              {isIconGenerating ? copy.quickTaskIconGenerating : copy.quickTaskIconRegenerate}
+            </button>
+          </>
+        )}
         {onDelete && (
           <>
             <Separator />
@@ -1130,7 +1208,55 @@ export default function DailyPlannerPage() {
   const [addQuickTaskOpen, setAddQuickTaskOpen] = useState(false);
   const [newQuickName, setNewQuickName] = useState("");
   const [newQuickBlocks, setNewQuickBlocks] = useState(3);
-  const [quickIconsBusy, setQuickIconsBusy] = useState(false);
+  const [quickIconBusyKeys, setQuickIconBusyKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const quickIconBackfillSignatureRef = useRef("");
+
+  const setQuickIconBusy = useCallback((key: string, busy: boolean) => {
+    setQuickIconBusyKeys((prev) => {
+      const next = new Set(prev);
+      if (busy) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const getCurrentQuickTasks = useCallback(
+    (fallback?: QuickTaskDef[]): QuickTaskDef[] => {
+      const cached = queryClient.getQueryData<UserProfile>(["profile"]);
+      return (
+        normalizeQuickTasksJson(cached?.quick_tasks) ??
+        normalizeQuickTasksJson(profile?.quick_tasks) ??
+        fallback ??
+        buildDefaultQuickTasks(copy)
+      );
+    },
+    [copy, profile?.quick_tasks, queryClient],
+  );
+
+  const writeQuickTaskIconUrl = useCallback(
+    async (
+      index: number,
+      expectedIdentity: string,
+      iconUrl: string,
+      fallback?: QuickTaskDef[],
+    ): Promise<boolean> => {
+      const current = getCurrentQuickTasks(fallback);
+      const preferredMatches =
+        current[index] && quickTaskIdentity(current[index]) === expectedIdentity;
+      const targetIndex = preferredMatches
+        ? index
+        : current.findIndex((task) => quickTaskIdentity(task) === expectedIdentity);
+      if (targetIndex < 0) return false;
+
+      const next = current.map((task, i) =>
+        i === targetIndex ? { ...task, iconUrl } : task,
+      );
+      await settingsRepository.updateProfile({ quick_tasks: next });
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      return true;
+    },
+    [getCurrentQuickTasks, queryClient],
+  );
 
   const quickTaskDefs = useMemo<
     {
@@ -1140,6 +1266,7 @@ export default function DailyPlannerPage() {
       iconClass: string;
       iconSrc?: string;
       iconRasterFallback?: string;
+      presetKey?: string | null;
     }[]
   >(() => {
     const custom = normalizeQuickTasksJson(profile?.quick_tasks);
@@ -1154,54 +1281,40 @@ export default function DailyPlannerPage() {
           iconClass: qt.iconClass,
           iconSrc: raster.primary,
           iconRasterFallback: raster.fallback,
+          presetKey: qt.presetKey,
         };
       });
     }
-    return BUILTIN_QUICK_TASK_DEFS.map((qt) => {
-      const name = copy[qt.nameKey];
-      const raster = resolveQuickTaskRaster({ name, presetKey: qt.presetKey });
+    return buildDefaultQuickTasks(copy).map((qt) => {
+      const raster = resolveQuickTaskRaster(qt);
+      const key = resolveQuickTaskIconKey(qt.name, qt.icon);
       return {
-        name,
-        icon: qt.icon,
+        name: qt.name,
+        icon: QUICK_TASK_ICON_MAP[key] ?? Sparkles,
         blocks: qt.blocks,
         iconClass: qt.iconClass,
         iconSrc: raster.primary,
         iconRasterFallback: raster.fallback,
+        presetKey: qt.presetKey,
       };
     });
   }, [profile?.quick_tasks, copy]);
 
   const handleDeleteQuickTask = useCallback(
     (index: number) => {
-      const current: QuickTaskDef[] =
-        normalizeQuickTasksJson(profile?.quick_tasks) ??
-        BUILTIN_QUICK_TASK_DEFS.map((qt) => ({
-          name: copy[qt.nameKey],
-          icon: lucideIconToQuickTaskKey(qt.icon),
-          blocks: qt.blocks,
-          iconClass: qt.iconClass,
-          presetKey: qt.presetKey,
-        }));
+      const current = getCurrentQuickTasks();
       const removed = current[index];
       const next = current.filter((_, i) => i !== index);
       updateProfile.mutate({ quick_tasks: next.length > 0 ? next : null });
       if (removed) toast.success(copy.quickTaskToastDeleted(removed.name));
     },
-    [profile?.quick_tasks, copy, updateProfile],
+    [copy, getCurrentQuickTasks, updateProfile],
   );
 
-  const handleAddQuickTask = useCallback(() => {
+  const handleAddQuickTask = useCallback(async () => {
     const trimmed = newQuickName.trim();
     if (!trimmed) return;
-    const current: QuickTaskDef[] =
-      normalizeQuickTasksJson(profile?.quick_tasks) ??
-      BUILTIN_QUICK_TASK_DEFS.map((qt) => ({
-        name: copy[qt.nameKey],
-        icon: lucideIconToQuickTaskKey(qt.icon),
-        blocks: qt.blocks,
-        iconClass: qt.iconClass,
-        presetKey: qt.presetKey,
-      }));
+    const current = getCurrentQuickTasks();
     const colors = [
       "text-amber-700 dark:text-amber-300",
       "text-emerald-700 dark:text-emerald-300",
@@ -1212,75 +1325,112 @@ export default function DailyPlannerPage() {
       "text-teal-700 dark:text-teal-300",
       "text-orange-700 dark:text-orange-300",
     ];
+    const created: QuickTaskDef = {
+      name: trimmed,
+      icon: inferQuickTaskIconKey(trimmed),
+      blocks: newQuickBlocks,
+      iconClass: colors[current.length % colors.length],
+      presetKey: null,
+      iconUrl: null,
+    };
     const next: QuickTaskDef[] = [
       ...current,
-      {
-        name: trimmed,
-        icon: inferQuickTaskIconKey(trimmed),
-        blocks: newQuickBlocks,
-        iconClass: colors[current.length % colors.length],
-        presetKey: null,
-        iconUrl: null,
-      },
+      created,
     ];
-    updateProfile.mutate({ quick_tasks: next });
+    const createdIndex = next.length - 1;
+    const expectedIdentity = quickTaskIdentity(created);
+    const jobKey = quickTaskJobKey(created, createdIndex);
+
+    try {
+      await updateProfile.mutateAsync({ quick_tasks: next });
+    } catch {
+      return;
+    }
     toast.success(copy.quickTaskToastAdded(trimmed));
     setNewQuickName("");
     setNewQuickBlocks(3);
     setAddQuickTaskOpen(false);
 
     void (async () => {
+      setQuickIconBusy(jobKey, true);
       try {
-        const res = await fetch("/api/quick-tasks/generate-icon", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ taskLabel: trimmed }),
-        });
-        const data = (await res.json()) as { iconUrl?: string; error?: string };
-        if (!res.ok || !data.iconUrl) return;
-        const merged = next.map((t) =>
-          t.name === trimmed ? { ...t, iconUrl: data.iconUrl! } : t,
-        );
-        await settingsRepository.updateProfile({ quick_tasks: merged });
-        await queryClient.invalidateQueries({ queryKey: ["profile"] });
+        const iconUrl = await requestQuickTaskIcon(created);
+        await writeQuickTaskIconUrl(createdIndex, expectedIdentity, iconUrl, next);
       } catch {
         /* optional AI icon */
+      } finally {
+        setQuickIconBusy(jobKey, false);
       }
     })();
-  }, [newQuickName, newQuickBlocks, profile?.quick_tasks, copy, updateProfile, queryClient]);
+  }, [
+    copy,
+    getCurrentQuickTasks,
+    newQuickBlocks,
+    newQuickName,
+    setQuickIconBusy,
+    updateProfile,
+    writeQuickTaskIconUrl,
+  ]);
 
-  const handleBackfillQuickIcons = useCallback(async () => {
-    setQuickIconsBusy(true);
-    try {
-      let seeded = normalizeQuickTasksJson(profile?.quick_tasks);
-      if (!seeded || seeded.length === 0) {
-        seeded = BUILTIN_QUICK_TASK_DEFS.map((qt) => ({
-          name: copy[qt.nameKey],
-          icon: lucideIconToQuickTaskKey(qt.icon),
-          blocks: qt.blocks,
-          iconClass: qt.iconClass,
-          presetKey: qt.presetKey,
-          iconUrl: null,
-        }));
-        await settingsRepository.updateProfile({ quick_tasks: seeded });
+  const handleRegenerateQuickTaskIcon = useCallback(
+    async (index: number) => {
+      const current = getCurrentQuickTasks();
+      const task = current[index];
+      if (!task) return;
+      const expectedIdentity = quickTaskIdentity(task);
+      const jobKey = quickTaskJobKey(task, index);
+
+      setQuickIconBusy(jobKey, true);
+      try {
+        const iconUrl = await requestQuickTaskIcon(task);
+        const updated = await writeQuickTaskIconUrl(index, expectedIdentity, iconUrl, current);
+        if (updated) toast.success(copy.quickTaskIconRegenerated(task.name));
+      } catch {
+        toast.error(copy.quickTaskIconRegenerateFailed);
+      } finally {
+        setQuickIconBusy(jobKey, false);
+      }
+    },
+    [copy, getCurrentQuickTasks, setQuickIconBusy, writeQuickTaskIconUrl],
+  );
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const parsed = normalizeQuickTasksJson(profile.quick_tasks);
+    const effective = parsed ?? buildDefaultQuickTasks(copy);
+    const missing = effective.filter((task) => !task.iconUrl?.trim());
+    if (missing.length === 0) return;
+
+    const signature = effective
+      .map((task, index) =>
+        `${index}\u0001${quickTaskIdentity(task)}\u0001${task.iconUrl?.trim() ? "1" : "0"}`,
+      )
+      .join("\u0002");
+    if (quickIconBackfillSignatureRef.current === signature) return;
+    quickIconBackfillSignatureRef.current = signature;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (!parsed || parsed.length === 0) {
+          await settingsRepository.updateProfile({ quick_tasks: effective });
+          if (cancelled) return;
+          await queryClient.invalidateQueries({ queryKey: ["profile"] });
+        }
+
+        const res = await fetch("/api/quick-tasks/backfill-icons", { method: "POST" });
+        if (!res.ok || cancelled) return;
         await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      } catch {
+        /* quiet background icon fill */
       }
+    })();
 
-      const res = await fetch("/api/quick-tasks/backfill-icons", { method: "POST" });
-      const data = (await res.json()) as { updated?: number; error?: string };
-      if (!res.ok) {
-        toast.error(data.error ?? "backfill failed");
-        return;
-      }
-      const n = typeof data.updated === "number" ? data.updated : 0;
-      toast.success(copy.quickTaskAiIconsToastDone(n));
-      await queryClient.invalidateQueries({ queryKey: ["profile"] });
-    } catch {
-      toast.error("backfill failed");
-    } finally {
-      setQuickIconsBusy(false);
-    }
-  }, [profile, copy, queryClient]);
+    return () => {
+      cancelled = true;
+    };
+  }, [copy, profile, queryClient]);
 
   // ── add task helper ──
   // In Free Mode the same entry points (Quick Add, AI Create, Import) drop tasks straight
@@ -1889,21 +2039,6 @@ export default function DailyPlannerPage() {
                 </Label>
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    className="h-11 min-h-11 min-w-11 gap-1 rounded-xl px-3 text-xs"
-                    disabled={quickIconsBusy}
-                    onClick={() => void handleBackfillQuickIcons()}
-                  >
-                    {quickIconsBusy ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3" />
-                    )}
-                    <span className="hidden sm:inline">{copy.quickTaskAiIcons}</span>
-                  </Button>
-                  <Button
                     variant="ghost"
                     size="xs"
                     className="h-11 min-h-11 gap-1 rounded-xl px-3 text-xs"
@@ -1921,6 +2056,8 @@ export default function DailyPlannerPage() {
                     task={qt}
                     onAdd={(blocks) => handleQuickAdd(qt.name, blocks)}
                     onDelete={() => handleDeleteQuickTask(idx)}
+                    onRegenerateIcon={() => void handleRegenerateQuickTaskIcon(idx)}
+                    isIconGenerating={quickIconBusyKeys.has(quickTaskJobKey(qt, idx))}
                   />
                 ))}
               </div>
@@ -1940,7 +2077,7 @@ export default function DailyPlannerPage() {
                       onChange={(e) => setNewQuickName(e.target.value)}
                       placeholder={copy.quickTaskNamePlaceholder}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddQuickTask();
+                        if (e.key === "Enter") void handleAddQuickTask();
                       }}
                     />
                   </div>
@@ -1970,7 +2107,7 @@ export default function DailyPlannerPage() {
                     <Button
                       size="sm"
                       className="h-11 min-h-11 rounded-xl px-3"
-                      onClick={handleAddQuickTask}
+                      onClick={() => void handleAddQuickTask()}
                       disabled={!newQuickName.trim()}
                     >
                       {copy.add}

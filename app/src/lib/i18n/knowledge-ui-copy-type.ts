@@ -119,6 +119,15 @@ export type KnowledgeUiCopy = {
     linked: string;
     sourceDate: string;
   };
+  cardsPerPageLabel: string;
+  cardsPerPageCustom: string;
+  cardsPerPageApply: string;
+  cardsPerPageInputAria: string;
+  formatCardsPerPageOption: (count: number) => string;
+  formatPaginationRange: (start: number, end: number, total: number) => string;
+  formatPaginationPage: (page: number, totalPages: number) => string;
+  previousPage: string;
+  nextPage: string;
   quickFilters: {
     recent: string;
     social: string;

@@ -284,7 +284,11 @@ export function KnowledgeLayout({
           >
             <Menu className="h-4 w-4" />
           </OSIconControl>
-          <OSControl size="sm" onClick={() => openAIPanel()} className="gap-1.5">
+          <OSControl
+            size="sm"
+            onClick={() => openAIPanel()}
+            className={`gap-1.5 ${isAIPanelOpen ? "lg:hidden" : ""}`}
+          >
             <Sparkles className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">{ui.askAi}</span>
           </OSControl>
@@ -304,41 +308,41 @@ export function KnowledgeLayout({
               board / table) keep their original min-height so card
               grids don't stretch awkwardly tall on huge screens. */}
           <div
-            className={`flex min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-6 ${
+            className={`flex min-w-0 flex-1 flex-col gap-4 ${
               currentView === "constellation"
                 ? "lg:min-h-[min(82dvh,820px)]"
                 : "lg:min-h-[min(70vh,640px)]"
             }`}
           >
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-              {currentView !== "constellation" && <KnowledgeInquiryAgent />}
-
-              <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">
-                <CardContent className="flex flex-1 flex-col gap-0 p-0">
-                  {currentView !== "constellation" && (
-                    <>
-                      <KnowledgeTopControlBar />
-                      <KnowledgeActiveFiltersBar />
-                    </>
-                  )}
-                  <KnowledgeContent userId={userId} />
-                </CardContent>
-              </Card>
-            </div>
+            {currentView !== "constellation" && <KnowledgeInquiryAgent />}
 
             <AnimatePresence>
               {isAIPanelOpen && (
                 <motion.div
-                  initial={{ x: 24, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 24, opacity: 0 }}
-                  transition={{ type: "spring", damping: 26, stiffness: 320 }}
-                  className="hidden min-h-0 w-[min(100%,320px)] shrink-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm lg:flex lg:h-full"
+                  initial={{ height: 0, opacity: 0, y: -12 }}
+                  animate={{ height: "auto", opacity: 1, y: 0 }}
+                  exit={{ height: 0, opacity: 0, y: -10 }}
+                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                  className="hidden min-w-0 overflow-hidden lg:block"
                 >
-                  <KnowledgeAIPanel userId={userId} />
+                  <div className="flex min-h-[320px] h-[min(58dvh,560px)] min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+                    <KnowledgeAIPanel userId={userId} layout="top" />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">
+              <CardContent className="flex flex-1 flex-col gap-0 p-0">
+                {currentView !== "constellation" && (
+                  <>
+                    <KnowledgeTopControlBar />
+                    <KnowledgeActiveFiltersBar />
+                  </>
+                )}
+                <KnowledgeContent userId={userId} />
+              </CardContent>
+            </Card>
           </div>
         </div>
 

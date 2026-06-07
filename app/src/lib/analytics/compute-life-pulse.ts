@@ -1,11 +1,12 @@
-import { format, isAfter, isBefore, startOfDay } from "date-fns";
+import { isAfter, isBefore } from "date-fns";
 
 import type { BrainGraphData } from "@/lib/brain/compat";
 import type { BrainNodeType } from "@/types/brain-graph";
 import type { DailyPlan, Goal, JapaneseStudySession, JournalEntry, Project, Task } from "@/types/database";
 import {
   clamp,
-  eachDayInAnalyticsRange,
+  eachBucketInAnalyticsRange,
+  getAnalyticsBucketGranularity,
   isDateInRange,
   parseAnyDate,
   percent,
@@ -443,32 +444,30 @@ export function computeMomentumWave(params: {
   journalEntries: JournalEntry[];
   dailyPlans: DailyPlan[];
 }): MomentumWave {
-  const points = eachDayInAnalyticsRange(params.range).map<MomentumWavePoint>((day) => {
-    const dayStart = startOfDay(day);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setHours(23, 59, 59, 999);
+  const granularity = getAnalyticsBucketGranularity(params.range);
+  const points = eachBucketInAnalyticsRange(params.range).map<MomentumWavePoint>((bucket) => {
     const completedTasks = params.tasks.filter(
       (task) =>
         task.status === "done" &&
-        isDateInRange(task.completed_at, dayStart, dayEnd),
+        isDateInRange(task.completed_at, bucket.start, bucket.end),
     ).length;
     const plannedItems = params.dailyPlans
-      .filter((plan) => isDateInRange(plan.plan_date, dayStart, dayEnd))
+      .filter((plan) => isDateInRange(plan.plan_date, bucket.start, bucket.end))
       .reduce((sum, plan) => sum + plannedItemCount(plan), 0);
     const overduePressure = params.tasks.filter((task) => {
       const due = parseAnyDate(task.due_date);
       return (
         taskIsOpen(task) &&
         due != null &&
-        !isAfter(due, dayEnd) &&
+        !isAfter(due, bucket.end) &&
         isBefore(due, new Date())
       );
     }).length;
     const studyMinutes = params.studySessions
-      .filter((session) => isDateInRange(session.session_date, dayStart, dayEnd))
+      .filter((session) => isDateInRange(session.session_date, bucket.start, bucket.end))
       .reduce((sum, session) => sum + session.duration_minutes, 0);
     const journals = params.journalEntries.filter((entry) =>
-      isDateInRange(entry.entryDate, dayStart, dayEnd),
+      isDateInRange(entry.entryDate, bucket.start, bucket.end),
     );
     const journalIntensity =
       journals.length === 0
@@ -476,8 +475,10 @@ export function computeMomentumWave(params: {
         : round(journals.reduce((sum, entry) => sum + entry.intensity, 0) / journals.length, 1);
     const studyBlocks = round(studyMinutes / 30, 1);
     return {
-      date: toDayKey(day),
-      label: format(day, params.range.days <= 14 ? "EEE" : "MMM d"),
+      date: bucket.key,
+      startISO: toDayKey(bucket.start),
+      endISO: toDayKey(bucket.end),
+      label: bucket.label,
       completedTasks,
       plannedItems,
       overduePressure,
@@ -515,7 +516,7 @@ export function computeMomentumWave(params: {
             ? "The wave shows real movement without a strong overload signal in this range."
             : "Planning or reflection exists, but task completion is quiet in this range.";
 
-  return { points, interpretation, hasData };
+  return { points, interpretation, hasData, granularity };
 }
 
 export function computeLifePulse(params: {

@@ -1,15 +1,7 @@
-import {
-  addDays,
-  endOfDay,
-  format,
-  isAfter,
-  min as minDate,
-  startOfDay,
-} from "date-fns";
-
 import type { DailyPlan, JournalEntry, Task } from "@/types/database";
 import {
-  eachDayInAnalyticsRange,
+  eachBucketInAnalyticsRange,
+  getAnalyticsBucketGranularity,
   isDateInRange,
   round,
   toDayKey,
@@ -40,39 +32,14 @@ function dominantQuadrant(entries: JournalEntry[]): EmotionQuadrant | null {
     null) as EmotionQuadrant | null;
 }
 
-function makeBuckets(range: AnalyticsRange): Array<{ start: Date; end: Date; label: string; key: string }> {
-  const days = eachDayInAnalyticsRange(range);
-  if (range.days <= 45) {
-    return days.map((day) => ({
-      start: startOfDay(day),
-      end: endOfDay(day),
-      label: format(day, range.days <= 7 ? "EEE" : "MMM d"),
-      key: toDayKey(day),
-    }));
-  }
-
-  const buckets: Array<{ start: Date; end: Date; label: string; key: string }> = [];
-  let cursor = startOfDay(range.start);
-  while (!isAfter(cursor, range.end)) {
-    const bucketEnd = minDate([endOfDay(addDays(cursor, 6)), range.end]);
-    buckets.push({
-      start: cursor,
-      end: bucketEnd,
-      label: format(cursor, "MMM d"),
-      key: toDayKey(cursor),
-    });
-    cursor = startOfDay(addDays(bucketEnd, 1));
-  }
-  return buckets;
-}
-
 export function computeEmotionExecution(params: {
   range: AnalyticsRange;
   tasks: Task[];
   journalEntries: JournalEntry[];
   dailyPlans: DailyPlan[];
 }): EmotionExecution {
-  const buckets = makeBuckets(params.range).map<EmotionExecutionBucket>((bucket) => {
+  const granularity = getAnalyticsBucketGranularity(params.range);
+  const buckets = eachBucketInAnalyticsRange(params.range).map<EmotionExecutionBucket>((bucket) => {
     const entries = params.journalEntries.filter((entry) =>
       isDateInRange(entry.entryDate, bucket.start, bucket.end),
     );
@@ -155,6 +122,6 @@ export function computeEmotionExecution(params: {
     interpretation,
     hasJournalData: bucketsWithJournal.length > 0,
     hasExecutionData: bucketsWithExecution.length > 0,
-    granularity: params.range.days <= 45 ? "day" : "week",
+    granularity,
   };
 }

@@ -43,6 +43,7 @@ import {
   type RichTextEditorHandle,
 } from "@/components/shared/rich-text-editor";
 import { RichTextReadOnly } from "@/components/shared/rich-text-read-only";
+import { OptimizedThumbnailImage } from "@/components/shared/OptimizedThumbnailImage";
 import type { Idea } from "@/types/database";
 import { IDEA_CATEGORIES, IDEA_DESTINATION_OPTIONS } from "@/lib/ideas/constants";
 import {
@@ -418,13 +419,13 @@ function IdeaDetailInner({
                 {cardVisual?.imageUrl ? (
                   <div>
                     <p className="mb-2 text-xs font-medium text-muted-foreground">{ui.visualPreviewSection}</p>
-                    <div className="overflow-hidden rounded-xl border border-border/50 bg-muted/15">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public icon URL */}
-                      <img
+                    <div className="relative h-[220px] overflow-hidden rounded-xl border border-border/50 bg-muted/15 sm:h-[300px]">
+                      <OptimizedThumbnailImage
                         src={cardVisual.imageUrl}
                         alt=""
-                        className="h-[220px] w-full object-contain sm:h-[300px]"
-                        loading="lazy"
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 680px"
+                        variant="detail"
                       />
                     </div>
                   </div>

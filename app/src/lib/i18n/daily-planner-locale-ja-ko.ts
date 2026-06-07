@@ -230,6 +230,10 @@ export const dailyPlannerJa: DailyPlannerUiCopy = {
   quickTaskBlocksLabel: "時間ブロック数",
   quickTaskToastAdded: (name) => `「${name}」をクイックタスクに追加しました`,
   quickTaskToastDeleted: (name) => `「${name}」をクイックタスクから削除しました`,
+  quickTaskIconRegenerate: "アイコンを再生成",
+  quickTaskIconGenerating: "アイコンを生成中…",
+  quickTaskIconRegenerated: (name) => `「${name}」のアイコンを再生成しました`,
+  quickTaskIconRegenerateFailed: "このアイコンを再生成できませんでした。",
   quickTaskAiIcons: "AIアイコンを生成（Liquid Glass）",
   quickTaskAiIconsGenerating: "アイコンを生成中…",
   quickTaskAiIconsToastDone: (count) =>
@@ -509,6 +513,10 @@ export const dailyPlannerKo: DailyPlannerUiCopy = {
   quickTaskBlocksLabel: "시간 블록 수",
   quickTaskToastAdded: (name) => `「${name}」을(를) 빠른 태스크에 추가했습니다`,
   quickTaskToastDeleted: (name) => `「${name}」을(를) 빠른 태스크에서 제거했습니다`,
+  quickTaskIconRegenerate: "아이콘 다시 생성",
+  quickTaskIconGenerating: "아이콘 생성 중…",
+  quickTaskIconRegenerated: (name) => `「${name}」 아이콘을 다시 생성했습니다`,
+  quickTaskIconRegenerateFailed: "이 아이콘을 다시 생성하지 못했습니다.",
   quickTaskAiIcons: "AI 아이콘 생성 (Liquid Glass)",
   quickTaskAiIconsGenerating: "아이콘 생성 중…",
   quickTaskAiIconsToastDone: (count) =>

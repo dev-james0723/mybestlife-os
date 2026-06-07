@@ -1,12 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { KnowledgeGalleryView } from "./KnowledgeGalleryView";
 import { KnowledgeBoardView } from "./KnowledgeBoardView";
 import { KnowledgeTableView } from "./KnowledgeTableView";
 import { ConstellationView } from "./constellation/ConstellationView";
 import { Button } from "@/components/ui/button";
-import { Brain } from "lucide-react";
+import { OSIconControl } from "@/components/ui/os-primitives";
+import { Brain, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { useKnowledgeFilteredItems } from "@/hooks/use-knowledge-filtered-items";
@@ -21,8 +23,21 @@ export function KnowledgeContent({ userId }: KnowledgeContentProps) {
   const currentView = useKnowledgeStore((s) => s.currentView);
   const openAddModal = useKnowledgeStore((s) => s.openAddModal);
   const clearAllListFilters = useKnowledgeStore((s) => s.clearAllListFilters);
+  const cardsPerPage = useKnowledgeStore((s) => s.cardsPerPage);
+  const currentPage = useKnowledgeStore((s) => s.currentPage);
+  const setCurrentPage = useKnowledgeStore((s) => s.setCurrentPage);
 
   const { items, filteredItems, summary } = useKnowledgeFilteredItems();
+  const pageSize = Math.max(1, cardsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, filteredItems.length);
+  const pagedItems = filteredItems.slice(pageStart, pageEnd);
+
+  useEffect(() => {
+    if (currentPage !== safePage) setCurrentPage(safePage);
+  }, [currentPage, safePage, setCurrentPage]);
 
   if (currentView === "constellation") {
     return (
@@ -72,9 +87,45 @@ export function KnowledgeContent({ userId }: KnowledgeContentProps) {
 
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
-      {currentView === "gallery" && <KnowledgeGalleryView items={filteredItems} />}
-      {currentView === "board" && <KnowledgeBoardView items={filteredItems} />}
-      {currentView === "table" && <KnowledgeTableView items={filteredItems} />}
+      {currentView === "gallery" && <KnowledgeGalleryView items={pagedItems} />}
+      {currentView === "board" && <KnowledgeBoardView items={pagedItems} />}
+      {currentView === "table" && <KnowledgeTableView items={pagedItems} />}
+
+      <div className="mt-4 flex min-w-0 flex-col gap-2 border-t border-border/50 pt-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span className="tabular-nums">
+          {ui.formatPaginationRange(pageStart + 1, pageEnd, filteredItems.length)}
+        </span>
+
+        {totalPages > 1 ? (
+          <div className="flex min-w-0 items-center gap-2">
+            <OSIconControl
+              type="button"
+              size="icon-sm"
+              osSize="none"
+              className="h-8 min-h-8 w-8"
+              disabled={safePage <= 1}
+              aria-label={ui.previousPage}
+              onClick={() => setCurrentPage(safePage - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </OSIconControl>
+            <span className="min-w-24 text-center tabular-nums">
+              {ui.formatPaginationPage(safePage, totalPages)}
+            </span>
+            <OSIconControl
+              type="button"
+              size="icon-sm"
+              osSize="none"
+              className="h-8 min-h-8 w-8"
+              disabled={safePage >= totalPages}
+              aria-label={ui.nextPage}
+              onClick={() => setCurrentPage(safePage + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </OSIconControl>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

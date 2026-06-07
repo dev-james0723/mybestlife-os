@@ -1,0 +1,8 @@
+{
+  "routes": [
+    "/en/ideas",
+    "/en/knowledge-base",
+    "/en/ai-knowledge"
+  ],
+  "skippedDynamic": []
+}

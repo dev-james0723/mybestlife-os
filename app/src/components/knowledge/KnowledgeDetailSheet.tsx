@@ -72,6 +72,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RichTextReadOnly } from "@/components/shared/rich-text-read-only";
+import { OptimizedThumbnailImage } from "@/components/shared/OptimizedThumbnailImage";
 import {
   parseKnowledgeRawContent,
   type CodeViewMode,
@@ -573,10 +574,12 @@ export function KnowledgeDetailSheet() {
                       onClick={() => setThumbLightboxOpen(true)}
                     />
                   ) : null}
-                  <img
+                  <OptimizedThumbnailImage
                     src={item.thumbnailUrl}
                     alt={item.title}
                     className="relative z-0 h-full w-full object-cover"
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    variant="detail"
                   />
                 </div>
               ) : item.thumbnailStyle === "na" ? (

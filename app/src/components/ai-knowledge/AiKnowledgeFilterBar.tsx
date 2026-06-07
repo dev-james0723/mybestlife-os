@@ -126,7 +126,10 @@ export function AiKnowledgeFilterBar({
           onTopCategoryChange(v === ALL_VALUE ? null : (v as PromptTopCategory))
         }
       >
-        <SelectTrigger className="!h-11 w-full sm:!h-8 sm:w-[200px]">
+        <SelectTrigger
+          data-selection-glow={activeTopCategory ? "active" : undefined}
+          className="!h-11 w-full sm:!h-8 sm:w-[200px]"
+        >
           <SelectValue placeholder={ui.filters.allCategories} />
         </SelectTrigger>
         <SelectContent>
@@ -146,7 +149,10 @@ export function AiKnowledgeFilterBar({
             onSubCategoryChange(v === ALL_VALUE ? null : v)
           }
         >
-          <SelectTrigger className="!h-11 w-full sm:!h-8 sm:w-[200px]">
+          <SelectTrigger
+            data-selection-glow={activeSubCategorySlug ? "active" : undefined}
+            className="!h-11 w-full sm:!h-8 sm:w-[200px]"
+          >
             <SelectValue placeholder={ui.filters.allSubcategories} />
           </SelectTrigger>
           <SelectContent>
@@ -166,8 +172,11 @@ export function AiKnowledgeFilterBar({
         <Select
           value={activeTag ?? ALL_VALUE}
           onValueChange={(v) => onTagChange(v === ALL_VALUE ? null : v)}
-      >
-          <SelectTrigger className="!h-11 w-full sm:!h-8 sm:w-[160px]">
+        >
+          <SelectTrigger
+            data-selection-glow={activeTag ? "active" : undefined}
+            className="!h-11 w-full sm:!h-8 sm:w-[160px]"
+          >
             <SelectValue placeholder={ui.filters.tagFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>

@@ -239,6 +239,7 @@ export interface OSSegmentedControlProps<T extends string> {
   getTabId?: (id: T) => string;
   labelMode?: "always" | "desktop" | "sr-only";
   layoutId?: string;
+  selectionGlow?: boolean;
 }
 
 export function OSSegmentedControl<T extends string>({
@@ -251,6 +252,7 @@ export function OSSegmentedControl<T extends string>({
   getTabId,
   labelMode = "always",
   layoutId = "os-segmented-active-pill",
+  selectionGlow = false,
 }: OSSegmentedControlProps<T>) {
   const reduceMotion = useHydrationSafeReducedMotion();
 
@@ -279,6 +281,7 @@ export function OSSegmentedControl<T extends string>({
             aria-label={item.ariaLabel}
             aria-controls={getPanelId?.(item.id)}
             id={getTabId?.(item.id)}
+            data-selection-glow={selectionGlow && active ? "active" : undefined}
             onClick={() => {
               if (item.id === value) return;
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
@@ -327,12 +330,13 @@ export interface OSStatusRailItem<T extends string> {
 
 export interface OSStatusRailProps<T extends string> {
   items: Array<OSStatusRailItem<T>>;
-  value: T;
+  value: T | null;
   onValueChange: (next: T) => void;
   ariaLabel: string;
   className?: string;
   allowReselect?: boolean;
   layoutId?: string;
+  selectionGlow?: boolean;
 }
 
 export function OSStatusRail<T extends string>({
@@ -343,6 +347,7 @@ export function OSStatusRail<T extends string>({
   className,
   allowReselect = false,
   layoutId = "os-status-active-pill",
+  selectionGlow = false,
 }: OSStatusRailProps<T>) {
   const reduceMotion = useHydrationSafeReducedMotion();
 
@@ -360,7 +365,7 @@ export function OSStatusRail<T extends string>({
       )}
     >
       {items.map((item) => {
-        const active = item.id === value;
+        const active = value != null && item.id === value;
         return (
           <button
             key={item.id}
@@ -370,8 +375,9 @@ export function OSStatusRail<T extends string>({
             aria-label={item.ariaLabel}
             title={item.title}
             disabled={item.disabled}
+            data-selection-glow={selectionGlow && active ? "active" : undefined}
             onClick={() => {
-              if (item.id === value && !allowReselect) return;
+              if (value != null && item.id === value && !allowReselect) return;
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
             }}
             className={cn(

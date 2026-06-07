@@ -24,6 +24,7 @@ import type { PreviewStatus, RenderMode } from "@/types/knowledge-source";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { retryDocumentExtractionJobAction } from "@/lib/document-brain/oracle-actions";
+import { OptimizedThumbnailImage } from "@/components/shared/OptimizedThumbnailImage";
 
 const TAG_VISIBLE = 3;
 
@@ -385,12 +386,12 @@ function renderCardVisual(args: {
     if (visualUrl) {
       return (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <OptimizedThumbnailImage
             src={visualUrl}
             alt=""
             className="h-full w-full object-cover"
-            loading="lazy"
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
+            variant="card"
           />
           {/* Subtle "Snapshot" / "Connected Preview" / "Saved" pill, top-right. */}
           <RenderModeBadge mode={mode} />
@@ -428,12 +429,12 @@ function renderCardVisual(args: {
   if (mode === "metadata_preview") {
     if (item.thumbnailUrl) {
       return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <OptimizedThumbnailImage
           src={item.thumbnailUrl}
           alt=""
           className="h-full w-full object-cover"
-          loading="lazy"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
+          variant="card"
         />
       );
     }
@@ -460,12 +461,12 @@ function renderCardVisual(args: {
   // Prefer explicit thumbnail URL even when style is "na" (e.g. uploaded photo uses file as preview).
   if (item.thumbnailUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <OptimizedThumbnailImage
         src={item.thumbnailUrl}
         alt=""
         className="h-full w-full object-cover"
-        loading="lazy"
+        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
+        variant="card"
       />
     );
   }

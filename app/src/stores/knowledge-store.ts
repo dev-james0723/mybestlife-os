@@ -32,10 +32,40 @@ export type KnowledgeSortKey =
 
 export type KnowledgeView = "gallery" | "board" | "table" | "constellation";
 
+export const KNOWLEDGE_CARDS_PER_PAGE_OPTIONS = [
+  10,
+  15,
+  20,
+  25,
+  30,
+  50,
+  60,
+  100,
+] as const;
+export const DEFAULT_KNOWLEDGE_CARDS_PER_PAGE = 20;
+export const MIN_KNOWLEDGE_CARDS_PER_PAGE = 1;
+export const MAX_KNOWLEDGE_CARDS_PER_PAGE = 500;
+
+export function normalizeKnowledgeCardsPerPage(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_KNOWLEDGE_CARDS_PER_PAGE;
+  return Math.min(
+    MAX_KNOWLEDGE_CARDS_PER_PAGE,
+    Math.max(MIN_KNOWLEDGE_CARDS_PER_PAGE, Math.round(value)),
+  );
+}
+
+export function isKnowledgeCardsPerPagePreset(value: number): boolean {
+  return KNOWLEDGE_CARDS_PER_PAGE_OPTIONS.includes(
+    value as (typeof KNOWLEDGE_CARDS_PER_PAGE_OPTIONS)[number],
+  );
+}
+
 interface KnowledgeStore {
   items: KnowledgeItem[];
   smartCollections: SmartCollection[];
   currentView: KnowledgeView;
+  currentPage: number;
+  cardsPerPage: number;
   boardGroupBy: "type" | "collection" | "tag";
   activeTypeFilters: ContentType[];
   activeCategoryFilters: KnowledgeCategory[];
@@ -82,6 +112,8 @@ interface KnowledgeStore {
   setItems: (items: KnowledgeItem[]) => void;
   setCollections: (collections: SmartCollection[]) => void;
   setView: (view: KnowledgeView) => void;
+  setCurrentPage: (page: number) => void;
+  setCardsPerPage: (count: number) => void;
   setBoardGroupBy: (groupBy: "type" | "collection" | "tag") => void;
   toggleTypeFilter: (type: ContentType) => void;
   clearTypeFilters: () => void;
@@ -127,6 +159,8 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
   items: [],
   smartCollections: [],
   currentView: "gallery",
+  currentPage: 1,
+  cardsPerPage: DEFAULT_KNOWLEDGE_CARDS_PER_PAGE,
   boardGroupBy: "type",
   activeTypeFilters: [],
   activeCategoryFilters: [],
@@ -174,6 +208,13 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
   setCollections: (collections) => set({ smartCollections: collections }),
 
   setView: (view) => set({ currentView: view }),
+  setCurrentPage: (page) =>
+    set({ currentPage: Math.max(1, Math.floor(page)) }),
+  setCardsPerPage: (count) =>
+    set({
+      cardsPerPage: normalizeKnowledgeCardsPerPage(count),
+      currentPage: 1,
+    }),
   setBoardGroupBy: (groupBy) => set({ boardGroupBy: groupBy }),
 
   toggleTypeFilter: (type) =>
@@ -181,20 +222,20 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
       const filters = state.activeTypeFilters.includes(type)
         ? state.activeTypeFilters.filter((t) => t !== type)
         : [...state.activeTypeFilters, type];
-      return { activeTypeFilters: filters };
+      return { activeTypeFilters: filters, currentPage: 1 };
     }),
 
-  clearTypeFilters: () => set({ activeTypeFilters: [] }),
+  clearTypeFilters: () => set({ activeTypeFilters: [], currentPage: 1 }),
 
   toggleCategoryFilter: (category) =>
     set((state) => {
       const filters = state.activeCategoryFilters.includes(category)
         ? state.activeCategoryFilters.filter((t) => t !== category)
         : [...state.activeCategoryFilters, category];
-      return { activeCategoryFilters: filters };
+      return { activeCategoryFilters: filters, currentPage: 1 };
     }),
 
-  clearCategoryFilters: () => set({ activeCategoryFilters: [] }),
+  clearCategoryFilters: () => set({ activeCategoryFilters: [], currentPage: 1 }),
 
   setQuickFilterDefinitions: (defs) =>
     set((state) => ({
@@ -215,18 +256,20 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
           filters,
           state.quickFilterDefinitions,
         ),
+        currentPage: 1,
       };
     }),
 
-  clearQuickFilters: () => set({ activeQuickFilters: [] }),
+  clearQuickFilters: () => set({ activeQuickFilters: [], currentPage: 1 }),
 
-  setActiveSmartCollectionId: (id) => set({ activeSmartCollectionId: id }),
+  setActiveSmartCollectionId: (id) =>
+    set({ activeSmartCollectionId: id, currentPage: 1 }),
 
-  setActiveTagId: (id) => set({ activeTagId: id }),
-  clearTagFilter: () => set({ activeTagId: null }),
+  setActiveTagId: (id) => set({ activeTagId: id, currentPage: 1 }),
+  clearTagFilter: () => set({ activeTagId: null, currentPage: 1 }),
 
-  setSearchQuery: (q) => set({ searchQuery: q }),
-  setSortBy: (sort) => set({ sortBy: sort }),
+  setSearchQuery: (q) => set({ searchQuery: q, currentPage: 1 }),
+  setSortBy: (sort) => set({ sortBy: sort, currentPage: 1 }),
 
   clearAllListFilters: () =>
     set({
@@ -236,6 +279,7 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
       activeQuickFilters: [],
       activeSmartCollectionId: null,
       activeTagId: null,
+      currentPage: 1,
     }),
 
   openAIPanel: (query, retrievalRunId) =>

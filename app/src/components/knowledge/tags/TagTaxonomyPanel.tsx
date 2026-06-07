@@ -195,6 +195,7 @@ export function TagTaxonomyPanel({ onAfterSelect, className }: TagTaxonomyPanelP
               onAfterSelect?.();
             }}
             aria-pressed={!activeTagId}
+            data-selection-glow={!activeTagId ? "active" : undefined}
             className={cn(
               "flex items-center justify-between gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
               !activeTagId
@@ -282,6 +283,7 @@ function CategorySection({
   return (
     <div className="min-w-0">
       <div
+        data-selection-glow={isCategoryActive ? "active" : undefined}
         className={cn(
           "group/tag-row flex items-center gap-1 rounded-md transition-colors",
           isCategoryActive

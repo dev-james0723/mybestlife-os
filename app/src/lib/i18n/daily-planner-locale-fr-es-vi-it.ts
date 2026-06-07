@@ -275,6 +275,10 @@ export const dailyPlannerFr: DailyPlannerUiCopy = {
   freeGoogleNoTasksToast: "Rien à synchroniser pour l'instant — ajoutez d'abord quelques tâches.",
   quickTaskToastAdded: (name) => `« ${name} » ajouté aux tâches rapides`,
   quickTaskToastDeleted: (name) => `« ${name} » retiré des tâches rapides`,
+  quickTaskIconRegenerate: "Régénérer l'icône",
+  quickTaskIconGenerating: "Génération de l'icône…",
+  quickTaskIconRegenerated: (name) => `Icône régénérée pour « ${name} »`,
+  quickTaskIconRegenerateFailed: "Impossible de régénérer cette icône.",
   quickTaskAiIcons: "Générer des icônes IA (Liquid Glass)",
   quickTaskAiIconsGenerating: "Génération des icônes…",
   quickTaskAiIconsToastDone: (count) =>
@@ -559,6 +563,10 @@ export const dailyPlannerEs: DailyPlannerUiCopy = {
   freeGoogleNoTasksToast: "Nada que sincronizar todavía — añade algunas tareas primero.",
   quickTaskToastAdded: (name) => `«${name}» añadido a tareas rápidas`,
   quickTaskToastDeleted: (name) => `«${name}» quitado de tareas rápidas`,
+  quickTaskIconRegenerate: "Regenerar icono",
+  quickTaskIconGenerating: "Generando icono…",
+  quickTaskIconRegenerated: (name) => `Icono regenerado para «${name}»`,
+  quickTaskIconRegenerateFailed: "No se pudo regenerar este icono.",
   quickTaskAiIcons: "Generar iconos IA (Liquid Glass)",
   quickTaskAiIconsGenerating: "Generando iconos…",
   quickTaskAiIconsToastDone: (count) =>
@@ -840,6 +848,10 @@ export const dailyPlannerVi: DailyPlannerUiCopy = {
   freeGoogleNoTasksToast: "Chưa có việc nào để đồng bộ — hãy thêm vài việc trước.",
   quickTaskToastAdded: (name) => `Đã thêm «${name}» vào việc nhanh`,
   quickTaskToastDeleted: (name) => `Đã xóa «${name}» khỏi việc nhanh`,
+  quickTaskIconRegenerate: "Tạo lại biểu tượng",
+  quickTaskIconGenerating: "Đang tạo biểu tượng…",
+  quickTaskIconRegenerated: (name) => `Đã tạo lại biểu tượng cho «${name}»`,
+  quickTaskIconRegenerateFailed: "Không thể tạo lại biểu tượng này.",
   quickTaskAiIcons: "Tạo biểu tượng AI (Liquid Glass)",
   quickTaskAiIconsGenerating: "Đang tạo biểu tượng…",
   quickTaskAiIconsToastDone: (count) =>
@@ -1124,6 +1136,10 @@ export const dailyPlannerIt: DailyPlannerUiCopy = {
   freeGoogleNoTasksToast: "Niente da sincronizzare — aggiungi prima qualche attività.",
   quickTaskToastAdded: (name) => `«${name}» aggiunto alle attività rapide`,
   quickTaskToastDeleted: (name) => `«${name}» rimosso dalle attività rapide`,
+  quickTaskIconRegenerate: "Rigenera icona",
+  quickTaskIconGenerating: "Generazione icona…",
+  quickTaskIconRegenerated: (name) => `Icona rigenerata per «${name}»`,
+  quickTaskIconRegenerateFailed: "Impossibile rigenerare questa icona.",
   quickTaskAiIcons: "Genera icone IA (Liquid Glass)",
   quickTaskAiIconsGenerating: "Generazione icone…",
   quickTaskAiIconsToastDone: (count) =>

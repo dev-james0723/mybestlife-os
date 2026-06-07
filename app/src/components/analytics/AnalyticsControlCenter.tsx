@@ -1,6 +1,6 @@
 "use client";
 
-import type { AnalyticsRangeKey, LifeAnalytics } from "@/lib/analytics/types";
+import type { AnalyticsRangeSelection, LifeAnalytics } from "@/lib/analytics/types";
 import { AIInterventionPanel } from "./AIInterventionPanel";
 import { AudioOverviewPanel } from "./AudioOverviewPanel";
 import { BrainHealthPanel } from "./BrainHealthPanel";
@@ -12,21 +12,21 @@ import { ProjectMomentumMap } from "./ProjectMomentumMap";
 
 export function AnalyticsControlCenter({
   analytics,
-  range,
-  onRangeChange,
+  rangeSelection,
+  onRangeSelectionChange,
   failedBrainSlices,
 }: {
   analytics: LifeAnalytics;
-  range: AnalyticsRangeKey;
-  onRangeChange: (range: AnalyticsRangeKey) => void;
+  rangeSelection: AnalyticsRangeSelection;
+  onRangeSelectionChange: (range: AnalyticsRangeSelection) => void;
   failedBrainSlices?: number;
 }) {
   return (
     <div className="space-y-5 sm:space-y-6">
       <LivingStatusHeader
         analytics={analytics}
-        range={range}
-        onRangeChange={onRangeChange}
+        rangeSelection={rangeSelection}
+        onRangeSelectionChange={onRangeSelectionChange}
       />
 
       {failedBrainSlices ? (
@@ -39,6 +39,7 @@ export function AnalyticsControlCenter({
         data={analytics.momentumWave.points}
         interpretation={analytics.momentumWave.interpretation}
         hasData={analytics.momentumWave.hasData}
+        granularity={analytics.momentumWave.granularity}
       />
 
       <div className="space-y-5">

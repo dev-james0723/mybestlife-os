@@ -416,6 +416,91 @@ html.focus-mode [data-focus-hideable] {
   display: none;
 }
 
+/* Selection glow — reusable active-state neon chase for filter/category/tag controls. */
+@property --selection-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes selection-glow-chase {
+  to {
+    --selection-glow-angle: 360deg;
+  }
+}
+
+[data-selection-glow] {
+  --selection-glow-angle: 0deg;
+  --selection-glow-size: 1px;
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--primary) 20%, transparent),
+    0 0 18px color-mix(in oklch, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 18%, transparent);
+}
+
+[data-selection-glow]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: var(--selection-glow-size);
+  background:
+    conic-gradient(
+      from var(--selection-glow-angle),
+      transparent 0deg,
+      color-mix(in oklch, var(--primary) 86%, white 14%) 40deg,
+      color-mix(in oklch, var(--accent-pink) 76%, white 24%) 78deg,
+      transparent 116deg,
+      transparent 180deg,
+      color-mix(in oklch, oklch(0.78 0.16 185) 82%, white 18%) 228deg,
+      color-mix(in oklch, var(--accent-pink-to) 74%, white 26%) 276deg,
+      transparent 330deg,
+      transparent 360deg
+    );
+  opacity: 0.9;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+[data-selection-glow="active"]::after {
+  animation: selection-glow-chase 3.6s linear infinite;
+}
+
+[data-selection-glow="static"] {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--primary) 24%, transparent),
+    0 0 14px color-mix(in oklch, var(--accent-pink) 12%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 14%, transparent);
+}
+
+[data-selection-glow="static"]::after {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--primary) 78%, white 22%),
+      color-mix(in oklch, var(--accent-pink) 74%, white 26%),
+      color-mix(in oklch, oklch(0.76 0.14 185) 78%, white 22%)
+    );
+  opacity: 0.78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-selection-glow="active"]::after {
+    animation: none !important;
+    --selection-glow-angle: 70deg;
+  }
+}
+
 .os-buddy-sprite-img {
   image-rendering: pixelated;
   image-rendering: crisp-edges;

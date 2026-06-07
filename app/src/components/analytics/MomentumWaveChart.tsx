@@ -15,7 +15,7 @@ import {
 import { Activity, BarChart3, Waves } from "lucide-react";
 
 import { GlassPanel } from "@/components/ui/glass-panel";
-import type { MomentumWavePoint } from "@/lib/analytics/types";
+import type { AnalyticsBucketGranularity, MomentumWavePoint } from "@/lib/analytics/types";
 import { cn } from "@/lib/utils";
 import { useChartSize } from "./useChartSize";
 
@@ -23,6 +23,7 @@ type MomentumWaveChartProps = {
   data: MomentumWavePoint[];
   interpretation: string;
   hasData: boolean;
+  granularity: AnalyticsBucketGranularity;
 };
 
 type MomentumView = "pulse" | "bars" | "wave";
@@ -333,6 +334,7 @@ export function MomentumWaveChart({
   data,
   interpretation,
   hasData,
+  granularity,
 }: MomentumWaveChartProps) {
   const [view, setView] = useState<MomentumView>("pulse");
 
@@ -345,6 +347,11 @@ export function MomentumWaveChart({
             <h2 className="text-base font-semibold tracking-normal">Momentum Wave</h2>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{interpretation}</p>
+          {hasData ? (
+            <p className="mt-1 text-xs uppercase tracking-normal text-muted-foreground/80">
+              {granularity} buckets
+            </p>
+          ) : null}
         </div>
         {hasData ? <ViewSwitch value={view} onChange={setView} /> : null}
       </div>

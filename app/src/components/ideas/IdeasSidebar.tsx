@@ -83,6 +83,8 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
             <button
               key={scope}
               type="button"
+              aria-pressed={active}
+              data-selection-glow={active ? "active" : undefined}
               className={cn(
                 "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent",
                 active && "bg-accent font-medium text-primary",
@@ -112,6 +114,8 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
                 <button
                   key={c}
                   type="button"
+                  aria-pressed={active}
+                  data-selection-glow={active ? "active" : undefined}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent",
                     active && "bg-accent font-medium",
@@ -145,19 +149,24 @@ function SidebarBody({ showTitle = true }: { showTitle?: boolean }) {
         <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {ui.relatedFilters}
         </p>
-        {relatedRows.map((row) => (
-          <button
-            key={row.value}
-            type="button"
-            className={cn(
-              "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-              relatedScopeFilter === row.value && "bg-accent font-medium",
-            )}
-            onClick={() => setRelated(row.value)}
-          >
-            {row.label}
-          </button>
-        ))}
+        {relatedRows.map((row) => {
+          const active = relatedScopeFilter === row.value;
+          return (
+            <button
+              key={row.value}
+              type="button"
+              aria-pressed={active}
+              data-selection-glow={active ? "active" : undefined}
+              className={cn(
+                "flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
+                active && "bg-accent font-medium",
+              )}
+              onClick={() => setRelated(row.value)}
+            >
+              {row.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

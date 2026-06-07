@@ -524,6 +524,7 @@ export default function AiKnowledgePage() {
           ariaLabel={ui.pageTitle}
           className="max-w-full"
           layoutId="ai-knowledge-tab-active-pill"
+          selectionGlow
         />
 
         {isPromptTab && (

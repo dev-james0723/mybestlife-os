@@ -5,19 +5,22 @@ import { useState } from "react";
 import { AnalyticsControlCenter } from "@/components/analytics/AnalyticsControlCenter";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { useLifeAnalytics } from "@/hooks/use-life-analytics";
-import type { AnalyticsRangeKey } from "@/lib/analytics/types";
+import { DEFAULT_ANALYTICS_RANGE_SELECTION } from "@/lib/analytics/date-range";
+import type { AnalyticsRangeSelection } from "@/lib/analytics/types";
 
 export default function AnalyticsPage() {
-  const [range, setRange] = useState<AnalyticsRangeKey>("7D");
-  const { analytics, isLoading, failedBrainSlices } = useLifeAnalytics(range);
+  const [rangeSelection, setRangeSelection] = useState<AnalyticsRangeSelection>(
+    DEFAULT_ANALYTICS_RANGE_SELECTION,
+  );
+  const { analytics, isLoading, failedBrainSlices } = useLifeAnalytics(rangeSelection);
 
   if (isLoading || !analytics) return <LoadingPage />;
 
   return (
     <AnalyticsControlCenter
       analytics={analytics}
-      range={range}
-      onRangeChange={setRange}
+      rangeSelection={rangeSelection}
+      onRangeSelectionChange={setRangeSelection}
       failedBrainSlices={failedBrainSlices}
     />
   );

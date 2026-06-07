@@ -1,8 +1,8 @@
 /**
  * Client-only: produce a smaller JPEG for Knowledge card thumbnails (faster gallery load).
  */
-const MAX_DIMENSION = 960;
-const JPEG_QUALITY = 0.82;
+const MAX_DIMENSION = 720;
+const JPEG_QUALITY = 0.72;
 
 export async function compressImageForKnowledgeThumbnail(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file).catch(() => null);

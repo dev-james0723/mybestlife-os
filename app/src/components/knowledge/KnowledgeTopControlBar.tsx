@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import {
+  KNOWLEDGE_CARDS_PER_PAGE_OPTIONS,
+  isKnowledgeCardsPerPagePreset,
+  normalizeKnowledgeCardsPerPage,
   useKnowledgeStore,
   type KnowledgeView,
   type KnowledgeSortKey,
@@ -9,8 +12,10 @@ import {
 import { CONTENT_TYPES, typeColors } from "@/types/knowledge";
 import {
   OSControl,
+  OSIconControl,
   OSSegmentedControl,
 } from "@/components/ui/os-primitives";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Check,
   ChevronDown,
   Columns3,
   LayoutGrid,
@@ -120,6 +126,7 @@ function quickFilterToneFor(def: KnowledgeQuickFilterDefinition): QuickFilterTon
 
 export function KnowledgeTopControlBar() {
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
+  const [customPageSizeOpen, setCustomPageSizeOpen] = useState(false);
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
   const common = getCommonUiCopy(language);
@@ -132,8 +139,41 @@ export function KnowledgeTopControlBar() {
   const toggleQuickFilter = useKnowledgeStore((s) => s.toggleQuickFilter);
   const sortBy = useKnowledgeStore((s) => s.sortBy);
   const setSortBy = useKnowledgeStore((s) => s.setSortBy);
+  const cardsPerPage = useKnowledgeStore((s) => s.cardsPerPage);
+  const setCardsPerPage = useKnowledgeStore((s) => s.setCardsPerPage);
   const currentView = useKnowledgeStore((s) => s.currentView);
   const setView = useKnowledgeStore((s) => s.setView);
+  const [customPageSizeDraft, setCustomPageSizeDraft] = useState(() =>
+    String(cardsPerPage),
+  );
+
+  const pageSizeSelectValue =
+    customPageSizeOpen || !isKnowledgeCardsPerPagePreset(cardsPerPage)
+      ? "custom"
+      : String(cardsPerPage);
+
+  function handlePageSizeChange(value: string | null) {
+    if (!value) return;
+    if (value === "custom") {
+      setCustomPageSizeDraft(String(cardsPerPage));
+      setCustomPageSizeOpen(true);
+      return;
+    }
+    setCustomPageSizeOpen(false);
+    setCardsPerPage(Number(value));
+  }
+
+  function applyCustomPageSize() {
+    const parsed = Number.parseInt(customPageSizeDraft, 10);
+    if (Number.isNaN(parsed)) {
+      setCustomPageSizeDraft(String(cardsPerPage));
+      return;
+    }
+    const next = normalizeKnowledgeCardsPerPage(parsed);
+    setCustomPageSizeDraft(String(next));
+    setCardsPerPage(next);
+    setCustomPageSizeOpen(!isKnowledgeCardsPerPagePreset(next));
+  }
 
   const viewOptions: Array<{
     id: KnowledgeView;
@@ -234,6 +274,58 @@ export function KnowledgeTopControlBar() {
               ))}
             </SelectContent>
           </Select>
+
+          <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto">
+            <Select value={pageSizeSelectValue} onValueChange={handlePageSizeChange}>
+              <SelectTrigger
+                aria-label={ui.cardsPerPageLabel}
+                className="h-9 w-full min-w-[8.5rem] border-border/60 bg-background/80 text-xs sm:w-[132px] lg:w-[124px] 2xl:w-[132px]"
+              >
+                <SelectValue placeholder={ui.cardsPerPageLabel} />
+              </SelectTrigger>
+              <SelectContent align="start">
+                {KNOWLEDGE_CARDS_PER_PAGE_OPTIONS.map((count) => (
+                  <SelectItem key={count} value={String(count)} className="text-xs">
+                    {ui.formatCardsPerPageOption(count)}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom" className="text-xs">
+                  {ui.cardsPerPageCustom}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {pageSizeSelectValue === "custom" ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={500}
+                  value={customPageSizeDraft}
+                  aria-label={ui.cardsPerPageInputAria}
+                  onChange={(event) => setCustomPageSizeDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      applyCustomPageSize();
+                    }
+                  }}
+                  className="h-9 min-h-9 w-20 bg-background/80 text-xs sm:min-h-0"
+                />
+                <OSIconControl
+                  type="button"
+                  size="icon-sm"
+                  osSize="none"
+                  className="h-9 min-h-9 w-9 shrink-0"
+                  aria-label={ui.cardsPerPageApply}
+                  onClick={applyCustomPageSize}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </OSIconControl>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <OSSegmentedControl
@@ -253,34 +345,45 @@ export function KnowledgeTopControlBar() {
         aria-label={ui.quickFilterManager.title}
       >
         {visibleQuickFilters.length > 0 ? (
-          <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {visibleQuickFilters.map((def) => {
-              const Icon = KNOWLEDGE_QUICK_FILTER_ICON_COMPONENTS[def.icon];
-              const isActive = activeQuickFilters.includes(def.id);
-              const tone = quickFilterToneFor(def);
-              const label = getKnowledgeQuickFilterDisplayLabel(
-                def,
-                ui.quickFilters as Record<KnowledgeBuiltinQuickFilterId, string>,
-              );
-              return (
-                <OSControl
-                  key={def.id}
-                  type="button"
-                  variant={isActive ? "secondary" : "outline"}
-                  size="sm"
-                  osSize="compact"
-                  className={cn(
-                    "shrink-0 gap-1 rounded-full border px-2.5 text-[11px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]",
-                    isActive ? tone.active : QUICK_FILTER_IDLE_CLASS,
-                  )}
-                  aria-pressed={isActive}
-                  onClick={() => toggleQuickFilter(def.id)}
-                >
-                  <Icon className="h-3 w-3 shrink-0" />
-                  <span className="hidden sm:inline">{label}</span>
-                </OSControl>
-              );
-            })}
+          <div className="relative min-w-0 flex-1">
+            <div
+              className="flex min-w-0 gap-1 overflow-x-auto pb-0.5 pr-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to right, #000 calc(100% - 2rem), transparent)",
+                maskImage:
+                  "linear-gradient(to right, #000 calc(100% - 2rem), transparent)",
+              }}
+            >
+              {visibleQuickFilters.map((def) => {
+                const Icon = KNOWLEDGE_QUICK_FILTER_ICON_COMPONENTS[def.icon];
+                const isActive = activeQuickFilters.includes(def.id);
+                const tone = quickFilterToneFor(def);
+                const label = getKnowledgeQuickFilterDisplayLabel(
+                  def,
+                  ui.quickFilters as Record<KnowledgeBuiltinQuickFilterId, string>,
+                );
+                return (
+                  <OSControl
+                    key={def.id}
+                    type="button"
+                    variant={isActive ? "secondary" : "outline"}
+                    size="sm"
+                    osSize="compact"
+                    className={cn(
+                      "shrink-0 gap-1 rounded-full border px-2.5 text-[11px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]",
+                      isActive ? tone.active : QUICK_FILTER_IDLE_CLASS,
+                    )}
+                    aria-pressed={isActive}
+                    data-selection-glow={isActive ? "active" : undefined}
+                    onClick={() => toggleQuickFilter(def.id)}
+                  >
+                    <Icon className="h-3 w-3 shrink-0" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </OSControl>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="min-w-0 flex-1" />
@@ -290,7 +393,7 @@ export function KnowledgeTopControlBar() {
           variant="outline"
           size="sm"
           osSize="compact"
-          className="shrink-0 gap-1 rounded-full border-border/60 bg-background/70 px-2.5 text-[11px] font-medium text-muted-foreground shadow-none hover:border-foreground/20 hover:bg-muted/60 hover:text-foreground focus-visible:ring-lime-300/40 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+          className="relative z-10 shrink-0 gap-1 rounded-full border-border/60 bg-background/70 px-2.5 text-[11px] font-medium text-muted-foreground shadow-[-10px_0_20px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.42)] hover:border-foreground/20 hover:bg-muted/60 hover:text-foreground hover:shadow-[-12px_0_24px_rgba(15,23,42,0.13),inset_0_1px_0_rgba(255,255,255,0.48)] focus-visible:ring-lime-300/40 dark:bg-white/[0.04] dark:shadow-[-12px_0_24px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.08)] dark:hover:bg-white/[0.07] dark:hover:shadow-[-14px_0_28px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.10)]"
           onClick={() => setQuickFiltersOpen(true)}
           aria-label={ui.quickFilterManager.manageButton}
         >

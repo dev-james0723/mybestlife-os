@@ -10,7 +10,6 @@ import {
 import {
   QUICK_TASK_PRESET_KEYS,
   QUICK_TASK_PRESET_VISUAL_SUBJECT,
-  guessPresetKeyFromTaskLabel,
   type QuickTaskPresetKey,
 } from "@/lib/daily-planner/quick-task-preset-meta";
 import { normalizeQuickTasksJson } from "@/lib/daily-planner/normalize-quick-task";
@@ -75,10 +74,10 @@ export async function POST() {
       typeof presetFromRow === "string" &&
       QUICK_TASK_PRESET_KEYS.includes(presetFromRow as QuickTaskPresetKey)
         ? (presetFromRow as QuickTaskPresetKey)
-        : guessPresetKeyFromTaskLabel(label);
+        : null;
 
     const subject = presetKey
-      ? `${QUICK_TASK_PRESET_VISUAL_SUBJECT[presetKey]} User-chosen label (context only): ${label}.`
+      ? `${QUICK_TASK_PRESET_VISUAL_SUBJECT[presetKey]} Exact task label: ${label}.`
       : label;
 
     try {

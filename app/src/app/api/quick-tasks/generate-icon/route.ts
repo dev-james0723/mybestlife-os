@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       : null;
 
   const subject = presetKey
-    ? `${QUICK_TASK_PRESET_VISUAL_SUBJECT[presetKey]} User-chosen label (context only): ${taskLabel}.`
+    ? `${QUICK_TASK_PRESET_VISUAL_SUBJECT[presetKey]} Exact task label: ${taskLabel}.`
     : taskLabel;
 
   const prompt = buildLiquidGlassQuickTaskIconPrompt(subject);

@@ -17,10 +17,10 @@ import { useJapaneseStudySessions } from "@/hooks/use-japanese-study";
 import { useJournalEntries } from "@/hooks/use-journal";
 import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
-import type { AnalyticsRangeKey, LifeAnalytics } from "@/lib/analytics/types";
+import type { AnalyticsRangeSelection, LifeAnalytics } from "@/lib/analytics/types";
 
-export function useLifeAnalytics(rangeKey: AnalyticsRangeKey) {
-  const range = useMemo(() => getAnalyticsDateRange(rangeKey), [rangeKey]);
+export function useLifeAnalytics(selection: AnalyticsRangeSelection) {
+  const range = useMemo(() => getAnalyticsDateRange(selection), [selection]);
   const { user, isLoading: authLoading } = useAuth();
   const tasks = useTasks();
   const projects = useProjects();

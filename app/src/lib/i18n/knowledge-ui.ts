@@ -147,6 +147,16 @@ const en: KnowledgeUiCopy = {
     linked: "Most connected",
     sourceDate: "Source date",
   },
+  cardsPerPageLabel: "Cards per page",
+  cardsPerPageCustom: "Custom",
+  cardsPerPageApply: "Apply custom page size",
+  cardsPerPageInputAria: "Custom cards per page",
+  formatCardsPerPageOption: (count) => `${count} / page`,
+  formatPaginationRange: (start, end, total) =>
+    `Showing ${start}-${end} of ${total}`,
+  formatPaginationPage: (page, totalPages) => `Page ${page} of ${totalPages}`,
+  previousPage: "Previous page",
+  nextPage: "Next page",
   quickFilters: {
     recent: "Recent",
     social: "Social",

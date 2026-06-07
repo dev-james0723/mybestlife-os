@@ -8,6 +8,7 @@ import type { AppLocale } from "@/lib/i18n/app-locale";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { IdeaCategoryBadge } from "./IdeaCategoryBadge";
 import { Badge } from "@/components/ui/badge";
+import { OptimizedThumbnailImage } from "@/components/shared/OptimizedThumbnailImage";
 import { formatDateShort } from "@/lib/utils/date";
 import {
   ideaCardVisual,
@@ -80,12 +81,12 @@ export function IdeaCard({
       {hasVisualBackground && visual?.imageUrl ? (
         <>
           <div className="absolute inset-0" aria-hidden>
-            {/* eslint-disable-next-line @next/next/no-img-element -- Gemini/Supabase public card visual URL */}
-            <img
+            <OptimizedThumbnailImage
               src={visual.imageUrl}
               alt=""
               className="h-full w-full object-cover object-center"
-              loading="lazy"
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 520px"
+              variant="card"
             />
           </div>
           <div className="absolute inset-0 bg-black/45" aria-hidden />

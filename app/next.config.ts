@@ -46,6 +46,13 @@ function supabaseStorageHostname(url: string): string {
   }
 }
 const supabaseHostname = supabaseStorageHostname(supabaseUrl);
+const optimizedThumbnailRemotePatterns = [
+  { protocol: "https" as const, hostname: "i.ytimg.com", pathname: "/vi/**" },
+  { protocol: "https" as const, hostname: "i.ytimg.com", pathname: "/vi_webp/**" },
+  { protocol: "https" as const, hostname: "img.youtube.com", pathname: "/vi/**" },
+  { protocol: "https" as const, hostname: "img.youtube.com", pathname: "/vi_webp/**" },
+  { protocol: "https" as const, hostname: "avatars.githubusercontent.com", pathname: "/**" },
+];
 
 /** `/_next` dev cross-site check uses Origin *hostname* only (no port). */
 const allowedDevOriginsHostnames = [
@@ -115,9 +122,12 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV ?? "",
   },
   images: {
-    remotePatterns: supabaseHostname
-      ? [{ protocol: "https", hostname: supabaseHostname, pathname: "/storage/v1/object/public/**" }]
-      : [],
+    remotePatterns: [
+      ...(supabaseHostname
+        ? [{ protocol: "https" as const, hostname: supabaseHostname, pathname: "/storage/v1/object/public/**" }]
+        : []),
+      ...optimizedThumbnailRemotePatterns,
+    ],
   },
   outputFileTracingRoot: workspaceRoot,
   turbopack: {

@@ -13,6 +13,49 @@ export function knowledgeFilesProxyUrlFromStoragePath(storagePath: string): stri
   return `/api/knowledge-files/${segments}`;
 }
 
+export type KnowledgeFileImageTransform = {
+  width?: number;
+  height?: number;
+  quality?: number;
+  resize?: "cover" | "contain" | "fill";
+};
+
+export const KNOWLEDGE_CARD_IMAGE_TRANSFORM: Required<KnowledgeFileImageTransform> = {
+  width: 640,
+  height: 400,
+  quality: 70,
+  resize: "cover",
+};
+
+export const KNOWLEDGE_DETAIL_IMAGE_TRANSFORM: Required<KnowledgeFileImageTransform> = {
+  width: 960,
+  height: 540,
+  quality: 72,
+  resize: "cover",
+};
+
+export function isKnowledgeFilesProxyUrl(url: string | undefined | null): boolean {
+  return typeof url === "string" && url.trim().startsWith("/api/knowledge-files/");
+}
+
+export function knowledgeFilesProxyUrlWithTransform(
+  url: string,
+  transform: KnowledgeFileImageTransform,
+): string {
+  if (!isKnowledgeFilesProxyUrl(url)) return url;
+
+  try {
+    const parsed = new URL(url, "http://local.knowledge");
+    if (transform.width) parsed.searchParams.set("w", String(transform.width));
+    if (transform.height) parsed.searchParams.set("h", String(transform.height));
+    if (transform.quality) parsed.searchParams.set("q", String(transform.quality));
+    if (transform.resize) parsed.searchParams.set("resize", transform.resize);
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return url;
+  }
+}
+
 /**
  * Rewrite legacy Supabase public/sign URLs for `knowledge-files` into proxy URLs so images load.
  */

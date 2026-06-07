@@ -5,6 +5,7 @@ import { HeartPulse } from "lucide-react";
 
 import { GlassPanel } from "@/components/ui/glass-panel";
 import type {
+  AnalyticsBucketGranularity,
   EmotionExecutionBucket,
   EmotionQuadrant,
 } from "@/lib/analytics/types";
@@ -36,7 +37,7 @@ export function EmotionExecutionHeatmap({
   interpretation: string;
   hasJournalData: boolean;
   hasExecutionData: boolean;
-  granularity: "day" | "week";
+  granularity: AnalyticsBucketGranularity;
 }) {
   const defaultBucket = useMemo(
     () =>
@@ -79,6 +80,8 @@ export function EmotionExecutionHeatmap({
                 "grid gap-1.5",
                 granularity === "day"
                   ? "grid-cols-7 sm:[grid-template-columns:repeat(10,minmax(0,1fr))] md:[grid-template-columns:repeat(14,minmax(0,1fr))]"
+                  : granularity === "week"
+                    ? "grid-cols-6 sm:[grid-template-columns:repeat(8,minmax(0,1fr))] md:[grid-template-columns:repeat(10,minmax(0,1fr))]"
                   : "grid-cols-6 sm:[grid-template-columns:repeat(8,minmax(0,1fr))] md:[grid-template-columns:repeat(10,minmax(0,1fr))]",
               )}
             >

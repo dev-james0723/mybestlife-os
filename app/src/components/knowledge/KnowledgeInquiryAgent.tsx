@@ -578,7 +578,7 @@ export function KnowledgeInquiryAgent() {
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="rounded-xl border border-border/70 bg-card/70 shadow-sm"
+            className="rounded-xl border border-lime-900/10 bg-[linear-gradient(135deg,rgba(247,250,239,0.94)_0%,rgba(233,241,215,0.9)_48%,rgba(220,232,188,0.82)_100%)] shadow-[0_18px_54px_rgba(79,103,34,0.14),inset_0_1px_0_rgba(255,255,255,0.54)] dark:border-lime-300/18 dark:bg-[linear-gradient(135deg,#11140e_0%,#151b10_48%,#202911_100%)] dark:shadow-[0_22px_64px_rgba(6,12,4,0.48),inset_0_1px_0_rgba(255,255,255,0.06)]"
             aria-labelledby="knowledge-inquiry-agent-title"
           >
             <div
@@ -592,7 +592,7 @@ export function KnowledgeInquiryAgent() {
         <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
-              <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-lime-800/70 dark:text-lime-200/65">
                 <Bot className="h-3.5 w-3.5" aria-hidden />
                 {ui.eyebrow}
               </p>
@@ -627,13 +627,13 @@ export function KnowledgeInquiryAgent() {
             <label htmlFor="knowledge-inquiry-input" className="sr-only">
               {ui.inputLabel}
             </label>
-            <div className="rounded-lg border border-border/70 bg-background/80 p-2 shadow-inner">
+            <div className="rounded-lg border border-lime-900/10 bg-white/62 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.52),inset_0_16px_42px_rgba(85,112,39,0.08)] dark:border-lime-300/14 dark:bg-black/24 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <Textarea
                 id="knowledge-inquiry-input"
                 value={draftInquiry}
                 onChange={(event) => setDraftInquiry(event.target.value)}
                 placeholder={ui.inputPlaceholder}
-                className="min-h-[88px] resize-none border-0 bg-transparent p-2 text-sm leading-6 shadow-none focus-visible:ring-0"
+                className="min-h-[88px] resize-none border-0 bg-transparent p-2 text-sm leading-6 shadow-none placeholder:text-muted-foreground/75 focus-visible:ring-0"
                 aria-describedby="knowledge-inquiry-status"
               />
               {(speech.interimTranscript || speech.transcript) && speech.isListening ? (
@@ -641,7 +641,7 @@ export function KnowledgeInquiryAgent() {
                   {speech.interimTranscript || speech.transcript}
                 </p>
               ) : null}
-              <div className="flex flex-col gap-2 border-t border-border/50 pt-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 border-t border-lime-900/10 pt-2 dark:border-lime-300/10 sm:flex-row sm:items-center sm:justify-between">
                 <div
                   id="knowledge-inquiry-status"
                   className="min-h-5 text-xs text-muted-foreground"
@@ -700,7 +700,7 @@ export function KnowledgeInquiryAgent() {
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Mode
             </span>
-            <div className="flex flex-wrap gap-1 rounded-lg border border-border/60 bg-background/60 p-1">
+            <div className="flex flex-wrap gap-1 rounded-lg border border-lime-900/10 bg-white/48 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] dark:border-lime-300/12 dark:bg-black/20">
               {RETRIEVAL_MODES.map((mode) => (
                 <button
                   key={mode}
@@ -708,8 +708,8 @@ export function KnowledgeInquiryAgent() {
                   className={cn(
                     "min-h-11 rounded-md px-3 py-2 text-xs font-medium capitalize transition-colors sm:min-h-9",
                     retrievalMode === mode
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                      ? "bg-lime-300 text-slate-950 shadow-[0_7px_18px_rgba(132,176,45,0.2)]"
+                      : "text-muted-foreground hover:bg-lime-300/10 hover:text-foreground",
                   )}
                   aria-pressed={retrievalMode === mode}
                   onClick={() => {
@@ -727,7 +727,7 @@ export function KnowledgeInquiryAgent() {
                   <OSControl
                     type="button"
                     osSize="compact"
-                    className="h-8 gap-1.5 border-border/60 bg-background/70 px-2.5 text-xs text-muted-foreground max-[480px]:ml-10 max-[480px]:max-w-[calc(100%-5rem)]"
+                    className="h-8 gap-1.5 border-lime-900/10 bg-white/54 px-2.5 text-xs text-muted-foreground hover:border-lime-700/20 hover:bg-white/72 dark:border-lime-300/12 dark:bg-black/20 dark:hover:border-lime-300/22 dark:hover:bg-black/28 max-[480px]:ml-10 max-[480px]:max-w-[calc(100%-5rem)]"
                   />
                 }
               >
@@ -772,7 +772,7 @@ export function KnowledgeInquiryAgent() {
               <button
                 key={example}
                 type="button"
-                className="min-h-11 rounded-md border border-border/60 bg-background/70 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:min-h-9"
+                className="min-h-11 rounded-md border border-lime-900/10 bg-white/54 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-lime-700/25 hover:bg-lime-300/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/12 dark:bg-black/18 dark:hover:border-lime-300/25 sm:min-h-9"
                 onClick={() => runInquiry(example)}
               >
                 {example}
@@ -800,7 +800,7 @@ export function KnowledgeInquiryAgent() {
                   <button
                     key={recipe.id}
                     type="button"
-                    className="min-h-11 max-w-full rounded-md border border-border/60 bg-background/70 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:min-h-9"
+                    className="min-h-11 max-w-full rounded-md border border-lime-900/10 bg-white/54 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-lime-700/25 hover:bg-lime-300/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/12 dark:bg-black/18 dark:hover:border-lime-300/25 sm:min-h-9"
                     onClick={() => applyRecipe(recipe)}
                     title={recipe.query}
                   >
@@ -813,10 +813,10 @@ export function KnowledgeInquiryAgent() {
         </div>
 
         {hasRetrievalActivity ? (
-        <div className="min-w-0 border-t border-border/60 bg-muted/15 p-3 xl:border-l xl:border-t-0">
+        <div className="min-w-0 border-t border-lime-900/10 bg-lime-950/[0.025] p-3 dark:border-lime-300/12 dark:bg-black/18 xl:border-l xl:border-t-0">
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
-              <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+              <Sparkles className="h-4 w-4 shrink-0 text-lime-700 dark:text-lime-200" aria-hidden />
               <span className="truncate">
                 {committedInquiry.trim()
                   ? ui.resultsHeading(activeResultCount)
@@ -830,7 +830,7 @@ export function KnowledgeInquiryAgent() {
               {sourceChips.slice(0, 8).map((chip) => (
                 <span
                   key={chip.domain}
-                  className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  className="rounded-full border border-lime-900/10 bg-white/54 px-2 py-0.5 text-[10px] font-medium text-muted-foreground dark:border-lime-300/12 dark:bg-black/18"
                 >
                   {chip.label}
                 </span>
@@ -892,7 +892,7 @@ export function KnowledgeInquiryAgent() {
           ) : null}
 
           {visibleAgentState === "idle" && !committedInquiry.trim() ? (
-            <div className="flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-border/70 bg-background/40 px-4 text-center text-sm leading-6 text-muted-foreground">
+            <div className="flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-lime-900/15 bg-white/36 px-4 text-center text-sm leading-6 text-muted-foreground dark:border-lime-300/18 dark:bg-black/16">
               {ui.inputPlaceholder}
             </div>
           ) : serverResults.length > 0 ? (
@@ -932,7 +932,7 @@ export function KnowledgeInquiryAgent() {
             </div>
           ) : (visibleAgentState === "analyzing" || visibleAgentState === "matching" || visibleAgentState === "transcribing") && displayMatches.length > 0 ? (
             <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
-              <p className="rounded-md border border-border/60 bg-background/60 px-2 py-1 text-[11px] text-muted-foreground">
+              <p className="rounded-md border border-lime-900/10 bg-white/48 px-2 py-1 text-[11px] text-muted-foreground dark:border-lime-300/12 dark:bg-black/20">
                 {statusLabel(visibleAgentState, ui)}
               </p>
               {displayMatches.map((match) => (
@@ -948,8 +948,8 @@ export function KnowledgeInquiryAgent() {
               ))}
             </div>
           ) : visibleAgentState === "analyzing" || visibleAgentState === "matching" || visibleAgentState === "transcribing" ? (
-            <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/70 bg-background/40 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 text-primary motion-safe:animate-spin" />
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-lime-900/15 bg-white/36 text-sm text-muted-foreground dark:border-lime-300/18 dark:bg-black/16">
+              <Loader2 className="h-5 w-5 text-lime-700 motion-safe:animate-spin dark:text-lime-200" />
               {statusLabel(visibleAgentState, ui)}
             </div>
           ) : displayMatches.length > 0 ? (
@@ -967,7 +967,7 @@ export function KnowledgeInquiryAgent() {
               ))}
             </div>
           ) : (
-            <div className="flex min-h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 bg-background/40 px-4 text-center">
+            <div className="flex min-h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-lime-900/15 bg-white/36 px-4 text-center dark:border-lime-300/18 dark:bg-black/16">
               <CheckCircle2 className="mb-3 h-5 w-5 text-muted-foreground" aria-hidden />
               <h3 className="text-sm font-medium">{ui.noStrongMatchesTitle}</h3>
               <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">
@@ -1020,13 +1020,13 @@ function RetrievalTriggerButton({
       whileHover={reduceMotion ? undefined : { y: -1 }}
       whileTap={reduceMotion ? undefined : { scale: 0.995 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
-      className="group relative flex min-h-[76px] w-full overflow-hidden rounded-xl border border-amber-300/25 bg-[linear-gradient(135deg,#1b1206_0%,#3f2b0c_52%,#7b5517_100%)] p-3 text-left text-amber-50 shadow-[0_18px_44px_rgba(83,52,12,0.26)] outline-none transition-[border-color,box-shadow,filter] hover:border-amber-200/45 hover:shadow-[0_20px_52px_rgba(83,52,12,0.34)] focus-visible:ring-2 focus-visible:ring-amber-300/45 sm:p-3.5"
+      className="group relative flex min-h-[76px] w-full overflow-hidden rounded-xl border border-lime-300/24 bg-[linear-gradient(135deg,#10140b_0%,#1c2a10_52%,#4f661a_100%)] p-3 text-left text-lime-50 shadow-[0_18px_44px_rgba(57,80,21,0.28)] outline-none transition-[border-color,box-shadow,filter] hover:border-lime-200/45 hover:shadow-[0_20px_52px_rgba(69,96,24,0.36)] focus-visible:ring-2 focus-visible:ring-lime-300/50 sm:p-3.5"
       aria-expanded="false"
       aria-controls={panelId}
       onClick={onOpen}
     >
       <span
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,229,156,0.18),transparent_28%),linear-gradient(90deg,transparent,rgba(255,222,144,0.12),transparent)] opacity-75 transition-opacity group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(217,249,157,0.2),transparent_28%),linear-gradient(90deg,transparent,rgba(190,242,100,0.12),transparent)] opacity-75 transition-opacity group-hover:opacity-100"
         aria-hidden
       />
       {!reduceMotion ? (
@@ -1034,7 +1034,7 @@ function RetrievalTriggerButton({
           {sparkles.map((sparkle) => (
             <motion.span
               key={`${sparkle.top}-${sparkle.right}`}
-              className="absolute h-1.5 w-1.5 rounded-full bg-amber-200/90 shadow-[0_0_14px_rgba(252,211,77,0.9)]"
+              className="absolute h-1.5 w-1.5 rounded-full bg-lime-200/90 shadow-[0_0_14px_rgba(190,242,100,0.9)]"
               style={{ top: sparkle.top, right: sparkle.right }}
               animate={{ opacity: [0.25, 1, 0.25], scale: [0.75, 1.35, 0.75] }}
               transition={{
@@ -1049,24 +1049,24 @@ function RetrievalTriggerButton({
       ) : null}
       <span className="relative z-10 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="flex min-w-0 items-start gap-3">
-          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-200/20 bg-black/25 text-amber-200 shadow-inner">
+          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-lime-200/20 bg-black/25 text-lime-200 shadow-inner">
             <Sparkles className="h-4 w-4" aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-amber-100/70">
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-lime-100/70">
               {ui.eyebrow}
             </span>
-            <span className="mt-0.5 block text-base font-semibold leading-tight text-amber-50">
+            <span className="mt-0.5 block text-base font-semibold leading-tight text-lime-50">
               {ui.openRetrieval}
             </span>
-            <span className="mt-1 block max-w-2xl text-xs leading-5 text-amber-50/75 sm:text-sm">
+            <span className="mt-1 block max-w-2xl text-xs leading-5 text-lime-50/75 sm:text-sm">
               {hasActivity
                 ? `${status}. ${ui.openRetrievalDescription}`
                 : ui.openRetrievalDescription}
             </span>
           </span>
         </span>
-        <span className="inline-flex h-9 max-w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-amber-200/25 bg-black/20 px-3 text-xs font-semibold text-amber-50/90 sm:self-center">
+        <span className="inline-flex h-9 max-w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-lime-200/25 bg-black/20 px-3 text-xs font-semibold text-lime-50/90 sm:self-center">
           <span className="truncate">{status}</span>
           <ChevronDown className="h-3.5 w-3.5 -rotate-90 opacity-75" aria-hidden />
         </span>
@@ -1084,10 +1084,10 @@ function AgentStatusBadge({ state, label }: { state: AgentState; label: string }
       className={cn(
         "inline-flex h-8 shrink-0 items-center gap-2 rounded-lg border px-2.5 text-xs font-medium",
         isDone
-          ? "border-primary/25 bg-primary/10 text-primary"
+          ? "border-lime-500/30 bg-lime-300/15 text-lime-700 dark:border-lime-300/28 dark:text-lime-200"
           : isError
             ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200"
-            : "border-border/70 bg-background/80 text-muted-foreground",
+            : "border-lime-900/10 bg-white/58 text-muted-foreground dark:border-lime-300/12 dark:bg-black/20",
       )}
       aria-live="polite"
     >
@@ -1095,9 +1095,9 @@ function AgentStatusBadge({ state, label }: { state: AgentState; label: string }
         className={cn(
           "h-2 w-2 rounded-full",
           isBusy
-            ? "bg-primary motion-safe:animate-pulse"
+            ? "bg-lime-600 motion-safe:animate-pulse dark:bg-lime-300"
             : isDone
-              ? "bg-primary"
+              ? "bg-lime-600 dark:bg-lime-300"
               : isError
                 ? "bg-rose-500"
                 : "bg-muted-foreground/50",
@@ -1119,8 +1119,8 @@ function PinnedSourcesStrip({
   onOpen: (result: RetrievalResult) => void;
 }) {
   return (
-    <div className="mb-2 rounded-lg border border-amber-300/20 bg-amber-950/10 p-2 dark:bg-amber-300/[0.04]">
-      <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-200">
+    <div className="mb-2 rounded-lg border border-lime-500/20 bg-lime-300/[0.06] p-2 dark:border-lime-300/16 dark:bg-lime-300/[0.04]">
+      <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-lime-700 dark:text-lime-200">
         <Pin className="h-3.5 w-3.5" />
         {ui.pinnedSources}
       </div>
@@ -1129,7 +1129,7 @@ function PinnedSourcesStrip({
           <button
             key={`${result.id}:${result.sourceId}`}
             type="button"
-            className="min-w-[180px] max-w-[240px] rounded-md border border-border/60 bg-background/75 px-2.5 py-2 text-left transition-colors hover:border-amber-300/40"
+            className="min-w-[180px] max-w-[240px] rounded-md border border-lime-900/10 bg-white/64 px-2.5 py-2 text-left transition-colors hover:border-lime-600/30 dark:border-lime-300/12 dark:bg-black/22 dark:hover:border-lime-300/28"
             onClick={() => onOpen(result)}
           >
             <span className="block truncate text-xs font-medium">{result.title}</span>
@@ -1155,11 +1155,11 @@ function RetrievalCompareTray({
   onCompare: () => void;
 }) {
   return (
-    <div className="mb-2 rounded-lg border border-border/70 bg-background/65 p-3">
+    <div className="mb-2 rounded-lg border border-lime-900/10 bg-white/56 p-3 dark:border-lime-300/12 dark:bg-black/20">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-xs font-semibold">
-            <GitCompareArrows className="h-3.5 w-3.5 text-primary" />
+            <GitCompareArrows className="h-3.5 w-3.5 text-lime-700 dark:text-lime-200" />
             {ui.compareTrayTitle}
           </p>
           <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
@@ -1180,11 +1180,11 @@ function RetrievalCompareTray({
         {results.slice(0, 4).map((result) => (
           <div
             key={`${result.id}:${result.sourceId}`}
-            className="rounded-md border border-border/60 bg-muted/25 px-2.5 py-2"
+            className="rounded-md border border-lime-900/10 bg-lime-950/[0.035] px-2.5 py-2 dark:border-lime-300/10 dark:bg-lime-300/[0.035]"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-xs font-medium">{result.title}</span>
-              <span className="shrink-0 text-[10px] font-semibold text-primary">
+              <span className="shrink-0 text-[10px] font-semibold text-lime-700 dark:text-lime-200">
                 {Math.round(result.scores.combined * 100)}%
               </span>
             </div>
@@ -1254,15 +1254,15 @@ function RetrievalResultCard({
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className="rounded-lg border border-border/70 bg-background/85 p-3 shadow-sm"
+      className="rounded-lg border border-lime-900/10 bg-white/68 p-3 shadow-[0_10px_28px_rgba(63,82,28,0.08)] dark:border-lime-300/10 dark:bg-[#10150d]/72 dark:shadow-[0_12px_34px_rgba(0,0,0,0.2)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-md border border-border/60 bg-muted/35 px-1.5 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
+            <span className="rounded-md border border-lime-900/10 bg-lime-950/[0.035] px-1.5 py-0.5 text-[10px] font-medium capitalize text-muted-foreground dark:border-lime-300/10 dark:bg-lime-300/[0.035]">
               {sourceLabel}
             </span>
-            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+            <span className="rounded-md bg-lime-300/15 px-1.5 py-0.5 text-[10px] font-semibold text-lime-700 dark:text-lime-200">
               {result.documentKind.replace(/_/g, " ")}
             </span>
           </div>
@@ -1270,7 +1270,7 @@ function RetrievalResultCard({
             {result.title}
           </h3>
         </div>
-        <span className="shrink-0 tabular-nums text-xs font-semibold text-primary">
+        <span className="shrink-0 tabular-nums text-xs font-semibold text-lime-700 dark:text-lime-200">
           {score}%
         </span>
       </div>
@@ -1292,19 +1292,19 @@ function RetrievalResultCard({
 
       <div className="mt-2 flex flex-wrap gap-1">
         {result.pageNumber != null ? (
-          <span className="rounded-md border border-border/60 bg-muted/35 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <span className="rounded-md border border-lime-900/10 bg-lime-950/[0.035] px-1.5 py-0.5 text-[10px] text-muted-foreground dark:border-lime-300/10 dark:bg-lime-300/[0.035]">
             page {result.pageNumber}
           </span>
         ) : null}
         {result.sectionPath ? (
-          <span className="rounded-md border border-border/60 bg-muted/35 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <span className="rounded-md border border-lime-900/10 bg-lime-950/[0.035] px-1.5 py-0.5 text-[10px] text-muted-foreground dark:border-lime-300/10 dark:bg-lime-300/[0.035]">
             {result.sectionPath}
           </span>
         ) : null}
         {visibleTags.map((tag) => (
           <span
             key={tag}
-            className="rounded-md border border-border/50 bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground"
+            className="rounded-md border border-lime-900/10 bg-white/54 px-1.5 py-0.5 text-[10px] text-muted-foreground dark:border-lime-300/10 dark:bg-black/18"
           >
             {tag}
           </span>
@@ -1316,7 +1316,7 @@ function RetrievalResultCard({
           type="button"
           osSize="compact"
           onClick={onTogglePin}
-          className={cn("gap-1.5", isPinned && "border-amber-300/40 text-amber-700 dark:text-amber-200")}
+          className={cn("gap-1.5", isPinned && "border-lime-500/35 text-lime-700 dark:border-lime-300/28 dark:text-lime-200")}
         >
           {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
           {isPinned ? ui.unpinSource : ui.pinSource}
@@ -1325,7 +1325,7 @@ function RetrievalResultCard({
           type="button"
           osSize="compact"
           onClick={onToggleCompare}
-          className={cn("gap-1.5", isCompared && "border-primary/35 text-primary")}
+          className={cn("gap-1.5", isCompared && "border-lime-500/35 text-lime-700 dark:border-lime-300/28 dark:text-lime-200")}
         >
           <GitCompareArrows className="h-3.5 w-3.5" />
           {isCompared ? ui.removeCompareSource : ui.compareSource}
@@ -1394,12 +1394,12 @@ function InquiryResultCard({
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className="rounded-lg border border-border/70 bg-background/85 p-3 shadow-sm"
+      className="rounded-lg border border-lime-900/10 bg-white/68 p-3 shadow-[0_10px_28px_rgba(63,82,28,0.08)] dark:border-lime-300/10 dark:bg-[#10150d]/72 dark:shadow-[0_12px_34px_rgba(0,0,0,0.2)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-md border border-border/60 bg-muted/35 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="rounded-md border border-lime-900/10 bg-lime-950/[0.035] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground dark:border-lime-300/10 dark:bg-lime-300/[0.035]">
               {category}
             </span>
             <span className="rounded-md bg-foreground/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
@@ -1410,7 +1410,7 @@ function InquiryResultCard({
             {match.item.title}
           </h3>
         </div>
-        <span className="shrink-0 tabular-nums text-xs font-semibold text-primary">
+        <span className="shrink-0 tabular-nums text-xs font-semibold text-lime-700 dark:text-lime-200">
           {ui.relevanceScore(match.normalizedScore)}
         </span>
       </div>
@@ -1434,7 +1434,7 @@ function InquiryResultCard({
         {match.matchedConcepts.slice(0, 3).map((concept) => (
           <span
             key={concept}
-            className="rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+            className="rounded-md border border-lime-500/20 bg-lime-300/12 px-1.5 py-0.5 text-[10px] text-lime-700 dark:text-lime-200"
             title={ui.matchedConcepts}
           >
             {concept}
@@ -1443,7 +1443,7 @@ function InquiryResultCard({
         {match.matchedKeywords.slice(0, Math.max(0, 4 - match.matchedConcepts.length)).map((keyword) => (
           <span
             key={keyword}
-            className="rounded-md border border-border/60 bg-muted/35 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+            className="rounded-md border border-lime-900/10 bg-lime-950/[0.035] px-1.5 py-0.5 text-[10px] text-muted-foreground dark:border-lime-300/10 dark:bg-lime-300/[0.035]"
             title={ui.matchedKeywords}
           >
             {keyword}
@@ -1452,14 +1452,14 @@ function InquiryResultCard({
         {tags.map((tag) => (
           <span
             key={tag}
-            className="rounded-md border border-border/50 bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground"
+            className="rounded-md border border-lime-900/10 bg-white/54 px-1.5 py-0.5 text-[10px] text-muted-foreground dark:border-lime-300/10 dark:bg-black/18"
           >
             {tag}
           </span>
         ))}
       </div>
 
-      <div className="mt-3 rounded-md bg-muted/35 px-2 py-1.5 text-[11px] leading-5 text-muted-foreground">
+      <div className="mt-3 rounded-md bg-lime-950/[0.035] px-2 py-1.5 text-[11px] leading-5 text-muted-foreground dark:bg-lime-300/[0.035]">
         <span className="font-medium text-foreground">{ui.suggestedAction}:</span>{" "}
         {match.suggestedAction}
       </div>

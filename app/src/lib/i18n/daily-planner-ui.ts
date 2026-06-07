@@ -304,6 +304,10 @@ export type DailyPlannerUiCopy = {
   quickTaskBlocksLabel: string;
   quickTaskToastAdded: (name: string) => string;
   quickTaskToastDeleted: (name: string) => string;
+  quickTaskIconRegenerate: string;
+  quickTaskIconGenerating: string;
+  quickTaskIconRegenerated: (name: string) => string;
+  quickTaskIconRegenerateFailed: string;
   /** Button to run Gemini liquid-glass icon generation for tasks missing `iconUrl`. */
   quickTaskAiIcons: string;
   quickTaskAiIconsGenerating: string;
@@ -576,6 +580,10 @@ const en: DailyPlannerUiCopy = {
   quickTaskBlocksLabel: "Time blocks",
   quickTaskToastAdded: (name) => `Added "${name}" to quick tasks`,
   quickTaskToastDeleted: (name) => `Removed "${name}" from quick tasks`,
+  quickTaskIconRegenerate: "Regenerate icon",
+  quickTaskIconGenerating: "Generating icon…",
+  quickTaskIconRegenerated: (name) => `Regenerated icon for "${name}"`,
+  quickTaskIconRegenerateFailed: "Could not regenerate this icon.",
   quickTaskAiIcons: "Generate AI icons (Liquid Glass)",
   quickTaskAiIconsGenerating: "Generating icons…",
   quickTaskAiIconsToastDone: (count) =>
@@ -802,6 +810,10 @@ const zhTW: DailyPlannerUiCopy = {
   quickTaskBlocksLabel: "時間塊數量",
   quickTaskToastAdded: (name) => `已將「${name}」加入快速任務`,
   quickTaskToastDeleted: (name) => `已從快速任務中移除「${name}」`,
+  quickTaskIconRegenerate: "重新生成圖示",
+  quickTaskIconGenerating: "正在生成圖示…",
+  quickTaskIconRegenerated: (name) => `已重新生成「${name}」的圖示`,
+  quickTaskIconRegenerateFailed: "無法重新生成此圖示。",
   quickTaskAiIcons: "生成 AI 圖示（Liquid Glass）",
   quickTaskAiIconsGenerating: "正在生成圖示…",
   quickTaskAiIconsToastDone: (count) =>
@@ -1068,6 +1080,10 @@ const zhCN: DailyPlannerUiCopy = {
   quickTaskBlocksLabel: "时间块数量",
   quickTaskToastAdded: (name) => `已将「${name}」添加到快速任务`,
   quickTaskToastDeleted: (name) => `已从快速任务中移除「${name}」`,
+  quickTaskIconRegenerate: "重新生成图标",
+  quickTaskIconGenerating: "正在生成图标…",
+  quickTaskIconRegenerated: (name) => `已重新生成「${name}」的图标`,
+  quickTaskIconRegenerateFailed: "无法重新生成此图标。",
   quickTaskAiIcons: "生成 AI 图标（Liquid Glass）",
   quickTaskAiIconsGenerating: "正在生成图标…",
   quickTaskAiIconsToastDone: (count) =>

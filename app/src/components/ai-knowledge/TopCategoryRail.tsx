@@ -81,6 +81,7 @@ export function TopCategoryRail({
       ariaLabel={ui.filters.allCategories}
       allowReselect
       layoutId="ai-knowledge-category-active-pill"
+      selectionGlow
     />
   );
 }

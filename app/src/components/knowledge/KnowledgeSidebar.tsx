@@ -3,11 +3,6 @@
 import { useMemo, useState } from "react";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { CONTENT_TYPES, typeColors, type ContentType } from "@/types/knowledge";
-import type { KnowledgeCategory } from "@/types/knowledge-source";
-import {
-  getCategoryLabel,
-  KNOWLEDGE_CATEGORY_ORDER,
-} from "@/lib/knowledge/labels";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -32,8 +27,9 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
   const smartCollections = useKnowledgeStore((s) => s.smartCollections);
   const activeTypeFilters = useKnowledgeStore((s) => s.activeTypeFilters);
   const toggleTypeFilter = useKnowledgeStore((s) => s.toggleTypeFilter);
+  const clearTypeFilters = useKnowledgeStore((s) => s.clearTypeFilters);
   const activeCategoryFilters = useKnowledgeStore((s) => s.activeCategoryFilters);
-  const toggleCategoryFilter = useKnowledgeStore((s) => s.toggleCategoryFilter);
+  const clearCategoryFilters = useKnowledgeStore((s) => s.clearCategoryFilters);
   const openAIPanel = useKnowledgeStore((s) => s.openAIPanel);
   const closeMobileSidebar = useKnowledgeStore((s) => s.closeMobileSidebar);
   const activeSmartCollectionId = useKnowledgeStore((s) => s.activeSmartCollectionId);
@@ -46,20 +42,6 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
     }
     return counts;
   }, [items]);
-
-  const categoryCounts = useMemo(() => {
-    const counts: Partial<Record<KnowledgeCategory, number>> = {};
-    for (const item of items) {
-      if (!item.category) continue;
-      counts[item.category] = (counts[item.category] ?? 0) + 1;
-    }
-    return counts;
-  }, [items]);
-
-  const activeCategoryList = useMemo(
-    () => KNOWLEDGE_CATEGORY_ORDER.filter((c) => (categoryCounts[c] ?? 0) > 0),
-    [categoryCounts],
-  );
 
   const handleTypeClick = (type: ContentType) => {
     toggleTypeFilter(type);
@@ -78,16 +60,28 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
           </p>
           <button
             type="button"
+            aria-pressed={
+              activeTypeFilters.length === 0 &&
+              activeCategoryFilters.length === 0 &&
+              !activeSmartCollectionId
+            }
+            data-selection-glow={
+              activeTypeFilters.length === 0 &&
+              activeCategoryFilters.length === 0 &&
+              !activeSmartCollectionId
+                ? "active"
+                : undefined
+            }
             className={cn(
               "flex items-center justify-between w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors",
               activeTypeFilters.length === 0 &&
+                activeCategoryFilters.length === 0 &&
                 !activeSmartCollectionId &&
                 "bg-accent text-primary font-medium",
             )}
             onClick={() => {
-              if (activeTypeFilters.length > 0) {
-                for (const f of activeTypeFilters) toggleTypeFilter(f);
-              }
+              clearTypeFilters();
+              clearCategoryFilters();
               setActiveSmartCollectionId(null);
               closeMobileSidebar();
             }}
@@ -104,6 +98,8 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
                 <button
                   type="button"
                   key={type}
+                  aria-pressed={isActive}
+                  data-selection-glow={isActive ? "active" : undefined}
                   className={cn(
                     "flex min-h-8 min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-[11px] leading-tight hover:bg-accent transition-colors",
                     isActive && "bg-accent font-medium",
@@ -127,39 +123,6 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
 
         <Separator />
 
-        {activeCategoryList.length > 0 && (
-          <>
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                {ui.categories}
-              </p>
-              {activeCategoryList.map((category) => {
-                const isActive = activeCategoryFilters.includes(category);
-                return (
-                  <button
-                    type="button"
-                    key={category}
-                    className={cn(
-                      "flex items-center justify-between w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors",
-                      isActive && "bg-accent font-medium",
-                    )}
-                    onClick={() => {
-                      toggleCategoryFilter(category);
-                      closeMobileSidebar();
-                    }}
-                  >
-                    <span className="truncate">{getCategoryLabel(category)}</span>
-                    <span className="tabular-nums text-[10px] text-muted-foreground">
-                      {categoryCounts[category] ?? 0}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <Separator />
-          </>
-        )}
-
         {smartCollections.length > 0 && (
           <div className="space-y-1">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
@@ -172,6 +135,7 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
                   type="button"
                   key={col.id}
                   aria-pressed={isColActive}
+                  data-selection-glow={isColActive ? "active" : undefined}
                   className={cn(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent",
                     isColActive && "bg-accent font-medium",

@@ -69,6 +69,7 @@ export function TagTreeNode({
   return (
     <div className="min-w-0">
       <div
+        data-selection-glow={isActive ? "active" : undefined}
         className={cn(
           "group/tag-row flex items-center gap-0.5 rounded-md transition-colors",
           isActive

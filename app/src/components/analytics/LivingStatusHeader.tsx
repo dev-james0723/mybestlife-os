@@ -6,20 +6,20 @@ import { RefreshCw, Sparkles } from "lucide-react";
 
 import { GlassTintPanel } from "@/components/dashboard/glass-tint-panel";
 import { OSControl } from "@/components/ui/os-primitives";
-import type { AnalyticsRangeKey, LifeAnalytics } from "@/lib/analytics/types";
+import type { AnalyticsRangeSelection, LifeAnalytics } from "@/lib/analytics/types";
 import { LifePulseCards } from "./LifePulseCards";
 import { TimeLensControl } from "./TimeLensControl";
 
 type LivingStatusHeaderProps = {
   analytics: LifeAnalytics;
-  range: AnalyticsRangeKey;
-  onRangeChange: (range: AnalyticsRangeKey) => void;
+  rangeSelection: AnalyticsRangeSelection;
+  onRangeSelectionChange: (range: AnalyticsRangeSelection) => void;
 };
 
 export function LivingStatusHeader({
   analytics,
-  range,
-  onRangeChange,
+  rangeSelection,
+  onRangeSelectionChange,
 }: LivingStatusHeaderProps) {
   const reduceMotion = useReducedMotion();
   const updatedLabel = formatDistanceToNow(new Date(analytics.generatedAt), {
@@ -59,7 +59,7 @@ export function LivingStatusHeader({
           </div>
 
           <div className="flex flex-col items-start gap-3 lg:items-end">
-            <TimeLensControl value={range} onChange={onRangeChange} />
+            <TimeLensControl value={rangeSelection} onChange={onRangeSelectionChange} />
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>
                 {analytics.range.startISO} to {analytics.range.endISO}

@@ -52,6 +52,7 @@ export function TagSearchResults({
               type="button"
               onClick={() => onSelect(hit.id)}
               aria-pressed={isActive}
+              data-selection-glow={isActive ? "active" : undefined}
               className={cn(
                 "group/search-row flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors",
                 isActive

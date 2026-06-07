@@ -90,6 +90,8 @@ export function IdeasTagTaxonomyPanel({
                   <button
                     key={token}
                     type="button"
+                    aria-pressed={active}
+                    data-selection-glow={active ? "active" : undefined}
                     className={cn(
                       "flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-accent",
                       active && "bg-accent font-medium",

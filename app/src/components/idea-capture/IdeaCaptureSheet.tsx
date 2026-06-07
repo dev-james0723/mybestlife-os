@@ -194,6 +194,7 @@ function KindChips({
                   }}
                   aria-pressed={kind === "idea" ? active : undefined}
                   aria-label={tooltips[kind]}
+                  data-selection-glow={active ? "active" : undefined}
                   className={cn(
                     "inline-flex min-h-[2rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
                     "transition-[background-color,color,border-color,transform] duration-150 ease-out",
@@ -428,6 +429,7 @@ function ModeButton({
             disabled={disabled}
             aria-label={label}
             aria-pressed={active}
+            data-selection-glow={active ? "active" : undefined}
             className={cn(
               "inline-flex size-8 items-center justify-center rounded-full",
               "transition-colors",

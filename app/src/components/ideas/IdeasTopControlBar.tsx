@@ -236,6 +236,7 @@ export function IdeasTopControlBar() {
                 className={cn("h-7 rounded-full px-2.5 text-[11px]", active && "border-transparent")}
                 onClick={() => toggleQuickFilter(def.id)}
                 aria-pressed={active}
+                data-selection-glow={active ? "active" : undefined}
               >
                 {Icon ? <Icon className="mr-1 h-3 w-3" /> : null}
                 {getIdeaQuickFilterDisplayLabel(

@@ -1410,6 +1410,18 @@ export type NotificationPreferences = {
   updated_at: string;
 };
 
+export type AnalyticsRangePreset = {
+  id: string;
+  user_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  sort_order: number;
+  last_used_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PlantType = "grass" | "sunflower" | "lily" | "orchid" | "apple_tree";
 export type PlantVariant = "normal" | "golden" | "rare";
 export type GardenItemType = "water" | "fertilizer" | "sunlight" | "rare_seed";

@@ -6,11 +6,13 @@
  */
 export function buildLiquidGlassQuickTaskIconPrompt(subjectDescription: string): string {
   const s = subjectDescription.trim();
-  return `Design ONE square mobile UI icon (not a photograph). Subject: ${s}.
+  return `Design ONE square mobile UI icon (not a photograph). Task meaning to visualize: ${s}.
 
 Style (mandatory): Liquid Glass / glassmorphism — frosted translucent tile on a very dark warm base (#141210–#1A1614), subtle white glass border rgba(255,255,255,0.16–0.22), strong backdrop-blur feeling, soft specular highlight along the top edge, gentle inner glow. Minimal neon accent allowed only as tiny highlight (e.g. lime #C8E53A) — do not flood the icon with bright green.
 
-Iconography: simple centered glyph or minimal symbol suggesting the subject; line weight ~1.5px feel; premium dashboard quality like SF Symbols inside a glass chip.
+Personalization: infer the concrete action, object, place, or mood from the exact task wording. Prefer a unique symbol/metaphor for this task over generic preset activity icons. If the phrase is unusual or personal, visualize the most meaningful literal cue from the words rather than defaulting to common productivity symbols.
+
+Iconography: simple centered glyph or minimal symbol suggesting the task meaning; line weight ~1.5px feel; premium dashboard quality like SF Symbols inside a glass chip.
 
 Constraints: absolutely NO text, letters, numbers, watermarks, logos, or photorealistic faces. Square canvas, symbol readable at 32px. Seamless dark background (no frame caption).
 Output: single crisp icon image.`;

@@ -144,7 +144,10 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm">
+    <span
+      data-selection-glow="static"
+      className="inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm"
+    >
       <span className="truncate">{label}</span>
       <button
         type="button"

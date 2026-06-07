@@ -1,0 +1,434 @@
+[
+  {
+    "route": "/en/ideas",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ideas",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ideas -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-ideas-390-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ideas",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ideas",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ideas -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-ideas-1280-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ideas",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ideas",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ideas -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-ideas-390-reduce.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/knowledge-base",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/knowledge-base -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-knowledge-base-390-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/knowledge-base",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/knowledge-base -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-knowledge-base-1280-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/knowledge-base",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/knowledge-base -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-knowledge-base-390-reduce.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ai-knowledge",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ai-knowledge",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ai-knowledge -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-ai-knowledge-390-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ai-knowledge",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ai-knowledge",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ai-knowledge -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-ai-knowledge-1280-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ai-knowledge",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ai-knowledge",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ai-knowledge -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow/en-ai-knowledge-390-reduce.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  }
+]

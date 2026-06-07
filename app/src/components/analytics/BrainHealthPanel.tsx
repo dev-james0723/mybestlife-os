@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { BrainCircuit, Link2Off } from "lucide-react";
 
@@ -7,159 +8,153 @@ import { GlassTintPanel } from "@/components/dashboard/glass-tint-panel";
 import { Badge } from "@/components/ui/badge";
 import type { BrainHealth } from "@/lib/analytics/types";
 
-function NeuronBrainIllustration({ health }: { health: BrainHealth }) {
+const SIGNAL_PATHS = [
+  {
+    d: "M90 145 C132 108 190 108 236 143",
+    stroke: "hsl(190 92% 62% / 0.78)",
+  },
+  {
+    d: "M133 93 C179 80 230 100 277 145",
+    stroke: "hsl(210 94% 64% / 0.72)",
+  },
+  {
+    d: "M121 176 C172 145 231 151 292 184",
+    stroke: "hsl(155 78% 58% / 0.68)",
+  },
+];
+
+const SIGNAL_NODES = [
+  [90, 145],
+  [133, 93],
+  [190, 108],
+  [236, 143],
+  [277, 145],
+  [121, 176],
+  [231, 151],
+  [292, 184],
+];
+
+function HumanBrainIllustration({ health }: { health: BrainHealth }) {
   const reduceMotion = useReducedMotion();
   const orphanGlow = Math.max(0.12, Math.min(0.44, health.orphanRate));
   const connectionStrength = Math.max(0.35, Math.min(0.9, health.averageDegree / 5));
-  const neuronPaths = [
-    "M74 82 C104 50 142 64 164 96",
-    "M86 134 C116 110 146 122 176 100",
-    "M96 188 C126 154 166 164 206 136",
-    "M192 78 C232 46 284 62 306 102",
-    "M198 132 C238 108 276 122 308 154",
-    "M218 190 C248 158 288 172 316 202",
-    "M150 92 C176 114 184 140 182 170",
-    "M210 90 C194 120 198 152 220 182",
-  ];
-  const neurons = [
-    [74, 82],
-    [116, 64],
-    [164, 96],
-    [86, 134],
-    [146, 122],
-    [96, 188],
-    [206, 136],
-    [192, 78],
-    [256, 58],
-    [306, 102],
-    [238, 108],
-    [308, 154],
-    [218, 190],
-    [278, 176],
-    [316, 202],
-    [182, 170],
-    [220, 182],
-  ];
 
   return (
-    <svg
-      viewBox="0 0 390 270"
-      className="h-52 w-full rounded-xl border border-border/50 bg-[radial-gradient(circle_at_46%_42%,hsl(var(--primary)/0.18),transparent_38%),linear-gradient(180deg,hsl(var(--background)/0.32),hsl(var(--muted)/0.18))]"
+    <div
+      className="relative h-52 w-full overflow-hidden rounded-xl border border-border/50 bg-[radial-gradient(circle_at_50%_45%,hsl(var(--primary)/0.20),transparent_42%),linear-gradient(180deg,hsl(var(--background)/0.32),hsl(var(--muted)/0.18))]"
       role="img"
-      aria-label="Neural Brain health preview"
+      aria-label="Human brain health preview"
     >
-      <defs>
-        <filter id="brain-neuron-glow" x="-35%" y="-35%" width="170%" height="170%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feColorMatrix
-            in="blur"
-            type="matrix"
-            values="0 0 0 0 0.34 0 0 0 0 0.78 0 0 0 0 0.93 0 0 0 0.75 0"
-          />
-          <feMerge>
-            <feMergeNode />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <linearGradient id="brain-shell" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="hsl(var(--primary) / 0.34)" />
-          <stop offset="55%" stopColor="hsl(265 72% 62% / 0.22)" />
-          <stop offset="100%" stopColor="hsl(335 70% 58% / 0.18)" />
-        </linearGradient>
-      </defs>
-
-      <motion.path
-        d="M192 42 C148 16 91 30 72 75 C32 84 28 147 64 167 C55 205 91 238 130 222 C151 252 202 242 212 205 C244 242 300 236 318 198 C356 190 367 132 335 106 C340 62 290 29 250 50 C235 31 210 30 192 42 Z"
-        fill="url(#brain-shell)"
-        stroke="hsl(var(--primary) / 0.42)"
-        strokeWidth="2"
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
-        animate={reduceMotion ? undefined : { opacity: 1, scale: 1 }}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_46%,hsl(190_85%_58%/0.12),transparent_36%)]" />
+      <motion.div
+        className="absolute inset-x-2 bottom-2 top-3"
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 6 }}
+        animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        style={{ transformOrigin: "195px 135px" }}
-      />
-      <path
-        d="M196 48 C182 80 184 110 198 135 C184 164 188 192 210 216"
-        fill="none"
-        stroke="hsl(var(--border) / 0.48)"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M92 86 C120 78 138 92 148 116 M78 151 C112 142 132 154 144 179 M248 84 C276 82 296 98 304 126 M238 154 C270 146 294 162 306 190"
-        fill="none"
-        stroke="hsl(var(--foreground) / 0.10)"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-
-      {neuronPaths.map((path, index) => (
-        <motion.path
-          key={path}
-          d={path}
-          fill="none"
-          stroke={
-            index % 3 === 0
-              ? "hsl(155 70% 54% / 0.78)"
-              : index % 3 === 1
-                ? "hsl(205 84% 62% / 0.74)"
-                : "hsl(265 72% 68% / 0.7)"
-          }
-          strokeWidth={1.6 + connectionStrength}
-          strokeLinecap="round"
-          filter="url(#brain-neuron-glow)"
-          strokeDasharray="12 18"
-          initial={reduceMotion ? false : { pathLength: 0, opacity: 0.35 }}
-          animate={
-            reduceMotion
-              ? undefined
-              : {
-                  pathLength: 1,
-                  opacity: [0.35, 0.9, 0.52],
-                  strokeDashoffset: [0, -26],
-                }
-          }
-          transition={{
-            duration: 1.4 + index * 0.08,
-            delay: index * 0.05,
-            repeat: reduceMotion ? 0 : Infinity,
-            repeatType: "mirror",
-            ease: "easeInOut",
-          }}
+      >
+        <Image
+          src="/analytics/human-brain.png"
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 240px, 100vw"
+          className="object-contain drop-shadow-[0_22px_42px_hsl(var(--primary)/0.24)]"
         />
-      ))}
-      {neurons.map(([cx, cy], index) => {
-        const dim = index % 5 === 0 && health.orphanRate > 0.25;
-        return (
-          <motion.circle
-            key={`${cx}-${cy}`}
-            cx={cx}
-            cy={cy}
-            r={dim ? 3.2 : 4.4}
-            fill={
-              dim
-                ? `hsl(var(--muted-foreground) / ${orphanGlow})`
-                : "hsl(var(--primary) / 0.92)"
-            }
-            filter={dim ? undefined : "url(#brain-neuron-glow)"}
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.7 }}
+      </motion.div>
+
+      <svg
+        aria-hidden
+        viewBox="0 0 390 270"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      >
+        {SIGNAL_PATHS.map(({ d, stroke }, index) => (
+          <motion.path
+            key={d}
+            d={d}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={1.4 + connectionStrength}
+            strokeLinecap="round"
+            strokeDasharray="10 18"
+            initial={reduceMotion ? false : { pathLength: 0, opacity: 0.15 }}
             animate={
               reduceMotion
                 ? undefined
                 : {
-                    opacity: dim ? orphanGlow : [0.58, 1, 0.7],
-                    scale: dim ? 1 : [0.9, 1.15, 0.95],
+                    pathLength: 1,
+                    opacity: [0.12, 0.72, 0.22],
+                    strokeDashoffset: [0, -24],
                   }
             }
             transition={{
-              duration: 1.2,
-              delay: index * 0.04,
-              repeat: reduceMotion || dim ? 0 : Infinity,
+              duration: 1.6 + index * 0.12,
+              delay: index * 0.08,
+              repeat: reduceMotion ? 0 : Infinity,
               repeatType: "mirror",
+              ease: "easeInOut",
             }}
           />
-        );
-      })}
-    </svg>
+        ))}
+
+        {SIGNAL_NODES.map(([cx, cy], index) => {
+          const dim = index % 4 === 0 && health.orphanRate > 0.25;
+          return (
+            <motion.circle
+              key={`${cx}-${cy}`}
+              cx={cx}
+              cy={cy}
+              r={dim ? 2.5 : 3.4}
+              fill={
+                dim
+                  ? `hsl(var(--muted-foreground) / ${orphanGlow})`
+                  : "hsl(190 96% 66% / 0.86)"
+              }
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.72 }}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      opacity: dim ? orphanGlow : [0.25, 0.9, 0.36],
+                      scale: dim ? 1 : [0.86, 1.25, 0.95],
+                    }
+              }
+              transition={{
+                duration: 1.25,
+                delay: index * 0.05,
+                repeat: reduceMotion || dim ? 0 : Infinity,
+                repeatType: "mirror",
+              }}
+            />
+          );
+        })}
+      </svg>
+
+      <motion.div
+        aria-hidden
+        className="absolute top-9 h-28 w-12 -skew-x-12 rounded-full blur-xl"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, hsl(190 100% 70% / 0.16), transparent)",
+        }}
+        initial={reduceMotion ? false : { x: "-24%", opacity: 0 }}
+        animate={
+          reduceMotion
+            ? undefined
+            : {
+                x: ["-24%", "116%"],
+                opacity: [0, 0.9, 0],
+              }
+        }
+        transition={{
+          duration: 2.6,
+          repeat: reduceMotion ? 0 : Infinity,
+          repeatDelay: 1.2,
+          ease: "easeInOut",
+        }}
+      />
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/24 to-transparent" />
+    </div>
   );
 }
 
@@ -178,7 +173,7 @@ export function BrainHealthPanel({ health }: { health: BrainHealth }) {
 
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-3">
-          <NeuronBrainIllustration health={health} />
+          <HumanBrainIllustration health={health} />
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded-xl bg-background/35 p-3">
               <p className="text-2xl font-semibold tabular-nums">{health.totalNodes}</p>

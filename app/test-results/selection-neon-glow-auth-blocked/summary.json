@@ -1,0 +1,648 @@
+[
+  {
+    "route": "/en/ideas",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Page errors: 1"
+    ],
+    "warnings": [
+      "Console errors: 4",
+      "Targets under 44px: 2",
+      "Quick Capture missing",
+      "Topbar search missing",
+      "Theme toggle missing",
+      "Clock tools missing"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-ideas-390-no-preference.png",
+    "metrics": {
+      "url": "http://127.0.0.1:3100/en/ideas",
+      "title": "",
+      "h1": "This page couldn’t load",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 2,
+      "interactiveSample": [
+        {
+          "index": 0,
+          "tag": "button",
+          "role": null,
+          "text": "Reload",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 78,
+            "y": 461,
+            "width": 69,
+            "height": 32
+          }
+        },
+        {
+          "index": 1,
+          "tag": "button",
+          "role": null,
+          "text": "Back",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 155,
+            "y": 461,
+            "width": 59,
+            "height": 32
+          }
+        }
+      ],
+      "tooSmallTargets": [],
+      "compactTargets": [
+        {
+          "index": 0,
+          "tag": "button",
+          "role": null,
+          "text": "Reload",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 78,
+            "y": 461,
+            "width": 69,
+            "height": 32
+          }
+        },
+        {
+          "index": 1,
+          "tag": "button",
+          "role": null,
+          "text": "Back",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 155,
+            "y": 461,
+            "width": 59,
+            "height": 32
+          }
+        }
+      ],
+      "focusedAfterTab": {
+        "tag": "nextjs-portal",
+        "role": null,
+        "text": "",
+        "ariaLabel": null
+      },
+      "timing": {
+        "domContentLoaded": 25834,
+        "loadEventEnd": 27450,
+        "responseStart": 25687,
+        "responseEnd": 25692,
+        "transferSize": 13185
+      },
+      "vitals": {
+        "lcp": 29828,
+        "cls": 0.41024380119127013
+      },
+      "resourceSummary": {
+        "count": 45,
+        "totalTransferSize": 12778486,
+        "byType": {
+          "link": {
+            "count": 10,
+            "transferSize": 371612,
+            "duration": 269
+          },
+          "script": {
+            "count": 8,
+            "transferSize": 12337394,
+            "duration": 3078
+          },
+          "css": {
+            "count": 4,
+            "transferSize": 29588,
+            "duration": 45
+          },
+          "fetch": {
+            "count": 22,
+            "transferSize": 0,
+            "duration": 21748
+          },
+          "img": {
+            "count": 1,
+            "transferSize": 39892,
+            "duration": 13
+          }
+        },
+        "slowResources": [
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/tasks?select=*%2Cproject%3Aprojects%28id%2Cname%2Cstatus%2Cpriority%29&order=created_at.desc",
+            "type": "fetch",
+            "duration": 1546,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/notes?select=*%2Cproject%3Aprojects%28id%2Cname%29&order=updated_at.desc",
+            "type": "fetch",
+            "duration": 1540,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/quotes?select=*&order=is_favorite.desc%2Ccreated_at.desc",
+            "type": "fetch",
+            "duration": 1540,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/habits?select=*&order=sort_order.asc%2Ccreated_at.desc",
+            "type": "fetch",
+            "duration": 1522,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/knowledge_items?select=id%2Ctitle%2Cstatus&order=date_added.desc&limit=400",
+            "type": "fetch",
+            "duration": 1520,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/grateful_things?select=*&order=entry_date.desc%2Ccreated_at.desc",
+            "type": "fetch",
+            "duration": 1517,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/goals?select=*&order=created_at.desc",
+            "type": "fetch",
+            "duration": 1514,
+            "transferSize": 0
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/habit_completions?select=*&order=completion_date.desc&completion_date=gte.2026-05-24&completion_date=lte.2026-07-07",
+            "type": "fetch",
+            "duration": 1509,
+            "transferSize": 0
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/app/%5Blocale%5D/(protected)/layout.js",
+            "type": "script",
+            "duration": 1505,
+            "transferSize": 5291883
+          },
+          {
+            "name": "https://aprjlwajbubjddtbqufk.supabase.co/rest/v1/projects?select=*&order=created_at.desc",
+            "type": "fetch",
+            "duration": 1446,
+            "transferSize": 0
+          },
+          {
+            "name": "https://api.openweathermap.org/data/2.5/forecast?lat=34.0522&lon=-118.2436&appid=9f7eb088de33e19aa6d1f9fec1c93c6f&units=metric",
+            "type": "fetch",
+            "duration": 1007,
+            "transferSize": 0
+          }
+        ]
+      }
+    },
+    "interactions": [
+      {
+        "key": "quick-capture",
+        "label": "Quick Capture",
+        "selector": "button[aria-label=\"Quick Capture\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "missing"
+      },
+      {
+        "key": "topbar-search",
+        "label": "Topbar search",
+        "selector": "button[aria-label*=\"Search\"], button:has-text(\"Search\")",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "missing"
+      },
+      {
+        "key": "theme-toggle",
+        "label": "Theme toggle",
+        "selector": "button[aria-label^=\"Switch to\"]",
+        "expectsLayer": false,
+        "viewports": "all",
+        "status": "missing"
+      },
+      {
+        "key": "clock",
+        "label": "Clock tools",
+        "selector": "button[aria-label^=\"Clock\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "missing"
+      }
+    ],
+    "elementInteractions": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "WebSocket is already in CLOSING or CLOSED state.",
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "WebSocket connection to 'ws://127.0.0.1:3100/_next/webpack-hmr?id=d44m1UI7DZWr2UjuSN9sp' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "WebSocket connection to 'ws://127.0.0.1:3100/_next/webpack-hmr?id=d44m1UI7DZWr2UjuSN9sp' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "WebSocket connection to 'ws://127.0.0.1:3100/_next/webpack-hmr?id=d44m1UI7DZWr2UjuSN9sp' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": [
+      "Loading chunk _app-pages-browser_node_modules_lottiefiles_dotlottie-react_dist_index_js failed.\n(error: http://127.0.0.1:3100/_next/static/chunks/_app-pages-browser_node_modules_lottiefiles_dotlottie-react_dist_index_js.js)"
+    ]
+  },
+  {
+    "route": "/en/ideas",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ideas",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ideas -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-ideas-1280-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ideas",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ideas",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ideas -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-ideas-390-reduce.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/knowledge-base",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/knowledge-base -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-knowledge-base-390-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/knowledge-base",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/knowledge-base -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-knowledge-base-1280-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/knowledge-base",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/knowledge-base -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-knowledge-base-390-reduce.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ai-knowledge",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ai-knowledge",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ai-knowledge -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-ai-knowledge-390-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ai-knowledge",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ai-knowledge",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ai-knowledge -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-ai-knowledge-1280-no-preference.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/ai-knowledge",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "fail",
+    "failures": [
+      "Audit error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/en/ai-knowledge",
+      "Missing h1"
+    ],
+    "warnings": [
+      "Unexpected redirect: /en/ai-knowledge -> /blank"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/selection-neon-glow-auth-blocked/en-ai-knowledge-390-reduce.png",
+    "metrics": {
+      "url": "about:blank",
+      "title": "",
+      "h1": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 0,
+      "interactiveCount": 0,
+      "interactiveSample": [],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": null,
+      "timing": null,
+      "vitals": null,
+      "resourceSummary": {
+        "count": 0,
+        "totalTransferSize": 0,
+        "byType": {},
+        "slowResources": []
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  }
+]

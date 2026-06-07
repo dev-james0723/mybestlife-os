@@ -8,19 +8,52 @@ import type {
 } from "@/types/database";
 import type { BrainGraphData } from "@/lib/brain/compat";
 
-export type AnalyticsRangeKey =
+export type AnalyticsPresetRangeKey =
+  | "1D"
   | "3D"
   | "7D"
+  | "14D"
+  | "21D"
   | "30D"
+  | "45D"
   | "2M"
   | "90D"
   | "6M"
+  | "9M"
   | "1Y"
+  | "18M"
+  | "2Y"
+  | "3Y"
   | "5Y"
   | "10Y";
 
+export type AnalyticsRangeKey = AnalyticsPresetRangeKey | "CUSTOM";
+
+export type AnalyticsRangeSource = "preset" | "custom" | "saved";
+
+export type AnalyticsRangeSelection =
+  | { source: "preset"; key: AnalyticsPresetRangeKey }
+  | { source: "custom"; startISO: string; endISO: string; label?: string }
+  | { source: "saved"; presetId: string; name: string; startISO: string; endISO: string };
+
+export type AnalyticsRangeValidationError =
+  | "missing"
+  | "invalid"
+  | "future_end"
+  | "start_after_end"
+  | "too_long";
+
+export type AnalyticsRangeValidationResult =
+  | { ok: true; startISO: string; endISO: string; days: number }
+  | { ok: false; error: AnalyticsRangeValidationError };
+
+export type AnalyticsBucketGranularity = "day" | "week" | "month";
+
 export type AnalyticsRange = {
   key: AnalyticsRangeKey;
+  source: AnalyticsRangeSource;
+  presetKey?: AnalyticsPresetRangeKey;
+  presetId?: string;
   label: string;
   behavior: string;
   days: number;
@@ -36,11 +69,9 @@ export type AnalyticsRange = {
 };
 
 export type AnalyticsRangeOption = {
-  key: AnalyticsRangeKey;
+  key: AnalyticsPresetRangeKey;
   label: string;
   behavior: string;
-  disabled?: boolean;
-  disabledReason?: string;
 };
 
 export type PulseScoreKey =
@@ -65,6 +96,8 @@ export type LifePulseScore = {
 
 export type MomentumWavePoint = {
   date: string;
+  startISO: string;
+  endISO: string;
   label: string;
   completedTasks: number;
   plannedItems: number;
@@ -79,6 +112,7 @@ export type MomentumWave = {
   points: MomentumWavePoint[];
   interpretation: string;
   hasData: boolean;
+  granularity: AnalyticsBucketGranularity;
 };
 
 export type DomainKey =
@@ -171,7 +205,7 @@ export type EmotionExecution = {
   interpretation: string;
   hasJournalData: boolean;
   hasExecutionData: boolean;
-  granularity: "day" | "week";
+  granularity: AnalyticsBucketGranularity;
 };
 
 export type BrainDomainHealth = {
