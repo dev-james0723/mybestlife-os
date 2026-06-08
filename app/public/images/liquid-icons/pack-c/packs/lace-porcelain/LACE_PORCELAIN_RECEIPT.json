@@ -1,20 +1,237 @@
 {
-  "packId": "lace-porcelain",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "lace-porcelain",
   "name": "Lace Porcelain",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Laced Up"
   ],
-  "description": "Porcelain lacework, crochet arcs, and soft stitched elegance.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Porcelain lace charms with tiny crochet loops and ceramic relief.",
+  "visualDNA": {
+    "spirit": "Refined, delicate, bridal, and handmade with restraint.",
+    "shapeLanguage": "Scallops, loops, pearls, braided edges, and airy negative space.",
+    "materialTexture": "Glazed porcelain, ivory lace, faint blue shadows, and raised ceramic dots.",
+    "iconConstruction": "Cutwork glyphs assembled from double strokes, bead dots, and scalloped seams.",
+    "dayModePaletteAndContrast": "Warm gray porcelain edges with slightly darker taupe relief so details survive on white.",
+    "darkModePaletteAndContrast": "Pearl-white raised lace with soft lavender-blue rim glow on dark UI.",
+    "distinctIconShapeRules": "Use dotted seams and looped contours; preserve open space and avoid heavy filled slabs.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid chrome fracture, brass geometry, field stencils, or saturated candy fills."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/lace-porcelain",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "ceramic starburst"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "porcelain cameo mirror"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "porcelain cameo mirror"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "porcelain pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "lace checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "porcelain card"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "lace doll group"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "porcelain clasp case"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "lacework rocket"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "porcelain target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "lace folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "ceramic keepsake box"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "ceramic keepsake box"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "porcelain card"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "lace library medallion"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "lace library medallion"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "porcelain lesson fan"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "porcelain sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/lace-porcelain/day",
+    "dark": "/images/liquid-icons/pack-c/packs/lace-porcelain/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/lace-porcelain-day-contact.png",
-    "/images/liquid-icons/pack-c/review/lace-porcelain-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/lace-porcelain-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/lace-porcelain-dna-preview.png"
   ]
 }

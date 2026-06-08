@@ -1,21 +1,238 @@
 {
-  "packId": "velvet-opera",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "velvet-opera",
   "name": "Velvet Opera",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Opera Aesthetic",
     "Vamp Romantic"
   ],
-  "description": "Deep velvet burgundy, stage-gold trim, and theatrical rose-shadow drama.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Dramatic burgundy stage objects trimmed like miniature opera costumes.",
+  "visualDNA": {
+    "spirit": "Romantic, theatrical, plush, and a little nocturnal.",
+    "shapeLanguage": "Draped ribbons, oval curves, tassel-like terminals, and ornate gold trim.",
+    "materialTexture": "Crushed velvet, rose shadow, antique gold embroidery, and soft stage light.",
+    "iconConstruction": "Filled velvet silhouettes with embroidered edge lines and subtle curtain folds.",
+    "dayModePaletteAndContrast": "Wine and oxblood forms with dark rose shadows plus gold line accents for pale UI.",
+    "darkModePaletteAndContrast": "Ruby velvet glow, blush highlights, and brighter gold trim for dark panels.",
+    "distinctIconShapeRules": "Give each glyph a plush filled body, a trim line, and at least one draped or ornamental curve.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid icy facets, flat line-only marks, utility stencils, or candy colors."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/velvet-opera",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "ruby stage brooch"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "velvet mask"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "velvet mask"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "aria pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "program checklist"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "opera program archive"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "chorus silhouettes"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "contract folio"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "opera rocket prop"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "stage target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "curtain folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "velvet trunk"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "velvet trunk"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "contract folio"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "opera program archive"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "opera program archive"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "music stand book"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "velvet rose sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/velvet-opera/day",
+    "dark": "/images/liquid-icons/pack-c/packs/velvet-opera/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/velvet-opera-day-contact.png",
-    "/images/liquid-icons/pack-c/review/velvet-opera-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/velvet-opera-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/velvet-opera-dna-preview.png"
   ]
 }

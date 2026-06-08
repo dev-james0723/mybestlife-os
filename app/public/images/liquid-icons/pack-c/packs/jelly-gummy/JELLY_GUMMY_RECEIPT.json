@@ -1,20 +1,237 @@
 {
-  "packId": "jelly-gummy",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "jelly-gummy",
   "name": "Jelly Gummy",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Gimme Gummy"
   ],
-  "description": "Squishy translucent candy color, bouncy bubbles, and gel highlights.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Squishy translucent app charms with candy-gel volume and soft specular highlights.",
+  "visualDNA": {
+    "spirit": "Playful, tactile, upbeat, and sweet without becoming childish.",
+    "shapeLanguage": "Inflated blobs, rounded tubes, pill corners, bubbles, and soft compression.",
+    "materialTexture": "Gummy candy, translucent gel, syrupy highlights, and tiny air bubbles.",
+    "iconConstruction": "Filled rounded mini-objects with thick gel bodies and white candy glints.",
+    "dayModePaletteAndContrast": "Saturated but shaded tangerine, pink, aqua, and berry tones with darker syrup edges.",
+    "darkModePaletteAndContrast": "Bright jelly cores, luminous candy rims, and stronger white glints for dark UI.",
+    "distinctIconShapeRules": "All strokes become inflated tubes; sharp corners must be rounded or softened.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid thin outline logic, metallic brass, porcelain delicacy, or glitch fragmentation."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/jelly-gummy",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "jelly bolt"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "jelly droplet face"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "jelly droplet face"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "jelly pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "gummy checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "gel book"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "gummy blob group"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "candy briefcase"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "jelly rocket"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "gummy target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "gummy folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "gummy storage box"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "data candy cube"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "gel card"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "data candy cube"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "data candy cube"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "gel book"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "gummy sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/jelly-gummy/day",
+    "dark": "/images/liquid-icons/pack-c/packs/jelly-gummy/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/jelly-gummy-day-contact.png",
-    "/images/liquid-icons/pack-c/review/jelly-gummy-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/jelly-gummy-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/jelly-gummy-dna-preview.png"
   ]
 }

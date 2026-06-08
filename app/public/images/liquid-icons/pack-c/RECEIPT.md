@@ -36,12 +36,75 @@ Execution state: transparent alpha asset generation and app navigation wiring.
   - `packs/adaptive-minimal-line/dark/*.png`
   - `packs/humanist-ink/day/*.png`
   - `packs/humanist-ink/dark/*.png`
+- Pinterest Predicts 2026 selectable pack folders:
+  - `packs/glacier-blue/day/*.png`
+  - `packs/glacier-blue/dark/*.png`
+  - `packs/opal-celestial/day/*.png`
+  - `packs/opal-celestial/dark/*.png`
+  - `packs/jelly-gummy/day/*.png`
+  - `packs/jelly-gummy/dark/*.png`
+  - `packs/neo-deco-brass/day/*.png`
+  - `packs/neo-deco-brass/dark/*.png`
+  - `packs/velvet-opera/day/*.png`
+  - `packs/velvet-opera/dark/*.png`
+  - `packs/lace-porcelain/day/*.png`
+  - `packs/lace-porcelain/dark/*.png`
+  - `packs/postal-poet/day/*.png`
+  - `packs/postal-poet/dark/*.png`
+  - `packs/mystic-outlands/day/*.png`
+  - `packs/mystic-outlands/dark/*.png`
+  - `packs/funhaus-stripe/day/*.png`
+  - `packs/funhaus-stripe/dark/*.png`
+  - `packs/field-khaki/day/*.png`
+  - `packs/field-khaki/dark/*.png`
+  - `packs/afrohemian-weave/day/*.png`
+  - `packs/afrohemian-weave/dark/*.png`
+  - `packs/glitch-glam/day/*.png`
+  - `packs/glitch-glam/dark/*.png`
 - Crop QA contact sheets:
   - `review/day-crops-contact.png`
   - `review/dark-crops-contact.png`
 - Final QA contact sheets:
   - `review/final-day-contact.png`
   - `review/final-dark-contact.png`
+- Pinterest Predicts 2026 QA contact sheets:
+  - `review/pinterest-2026-packs-overview.png`
+  - `review/glacier-blue-dna-preview.png`
+  - `review/opal-celestial-dna-preview.png`
+  - `review/jelly-gummy-dna-preview.png`
+  - `review/neo-deco-brass-dna-preview.png`
+  - `review/velvet-opera-dna-preview.png`
+  - `review/lace-porcelain-dna-preview.png`
+  - `review/postal-poet-dna-preview.png`
+  - `review/mystic-outlands-dna-preview.png`
+  - `review/funhaus-stripe-dna-preview.png`
+  - `review/field-khaki-dna-preview.png`
+  - `review/afrohemian-weave-dna-preview.png`
+  - `review/glitch-glam-dna-preview.png`
+  - `review/glacier-blue-day-contact.png`
+  - `review/glacier-blue-dark-contact.png`
+  - `review/opal-celestial-day-contact.png`
+  - `review/opal-celestial-dark-contact.png`
+  - `review/jelly-gummy-day-contact.png`
+  - `review/jelly-gummy-dark-contact.png`
+  - `review/neo-deco-brass-day-contact.png`
+  - `review/neo-deco-brass-dark-contact.png`
+  - `review/velvet-opera-day-contact.png`
+  - `review/velvet-opera-dark-contact.png`
+  - `review/lace-porcelain-day-contact.png`
+  - `review/lace-porcelain-dark-contact.png`
+  - `review/postal-poet-day-contact.png`
+  - `review/postal-poet-dark-contact.png`
+  - `review/mystic-outlands-day-contact.png`
+  - `review/mystic-outlands-dark-contact.png`
+  - `review/funhaus-stripe-day-contact.png`
+  - `review/funhaus-stripe-dark-contact.png`
+  - `review/field-khaki-day-contact.png`
+  - `review/field-khaki-dark-contact.png`
+  - `review/afrohemian-weave-day-contact.png`
+  - `review/afrohemian-weave-dark-contact.png`
+  - `review/glitch-glam-day-contact.png`
+  - `review/glitch-glam-dark-contact.png`
 - Mapping manifest:
   - `manifest.json`
 
@@ -57,6 +120,12 @@ Production sheet sources copied into this folder:
 - Day sheet 2: `ig_02dfec22cbb09e26016a2546dafee88195868bd14d92dc9938.png`
 - Dark sheet 1: `ig_02dfec22cbb09e26016a25475b6fd8819589e6af899278b673.png`
 - Dark sheet 2: `ig_02dfec22cbb09e26016a2547c78c9c8195bb2a464671343d18.png`
+
+Pinterest Predicts 2026 packs were derived from `/Users/ouxianxing/Desktop/IDPC/SRT/Pinterest Predicts 2026 Trend Report.pdf`. The 12 visual directions map to these report trends: Cool Blue, Extra Celestial, Gimme Gummy, Neo Deco, Opera Aesthetic, Vamp Romantic, Laced Up, Pen Pals, Poetcore, Mystic Outlands, Wilderkind, FunHaus, Khaki Coded, Afrohemian Decor, Glitchy Glam, and Glamoratti.
+
+The Pinterest Predicts 2026 packs were then redesigned with `app/scripts/regenerate-pinterest-icon-packs.mjs` so they no longer share one Lucide-like base outline. Each pack now records its own visual DNA in its per-pack receipt: spirit, shape language, material/texture, icon construction, Day Mode contrast, Dark Mode contrast, distinct shape rules, and avoid rules.
+
+The same generator now also includes a semantic metaphor map for the primary app destinations, so page meaning can resolve to pack-native objects before styling. For example, `knowledge-base` becomes an ice knowledge shard in Glacier Blue, a star map in Opal Celestial, a data candy cube in Jelly Gummy, a stamped archive card in Postal Poet, a spell shard in Mystic Outlands, and a holographic data cube in Glitch Glam.
 
 ## Validation
 
@@ -86,12 +155,14 @@ Result:
 - Command Center style Day Mode icon count: 50, derived from `alpha-day-textured`; all icons were locally remapped to the Command Center dark glass/chrome material style while preserving alpha masks.
 - Command Center style Dark Mode icon count: 50, derived from `alpha-day-command-style`; all icons were locally remapped to bright icy glass/chrome texture for dark UI while preserving alpha masks.
 - Additional selectable icon packs: 4 packs × 2 modes × 50 PNGs, generated from the same alpha masks for Settings personalization.
+- Pinterest Predicts 2026 selectable icon packs: 12 packs × 2 modes × 50 PNGs, regenerated as transparent theme-specific pictogram systems with separate semantic metaphors, silhouette, material, texture, and lighting rules.
+- Pinterest Predicts 2026 DNA preview sheets: 12 files, each showing the same sample icons across Day and Dark modes.
 - Transparent alpha assets report `hasAlpha: yes`.
 
 ## Residual Risk
 
-The transparent `alpha-*` folders are now the canonical app-facing asset set. The API reached a billing hard limit during Dark Mode generation, so 24 Dark Mode files are transparent Day Mode fallbacks copied into `alpha-dark`. They remove the unwanted black/white/circular backgrounds but are not native dark-glow variants yet.
+Historical `alpha-*` command-pack folders still contain earlier generation notes and fallbacks. The redesigned Pinterest Predicts 2026 packs are complete for both Day and Dark Mode with 50 transparent PNGs per mode.
 
 ## Next Action
 
-After billing is available again, rerun only the 24 missing native Dark Mode jobs listed in `alpha-dark/DAY_FALLBACKS.txt`, then rebuild contact sheets and revalidate alpha.
+Use `app/scripts/regenerate-pinterest-icon-packs.mjs` for future Pinterest-pack tuning, then rebuild contact sheets and rerun the alpha/count/type checks.

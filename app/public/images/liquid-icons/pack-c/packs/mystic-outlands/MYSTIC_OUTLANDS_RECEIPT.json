@@ -1,21 +1,238 @@
 {
-  "packId": "mystic-outlands",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "mystic-outlands",
   "name": "Mystic Outlands",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Mystic Outlands",
     "Wilderkind"
   ],
-  "description": "Moss, mist, ancient spirals, and quiet forest-magic shimmer.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Small carved talismans from misty forest ruins, marked with moss and runes.",
+  "visualDNA": {
+    "spirit": "Ancient, grounded, enchanted, and exploratory.",
+    "shapeLanguage": "Organic carved marks, rough stone edges, spiral knots, twigs, and asymmetry.",
+    "materialTexture": "Mossy stone, dark bark, lichen dust, mineral scratches, and faint firefly glow.",
+    "iconConstruction": "Carved relief pictograms with rough dashes, spiral accents, and natural speckling.",
+    "dayModePaletteAndContrast": "Deep fern and bark strokes with sage highlights, strong enough for light UI.",
+    "darkModePaletteAndContrast": "Pale moss glow, emerald edge light, and soft amber specks for dark UI.",
+    "distinctIconShapeRules": "Break perfect geometry with rough carved segments, spiral marks, and natural speckles.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid perfect chrome, polished brass symmetry, porcelain lace, or paper perforations."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/mystic-outlands",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "storm rune wand"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "identity totem"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "identity totem"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "moss pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "rune checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "bark journal"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "moss clan stones"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "pathfinder talisman"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "enchanted arrow rune"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "rune target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "bark folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "moss supply chest"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "moss supply chest"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "rune tablet"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "spell shard"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "spell shard"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "rune tablet"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "mystic sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/mystic-outlands/day",
+    "dark": "/images/liquid-icons/pack-c/packs/mystic-outlands/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/mystic-outlands-day-contact.png",
-    "/images/liquid-icons/pack-c/review/mystic-outlands-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/mystic-outlands-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/mystic-outlands-dna-preview.png"
   ]
 }

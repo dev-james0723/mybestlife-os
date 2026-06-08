@@ -6,7 +6,19 @@ export type LiquidIconPackId =
   | "soft-3d-clay"
   | "neo-brutal-retro"
   | "adaptive-minimal-line"
-  | "humanist-ink";
+  | "humanist-ink"
+  | "glacier-blue"
+  | "opal-celestial"
+  | "jelly-gummy"
+  | "neo-deco-brass"
+  | "velvet-opera"
+  | "lace-porcelain"
+  | "postal-poet"
+  | "mystic-outlands"
+  | "funhaus-stripe"
+  | "field-khaki"
+  | "afrohemian-weave"
+  | "glitch-glam";
 
 type LiquidIconPackMeta = {
   id: LiquidIconPackId;
@@ -48,6 +60,66 @@ export const LIQUID_ICON_PACKS: LiquidIconPackMeta[] = [
     name: "Humanist Ink",
     description: "Handmade ink texture with soft organic color washes.",
   },
+  {
+    id: "glacier-blue",
+    name: "Glacier Blue",
+    description: "Carved ice facets, clipped crystalline cuts, and cold engineered clarity.",
+  },
+  {
+    id: "opal-celestial",
+    name: "Opal Celestial",
+    description: "Pearlescent astronomical sigils with orbit arcs, beads, and star flashes.",
+  },
+  {
+    id: "jelly-gummy",
+    name: "Jelly Gummy",
+    description: "Inflated candy-gel charms with squishy tubes, bubbles, and syrup glints.",
+  },
+  {
+    id: "neo-deco-brass",
+    name: "Neo Deco Brass",
+    description: "Black-lacquer architectural marks with stepped brass geometry and fan rays.",
+  },
+  {
+    id: "velvet-opera",
+    name: "Velvet Opera",
+    description: "Plush burgundy silhouettes with theatrical trim, folds, and rose-shadow drama.",
+  },
+  {
+    id: "lace-porcelain",
+    name: "Lace Porcelain",
+    description: "Ceramic cutwork glyphs with scalloped lace, pearls, and raised relief.",
+  },
+  {
+    id: "postal-poet",
+    name: "Postal Poet",
+    description: "Folded paper miniatures with sepia ink, stamp perforations, and literary warmth.",
+  },
+  {
+    id: "mystic-outlands",
+    name: "Mystic Outlands",
+    description: "Mossy carved talismans with rough runes, spirals, and forest shimmer.",
+  },
+  {
+    id: "funhaus-stripe",
+    name: "FunHaus Stripe",
+    description: "Premium carnival signage with chunky stripes, tilted blocks, and enamel rhythm.",
+  },
+  {
+    id: "field-khaki",
+    name: "Field Khaki",
+    description: "Expedition stencils with canvas texture, contour lines, rivets, and khaki utility.",
+  },
+  {
+    id: "afrohemian-weave",
+    name: "Afrohemian Weave",
+    description: "Woven textile pictograms with beads, chevrons, terracotta, and indigo rhythm.",
+  },
+  {
+    id: "glitch-glam",
+    name: "Glitch Glam",
+    description: "Fractured chrome icons with RGB splits, scan breaks, and editorial shine.",
+  },
 ];
 
 const LIQUID_ICON_PACK_IDS = new Set<LiquidIconPackId>(
@@ -74,6 +146,54 @@ const LIQUID_ICON_PACK_PATHS: Record<LiquidIconPackId, Record<ColorMode, string>
   "humanist-ink": {
     light: "packs/humanist-ink/day",
     dark: "packs/humanist-ink/dark",
+  },
+  "glacier-blue": {
+    light: "packs/glacier-blue/day",
+    dark: "packs/glacier-blue/dark",
+  },
+  "opal-celestial": {
+    light: "packs/opal-celestial/day",
+    dark: "packs/opal-celestial/dark",
+  },
+  "jelly-gummy": {
+    light: "packs/jelly-gummy/day",
+    dark: "packs/jelly-gummy/dark",
+  },
+  "neo-deco-brass": {
+    light: "packs/neo-deco-brass/day",
+    dark: "packs/neo-deco-brass/dark",
+  },
+  "velvet-opera": {
+    light: "packs/velvet-opera/day",
+    dark: "packs/velvet-opera/dark",
+  },
+  "lace-porcelain": {
+    light: "packs/lace-porcelain/day",
+    dark: "packs/lace-porcelain/dark",
+  },
+  "postal-poet": {
+    light: "packs/postal-poet/day",
+    dark: "packs/postal-poet/dark",
+  },
+  "mystic-outlands": {
+    light: "packs/mystic-outlands/day",
+    dark: "packs/mystic-outlands/dark",
+  },
+  "funhaus-stripe": {
+    light: "packs/funhaus-stripe/day",
+    dark: "packs/funhaus-stripe/dark",
+  },
+  "field-khaki": {
+    light: "packs/field-khaki/day",
+    dark: "packs/field-khaki/dark",
+  },
+  "afrohemian-weave": {
+    light: "packs/afrohemian-weave/day",
+    dark: "packs/afrohemian-weave/dark",
+  },
+  "glitch-glam": {
+    light: "packs/glitch-glam/day",
+    dark: "packs/glitch-glam/dark",
   },
 };
 

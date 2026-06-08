@@ -1,20 +1,237 @@
 {
-  "packId": "afrohemian-weave",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "afrohemian-weave",
   "name": "Afrohemian Weave",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Afrohemian Decor"
   ],
-  "description": "Handwoven textile geometry, terracotta warmth, indigo accents, and basket fiber texture.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Woven textile icons made from beads, terracotta warmth, and indigo geometry.",
+  "visualDNA": {
+    "spirit": "Earthy, expressive, crafted, and rhythmically warm.",
+    "shapeLanguage": "Bead rows, woven strips, chevrons, sunbursts, basket arcs, and geometric blocks.",
+    "materialTexture": "Woven fiber, carved beads, matte clay, indigo dye, and sunbaked ochre.",
+    "iconConstruction": "Pattern-built pictograms with tactile beads, zigzags, and textile strip fills.",
+    "dayModePaletteAndContrast": "Deep terracotta, indigo, and umber outlines with ochre fills for pale UI contrast.",
+    "darkModePaletteAndContrast": "Warm woven highlights, coral clay, bright indigo, and bead glow on dark panels.",
+    "distinctIconShapeRules": "Build with repeated beads, chevrons, and woven bands; no thin generic stroke skeleton.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid frosted glass, paper folds, chrome glitches, or opera velvet trim."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/afrohemian-weave",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "bead lightning charm"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "woven identity mask"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "woven identity mask"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "woven pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "bead checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "woven journal"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "bead circle gathering"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "textile satchel"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "woven arrow rocket"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "bead target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "woven folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "basket archive"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "basket archive"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "bead knowledge tablet"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "bead knowledge tablet"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "bead knowledge tablet"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "woven study fan"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "woven sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/afrohemian-weave/day",
+    "dark": "/images/liquid-icons/pack-c/packs/afrohemian-weave/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/afrohemian-weave-day-contact.png",
-    "/images/liquid-icons/pack-c/review/afrohemian-weave-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/afrohemian-weave-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/afrohemian-weave-dna-preview.png"
   ]
 }

@@ -1,20 +1,237 @@
 {
-  "packId": "neo-deco-brass",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "neo-deco-brass",
   "name": "Neo Deco Brass",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Neo Deco"
   ],
-  "description": "Black lacquer, brass fan geometry, chrome edges, and crisp art-deco rhythm.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "A black-lacquer and brass system of stepped architectural marks.",
+  "visualDNA": {
+    "spirit": "Glamorous, controlled, metropolitan, and hotel-lobby expensive.",
+    "shapeLanguage": "Stepped geometry, fan rays, symmetry, hard angles, inset bars, and squared caps.",
+    "materialTexture": "Brushed brass, black lacquer, smoked chrome, and engraved bevels.",
+    "iconConstruction": "Art-deco pictograms with stacked brass strokes and lacquer shadow planes.",
+    "dayModePaletteAndContrast": "Deep umber shadows and antique brass highlights so the gold does not disappear on white.",
+    "darkModePaletteAndContrast": "Champagne-brass linework, glossy black inner planes, and warm edge glow.",
+    "distinctIconShapeRules": "Use squared caps, stepped detail, and symmetrical fan accents; circles become octagonal medallion fragments, not badges.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid organic moss, lace dots, gummy softness, or casual hand-drawn strokes."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/neo-deco-brass",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "deco lightning monogram"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "brass vanity mirror"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "brass vanity mirror"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "deco pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "deco check panel"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "lacquer ledger"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "guild medallion figures"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "brass portfolio clasp"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "deco rocket finial"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "brass target seal"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "deco folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "lacquer archive drawer"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "brass cube"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "stepped folio"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "brass library emblem"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "brass library emblem"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "stepped folio"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "brass sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/neo-deco-brass/day",
+    "dark": "/images/liquid-icons/pack-c/packs/neo-deco-brass/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/neo-deco-brass-day-contact.png",
-    "/images/liquid-icons/pack-c/review/neo-deco-brass-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/neo-deco-brass-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/neo-deco-brass-dna-preview.png"
   ]
 }

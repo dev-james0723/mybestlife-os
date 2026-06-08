@@ -1,20 +1,237 @@
 {
-  "packId": "glacier-blue",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "glacier-blue",
   "name": "Glacier Blue",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Cool Blue"
   ],
-  "description": "Subzero blue glass, frosted ridges, and icy crystalline highlights.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "A subzero interface language made of carved ice facets and crystalline ridges.",
+  "visualDNA": {
+    "spirit": "Clear, calm, expensive, and cold enough to feel engineered.",
+    "shapeLanguage": "Angular shards, asymmetric facets, clipped corners, and narrow crystalline cuts.",
+    "materialTexture": "Frosted glass, blue ice, hairline cracks, and polished frozen edges.",
+    "iconConstruction": "Faceted relief glyphs with sharp joins, internal crack marks, and no rounded outline skeleton.",
+    "dayModePaletteAndContrast": "Medium arctic blue body, deep cyan cuts, and navy edge shadows so the icons stay readable on pale UI.",
+    "darkModePaletteAndContrast": "Bright icy cores, white-blue rim light, and cyan internal glow tuned for dark chrome panels.",
+    "distinctIconShapeRules": "Use polygonal replacements for circles and rectangles; prefer triangular facets and diagonal cuts.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid soft bubbles, warm gold, decorative lace loops, or generic outline strokes."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/glacier-blue",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "ice bolt"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "ice mask"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "ice mask"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "ice pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "ice rune tablet"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "ice tablet"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "ice figures"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "ice instrument case"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "ice rocket"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "ice target shard"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "ice blueprint"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "ice archive chest"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "ice cube"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "ice tablet"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "ice knowledge shard"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "ice knowledge shard"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "ice rune tablet"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "frost sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/glacier-blue/day",
+    "dark": "/images/liquid-icons/pack-c/packs/glacier-blue/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/glacier-blue-day-contact.png",
-    "/images/liquid-icons/pack-c/review/glacier-blue-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/glacier-blue-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/glacier-blue-dna-preview.png"
   ]
 }

@@ -1,20 +1,237 @@
 {
-  "packId": "field-khaki",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "field-khaki",
   "name": "Field Khaki",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Khaki Coded"
   ],
-  "description": "Expedition khaki, map contours, utility canvas, and dusty archive warmth.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Field-kit navigation glyphs with canvas, map contours, and stenciled utility.",
+  "visualDNA": {
+    "spirit": "Prepared, practical, expeditionary, and quietly rugged.",
+    "shapeLanguage": "Stencils, tabs, straps, map-line contours, clipped labels, and utilitarian silhouettes.",
+    "materialTexture": "Waxed canvas, khaki webbing, brass rivets, topo-line ink, and worn edges.",
+    "iconConstruction": "Stenciled filled objects with contour-line overlays and small rivet details.",
+    "dayModePaletteAndContrast": "Olive-brown and charcoal canvas strokes with tan fills for pale work surfaces.",
+    "darkModePaletteAndContrast": "Sand and sage highlights, muted amber rivets, and reduced black mass on dark UI.",
+    "distinctIconShapeRules": "Use stencil gaps, clipped corners, contour lines, and rivets; make it feel like field equipment.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid glamorous chrome, gummy transparency, porcelain lace, or cosmic star halos."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/field-khaki",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "tactical signal bolt"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "dog tag mirror"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "dog tag mirror"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "field pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "field checklist"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "field notebook tab"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "field team markers"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "compass and case"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "launch flag marker"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "survey target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "field folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "canvas supply pouch"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "canvas supply pouch"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "folded map"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "topo map shard"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "topo map shard"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "field notebook tab"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "field sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/field-khaki/day",
+    "dark": "/images/liquid-icons/pack-c/packs/field-khaki/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/field-khaki-day-contact.png",
-    "/images/liquid-icons/pack-c/review/field-khaki-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/field-khaki-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/field-khaki-dna-preview.png"
   ]
 }

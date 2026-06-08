@@ -1,0 +1,2870 @@
+{
+  "executionState": "real_generation_completed",
+  "sourceDocument": "/Users/ouxianxing/Desktop/IDPC/SRT/Pinterest Predicts 2026 Trend Report.pdf",
+  "generationMethod": "Semantic-metaphor procedural SVG-to-PNG pack generation. Unlike the previous Lucide-like recolor set, each pack has separate object metaphors, silhouette grammar, material stack, texture rules, and day/dark lighting strategy.",
+  "semanticContract": "Every target keeps its existing navigation meaning; primary destinations are re-metaphored per pack while preserving transparent backgrounds and label-free icons.",
+  "targets": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "totalPngFiles": 1200,
+  "packs": [
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "glacier-blue",
+      "name": "Glacier Blue",
+      "sourceTrends": [
+        "Cool Blue"
+      ],
+      "concept": "A subzero interface language made of carved ice facets and crystalline ridges.",
+      "visualDNA": {
+        "spirit": "Clear, calm, expensive, and cold enough to feel engineered.",
+        "shapeLanguage": "Angular shards, asymmetric facets, clipped corners, and narrow crystalline cuts.",
+        "materialTexture": "Frosted glass, blue ice, hairline cracks, and polished frozen edges.",
+        "iconConstruction": "Faceted relief glyphs with sharp joins, internal crack marks, and no rounded outline skeleton.",
+        "dayModePaletteAndContrast": "Medium arctic blue body, deep cyan cuts, and navy edge shadows so the icons stay readable on pale UI.",
+        "darkModePaletteAndContrast": "Bright icy cores, white-blue rim light, and cyan internal glow tuned for dark chrome panels.",
+        "distinctIconShapeRules": "Use polygonal replacements for circles and rectangles; prefer triangular facets and diagonal cuts.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid soft bubbles, warm gold, decorative lace loops, or generic outline strokes."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "ice bolt"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "ice mask"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "ice mask"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "ice pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "ice rune tablet"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "ice tablet"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "ice figures"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "ice instrument case"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "ice rocket"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "ice target shard"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "ice blueprint"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "ice archive chest"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "ice cube"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "ice tablet"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "ice knowledge shard"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "ice knowledge shard"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "ice rune tablet"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "frost sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/glacier-blue/day",
+        "dark": "/images/liquid-icons/pack-c/packs/glacier-blue/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/glacier-blue-day-contact.png",
+        "/images/liquid-icons/pack-c/review/glacier-blue-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/glacier-blue-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "opal-celestial",
+      "name": "Opal Celestial",
+      "sourceTrends": [
+        "Extra Celestial"
+      ],
+      "concept": "Tiny pearlescent astronomical instruments, like moon charms for the operating system.",
+      "visualDNA": {
+        "spirit": "Dreamy, quiet, cosmic, and gently ceremonial.",
+        "shapeLanguage": "Orbital arcs, crescents, star pinpoints, concentric halos, and floating symmetry.",
+        "materialTexture": "Opal dust, pearl enamel, moonlit lavender, and soft spectral edges.",
+        "iconConstruction": "Sigil-like pictograms built from orbits, beads, small filled stars, and luminous line fragments.",
+        "dayModePaletteAndContrast": "Dusty indigo-lavender strokes with opal highlights and restrained blue shadows on white UI.",
+        "darkModePaletteAndContrast": "Moon-white cores with lavender aura and star flashes that read on dark UI without becoming neon.",
+        "distinctIconShapeRules": "Add at least one orbit, crescent, or star family marker; keep forms airy and celestial.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid square utility geometry, paper perforations, heavy stripes, and carved field marks."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "comet sigil"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "moon mirror"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "moon mirror"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "pulse constellation"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "orbit checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "moon scroll"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "constellation cluster"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "astrolabe badge"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "starship charm"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "target orbit"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "orbit folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "moon vault"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "opal orb"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "crescent scroll"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "star map"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "star map"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "crescent scroll"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "moon sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/opal-celestial/day",
+        "dark": "/images/liquid-icons/pack-c/packs/opal-celestial/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/opal-celestial-day-contact.png",
+        "/images/liquid-icons/pack-c/review/opal-celestial-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/opal-celestial-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "jelly-gummy",
+      "name": "Jelly Gummy",
+      "sourceTrends": [
+        "Gimme Gummy"
+      ],
+      "concept": "Squishy translucent app charms with candy-gel volume and soft specular highlights.",
+      "visualDNA": {
+        "spirit": "Playful, tactile, upbeat, and sweet without becoming childish.",
+        "shapeLanguage": "Inflated blobs, rounded tubes, pill corners, bubbles, and soft compression.",
+        "materialTexture": "Gummy candy, translucent gel, syrupy highlights, and tiny air bubbles.",
+        "iconConstruction": "Filled rounded mini-objects with thick gel bodies and white candy glints.",
+        "dayModePaletteAndContrast": "Saturated but shaded tangerine, pink, aqua, and berry tones with darker syrup edges.",
+        "darkModePaletteAndContrast": "Bright jelly cores, luminous candy rims, and stronger white glints for dark UI.",
+        "distinctIconShapeRules": "All strokes become inflated tubes; sharp corners must be rounded or softened.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid thin outline logic, metallic brass, porcelain delicacy, or glitch fragmentation."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "jelly bolt"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "jelly droplet face"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "jelly droplet face"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "jelly pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "gummy checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "gel book"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "gummy blob group"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "candy briefcase"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "jelly rocket"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "gummy target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "gummy folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "gummy storage box"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "data candy cube"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "gel card"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "data candy cube"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "data candy cube"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "gel book"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "gummy sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/jelly-gummy/day",
+        "dark": "/images/liquid-icons/pack-c/packs/jelly-gummy/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/jelly-gummy-day-contact.png",
+        "/images/liquid-icons/pack-c/review/jelly-gummy-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/jelly-gummy-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "neo-deco-brass",
+      "name": "Neo Deco Brass",
+      "sourceTrends": [
+        "Neo Deco"
+      ],
+      "concept": "A black-lacquer and brass system of stepped architectural marks.",
+      "visualDNA": {
+        "spirit": "Glamorous, controlled, metropolitan, and hotel-lobby expensive.",
+        "shapeLanguage": "Stepped geometry, fan rays, symmetry, hard angles, inset bars, and squared caps.",
+        "materialTexture": "Brushed brass, black lacquer, smoked chrome, and engraved bevels.",
+        "iconConstruction": "Art-deco pictograms with stacked brass strokes and lacquer shadow planes.",
+        "dayModePaletteAndContrast": "Deep umber shadows and antique brass highlights so the gold does not disappear on white.",
+        "darkModePaletteAndContrast": "Champagne-brass linework, glossy black inner planes, and warm edge glow.",
+        "distinctIconShapeRules": "Use squared caps, stepped detail, and symmetrical fan accents; circles become octagonal medallion fragments, not badges.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid organic moss, lace dots, gummy softness, or casual hand-drawn strokes."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "deco lightning monogram"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "brass vanity mirror"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "brass vanity mirror"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "deco pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "deco check panel"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "lacquer ledger"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "guild medallion figures"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "brass portfolio clasp"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "deco rocket finial"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "brass target seal"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "deco folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "lacquer archive drawer"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "brass cube"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "stepped folio"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "brass library emblem"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "brass library emblem"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "stepped folio"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "brass sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/neo-deco-brass/day",
+        "dark": "/images/liquid-icons/pack-c/packs/neo-deco-brass/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/neo-deco-brass-day-contact.png",
+        "/images/liquid-icons/pack-c/review/neo-deco-brass-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/neo-deco-brass-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "velvet-opera",
+      "name": "Velvet Opera",
+      "sourceTrends": [
+        "Opera Aesthetic",
+        "Vamp Romantic"
+      ],
+      "concept": "Dramatic burgundy stage objects trimmed like miniature opera costumes.",
+      "visualDNA": {
+        "spirit": "Romantic, theatrical, plush, and a little nocturnal.",
+        "shapeLanguage": "Draped ribbons, oval curves, tassel-like terminals, and ornate gold trim.",
+        "materialTexture": "Crushed velvet, rose shadow, antique gold embroidery, and soft stage light.",
+        "iconConstruction": "Filled velvet silhouettes with embroidered edge lines and subtle curtain folds.",
+        "dayModePaletteAndContrast": "Wine and oxblood forms with dark rose shadows plus gold line accents for pale UI.",
+        "darkModePaletteAndContrast": "Ruby velvet glow, blush highlights, and brighter gold trim for dark panels.",
+        "distinctIconShapeRules": "Give each glyph a plush filled body, a trim line, and at least one draped or ornamental curve.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid icy facets, flat line-only marks, utility stencils, or candy colors."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "ruby stage brooch"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "velvet mask"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "velvet mask"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "aria pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "program checklist"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "opera program archive"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "chorus silhouettes"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "contract folio"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "opera rocket prop"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "stage target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "curtain folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "velvet trunk"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "velvet trunk"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "contract folio"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "opera program archive"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "opera program archive"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "music stand book"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "velvet rose sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/velvet-opera/day",
+        "dark": "/images/liquid-icons/pack-c/packs/velvet-opera/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/velvet-opera-day-contact.png",
+        "/images/liquid-icons/pack-c/review/velvet-opera-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/velvet-opera-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "lace-porcelain",
+      "name": "Lace Porcelain",
+      "sourceTrends": [
+        "Laced Up"
+      ],
+      "concept": "Porcelain lace charms with tiny crochet loops and ceramic relief.",
+      "visualDNA": {
+        "spirit": "Refined, delicate, bridal, and handmade with restraint.",
+        "shapeLanguage": "Scallops, loops, pearls, braided edges, and airy negative space.",
+        "materialTexture": "Glazed porcelain, ivory lace, faint blue shadows, and raised ceramic dots.",
+        "iconConstruction": "Cutwork glyphs assembled from double strokes, bead dots, and scalloped seams.",
+        "dayModePaletteAndContrast": "Warm gray porcelain edges with slightly darker taupe relief so details survive on white.",
+        "darkModePaletteAndContrast": "Pearl-white raised lace with soft lavender-blue rim glow on dark UI.",
+        "distinctIconShapeRules": "Use dotted seams and looped contours; preserve open space and avoid heavy filled slabs.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid chrome fracture, brass geometry, field stencils, or saturated candy fills."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "ceramic starburst"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "porcelain cameo mirror"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "porcelain cameo mirror"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "porcelain pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "lace checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "porcelain card"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "lace doll group"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "porcelain clasp case"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "lacework rocket"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "porcelain target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "lace folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "ceramic keepsake box"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "ceramic keepsake box"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "porcelain card"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "lace library medallion"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "lace library medallion"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "porcelain lesson fan"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "porcelain sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/lace-porcelain/day",
+        "dark": "/images/liquid-icons/pack-c/packs/lace-porcelain/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/lace-porcelain-day-contact.png",
+        "/images/liquid-icons/pack-c/review/lace-porcelain-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/lace-porcelain-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "postal-poet",
+      "name": "Postal Poet",
+      "sourceTrends": [
+        "Pen Pals",
+        "Poetcore"
+      ],
+      "concept": "Literary stationery icons made from ink, folded paper, and stamp perforations.",
+      "visualDNA": {
+        "spirit": "Tender, analog, thoughtful, and quietly archival.",
+        "shapeLanguage": "Torn paper tabs, folded corners, fountain-pen strokes, labels, and perforated edges.",
+        "materialTexture": "Cream paper, sepia ink, postage gum, graphite smudges, and pressed fibers.",
+        "iconConstruction": "Cut-paper miniatures with inked pictogram strokes and tiny perforation dots.",
+        "dayModePaletteAndContrast": "Sepia ink over cream paper fragments with enough brown contrast for pale sidebars.",
+        "darkModePaletteAndContrast": "Warm paper glow and pale blue ink highlights, still readable on dark UI.",
+        "distinctIconShapeRules": "Every icon should look assembled from paper or stamped ink; use fold and perforation cues.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid glass shine, orbit halos, gummy blobs, and woven textile geometry."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "stamped urgent mark"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "handwritten profile card"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "handwritten profile card"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "ink pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "paper checklist"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "handwritten journal"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "address book cluster"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "sealed work dossier"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "paper rocket letter"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "stamp target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "paper folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "archive drawer card"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "archive drawer card"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "folded study letter"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "stamped archive card"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "stamped archive card"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "folded study letter"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "pressed flower note"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/postal-poet/day",
+        "dark": "/images/liquid-icons/pack-c/packs/postal-poet/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/postal-poet-day-contact.png",
+        "/images/liquid-icons/pack-c/review/postal-poet-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/postal-poet-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "mystic-outlands",
+      "name": "Mystic Outlands",
+      "sourceTrends": [
+        "Mystic Outlands",
+        "Wilderkind"
+      ],
+      "concept": "Small carved talismans from misty forest ruins, marked with moss and runes.",
+      "visualDNA": {
+        "spirit": "Ancient, grounded, enchanted, and exploratory.",
+        "shapeLanguage": "Organic carved marks, rough stone edges, spiral knots, twigs, and asymmetry.",
+        "materialTexture": "Mossy stone, dark bark, lichen dust, mineral scratches, and faint firefly glow.",
+        "iconConstruction": "Carved relief pictograms with rough dashes, spiral accents, and natural speckling.",
+        "dayModePaletteAndContrast": "Deep fern and bark strokes with sage highlights, strong enough for light UI.",
+        "darkModePaletteAndContrast": "Pale moss glow, emerald edge light, and soft amber specks for dark UI.",
+        "distinctIconShapeRules": "Break perfect geometry with rough carved segments, spiral marks, and natural speckles.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid perfect chrome, polished brass symmetry, porcelain lace, or paper perforations."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "storm rune wand"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "identity totem"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "identity totem"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "moss pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "rune checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "bark journal"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "moss clan stones"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "pathfinder talisman"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "enchanted arrow rune"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "rune target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "bark folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "moss supply chest"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "moss supply chest"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "rune tablet"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "spell shard"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "spell shard"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "rune tablet"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "mystic sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/mystic-outlands/day",
+        "dark": "/images/liquid-icons/pack-c/packs/mystic-outlands/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/mystic-outlands-day-contact.png",
+        "/images/liquid-icons/pack-c/review/mystic-outlands-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/mystic-outlands-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "funhaus-stripe",
+      "name": "FunHaus Stripe",
+      "sourceTrends": [
+        "FunHaus"
+      ],
+      "concept": "Premium carnival signage compressed into playful, stripe-built navigation objects.",
+      "visualDNA": {
+        "spirit": "Campy, bold, cheerful, and slightly surreal.",
+        "shapeLanguage": "Chunky arches, diagonal stripes, flags, tilted blocks, and bouncing geometry.",
+        "materialTexture": "Gloss paint, enamel stripes, circus canvas, and polished candy signage.",
+        "iconConstruction": "Blocky filled pictograms with striped inlays and deliberately tilted proportions.",
+        "dayModePaletteAndContrast": "Deep tomato and blue enamel with cream highlights for crisp reading on white.",
+        "darkModePaletteAndContrast": "Hot coral, mint, banana, and ice-blue striping with brighter edge lights.",
+        "distinctIconShapeRules": "Use chunky filled pieces, diagonal stripes, and jaunty rotation; avoid sober symmetry.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid delicate outlines, muted stationery, moss carving, or monochrome utility icons."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "striped lightning sign"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "funhouse mirror mask"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "funhouse mirror mask"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "marquee pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "ticket checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "show program"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "performer token stack"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "ticket booth case"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "striped rocket sign"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "carnival target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "show folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "prize crate"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "prize crate"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "ticket card"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "carnival map placard"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "carnival map placard"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "striped lesson banner"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "stripe sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/funhaus-stripe/day",
+        "dark": "/images/liquid-icons/pack-c/packs/funhaus-stripe/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/funhaus-stripe-day-contact.png",
+        "/images/liquid-icons/pack-c/review/funhaus-stripe-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/funhaus-stripe-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "field-khaki",
+      "name": "Field Khaki",
+      "sourceTrends": [
+        "Khaki Coded"
+      ],
+      "concept": "Field-kit navigation glyphs with canvas, map contours, and stenciled utility.",
+      "visualDNA": {
+        "spirit": "Prepared, practical, expeditionary, and quietly rugged.",
+        "shapeLanguage": "Stencils, tabs, straps, map-line contours, clipped labels, and utilitarian silhouettes.",
+        "materialTexture": "Waxed canvas, khaki webbing, brass rivets, topo-line ink, and worn edges.",
+        "iconConstruction": "Stenciled filled objects with contour-line overlays and small rivet details.",
+        "dayModePaletteAndContrast": "Olive-brown and charcoal canvas strokes with tan fills for pale work surfaces.",
+        "darkModePaletteAndContrast": "Sand and sage highlights, muted amber rivets, and reduced black mass on dark UI.",
+        "distinctIconShapeRules": "Use stencil gaps, clipped corners, contour lines, and rivets; make it feel like field equipment.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid glamorous chrome, gummy transparency, porcelain lace, or cosmic star halos."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "tactical signal bolt"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "dog tag mirror"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "dog tag mirror"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "field pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "field checklist"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "field notebook tab"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "field team markers"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "compass and case"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "launch flag marker"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "survey target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "field folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "canvas supply pouch"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "canvas supply pouch"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "folded map"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "topo map shard"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "topo map shard"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "field notebook tab"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "field sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/field-khaki/day",
+        "dark": "/images/liquid-icons/pack-c/packs/field-khaki/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/field-khaki-day-contact.png",
+        "/images/liquid-icons/pack-c/review/field-khaki-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/field-khaki-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "afrohemian-weave",
+      "name": "Afrohemian Weave",
+      "sourceTrends": [
+        "Afrohemian Decor"
+      ],
+      "concept": "Woven textile icons made from beads, terracotta warmth, and indigo geometry.",
+      "visualDNA": {
+        "spirit": "Earthy, expressive, crafted, and rhythmically warm.",
+        "shapeLanguage": "Bead rows, woven strips, chevrons, sunbursts, basket arcs, and geometric blocks.",
+        "materialTexture": "Woven fiber, carved beads, matte clay, indigo dye, and sunbaked ochre.",
+        "iconConstruction": "Pattern-built pictograms with tactile beads, zigzags, and textile strip fills.",
+        "dayModePaletteAndContrast": "Deep terracotta, indigo, and umber outlines with ochre fills for pale UI contrast.",
+        "darkModePaletteAndContrast": "Warm woven highlights, coral clay, bright indigo, and bead glow on dark panels.",
+        "distinctIconShapeRules": "Build with repeated beads, chevrons, and woven bands; no thin generic stroke skeleton.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid frosted glass, paper folds, chrome glitches, or opera velvet trim."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "bead lightning charm"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "woven identity mask"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "woven identity mask"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "woven pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "bead checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "woven journal"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "bead circle gathering"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "textile satchel"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "woven arrow rocket"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "bead target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "woven folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "basket archive"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "basket archive"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "bead knowledge tablet"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "bead knowledge tablet"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "bead knowledge tablet"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "woven study fan"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "woven sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/afrohemian-weave/day",
+        "dark": "/images/liquid-icons/pack-c/packs/afrohemian-weave/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/afrohemian-weave-day-contact.png",
+        "/images/liquid-icons/pack-c/review/afrohemian-weave-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/afrohemian-weave-dna-preview.png"
+      ]
+    },
+    {
+      "executionState": "real_generation_completed",
+      "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+      "id": "glitch-glam",
+      "name": "Glitch Glam",
+      "sourceTrends": [
+        "Glitchy Glam",
+        "Glamoratti"
+      ],
+      "concept": "Editorial chrome symbols fractured by magenta-cyan digital light leaks.",
+      "visualDNA": {
+        "spirit": "High-fashion, electric, synthetic, and intentionally unstable.",
+        "shapeLanguage": "Fractured chrome shards, offset doubles, rectangular scan breaks, and asymmetry.",
+        "materialTexture": "Mirror chrome, iridescent foil, RGB split, wet gloss, and pixel-sliced highlights.",
+        "iconConstruction": "Chrome pictograms with displaced color channels and small glitch bars cutting the silhouette.",
+        "dayModePaletteAndContrast": "Dark violet chrome cores with vivid magenta/cyan offsets to read on white UI.",
+        "darkModePaletteAndContrast": "Bright silver-pink chrome, cyan edge split, and neon-magenta cuts for dark UI.",
+        "distinctIconShapeRules": "Use asymmetric offsets, fractured bars, and chrome gradients; never allow a quiet single-line icon.",
+        "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+        "mustAvoid": "Avoid natural textures, soft paper, lace loops, or stable symmetric art-deco rhythm."
+      },
+      "semanticMetaphorMap": {
+        "category-command-center": {
+          "label": "Command Center",
+          "metaphor": "fractured chrome signal"
+        },
+        "dashboard": {
+          "label": "Dashboard",
+          "metaphor": "dashboard"
+        },
+        "brain": {
+          "label": "Brain",
+          "metaphor": "brain"
+        },
+        "life-agent": {
+          "label": "Life Companion",
+          "metaphor": "spark person"
+        },
+        "daily-planner": {
+          "label": "Daily Planner",
+          "metaphor": "calendar clock"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "metaphor": "checkbox"
+        },
+        "weekly-review": {
+          "label": "Weekly Review",
+          "metaphor": "calendar check"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "metaphor": "calendar"
+        },
+        "weather": {
+          "label": "Weather",
+          "metaphor": "weather"
+        },
+        "signals": {
+          "label": "Signals",
+          "metaphor": "target"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "metaphor": "bars"
+        },
+        "finance": {
+          "label": "Finance",
+          "metaphor": "wallet"
+        },
+        "category-self": {
+          "label": "Self",
+          "metaphor": "holographic mirror avatar"
+        },
+        "about-me": {
+          "label": "About Me",
+          "metaphor": "holographic mirror avatar"
+        },
+        "grateful-things": {
+          "label": "Grateful Things",
+          "metaphor": "heart"
+        },
+        "quote-library": {
+          "label": "Quote Library",
+          "metaphor": "quotes"
+        },
+        "bucket-list": {
+          "label": "Bucket List",
+          "metaphor": "bucket"
+        },
+        "health": {
+          "label": "Health",
+          "metaphor": "neon pulse"
+        },
+        "habits": {
+          "label": "Habits & Routines",
+          "metaphor": "glitch checks"
+        },
+        "journal": {
+          "label": "Journal",
+          "metaphor": "glitch learning tablet"
+        },
+        "category-people": {
+          "label": "People",
+          "metaphor": "rgb avatar cluster"
+        },
+        "relationship": {
+          "label": "Relationships",
+          "metaphor": "relationship"
+        },
+        "role-model": {
+          "label": "Role Model",
+          "metaphor": "star person"
+        },
+        "category-career": {
+          "label": "Career",
+          "metaphor": "chrome credential case"
+        },
+        "career": {
+          "label": "Career Home",
+          "metaphor": "briefcase"
+        },
+        "career-compass": {
+          "label": "Career Compass",
+          "metaphor": "compass"
+        },
+        "career-profile": {
+          "label": "Career Profile",
+          "metaphor": "id card"
+        },
+        "career-vault": {
+          "label": "Career Vault",
+          "metaphor": "folder lock"
+        },
+        "career-coach": {
+          "label": "AI Career Coach",
+          "metaphor": "coach"
+        },
+        "career-pipeline": {
+          "label": "Career Pipeline",
+          "metaphor": "pipeline"
+        },
+        "career-timeline": {
+          "label": "Career Timeline",
+          "metaphor": "timeline"
+        },
+        "career-network": {
+          "label": "Career Network",
+          "metaphor": "network"
+        },
+        "career-journal": {
+          "label": "Career Journal",
+          "metaphor": "notebook"
+        },
+        "career-analytics": {
+          "label": "Career Analytics",
+          "metaphor": "chart arrow"
+        },
+        "category-goals-execution": {
+          "label": "Build & Execute",
+          "metaphor": "neon launch vector"
+        },
+        "goals": {
+          "label": "Goals",
+          "metaphor": "neon target"
+        },
+        "projects": {
+          "label": "Projects",
+          "metaphor": "glitch folder"
+        },
+        "category-resources": {
+          "label": "Resources",
+          "metaphor": "holographic vault prism"
+        },
+        "assets": {
+          "label": "Assets",
+          "metaphor": "holographic vault prism"
+        },
+        "documents": {
+          "label": "Documents",
+          "metaphor": "glitch learning tablet"
+        },
+        "software-vault": {
+          "label": "Software Vault",
+          "metaphor": "software"
+        },
+        "category-knowledge": {
+          "label": "Knowledge",
+          "metaphor": "holographic data cube"
+        },
+        "knowledge-base": {
+          "label": "Knowledge Base",
+          "metaphor": "holographic data cube"
+        },
+        "ai-knowledge": {
+          "label": "AI Knowledge",
+          "metaphor": "brain spark"
+        },
+        "mind-council": {
+          "label": "Mind Council",
+          "metaphor": "council"
+        },
+        "ideas": {
+          "label": "Idea Capture",
+          "metaphor": "bulb"
+        },
+        "category-learning": {
+          "label": "Learning",
+          "metaphor": "glitch learning tablet"
+        },
+        "japanese-study": {
+          "label": "Japanese Study",
+          "metaphor": "study"
+        },
+        "garden": {
+          "label": "Garden",
+          "metaphor": "neon sprout"
+        },
+        "settings-reserved": {
+          "label": "Settings Reserved",
+          "metaphor": "gear"
+        }
+      },
+      "targetCount": 50,
+      "modes": [
+        "day",
+        "dark"
+      ],
+      "assets": {
+        "day": "/images/liquid-icons/pack-c/packs/glitch-glam/day",
+        "dark": "/images/liquid-icons/pack-c/packs/glitch-glam/dark"
+      },
+      "contactSheets": [
+        "/images/liquid-icons/pack-c/review/glitch-glam-day-contact.png",
+        "/images/liquid-icons/pack-c/review/glitch-glam-dark-contact.png",
+        "/images/liquid-icons/pack-c/review/glitch-glam-dna-preview.png"
+      ]
+    }
+  ],
+  "overview": "/images/liquid-icons/pack-c/review/pinterest-2026-packs-overview.png",
+  "validationContract": [
+    "50 PNGs per pack/mode.",
+    "Transparent PNG output with alpha channel.",
+    "No outer badge, circle frame, or full-canvas tile.",
+    "Day and Dark share identity but use separate contrast and glow.",
+    "Contact sheets use the same sample icons across modes."
+  ]
+}

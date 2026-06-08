@@ -1,21 +1,238 @@
 {
-  "packId": "postal-poet",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "postal-poet",
   "name": "Postal Poet",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Pen Pals",
     "Poetcore"
   ],
-  "description": "Cream stationery, fountain-ink marks, stamp perforations, and literary red-blue accents.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Literary stationery icons made from ink, folded paper, and stamp perforations.",
+  "visualDNA": {
+    "spirit": "Tender, analog, thoughtful, and quietly archival.",
+    "shapeLanguage": "Torn paper tabs, folded corners, fountain-pen strokes, labels, and perforated edges.",
+    "materialTexture": "Cream paper, sepia ink, postage gum, graphite smudges, and pressed fibers.",
+    "iconConstruction": "Cut-paper miniatures with inked pictogram strokes and tiny perforation dots.",
+    "dayModePaletteAndContrast": "Sepia ink over cream paper fragments with enough brown contrast for pale sidebars.",
+    "darkModePaletteAndContrast": "Warm paper glow and pale blue ink highlights, still readable on dark UI.",
+    "distinctIconShapeRules": "Every icon should look assembled from paper or stamped ink; use fold and perforation cues.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid glass shine, orbit halos, gummy blobs, and woven textile geometry."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/postal-poet",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "stamped urgent mark"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "handwritten profile card"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "handwritten profile card"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "ink pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "paper checklist"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "handwritten journal"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "address book cluster"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "sealed work dossier"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "paper rocket letter"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "stamp target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "paper folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "archive drawer card"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "archive drawer card"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "folded study letter"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "stamped archive card"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "stamped archive card"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "folded study letter"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "pressed flower note"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/postal-poet/day",
+    "dark": "/images/liquid-icons/pack-c/packs/postal-poet/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/postal-poet-day-contact.png",
-    "/images/liquid-icons/pack-c/review/postal-poet-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/postal-poet-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/postal-poet-dna-preview.png"
   ]
 }

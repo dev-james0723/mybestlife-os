@@ -34,6 +34,78 @@
       "name": "Humanist Ink",
       "dayAssetBase": "/images/liquid-icons/pack-c/packs/humanist-ink/day",
       "darkAssetBase": "/images/liquid-icons/pack-c/packs/humanist-ink/dark"
+    },
+    {
+      "id": "glacier-blue",
+      "name": "Glacier Blue",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/glacier-blue/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/glacier-blue/dark"
+    },
+    {
+      "id": "opal-celestial",
+      "name": "Opal Celestial",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/opal-celestial/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/opal-celestial/dark"
+    },
+    {
+      "id": "jelly-gummy",
+      "name": "Jelly Gummy",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/jelly-gummy/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/jelly-gummy/dark"
+    },
+    {
+      "id": "neo-deco-brass",
+      "name": "Neo Deco Brass",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/neo-deco-brass/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/neo-deco-brass/dark"
+    },
+    {
+      "id": "velvet-opera",
+      "name": "Velvet Opera",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/velvet-opera/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/velvet-opera/dark"
+    },
+    {
+      "id": "lace-porcelain",
+      "name": "Lace Porcelain",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/lace-porcelain/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/lace-porcelain/dark"
+    },
+    {
+      "id": "postal-poet",
+      "name": "Postal Poet",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/postal-poet/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/postal-poet/dark"
+    },
+    {
+      "id": "mystic-outlands",
+      "name": "Mystic Outlands",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/mystic-outlands/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/mystic-outlands/dark"
+    },
+    {
+      "id": "funhaus-stripe",
+      "name": "FunHaus Stripe",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/funhaus-stripe/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/funhaus-stripe/dark"
+    },
+    {
+      "id": "field-khaki",
+      "name": "Field Khaki",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/field-khaki/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/field-khaki/dark"
+    },
+    {
+      "id": "afrohemian-weave",
+      "name": "Afrohemian Weave",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/afrohemian-weave/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/afrohemian-weave/dark"
+    },
+    {
+      "id": "glitch-glam",
+      "name": "Glitch Glam",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/glitch-glam/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/glitch-glam/dark"
     }
   ],
   "modes": {

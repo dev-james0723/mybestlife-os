@@ -1,20 +1,237 @@
 {
-  "packId": "funhaus-stripe",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "funhaus-stripe",
   "name": "FunHaus Stripe",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "FunHaus"
   ],
-  "description": "Elevated circus stripes, campy geometry, and candy-red architectural rhythm.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Premium carnival signage compressed into playful, stripe-built navigation objects.",
+  "visualDNA": {
+    "spirit": "Campy, bold, cheerful, and slightly surreal.",
+    "shapeLanguage": "Chunky arches, diagonal stripes, flags, tilted blocks, and bouncing geometry.",
+    "materialTexture": "Gloss paint, enamel stripes, circus canvas, and polished candy signage.",
+    "iconConstruction": "Blocky filled pictograms with striped inlays and deliberately tilted proportions.",
+    "dayModePaletteAndContrast": "Deep tomato and blue enamel with cream highlights for crisp reading on white.",
+    "darkModePaletteAndContrast": "Hot coral, mint, banana, and ice-blue striping with brighter edge lights.",
+    "distinctIconShapeRules": "Use chunky filled pieces, diagonal stripes, and jaunty rotation; avoid sober symmetry.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid delicate outlines, muted stationery, moss carving, or monochrome utility icons."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/funhaus-stripe",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "striped lightning sign"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "funhouse mirror mask"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "funhouse mirror mask"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "marquee pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "ticket checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "show program"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "performer token stack"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "ticket booth case"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "striped rocket sign"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "carnival target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "show folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "prize crate"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "prize crate"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "ticket card"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "carnival map placard"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "carnival map placard"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "striped lesson banner"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "stripe sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/funhaus-stripe/day",
+    "dark": "/images/liquid-icons/pack-c/packs/funhaus-stripe/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/funhaus-stripe-day-contact.png",
-    "/images/liquid-icons/pack-c/review/funhaus-stripe-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/funhaus-stripe-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/funhaus-stripe-dna-preview.png"
   ]
 }

@@ -1,20 +1,237 @@
 {
-  "packId": "opal-celestial",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "opal-celestial",
   "name": "Opal Celestial",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Extra Celestial"
   ],
-  "description": "Pearlescent moon-dust gradients, orbit arcs, and tiny star flashes.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Tiny pearlescent astronomical instruments, like moon charms for the operating system.",
+  "visualDNA": {
+    "spirit": "Dreamy, quiet, cosmic, and gently ceremonial.",
+    "shapeLanguage": "Orbital arcs, crescents, star pinpoints, concentric halos, and floating symmetry.",
+    "materialTexture": "Opal dust, pearl enamel, moonlit lavender, and soft spectral edges.",
+    "iconConstruction": "Sigil-like pictograms built from orbits, beads, small filled stars, and luminous line fragments.",
+    "dayModePaletteAndContrast": "Dusty indigo-lavender strokes with opal highlights and restrained blue shadows on white UI.",
+    "darkModePaletteAndContrast": "Moon-white cores with lavender aura and star flashes that read on dark UI without becoming neon.",
+    "distinctIconShapeRules": "Add at least one orbit, crescent, or star family marker; keep forms airy and celestial.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid square utility geometry, paper perforations, heavy stripes, and carved field marks."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/opal-celestial",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "comet sigil"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "moon mirror"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "moon mirror"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "pulse constellation"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "orbit checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "moon scroll"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "constellation cluster"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "astrolabe badge"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "starship charm"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "target orbit"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "orbit folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "moon vault"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "opal orb"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "crescent scroll"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "star map"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "star map"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "crescent scroll"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "moon sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/opal-celestial/day",
+    "dark": "/images/liquid-icons/pack-c/packs/opal-celestial/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/opal-celestial-day-contact.png",
-    "/images/liquid-icons/pack-c/review/opal-celestial-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/opal-celestial-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/opal-celestial-dna-preview.png"
   ]
 }

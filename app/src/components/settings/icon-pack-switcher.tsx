@@ -18,8 +18,10 @@ const PREVIEW_ASSETS = [
   "category-command-center",
   "category-self",
   "category-people",
+  "category-career",
   "category-goals-execution",
   "category-resources",
+  "category-knowledge",
   "category-learning",
 ];
 

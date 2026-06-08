@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isDevLoginBypassFeatureEnabled } from "@/lib/dev-login-bypass";
+import {
+  clearDevLoginBypassCookie,
+  isDevLoginBypassFeatureEnabled,
+} from "@/lib/dev-login-bypass";
 import { useAuth } from "@/hooks/use-auth";
 import {
   AppleBrandIcon,
@@ -54,6 +57,10 @@ export function LoginForm() {
       toast.error(ui.toastAuthFailed);
     }
   }, [searchParams, ui.toastAuthFailed]);
+
+  useEffect(() => {
+    if (!showDevBypass) clearDevLoginBypassCookie();
+  }, [showDevBypass]);
 
   const runOAuth = async (provider: "google" | "apple" | "microsoft" | "facebook") => {
     setOauthBusy(provider);

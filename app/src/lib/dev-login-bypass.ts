@@ -5,14 +5,12 @@ export const DEV_LOGIN_BYPASS_COOKIE = "mylifeos_dev_bypass";
  * When true, /login shows “Dev / Test mode” and middleware accepts the bypass cookie.
  * - Local `next dev`: on
  * - Explicit opt-in: NEXT_PUBLIC_DEV_LOGIN_BYPASS=true
- * - Any host built on Vercel: on (first-sale / demo deploys); opt out with
- *   NEXT_PUBLIC_HIDE_DEV_LOGIN_BYPASS=true
+ * - Explicit opt-out: NEXT_PUBLIC_HIDE_DEV_LOGIN_BYPASS=true
  */
 export function isDevLoginBypassFeatureEnabled(): boolean {
   if (process.env.NEXT_PUBLIC_HIDE_DEV_LOGIN_BYPASS === "true") return false;
   if (process.env.NODE_ENV === "development") return true;
   if (process.env.NEXT_PUBLIC_DEV_LOGIN_BYPASS === "true") return true;
-  if (process.env.NEXT_PUBLIC_VERCEL === "1") return true;
   return false;
 }
 

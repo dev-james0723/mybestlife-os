@@ -1,21 +1,238 @@
 {
-  "packId": "glitch-glam",
+  "executionState": "real_generation_completed",
+  "generationMethod": "Procedural SVG-to-PNG render with pack-specific silhouette, material, texture, lighting, and construction rules; transparent PNG output.",
+  "id": "glitch-glam",
   "name": "Glitch Glam",
-  "source": "Pinterest Predicts 2026 Trend Report.pdf",
   "sourceTrends": [
     "Glitchy Glam",
     "Glamoratti"
   ],
-  "description": "Asymmetric glam color blocking, chromatic glitch bands, and glossy editorial shine.",
-  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
-  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
-  "files": {
-    "day": 50,
-    "dark": 50
+  "concept": "Editorial chrome symbols fractured by magenta-cyan digital light leaks.",
+  "visualDNA": {
+    "spirit": "High-fashion, electric, synthetic, and intentionally unstable.",
+    "shapeLanguage": "Fractured chrome shards, offset doubles, rectangular scan breaks, and asymmetry.",
+    "materialTexture": "Mirror chrome, iridescent foil, RGB split, wet gloss, and pixel-sliced highlights.",
+    "iconConstruction": "Chrome pictograms with displaced color channels and small glitch bars cutting the silhouette.",
+    "dayModePaletteAndContrast": "Dark violet chrome cores with vivid magenta/cyan offsets to read on white UI.",
+    "darkModePaletteAndContrast": "Bright silver-pink chrome, cyan edge split, and neon-magenta cuts for dark UI.",
+    "distinctIconShapeRules": "Use asymmetric offsets, fractured bars, and chrome gradients; never allow a quiet single-line icon.",
+    "semanticMetaphorRules": "Primary app destinations use pack-native objects, not shared base glyph silhouettes. Remaining subnavigation keeps page meaning while inheriting the pack material system.",
+    "mustAvoid": "Avoid natural textures, soft paper, lace loops, or stable symmetric art-deco rhythm."
   },
-  "assetBase": "/images/liquid-icons/pack-c/packs/glitch-glam",
+  "semanticMetaphorMap": {
+    "category-command-center": {
+      "label": "Command Center",
+      "metaphor": "fractured chrome signal"
+    },
+    "dashboard": {
+      "label": "Dashboard",
+      "metaphor": "dashboard"
+    },
+    "brain": {
+      "label": "Brain",
+      "metaphor": "brain"
+    },
+    "life-agent": {
+      "label": "Life Companion",
+      "metaphor": "spark person"
+    },
+    "daily-planner": {
+      "label": "Daily Planner",
+      "metaphor": "calendar clock"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "metaphor": "checkbox"
+    },
+    "weekly-review": {
+      "label": "Weekly Review",
+      "metaphor": "calendar check"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "metaphor": "calendar"
+    },
+    "weather": {
+      "label": "Weather",
+      "metaphor": "weather"
+    },
+    "signals": {
+      "label": "Signals",
+      "metaphor": "target"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "metaphor": "bars"
+    },
+    "finance": {
+      "label": "Finance",
+      "metaphor": "wallet"
+    },
+    "category-self": {
+      "label": "Self",
+      "metaphor": "holographic mirror avatar"
+    },
+    "about-me": {
+      "label": "About Me",
+      "metaphor": "holographic mirror avatar"
+    },
+    "grateful-things": {
+      "label": "Grateful Things",
+      "metaphor": "heart"
+    },
+    "quote-library": {
+      "label": "Quote Library",
+      "metaphor": "quotes"
+    },
+    "bucket-list": {
+      "label": "Bucket List",
+      "metaphor": "bucket"
+    },
+    "health": {
+      "label": "Health",
+      "metaphor": "neon pulse"
+    },
+    "habits": {
+      "label": "Habits & Routines",
+      "metaphor": "glitch checks"
+    },
+    "journal": {
+      "label": "Journal",
+      "metaphor": "glitch learning tablet"
+    },
+    "category-people": {
+      "label": "People",
+      "metaphor": "rgb avatar cluster"
+    },
+    "relationship": {
+      "label": "Relationships",
+      "metaphor": "relationship"
+    },
+    "role-model": {
+      "label": "Role Model",
+      "metaphor": "star person"
+    },
+    "category-career": {
+      "label": "Career",
+      "metaphor": "chrome credential case"
+    },
+    "career": {
+      "label": "Career Home",
+      "metaphor": "briefcase"
+    },
+    "career-compass": {
+      "label": "Career Compass",
+      "metaphor": "compass"
+    },
+    "career-profile": {
+      "label": "Career Profile",
+      "metaphor": "id card"
+    },
+    "career-vault": {
+      "label": "Career Vault",
+      "metaphor": "folder lock"
+    },
+    "career-coach": {
+      "label": "AI Career Coach",
+      "metaphor": "coach"
+    },
+    "career-pipeline": {
+      "label": "Career Pipeline",
+      "metaphor": "pipeline"
+    },
+    "career-timeline": {
+      "label": "Career Timeline",
+      "metaphor": "timeline"
+    },
+    "career-network": {
+      "label": "Career Network",
+      "metaphor": "network"
+    },
+    "career-journal": {
+      "label": "Career Journal",
+      "metaphor": "notebook"
+    },
+    "career-analytics": {
+      "label": "Career Analytics",
+      "metaphor": "chart arrow"
+    },
+    "category-goals-execution": {
+      "label": "Build & Execute",
+      "metaphor": "neon launch vector"
+    },
+    "goals": {
+      "label": "Goals",
+      "metaphor": "neon target"
+    },
+    "projects": {
+      "label": "Projects",
+      "metaphor": "glitch folder"
+    },
+    "category-resources": {
+      "label": "Resources",
+      "metaphor": "holographic vault prism"
+    },
+    "assets": {
+      "label": "Assets",
+      "metaphor": "holographic vault prism"
+    },
+    "documents": {
+      "label": "Documents",
+      "metaphor": "glitch learning tablet"
+    },
+    "software-vault": {
+      "label": "Software Vault",
+      "metaphor": "software"
+    },
+    "category-knowledge": {
+      "label": "Knowledge",
+      "metaphor": "holographic data cube"
+    },
+    "knowledge-base": {
+      "label": "Knowledge Base",
+      "metaphor": "holographic data cube"
+    },
+    "ai-knowledge": {
+      "label": "AI Knowledge",
+      "metaphor": "brain spark"
+    },
+    "mind-council": {
+      "label": "Mind Council",
+      "metaphor": "council"
+    },
+    "ideas": {
+      "label": "Idea Capture",
+      "metaphor": "bulb"
+    },
+    "category-learning": {
+      "label": "Learning",
+      "metaphor": "glitch learning tablet"
+    },
+    "japanese-study": {
+      "label": "Japanese Study",
+      "metaphor": "study"
+    },
+    "garden": {
+      "label": "Garden",
+      "metaphor": "neon sprout"
+    },
+    "settings-reserved": {
+      "label": "Settings Reserved",
+      "metaphor": "gear"
+    }
+  },
+  "targetCount": 50,
+  "modes": [
+    "day",
+    "dark"
+  ],
+  "assets": {
+    "day": "/images/liquid-icons/pack-c/packs/glitch-glam/day",
+    "dark": "/images/liquid-icons/pack-c/packs/glitch-glam/dark"
+  },
   "contactSheets": [
     "/images/liquid-icons/pack-c/review/glitch-glam-day-contact.png",
-    "/images/liquid-icons/pack-c/review/glitch-glam-dark-contact.png"
+    "/images/liquid-icons/pack-c/review/glitch-glam-dark-contact.png",
+    "/images/liquid-icons/pack-c/review/glitch-glam-dna-preview.png"
   ]
 }
