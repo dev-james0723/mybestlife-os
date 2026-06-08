@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import {
   getKnowledgeQuickFilterDisplayLabel,
   isKnowledgeBuiltinQuickFilterId,
@@ -212,14 +213,14 @@ export function KnowledgeTopControlBar() {
   return (
     <div className="flex shrink-0 flex-col gap-2.5 border-b border-border/40 bg-muted/10 px-4 py-3 sm:px-5">
       <div className="grid min-w-0 gap-2 lg:grid-cols-[auto_auto] lg:items-center lg:justify-start lg:gap-3">
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
+        <div className={cn(filterHorizontalScrollClassName, "lg:flex-nowrap")}>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <OSControl
                   size="sm"
                   osSize="compact"
-                  className="w-full justify-between border-border/60 bg-background/80 font-normal sm:w-[160px] lg:w-[128px] 2xl:w-[140px]"
+                  className="w-[160px] shrink-0 justify-between border-border/60 bg-background/80 font-normal lg:w-[128px] 2xl:w-[140px]"
                 />
               }
             >
@@ -263,7 +264,7 @@ export function KnowledgeTopControlBar() {
           </DropdownMenu>
 
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as KnowledgeSortKey)}>
-            <SelectTrigger className="h-9 w-full min-w-[7rem] border-border/60 bg-background/80 text-xs sm:w-[132px] lg:w-[108px] 2xl:w-[120px]">
+            <SelectTrigger className="h-9 w-[132px] shrink-0 border-border/60 bg-background/80 text-xs lg:w-[108px] 2xl:w-[120px]">
               <SelectValue placeholder={ui.sortLabel} />
             </SelectTrigger>
             <SelectContent>
@@ -275,11 +276,11 @@ export function KnowledgeTopControlBar() {
             </SelectContent>
           </Select>
 
-          <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto sm:shrink-0">
+          <div className="flex w-auto shrink-0 items-center gap-1.5">
             <Select value={pageSizeSelectValue} onValueChange={handlePageSizeChange}>
               <SelectTrigger
                 aria-label={ui.cardsPerPageLabel}
-                className="h-9 w-full min-w-[7rem] border-border/60 bg-background/80 text-xs sm:w-[112px] lg:w-[96px] 2xl:w-[104px]"
+                className="h-9 w-[112px] shrink-0 border-border/60 bg-background/80 text-xs lg:w-[96px] 2xl:w-[104px]"
               >
                 <SelectValue placeholder={ui.cardsPerPageLabel} />
               </SelectTrigger>

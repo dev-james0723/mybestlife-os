@@ -136,6 +136,8 @@ const en: KnowledgeUiCopy = {
     emptyDescription:
       "Tags appear here automatically as the AI analyzes your knowledge items.",
   },
+  formatFreezeColumn: (label) => `Freeze ${label} column`,
+  formatUnfreezeColumn: (label) => `Unfreeze ${label} column`,
   formatAddToColumn: (label) => `Add to ${label}`,
   formatFilterByTag: (tag) => `Filter by tag: ${tag}`,
   emptyStateNoKnowledgeTitle: "No knowledge yet",

@@ -3,9 +3,12 @@
 import { BarChart3, CheckCircle2, Gauge, Play, Sparkles, TimerReset } from "lucide-react";
 
 import { ActiveFocusDock } from "@/components/daily-planner/focus/active-focus-dock";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  OSControl,
+  OSFrostedPanel,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import type { DailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
 import type {
@@ -56,8 +59,11 @@ export function TodayFocusStrip({
   onDistracted: () => void;
 }) {
   return (
-    <Card className="overflow-hidden border-emerald-500/20 bg-card/80" data-reduced-during-focus="true">
-      <CardContent className="p-4 sm:p-5">
+    <OSFrostedPanel
+      as="section"
+      className="border-emerald-500/20 p-4 sm:p-5"
+      data-reduced-during-focus="true"
+    >
         {activeSession ? (
           <ActiveFocusDock
             copy={copy}
@@ -116,74 +122,63 @@ export function TodayFocusStrip({
             <div className="flex shrink-0 flex-wrap gap-2">
               {!planExists ? null : qualityReport ? (
                 <>
-                  <Button
+                  <OSControl
                     type="button"
-                    variant="outline"
-                    size="sm"
                     className="h-11 min-h-11 gap-1.5 rounded-xl"
                     onClick={onImprove}
                     disabled={qualityReport.suggested_changes.length === 0}
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     {copy.improvePlan}
-                  </Button>
-                  <Button
+                  </OSControl>
+                  <OSControl
                     type="button"
-                    variant="outline"
-                    size="sm"
                     className="h-11 min-h-11 gap-1.5 rounded-xl"
                     onClick={onOpenDetails}
                   >
                     <BarChart3 className="h-3.5 w-3.5" />
                     {copy.openDetails}
-                  </Button>
-                  <Button
+                  </OSControl>
+                  <OSPrimaryAction
                     type="button"
-                    size="sm"
                     className="h-11 min-h-11 gap-1.5 rounded-xl"
                     onClick={onStartFirstFocus}
                   >
                     <Play className="h-3.5 w-3.5" />
                     {copy.startFirstFocus}
-                  </Button>
+                  </OSPrimaryAction>
                 </>
               ) : (
-                <Button
+                <OSPrimaryAction
                   type="button"
-                  size="sm"
                   className="h-11 min-h-11 gap-1.5 rounded-xl"
                   onClick={onAnalyze}
                   disabled={analyzing}
                 >
                   <TimerReset className="h-3.5 w-3.5" />
                   {copy.analyzePlan}
-                </Button>
+                </OSPrimaryAction>
               )}
               {review ? (
-                <Button
+                <OSControl
                   type="button"
-                  variant="outline"
-                  size="sm"
                   className="h-11 min-h-11 rounded-xl"
                   onClick={onOpenReview}
                 >
                   {copy.openReview}
-                </Button>
+                </OSControl>
               ) : planExists ? (
-                <Button
+                <OSControl
                   type="button"
-                  variant="outline"
-                  size="sm"
                   className="h-11 min-h-11 rounded-xl"
                   onClick={onOpenReview}
                 >
                   {copy.reviewDay}
-                </Button>
+                </OSControl>
               ) : null}
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </OSFrostedPanel>
   );
 }

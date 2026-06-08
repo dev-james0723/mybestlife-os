@@ -20,6 +20,11 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
+import { cn } from "@/lib/utils";
+import {
+  filterHorizontalScrollClassName,
+  filterSearchControlClassName,
+} from "./filter-scroll";
 
 export type FilterOption = {
   value: string;
@@ -86,10 +91,13 @@ export function FilterBar({
   return (
     <div
       data-slot="filter-bar"
-      className="flex flex-col gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055] sm:flex-row sm:flex-wrap sm:items-center"
+      className={cn(
+        "rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055]",
+        filterHorizontalScrollClassName,
+      )}
     >
       {search && (
-        <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
+        <div className={cn(filterSearchControlClassName, "lg:max-w-sm")}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={
@@ -121,7 +129,7 @@ export function FilterBar({
               if (value !== null) onFilterChange?.(filter.key, value);
             }}
           >
-            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[160px]">
+            <SelectTrigger className="h-11 min-h-11 w-[160px] shrink-0 rounded-[0.95rem]">
               <SelectValue placeholder={filter.label}>
                 {selectedLabel ?? filter.label}
               </SelectValue>
@@ -145,7 +153,7 @@ export function FilterBar({
             if (value !== null) sort.onChange(value);
           }}
         >
-          <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[160px]">
+          <SelectTrigger className="h-11 min-h-11 w-[160px] shrink-0 rounded-[0.95rem]">
             <ArrowUpDown className="h-4 w-4 mr-2" />
             <SelectValue
               placeholder={i18n?.sortPlaceholder ?? common.sortBy}
@@ -167,7 +175,7 @@ export function FilterBar({
       )}
 
       {viewModes && viewModes.length > 1 && (
-        <div className="ml-auto flex w-full items-center gap-1 overflow-x-auto rounded-[1.15rem] border border-slate-200/70 bg-white/58 p-1 [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 dark:bg-white/[0.04] sm:w-auto [&::-webkit-scrollbar]:hidden">
+        <div className="ml-auto flex w-auto shrink-0 items-center gap-1 overflow-x-auto rounded-[1.15rem] border border-slate-200/70 bg-white/58 p-1 [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 dark:bg-white/[0.04] [&::-webkit-scrollbar]:hidden">
           {viewModes.map((mode) => {
             const Icon = viewModeIcons[mode];
             return (

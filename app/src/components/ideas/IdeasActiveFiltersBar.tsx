@@ -7,6 +7,7 @@ import { useIdeasStore } from "@/stores/ideas-store";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { cn } from "@/lib/utils";
+import { filterChipScrollClassName } from "@/components/shared/filter-scroll";
 import {
   getActiveIdeaQuickFilterDefinitions,
   getIdeaQuickFilterDisplayLabel,
@@ -90,16 +91,16 @@ export function IdeasActiveFiltersBar({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 border-b border-border/50 bg-muted/15 px-4 py-2.5 sm:px-5",
+        "flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden border-b border-border/50 bg-muted/15 px-4 py-2.5 sm:px-5 lg:flex-wrap lg:overflow-visible",
         className,
       )}
       role="region"
       aria-label={ui.activeFiltersHeading}
     >
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <span className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {ui.activeFiltersHeading}
       </span>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+      <div className={filterChipScrollClassName}>
         {searchQuery.trim() ? (
           <FilterChip label={`Search: ${searchQuery.trim()}`} onRemove={() => setSearchQuery("")} />
         ) : null}
@@ -146,7 +147,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
   return (
     <span
       data-selection-glow="static"
-      className="inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm"
+      className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm"
     >
       <span className="truncate">{label}</span>
       <button

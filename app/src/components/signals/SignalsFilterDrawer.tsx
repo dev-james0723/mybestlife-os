@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import {
   Sheet,
   SheetContent,
@@ -64,7 +65,7 @@ function Toggle({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        "max-w-[min(72vw,220px)] shrink-0 truncate rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         active
           ? "border-primary/40 bg-primary/10 text-primary"
           : "border-border/60 bg-card/60 text-muted-foreground hover:bg-muted/40",
@@ -143,7 +144,7 @@ export function SignalsFilterDrawer({
           </Group>
 
           <Group label={copy.filters.groups.topic}>
-            <div className="flex flex-wrap gap-1.5">
+            <div className={filterHorizontalScrollClassName}>
               {customTopics.map((name) => (
                 <Toggle
                   key={`custom:${name}`}
@@ -164,7 +165,7 @@ export function SignalsFilterDrawer({
           </Group>
 
           <Group label={copy.filters.groups.media}>
-            <div className="flex flex-wrap gap-1.5">
+            <div className={filterHorizontalScrollClassName}>
               {MEDIA_TYPE_ORDER.map((m) => (
                 <Toggle
                   key={m}

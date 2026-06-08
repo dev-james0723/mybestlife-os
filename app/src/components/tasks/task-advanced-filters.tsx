@@ -12,6 +12,7 @@ import {
   OSControl,
   OSPrimaryAction,
 } from "@/components/ui/os-primitives";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import { cn } from "@/lib/utils";
 import {
   formatAllFilterLabel,
@@ -83,14 +84,14 @@ function PillRow({
       : selected === value;
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className={filterHorizontalScrollClassName}>
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
           onClick={() => onSelect(opt.value)}
           className={cn(
-            "min-h-11 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
+            "min-h-11 shrink-0 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
             isActive(opt.value)
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border hover:bg-muted",

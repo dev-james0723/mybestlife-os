@@ -20,6 +20,10 @@ import {
   OSSegmentedControl,
 } from "@/components/ui/os-primitives";
 import {
+  filterHorizontalScrollClassName,
+  filterSearchControlClassName,
+} from "@/components/shared/filter-scroll";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -75,7 +79,7 @@ function QuickSelect({
         options.find((o) => o.value === v)?.label ?? String(v)
       }
     >
-      <SelectTrigger className={cn("h-11 min-h-11 rounded-xl", width)}>
+      <SelectTrigger className={cn("h-11 min-h-11 shrink-0 rounded-xl", width)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -151,8 +155,8 @@ export function TaskControlBar({
   const showClear = activeFilterCount > 0 || filter.search.trim().length > 0;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-[220px] max-w-sm flex-1">
+    <div className={filterHorizontalScrollClassName}>
+      <div className={cn(filterSearchControlClassName, "lg:max-w-sm")}>
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filter.search}
@@ -184,7 +188,7 @@ export function TaskControlBar({
         width="w-[150px]"
       />
 
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <QuickSelect
           value={sortKey}
           options={sortOptions}
@@ -205,7 +209,7 @@ export function TaskControlBar({
       </div>
 
       {onOpenAdvanced && (
-        <OSControl onClick={onOpenAdvanced}>
+        <OSControl className="shrink-0" onClick={onOpenAdvanced}>
           <SlidersHorizontal className="h-4 w-4" />
           {centerCopy.advancedFilters}
           {activeFilterCount > 0 && (
@@ -217,7 +221,7 @@ export function TaskControlBar({
       )}
 
       {showClear && onClearAll && (
-        <OSControl onClick={onClearAll}>
+        <OSControl className="shrink-0" onClick={onClearAll}>
           <X className="h-4 w-4" />
           {centerCopy.clearAll}
         </OSControl>
@@ -234,7 +238,7 @@ export function TaskControlBar({
           value={viewMode}
           onValueChange={onViewModeChange}
           ariaLabel={`${copy.pageTitle} view`}
-          className="sm:ml-auto"
+          className="shrink-0 lg:ml-auto"
           labelMode="sr-only"
           layoutId="tasks-view-mode-pill"
         />

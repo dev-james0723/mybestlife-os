@@ -1,15 +1,52 @@
 {
   "packId": "pack-c-liquid-glass",
   "name": "Pack C Liquid Glass",
-  "status": "review_ready",
-  "canonicalAssets": "review_sheets",
-  "croppedAssets": "provisional_only",
+  "status": "alpha_assets_ready_with_dark_fallbacks",
+  "canonicalAssets": "transparent_alpha_single_icons",
+  "croppedAssets": "framed_assets_archived",
+  "availablePacks": [
+    {
+      "id": "command-glass",
+      "name": "Command Glass",
+      "dayAssetBase": "/images/liquid-icons/pack-c/alpha-day-command-style",
+      "darkAssetBase": "/images/liquid-icons/pack-c/alpha-dark-command-style"
+    },
+    {
+      "id": "soft-3d-clay",
+      "name": "Soft 3D Clay",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/soft-3d-clay/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/soft-3d-clay/dark"
+    },
+    {
+      "id": "neo-brutal-retro",
+      "name": "Neo Brutal Retro",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/neo-brutal-retro/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/neo-brutal-retro/dark"
+    },
+    {
+      "id": "adaptive-minimal-line",
+      "name": "Adaptive Minimal Line",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/adaptive-minimal-line/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/adaptive-minimal-line/dark"
+    },
+    {
+      "id": "humanist-ink",
+      "name": "Humanist Ink",
+      "dayAssetBase": "/images/liquid-icons/pack-c/packs/humanist-ink/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/packs/humanist-ink/dark"
+    }
+  ],
   "modes": {
     "day": {
       "reviewSheets": [
         "/images/liquid-icons/pack-c/review/day-sheet-1.png",
         "/images/liquid-icons/pack-c/review/day-sheet-2.png"
       ],
+      "alphaAssetBase": "/images/liquid-icons/pack-c/alpha-day-command-style",
+      "alphaAssetSource": "/images/liquid-icons/pack-c/alpha-day-textured",
+      "alphaCommandStyleReceipt": "/images/liquid-icons/pack-c/alpha-day-command-style/COMMAND_STYLE_RECEIPT.json",
+      "alphaTextureReceipt": "/images/liquid-icons/pack-c/alpha-day-textured/TEXTURED_LIGHT_RECEIPT.json",
+      "finalAssetBase": "/images/liquid-icons/pack-c/final-day",
       "provisionalAssetBase": "/images/liquid-icons/pack-c/provisional-day"
     },
     "dark": {
@@ -17,6 +54,11 @@
         "/images/liquid-icons/pack-c/review/dark-sheet-1.png",
         "/images/liquid-icons/pack-c/review/dark-sheet-2.png"
       ],
+      "alphaAssetBase": "/images/liquid-icons/pack-c/alpha-dark-command-style",
+      "alphaAssetSource": "/images/liquid-icons/pack-c/alpha-day-command-style",
+      "alphaCommandStyleReceipt": "/images/liquid-icons/pack-c/alpha-dark-command-style/DARK_COMMAND_STYLE_RECEIPT.json",
+      "dayFallbackMarker": "/images/liquid-icons/pack-c/alpha-dark/DAY_FALLBACKS.txt",
+      "finalAssetBase": "/images/liquid-icons/pack-c/final-dark",
       "provisionalAssetBase": "/images/liquid-icons/pack-c/provisional-dark"
     }
   },

@@ -5,6 +5,10 @@ const copy = {
   en: {
     visualThemeTitle: "Visual Theme",
     visualThemeDescription: "Choose a theme that matches your style. This changes colors, fonts, and sidebar labels.",
+    navigationIconPackTitle: "Navigation Icon Packs",
+    navigationIconPackDescription: "Choose the icon style for the sidebar, navigation menu, and command palette.",
+    navigationIconPackDayPreview: "Day",
+    navigationIconPackDarkPreview: "Dark",
     dayNightMode: "Day / Night Mode",
     dayMode: "Day",
     nightMode: "Night",
@@ -165,6 +169,10 @@ const copy = {
   "zh-TW": {
     visualThemeTitle: "介面主題",
     visualThemeDescription: "選擇符合你風格的主題。這將改變顏色、字體和側欄標籤。",
+    navigationIconPackTitle: "導覽圖示套組",
+    navigationIconPackDescription: "選擇側欄、導覽選單與指令面板的圖示風格。",
+    navigationIconPackDayPreview: "日間",
+    navigationIconPackDarkPreview: "夜間",
     dayNightMode: "日間 / 夜間模式",
     dayMode: "日間",
     nightMode: "夜間",

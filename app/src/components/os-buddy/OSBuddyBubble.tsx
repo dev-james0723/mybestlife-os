@@ -10,6 +10,7 @@ type OSBuddyBubblePayload = {
   type: OSBuddyBubbleType;
   kind?: OSBuddyCompanionKind;
   cta?: OSBuddyCompanionCta | null;
+  isDismissing?: boolean;
 };
 
 type OSBuddyBubbleProps = {
@@ -33,6 +34,7 @@ export function OSBuddyBubble({
       data-kind={bubble.kind ?? bubble.type}
       data-horizontal={horizontal}
       data-vertical={vertical}
+      data-state={bubble.isDismissing ? "dismissing" : "visible"}
       role="status"
       aria-live="polite"
     >

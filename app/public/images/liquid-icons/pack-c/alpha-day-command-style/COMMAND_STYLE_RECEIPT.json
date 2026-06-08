@@ -1,0 +1,258 @@
+{
+  "source": "alpha-day-textured",
+  "styleReference": "category-command-center.png",
+  "method": "local material remap preserving alpha masks",
+  "fileCount": 50,
+  "files": [
+    {
+      "file": "about-me.png",
+      "sourceMean": 62.4,
+      "sourceStdev": 52.4
+    },
+    {
+      "file": "ai-knowledge.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "analytics.png",
+      "sourceMean": 56.1,
+      "sourceStdev": 67.8
+    },
+    {
+      "file": "assets.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "brain.png",
+      "sourceMean": 75.2,
+      "sourceStdev": 71
+    },
+    {
+      "file": "bucket-list.png",
+      "sourceMean": 50.4,
+      "sourceStdev": 68.1
+    },
+    {
+      "file": "calendar.png",
+      "sourceMean": 66.7,
+      "sourceStdev": 57.4
+    },
+    {
+      "file": "career-analytics.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "career-coach.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "career-compass.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "career-journal.png",
+      "sourceMean": 76,
+      "sourceStdev": 17
+    },
+    {
+      "file": "career-network.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "career-pipeline.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "career-profile.png",
+      "sourceMean": 75.9,
+      "sourceStdev": 16
+    },
+    {
+      "file": "career-timeline.png",
+      "sourceMean": 60.7,
+      "sourceStdev": 62.2
+    },
+    {
+      "file": "career-vault.png",
+      "sourceMean": 72.7,
+      "sourceStdev": 59.5
+    },
+    {
+      "file": "career.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "category-career.png",
+      "sourceMean": 62.5,
+      "sourceStdev": 59
+    },
+    {
+      "file": "category-command-center.png",
+      "sourceMean": 78.7,
+      "sourceStdev": 71.6
+    },
+    {
+      "file": "category-goals-execution.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "category-knowledge.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "category-learning.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "category-people.png",
+      "sourceMean": 49.6,
+      "sourceStdev": 61.6
+    },
+    {
+      "file": "category-resources.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "category-self.png",
+      "sourceMean": 56.7,
+      "sourceStdev": 62.9
+    },
+    {
+      "file": "daily-planner.png",
+      "sourceMean": 64.4,
+      "sourceStdev": 66.6
+    },
+    {
+      "file": "dashboard.png",
+      "sourceMean": 66.8,
+      "sourceStdev": 66.3
+    },
+    {
+      "file": "documents.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "finance.png",
+      "sourceMean": 78.4,
+      "sourceStdev": 67.8
+    },
+    {
+      "file": "garden.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "goals.png",
+      "sourceMean": 76.1,
+      "sourceStdev": 16
+    },
+    {
+      "file": "grateful-things.png",
+      "sourceMean": 58.6,
+      "sourceStdev": 58.9
+    },
+    {
+      "file": "habits.png",
+      "sourceMean": 52.6,
+      "sourceStdev": 68.6
+    },
+    {
+      "file": "health.png",
+      "sourceMean": 53.4,
+      "sourceStdev": 69.7
+    },
+    {
+      "file": "ideas.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "japanese-study.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "journal.png",
+      "sourceMean": 64.5,
+      "sourceStdev": 50.2
+    },
+    {
+      "file": "knowledge-base.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "life-agent.png",
+      "sourceMean": 55.5,
+      "sourceStdev": 67.9
+    },
+    {
+      "file": "mind-council.png",
+      "sourceMean": 75.9,
+      "sourceStdev": 16
+    },
+    {
+      "file": "projects.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "quote-library.png",
+      "sourceMean": 62.6,
+      "sourceStdev": 59.3
+    },
+    {
+      "file": "relationship.png",
+      "sourceMean": 57.7,
+      "sourceStdev": 69.3
+    },
+    {
+      "file": "role-model.png",
+      "sourceMean": 66.3,
+      "sourceStdev": 73.9
+    },
+    {
+      "file": "settings-reserved.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "signals.png",
+      "sourceMean": 52.1,
+      "sourceStdev": 56.7
+    },
+    {
+      "file": "software-vault.png",
+      "sourceMean": 76,
+      "sourceStdev": 16
+    },
+    {
+      "file": "tasks.png",
+      "sourceMean": 74.5,
+      "sourceStdev": 67.7
+    },
+    {
+      "file": "weather.png",
+      "sourceMean": 64.5,
+      "sourceStdev": 66.3
+    },
+    {
+      "file": "weekly-review.png",
+      "sourceMean": 51.3,
+      "sourceStdev": 62.9
+    }
+  ]
+}

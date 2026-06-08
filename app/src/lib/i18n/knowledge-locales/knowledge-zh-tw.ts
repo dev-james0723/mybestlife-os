@@ -106,6 +106,8 @@ export const knowledgeOverridesZhTW = {
     emptyTitle: "尚無標籤",
     emptyDescription: "AI 分析知識項目時會自動產生標籤。",
   },
+  formatFreezeColumn: (label: string) => `釘住「${label}」欄`,
+  formatUnfreezeColumn: (label: string) => `取消釘住「${label}」欄`,
   formatAddToColumn: (label: string) => `新增到 ${label}`,
   formatFilterByTag: (tag: string) => `依標籤篩選：${tag}`,
   emptyStateNoKnowledgeTitle: "尚無知識內容",

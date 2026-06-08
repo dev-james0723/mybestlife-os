@@ -1,0 +1,87 @@
+{
+  "url": "http://127.0.0.1:3000/en/daily-planner",
+  "screenshots": {
+    "desktopTimeBlock": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-ui-redesign/desktop-time-block.png",
+    "desktopFreePlan": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-ui-redesign/desktop-free-plan.png",
+    "mobileTimeBlock": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-ui-redesign/mobile-time-block.png"
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "pageErrors": [
+    "Invalid or unexpected token"
+  ],
+  "checks": [
+    {
+      "name": "networkidle",
+      "status": "fallback_timeout"
+    },
+    {
+      "name": "desktop-time-block",
+      "status": "pass",
+      "pathname": "/en/daily-planner",
+      "htmlClass": "__variable_246ccd __variable_4c40f6 __variable_b77edb __variable_dd5b2f __variable_0a80b4 __variable_c1a059 __variable_eb41fe __variable_0d7163 h-full antialiased font-size-medium density-comfortable",
+      "overflowX": 0,
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "floatingButtonsNearBottomRight": [
+        {
+          "text": "",
+          "x": 1360,
+          "y": 1020,
+          "w": 56,
+          "h": 56
+        }
+      ],
+      "textSample": "My Best Life OS\nCommand Center\nSelf\nPeople\nCareer\nBuild & Execute\nResources\nKnowledge\nLearning\nMy Garden\nToday\n\nSun, Jun 7\n\nFocus\nDeep Work\nNext\n6:00 AM Breakfast\nGarden\nPlant seed\nQuick Launch\nPlanner\nTasks\nBrain\nXiaoba's resting space\nDrop here\nCapture\nPlan\nSearch...\n⌘K\n18°C\nFew clouds\n22:50\nDaily Planner\n\nBuild your perfect day, one block at a time\n\nBack to AI Plan\nGet AI Suggestions\nTemplates\nSunday, June 7, 2026\nToday\nTime Block\nFree Plan\nGoogle Calendar sync now\nStart Time\n6:00 AM\nEnd Time\n11:00 PM\nAVAILABLE\n17h (1020 min)\nPLANNED\n1h 30m (90 min)\nREMAINING\n15h 30m (930 min)\nToday Focus\n\nPlan Quality not checked yet.\n\nAnalyze Plan\nReview Day\nTask Builder\nCreate Task\nImport from Tasks\nQU"
+    },
+    {
+      "name": "desktop-free-plan",
+      "status": "pass",
+      "pathname": "/en/daily-planner",
+      "htmlClass": "__variable_246ccd __variable_4c40f6 __variable_b77edb __variable_dd5b2f __variable_0a80b4 __variable_c1a059 __variable_eb41fe __variable_0d7163 h-full antialiased font-size-medium density-comfortable",
+      "overflowX": 0,
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "floatingButtonsNearBottomRight": [
+        {
+          "text": "",
+          "x": 1360,
+          "y": 1020,
+          "w": 56,
+          "h": 56
+        }
+      ],
+      "textSample": "My Best Life OS\nCommand Center\nSelf\nPeople\nCareer\nBuild & Execute\nResources\nKnowledge\nLearning\nMy Garden\nToday\n\nSun, Jun 7\n\nFocus\nDeep Work\nNext\n6:00 AM Breakfast\nGarden\nPlant seed\nQuick Launch\nPlanner\nTasks\nBrain\nXiaoba's resting space\nDrop here\nCapture\nPlan\nSearch...\n⌘K\n18°C\nFew clouds\n22:50\nDaily Planner\n\nBuild your perfect day, one block at a time\n\nBack to AI Plan\nGet AI Suggestions\nTemplates\nSunday, June 7, 2026\nToday\nTime Block\nFree Plan\nGoogle Calendar sync now\nStart Time\n6:00 AM\nEnd Time\n11:00 PM\n\nPLANNING WINDOW\n\n6:00 AM → 11:00 PM\n\nA loose boundary for today's flow — tasks don't need exact times in Free Planning Mode.\n\nToday Focus\n\nCreate a plan to unlock Focus & Reality insights.\n"
+    },
+    {
+      "name": "networkidle",
+      "status": "fallback_timeout"
+    },
+    {
+      "name": "mobile-time-block",
+      "status": "pass",
+      "pathname": "/en/daily-planner",
+      "htmlClass": "__variable_246ccd __variable_4c40f6 __variable_b77edb __variable_dd5b2f __variable_0a80b4 __variable_c1a059 __variable_eb41fe __variable_0d7163 h-full antialiased",
+      "overflowX": 0,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "floatingButtonsNearBottomRight": [
+        {
+          "text": "",
+          "x": 310,
+          "y": 696,
+          "w": 56,
+          "h": 56
+        }
+      ],
+      "textSample": "Search...\n⌘K\n—\n--:--\nDaily Planner\n\nBuild your perfect day, one block at a time\n\nBack to AI Plan\nGet AI Suggestions\nTemplates\nSun, Jun 7, 2026\nToday\nTime Block\nFree Plan\nGoogle Calendar sync now\nStart Time\n6:00 AM\nEnd Time\n11:00 PM\nAVAILABLE\n17h (1020 min)\nPLANNED\n0 min\nREMAINING\n17h (1020 min)\nToday Focus\n\nCreate a plan to unlock Focus & Reality insights.\n\nTask Builder\nCreate Task\nImport from Tasks\nQUICK ADD\nAdd Quick Task\n\nBreakfast\n\n3b · 30 min\n\nLunch\n\n6b · 1h (60 min)\n\nDinner\n\n8b · 1h 20m (80 min)\n\nGym\n\n9b · 1h 30m (90 min)\n\nMeditate\n\n1b · 10 min\n\nImprovise\n\n3b · 30 min\n\nRead\n\n2b · 20 min\n\nJournal\n\n1b · 10 min\n\nBreak\n\n1b · 10 min\n\nRest\n\n2b · 20 min\n\nYour Plan (0 tasks)\n0 blocks · 0 min\nN"
+    }
+  ]
+}

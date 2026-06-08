@@ -7,7 +7,7 @@ import { motion, type Variants } from "framer-motion";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { stripLeadingLocaleFromPathname, withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
-import { ChevronDown, ChevronRight, LogOut, Settings, ChevronsUpDown } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Settings, ChevronsUpDown, Sprout } from "lucide-react";
 import { LifeOsLogo } from "@/components/branding/life-os-logo";
 import {
   Sidebar,
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { TodayCompanionPanel } from "@/components/sidebar/TodayCompanionPanel";
+import { LiquidNavIcon } from "@/components/liquid-icons/LiquidNavIcon";
 import { useFocusNavigation } from "@/components/daily-planner/focus/focus-reality-boundary";
 import { navigationCategories, type NavCategory } from "@/lib/constants/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -54,6 +55,8 @@ import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { UiTheme } from "@/types/database";
+import type { ColorMode } from "@/types/database";
+import type { LiquidIconTargetType } from "@/lib/liquid-icons/navigation-assets";
 
 /**
  * IconWell — wraps a Lucide-style icon in a span that the default theme
@@ -62,10 +65,29 @@ import type { UiTheme } from "@/types/database";
  * so the original inline-icon layout is preserved byte-for-byte.
  */
 type IconComponent = ComponentType<{ className?: string }>;
-function IconWell({ icon: Icon }: { icon: IconComponent }) {
+function IconWell({
+  icon,
+  targetType,
+  targetId,
+  uiTheme,
+  colorMode,
+}: {
+  icon: IconComponent;
+  targetType: LiquidIconTargetType;
+  targetId: string;
+  uiTheme: UiTheme;
+  colorMode: ColorMode;
+}) {
   return (
     <span data-glass-icon-well>
-      <Icon className="h-4 w-4" />
+      <LiquidNavIcon
+        fallbackIcon={icon}
+        targetType={targetType}
+        targetId={targetId}
+        uiTheme={uiTheme}
+        colorMode={colorMode}
+        className="h-4 w-4"
+      />
     </span>
   );
 }
@@ -157,7 +179,7 @@ export function AppSidebar() {
   const { user, signOut, isLoading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const language = useAppStore((s) => s.language);
-  const { uiTheme } = useTheme();
+  const { uiTheme, colorMode } = useTheme();
   const focusNavigation = useFocusNavigation();
   const footer = getSidebarFooterCopy(language);
   const tui = getThemeUiCopy(language);
@@ -224,26 +246,41 @@ export function AppSidebar() {
   }, [companionRevealDelayMs, menuItemsReady]);
 
   const closeMobileSidebar = useCallback(() => setOpenMobile(false), [setOpenMobile]);
+  const closeMobileSidebarAfterNavigation = useCallback(() => {
+    window.setTimeout(() => setOpenMobile(false), 0);
+  }, [setOpenMobile]);
   const handleSidebarNavigate = useCallback(
     (href: string, event: MouseEvent<HTMLElement>) => {
       if (focusNavigation?.handleLinkClick(href, event) === false) return;
-      closeMobileSidebar();
+      closeMobileSidebarAfterNavigation();
     },
-    [closeMobileSidebar, focusNavigation],
+    [closeMobileSidebarAfterNavigation, focusNavigation],
   );
 
-  const userInitials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "U";
-
-  const userName = user?.user_metadata?.full_name || user?.email || "User";
-  const userEmail = user?.email || "";
-  const userAvatar = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
+  const metadataFullName =
+    typeof user?.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name.trim()
+      : "";
+  const metadataName =
+    typeof user?.user_metadata?.name === "string"
+      ? user.user_metadata.name.trim()
+      : "";
+  const metadataAvatar =
+    typeof user?.user_metadata?.avatar_url === "string"
+      ? user.user_metadata.avatar_url
+      : undefined;
+  const userName = profile?.full_name || metadataFullName || metadataName || user?.email || "User";
+  const userEmail = profile?.email || user?.email || "";
+  const userAvatar = profile?.avatar_url ?? metadataAvatar;
+  const userInitialsSeed = userName !== "User" ? userName : userEmail;
+  const userInitials =
+    userInitialsSeed
+      .split(/[\s.@_-]+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
 
   return (
     <Sidebar>
@@ -274,6 +311,7 @@ export function AppSidebar() {
                 pathWithoutLocale={pathWithoutLocale}
                 currentSearch={currentSearch}
                 uiTheme={uiTheme}
+                colorMode={colorMode}
                 language={language}
                 onNavigate={handleSidebarNavigate}
               />
@@ -283,6 +321,7 @@ export function AppSidebar() {
                   pathWithoutLocale={pathWithoutLocale}
                   onNavigate={handleSidebarNavigate}
                   uiTheme={uiTheme}
+                  colorMode={colorMode}
                   language={language}
                 />
               ) : null}
@@ -319,6 +358,7 @@ export function AppSidebar() {
                       pathWithoutLocale={pathWithoutLocale}
                       currentSearch={currentSearch}
                       uiTheme={uiTheme}
+                      colorMode={colorMode}
                       language={language}
                       onNavigate={handleSidebarNavigate}
                     />
@@ -328,6 +368,7 @@ export function AppSidebar() {
                         pathWithoutLocale={pathWithoutLocale}
                         onNavigate={handleSidebarNavigate}
                         uiTheme={uiTheme}
+                        colorMode={colorMode}
                         language={language}
                       />
                     ) : null}
@@ -338,10 +379,10 @@ export function AppSidebar() {
           </>
         )}
 
-        {showCompanionPanel ? <TodayCompanionPanel /> : null}
+        {showCompanionPanel ? <TodayCompanionPanel onNavigate={handleSidebarNavigate} /> : null}
       </SidebarContent>
 
-      <SidebarFooter className="hidden">
+      <SidebarFooter className="shrink-0 group-data-[collapsible=icon]:hidden">
         <SidebarSeparator className="my-1" />
         <SidebarMenu>
           <SidebarMenuItem>
@@ -350,7 +391,8 @@ export function AppSidebar() {
                 render={
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-sidebar-accent"
+                    className="data-[state=open]:bg-sidebar-accent data-open:bg-sidebar-accent"
+                    aria-label={`${userName} account menu`}
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={userAvatar} />
@@ -404,6 +446,7 @@ type CategoryGroupProps = {
   pathWithoutLocale: string;
   currentSearch: Record<string, string>;
   uiTheme: UiTheme;
+  colorMode: ColorMode;
   language: AppLocale;
   onNavigate: (href: string, event: MouseEvent<HTMLElement>) => void;
 };
@@ -433,6 +476,7 @@ function CategoryGroup({
   pathWithoutLocale,
   currentSearch,
   uiTheme,
+  colorMode,
   language,
   onNavigate,
 }: CategoryGroupProps) {
@@ -456,7 +500,13 @@ function CategoryGroup({
               isActive={isActive}
               onClick={(event) => onNavigate(href, event)}
             >
-              <IconWell icon={category.icon} />
+              <IconWell
+                icon={category.icon}
+                targetType="category"
+                targetId={category.categoryId}
+                uiTheme={uiTheme}
+                colorMode={colorMode}
+              />
               <span className="font-semibold">{label}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -488,7 +538,13 @@ function CategoryGroup({
                 onClick={(event) => onNavigate(href, event)}
                 className="flex-1"
               >
-                <IconWell icon={category.icon} />
+                <IconWell
+                  icon={category.icon}
+                  targetType="category"
+                  targetId={category.categoryId}
+                  uiTheme={uiTheme}
+                  colorMode={colorMode}
+                />
                 <span className="font-semibold">{label}</span>
               </SidebarMenuButton>
               <CollapsibleTrigger
@@ -521,7 +577,13 @@ function CategoryGroup({
                       isActive={itemActive}
                       onClick={(event) => onNavigate(sublinkHref, event)}
                     >
-                      <IconWell icon={item.icon} />
+                      <IconWell
+                        icon={item.icon}
+                        targetType="nav_item"
+                        targetId={item.itemId}
+                        uiTheme={uiTheme}
+                        colorMode={colorMode}
+                      />
                       <span>
                         {getThemedItemLabel(item.itemId, uiTheme, language)}
                       </span>
@@ -543,7 +605,13 @@ function CategoryGroup({
           <CollapsibleTrigger
             render={
               <SidebarMenuButton>
-                <IconWell icon={category.icon} />
+                <IconWell
+                  icon={category.icon}
+                  targetType="category"
+                  targetId={category.categoryId}
+                  uiTheme={uiTheme}
+                  colorMode={colorMode}
+                />
                 <span className="font-semibold">{label}</span>
                 <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
               </SidebarMenuButton>
@@ -567,7 +635,13 @@ function CategoryGroup({
                     isActive={isActive}
                     onClick={(event) => onNavigate(href, event)}
                   >
-                    <IconWell icon={item.icon} />
+                    <IconWell
+                      icon={item.icon}
+                      targetType="nav_item"
+                      targetId={item.itemId}
+                      uiTheme={uiTheme}
+                      colorMode={colorMode}
+                    />
                     <span>
                       {getThemedItemLabel(item.itemId, uiTheme, language)}
                     </span>
@@ -587,6 +661,7 @@ type GardenNavButtonProps = {
   pathWithoutLocale: string;
   onNavigate: (href: string, event: MouseEvent<HTMLElement>) => void;
   uiTheme: UiTheme;
+  colorMode: ColorMode;
   language: AppLocale;
 };
 
@@ -595,6 +670,7 @@ function GardenNavButton({
   pathWithoutLocale,
   onNavigate,
   uiTheme,
+  colorMode,
   language,
 }: GardenNavButtonProps) {
   const href = withLocalePrefix(localeSlug, "/garden");
@@ -615,9 +691,14 @@ function GardenNavButton({
               isActive && "ring-2 ring-emerald-400/90 ring-offset-2 ring-offset-sidebar"
             )}
           >
-            <span className="select-none text-base leading-none" aria-hidden>
-              🪴
-            </span>
+            <LiquidNavIcon
+              fallbackIcon={Sprout}
+              targetType="cta"
+              targetId="garden"
+              uiTheme={uiTheme}
+              colorMode={colorMode}
+              className="h-6 w-6"
+            />
             <span>{getThemedItemLabel("garden", uiTheme, language)}</span>
           </Link>
         </SidebarMenuItem>

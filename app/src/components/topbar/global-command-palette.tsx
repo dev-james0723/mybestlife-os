@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { LiquidNavIcon } from "@/components/liquid-icons/LiquidNavIcon";
 import { useCommandPaletteStore } from "@/stores/command-palette-store";
 import { navigationCategories } from "@/lib/constants/navigation";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
@@ -38,6 +39,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getThemedCategoryLabel, getThemedItemLabel } from "@/lib/theme-labels";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
+import type { LiquidIconTargetType } from "@/lib/liquid-icons/navigation-assets";
 
 type FlatNavItem = {
   key: string;
@@ -45,6 +47,8 @@ type FlatNavItem = {
   url: string;
   category: string;
   icon: LucideIcon;
+  iconTargetType: LiquidIconTargetType;
+  iconTargetId: string;
 };
 
 export function GlobalCommandPalette() {
@@ -89,6 +93,8 @@ export function GlobalCommandPalette() {
           url: item.url,
           category: catLabel,
           icon: item.icon,
+          iconTargetType: "nav_item",
+          iconTargetId: item.itemId,
         });
       }
     }
@@ -98,6 +104,8 @@ export function GlobalCommandPalette() {
       url: "/garden",
       category: "Garden",
       icon: Sprout,
+      iconTargetType: "cta",
+      iconTargetId: "garden",
     });
     return items;
   }, [language, uiTheme]);
@@ -135,7 +143,6 @@ export function GlobalCommandPalette() {
               className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:opacity-60"
             >
               {navItems.map((item) => {
-                const Icon = item.icon;
                 return (
                   <Command.Item
                     key={item.key}
@@ -143,7 +150,14 @@ export function GlobalCommandPalette() {
                     onSelect={() => handleNavigate(item.url)}
                     className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm data-[selected=true]:bg-white/10"
                   >
-                    <Icon className="h-4 w-4 opacity-80" />
+                    <LiquidNavIcon
+                      fallbackIcon={item.icon}
+                      targetType={item.iconTargetType}
+                      targetId={item.iconTargetId}
+                      uiTheme={uiTheme}
+                      colorMode={colorMode}
+                      className="h-4 w-4 opacity-90"
+                    />
                     <span className="flex-1 truncate">{item.label}</span>
                     <span className="text-xs opacity-50">{item.category}</span>
                   </Command.Item>

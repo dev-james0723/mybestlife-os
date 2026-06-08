@@ -71,11 +71,6 @@ function RotatingPhone({ className }: { className?: string }) {
         <span className="absolute left-1/2 top-1 h-0.5 w-2 -translate-x-1/2 rounded-full bg-foreground/55" />
         <span className="absolute inset-x-1 bottom-1 h-0.5 rounded-full bg-foreground/35" />
       </motion.div>
-      <motion.span
-        className="absolute bottom-0 right-0 h-4 w-4 rounded-full border border-foreground/30 border-l-transparent border-t-transparent"
-        animate={reduceMotion ? undefined : { rotate: 360 }}
-        transition={reduceMotion ? undefined : { duration: 3, ease: "linear", repeat: Infinity }}
-      />
     </div>
   );
 }
@@ -181,7 +176,9 @@ export function BoardLandscapeMode({
                   <RotatingPhone className="h-9 w-10 shrink-0" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{title}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">{rotateHint}</p>
+                    {!isPortraitMobile ? (
+                      <p className="truncate text-[11px] text-muted-foreground">{rotateHint}</p>
+                    ) : null}
                   </div>
                 </div>
                 <Button

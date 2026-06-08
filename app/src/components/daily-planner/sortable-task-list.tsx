@@ -710,7 +710,7 @@ function TaskRowContent({
         >
           <button
             type="button"
-            className="flex flex-1 items-center justify-center bg-orange-500 text-white min-w-0 active:bg-orange-600"
+            className="flex min-w-0 flex-1 items-center justify-center bg-amber-500/95 text-white active:bg-amber-600"
             style={{ maxWidth: MOBILE_SWIPE_ACTION_W }}
             disabled={blocks <= 1}
             aria-label={copy.ariaRemoveOneBlock}
@@ -723,7 +723,7 @@ function TaskRowContent({
           </button>
           <button
             type="button"
-            className="flex flex-1 items-center justify-center bg-blue-500 text-white min-w-0 active:bg-blue-600"
+            className="flex min-w-0 flex-1 items-center justify-center bg-sky-500/95 text-white active:bg-sky-600"
             style={{ maxWidth: MOBILE_SWIPE_ACTION_W }}
             aria-label={copy.ariaAddOneBlock}
             onClick={(e) => {
@@ -735,7 +735,7 @@ function TaskRowContent({
           </button>
           <button
             type="button"
-            className="flex flex-1 items-center justify-center bg-purple-500 text-white min-w-0 active:bg-purple-600"
+            className="flex min-w-0 flex-1 items-center justify-center bg-violet-500/95 text-white active:bg-violet-600"
             style={{ maxWidth: MOBILE_SWIPE_ACTION_W }}
             aria-label={copy.ariaPreTaskRitual}
             onClick={(e) => {
@@ -748,7 +748,7 @@ function TaskRowContent({
           </button>
           <button
             type="button"
-            className="flex flex-1 items-center justify-center bg-red-500 text-white min-w-0 active:bg-red-600"
+            className="flex min-w-0 flex-1 items-center justify-center bg-rose-500/95 text-white active:bg-rose-600"
             style={{ maxWidth: MOBILE_SWIPE_ACTION_W }}
             aria-label={copy.ariaRemoveTask}
             onClick={(e) => {
@@ -770,11 +770,11 @@ function TaskRowContent({
         {...(dndListeners ?? {})}
         {...(dndAttributes ?? {})}
         className={cn(
-          "relative z-10 flex items-center gap-2 rounded-lg border bg-card p-3",
+          "relative z-10 flex items-center gap-2 rounded-xl border border-slate-300/55 bg-white/62 p-3 shadow-[0_8px_22px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.68)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045] dark:shadow-[0_12px_28px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]",
           !isMobile && "cursor-grab active:cursor-grabbing",
           !isMobile &&
             !isAnyDragging &&
-            "transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-md",
+            "transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out hover:-translate-y-px hover:border-slate-400/65 hover:bg-white/78 hover:shadow-[0_14px_34px_rgba(15,23,42,0.1),inset_0_1px_0_rgba(255,255,255,0.74)] dark:hover:border-white/18 dark:hover:bg-white/[0.075] dark:hover:shadow-[0_16px_38px_rgba(2,8,23,0.36),inset_0_1px_0_rgba(255,255,255,0.08)]",
           isPlaceholder && "opacity-0 pointer-events-none select-none",
           isAnyDragging && "select-none",
         )}
@@ -819,7 +819,7 @@ function TaskRowContent({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1.5 min-w-0">
-            <p className="text-sm font-medium break-words min-w-0 flex-1">
+            <p className="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-foreground">
               {task.taskName ?? copy.untitledTask}
             </p>
             <PlannerGoogleSyncDot
@@ -836,12 +836,12 @@ function TaskRowContent({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
             <Badge
               variant="secondary"
-              className="text-[10px] px-1.5 py-0 shrink-0"
+              className="shrink-0 px-1.5 py-0 text-[10px] font-semibold"
             >
               {blocks}
               {copy.blockAbbr} · {durationLabel}
             </Badge>
-            <span className="text-[10px] font-medium text-green-600 dark:text-green-400 shrink-0">
+            <span className="shrink-0 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
               {timeRangeLabel}
             </span>
           </div>
@@ -855,7 +855,7 @@ function TaskRowContent({
             type="button"
             aria-label={copy.ariaPreTaskRitual /* generic toggle label */}
             aria-expanded={chevronOpenLook}
-            className="ml-auto flex shrink-0 items-center gap-0.5 pl-2 pr-1 -mr-1 py-2 text-muted-foreground/70 active:text-muted-foreground"
+            className="ml-auto -mr-1 flex shrink-0 items-center gap-0.5 rounded-lg py-2 pl-2 pr-1 text-muted-foreground/70 transition-colors hover:bg-muted/40 active:text-muted-foreground"
             onPointerDown={stopDragActivation}
             onTouchStart={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -881,7 +881,7 @@ function TaskRowContent({
           <button
             type="button"
             aria-label={copy.startFocus}
-            className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 active:bg-emerald-500/20 dark:text-emerald-200"
+            className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] transition-colors hover:bg-emerald-500/15 active:bg-emerald-500/20 dark:text-emerald-200"
             onPointerDown={stopDragActivation}
             onTouchStart={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -1037,7 +1037,7 @@ function LiftedCardOverlay({
 
   return (
     <div
-      className="relative flex items-center gap-2 rounded-lg border bg-card p-3"
+      className="relative flex items-center gap-2 rounded-xl border border-slate-300/55 bg-white/72 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.68)] backdrop-blur-md dark:border-white/12 dark:bg-slate-950/78"
       style={{
         borderLeftWidth: 4,
         borderLeftColor: color,
@@ -1059,18 +1059,18 @@ function LiftedCardOverlay({
         <GripVertical className="h-4 w-4 shrink-0 text-primary/80" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium break-words">
+        <p className="break-words text-sm font-semibold leading-snug text-foreground">
           {task.taskName ?? copy.untitledTask}
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
           <Badge
             variant="secondary"
-            className="text-[10px] px-1.5 py-0 shrink-0"
+            className="shrink-0 px-1.5 py-0 text-[10px] font-semibold"
           >
             {blocks}
             {copy.blockAbbr} · {durationLabel}
           </Badge>
-          <span className="text-[10px] font-medium text-green-600 dark:text-green-400 shrink-0">
+          <span className="shrink-0 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
             {timeRangeLabel}
           </span>
         </div>

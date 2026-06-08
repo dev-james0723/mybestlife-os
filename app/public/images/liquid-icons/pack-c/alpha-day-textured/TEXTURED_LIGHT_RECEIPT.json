@@ -1,0 +1,129 @@
+{
+  "source": "alpha-dark",
+  "targetMean": 76,
+  "thresholdMean": 120,
+  "fileCount": 50,
+  "adjustedCount": 24,
+  "adjusted": [
+    {
+      "file": "ai-knowledge.png",
+      "mean": 212.7,
+      "scale": 0.357
+    },
+    {
+      "file": "assets.png",
+      "mean": 210,
+      "scale": 0.362
+    },
+    {
+      "file": "career-analytics.png",
+      "mean": 214.4,
+      "scale": 0.355
+    },
+    {
+      "file": "career-coach.png",
+      "mean": 212.1,
+      "scale": 0.358
+    },
+    {
+      "file": "career-compass.png",
+      "mean": 217.4,
+      "scale": 0.35
+    },
+    {
+      "file": "career-journal.png",
+      "mean": 213.6,
+      "scale": 0.356
+    },
+    {
+      "file": "career-network.png",
+      "mean": 221.2,
+      "scale": 0.344
+    },
+    {
+      "file": "career-pipeline.png",
+      "mean": 221.8,
+      "scale": 0.343
+    },
+    {
+      "file": "career-profile.png",
+      "mean": 229.5,
+      "scale": 0.331
+    },
+    {
+      "file": "career.png",
+      "mean": 213.9,
+      "scale": 0.355
+    },
+    {
+      "file": "category-goals-execution.png",
+      "mean": 211.7,
+      "scale": 0.359
+    },
+    {
+      "file": "category-knowledge.png",
+      "mean": 200.7,
+      "scale": 0.379
+    },
+    {
+      "file": "category-learning.png",
+      "mean": 231,
+      "scale": 0.329
+    },
+    {
+      "file": "category-resources.png",
+      "mean": 216.2,
+      "scale": 0.352
+    },
+    {
+      "file": "documents.png",
+      "mean": 237.3,
+      "scale": 0.32
+    },
+    {
+      "file": "garden.png",
+      "mean": 199.2,
+      "scale": 0.381
+    },
+    {
+      "file": "goals.png",
+      "mean": 226.4,
+      "scale": 0.336
+    },
+    {
+      "file": "ideas.png",
+      "mean": 216.3,
+      "scale": 0.351
+    },
+    {
+      "file": "japanese-study.png",
+      "mean": 211.8,
+      "scale": 0.359
+    },
+    {
+      "file": "knowledge-base.png",
+      "mean": 219,
+      "scale": 0.347
+    },
+    {
+      "file": "mind-council.png",
+      "mean": 227.6,
+      "scale": 0.334
+    },
+    {
+      "file": "projects.png",
+      "mean": 221.1,
+      "scale": 0.344
+    },
+    {
+      "file": "settings-reserved.png",
+      "mean": 223.8,
+      "scale": 0.34
+    },
+    {
+      "file": "software-vault.png",
+      "mean": 220.2,
+      "scale": 0.345
+    }
+  ]
+}

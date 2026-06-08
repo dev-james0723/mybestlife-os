@@ -107,6 +107,10 @@ export type KnowledgeUiCopy = {
   collapseDirectory: string;
   /** Laptop: show the left directory again after it was collapsed. */
   expandDirectory: string;
+  /** Board view: keep a column visible while horizontally scrolling other columns. */
+  formatFreezeColumn: (label: string) => string;
+  /** Board view: release a frozen column back into the horizontal board flow. */
+  formatUnfreezeColumn: (label: string) => string;
   formatAddToColumn: (label: string) => string;
   /** Accessible label for applying a tag as search filter from the sidebar. */
   formatFilterByTag: (tag: string) => string;

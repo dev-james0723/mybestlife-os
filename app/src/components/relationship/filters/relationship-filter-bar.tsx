@@ -13,6 +13,7 @@
 
 import { useMemo } from "react";
 import { FilterBar } from "@/components/shared/filter-bar";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import { OSControl } from "@/components/ui/os-primitives";
 import { Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -79,7 +80,7 @@ export function RelationshipFilterBar({
     filters.favoritesOnly;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className={filterHorizontalScrollClassName}>
       <FilterBar
         search={{
           placeholder: copy.relSearchPlaceholder,
@@ -124,7 +125,7 @@ export function RelationshipFilterBar({
         type="button"
         variant={filters.favoritesOnly ? "default" : "outline"}
         className={cn(
-          "gap-1.5",
+          "shrink-0 gap-1.5",
           filters.favoritesOnly && "bg-amber-500 hover:bg-amber-500/90",
         )}
         onClick={() =>
@@ -144,7 +145,7 @@ export function RelationshipFilterBar({
         <OSControl
           type="button"
           variant="ghost"
-          className="gap-1 text-muted-foreground hover:text-foreground"
+          className="shrink-0 gap-1 text-muted-foreground hover:text-foreground"
           onClick={() =>
             onFiltersChange({
               search: "",

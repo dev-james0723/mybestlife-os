@@ -5,6 +5,10 @@ import { LayoutGrid, List, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { OSControl, OSSegmentedControl } from "@/components/ui/os-primitives";
 import {
+  filterHorizontalScrollClassName,
+  filterSearchControlClassName,
+} from "@/components/shared/filter-scroll";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -98,8 +102,8 @@ export function AiKnowledgeFilterBar({
   ];
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-      <div className="relative flex-1 min-w-[220px] max-w-md">
+    <div className={filterHorizontalScrollClassName}>
+      <div className={`${filterSearchControlClassName} lg:max-w-md`}>
         <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           value={searchQuery}
@@ -128,7 +132,7 @@ export function AiKnowledgeFilterBar({
       >
         <SelectTrigger
           data-selection-glow={activeTopCategory ? "active" : undefined}
-          className="!h-11 w-full sm:!h-8 sm:w-[200px]"
+          className="!h-11 w-[200px] shrink-0 sm:!h-8"
         >
           <SelectValue placeholder={ui.filters.allCategories} />
         </SelectTrigger>
@@ -151,7 +155,7 @@ export function AiKnowledgeFilterBar({
         >
           <SelectTrigger
             data-selection-glow={activeSubCategorySlug ? "active" : undefined}
-            className="!h-11 w-full sm:!h-8 sm:w-[200px]"
+            className="!h-11 w-[200px] shrink-0 sm:!h-8"
           >
             <SelectValue placeholder={ui.filters.allSubcategories} />
           </SelectTrigger>
@@ -175,7 +179,7 @@ export function AiKnowledgeFilterBar({
         >
           <SelectTrigger
             data-selection-glow={activeTag ? "active" : undefined}
-            className="!h-11 w-full sm:!h-8 sm:w-[160px]"
+            className="!h-11 w-[160px] shrink-0 sm:!h-8"
           >
             <SelectValue placeholder={ui.filters.tagFilterPlaceholder} />
           </SelectTrigger>
@@ -196,7 +200,7 @@ export function AiKnowledgeFilterBar({
         <OSControl
           size="sm"
           onClick={onClear}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <X className="h-3.5 w-3.5" />
           {ui.filters.clearFilters}
@@ -208,7 +212,7 @@ export function AiKnowledgeFilterBar({
         value={layout}
         onValueChange={onLayoutChange}
         ariaLabel={`${ui.filters.layoutGrid} / ${ui.filters.layoutList}`}
-        className="sm:ml-auto sm:w-auto"
+        className="shrink-0 lg:ml-auto lg:w-auto"
         labelMode="sr-only"
         layoutId="ai-knowledge-layout-active-pill"
       />

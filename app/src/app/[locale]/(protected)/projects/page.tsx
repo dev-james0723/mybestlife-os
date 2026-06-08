@@ -82,6 +82,10 @@ import {
   getMergedTemplates,
   type ProjectCreatePreset,
 } from "@/lib/projects/templates";
+import {
+  filterHorizontalScrollClassName,
+  filterSearchControlClassName,
+} from "@/components/shared/filter-scroll";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -616,10 +620,10 @@ export default function ProjectsPage() {
         {/* Toolbar */}
         <div
           data-slot="projects-toolbar"
-          className="flex flex-col gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055] sm:flex-row sm:flex-wrap sm:items-center"
+          className={`${filterHorizontalScrollClassName} rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055]`}
         >
           {/* Search */}
-          <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
+          <div className={`${filterSearchControlClassName} lg:max-w-sm`}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={ui.searchPlaceholder}
@@ -636,15 +640,15 @@ export default function ProjectsPage() {
 
           {/* Quick filter chips */}
           {activeFilters.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex shrink-0 flex-nowrap items-center gap-1.5 lg:flex-wrap">
               {activeFilters.map((f) => (
                 <button
                   key={f.key}
                   type="button"
-                  className="inline-flex min-h-11 items-center gap-1 rounded-[0.9rem] border border-lime-300/35 bg-lime-300/16 px-3 pr-2 text-xs font-semibold text-slate-800 transition-[background,border-color,transform] duration-150 hover:border-lime-300/55 hover:bg-lime-300/24 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:text-lime-50"
+                  className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-1 rounded-[0.9rem] border border-lime-300/35 bg-lime-300/16 px-3 pr-2 text-xs font-semibold text-slate-800 transition-[background,border-color,transform] duration-150 hover:border-lime-300/55 hover:bg-lime-300/24 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:text-lime-50"
                   onClick={() => clearFilter(f.key)}
                 >
-                  {f.label}
+                  <span className="truncate">{f.label}</span>
                   <X className="h-3 w-3" />
                 </button>
               ))}
@@ -663,7 +667,7 @@ export default function ProjectsPage() {
                 : getProjectStatusLabel(v as Project["status"], ui)
             }
           >
-            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[140px]">
+            <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
               <SelectValue placeholder={ui.filterStatus} />
             </SelectTrigger>
             <SelectContent>
@@ -687,7 +691,7 @@ export default function ProjectsPage() {
                 : getProjectPriorityLabel(v as Project["priority"], ui)
             }
           >
-            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[140px]">
+            <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
               <SelectValue placeholder={ui.filterPriority} />
             </SelectTrigger>
             <SelectContent>
@@ -714,7 +718,7 @@ export default function ProjectsPage() {
               sortOptions.find((o) => o.value === v)?.label ?? String(v)
             }
           >
-            <SelectTrigger className="h-11 min-h-11 w-full rounded-[0.95rem] sm:w-[140px]">
+            <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
               <ArrowUpDown className="h-4 w-4 mr-1.5" />
               <SelectValue placeholder={ui.sortBy} />
             </SelectTrigger>
@@ -737,7 +741,7 @@ export default function ProjectsPage() {
             value={viewMode}
             onValueChange={setViewMode}
             ariaLabel={`${ui.pageTitle} view`}
-            className="sm:ml-auto"
+            className="shrink-0 lg:ml-auto"
             labelMode="desktop"
             layoutId="projects-view-mode-pill"
           />

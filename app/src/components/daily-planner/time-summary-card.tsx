@@ -82,7 +82,7 @@ export function TimeSummaryCard({
     <div
       ref={cardRef}
       className={cn(
-        "time-summary-card group relative flex aspect-square min-h-0 flex-col items-center justify-center overflow-hidden rounded-xl border px-1.5 py-2 text-center shadow-sm sm:gap-2 sm:px-2 sm:py-3",
+        "time-summary-card group relative flex aspect-square min-h-0 flex-col items-center justify-center overflow-hidden rounded-2xl border px-1.5 py-2 text-center shadow-sm transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:gap-2 sm:px-2 sm:py-3",
         "border-white/12 bg-black/5",
         glassIntensity === "medium" ? "time-summary-card--glass-medium" : "time-summary-card--glass-soft",
       )}

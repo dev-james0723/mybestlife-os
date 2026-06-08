@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
 import { hasActiveFilters, type TaskFilterState } from "@/lib/tasks/task-filters";
 import {
@@ -66,8 +67,8 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+    <div className={filterHorizontalScrollClassName}>
+      <span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-muted-foreground">
         <Bookmark className="h-3.5 w-3.5" />
         {copy.savedFilters}
       </span>
@@ -81,6 +82,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
             onClick={() => onApply(p.filter)}
             className={cn(
               "min-h-11 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
+              "shrink-0",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border hover:bg-muted",
@@ -98,6 +100,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
             key={p.id}
             className={cn(
               "inline-flex min-h-11 items-center gap-1 rounded-xl border py-1 pl-3 pr-1 text-sm font-semibold transition-colors",
+              "shrink-0",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border hover:bg-muted",
@@ -126,7 +129,7 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
         <Popover open={saveOpen} onOpenChange={setSaveOpen}>
           <PopoverTrigger
             render={
-              <Button variant="ghost" size="sm" className="min-h-11 gap-1 rounded-xl text-sm" />
+              <Button variant="ghost" size="sm" className="min-h-11 shrink-0 gap-1 rounded-xl text-sm" />
             }
           >
             <Plus className="h-3.5 w-3.5" />

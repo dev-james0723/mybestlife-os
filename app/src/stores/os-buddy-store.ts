@@ -27,7 +27,8 @@ import type { OSBuddyRestingState } from "@/lib/os-buddy/os-buddy-resting-space"
 import type { OSBuddyMood } from "@/types/os-buddy";
 
 const UNSOLICITED_BUBBLE_COOLDOWN_MS = 20_000;
-const DEFAULT_BUBBLE_DURATION_MS = 3_200;
+const DEFAULT_BUBBLE_DURATION_MS = 5_000;
+const BUBBLE_VANISH_ANIMATION_MS = 560;
 const CLICK_BURST_WINDOW_MS = 5_000;
 
 export type OSBuddyBubbleType =
@@ -66,6 +67,7 @@ interface OSBuddyRuntimeState {
     kind?: OSBuddyCompanionKind;
     cta?: OSBuddyCompanionCta | null;
     createdAt: number;
+    isDismissing: boolean;
   } | null;
 
   isMenuOpen: boolean;
@@ -195,6 +197,7 @@ interface OSBuddyRuntimeState {
 
 let moodResetTimer: ReturnType<typeof setTimeout> | null = null;
 let bubbleClearTimer: ReturnType<typeof setTimeout> | null = null;
+let bubbleVanishTimer: ReturnType<typeof setTimeout> | null = null;
 let birthdayModeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function inactiveAirPilotPlusCountdown(durationMs = 0): AIPilotPlusCountdownState {
@@ -312,6 +315,10 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       clearTimeout(bubbleClearTimer);
       bubbleClearTimer = null;
     }
+    if (bubbleVanishTimer) {
+      clearTimeout(bubbleVanishTimer);
+      bubbleVanishTimer = null;
+    }
 
     set((state) => ({
       bubble: {
@@ -320,15 +327,25 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
         kind: options?.kind,
         cta: options?.cta ?? null,
         createdAt: now,
+        isDismissing: false,
       },
       lastUnsolicitedBubbleAt: unsolicited ? now : state.lastUnsolicitedBubbleAt,
     }));
 
     bubbleClearTimer = setTimeout(() => {
+      bubbleClearTimer = null;
       set((state) => {
         if (state.bubble?.createdAt !== now) return state;
-        return { bubble: null };
+        return { bubble: { ...state.bubble, isDismissing: true } };
       });
+
+      bubbleVanishTimer = setTimeout(() => {
+        bubbleVanishTimer = null;
+        set((state) => {
+          if (state.bubble?.createdAt !== now) return state;
+          return { bubble: null };
+        });
+      }, BUBBLE_VANISH_ANIMATION_MS);
     }, durationMs);
   },
 
@@ -337,7 +354,42 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
       clearTimeout(bubbleClearTimer);
       bubbleClearTimer = null;
     }
-    set({ bubble: null });
+
+    const currentBubble = get().bubble;
+    if (!currentBubble) {
+      if (bubbleVanishTimer) {
+        clearTimeout(bubbleVanishTimer);
+        bubbleVanishTimer = null;
+      }
+      set({ bubble: null });
+      return;
+    }
+
+    if (currentBubble.isDismissing) {
+      if (bubbleVanishTimer) {
+        clearTimeout(bubbleVanishTimer);
+        bubbleVanishTimer = null;
+      }
+      set({ bubble: null });
+      return;
+    }
+
+    set((state) => {
+      if (state.bubble?.createdAt !== currentBubble.createdAt) return state;
+      return { bubble: { ...state.bubble, isDismissing: true } };
+    });
+
+    if (bubbleVanishTimer) {
+      clearTimeout(bubbleVanishTimer);
+    }
+
+    bubbleVanishTimer = setTimeout(() => {
+      bubbleVanishTimer = null;
+      set((state) => {
+        if (state.bubble?.createdAt !== currentBubble.createdAt) return state;
+        return { bubble: null };
+      });
+    }, BUBBLE_VANISH_ANIMATION_MS);
   },
 
   setMenuOpen: (open) => set({ isMenuOpen: open }),

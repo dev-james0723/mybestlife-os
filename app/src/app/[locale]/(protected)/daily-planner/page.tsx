@@ -110,9 +110,9 @@ import type {
 } from "@/types/database";
 
 import { PageShell } from "@/components/shared/page-shell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
+  OSFrostedPanel,
   OSControl,
   OSIconControl,
   OSPrimaryAction,
@@ -488,7 +488,7 @@ function WheelColumn({
   return (
     <div className="relative">
       <div
-        className="pointer-events-none absolute inset-x-0 z-10 border-y border-primary/30 bg-primary/5"
+        className="pointer-events-none absolute inset-x-0 z-10 border-y border-lime-300/40 bg-lime-300/10"
         style={{ top: ITEM_H, height: ITEM_H }}
       />
       <div
@@ -604,14 +604,14 @@ function TimeWheelPicker({
 
   return (
     <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
             <Button
               variant="outline"
               size="sm"
-              className="h-11 min-h-11 w-full min-w-0 justify-start gap-2 rounded-xl text-sm font-medium tabular-nums"
+              className="h-11 min-h-11 w-full min-w-0 justify-start gap-2 rounded-xl border-slate-300/55 bg-white/62 text-sm font-semibold tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-md hover:bg-white/82 dark:border-white/10 dark:bg-white/[0.055] dark:hover:bg-white/[0.08]"
             />
           }
         >
@@ -794,7 +794,7 @@ function QuickTaskButton({
       <div className="flex items-stretch">
         <button
           type="button"
-          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-l-xl border border-r-0 px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/50 touch-manipulation"
+          className="group flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-l-xl border border-r-0 border-slate-300/55 bg-white/58 px-3 py-2 text-left text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-md transition-[background,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-slate-400/65 hover:bg-white/82 hover:shadow-[0_10px_26px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] touch-manipulation dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-white/18 dark:hover:bg-white/[0.075] dark:hover:shadow-[0_12px_28px_rgba(2,8,23,0.24)]"
           onClick={() => onAdd(task.blocks)}
         >
           <span
@@ -802,7 +802,7 @@ function QuickTaskButton({
               "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[9px]",
               showRaster
                 ? "bg-[#15120f] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_5px_16px_rgba(0,0,0,0.22)] ring-1 ring-white/15"
-                : "bg-muted/70 ring-1 ring-border/40",
+                : "bg-white/66 text-slate-700 ring-1 ring-slate-300/55 dark:bg-white/[0.06] dark:text-white/78 dark:ring-white/10",
             )}
           >
             {showRaster ? (
@@ -829,8 +829,8 @@ function QuickTaskButton({
             ) : null}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium">{task.name}</p>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="truncate text-xs font-semibold text-foreground">{task.name}</p>
+            <p className="text-[10px] font-medium text-muted-foreground">
               {task.blocks}b · {duration}
             </p>
           </div>
@@ -839,7 +839,7 @@ function QuickTaskButton({
           render={
             <button
               type="button"
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-r-xl border px-2 hover:bg-muted/50 transition-colors touch-manipulation"
+              className="flex min-h-12 min-w-11 shrink-0 items-center justify-center rounded-r-xl border border-slate-300/55 bg-white/46 px-2 text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md transition-[background,border-color,color,transform] duration-200 hover:-translate-y-px hover:border-slate-400/65 hover:bg-white/72 hover:text-foreground touch-manipulation dark:border-white/10 dark:bg-white/[0.035] dark:hover:border-white/18 dark:hover:bg-white/[0.07]"
               aria-label={`Choose blocks for ${task.name}`}
             />
           }
@@ -2188,10 +2188,12 @@ export default function DailyPlannerPage() {
         </>
       }
     >
-      <div className="space-y-6 pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4rem))] md:pb-0">
+      <div
+        className="space-y-6 pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4rem))] md:pb-0"
+        data-stagger
+      >
       {/* ─── Date & Time Card ─── */}
-      <Card>
-        <CardContent className="space-y-4 p-4 sm:p-5">
+      <OSFrostedPanel as="section" className="space-y-5 p-4 sm:p-5">
           {/* Date navigation + actions */}
           <div className="flex flex-col gap-3">
             <div className="flex min-w-0 items-stretch gap-2">
@@ -2203,7 +2205,7 @@ export default function DailyPlannerPage() {
                 <ChevronLeft className="h-4 w-4" />
               </OSIconControl>
 
-              <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg border border-border/70 bg-muted/25 px-2 py-2.5 text-center">
+              <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-xl border border-slate-300/55 bg-white/56 px-3 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045]">
                 <span className="hidden text-sm font-semibold leading-snug sm:inline">
                   {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: dateLocale })}
                 </span>
@@ -2272,10 +2274,10 @@ export default function DailyPlannerPage() {
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-border/45" />
 
           {/* Time pickers */}
-          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:max-w-xl">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:max-w-2xl sm:grid-cols-2">
             <TimeWheelPicker
               label={copy.startTime}
               value={startTime}
@@ -2317,12 +2319,12 @@ export default function DailyPlannerPage() {
             </div>
           ) : null}
 
-          <Separator />
+          <Separator className="bg-border/45" />
 
           {mode === "free" ? (
             /* Free Mode: replace the time-budget tiles with a calm Planning Window caption */
-            <div className="space-y-1.5 rounded-xl border border-border/50 bg-card/30 px-4 py-3 backdrop-blur-sm">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="space-y-1.5 rounded-2xl border border-slate-300/50 bg-white/52 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 {copy.freePlanningWindowLabel}
               </p>
               <p className="text-sm font-semibold tabular-nums leading-snug text-foreground">
@@ -2334,7 +2336,7 @@ export default function DailyPlannerPage() {
             </div>
           ) : (
           /* Time budget — three icon tiles */
-          <div className="grid min-w-0 grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             <TimeSummaryCard
               title={copy.available}
               value={fmtBlocks(
@@ -2379,8 +2381,7 @@ export default function DailyPlannerPage() {
             />
           </div>
           )}
-        </CardContent>
-      </Card>
+      </OSFrostedPanel>
 
       <TodayFocusStrip
         copy={copy}
@@ -2403,36 +2404,35 @@ export default function DailyPlannerPage() {
 
       {/* ─── Main grid (Time Block mode only) ─── */}
       {mode === "time-block" && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(21rem,0.9fr)_minmax(0,1.1fr)]">
         {/* ─── Task Builder ─── */}
-        <Card>
-          <CardHeader className="space-y-3 pb-3">
-            <CardTitle className="text-base">{copy.taskBuilder}</CardTitle>
+        <OSFrostedPanel as="section" className="space-y-4 p-4 sm:p-5">
+          <div className="space-y-3">
+            <h2 className="font-heading text-base font-semibold tracking-tight text-foreground">
+              {copy.taskBuilder}
+            </h2>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-              <Button
-                size="sm"
-                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl border-transparent bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-sm hover:from-fuchsia-500 hover:to-pink-500 sm:flex-1"
+              <OSPrimaryAction
+                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl sm:flex-1"
                 onClick={() => setCreateAiDialogOpen(true)}
               >
                 <Wand2 className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{copy.createTaskWithAi}</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl border-2 border-cyan-500/70 bg-background text-cyan-950 hover:bg-cyan-50 dark:border-cyan-400/55 dark:text-cyan-50 dark:hover:bg-cyan-950/35 sm:flex-1"
+              </OSPrimaryAction>
+              <OSControl
+                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl sm:flex-1"
                 onClick={() => setImportDialogOpen(true)}
               >
                 <FolderInput className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{copy.importFromTasks}</span>
-              </Button>
+              </OSControl>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          </div>
+          <div className="space-y-4">
             {/* Quick add grid */}
             <div>
               <div className="flex items-center justify-between mb-2 gap-2">
-                <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <Label className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   {copy.quickAdd}
                 </Label>
                 <div className="flex items-center gap-1 shrink-0">
@@ -2447,7 +2447,7 @@ export default function DailyPlannerPage() {
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-1.5 pb-1 sm:pb-0">
+              <div className="grid grid-cols-2 gap-2 pb-1 sm:pb-0">
                 {quickTaskDefs.map((qt, idx) => (
                   <QuickTaskButton
                     key={`${qt.name}-${idx}-${qt.iconSrc ?? ""}-${qt.iconRasterFallback ?? ""}`}
@@ -2515,7 +2515,7 @@ export default function DailyPlannerPage() {
               </DialogContent>
             </Dialog>
 
-            <Separator />
+            <Separator className="bg-border/45" />
 
             {/* Task list */}
             <div>
@@ -2530,7 +2530,7 @@ export default function DailyPlannerPage() {
               </div>
 
               {tasks.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-dashed border-slate-300/55 bg-white/36 px-4 py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
                   {copy.noTasksYet}
                 </div>
               ) : (
@@ -2549,8 +2549,8 @@ export default function DailyPlannerPage() {
                 />
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </OSFrostedPanel>
 
         {/* ─── Timeline + visual schedule ─── */}
         <div className="space-y-6">
@@ -2627,26 +2627,22 @@ export default function DailyPlannerPage() {
             onStartFocus={openStartFocusForFreeTask}
             secondaryActions={
               <>
-                <Button
+                <OSPrimaryAction
                   type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl border-fuchsia-400/35 bg-fuchsia-500/10 text-fuchsia-100 hover:bg-fuchsia-500/15 dark:text-fuchsia-100"
+                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
                   onClick={() => setCreateAiDialogOpen(true)}
                 >
                   <Wand2 className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{copy.createTaskWithAi}</span>
-                </Button>
-                <Button
+                </OSPrimaryAction>
+                <OSControl
                   type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl border-cyan-400/35 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/15 dark:text-cyan-100"
+                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
                   onClick={() => setImportDialogOpen(true)}
                 >
                   <FolderInput className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{copy.importFromTasks}</span>
-                </Button>
+                </OSControl>
               </>
             }
           />

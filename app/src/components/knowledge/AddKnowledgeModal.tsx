@@ -55,6 +55,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import { createClient } from "@/lib/supabase/client";
+import { hasDevLoginBypassCookie } from "@/lib/dev-login-bypass";
 
 /**
  * Map a classifier result → the SourceType we'll pass to the server.
@@ -143,6 +145,55 @@ function formatFileSize(bytes: number): string {
 
 function getInitialPendingKnowledgeAdd() {
   return useKnowledgeStore.getState().pendingKnowledgeAdd;
+}
+
+const SAVE_AUTH_DEV_BYPASS =
+  "You're in Dev / Skip-login mode. Saving Knowledge needs a real Supabase account. Log in with Google or email, then try again.";
+const SAVE_AUTH_NO_SESSION =
+  "You need to sign in with a real account before saving Knowledge. Open the login page and continue with Google or email.";
+const SAVE_AUTH_SESSION_INVALID =
+  "Your session has expired. Log out and log back in, then try saving again.";
+
+async function getKnowledgeSaveAuthErrorMessage(): Promise<string | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (user) return null;
+  if (hasDevLoginBypassCookie()) return SAVE_AUTH_DEV_BYPASS;
+  if (error) return SAVE_AUTH_SESSION_INVALID;
+  return SAVE_AUTH_NO_SESSION;
+}
+
+function messageFromUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+  return String(error);
+}
+
+function knowledgeSaveFailureMessage(error: unknown): string | null {
+  const message = messageFromUnknownError(error);
+  const lower = message.toLowerCase();
+  if (
+    message === "Unauthorized" ||
+    lower.includes("auth session missing") ||
+    lower.includes("row-level security") ||
+    lower.includes("jwt")
+  ) {
+    return hasDevLoginBypassCookie()
+      ? SAVE_AUTH_DEV_BYPASS
+      : SAVE_AUTH_SESSION_INVALID;
+  }
+  return null;
 }
 
 export function AddKnowledgeModal() {
@@ -295,6 +346,11 @@ export function AddKnowledgeModal() {
 
   const handleSubmitUrl = async () => {
     if (!url.trim()) return;
+    const authError = await getKnowledgeSaveAuthErrorMessage();
+    if (authError) {
+      toast.error(authError);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const created = await addKnowledgeFromUrl(url, {
@@ -309,8 +365,9 @@ export function AddKnowledgeModal() {
       upsertItem(created);
       toast.success(ui.addSuccess);
       closeAddModal();
-    } catch {
-      toast.error(ui.addUrlFailed);
+    } catch (err) {
+      console.error("[add-knowledge] URL knowledge failed:", err);
+      toast.error(knowledgeSaveFailureMessage(err) ?? ui.addUrlFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -363,6 +420,11 @@ export function AddKnowledgeModal() {
 
   const handleSubmitFile = async () => {
     if (!file) return;
+    const authError = await getKnowledgeSaveAuthErrorMessage();
+    if (authError) {
+      toast.error(authError);
+      return;
+    }
     setIsSubmitting(true);
     cancelPendingFileUploadRef.current = false;
 
@@ -393,7 +455,7 @@ export function AddKnowledgeModal() {
       if (msg === "VIDEO_TOO_LARGE") toast.error(ui.fileVideoTooLarge);
       else if (msg === "PHOTO_TOO_LARGE") toast.error(ui.filePhotoTooLarge);
       else if (msg === "FILE_TOO_LARGE") toast.error(ui.fileTooLarge);
-      else toast.error(ui.uploadFailed);
+      else toast.error(knowledgeSaveFailureMessage(err) ?? ui.uploadFailed);
     } finally {
       setIsSubmitting(false);
       cancelPendingFileUploadRef.current = false;
@@ -417,6 +479,12 @@ export function AddKnowledgeModal() {
     const draft = syncTextDraft();
     const hasMediaOnly = /<img\b/i.test(draft.html);
     if (!textTitle.trim() && !draft.text && !hasMediaOnly) return;
+
+    const authError = await getKnowledgeSaveAuthErrorMessage();
+    if (authError) {
+      toast.error(authError);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -453,7 +521,8 @@ export function AddKnowledgeModal() {
               typeof (e as { message: unknown }).message === "string"
             ? (e as { message: string }).message
             : ui.addNoteFallbackFailed;
-      toast.error(msg.length > 220 ? `${msg.slice(0, 220)}…` : msg);
+      const authMessage = knowledgeSaveFailureMessage(e);
+      toast.error(authMessage ?? (msg.length > 220 ? `${msg.slice(0, 220)}…` : msg));
     } finally {
       setIsSubmitting(false);
     }
@@ -531,6 +600,11 @@ export function AddKnowledgeModal() {
   }, []);
 
   const handleSubmitVoice = async () => {
+    const authError = await getKnowledgeSaveAuthErrorMessage();
+    if (authError) {
+      toast.error(authError);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -544,8 +618,9 @@ export function AddKnowledgeModal() {
       upsertItem(created);
       toast.success(ui.addSuccess);
       closeAddModal();
-    } catch {
-      toast.error(ui.addVoiceMemoFailed);
+    } catch (err) {
+      console.error("[add-knowledge] voice memo failed:", err);
+      toast.error(knowledgeSaveFailureMessage(err) ?? ui.addVoiceMemoFailed);
     } finally {
       setIsSubmitting(false);
     }

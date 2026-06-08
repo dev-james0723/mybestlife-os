@@ -3,6 +3,7 @@
 import { Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import { EASE_OUT_EXPO } from "@/lib/animation/easings";
 import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import {
@@ -15,9 +16,8 @@ import {
 } from "./AssetCategoryPill";
 
 /**
- * Horizontal category filter row used on desktop (sm+). On mobile we fall
- * back to a plain Select (rendered separately in AssetsView) because chip rows
- * don't scale well at narrow widths without horizontal scroll.
+ * Horizontal category filter row used on tablet/desktop (sm+). On mobile we
+ * fall back to a plain Select rendered separately in AssetsView.
  *
  * The "Favorites" chip is intentionally part of the same row so it reads as
  * another filter facet rather than a disconnected toggle.
@@ -57,7 +57,7 @@ export function CategoryFilterChips({
       role="toolbar"
       aria-label="Category filters"
       className={cn(
-        "flex flex-wrap items-center gap-1.5",
+        filterHorizontalScrollClassName,
         className,
       )}
     >
@@ -79,7 +79,7 @@ export function CategoryFilterChips({
       {/* Visual divider between category chips and the favorites facet */}
       <span
         aria-hidden
-        className="mx-0.5 hidden h-5 w-px bg-border sm:inline-block"
+        className="mx-0.5 hidden h-5 w-px shrink-0 bg-border sm:inline-block"
       />
       <FavoritesChip
         active={favoritesOnly}
@@ -123,7 +123,7 @@ function CategoryChip({ active, hue, label, onClick }: CategoryChipProps) {
       whileTap={prefersReduced ? undefined : { scale: 0.96 }}
       transition={{ duration: 0.15, ease: EASE_OUT_EXPO }}
       className={cn(
-        "inline-flex min-h-11 min-w-11 items-center rounded-full border px-3 py-1 text-xs font-medium leading-tight sm:min-h-0 sm:min-w-0",
+        "inline-flex min-h-11 min-w-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium leading-tight sm:min-h-0 sm:min-w-0",
         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
         !active &&
           "border-border/70 bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -154,7 +154,7 @@ function FavoritesChip({
       whileTap={prefersReduced ? undefined : { scale: 0.96 }}
       transition={{ duration: 0.15, ease: EASE_OUT_EXPO }}
       className={cn(
-        "inline-flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium leading-tight transition-colors sm:min-h-0 sm:min-w-0",
+        "inline-flex min-h-11 min-w-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium leading-tight transition-colors sm:min-h-0 sm:min-w-0",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)]/40",
         active
           ? "border-[var(--accent-pink)]/50 bg-[var(--accent-pink)]/12 text-[var(--accent-pink)]"

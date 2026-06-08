@@ -9,6 +9,7 @@ import { getTagBreadcrumb } from "@/lib/knowledge/tags/build-tree";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import { filterChipScrollClassName } from "@/components/shared/filter-scroll";
 import {
   getActiveKnowledgeQuickFilterDefinitions,
   getKnowledgeQuickFilterDisplayLabel,
@@ -63,17 +64,17 @@ export function KnowledgeActiveFiltersBar({ className }: { className?: string })
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 border-b border-border/50 bg-muted/15 py-2.5 pl-4 pr-20 sm:px-5",
+        "flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden border-b border-border/50 bg-muted/15 py-2.5 pl-4 pr-20 sm:px-5 lg:flex-wrap lg:overflow-visible",
         className,
       )}
       role="region"
       aria-label={ui.activeFiltersHeading}
     >
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <span className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {ui.activeFiltersHeading}
       </span>
 
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+      <div className={filterChipScrollClassName}>
         {searchQuery.trim() ? (
           <FilterChip
             label={ui.formatActiveSearch(searchQuery.trim())}
@@ -121,7 +122,7 @@ export function KnowledgeActiveFiltersBar({ className }: { className?: string })
         {activeTagId && tagTrail.length > 0 ? (
           <div
             data-selection-glow="static"
-            className="flex max-w-full min-w-0 items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm"
+            className="flex max-w-[min(72vw,260px)] shrink-0 items-center gap-1 rounded-md border border-border/60 bg-background/80 px-2 py-1 text-xs shadow-sm"
           >
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto scrollbar-none">
               {tagTrail.map((crumb, idx) => {
@@ -189,7 +190,7 @@ function FilterChip({
   return (
     <span
       data-selection-glow="static"
-      className="inline-flex max-w-[min(100%,220px)] items-center gap-0.5 rounded-full border border-border/70 bg-background/90 pl-2.5 pr-1 text-[11px] text-foreground shadow-sm"
+      className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-0.5 rounded-full border border-border/70 bg-background/90 pl-2.5 pr-1 text-[11px] text-foreground shadow-sm"
     >
       <span className="min-w-0 truncate font-medium">{label}</span>
       <button

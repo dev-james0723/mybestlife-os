@@ -4,6 +4,7 @@ import { Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { OSControl, OSStatusRail } from "@/components/ui/os-primitives";
+import { filterChipScrollClassName } from "@/components/shared/filter-scroll";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -187,15 +188,15 @@ export function SignalsFilterBar({
       </div>
 
       {chips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className={filterChipScrollClassName}>
           {chips.map((chip) => (
             <button
               key={chip.key}
               type="button"
               onClick={() => onChange(removeFilterChip(filter, chip))}
-              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium text-foreground/80 transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-1 rounded-full border border-border/60 bg-muted/40 py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium text-foreground/80 transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
-              {chipLabel(chip, copy)}
+              <span className="truncate">{chipLabel(chip, copy)}</span>
               <X className="h-3 w-3 opacity-60" />
             </button>
           ))}
@@ -203,7 +204,7 @@ export function SignalsFilterBar({
             <button
               type="button"
               onClick={onClear}
-              className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
             >
               {copy.filters.clearAll}
             </button>

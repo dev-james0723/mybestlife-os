@@ -26,7 +26,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -374,14 +374,15 @@ function QuickLaunchButton({
   option: QuickLaunchOption;
   localeSlug: LocaleUrlSlug;
   locale: AppLocale;
-  onNavigate: () => void;
+  onNavigate: (href: string, event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const Icon = option.icon;
   const label = isZh(locale) ? option.zhLabel : option.label;
+  const href = withLocalePrefix(localeSlug, option.href);
   return (
     <Link
-      href={withLocalePrefix(localeSlug, option.href)}
-      onClick={onNavigate}
+      href={href}
+      onClick={(event) => onNavigate(href, event)}
       className="today-companion-quick-button group flex min-h-[42px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border border-slate-200/85 bg-white/68 px-0.5 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)] transition hover:border-emerald-300/55 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:border-white/[0.09] dark:bg-white/[0.045] dark:text-slate-200/85 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] dark:hover:border-emerald-300/30 dark:hover:bg-emerald-400/10 dark:hover:text-white"
       title={label}
     >
@@ -720,7 +721,11 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
   );
 }
 
-export function TodayCompanionPanel() {
+type TodayCompanionPanelProps = {
+  onNavigate?: (href: string, event: MouseEvent<HTMLElement>) => void;
+};
+
+export function TodayCompanionPanel({ onNavigate }: TodayCompanionPanelProps) {
   const locale = useAppStore((s) => s.language);
   const localeSlug = useLocaleSlug();
   const pathname = usePathname();
@@ -864,12 +869,13 @@ export function TodayCompanionPanel() {
     );
   };
 
-  const handlePlan = () => {
+  const handlePlan = (event: MouseEvent<HTMLAnchorElement>) => {
     showBubble(
       isZh(locale) ? `${name} 幫你打開 planner。` : `${name} opened the planner.`,
       "user-triggered",
       { durationMs: 1800, force: true },
     );
+    onNavigate?.(withLocalePrefix(localeSlug, "/daily-planner"), event);
   };
 
   if (!panelPreferencesReady) {
@@ -935,7 +941,7 @@ export function TodayCompanionPanel() {
                 option={option}
                 localeSlug={localeSlug}
                 locale={locale}
-                onNavigate={() => {
+                onNavigate={(href, event) => {
                   showBubble(
                     isZh(locale)
                       ? `${name} 送你去 ${option.zhLabel}。`
@@ -943,6 +949,7 @@ export function TodayCompanionPanel() {
                     "user-triggered",
                     { durationMs: 1700, force: true },
                   );
+                  onNavigate?.(href, event);
                 }}
               />
             ))}

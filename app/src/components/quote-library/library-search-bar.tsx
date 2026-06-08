@@ -16,6 +16,10 @@ import { useQuoteLibraryStore } from "@/stores/quote-library-store";
 import { getQuoteLibraryUiCopy } from "@/lib/i18n/quote-library-ui";
 import type { QuoteSortKey } from "@/types/quote";
 import { cn } from "@/lib/utils";
+import {
+  filterHorizontalScrollClassName,
+  filterSearchControlClassName,
+} from "@/components/shared/filter-scroll";
 
 export function LibrarySearchBar() {
   const language = useAppStore((s) => s.language);
@@ -48,8 +52,8 @@ export function LibrarySearchBar() {
     filters.linkedGoalId !== null;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <div className="relative min-w-[240px] flex-1 max-w-md">
+    <div className={filterHorizontalScrollClassName}>
+      <div className={cn(filterSearchControlClassName, "min-w-[240px] lg:max-w-md")}>
         <Search
           className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
@@ -68,7 +72,7 @@ export function LibrarySearchBar() {
         variant={filters.favoritesOnly ? "default" : "outline"}
         size="sm"
         onClick={() => setFilters({ favoritesOnly: !filters.favoritesOnly })}
-        className="h-11 min-h-11 gap-2 rounded-xl px-3"
+        className="h-11 min-h-11 shrink-0 gap-2 rounded-xl px-3"
         aria-pressed={filters.favoritesOnly}
       >
         <Star
@@ -82,7 +86,7 @@ export function LibrarySearchBar() {
         value={sort}
         onValueChange={(value) => value && setSort(value as QuoteSortKey)}
       >
-        <SelectTrigger className="h-11 min-h-11 w-[180px] rounded-xl">
+        <SelectTrigger className="h-11 min-h-11 w-[180px] shrink-0 rounded-xl">
           <ArrowUpDown className="mr-2 size-4" aria-hidden />
           <SelectValue placeholder={copy.sortPlaceholder} />
         </SelectTrigger>
@@ -101,7 +105,7 @@ export function LibrarySearchBar() {
           variant="ghost"
           size="sm"
           onClick={resetFilters}
-          className="h-11 min-h-11 gap-2 rounded-xl px-3 text-muted-foreground"
+          className="h-11 min-h-11 shrink-0 gap-2 rounded-xl px-3 text-muted-foreground"
         >
           <X className="size-4" aria-hidden />
           {copy.filterClear}

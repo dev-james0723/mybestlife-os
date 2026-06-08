@@ -844,6 +844,8 @@ html.focus-mode [data-focus-hideable] {
   --os-buddy-bubble-ink: var(--popover-foreground);
   --os-buddy-bubble-border: color-mix(in oklch, var(--foreground) 82%, black 18%);
   --os-buddy-bubble-x: 0;
+  --os-buddy-bubble-vanish-y: -14px;
+  --os-buddy-bubble-vanish-mid-y: -5px;
   position: absolute;
   z-index: 46;
   width: max-content;
@@ -875,9 +877,16 @@ html.focus-mode [data-focus-hideable] {
 }
 
 .os-buddy-pixel-bubble[data-vertical="below"] {
+  --os-buddy-bubble-vanish-y: 14px;
+  --os-buddy-bubble-vanish-mid-y: 5px;
   top: 100%;
   margin-top: 12px;
   transform-origin: 50% 0%;
+}
+
+.os-buddy-pixel-bubble[data-state="dismissing"] {
+  pointer-events: none;
+  animation: os-buddy-bubble-vanish 560ms cubic-bezier(0.36, 0, 0.22, 1) both;
 }
 
 .os-buddy-pixel-bubble[data-horizontal="left"] {
@@ -1120,6 +1129,32 @@ html.focus-mode [data-focus-hideable] {
   }
   76% {
     transform: translateX(var(--os-buddy-bubble-x)) translateY(-0.5px) rotate(-0.35deg);
+  }
+}
+
+@keyframes os-buddy-bubble-vanish {
+  0% {
+    opacity: 1;
+    filter: blur(0) saturate(1);
+    transform: translateX(var(--os-buddy-bubble-x)) translateY(0) scale(1);
+  }
+  42% {
+    opacity: 0.72;
+    filter: blur(1.5px) saturate(0.92);
+    transform: translateX(var(--os-buddy-bubble-x))
+      translateY(var(--os-buddy-bubble-vanish-mid-y)) scale(1.025);
+  }
+  74% {
+    opacity: 0.28;
+    filter: blur(5px) saturate(0.82);
+    transform: translateX(var(--os-buddy-bubble-x))
+      translateY(var(--os-buddy-bubble-vanish-y)) scale(1.06);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(10px) saturate(0.72);
+    transform: translateX(var(--os-buddy-bubble-x))
+      translateY(var(--os-buddy-bubble-vanish-y)) scale(1.08);
   }
 }
 
@@ -1652,7 +1687,16 @@ html[data-ui-theme="default"] [data-glass-icon-well] svg {
   width: 16px !important;
   height: 16px !important;
 }
-
+html[data-ui-theme="default"] [data-glass-icon-well] img {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: inherit;
+  object-fit: contain;
+}
+html[data-ui-theme="default"] [data-glass-icon-well]:has([data-liquid-nav-icon]) {
+  background: transparent;
+  box-shadow: none;
+}
 /* Sub-menu items: suppress the pill well. Keep the icon, lose the
    circular background. Makes the sub-item list feel lighter and frees
    horizontal space for the label. */
@@ -1666,6 +1710,10 @@ html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] [data-glass-
   width: 16px !important;
   height: 16px !important;
   color: var(--sidebar-icon-muted);
+}
+html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"] [data-glass-icon-well] img {
+  width: 20px !important;
+  height: 20px !important;
 }
 
 /* Hover — row lightly fills, well stays muted */
@@ -1688,6 +1736,10 @@ html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="tru
   background: var(--sidebar-icon-well-active-bg);
   color: var(--sidebar-text-active);
   box-shadow: 0 0 10px color-mix(in oklch, var(--primary) 35%, transparent);
+}
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="true"] [data-glass-icon-well]:has([data-liquid-nav-icon]) {
+  background: transparent;
+  box-shadow: none;
 }
 /* Sub-item active: tint the bare icon with primary color (no pill) */
 html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"][data-active="true"] [data-glass-icon-well] svg {

@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Play } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { OSFrostedPanel } from "@/components/ui/os-primitives";
 import { cn } from "@/lib/utils";
 import { computeSequentialSchedule } from "@/lib/daily-planner/plan-schedule-math";
 import { getSessionActualMinutes } from "@/lib/daily-planner/focus/review-metrics";
@@ -181,17 +181,17 @@ export function TimelineView({
   }, [sortedTasks, startTime, blockMinutes, planDateForSchedule]);
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold tracking-tight">
+    <OSFrostedPanel as="section" className="overflow-hidden p-0">
+      <div className="px-4 pb-3 pt-4 sm:px-5">
+        <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
           {scheduleTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 sm:p-0">
-        <div className="flex min-w-0 border-t border-border/60">
+        </h2>
+      </div>
+      <div className="p-0 sm:p-0">
+        <div className="flex min-w-0 border-t border-border/45">
           {/* Time column — one label per 10-minute row */}
           <div
-            className="w-[4.25rem] shrink-0 border-r border-border/60 bg-muted/20"
+            className="w-[4.25rem] shrink-0 border-r border-border/45 bg-white/34 dark:bg-white/[0.025]"
             style={{ height: trackHeightPx }}
           >
             {slotStarts.map((min, i) => {
@@ -218,15 +218,15 @@ export function TimelineView({
 
           {/* Track: empty 10-min rows + absolutely positioned tasks */}
           <div
-            className="relative min-w-0 flex-1 bg-muted/10"
+            className="relative min-w-0 flex-1 bg-white/22 dark:bg-slate-950/20"
             style={{ height: trackHeightPx }}
           >
             {slotStarts.map((_, i) => (
               <div
                 key={i}
                 className={cn(
-                  "absolute left-0 right-0 border-b border-border/40",
-                  i % 2 === 0 ? "bg-background/40" : "bg-muted/5",
+                  "absolute left-0 right-0 border-b border-border/30",
+                  i % 2 === 0 ? "bg-white/28 dark:bg-white/[0.018]" : "bg-transparent",
                 )}
                 style={{ top: i * ROW_HEIGHT_PX, height: ROW_HEIGHT_PX }}
               />
@@ -250,12 +250,12 @@ export function TimelineView({
                 <div
                   key={`${layout.task.taskName}-${layout.index}-${layout.startMin}`}
                   className={cn(
-                    "absolute left-2.5 right-2.5 z-[1] flex min-h-0 min-w-0 flex-col items-center justify-center rounded-xl border text-center transition-[box-shadow,transform]",
+                    "absolute left-2.5 right-2.5 z-[1] flex min-h-0 min-w-0 flex-col items-center justify-center rounded-2xl border text-center backdrop-blur-sm transition-[box-shadow,transform,border-color,background-color] duration-200",
                     isCompactBlock
                       ? "gap-1 px-3 py-3"
                       : "gap-1.5 px-4 py-3.5",
                     onTaskClick &&
-                      "cursor-pointer hover:shadow-md hover:ring-1 hover:ring-ring/40 active:scale-[0.99]",
+                      "cursor-pointer hover:-translate-y-px hover:shadow-[0_14px_30px_rgba(15,23,42,0.1)] hover:ring-1 hover:ring-ring/35 active:scale-[0.99] dark:hover:shadow-[0_16px_34px_rgba(2,8,23,0.34)]",
                     activeForTask && "ring-2 ring-emerald-400/70",
                   )}
                   style={{
@@ -266,7 +266,7 @@ export function TimelineView({
                     ),
                     borderColor: layout.color,
                     backgroundColor: `${layout.color}12`,
-                    boxShadow: `0 0 0 1px ${layout.color}33`,
+                    boxShadow: `0 10px 24px -18px ${layout.color}, 0 0 0 1px ${layout.color}33, inset 0 1px 0 rgba(255,255,255,0.16)`,
                   }}
                   role={onTaskClick ? "button" : undefined}
                   tabIndex={onTaskClick ? 0 : undefined}
@@ -349,7 +349,7 @@ export function TimelineView({
             })}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </OSFrostedPanel>
   );
 }

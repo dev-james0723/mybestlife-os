@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getIdeasUiCopy } from "@/lib/i18n/ideas-ui";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import { IDEA_CATEGORIES } from "@/lib/ideas/constants";
 import {
   getIdeaQuickFilterDisplayLabel,
@@ -117,9 +118,9 @@ export function IdeasTopControlBar() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+        <div className={cn(filterHorizontalScrollClassName, "lg:shrink-0 lg:flex-nowrap")}>
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as IdeasSortKey)}>
-            <SelectTrigger className="h-9 w-full min-w-[9.5rem] border-border/60 bg-background/80 text-xs sm:w-[160px]">
+            <SelectTrigger className="h-9 w-[160px] shrink-0 border-border/60 bg-background/80 text-xs">
               <SelectValue placeholder={ui.sortLabel} />
             </SelectTrigger>
             <SelectContent>
@@ -140,19 +141,20 @@ export function IdeasTopControlBar() {
             onValueChange={setView}
             ariaLabel="Ideas view"
             labelMode="desktop"
+            className="shrink-0"
             layoutId="ideas-view-switcher-active"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className={cn(filterHorizontalScrollClassName, "lg:justify-between")}>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 w-full justify-between border-border/60 bg-background/80 text-xs font-normal sm:w-[200px]"
+                className="h-8 w-[200px] shrink-0 justify-between border-border/60 bg-background/80 text-xs font-normal"
               />
             }
           >
@@ -206,7 +208,7 @@ export function IdeasTopControlBar() {
 
         {currentView === "board" ? (
           <Select value={boardGroupBy} onValueChange={(v) => v && setBoardGroupBy(v as typeof boardGroupBy)}>
-            <SelectTrigger className="h-8 w-full border-border/60 bg-background/80 text-xs sm:w-[180px]">
+            <SelectTrigger className="h-8 w-[180px] shrink-0 border-border/60 bg-background/80 text-xs">
               <SelectValue placeholder={ui.boardGroupBy} />
             </SelectTrigger>
             <SelectContent>
@@ -223,7 +225,7 @@ export function IdeasTopControlBar() {
           </Select>
         ) : null}
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex shrink-0 flex-nowrap gap-1.5 lg:flex-wrap">
           {visibleQuickFilters.map((def) => {
             const active = activeQuickFilters.includes(def.id);
             const Icon = IDEA_QUICK_FILTER_ICON_COMPONENTS[def.icon];
@@ -233,7 +235,7 @@ export function IdeasTopControlBar() {
                 type="button"
                 variant={active ? "secondary" : "outline"}
                 size="sm"
-                className={cn("h-7 rounded-full px-2.5 text-[11px]", active && "border-transparent")}
+                className={cn("h-7 shrink-0 rounded-full px-2.5 text-[11px]", active && "border-transparent")}
                 onClick={() => toggleQuickFilter(def.id)}
                 aria-pressed={active}
                 data-selection-glow={active ? "active" : undefined}
@@ -250,7 +252,7 @@ export function IdeasTopControlBar() {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+            className="h-7 shrink-0 rounded-full px-2 text-[11px] text-muted-foreground"
             onClick={() => setManageQuickFiltersOpen(true)}
             aria-label={ui.quickFilterManager.manageButton}
           >

@@ -3,9 +3,12 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles, Download, RefreshCw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  OSControl,
+  OSFrostedPanel,
+  OSPrimaryAction,
+} from "@/components/ui/os-primitives";
 import {
   Select,
   SelectContent,
@@ -126,23 +129,21 @@ export function VisualScheduleGenerator({
   const hasTasks = tasks.length > 0;
 
   return (
-    <Card
-      className={cn(
-        "border-border/70 shadow-sm",
-        "bg-violet-50/70 dark:bg-violet-950/30",
-      )}
-    >
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold">
-          <Sparkles className="h-4 w-4 shrink-0 text-pink-500" aria-hidden />
-          {copy.visualScheduleTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          {copy.visualScheduleBlurb}
-        </p>
-
+    <OSFrostedPanel as="section" className="space-y-4 p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/45 bg-white/65 text-lime-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/10 dark:bg-white/[0.06] dark:text-lime-200">
+          <Sparkles className="h-4 w-4 shrink-0" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-heading text-base font-semibold tracking-tight text-foreground">
+            {copy.visualScheduleTitle}
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {copy.visualScheduleBlurb}
+          </p>
+        </div>
+      </div>
+      <div className="space-y-4">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">
             {copy.imageStyleLabel}
@@ -167,15 +168,15 @@ export function VisualScheduleGenerator({
           </Select>
         </div>
 
-        <Button
+        <OSPrimaryAction
           type="button"
-          className="h-11 min-h-11 w-full gap-2 rounded-xl border-transparent bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+          className="h-11 min-h-11 w-full gap-2 rounded-xl"
           disabled={!hasTasks || busy}
           onClick={() => void runGenerate()}
         >
           <Sparkles className="h-4 w-4 shrink-0" />
           {busy ? copy.scheduleImageGenerating : copy.generateScheduleImage}
-        </Button>
+        </OSPrimaryAction>
 
         {imageUrl ? (
           <div className="space-y-3 pt-1">
@@ -187,29 +188,27 @@ export function VisualScheduleGenerator({
               />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
+              <OSControl
                 type="button"
-                variant="secondary"
                 className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
                 disabled={!hasTasks || busy}
                 onClick={() => void runGenerate()}
               >
                 <RefreshCw className={cn("h-4 w-4", busy && "animate-spin")} />
                 {copy.regenerateScheduleImage}
-              </Button>
-              <Button
+              </OSControl>
+              <OSControl
                 type="button"
-                variant="outline"
                 className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
                 onClick={handleDownload}
               >
                 <Download className="h-4 w-4" />
                 {copy.downloadScheduleImage}
-              </Button>
+              </OSControl>
             </div>
           </div>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </OSFrostedPanel>
   );
 }

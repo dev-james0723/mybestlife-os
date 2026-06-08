@@ -1,6 +1,6 @@
 # Pack C Liquid Glass Icon Receipt
 
-Execution state: review asset generation, not app wiring.
+Execution state: transparent alpha asset generation and app navigation wiring.
 
 ## What Was Produced
 
@@ -13,9 +13,35 @@ Execution state: review asset generation, not app wiring.
 - Provisional crop folders for mapping and small-size trials only:
   - `provisional-day/*.png`
   - `provisional-dark/*.png`
+- Final single-icon asset folders:
+  - `final-day/*.png`
+  - `final-dark/*.png`
+  - `final-pairs/*.png`
+- Transparent alpha asset folders:
+  - `alpha-day/*.png`
+  - `alpha-day-textured/*.png`
+  - `alpha-day-textured/TEXTURED_LIGHT_RECEIPT.json`
+  - `alpha-day-command-style/*.png`
+  - `alpha-day-command-style/COMMAND_STYLE_RECEIPT.json`
+  - `alpha-dark/*.png`
+  - `alpha-dark-command-style/*.png`
+  - `alpha-dark-command-style/DARK_COMMAND_STYLE_RECEIPT.json`
+  - `alpha-dark/DAY_FALLBACKS.txt`
+- Selectable pack folders:
+  - `packs/soft-3d-clay/day/*.png`
+  - `packs/soft-3d-clay/dark/*.png`
+  - `packs/neo-brutal-retro/day/*.png`
+  - `packs/neo-brutal-retro/dark/*.png`
+  - `packs/adaptive-minimal-line/day/*.png`
+  - `packs/adaptive-minimal-line/dark/*.png`
+  - `packs/humanist-ink/day/*.png`
+  - `packs/humanist-ink/dark/*.png`
 - Crop QA contact sheets:
   - `review/day-crops-contact.png`
   - `review/dark-crops-contact.png`
+- Final QA contact sheets:
+  - `review/final-day-contact.png`
+  - `review/final-dark-contact.png`
 - Mapping manifest:
   - `manifest.json`
 
@@ -49,11 +75,23 @@ Result:
 - Provisional Day Mode icon count: 50.
 - Provisional Dark Mode icon count: 50.
 - Sample provisional icons are `512x512`.
+- Final Day Mode icon count: 50.
+- Final Dark Mode icon count: 50.
+- Final paired source image count: 50.
+- Final sample icons are `512x512`.
+- Native-alpha Day Mode icon count: 50.
+- Native-alpha Dark Mode icon count: 26.
+- Day-derived transparent Dark fallback count: 24.
+- Textured Day Mode icon count: 50, derived from `alpha-dark`; 24 overly pale files were tone-mapped darker while preserving raster texture.
+- Command Center style Day Mode icon count: 50, derived from `alpha-day-textured`; all icons were locally remapped to the Command Center dark glass/chrome material style while preserving alpha masks.
+- Command Center style Dark Mode icon count: 50, derived from `alpha-day-command-style`; all icons were locally remapped to bright icy glass/chrome texture for dark UI while preserving alpha masks.
+- Additional selectable icon packs: 4 packs × 2 modes × 50 PNGs, generated from the same alpha masks for Settings personalization.
+- Transparent alpha assets report `hasAlpha: yes`.
 
 ## Residual Risk
 
-The review sheets are the canonical aesthetic artifact. The cropped PNGs are provisional because generated sheet spacing is not perfectly uniform, so several extracted icons are not clean enough for final app wiring without per-icon regeneration or manual asset cleanup.
+The transparent `alpha-*` folders are now the canonical app-facing asset set. The API reached a billing hard limit during Dark Mode generation, so 24 Dark Mode files are transparent Day Mode fallbacks copied into `alpha-dark`. They remove the unwanted black/white/circular backgrounds but are not native dark-glow variants yet.
 
 ## Next Action
 
-After visual approval of the four review sheets, generate final single-icon Day/Dark pairs for each approved target, then wire the app to theme-select the final assets.
+After billing is available again, rerun only the 24 missing native Dark Mode jobs listed in `alpha-dark/DAY_FALLBACKS.txt`, then rebuild contact sheets and revalidate alpha.

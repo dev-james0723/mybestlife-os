@@ -127,6 +127,13 @@ function ToolbarDivider() {
   return <div className="mx-0.5 hidden h-6 w-px shrink-0 bg-border sm:block" aria-hidden />;
 }
 
+const toolbarScrollerBaseClass =
+  "max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-1 sm:gap-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+
+const toolbarScrollerClass = `flex ${toolbarScrollerBaseClass}`;
+
+const toolbarGroupClass = "flex shrink-0 flex-nowrap items-center gap-1";
+
 export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
   function RichTextEditor(
     {
@@ -330,7 +337,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
         />
 
         <div className="flex min-w-0 flex-col gap-1 border-b border-border bg-muted/40 px-1.5 py-1.5 sm:px-2">
-          <div className="flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 sm:gap-0.5">
+          <div className={toolbarScrollerClass}>
             <ToolbarIcon aria-label="Undo" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("undo")}>
               <Undo2 className="size-3.5" />
             </ToolbarIcon>
@@ -365,6 +372,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             <ToolbarIcon
               aria-label="Strikethrough"
               active={cmdActive("strikeThrough")}
+              className="hidden lg:flex"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => exec("strikeThrough")}
             >
@@ -387,16 +395,27 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             >
               <ListOrdered className="size-3.5" />
             </ToolbarIcon>
-            <ToolbarIcon aria-label="Outdent" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("outdent")}>
+            <ToolbarIcon
+              aria-label="Outdent"
+              className="hidden lg:flex"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => exec("outdent")}
+            >
               <Outdent className="size-3.5" />
             </ToolbarIcon>
-            <ToolbarIcon aria-label="Indent" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("indent")}>
+            <ToolbarIcon
+              aria-label="Indent"
+              className="hidden lg:flex"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => exec("indent")}
+            >
               <Indent className="size-3.5" />
             </ToolbarIcon>
             <ToolbarDivider />
             <ToolbarIcon
               aria-label="Align left"
               active={cmdActive("justifyLeft")}
+              className="hidden lg:flex"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => exec("justifyLeft")}
             >
@@ -405,6 +424,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             <ToolbarIcon
               aria-label="Align center"
               active={cmdActive("justifyCenter")}
+              className="hidden lg:flex"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => exec("justifyCenter")}
             >
@@ -413,6 +433,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             <ToolbarIcon
               aria-label="Align right"
               active={cmdActive("justifyRight")}
+              className="hidden lg:flex"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => exec("justifyRight")}
             >
@@ -421,6 +442,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             <ToolbarIcon
               aria-label="Justify"
               active={cmdActive("justifyFull")}
+              className="hidden lg:flex"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => exec("justifyFull")}
             >
@@ -439,6 +461,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             </ToolbarIcon>
             <ToolbarIcon
               aria-label="Clear formatting"
+              className="hidden lg:flex"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => exec("removeFormat")}
             >
@@ -446,7 +469,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             </ToolbarIcon>
           </div>
 
-          <div className="flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain border-t border-border pt-1 sm:border-t-0 sm:pt-0">
+          <div className={cn("hidden lg:flex", toolbarScrollerBaseClass, "border-t border-border pt-1 sm:border-t-0 sm:pt-0")}>
             <Select
               value={blockType}
               onValueChange={(v) => {
@@ -455,7 +478,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             >
               <SelectTrigger
                 size="sm"
-                className="!h-11 min-w-[6.5rem] text-xs sm:!h-8"
+                className="!h-8 !min-h-8 min-w-[5.75rem] shrink-0 text-xs"
                 title="Block style"
               >
                 <SelectValue placeholder="Style" />
@@ -474,7 +497,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
                 if (v != null && v !== "") exec("fontName", String(v));
               }}
             >
-              <SelectTrigger size="sm" className="!h-11 min-w-[5.5rem] text-xs sm:!h-8" title="Font">
+              <SelectTrigger size="sm" className="!h-8 !min-h-8 min-w-[5rem] shrink-0 text-xs" title="Font">
                 <span className="truncate text-muted-foreground">Font</span>
               </SelectTrigger>
               <SelectContent>
@@ -491,7 +514,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
                 if (v != null && v !== "") exec("fontSize", String(v));
               }}
             >
-              <SelectTrigger size="sm" className="!h-11 min-w-[4.5rem] text-xs sm:!h-8" title="Size">
+              <SelectTrigger size="sm" className="!h-8 !min-h-8 min-w-[4.25rem] shrink-0 text-xs" title="Size">
                 <span className="truncate text-muted-foreground">Size</span>
               </SelectTrigger>
               <SelectContent>
@@ -503,8 +526,8 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
               </SelectContent>
             </Select>
 
-            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Text</span>
-            <div className="flex flex-wrap items-center gap-1 sm:gap-0.5">
+            <span className="shrink-0 text-[10px] font-medium uppercase text-muted-foreground">Text</span>
+            <div className={toolbarGroupClass}>
               {TEXT_COLORS.map((c) => (
                 <button
                   key={c}
@@ -512,14 +535,14 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
                   title={`Text ${c}`}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => applyForeColor(c)}
-                  className="size-11 shrink-0 rounded-lg border border-border shadow-sm transition hover:scale-105 sm:size-6 sm:rounded-md"
+                  className="size-7 shrink-0 rounded-md border border-border shadow-sm transition hover:scale-105 sm:size-6"
                   style={{ backgroundColor: c }}
                 />
               ))}
             </div>
 
-            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Highlight</span>
-            <div className="flex flex-wrap items-center gap-1 sm:gap-0.5">
+            <span className="shrink-0 text-[10px] font-medium uppercase text-muted-foreground">Highlight</span>
+            <div className={toolbarGroupClass}>
               {HIGHLIGHT_COLORS.map((c) => (
                 <button
                   key={c}
@@ -528,7 +551,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => applyHilite(c)}
                   className={cn(
-                    "size-11 shrink-0 rounded-lg border border-border shadow-sm transition hover:scale-105 sm:size-6 sm:rounded-md",
+                    "size-7 shrink-0 rounded-md border border-border shadow-sm transition hover:scale-105 sm:size-6",
                     c === "transparent" &&
                       "bg-[repeating-linear-gradient(45deg,#e4e4e7,#e4e4e7_3px,#fafafa_3px,#fafafa_6px)] dark:bg-[repeating-linear-gradient(45deg,#3f3f46,#3f3f46_3px,#27272a_3px,#27272a_6px)]"
                   )}
@@ -537,11 +560,11 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
               ))}
             </div>
 
-            <label className="flex min-h-11 shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:bg-muted/60 sm:ml-auto sm:min-h-0 sm:px-2">
+            <label className="flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2 text-xs text-muted-foreground hover:bg-muted/60 sm:ml-auto">
               <span>Custom</span>
               <input
                 type="color"
-                className="h-11 w-11 cursor-pointer overflow-hidden rounded border-0 bg-transparent p-0 sm:h-6 sm:w-8"
+                className="h-6 w-8 cursor-pointer overflow-hidden rounded border-0 bg-transparent p-0"
                 defaultValue="#171717"
                 onMouseDown={(e) => e.stopPropagation()}
                 onChange={(e) => applyForeColor(e.target.value)}
@@ -589,7 +612,7 @@ function ToolbarIcon({
     <button
       type="button"
       className={cn(
-        "flex size-11 shrink-0 items-center justify-center rounded-lg text-foreground transition sm:size-8",
+        "flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground transition",
         active
           ? "bg-pink-100 text-foreground dark:bg-pink-950/45 dark:text-foreground"
           : "hover:bg-muted/80",

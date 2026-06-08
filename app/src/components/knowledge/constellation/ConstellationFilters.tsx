@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import { cn } from "@/lib/utils";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { useAppStore } from "@/stores/app-store";
@@ -312,7 +313,7 @@ export function ConstellationFilters({
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {ui.tags}
                 </p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className={filterHorizontalScrollClassName}>
                   {tagOptions.map((opt) => {
                     const active = isSelected("tagIds", opt.id);
                     return (
@@ -321,7 +322,7 @@ export function ConstellationFilters({
                         key={opt.id}
                         aria-pressed={active}
                         className={cn(
-                          "rounded-full border px-2 py-0.5 text-xs transition-colors",
+                          "max-w-[min(72vw,220px)] shrink-0 truncate rounded-full border px-2 py-0.5 text-xs transition-colors",
                           active
                             ? "border-violet-300/50 bg-violet-500/15 text-violet-800 dark:text-violet-100"
                             : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70",

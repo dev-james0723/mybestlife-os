@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Fragment, useCallback, useMemo, type MouseEvent } from "react";
 import { LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LiquidNavIcon } from "@/components/liquid-icons/LiquidNavIcon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +37,7 @@ function hrefWithSearch(
 export function AppMainNavMenu() {
   const localeSlug = useLocaleSlug();
   const language = useAppStore((s) => s.language);
-  const { uiTheme } = useTheme();
+  const { uiTheme, colorMode } = useTheme();
   const focusNavigation = useFocusNavigation();
   const ui = useMemo(() => getCommonUiCopy(language), [language]);
   const handleNavClick = useCallback(
@@ -90,7 +91,14 @@ export function AppMainNavMenu() {
                       />
                     }
                   >
-                    <category.icon className="size-4 shrink-0 opacity-80" />
+                    <LiquidNavIcon
+                      fallbackIcon={category.icon}
+                      targetType="category"
+                      targetId={category.categoryId}
+                      uiTheme={uiTheme}
+                      colorMode={colorMode}
+                      className="size-4 shrink-0 opacity-90"
+                    />
                     <span className="truncate">{catLabel}</span>
                   </DropdownMenuItem>
                 ) : null}
@@ -108,7 +116,14 @@ export function AppMainNavMenu() {
                         />
                       }
                     >
-                      <category.icon className="size-4 shrink-0 opacity-80" />
+                      <LiquidNavIcon
+                        fallbackIcon={category.icon}
+                        targetType="category"
+                        targetId={category.categoryId}
+                        uiTheme={uiTheme}
+                        colorMode={colorMode}
+                        className="size-4 shrink-0 opacity-90"
+                      />
                       <span className="truncate">{catLabel}</span>
                     </DropdownMenuItem>
                     {category.items.map((item) => {
@@ -126,7 +141,14 @@ export function AppMainNavMenu() {
                             />
                           }
                         >
-                          <item.icon className="size-4 shrink-0 opacity-80" />
+                          <LiquidNavIcon
+                            fallbackIcon={item.icon}
+                            targetType="nav_item"
+                            targetId={item.itemId}
+                            uiTheme={uiTheme}
+                            colorMode={colorMode}
+                            className="size-4 shrink-0 opacity-90"
+                          />
                           <span className="truncate">
                             {getThemedItemLabel(item.itemId, uiTheme, language)}
                           </span>
@@ -152,7 +174,14 @@ export function AppMainNavMenu() {
                             />
                           }
                         >
-                          <item.icon className="size-4 shrink-0 opacity-80" />
+                          <LiquidNavIcon
+                            fallbackIcon={item.icon}
+                            targetType="nav_item"
+                            targetId={item.itemId}
+                            uiTheme={uiTheme}
+                            colorMode={colorMode}
+                            className="size-4 shrink-0 opacity-90"
+                          />
                           <span className="truncate">
                             {getThemedItemLabel(item.itemId, uiTheme, language)}
                           </span>

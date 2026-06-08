@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOSBuddyStore } from "./os-buddy-store";
 
 function resetAirPilotStoreState() {
@@ -154,5 +154,63 @@ describe("OS Buddy AirPilot lifecycle state", () => {
 
     useOSBuddyStore.getState().setOSBuddyEnabledOverride(null);
     expect(useOSBuddyStore.getState().osBuddyEnabledOverride).toBeNull();
+  });
+});
+
+describe("OS Buddy bubble lifecycle", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-08T00:00:00.000Z"));
+    useOSBuddyStore.setState({
+      bubble: null,
+      lastUnsolicitedBubbleAt: null,
+    });
+  });
+
+  afterEach(() => {
+    useOSBuddyStore.setState({
+      bubble: null,
+      lastUnsolicitedBubbleAt: null,
+    });
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("keeps default bubbles visible for five seconds before vanishing", () => {
+    useOSBuddyStore.getState().showBubble("Still here.");
+
+    vi.advanceTimersByTime(4_999);
+    expect(useOSBuddyStore.getState().bubble).toMatchObject({
+      message: "Still here.",
+      isDismissing: false,
+    });
+
+    vi.advanceTimersByTime(1);
+    expect(useOSBuddyStore.getState().bubble).toMatchObject({
+      message: "Still here.",
+      isDismissing: true,
+    });
+
+    vi.advanceTimersByTime(559);
+    expect(useOSBuddyStore.getState().bubble?.isDismissing).toBe(true);
+
+    vi.advanceTimersByTime(1);
+    expect(useOSBuddyStore.getState().bubble).toBeNull();
+  });
+
+  it("uses the same vanish state when bubbles are manually dismissed", () => {
+    useOSBuddyStore.getState().showBubble("Dismiss me.", "system", {
+      durationMs: 10_000,
+    });
+
+    useOSBuddyStore.getState().clearBubble();
+
+    expect(useOSBuddyStore.getState().bubble).toMatchObject({
+      message: "Dismiss me.",
+      isDismissing: true,
+    });
+
+    vi.advanceTimersByTime(560);
+    expect(useOSBuddyStore.getState().bubble).toBeNull();
   });
 });

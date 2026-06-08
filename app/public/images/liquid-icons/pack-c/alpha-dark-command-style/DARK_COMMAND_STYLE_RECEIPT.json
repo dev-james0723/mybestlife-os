@@ -1,0 +1,358 @@
+{
+  "source": "alpha-day-command-style",
+  "styleReference": "category-command-center.png",
+  "method": "local bright dark-mode glass remap preserving alpha masks and tonal texture",
+  "fileCount": 50,
+  "files": [
+    {
+      "file": "about-me.png",
+      "sourceP08": 31.4,
+      "sourceP50": 52.2,
+      "sourceP92": 139,
+      "sourceP98": 193.3
+    },
+    {
+      "file": "ai-knowledge.png",
+      "sourceP08": 36.5,
+      "sourceP50": 61,
+      "sourceP92": 136.9,
+      "sourceP98": 152.7
+    },
+    {
+      "file": "analytics.png",
+      "sourceP08": 30.4,
+      "sourceP50": 52.1,
+      "sourceP92": 150.9,
+      "sourceP98": 184.5
+    },
+    {
+      "file": "assets.png",
+      "sourceP08": 35.2,
+      "sourceP50": 55.9,
+      "sourceP92": 110.3,
+      "sourceP98": 162.5
+    },
+    {
+      "file": "brain.png",
+      "sourceP08": 33.7,
+      "sourceP50": 62.9,
+      "sourceP92": 158.5,
+      "sourceP98": 185
+    },
+    {
+      "file": "bucket-list.png",
+      "sourceP08": 31.4,
+      "sourceP50": 56.9,
+      "sourceP92": 155.1,
+      "sourceP98": 193.3
+    },
+    {
+      "file": "calendar.png",
+      "sourceP08": 30.4,
+      "sourceP50": 53.9,
+      "sourceP92": 132,
+      "sourceP98": 184.5
+    },
+    {
+      "file": "career-analytics.png",
+      "sourceP08": 31.4,
+      "sourceP50": 47,
+      "sourceP92": 128,
+      "sourceP98": 142.7
+    },
+    {
+      "file": "career-coach.png",
+      "sourceP08": 34.4,
+      "sourceP50": 60.9,
+      "sourceP92": 76.6,
+      "sourceP98": 174.9
+    },
+    {
+      "file": "career-compass.png",
+      "sourceP08": 37.5,
+      "sourceP50": 61.7,
+      "sourceP92": 105.3,
+      "sourceP98": 151.2
+    },
+    {
+      "file": "career-journal.png",
+      "sourceP08": 33.4,
+      "sourceP50": 56,
+      "sourceP92": 100.3,
+      "sourceP98": 156.8
+    },
+    {
+      "file": "career-network.png",
+      "sourceP08": 33.5,
+      "sourceP50": 56.2,
+      "sourceP92": 106.5,
+      "sourceP98": 137
+    },
+    {
+      "file": "career-pipeline.png",
+      "sourceP08": 33.5,
+      "sourceP50": 53.1,
+      "sourceP92": 100.3,
+      "sourceP98": 121.2
+    },
+    {
+      "file": "career-profile.png",
+      "sourceP08": 33.4,
+      "sourceP50": 52.1,
+      "sourceP92": 66.7,
+      "sourceP98": 73.7
+    },
+    {
+      "file": "career-timeline.png",
+      "sourceP08": 34.2,
+      "sourceP50": 57.9,
+      "sourceP92": 147.7,
+      "sourceP98": 190.3
+    },
+    {
+      "file": "career-vault.png",
+      "sourceP08": 30.4,
+      "sourceP50": 56.9,
+      "sourceP92": 139,
+      "sourceP98": 184.3
+    },
+    {
+      "file": "career.png",
+      "sourceP08": 33.4,
+      "sourceP50": 54.9,
+      "sourceP92": 118.4,
+      "sourceP98": 156.7
+    },
+    {
+      "file": "category-career.png",
+      "sourceP08": 31.4,
+      "sourceP50": 54.1,
+      "sourceP92": 151.9,
+      "sourceP98": 190.9
+    },
+    {
+      "file": "category-command-center.png",
+      "sourceP08": 30.7,
+      "sourceP50": 56.9,
+      "sourceP92": 150.8,
+      "sourceP98": 171.5
+    },
+    {
+      "file": "category-goals-execution.png",
+      "sourceP08": 35.2,
+      "sourceP50": 57.9,
+      "sourceP92": 128.3,
+      "sourceP98": 159.7
+    },
+    {
+      "file": "category-knowledge.png",
+      "sourceP08": 30.7,
+      "sourceP50": 49,
+      "sourceP92": 132.1,
+      "sourceP98": 160.5
+    },
+    {
+      "file": "category-learning.png",
+      "sourceP08": 33.4,
+      "sourceP50": 54.9,
+      "sourceP92": 72.7,
+      "sourceP98": 126.1
+    },
+    {
+      "file": "category-people.png",
+      "sourceP08": 32.4,
+      "sourceP50": 55.1,
+      "sourceP92": 151.8,
+      "sourceP98": 189.5
+    },
+    {
+      "file": "category-resources.png",
+      "sourceP08": 32.4,
+      "sourceP50": 55.1,
+      "sourceP92": 99.5,
+      "sourceP98": 156.7
+    },
+    {
+      "file": "category-self.png",
+      "sourceP08": 30.6,
+      "sourceP50": 57,
+      "sourceP92": 159.7,
+      "sourceP98": 194.3
+    },
+    {
+      "file": "daily-planner.png",
+      "sourceP08": 33.4,
+      "sourceP50": 59,
+      "sourceP92": 148.9,
+      "sourceP98": 189.5
+    },
+    {
+      "file": "dashboard.png",
+      "sourceP08": 30.4,
+      "sourceP50": 56.2,
+      "sourceP92": 142.8,
+      "sourceP98": 185.3
+    },
+    {
+      "file": "documents.png",
+      "sourceP08": 32.4,
+      "sourceP50": 53.1,
+      "sourceP92": 74,
+      "sourceP98": 111.2
+    },
+    {
+      "file": "finance.png",
+      "sourceP08": 31.7,
+      "sourceP50": 57.9,
+      "sourceP92": 148.7,
+      "sourceP98": 177
+    },
+    {
+      "file": "garden.png",
+      "sourceP08": 32.7,
+      "sourceP50": 55.9,
+      "sourceP92": 124.9,
+      "sourceP98": 161.5
+    },
+    {
+      "file": "goals.png",
+      "sourceP08": 35.5,
+      "sourceP50": 58.9,
+      "sourceP92": 86.7,
+      "sourceP98": 104.2
+    },
+    {
+      "file": "grateful-things.png",
+      "sourceP08": 38.4,
+      "sourceP50": 61,
+      "sourceP92": 145,
+      "sourceP98": 183.5
+    },
+    {
+      "file": "habits.png",
+      "sourceP08": 31.7,
+      "sourceP50": 62,
+      "sourceP92": 158.7,
+      "sourceP98": 195.3
+    },
+    {
+      "file": "health.png",
+      "sourceP08": 34.5,
+      "sourceP50": 66.7,
+      "sourceP92": 163.5,
+      "sourceP98": 196.4
+    },
+    {
+      "file": "ideas.png",
+      "sourceP08": 33.5,
+      "sourceP50": 61,
+      "sourceP92": 98.3,
+      "sourceP98": 141.7
+    },
+    {
+      "file": "japanese-study.png",
+      "sourceP08": 30.4,
+      "sourceP50": 54.1,
+      "sourceP92": 114.2,
+      "sourceP98": 137
+    },
+    {
+      "file": "journal.png",
+      "sourceP08": 31.5,
+      "sourceP50": 58.9,
+      "sourceP92": 135,
+      "sourceP98": 185.5
+    },
+    {
+      "file": "knowledge-base.png",
+      "sourceP08": 35.5,
+      "sourceP50": 57.9,
+      "sourceP92": 108.5,
+      "sourceP98": 122.1
+    },
+    {
+      "file": "life-agent.png",
+      "sourceP08": 34.5,
+      "sourceP50": 62,
+      "sourceP92": 151.7,
+      "sourceP98": 184.3
+    },
+    {
+      "file": "mind-council.png",
+      "sourceP08": 32.5,
+      "sourceP50": 53.1,
+      "sourceP92": 113.2,
+      "sourceP98": 142.7
+    },
+    {
+      "file": "projects.png",
+      "sourceP08": 32.4,
+      "sourceP50": 54.1,
+      "sourceP92": 103.3,
+      "sourceP98": 141.7
+    },
+    {
+      "file": "quote-library.png",
+      "sourceP08": 34.2,
+      "sourceP50": 59.9,
+      "sourceP92": 144,
+      "sourceP98": 191.5
+    },
+    {
+      "file": "relationship.png",
+      "sourceP08": 29.4,
+      "sourceP50": 51.9,
+      "sourceP92": 151.7,
+      "sourceP98": 182.2
+    },
+    {
+      "file": "role-model.png",
+      "sourceP08": 35.2,
+      "sourceP50": 63.7,
+      "sourceP92": 159,
+      "sourceP98": 191.3
+    },
+    {
+      "file": "settings-reserved.png",
+      "sourceP08": 35.2,
+      "sourceP50": 54.1,
+      "sourceP92": 103.3,
+      "sourceP98": 142.9
+    },
+    {
+      "file": "signals.png",
+      "sourceP08": 33.4,
+      "sourceP50": 56,
+      "sourceP92": 135,
+      "sourceP98": 194.3
+    },
+    {
+      "file": "software-vault.png",
+      "sourceP08": 33.5,
+      "sourceP50": 56.9,
+      "sourceP92": 113.2,
+      "sourceP98": 144.7
+    },
+    {
+      "file": "tasks.png",
+      "sourceP08": 33.5,
+      "sourceP50": 55.9,
+      "sourceP92": 157.8,
+      "sourceP98": 193.3
+    },
+    {
+      "file": "weather.png",
+      "sourceP08": 30.4,
+      "sourceP50": 52.2,
+      "sourceP92": 149.9,
+      "sourceP98": 185.8
+    },
+    {
+      "file": "weekly-review.png",
+      "sourceP08": 32.4,
+      "sourceP50": 59.2,
+      "sourceP92": 145,
+      "sourceP98": 187.3
+    }
+  ]
+}
