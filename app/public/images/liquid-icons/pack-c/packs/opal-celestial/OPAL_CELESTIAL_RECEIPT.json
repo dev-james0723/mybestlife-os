@@ -1,0 +1,20 @@
+{
+  "packId": "opal-celestial",
+  "name": "Opal Celestial",
+  "source": "Pinterest Predicts 2026 Trend Report.pdf",
+  "sourceTrends": [
+    "Extra Celestial"
+  ],
+  "description": "Pearlescent moon-dust gradients, orbit arcs, and tiny star flashes.",
+  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
+  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
+  "files": {
+    "day": 50,
+    "dark": 50
+  },
+  "assetBase": "/images/liquid-icons/pack-c/packs/opal-celestial",
+  "contactSheets": [
+    "/images/liquid-icons/pack-c/review/opal-celestial-day-contact.png",
+    "/images/liquid-icons/pack-c/review/opal-celestial-dark-contact.png"
+  ]
+}

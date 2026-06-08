@@ -1,0 +1,20 @@
+{
+  "packId": "neo-deco-brass",
+  "name": "Neo Deco Brass",
+  "source": "Pinterest Predicts 2026 Trend Report.pdf",
+  "sourceTrends": [
+    "Neo Deco"
+  ],
+  "description": "Black lacquer, brass fan geometry, chrome edges, and crisp art-deco rhythm.",
+  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
+  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
+  "files": {
+    "day": 50,
+    "dark": 50
+  },
+  "assetBase": "/images/liquid-icons/pack-c/packs/neo-deco-brass",
+  "contactSheets": [
+    "/images/liquid-icons/pack-c/review/neo-deco-brass-day-contact.png",
+    "/images/liquid-icons/pack-c/review/neo-deco-brass-dark-contact.png"
+  ]
+}

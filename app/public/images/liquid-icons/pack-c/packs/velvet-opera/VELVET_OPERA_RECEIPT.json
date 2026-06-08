@@ -1,0 +1,21 @@
+{
+  "packId": "velvet-opera",
+  "name": "Velvet Opera",
+  "source": "Pinterest Predicts 2026 Trend Report.pdf",
+  "sourceTrends": [
+    "Opera Aesthetic",
+    "Vamp Romantic"
+  ],
+  "description": "Deep velvet burgundy, stage-gold trim, and theatrical rose-shadow drama.",
+  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
+  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
+  "files": {
+    "day": 50,
+    "dark": 50
+  },
+  "assetBase": "/images/liquid-icons/pack-c/packs/velvet-opera",
+  "contactSheets": [
+    "/images/liquid-icons/pack-c/review/velvet-opera-day-contact.png",
+    "/images/liquid-icons/pack-c/review/velvet-opera-dark-contact.png"
+  ]
+}

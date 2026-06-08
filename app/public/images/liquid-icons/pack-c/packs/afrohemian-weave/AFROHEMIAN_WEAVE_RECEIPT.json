@@ -1,0 +1,20 @@
+{
+  "packId": "afrohemian-weave",
+  "name": "Afrohemian Weave",
+  "source": "Pinterest Predicts 2026 Trend Report.pdf",
+  "sourceTrends": [
+    "Afrohemian Decor"
+  ],
+  "description": "Handwoven textile geometry, terracotta warmth, indigo accents, and basket fiber texture.",
+  "generation": "Procedural transparent-alpha render from app navigation Lucide glyphs, approved 50-target manifest, and Pinterest 2026 trend material systems.",
+  "semanticSource": "app/src/lib/constants/navigation.ts plus Garden/Settings reserved mappings",
+  "files": {
+    "day": 50,
+    "dark": 50
+  },
+  "assetBase": "/images/liquid-icons/pack-c/packs/afrohemian-weave",
+  "contactSheets": [
+    "/images/liquid-icons/pack-c/review/afrohemian-weave-day-contact.png",
+    "/images/liquid-icons/pack-c/review/afrohemian-weave-dark-contact.png"
+  ]
+}
