@@ -1,0 +1,79 @@
+{
+  "executionState": "real_generation_completed",
+  "generationMethod": "Downscaled app-facing runtime icons from canonical 512px transparent PNG sources.",
+  "runtimeSizePx": 96,
+  "outputBase": "/images/liquid-icons/pack-c/runtime",
+  "sourcePacks": {
+    "command-glass": {
+      "day": "alpha-day-command-style",
+      "dark": "alpha-dark-command-style"
+    },
+    "soft-3d-clay": {
+      "day": "packs/soft-3d-clay/day",
+      "dark": "packs/soft-3d-clay/dark"
+    },
+    "neo-brutal-retro": {
+      "day": "packs/neo-brutal-retro/day",
+      "dark": "packs/neo-brutal-retro/dark"
+    },
+    "adaptive-minimal-line": {
+      "day": "packs/adaptive-minimal-line/day",
+      "dark": "packs/adaptive-minimal-line/dark"
+    },
+    "humanist-ink": {
+      "day": "packs/humanist-ink/day",
+      "dark": "packs/humanist-ink/dark"
+    },
+    "glacier-blue": {
+      "day": "packs/glacier-blue/day",
+      "dark": "packs/glacier-blue/dark"
+    },
+    "opal-celestial": {
+      "day": "packs/opal-celestial/day",
+      "dark": "packs/opal-celestial/dark"
+    },
+    "jelly-gummy": {
+      "day": "packs/jelly-gummy/day",
+      "dark": "packs/jelly-gummy/dark"
+    },
+    "neo-deco-brass": {
+      "day": "packs/neo-deco-brass/day",
+      "dark": "packs/neo-deco-brass/dark"
+    },
+    "velvet-opera": {
+      "day": "packs/velvet-opera/day",
+      "dark": "packs/velvet-opera/dark"
+    },
+    "lace-porcelain": {
+      "day": "packs/lace-porcelain/day",
+      "dark": "packs/lace-porcelain/dark"
+    },
+    "postal-poet": {
+      "day": "packs/postal-poet/day",
+      "dark": "packs/postal-poet/dark"
+    },
+    "mystic-outlands": {
+      "day": "packs/mystic-outlands/day",
+      "dark": "packs/mystic-outlands/dark"
+    },
+    "funhaus-stripe": {
+      "day": "packs/funhaus-stripe/day",
+      "dark": "packs/funhaus-stripe/dark"
+    },
+    "field-khaki": {
+      "day": "packs/field-khaki/day",
+      "dark": "packs/field-khaki/dark"
+    },
+    "afrohemian-weave": {
+      "day": "packs/afrohemian-weave/day",
+      "dark": "packs/afrohemian-weave/dark"
+    },
+    "glitch-glam": {
+      "day": "packs/glitch-glam/day",
+      "dark": "packs/glitch-glam/dark"
+    }
+  },
+  "targetCount": 50,
+  "converted": 1700,
+  "failures": []
+}

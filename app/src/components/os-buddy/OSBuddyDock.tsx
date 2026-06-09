@@ -749,6 +749,7 @@ export function OSBuddyDock() {
         );
 
     const frame = window.requestAnimationFrame(() => {
+      dockPointRef.current = next;
       setDockPoint(next);
     });
     return () => window.cancelAnimationFrame(frame);
@@ -2313,6 +2314,8 @@ export function OSBuddyDock() {
     if (event.button !== 0) return;
     if (viewport.width <= 0 || viewport.height <= 0) return;
 
+    const currentDockPoint = dockPointRef.current;
+
     if (isAirControlActive) {
       event.preventDefault();
       clearLongPressTimer();
@@ -2321,9 +2324,9 @@ export function OSBuddyDock() {
         pointerId: event.pointerId,
         startPointerX: event.clientX,
         startPointerY: event.clientY,
-        startDockX: dockPoint.x,
-        startDockY: dockPoint.y,
-        lastDockX: dockPoint.x,
+        startDockX: currentDockPoint.x,
+        startDockY: currentDockPoint.y,
+        lastDockX: currentDockPoint.x,
         isDragging: false,
       };
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -2341,9 +2344,9 @@ export function OSBuddyDock() {
       pointerId: event.pointerId,
       startPointerX: event.clientX,
       startPointerY: event.clientY,
-      startDockX: dockPoint.x,
-      startDockY: dockPoint.y,
-      lastDockX: dockPoint.x,
+      startDockX: currentDockPoint.x,
+      startDockY: currentDockPoint.y,
+      lastDockX: currentDockPoint.x,
       isDragging: false,
     };
 
@@ -2368,7 +2371,8 @@ export function OSBuddyDock() {
       if (!dragSessionRef.current || dragSessionRef.current.isDragging) return;
       longPressTriggeredRef.current = true;
       emitOSBuddyEvent({ type: "buddy:longpress" });
-      openMenu(dockPoint.x + buddyBox.width + 12, dockPoint.y - 8);
+      const latestDockPoint = dockPointRef.current;
+      openMenu(latestDockPoint.x + buddyBox.width + 12, latestDockPoint.y - 8);
     }, LONG_PRESS_MS);
   };
 
@@ -2419,6 +2423,7 @@ export function OSBuddyDock() {
     session.lastDockX = nextPoint.x;
     dragSessionRef.current = session;
 
+    dockPointRef.current = nextPoint;
     setDockPoint(nextPoint);
     setDragging(true, direction);
   };
@@ -2444,15 +2449,16 @@ export function OSBuddyDock() {
       void incrementOSBuddyStat("drags");
       if (isWalkModeActive || isReturningHome) return;
 
+      const finalDockPoint = clampDockPoint(dockPointRef.current, viewport, buddyBox);
       const finalPosition: OSBuddyPosition = {
-        x: Math.round(dockPoint.x),
-        y: Math.round(dockPoint.y),
+        x: Math.round(finalDockPoint.x),
+        y: Math.round(finalDockPoint.y),
         anchor: "custom",
       };
 
       const buddyCenter = {
-        x: dockPoint.x + buddyBox.width / 2,
-        y: dockPoint.y + buddyBox.height / 2,
+        x: finalDockPoint.x + buddyBox.width / 2,
+        y: finalDockPoint.y + buddyBox.height / 2,
       };
 
       if (isPointInsideOSBuddyRestingSpace(buddyCenter)) {
@@ -2478,6 +2484,8 @@ export function OSBuddyDock() {
         return;
       }
 
+      dockPointRef.current = finalDockPoint;
+      setDockPoint(finalDockPoint);
       setActivePosition(finalPosition);
       await savePosition(finalPosition);
       return;
@@ -2492,15 +2500,17 @@ export function OSBuddyDock() {
     if (isWalkModeActive || isReturningHome) return;
 
     interruptFreeRoam("keyboard");
+    const currentDockPoint = dockPointRef.current;
     const nextPoint = clampDockPoint(
       {
-        x: dockPoint.x + dx,
-        y: dockPoint.y + dy,
+        x: currentDockPoint.x + dx,
+        y: currentDockPoint.y + dy,
       },
       viewport,
       buddyBox,
     );
 
+    dockPointRef.current = nextPoint;
     setDockPoint(nextPoint);
     const direction = dx < 0 ? "dragging-left" : dx > 0 ? "dragging-right" : "idle";
     temporarilySetMood(direction, 240);

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { Toaster } from "sonner";
+import { LiquidIconPreloader } from "@/components/liquid-icons/LiquidIconPreloader";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-context";
 import { SyncDocumentLanguage } from "@/components/sync-document-language";
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <TooltipProvider>
           <SyncDocumentLanguage />
+          <LiquidIconPreloader />
           {children}
           <Toaster position="bottom-right" richColors />
         </TooltipProvider>

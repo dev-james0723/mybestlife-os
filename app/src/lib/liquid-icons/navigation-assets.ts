@@ -1,7 +1,15 @@
 import type { ColorMode, UiTheme } from "@/types/database";
+import {
+  STYLED_LIBRARY_ICON_PACKS,
+  type StyledLibraryIconPackId,
+} from "@/lib/liquid-icons/styled-icon-pack-metadata";
+import {
+  ANIMATED_ICON_PACKS,
+  type AnimatedIconPackId,
+} from "@/lib/liquid-icons/animated-icon-pack-metadata";
 
 export type LiquidIconTargetType = "category" | "nav_item" | "cta" | "reserved";
-export type LiquidIconPackId =
+export type ImageLiquidIconPackId =
   | "command-glass"
   | "soft-3d-clay"
   | "neo-brutal-retro"
@@ -19,11 +27,29 @@ export type LiquidIconPackId =
   | "field-khaki"
   | "afrohemian-weave"
   | "glitch-glam";
+export type LiquidIconPackId =
+  | ImageLiquidIconPackId
+  | StyledLibraryIconPackId
+  | AnimatedIconPackId;
+export type LiquidIconPackSource = "generated-image" | "styled-icons" | "animated-icons";
+export type LiquidIconPackGroupId =
+  | "premium-generated"
+  | "icon-library-classics"
+  | "animated-motion";
+
+export type LiquidIconPackGroup = {
+  id: LiquidIconPackGroupId;
+  name: string;
+  description: string;
+};
 
 type LiquidIconPackMeta = {
   id: LiquidIconPackId;
   name: string;
   description: string;
+  source: LiquidIconPackSource;
+  groupId: LiquidIconPackGroupId;
+  packageName?: string;
 };
 
 type LiquidIconAsset = {
@@ -34,171 +60,251 @@ type LiquidIconAsset = {
 
 export const DEFAULT_LIQUID_ICON_PACK_ID: LiquidIconPackId = "command-glass";
 
-export const LIQUID_ICON_PACKS: LiquidIconPackMeta[] = [
+export const LIQUID_ICON_PACK_GROUPS: LiquidIconPackGroup[] = [
+  {
+    id: "premium-generated",
+    name: "Premium Generated Packs",
+    description: "Texture-rich app icon worlds generated for this OS.",
+  },
+  {
+    id: "icon-library-classics",
+    name: "Icon Library Classics",
+    description: "Classic styled-icons families remapped to this app navigation.",
+  },
+  {
+    id: "animated-motion",
+    name: "Animated Motion Packs",
+    description: "Motion-ready navigation glyphs with live animated previews.",
+  },
+];
+
+const GENERATED_IMAGE_ICON_PACKS: LiquidIconPackMeta[] = [
   {
     id: "command-glass",
     name: "Command Glass",
     description: "Dark glass and icy chrome inspired by the Command Center icon.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "soft-3d-clay",
     name: "Soft 3D Clay",
     description: "Tactile pastel objects with gentle depth and soft shadows.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "neo-brutal-retro",
     name: "Neo Brutal Retro",
     description: "Bold poster colors, chunky outlines, and playful Y2K energy.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "adaptive-minimal-line",
     name: "Minimal Line",
     description: "Precise adaptive linework for a crisp utility-first interface.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "humanist-ink",
     name: "Humanist Ink",
     description: "Handmade ink texture with soft organic color washes.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "glacier-blue",
     name: "Glacier Blue",
     description: "Carved ice facets, clipped crystalline cuts, and cold engineered clarity.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "opal-celestial",
     name: "Opal Celestial",
     description: "Pearlescent astronomical sigils with orbit arcs, beads, and star flashes.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "jelly-gummy",
     name: "Jelly Gummy",
     description: "Inflated candy-gel charms with squishy tubes, bubbles, and syrup glints.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "neo-deco-brass",
     name: "Neo Deco Brass",
     description: "Black-lacquer architectural marks with stepped brass geometry and fan rays.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "velvet-opera",
     name: "Velvet Opera",
     description: "Plush burgundy silhouettes with theatrical trim, folds, and rose-shadow drama.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "lace-porcelain",
     name: "Lace Porcelain",
     description: "Ceramic cutwork glyphs with scalloped lace, pearls, and raised relief.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "postal-poet",
     name: "Postal Poet",
     description: "Folded paper miniatures with sepia ink, stamp perforations, and literary warmth.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "mystic-outlands",
     name: "Mystic Outlands",
     description: "Mossy carved talismans with rough runes, spirals, and forest shimmer.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "funhaus-stripe",
     name: "FunHaus Stripe",
     description: "Premium carnival signage with chunky stripes, tilted blocks, and enamel rhythm.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "field-khaki",
     name: "Field Khaki",
     description: "Expedition stencils with canvas texture, contour lines, rivets, and khaki utility.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "afrohemian-weave",
     name: "Afrohemian Weave",
     description: "Woven textile pictograms with beads, chevrons, terracotta, and indigo rhythm.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
   {
     id: "glitch-glam",
     name: "Glitch Glam",
     description: "Fractured chrome icons with RGB splits, scan breaks, and editorial shine.",
+    source: "generated-image",
+    groupId: "premium-generated",
   },
+];
+
+export const LIQUID_ICON_PACKS: LiquidIconPackMeta[] = [
+  ...GENERATED_IMAGE_ICON_PACKS,
+  ...STYLED_LIBRARY_ICON_PACKS.map((pack) => ({
+    id: pack.id,
+    name: pack.name,
+    description: pack.description,
+    source: "styled-icons" as const,
+    groupId: "icon-library-classics" as const,
+    packageName: pack.packageName,
+  })),
+  ...ANIMATED_ICON_PACKS.map((pack) => ({
+    id: pack.id,
+    name: pack.name,
+    description: pack.description,
+    source: "animated-icons" as const,
+    groupId: "animated-motion" as const,
+    packageName: pack.packageName,
+  })),
 ];
 
 const LIQUID_ICON_PACK_IDS = new Set<LiquidIconPackId>(
   LIQUID_ICON_PACKS.map((pack) => pack.id),
 );
 
-const LIQUID_ICON_PACK_PATHS: Record<LiquidIconPackId, Record<ColorMode, string>> = {
+const IMAGE_LIQUID_ICON_PACK_IDS = new Set<ImageLiquidIconPackId>(
+  GENERATED_IMAGE_ICON_PACKS.map((pack) => pack.id as ImageLiquidIconPackId),
+);
+
+const LIQUID_ICON_PACK_PATHS: Record<ImageLiquidIconPackId, Record<ColorMode, string>> = {
   "command-glass": {
-    light: "alpha-day-command-style",
-    dark: "alpha-dark-command-style",
+    light: "runtime/command-glass/day",
+    dark: "runtime/command-glass/dark",
   },
   "soft-3d-clay": {
-    light: "packs/soft-3d-clay/day",
-    dark: "packs/soft-3d-clay/dark",
+    light: "runtime/soft-3d-clay/day",
+    dark: "runtime/soft-3d-clay/dark",
   },
   "neo-brutal-retro": {
-    light: "packs/neo-brutal-retro/day",
-    dark: "packs/neo-brutal-retro/dark",
+    light: "runtime/neo-brutal-retro/day",
+    dark: "runtime/neo-brutal-retro/dark",
   },
   "adaptive-minimal-line": {
-    light: "packs/adaptive-minimal-line/day",
-    dark: "packs/adaptive-minimal-line/dark",
+    light: "runtime/adaptive-minimal-line/day",
+    dark: "runtime/adaptive-minimal-line/dark",
   },
   "humanist-ink": {
-    light: "packs/humanist-ink/day",
-    dark: "packs/humanist-ink/dark",
+    light: "runtime/humanist-ink/day",
+    dark: "runtime/humanist-ink/dark",
   },
   "glacier-blue": {
-    light: "packs/glacier-blue/day",
-    dark: "packs/glacier-blue/dark",
+    light: "runtime/glacier-blue/day",
+    dark: "runtime/glacier-blue/dark",
   },
   "opal-celestial": {
-    light: "packs/opal-celestial/day",
-    dark: "packs/opal-celestial/dark",
+    light: "runtime/opal-celestial/day",
+    dark: "runtime/opal-celestial/dark",
   },
   "jelly-gummy": {
-    light: "packs/jelly-gummy/day",
-    dark: "packs/jelly-gummy/dark",
+    light: "runtime/jelly-gummy/day",
+    dark: "runtime/jelly-gummy/dark",
   },
   "neo-deco-brass": {
-    light: "packs/neo-deco-brass/day",
-    dark: "packs/neo-deco-brass/dark",
+    light: "runtime/neo-deco-brass/day",
+    dark: "runtime/neo-deco-brass/dark",
   },
   "velvet-opera": {
-    light: "packs/velvet-opera/day",
-    dark: "packs/velvet-opera/dark",
+    light: "runtime/velvet-opera/day",
+    dark: "runtime/velvet-opera/dark",
   },
   "lace-porcelain": {
-    light: "packs/lace-porcelain/day",
-    dark: "packs/lace-porcelain/dark",
+    light: "runtime/lace-porcelain/day",
+    dark: "runtime/lace-porcelain/dark",
   },
   "postal-poet": {
-    light: "packs/postal-poet/day",
-    dark: "packs/postal-poet/dark",
+    light: "runtime/postal-poet/day",
+    dark: "runtime/postal-poet/dark",
   },
   "mystic-outlands": {
-    light: "packs/mystic-outlands/day",
-    dark: "packs/mystic-outlands/dark",
+    light: "runtime/mystic-outlands/day",
+    dark: "runtime/mystic-outlands/dark",
   },
   "funhaus-stripe": {
-    light: "packs/funhaus-stripe/day",
-    dark: "packs/funhaus-stripe/dark",
+    light: "runtime/funhaus-stripe/day",
+    dark: "runtime/funhaus-stripe/dark",
   },
   "field-khaki": {
-    light: "packs/field-khaki/day",
-    dark: "packs/field-khaki/dark",
+    light: "runtime/field-khaki/day",
+    dark: "runtime/field-khaki/dark",
   },
   "afrohemian-weave": {
-    light: "packs/afrohemian-weave/day",
-    dark: "packs/afrohemian-weave/dark",
+    light: "runtime/afrohemian-weave/day",
+    dark: "runtime/afrohemian-weave/dark",
   },
   "glitch-glam": {
-    light: "packs/glitch-glam/day",
-    dark: "packs/glitch-glam/dark",
+    light: "runtime/glitch-glam/day",
+    dark: "runtime/glitch-glam/dark",
   },
 };
 
 export function isLiquidIconPackId(value: unknown): value is LiquidIconPackId {
   return typeof value === "string" && LIQUID_ICON_PACK_IDS.has(value as LiquidIconPackId);
+}
+
+export function isImageLiquidIconPackId(value: unknown): value is ImageLiquidIconPackId {
+  return typeof value === "string" && IMAGE_LIQUID_ICON_PACK_IDS.has(value as ImageLiquidIconPackId);
 }
 
 const LIQUID_ICON_ASSETS: LiquidIconAsset[] = [
@@ -282,13 +388,14 @@ export function getLiquidIconSrc({
   iconPack?: LiquidIconPackId;
 }): string | undefined {
   if (uiTheme !== "default") return undefined;
+  if (!isImageLiquidIconPackId(iconPack)) return undefined;
   const assetId = getLiquidIconAssetId(targetType, targetId);
   if (!assetId) return undefined;
   return getLiquidIconPackAssetSrc(iconPack, colorMode, assetId);
 }
 
 export function getLiquidIconPackAssetSrc(
-  iconPack: LiquidIconPackId,
+  iconPack: ImageLiquidIconPackId,
   colorMode: ColorMode,
   assetId: string,
 ): string {

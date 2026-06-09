@@ -494,13 +494,16 @@ export default function SettingsPage() {
         </div>
       }
     >
-      <div className="space-y-6 max-w-2xl">
-        <ThemeSwitcher />
-        <IconPackSwitcher />
-        <VoiceSpeechSection />
-        <OSBuddySettingsSection />
+      <div className="mx-auto grid w-full max-w-6xl gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)] xl:items-start">
+        <div className="min-w-0 space-y-6">
+          <ThemeSwitcher />
+          <IconPackSwitcher />
+          <VoiceSpeechSection />
+          <OSBuddySettingsSection />
+        </div>
 
-        <Card>
+        <div className="min-w-0 space-y-6">
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
@@ -637,9 +640,9 @@ export default function SettingsPage() {
               </OSPrimaryAction>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Gauge className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
@@ -752,9 +755,9 @@ export default function SettingsPage() {
               </OSPrimaryAction>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Share2 className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
@@ -843,9 +846,9 @@ export default function SettingsPage() {
               </OSPrimaryAction>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
@@ -902,9 +905,9 @@ export default function SettingsPage() {
               />
             </label>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
@@ -1006,9 +1009,9 @@ export default function SettingsPage() {
               </ul>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
@@ -1082,11 +1085,11 @@ export default function SettingsPage() {
               </OSPrimaryAction>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <SocialIntegrationsSection />
+          <SocialIntegrationsSection />
 
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Info className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden />
@@ -1125,7 +1128,8 @@ export default function SettingsPage() {
               <span className="tabular-nums text-muted-foreground">{APP_VERSION}</span>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     </PageShell>
   );

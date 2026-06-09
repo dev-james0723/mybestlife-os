@@ -61,6 +61,10 @@ Execution state: transparent alpha asset generation and app navigation wiring.
   - `packs/afrohemian-weave/dark/*.png`
   - `packs/glitch-glam/day/*.png`
   - `packs/glitch-glam/dark/*.png`
+- App-facing runtime icon folders:
+  - `runtime/<pack-id>/day/*.png`
+  - `runtime/<pack-id>/dark/*.png`
+  - `runtime/RUNTIME_RECEIPT.json`
 - Crop QA contact sheets:
   - `review/day-crops-contact.png`
   - `review/dark-crops-contact.png`
@@ -157,6 +161,7 @@ Result:
 - Additional selectable icon packs: 4 packs × 2 modes × 50 PNGs, generated from the same alpha masks for Settings personalization.
 - Pinterest Predicts 2026 selectable icon packs: 12 packs × 2 modes × 50 PNGs, regenerated as transparent theme-specific pictogram systems with separate semantic metaphors, silhouette, material, texture, and lighting rules.
 - Pinterest Predicts 2026 DNA preview sheets: 12 files, each showing the same sample icons across Day and Dark modes.
+- App-facing runtime tier: 17 selectable packs × 2 modes × 50 PNGs, downscaled from the canonical 512px transparent PNGs to 96px transparent PNGs for faster navigation loading. The runtime PNG payload is about 5.17 MB total, with an average file size of about 3.1 KB.
 - Transparent alpha assets report `hasAlpha: yes`.
 
 ## Residual Risk

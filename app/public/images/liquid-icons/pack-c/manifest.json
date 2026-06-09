@@ -8,104 +8,104 @@
     {
       "id": "command-glass",
       "name": "Command Glass",
-      "dayAssetBase": "/images/liquid-icons/pack-c/alpha-day-command-style",
-      "darkAssetBase": "/images/liquid-icons/pack-c/alpha-dark-command-style"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/command-glass/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/command-glass/dark"
     },
     {
       "id": "soft-3d-clay",
       "name": "Soft 3D Clay",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/soft-3d-clay/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/soft-3d-clay/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/soft-3d-clay/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/soft-3d-clay/dark"
     },
     {
       "id": "neo-brutal-retro",
       "name": "Neo Brutal Retro",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/neo-brutal-retro/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/neo-brutal-retro/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/neo-brutal-retro/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/neo-brutal-retro/dark"
     },
     {
       "id": "adaptive-minimal-line",
       "name": "Adaptive Minimal Line",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/adaptive-minimal-line/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/adaptive-minimal-line/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/adaptive-minimal-line/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/adaptive-minimal-line/dark"
     },
     {
       "id": "humanist-ink",
       "name": "Humanist Ink",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/humanist-ink/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/humanist-ink/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/humanist-ink/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/humanist-ink/dark"
     },
     {
       "id": "glacier-blue",
       "name": "Glacier Blue",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/glacier-blue/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/glacier-blue/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/glacier-blue/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/glacier-blue/dark"
     },
     {
       "id": "opal-celestial",
       "name": "Opal Celestial",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/opal-celestial/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/opal-celestial/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/opal-celestial/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/opal-celestial/dark"
     },
     {
       "id": "jelly-gummy",
       "name": "Jelly Gummy",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/jelly-gummy/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/jelly-gummy/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/jelly-gummy/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/jelly-gummy/dark"
     },
     {
       "id": "neo-deco-brass",
       "name": "Neo Deco Brass",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/neo-deco-brass/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/neo-deco-brass/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/neo-deco-brass/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/neo-deco-brass/dark"
     },
     {
       "id": "velvet-opera",
       "name": "Velvet Opera",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/velvet-opera/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/velvet-opera/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/velvet-opera/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/velvet-opera/dark"
     },
     {
       "id": "lace-porcelain",
       "name": "Lace Porcelain",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/lace-porcelain/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/lace-porcelain/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/lace-porcelain/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/lace-porcelain/dark"
     },
     {
       "id": "postal-poet",
       "name": "Postal Poet",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/postal-poet/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/postal-poet/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/postal-poet/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/postal-poet/dark"
     },
     {
       "id": "mystic-outlands",
       "name": "Mystic Outlands",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/mystic-outlands/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/mystic-outlands/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/mystic-outlands/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/mystic-outlands/dark"
     },
     {
       "id": "funhaus-stripe",
       "name": "FunHaus Stripe",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/funhaus-stripe/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/funhaus-stripe/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/funhaus-stripe/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/funhaus-stripe/dark"
     },
     {
       "id": "field-khaki",
       "name": "Field Khaki",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/field-khaki/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/field-khaki/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/field-khaki/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/field-khaki/dark"
     },
     {
       "id": "afrohemian-weave",
       "name": "Afrohemian Weave",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/afrohemian-weave/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/afrohemian-weave/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/afrohemian-weave/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/afrohemian-weave/dark"
     },
     {
       "id": "glitch-glam",
       "name": "Glitch Glam",
-      "dayAssetBase": "/images/liquid-icons/pack-c/packs/glitch-glam/day",
-      "darkAssetBase": "/images/liquid-icons/pack-c/packs/glitch-glam/dark"
+      "dayAssetBase": "/images/liquid-icons/pack-c/runtime/glitch-glam/day",
+      "darkAssetBase": "/images/liquid-icons/pack-c/runtime/glitch-glam/dark"
     }
   ],
   "modes": {
@@ -185,5 +185,12 @@
     { "assetId": "japanese-study", "targetType": "nav_item", "targetId": "japanese-study", "label": "Japanese Study", "sheet": 2, "cell": 23 },
     { "assetId": "garden", "targetType": "cta", "targetId": "garden", "label": "Garden", "sheet": 2, "cell": 24 },
     { "assetId": "settings-reserved", "targetType": "reserved", "targetId": "settings", "label": "Settings Reserved", "sheet": 2, "cell": 25 }
-  ]
+  ],
+  "runtimeAssets": {
+    "status": "app_facing_runtime_assets_ready",
+    "base": "/images/liquid-icons/pack-c/runtime",
+    "sizePx": 96,
+    "receipt": "/images/liquid-icons/pack-c/runtime/RUNTIME_RECEIPT.json",
+    "sourceAssets": "canonical_512px_transparent_pngs_preserved_for_review_and_regeneration"
+  }
 }

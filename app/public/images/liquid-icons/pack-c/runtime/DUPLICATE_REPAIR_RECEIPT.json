@@ -1,0 +1,60 @@
+{
+  "repairedAt": "2026-06-09T00:47:21.181Z",
+  "reason": "Replaced exact duplicate generated image navigation icons with target-specific transparent PNG glyphs.",
+  "size": 96,
+  "repairs": {
+    "afrohemian-weave": [
+      "about-me",
+      "career-journal",
+      "assets",
+      "category-knowledge",
+      "knowledge-base"
+    ],
+    "lace-porcelain": [
+      "about-me",
+      "documents",
+      "career",
+      "assets",
+      "knowledge-base"
+    ],
+    "neo-deco-brass": [
+      "about-me",
+      "career-journal",
+      "career",
+      "category-learning",
+      "knowledge-base"
+    ]
+  },
+  "outputs": [
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/day/about-me.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/day/career-journal.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/day/assets.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/day/category-knowledge.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/day/knowledge-base.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/dark/about-me.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/dark/career-journal.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/dark/assets.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/dark/category-knowledge.png",
+    "public/images/liquid-icons/pack-c/runtime/afrohemian-weave/dark/knowledge-base.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/day/about-me.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/day/documents.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/day/career.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/day/assets.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/day/knowledge-base.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/dark/about-me.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/dark/documents.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/dark/career.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/dark/assets.png",
+    "public/images/liquid-icons/pack-c/runtime/lace-porcelain/dark/knowledge-base.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/day/about-me.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/day/career-journal.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/day/career.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/day/category-learning.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/day/knowledge-base.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/dark/about-me.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/dark/career-journal.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/dark/career.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/dark/category-learning.png",
+    "public/images/liquid-icons/pack-c/runtime/neo-deco-brass/dark/knowledge-base.png"
+  ]
+}

@@ -1693,7 +1693,8 @@ html[data-ui-theme="default"] [data-glass-icon-well] img {
   border-radius: inherit;
   object-fit: contain;
 }
-html[data-ui-theme="default"] [data-glass-icon-well]:has([data-liquid-nav-icon]) {
+html[data-ui-theme="default"] [data-glass-icon-well]:has([data-liquid-nav-icon]),
+html[data-ui-theme="default"] [data-glass-icon-well]:has([data-animated-nav-icon]) {
   background: transparent;
   box-shadow: none;
 }
@@ -1737,7 +1738,8 @@ html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="tru
   color: var(--sidebar-text-active);
   box-shadow: 0 0 10px color-mix(in oklch, var(--primary) 35%, transparent);
 }
-html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="true"] [data-glass-icon-well]:has([data-liquid-nav-icon]) {
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="true"] [data-glass-icon-well]:has([data-liquid-nav-icon]),
+html[data-ui-theme="default"] [data-slot="sidebar-menu-button"][data-active="true"] [data-glass-icon-well]:has([data-animated-nav-icon]) {
   background: transparent;
   box-shadow: none;
 }
