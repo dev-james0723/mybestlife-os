@@ -516,6 +516,15 @@ export type Note = {
   category: string | null;
   tags: string[];
   is_favorite: boolean;
+  status?: string | null;
+  note_type?: string | null;
+  summary?: string | null;
+  ai_tags?: string[];
+  manual_tags?: string[];
+  ai_suggestions?: Json | null;
+  ai_metadata?: Json | null;
+  last_processed_at?: string | null;
+  archived_at?: string | null;
   created_at: string;
   updated_at: string;
   project?: Pick<Project, "id" | "name"> | null;

@@ -87,6 +87,7 @@ export const navigationCategories: NavCategory[] = [
       },
       { itemId: "daily-planner", title: "Daily Planner", url: "/daily-planner", icon: CalendarClock },
       { itemId: "tasks", title: "Tasks", url: "/tasks", icon: CheckSquare },
+      { itemId: "notes", title: "Notes", url: "/notes", icon: NotebookPen },
       { itemId: "weekly-review", title: "Weekly Review", url: "/weekly-review", icon: CalendarCheck },
       { itemId: "calendar", title: "Calendar", url: "/calendar", icon: CalendarDays },
       { itemId: "weather", title: "Weather", url: "/weather", icon: CloudSun },

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Note } from "@/types/database";
+import type { Json, Note } from "@/types/database";
 
 async function requireUserId(): Promise<string> {
   const supabase = createClient();
@@ -18,9 +18,28 @@ export type CreateNoteInput = {
   tags?: string[];
   is_favorite?: boolean;
   project_id?: string | null;
+  status?: string | null;
+  note_type?: string | null;
+  summary?: string | null;
+  ai_tags?: string[];
+  manual_tags?: string[];
+  ai_suggestions?: Json | null;
+  ai_metadata?: Json | null;
+  last_processed_at?: string | null;
+  archived_at?: string | null;
 };
 
 export type UpdateNoteInput = Partial<CreateNoteInput>;
+
+export type UpdateNoteAiMetadataInput = Pick<
+  CreateNoteInput,
+  | "summary"
+  | "ai_tags"
+  | "ai_suggestions"
+  | "ai_metadata"
+  | "last_processed_at"
+  | "note_type"
+>;
 
 export const notesRepository = {
   async getAll(): Promise<Note[]> {
@@ -57,6 +76,17 @@ export const notesRepository = {
         tags: input.tags ?? [],
         is_favorite: input.is_favorite ?? false,
         project_id: input.project_id ?? null,
+        ...(input.status ? { status: input.status } : {}),
+        ...(input.note_type ? { note_type: input.note_type } : {}),
+        ...(input.summary ? { summary: input.summary } : {}),
+        ...(input.ai_tags ? { ai_tags: input.ai_tags } : {}),
+        ...(input.manual_tags ? { manual_tags: input.manual_tags } : {}),
+        ...(input.ai_suggestions ? { ai_suggestions: input.ai_suggestions } : {}),
+        ...(input.ai_metadata ? { ai_metadata: input.ai_metadata } : {}),
+        ...(input.last_processed_at
+          ? { last_processed_at: input.last_processed_at }
+          : {}),
+        ...(input.archived_at ? { archived_at: input.archived_at } : {}),
       })
       .select()
       .single();
@@ -74,6 +104,18 @@ export const notesRepository = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async tryUpdateAiMetadata(
+    id: string,
+    input: UpdateNoteAiMetadataInput,
+  ): Promise<boolean> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("notes")
+      .update({ ...input, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    return !error;
   },
 
   async delete(id: string): Promise<void> {
