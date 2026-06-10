@@ -1,0 +1,5 @@
+# Repo-local conservative defaults for Codex.
+# Keep this workspace writable, but do not grant full unrestricted filesystem access by default.
+
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"

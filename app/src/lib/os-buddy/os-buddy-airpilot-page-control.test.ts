@@ -35,6 +35,7 @@ class FakeElement {
     private readonly options: {
       selector?: string;
       closestIgnore?: boolean;
+      closestDock?: boolean;
       disabled?: boolean;
       hidden?: boolean;
       rect?: { left: number; top: number; width: number; height: number };
@@ -65,8 +66,16 @@ class FakeElement {
   }
 
   closest(selector: string) {
-    if (selector.includes("data-airpilot-ignore") && this.options.closestIgnore) {
-      return this;
+    const matches = (element: FakeElement) => {
+      if (selector.includes("data-airpilot-ignore") && element.options.closestIgnore) {
+        return true;
+      }
+      return selector.includes(".os-buddy-dock") && element.options.closestDock;
+    };
+
+    if (matches(this)) return this;
+    for (let parent = this.parentElement; parent; parent = parent.parentElement) {
+      if (matches(parent)) return parent;
     }
     return null;
   }
@@ -227,6 +236,51 @@ describe("AirPilot page control", () => {
     expect(target?.element).toBe(card);
     expect(clickAirPilotTarget(card as unknown as HTMLElement)).toBe(true);
     expect(card.clicked).toBe(true);
+  });
+
+  it("prefers explicit OS Buddy actions over clickable content underneath the dock", () => {
+    const osBuddyButton = new FakeElement({
+      selector: "[data-airpilot-os-buddy-action]",
+      closestDock: true,
+      rect: { left: 20, top: 40, width: 80, height: 80 },
+      label: "OS Buddy Quick Snap",
+    });
+    const sprite = new FakeElement({
+      rect: { left: 30, top: 50, width: 60, height: 60 },
+      label: "Sprite",
+    });
+    const cardUnderBuddy = new FakeElement({
+      selector: ".cursor-pointer",
+      rect: { left: 0, top: 0, width: 200, height: 180 },
+      label: "Card underneath",
+    });
+    sprite.parentElement = osBuddyButton;
+    installDom([sprite, osBuddyButton, cardUnderBuddy]);
+
+    expect(resolveAirPilotTargetAtPoint({ x: 50, y: 70 })).toBe(osBuddyButton);
+    expect(clickAirPilotTarget(osBuddyButton as unknown as HTMLElement)).toBe(true);
+    expect(osBuddyButton.clicked).toBe(true);
+    expect(cardUnderBuddy.clicked).toBe(false);
+  });
+
+  it("lets the Quick Snap capture layer block page targets underneath", () => {
+    const captureLayer = new FakeElement({
+      selector: "[data-airpilot-os-buddy-action]",
+      closestDock: true,
+      rect: { left: 0, top: 0, width: 400, height: 400 },
+      label: "Quick Snap paste capture",
+    });
+    const cardUnderLayer = new FakeElement({
+      selector: ".cursor-pointer",
+      rect: { left: 40, top: 40, width: 200, height: 120 },
+      label: "Card underneath",
+    });
+    installDom([captureLayer, cardUnderLayer]);
+
+    expect(resolveAirPilotTargetAtPoint({ x: 100, y: 100 })).toBe(captureLayer);
+    expect(clickAirPilotTarget(captureLayer as unknown as HTMLElement)).toBe(true);
+    expect(captureLayer.clicked).toBe(true);
+    expect(cardUnderLayer.clicked).toBe(false);
   });
 
   it("excludes hidden, disabled, ignored, and form-only elements from magnet targets", () => {

@@ -259,6 +259,97 @@ export function createOSBuddyQuickSnapPayloadFromClipboardData(
   });
 }
 
+function clipboardFileName(mime: string | null, index: number) {
+  const extension =
+    mime === "image/png"
+      ? "png"
+      : mime === "image/jpeg"
+        ? "jpg"
+        : mime === "image/webp"
+          ? "webp"
+          : mime === "image/gif"
+            ? "gif"
+            : "bin";
+  return `Quick Snap ${index}.${extension}`;
+}
+
+async function createPayloadFromClipboardItems(
+  items: ClipboardItems,
+  now?: number,
+) {
+  const files: File[] = [];
+  let plainText: string | null = null;
+  let html: string | null = null;
+  let uriList: string | null = null;
+
+  for (const item of Array.from(items)) {
+    for (const type of item.types) {
+      let blob: Blob;
+      try {
+        blob = await item.getType(type);
+      } catch {
+        continue;
+      }
+
+      if (type === "text/plain") {
+        plainText ??= await blob.text();
+        continue;
+      }
+      if (type === "text/html") {
+        html ??= await blob.text();
+        continue;
+      }
+      if (type === "text/uri-list") {
+        uriList ??= await blob.text();
+        continue;
+      }
+      if (type.startsWith("image/") && blob.size > 0) {
+        files.push(
+          new File([blob], clipboardFileName(blob.type || type, files.length + 1), {
+            type: blob.type || type,
+          }),
+        );
+      }
+    }
+  }
+
+  return createOSBuddyQuickSnapPayloadFromParts({
+    files,
+    plainText,
+    html,
+    uriList,
+    now,
+  });
+}
+
+export async function createOSBuddyQuickSnapPayloadFromNavigatorClipboard(
+  clipboard: Clipboard | undefined = typeof navigator !== "undefined"
+    ? navigator.clipboard
+    : undefined,
+  now?: number,
+) {
+  if (!clipboard) return null;
+
+  if (typeof clipboard.read === "function") {
+    try {
+      const payload = await createPayloadFromClipboardItems(await clipboard.read(), now);
+      if (payload) return payload;
+    } catch {
+      // Some browsers expose read() but only allow readText().
+    }
+  }
+
+  if (typeof clipboard.readText !== "function") return null;
+  try {
+    return createOSBuddyQuickSnapPayloadFromParts({
+      plainText: await clipboard.readText(),
+      now,
+    });
+  } catch {
+    return null;
+  }
+}
+
 function dedupeQuickSnapEntries(entries: OSBuddyQuickSnapEntry[]) {
   const seen = new Set<string>();
   const next: OSBuddyQuickSnapEntry[] = [];

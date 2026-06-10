@@ -4,11 +4,13 @@ import type { OSBuddyAirControlPoint } from "./os-buddy-air-control-types";
 export const AIRPILOT_IGNORE_SELECTOR =
   '[data-airpilot-ignore="true"], .os-buddy-dock';
 export const AIRPILOT_TARGET_HIGHLIGHT_CLASS = "os-buddy-airpilot-target-highlight";
+const OS_BUDDY_ACTION_SELECTOR = "[data-airpilot-os-buddy-action]";
 
 const EXPLICIT_AIRPILOT_TARGET_SELECTOR = [
   "[data-airpilot-target]",
   "[data-airpilot-clickable]",
   "[data-airpilot-selectable]",
+  OS_BUDDY_ACTION_SELECTOR,
 ].join(",");
 
 const CLICKABLE_SELECTOR = [
@@ -60,7 +62,8 @@ function isVisibleElement(element: HTMLElement) {
 }
 
 export function isAirPilotSelectableElement(element: HTMLElement) {
-  if (element.closest(AIRPILOT_IGNORE_SELECTOR)) return false;
+  const isOSBuddyAction = element.matches(OS_BUDDY_ACTION_SELECTOR);
+  if (element.closest(AIRPILOT_IGNORE_SELECTOR) && !isOSBuddyAction) return false;
   if (!element.matches(CLICKABLE_SELECTOR)) return false;
   if (
     element.matches(FORM_FIELD_SELECTOR) &&
@@ -87,9 +90,9 @@ export function resolveAirPilotTargetAtPoint(point: OSBuddyAirControlPoint) {
   if (typeof document === "undefined") return null;
   const elements = document.elementsFromPoint(point.x, point.y);
   for (const element of elements) {
-    if (element.closest(AIRPILOT_IGNORE_SELECTOR)) continue;
     const target = findAirPilotSelectableTarget(element);
     if (target) return target;
+    if (element.closest(AIRPILOT_IGNORE_SELECTOR)) continue;
   }
   return null;
 }

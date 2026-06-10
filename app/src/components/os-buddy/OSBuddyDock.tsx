@@ -12,7 +12,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { usePathname } from "next/navigation";
-import { Cloud, Database, Lightbulb, Loader2, type LucideIcon } from "lucide-react";
+import { Cloud, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
@@ -65,6 +65,7 @@ import { routeOSBuddyDroppedFile } from "@/lib/os-buddy/os-buddy-file-drop-routi
 import {
   buildLocalQuickSnapAck,
   createOSBuddyQuickSnapPayloadFromClipboardData,
+  createOSBuddyQuickSnapPayloadFromNavigatorClipboard,
   QUICK_SNAP_SHIFT_DOUBLE_TAP_MS,
   registerQuickSnapShiftTap,
   type OSBuddyQuickSnapAckContext,
@@ -72,6 +73,7 @@ import {
   type OSBuddyQuickSnapPayload,
   type OSBuddyQuickSnapShiftTapState,
 } from "@/lib/os-buddy/os-buddy-quick-snap";
+import { triggerOSBuddyHapticFeedback } from "@/lib/os-buddy/os-buddy-haptics";
 import { routeOSBuddyQuickSnapPayload } from "@/lib/os-buddy/os-buddy-quick-snap-routing";
 import {
   resolveOSBuddyTapSequence,
@@ -507,11 +509,7 @@ function OSBuddyQuickSnapClouds({
   saving: boolean;
   onSelect: (destination: OSBuddyQuickSnapDestination) => void;
 }) {
-  const renderCloudButton = (
-    destination: OSBuddyQuickSnapDestination,
-    title: string,
-    Icon: LucideIcon,
-  ) => (
+  const renderCloudButton = (destination: OSBuddyQuickSnapDestination, title: string) => (
     <button
       type="button"
       className={cn(
@@ -525,11 +523,13 @@ function OSBuddyQuickSnapClouds({
       onClick={() => onSelect(destination)}
     >
       <span className="os-buddy-quick-snap-cloud-shape" aria-hidden>
-        <span className="os-buddy-quick-snap-cloud-puff os-buddy-quick-snap-cloud-puff--left" />
-        <span className="os-buddy-quick-snap-cloud-puff os-buddy-quick-snap-cloud-puff--top" />
-        <span className="os-buddy-quick-snap-cloud-puff os-buddy-quick-snap-cloud-puff--right" />
-        <span className="os-buddy-quick-snap-cloud-puff os-buddy-quick-snap-cloud-puff--front" />
-        <span className="os-buddy-quick-snap-cloud-base" />
+        <span className="os-buddy-quick-snap-cloud-art" />
+        <span className="os-buddy-quick-snap-cloud-sparkles">
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
         <span className="os-buddy-quick-snap-cloud-mist">
           <span />
           <span />
@@ -537,11 +537,8 @@ function OSBuddyQuickSnapClouds({
         </span>
       </span>
       <span className="os-buddy-quick-snap-cloud-content">
-        <span className="os-buddy-quick-snap-cloud-icon">
-          <Icon className="size-3.5" aria-hidden />
-        </span>
         <span className="os-buddy-quick-snap-cloud-copy">
-          <span className="os-buddy-quick-snap-cloud-kicker">Quick Snap to</span>
+          <span className="os-buddy-quick-snap-cloud-kicker">Quick Snap</span>
           <span className="os-buddy-quick-snap-cloud-title">{title}</span>
         </span>
       </span>
@@ -557,8 +554,8 @@ function OSBuddyQuickSnapClouds({
       aria-label="OS Buddy Quick Snap destinations"
     >
       <div className="os-buddy-quick-snap-cloud-row">
-        {renderCloudButton("idea", "Idea Capture", Lightbulb)}
-        {renderCloudButton("knowledge", "Knowledge Base", Database)}
+        {renderCloudButton("idea", "Idea Capture")}
+        {renderCloudButton("knowledge", "Knowledge Base")}
       </div>
       <div className="os-buddy-quick-snap-keyhint">
         {saving ? (
@@ -667,6 +664,7 @@ export function OSBuddyDock() {
   const [quickSnapPayload, setQuickSnapPayload] =
     useState<OSBuddyQuickSnapPayload | null>(null);
   const [quickSnapCloudsDismissing, setQuickSnapCloudsDismissing] = useState(false);
+  const [quickSnapClipboardPending, setQuickSnapClipboardPending] = useState(false);
   const isQuickSnapActive = quickSnapState !== "idle";
 
   const handleOverlayMiniGameExitComplete = useCallback(() => {
@@ -1209,7 +1207,9 @@ export function OSBuddyDock() {
 
   const focusQuickSnapPasteTarget = useCallback(() => {
     window.requestAnimationFrame(() => {
-      quickSnapPasteTargetRef.current?.focus({ preventScroll: true });
+      const target = quickSnapPasteTargetRef.current;
+      target?.focus({ preventScroll: true });
+      target?.setSelectionRange(0, 0);
     });
   }, []);
 
@@ -1219,6 +1219,7 @@ export function OSBuddyDock() {
       setQuickSnapState("idle");
       setQuickSnapPayload(null);
       setQuickSnapCloudsDismissing(false);
+      setQuickSnapClipboardPending(false);
       if (!options?.preserveBubble) clearBubble();
     },
     [clearBubble, clearQuickSnapTimers],
@@ -1242,8 +1243,10 @@ export function OSBuddyDock() {
     clearBubble();
     setQuickSnapPayload(null);
     setQuickSnapCloudsDismissing(false);
+    setQuickSnapClipboardPending(false);
     setQuickSnapState("armed");
     setMood("playful");
+    triggerOSBuddyHapticFeedback("quick-snap-activate");
     focusQuickSnapPasteTarget();
     emitOSBuddyEvent({ type: "buddy:longpress" });
   }, [
@@ -1260,6 +1263,7 @@ export function OSBuddyDock() {
 
   const stageQuickSnapPayload = useCallback(
     (payload: OSBuddyQuickSnapPayload | null) => {
+      setQuickSnapClipboardPending(false);
       if (!payload) {
         temporarilySetMood("error", 1_000);
         showBubble(
@@ -1283,6 +1287,36 @@ export function OSBuddyDock() {
     [clearBubble, focusQuickSnapPasteTarget, locale, showBubble, temporarilySetMood],
   );
 
+  const readQuickSnapClipboard = useCallback(async () => {
+    if (quickSnapClipboardPending || quickSnapState === "idle" || quickSnapState === "saving") {
+      return false;
+    }
+
+    setQuickSnapClipboardPending(true);
+    const payload = await createOSBuddyQuickSnapPayloadFromNavigatorClipboard();
+    if (payload) {
+      stageQuickSnapPayload(payload);
+      return true;
+    }
+
+    setQuickSnapClipboardPending(false);
+    return false;
+  }, [quickSnapClipboardPending, quickSnapState, stageQuickSnapPayload]);
+
+  const handleQuickSnapPasteRequest = useCallback(
+    (event?: {
+      preventDefault: () => void;
+      stopPropagation: () => void;
+    }) => {
+      event?.preventDefault();
+      event?.stopPropagation();
+      void readQuickSnapClipboard().then((captured) => {
+        if (!captured) focusQuickSnapPasteTarget();
+      });
+    },
+    [focusQuickSnapPasteTarget, readQuickSnapClipboard],
+  );
+
   const handleQuickSnapPaste = useCallback(
     (event: ClipboardEvent<HTMLTextAreaElement>) => {
       if (quickSnapState === "idle" || quickSnapState === "saving") return;
@@ -1295,6 +1329,19 @@ export function OSBuddyDock() {
     },
     [quickSnapState, stageQuickSnapPayload],
   );
+
+  useEffect(() => {
+    if (!isQuickSnapActive || typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.classList.add("os-buddy-quick-snap-capturing");
+
+    const selection = window.getSelection?.();
+    if (selection && !selection.isCollapsed) selection.removeAllRanges();
+
+    return () => {
+      root.classList.remove("os-buddy-quick-snap-capturing");
+    };
+  }, [isQuickSnapActive]);
 
   const requestQuickSnapAck = useCallback(
     async (ackContext: OSBuddyQuickSnapAckContext) => {
@@ -3069,18 +3116,34 @@ export function OSBuddyDock() {
       : undefined;
   const quickSnapPasteWidth =
     viewport.width > 0 ? Math.min(148, Math.max(112, viewport.width - 24)) : 136;
+  const quickSnapPasteLeft =
+    viewport.width > 0
+      ? clamp(
+          dockPoint.x + buddyBox.width / 2 - quickSnapPasteWidth / 2,
+          12,
+          Math.max(12, viewport.width - quickSnapPasteWidth - 12),
+        )
+      : 0;
+  const quickSnapPasteTop =
+    viewport.width > 0 && viewport.height > 0
+      ? quickSnapVertical === "below"
+        ? dockPoint.y + buddyBox.height + 10
+        : Math.max(12, dockPoint.y - 46)
+      : 0;
   const quickSnapPasteFixedStyle =
     viewport.width > 0 && viewport.height > 0
       ? {
-          left: clamp(
-            dockPoint.x + buddyBox.width / 2 - quickSnapPasteWidth / 2,
-            12,
-            Math.max(12, viewport.width - quickSnapPasteWidth - 12),
-          ),
+          left: quickSnapPasteLeft,
+          top: quickSnapPasteTop,
+          bottom: "auto",
           width: quickSnapPasteWidth,
-          ...(quickSnapVertical === "below"
-            ? { top: dockPoint.y + buddyBox.height + 10, bottom: "auto" }
-            : { bottom: viewport.height - dockPoint.y + 10, top: "auto" }),
+        }
+      : undefined;
+  const quickSnapPasteSinkFixedStyle =
+    viewport.width > 0 && viewport.height > 0
+      ? {
+          left: quickSnapPasteLeft + quickSnapPasteWidth / 2,
+          top: quickSnapPasteTop + 18,
         }
       : undefined;
   const shouldHideDockForOverlayMiniGame = isOverlayMiniGameOpen || isOverlayMiniGamePresent;
@@ -3115,22 +3178,44 @@ export function OSBuddyDock() {
         }}
       >
         {isQuickSnapActive && quickSnapState === "armed" ? (
-          <textarea
-            ref={quickSnapPasteTargetRef}
-            className="os-buddy-quick-snap-paste-target"
-            style={quickSnapPasteFixedStyle}
-            aria-label="Paste into OS Buddy Quick Snap"
-            autoCapitalize="off"
-            autoComplete="off"
-            autoCorrect="off"
-            placeholder="Paste"
-            spellCheck={false}
-            defaultValue=""
-            onPaste={handleQuickSnapPaste}
-            onInput={(event) => {
-              event.currentTarget.value = "";
-            }}
-          />
+          <>
+            <div
+              className="os-buddy-quick-snap-capture-layer"
+              data-airpilot-os-buddy-action="quick-snap-paste"
+              role="button"
+              tabIndex={-1}
+              aria-label="Paste into OS Buddy Quick Snap"
+              onClick={handleQuickSnapPasteRequest}
+              onPointerDown={handleQuickSnapPasteRequest}
+            />
+            <button
+              type="button"
+              className="os-buddy-quick-snap-paste-target"
+              style={quickSnapPasteFixedStyle}
+              data-airpilot-os-buddy-action="quick-snap-paste"
+              aria-label="Paste into OS Buddy Quick Snap"
+              onClick={handleQuickSnapPasteRequest}
+              onPointerDown={handleQuickSnapPasteRequest}
+            >
+              {quickSnapClipboardPending ? "Reading..." : "Paste"}
+            </button>
+            <textarea
+              ref={quickSnapPasteTargetRef}
+              className="os-buddy-quick-snap-paste-sink"
+              style={quickSnapPasteSinkFixedStyle}
+              aria-label="Hidden Quick Snap paste input"
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              inputMode="none"
+              spellCheck={false}
+              defaultValue=""
+              onPaste={handleQuickSnapPaste}
+              onInput={(event) => {
+                event.currentTarget.value = "";
+              }}
+            />
+          </>
         ) : null}
 
         {quickSnapPayload && (quickSnapState === "ready" || quickSnapState === "saving") ? (
@@ -3181,6 +3266,7 @@ export function OSBuddyDock() {
             transformOrigin: "top left",
           }}
           aria-label={`${name}, your OS Buddy`}
+          data-airpilot-os-buddy-action="quick-snap-activate"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={(event) => void finishPointer(event, "up")}
@@ -3189,6 +3275,12 @@ export function OSBuddyDock() {
             event.preventDefault();
             if (isQuickSnapActive && quickSnapState !== "saving") cancelQuickSnap();
             openMenu(event.clientX + 6, event.clientY + 6);
+          }}
+          onClick={(event) => {
+            if (event.detail !== 0 || isQuickSnapActive) return;
+            event.preventDefault();
+            event.stopPropagation();
+            armQuickSnap();
           }}
           onKeyDown={(event) => {
             void handleKeyDown(event);

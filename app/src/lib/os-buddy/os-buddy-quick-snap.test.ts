@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createOSBuddyQuickSnapPayloadFromParts,
+  createOSBuddyQuickSnapPayloadFromNavigatorClipboard,
   extractQuickSnapUrls,
   registerQuickSnapShiftTap,
 } from "./os-buddy-quick-snap";
@@ -54,6 +55,41 @@ describe("OS Buddy Quick Snap payload parsing", () => {
     expect(payload?.previewLabel).toBe("3 items");
     expect(payload?.entries.filter((entry) => entry.kind === "file")).toHaveLength(2);
     expect(payload?.entries.some((entry) => entry.kind === "text")).toBe(true);
+  });
+
+  it("builds payloads from navigator clipboard text", async () => {
+    const payload = await createOSBuddyQuickSnapPayloadFromNavigatorClipboard(
+      {
+        readText: async () => "Capture this directly from clipboard",
+      } as Clipboard,
+      200,
+    );
+
+    expect(payload?.primaryKind).toBe("text");
+    expect(payload?.previewLabel).toBe("text note");
+    expect(payload?.entries[0]).toMatchObject({
+      kind: "text",
+      text: "Capture this directly from clipboard",
+    });
+    expect(payload?.pastedAt).toBe(200);
+  });
+
+  it("falls back from clipboard read() to readText()", async () => {
+    const payload = await createOSBuddyQuickSnapPayloadFromNavigatorClipboard(
+      {
+        read: async () => {
+          throw new Error("read blocked");
+        },
+        readText: async () => "https://example.com/from-read-text",
+      } as unknown as Clipboard,
+      300,
+    );
+
+    expect(payload?.primaryKind).toBe("url");
+    expect(payload?.entries[0]).toMatchObject({
+      kind: "url",
+      url: "https://example.com/from-read-text",
+    });
   });
 });
 

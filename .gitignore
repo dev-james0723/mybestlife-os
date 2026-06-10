@@ -14,3 +14,10 @@ DocOracle/
 docoracle-capture-run.log
 docoracle-capture-urls.json
 playwright-user-data-docoracle/
+
+# Codex local validation state (no secrets, but machine-local)
+.codex/run-state/
+.codex-profile-export/
+.codex-profile-export.previous-*/
+.codex-profile-restore-*/
+codex-profile-export-redacted*.zip
