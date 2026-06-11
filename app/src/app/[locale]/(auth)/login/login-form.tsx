@@ -25,6 +25,7 @@ import {
 import { useAppStore } from "@/stores/app-store";
 import { getMiscUiCopy } from "@/lib/i18n/misc-ui";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
+import { LiquidGlassRoot } from "@/components/liquid-glass/liquid-glass-root";
 
 export function LoginForm() {
   const language = useAppStore((s) => s.language);
@@ -128,7 +129,11 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+    <div
+      data-atmosphere
+      className="lg-login-shell min-h-screen flex items-center justify-center bg-muted/30 p-4"
+    >
+      <LiquidGlassRoot />
       <Reveal scroll={false} className="w-full max-w-md">
         <Card className="w-full">
           <CardHeader className="text-center space-y-4">

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { SearchPill, SearchIconTrigger } from "@/components/topbar/search-pill";
+import { WallpaperQuickButton } from "@/components/liquid-glass/wallpaper-picker";
 import { GlobalCommandPalette } from "@/components/topbar/global-command-palette";
 import { WeatherBadge } from "@/components/topbar/weather-badge";
 import { UtilityPill } from "@/components/topbar/utility-pill";
@@ -148,6 +149,9 @@ function TopbarInnerRow() {
             <SearchIconTrigger />
           </EnterItem>
           <EnterItem enabled={isGlass}>
+            <WallpaperQuickButton />
+          </EnterItem>
+          <EnterItem enabled={isGlass}>
             <UtilityPill />
           </EnterItem>
           <EnterItem enabled={isGlass}>
@@ -170,6 +174,9 @@ function TopbarInnerRow() {
       <EnterStagger enabled={isGlass}>
         <EnterItem enabled={isGlass}>
           <WeatherBadge />
+        </EnterItem>
+        <EnterItem enabled={isGlass}>
+          <WallpaperQuickButton />
         </EnterItem>
         <EnterItem enabled={isGlass}>
           <UtilityPill />

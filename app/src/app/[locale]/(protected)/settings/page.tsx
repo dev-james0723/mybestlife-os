@@ -66,6 +66,7 @@ import {
 import { ProfileAvatarField } from "@/components/settings/profile-avatar-field";
 import { SocialIntegrationsSection } from "@/components/settings/social-integrations-section";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
+import { WallpaperSwitcher } from "@/components/liquid-glass/wallpaper-picker";
 import { IconPackSwitcher } from "@/components/settings/icon-pack-switcher";
 import { VoiceSpeechSection } from "@/components/settings/voice-speech-section";
 import { OSBuddySettingsSection } from "@/components/settings/os-buddy-settings-section";
@@ -497,6 +498,7 @@ export default function SettingsPage() {
       <div className="mx-auto grid w-full max-w-6xl gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)] xl:items-start">
         <div className="min-w-0 space-y-6">
           <ThemeSwitcher />
+          <WallpaperSwitcher />
           <IconPackSwitcher />
           <VoiceSpeechSection />
           <OSBuddySettingsSection />

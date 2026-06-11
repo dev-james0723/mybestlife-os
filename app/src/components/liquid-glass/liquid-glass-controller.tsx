@@ -91,6 +91,16 @@ function isChromium(): boolean {
 
 export function LiquidGlassController() {
   const setStore = useLiquidGlassStore((s) => s.set);
+  const scene = useLiquidGlassStore((s) => s.scene);
+
+  /* Active wallpaper scene → html[data-lg-scene] (drives the static CSS
+     gradient fallback when the WebGL canvas is not mounted). */
+  useEffect(() => {
+    document.documentElement.setAttribute("data-lg-scene", scene);
+    return () => {
+      document.documentElement.removeAttribute("data-lg-scene");
+    };
+  }, [scene]);
 
   /* Quality tier + displacement flag + canvas flag */
   useEffect(() => {

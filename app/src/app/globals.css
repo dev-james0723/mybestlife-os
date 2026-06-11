@@ -4333,13 +4333,16 @@ html[data-ui-theme="default"][data-color-mode="light"] {
   --lg-py: 50%;
 }
 html[data-ui-theme="default"][data-color-mode="dark"] {
-  --lg-blur-sm: 6px;
-  --lg-blur-md: 14px;
-  --lg-blur-lg: 24px;
-  --lg-saturation: 130%;
-  --lg-tint: color-mix(in oklch, oklch(0.96 0.005 264) 6%, transparent);
-  --lg-tint-strong: color-mix(in oklch, oklch(0.22 0.02 264) 45%, transparent);
-  --lg-tint-control: color-mix(in oklch, white 8%, transparent);
+  --lg-blur-sm: 8px;
+  --lg-blur-md: 20px;
+  --lg-blur-lg: 32px;
+  --lg-saturation: 140%;
+  /* Smoked dark glass: a dark translucent film (not a white one) so the
+     vivid animated wallpaper glows through panels while body text keeps
+     its contrast — the iOS dark-mode material recipe. */
+  --lg-tint: color-mix(in oklch, oklch(0.17 0.02 264) 34%, transparent);
+  --lg-tint-strong: color-mix(in oklch, oklch(0.16 0.02 264) 62%, transparent);
+  --lg-tint-control: color-mix(in oklch, white 10%, transparent);
   --lg-edge-hi: color-mix(in oklch, white 32%, transparent);
   --lg-edge-lo: color-mix(in oklch, black 50%, transparent);
   --lg-shine: rgba(255, 255, 255, 0.2);
@@ -4700,10 +4703,22 @@ html[data-ui-theme="default"] .lg-backdrop-canvas {
   z-index: 0;
   pointer-events: none;
 }
-/* The sidebar/inset live above the fixed canvas. */
-html[data-ui-theme="default"][data-lg-canvas] [data-slot="sidebar-wrapper"] > *:not(.lg-backdrop-canvas) {
-  position: relative;
-  z-index: 1;
+/* The inset paints `bg-background` on mobile — clear it so the wallpaper
+   shows through (the canvas sits below: it is an earlier sibling and the
+   inset is positioned). NOTE: never blanket-override the wrapper's other
+   children — they include `position: fixed` overlays (OS Buddy dock,
+   FABs) that must not be pulled into the flex flow. */
+html[data-ui-theme="default"][data-lg-canvas] [data-slot="sidebar-inset"] {
+  background: transparent;
+}
+/* Desktop sidebar floats as a glass island over the wallpaper instead of
+   a near-opaque sheet (mobile keeps its dedicated Sheet styling). */
+html[data-ui-theme="default"][data-lg-canvas]
+  [data-sidebar="sidebar"]:not([data-mobile="true"]) {
+  background: var(--lg-tint);
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
 }
 
 /* ---------- 9. L3 — Chromium SVG displacement (gated) ---------- */
@@ -4845,4 +4860,87 @@ html[data-ui-theme="default"] :is(
    strong tint so long-form text keeps AA contrast. */
 html[data-ui-theme="default"] [data-lg-ink] {
   background: var(--lg-tint-strong);
+}
+
+/* ---------- 11. Wallpaper scenes — static CSS fallbacks ---------- */
+/* When the WebGL canvas is not mounted (low tier, no WebGL, reduced
+   transparency) the [data-atmosphere]::before layer paints a still
+   approximation of the selected scene so the picker is still meaningful. */
+html[data-ui-theme="default"][data-lg-scene="aurora"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(ellipse 70% 28% at 30% 30%, oklch(0.72 0.17 165 / 0.45) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 24% at 70% 52%, oklch(0.62 0.18 300 / 0.40) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 22% at 45% 74%, oklch(0.70 0.14 220 / 0.35) 0%, transparent 70%),
+    linear-gradient(180deg, oklch(0.18 0.05 265) 0%, oklch(0.24 0.09 300) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="aurora"][data-color-mode="light"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(ellipse 70% 28% at 30% 30%, oklch(0.85 0.12 165 / 0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 24% at 70% 52%, oklch(0.80 0.12 300 / 0.50) 0%, transparent 70%),
+    linear-gradient(180deg, oklch(0.78 0.06 260) 0%, oklch(0.88 0.05 300) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="ocean"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(ellipse 60% 40% at 28% 18%, oklch(0.78 0.13 210 / 0.45) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 35% at 75% 42%, oklch(0.70 0.14 195 / 0.35) 0%, transparent 65%),
+    linear-gradient(180deg, oklch(0.45 0.10 215) 0%, oklch(0.22 0.08 250) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="ocean"][data-color-mode="light"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(ellipse 60% 40% at 28% 18%, oklch(0.93 0.07 200 / 0.6) 0%, transparent 65%),
+    linear-gradient(180deg, oklch(0.90 0.06 205) 0%, oklch(0.70 0.10 230) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="nebula"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(ellipse 55% 45% at 24% 30%, oklch(0.45 0.20 340 / 0.55) 0%, transparent 68%),
+    radial-gradient(ellipse 60% 42% at 78% 60%, oklch(0.45 0.16 250 / 0.50) 0%, transparent 68%),
+    radial-gradient(ellipse 35% 30% at 55% 22%, oklch(0.60 0.14 60 / 0.25) 0%, transparent 70%),
+    linear-gradient(180deg, oklch(0.12 0.03 290) 0%, oklch(0.16 0.06 310) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="nebula"][data-color-mode="light"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(ellipse 55% 45% at 24% 30%, oklch(0.80 0.13 340 / 0.55) 0%, transparent 68%),
+    radial-gradient(ellipse 60% 42% at 78% 60%, oklch(0.80 0.11 250 / 0.50) 0%, transparent 68%),
+    linear-gradient(180deg, oklch(0.88 0.04 300) 0%, oklch(0.82 0.06 310) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="bokeh"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(circle 14% at 22% 26%, oklch(0.75 0.18 25 / 0.55) 0%, transparent 100%),
+    radial-gradient(circle 10% at 68% 18%, oklch(0.80 0.16 85 / 0.50) 0%, transparent 100%),
+    radial-gradient(circle 12% at 82% 64%, oklch(0.75 0.14 190 / 0.45) 0%, transparent 100%),
+    radial-gradient(circle 9% at 38% 72%, oklch(0.72 0.17 330 / 0.45) 0%, transparent 100%),
+    linear-gradient(160deg, oklch(0.28 0.09 20) 0%, oklch(0.30 0.10 50) 45%, oklch(0.20 0.06 200) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="bokeh"][data-color-mode="light"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(circle 14% at 22% 26%, oklch(0.85 0.12 25 / 0.6) 0%, transparent 100%),
+    radial-gradient(circle 10% at 68% 18%, oklch(0.90 0.11 85 / 0.55) 0%, transparent 100%),
+    radial-gradient(circle 12% at 82% 64%, oklch(0.88 0.09 190 / 0.5) 0%, transparent 100%),
+    linear-gradient(160deg, oklch(0.92 0.05 25) 0%, oklch(0.94 0.06 85) 45%, oklch(0.88 0.06 190) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="butterflies"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(circle 11% at 30% 30%, oklch(0.75 0.16 350 / 0.5) 0%, transparent 100%),
+    radial-gradient(circle 9% at 72% 24%, oklch(0.78 0.15 60 / 0.45) 0%, transparent 100%),
+    radial-gradient(circle 12% at 64% 70%, oklch(0.74 0.13 170 / 0.45) 0%, transparent 100%),
+    linear-gradient(170deg, oklch(0.26 0.08 350) 0%, oklch(0.22 0.07 160) 100%);
+}
+html[data-ui-theme="default"][data-lg-scene="butterflies"][data-color-mode="light"]:not([data-lg-canvas]) [data-atmosphere]::before {
+  background:
+    radial-gradient(circle 11% at 30% 30%, oklch(0.87 0.11 350 / 0.55) 0%, transparent 100%),
+    radial-gradient(circle 9% at 72% 24%, oklch(0.90 0.10 60 / 0.5) 0%, transparent 100%),
+    linear-gradient(170deg, oklch(0.93 0.05 350) 0%, oklch(0.90 0.06 160) 100%);
+}
+
+/* ---------- 12. Login shell ---------- */
+/* The login page mounts the same liquid-glass stack (its card is already
+   a [data-lg-lens] glass panel). While the canvas is live the shell goes
+   transparent; otherwise the scene fallback above paints via its
+   [data-atmosphere] marker. */
+html[data-ui-theme="default"][data-lg-canvas] .lg-login-shell {
+  background: transparent;
+}
+html[data-ui-theme="default"] .lg-login-shell > :not(.lg-backdrop-canvas) {
+  position: relative;
+  z-index: 1;
 }

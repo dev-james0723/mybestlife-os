@@ -16,6 +16,47 @@ export type LiquidGlassQuality = "high" | "mid" | "low";
 
 export const MAX_LENSES = 12;
 
+/* ---------------------------------------------------------------- */
+/* Animated wallpaper scenes                                         */
+/* ---------------------------------------------------------------- */
+
+export const LG_SCENES = [
+  "aurora",
+  "ocean",
+  "nebula",
+  "bokeh",
+  "butterflies",
+] as const;
+
+export type LiquidGlassScene = (typeof LG_SCENES)[number];
+
+/** Shader scene index — must match the dispatch order in the fragment shader. */
+export const LG_SCENE_INDEX: Record<LiquidGlassScene, number> = {
+  aurora: 0,
+  ocean: 1,
+  nebula: 2,
+  bokeh: 3,
+  butterflies: 4,
+};
+
+export const LG_SCENE_STORAGE_KEY = "mylifeos-lg-scene";
+export const LG_DEFAULT_SCENE: LiquidGlassScene = "aurora";
+
+export function parseLiquidGlassScene(value: unknown): LiquidGlassScene {
+  return LG_SCENES.includes(value as LiquidGlassScene)
+    ? (value as LiquidGlassScene)
+    : LG_DEFAULT_SCENE;
+}
+
+function readStoredScene(): LiquidGlassScene {
+  if (typeof window === "undefined") return LG_DEFAULT_SCENE;
+  try {
+    return parseLiquidGlassScene(localStorage.getItem(LG_SCENE_STORAGE_KEY));
+  } catch {
+    return LG_DEFAULT_SCENE;
+  }
+}
+
 /** data-lg-lens values, highest priority first when competing for slots. */
 const LENS_RANK: Record<string, number> = {
   overlay: 4,
@@ -153,12 +194,24 @@ type LiquidGlassState = {
   canvasEnabled: boolean;
   /** Chromium-only SVG displacement backdrop-filter is active. */
   displacementEnabled: boolean;
-  set: (partial: Partial<Omit<LiquidGlassState, "set">>) => void;
+  /** Active animated wallpaper scene (persisted to localStorage). */
+  scene: LiquidGlassScene;
+  setScene: (scene: LiquidGlassScene) => void;
+  set: (partial: Partial<Omit<LiquidGlassState, "set" | "setScene">>) => void;
 };
 
 export const useLiquidGlassStore = create<LiquidGlassState>((set) => ({
   quality: "mid",
   canvasEnabled: false,
   displacementEnabled: false,
+  scene: readStoredScene(),
+  setScene: (scene) => {
+    set({ scene });
+    try {
+      localStorage.setItem(LG_SCENE_STORAGE_KEY, scene);
+    } catch {
+      /* private mode etc. — scene still applies for the session */
+    }
+  },
   set: (partial) => set(partial),
 }));
