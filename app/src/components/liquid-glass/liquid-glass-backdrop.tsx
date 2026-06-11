@@ -69,20 +69,28 @@ const FRAGMENT = /* glsl */ `
     vec2 b1 = vec2((0.18 + 0.04 * sin(uTime * 0.11)) * aspect, 0.28 + 0.03 * cos(uTime * 0.09));
     vec2 b2 = vec2((0.84 + 0.05 * cos(uTime * 0.07)) * aspect, 0.16 + 0.05 * sin(uTime * 0.10));
     vec2 b3 = vec2((0.55 + 0.06 * sin(uTime * 0.05)) * aspect, 0.88 + 0.04 * cos(uTime * 0.08));
+    vec2 b4 = vec2((0.62 + 0.05 * cos(uTime * 0.06)) * aspect, 0.45 + 0.05 * sin(uTime * 0.07));
 
     float g1 = exp(-pow(length(auv - b1) / 0.50, 2.0));
     float g2 = exp(-pow(length(auv - b2) / 0.42, 2.0));
     float g3 = exp(-pow(length(auv - b3) / 0.55, 2.0));
+    float g4 = exp(-pow(length(auv - b4) / 0.60, 2.0));
 
-    vec3 tintA = uPrimary;
-    vec3 tintB = mix(uPrimary, vec3(0.56, 0.36, 0.78), 0.55); // violet companion
-    vec3 tintC = mix(uPrimary, vec3(0.22, 0.62, 0.66), 0.55); // teal companion
+    // Dark mode dims the blob tints themselves ("shop window at night")
+    // instead of only lowering mix strength, so blobs never wash the UI.
+    vec3 dim = uLight > 0.5 ? vec3(1.0) : vec3(0.42);
+    vec3 tintA = uPrimary * dim;
+    vec3 tintB = mix(uPrimary, vec3(0.56, 0.36, 0.78), 0.55) * dim; // violet companion
+    vec3 tintC = mix(uPrimary, vec3(0.22, 0.62, 0.66), 0.55) * dim; // teal companion
 
-    float strength = uLight > 0.5 ? 0.17 : 0.26;
+    float strength = uLight > 0.5 ? 0.26 : 0.30;
     vec3 col = base;
     col = mix(col, tintA, g1 * strength);
     col = mix(col, tintB, g2 * strength * 0.85);
     col = mix(col, tintC, g3 * strength * 0.7);
+    // Centre-field wash so content-area glass usually overlaps a gradient
+    // (refraction is invisible over a flat field).
+    col = mix(col, tintB, g4 * strength * (uLight > 0.5 ? 0.45 : 0.3));
 
     // Micro-grain gives the lens band fine detail to bend.
     float n = vnoise(cssPx * 0.018) * 0.5 + vnoise(cssPx * 0.004);
@@ -170,6 +178,8 @@ type LensUniforms = {
    uniform objects are mutated imperatively per frame — keeping them out
    of React state entirely is the cleanest fit for that access pattern. */
 let sharedUniforms: LensUniforms | null = null;
+let sharedMaterial: THREE.ShaderMaterial | null = null;
+
 function getUniforms(): LensUniforms {
   sharedUniforms ??= {
     uResolution: { value: new THREE.Vector2(1, 1) },
@@ -185,6 +195,21 @@ function getUniforms(): LensUniforms {
     uLensStrength: { value: new Float32Array(MAX_LENSES).fill(1) },
   };
   return sharedUniforms;
+}
+
+/* The material is built imperatively and attached via <primitive> so that
+   material.uniforms is GUARANTEED to be the singleton above. Passing a
+   uniforms prop through R3F can leave the renderer bound to a different
+   uniforms object, silently ignoring all later mutations. */
+function getMaterial(): THREE.ShaderMaterial {
+  sharedMaterial ??= new THREE.ShaderMaterial({
+    vertexShader: VERTEX,
+    fragmentShader: FRAGMENT,
+    uniforms: getUniforms(),
+    depthTest: false,
+    depthWrite: false,
+  });
+  return sharedMaterial;
 }
 
 function WallpaperLensPass({ colorMode }: { colorMode: "light" | "dark" }) {
@@ -236,15 +261,8 @@ function WallpaperLensPass({ colorMode }: { colorMode: "light" | "dark" }) {
   });
 
   return (
-    <mesh frustumCulled={false}>
+    <mesh frustumCulled={false} material={getMaterial()}>
       <planeGeometry args={[2, 2]} />
-      <shaderMaterial
-        vertexShader={VERTEX}
-        fragmentShader={FRAGMENT}
-        uniforms={getUniforms()}
-        depthTest={false}
-        depthWrite={false}
-      />
     </mesh>
   );
 }

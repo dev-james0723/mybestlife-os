@@ -42,6 +42,11 @@ const WOBBLE_SELECTOR = [
 
 function detectQuality(): LiquidGlassQuality {
   try {
+    // Manual override / kill switch: localStorage["mylifeos-lg-quality"].
+    const override = localStorage.getItem("mylifeos-lg-quality");
+    if (override === "high" || override === "mid" || override === "low") {
+      return override;
+    }
     if (window.matchMedia("(prefers-reduced-transparency: reduce)").matches) {
       return "low";
     }
@@ -49,7 +54,14 @@ function detectQuality(): LiquidGlassQuality {
     const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
     const probe = document.createElement("canvas");
     const gl = probe.getContext("webgl2");
-    if (!gl || cores <= 4 || (mem !== undefined && mem <= 4)) return "low";
+    if (!gl || cores <= 2 || (mem !== undefined && mem <= 2)) return "low";
+    // Software rasterisers (VMs, remote desktops, missing drivers) make
+    // backdrop-filter + WebGL crawl — treat them as low-end.
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer = dbg
+      ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL))
+      : "";
+    if (/swiftshader|llvmpipe|software/i.test(renderer)) return "low";
     if (cores >= 8 && (mem === undefined || mem >= 8)) return "high";
     return "mid";
   } catch {
