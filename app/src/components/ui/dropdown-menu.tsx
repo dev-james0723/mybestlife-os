@@ -33,7 +33,11 @@ function DropdownMenuContent({
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
-        className="isolate z-50 outline-none"
+        // Glass lives on the positioner (same WebKit constraint as popover.tsx:
+        // backdrop-filter on the popup breaks under the transformed positioner).
+        // .lg-menu-positioner only takes effect under the default theme.
+        className="lg-menu-positioner isolate z-50 outline-none"
+        data-lg-lens="overlay"
         align={align}
         alignOffset={alignOffset}
         side={side}

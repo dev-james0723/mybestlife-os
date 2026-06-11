@@ -4280,3 +4280,569 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Liquid Glass v2 — true-refraction upgrade (default theme only)
+   ----------------------------------------------------------------
+   Every rule in this block sits under html[data-ui-theme="default"]
+   (or one of the runtime flags below, which are only ever set while
+   the default theme is active). Other themes are untouched.
+
+   Runtime flags set by LiquidGlassController on <html>:
+     data-lg-canvas        WebGL wallpaper canvas is mounted (L0+L1)
+     data-lg-displacement  Chromium: SVG displacement backdrop-filter (L3)
+     data-lg-quality       "high" | "mid" | "low" — device tier
+
+   Layer model (back → front):
+     L0 wallpaper (WebGL)  →  L1 lens refraction (WebGL, wallpaper only)
+     L2 frost (CSS backdrop blur+saturate, cross-platform)
+     L3 DOM edge refraction (Chromium-only SVG displacement)
+     L4 optics (pure CSS: specular, edge glints, chromatic fringe)
+   ============================================================ */
+
+/* ---------- 1. Tokens ---------- */
+html[data-ui-theme="default"][data-color-mode="light"] {
+  /* frost */
+  --lg-blur-sm: 8px;
+  --lg-blur-md: 20px;
+  --lg-blur-lg: 32px;
+  --lg-saturation: 160%;
+  /* material tint */
+  --lg-tint: color-mix(in oklch, white 55%, transparent);
+  --lg-tint-strong: color-mix(in oklch, white 78%, transparent);
+  --lg-tint-control: color-mix(in oklch, white 45%, transparent);
+  /* optics */
+  --lg-edge-hi: color-mix(in oklch, white 92%, transparent);
+  --lg-edge-lo: color-mix(in oklch, black 14%, transparent);
+  --lg-shine: rgba(255, 255, 255, 0.65);
+  --lg-fringe-warm: oklch(0.8 0.08 60 / 0.22);
+  --lg-fringe-cool: oklch(0.8 0.08 250 / 0.22);
+  /* geometry / depth */
+  --lg-radius-control: 1.25rem;
+  --lg-radius-panel: 1.5rem;
+  --lg-shadow:
+    0 12px 40px color-mix(in oklch, black 12%, transparent),
+    inset 0 1px 0 var(--lg-edge-hi),
+    inset 0 -1px 1px var(--lg-edge-lo);
+  --lg-shadow-control:
+    0 2px 10px color-mix(in oklch, black 8%, transparent),
+    inset 0 1px 0 var(--lg-edge-hi),
+    inset 0 -1px 1px var(--lg-edge-lo);
+  /* pointer-tracked specular (inline-updated by LiquidGlassController) */
+  --lg-px: 50%;
+  --lg-py: 50%;
+}
+html[data-ui-theme="default"][data-color-mode="dark"] {
+  --lg-blur-sm: 6px;
+  --lg-blur-md: 14px;
+  --lg-blur-lg: 24px;
+  --lg-saturation: 130%;
+  --lg-tint: color-mix(in oklch, oklch(0.96 0.005 264) 6%, transparent);
+  --lg-tint-strong: color-mix(in oklch, oklch(0.22 0.02 264) 45%, transparent);
+  --lg-tint-control: color-mix(in oklch, white 8%, transparent);
+  --lg-edge-hi: color-mix(in oklch, white 32%, transparent);
+  --lg-edge-lo: color-mix(in oklch, black 50%, transparent);
+  --lg-shine: rgba(255, 255, 255, 0.2);
+  --lg-fringe-warm: oklch(0.8 0.08 60 / 0.14);
+  --lg-fringe-cool: oklch(0.8 0.08 250 / 0.14);
+  --lg-radius-control: 1.25rem;
+  --lg-radius-panel: 1.5rem;
+  --lg-shadow:
+    0 12px 40px color-mix(in oklch, black 45%, transparent),
+    inset 0 1px 0 var(--lg-edge-hi),
+    inset 0 -1px 1px var(--lg-edge-lo);
+  --lg-shadow-control:
+    0 2px 10px color-mix(in oklch, black 30%, transparent),
+    inset 0 1px 0 var(--lg-edge-hi),
+    inset 0 -1px 1px var(--lg-edge-lo);
+  --lg-px: 50%;
+  --lg-py: 50%;
+}
+
+/* Re-point the v1 glass tokens at the v2 scale so every existing
+   consumer (GlassPanel, sidebar, topbar pills) upgrades in place. */
+html[data-ui-theme="default"][data-color-mode="light"] {
+  --glass-blur: var(--lg-blur-md);
+  --glass-saturation: var(--lg-saturation);
+  --surface-glass: var(--lg-tint);
+  --surface-glass-strong: var(--lg-tint-strong);
+  --shadow-glass: var(--lg-shadow);
+}
+html[data-ui-theme="default"][data-color-mode="dark"] {
+  --glass-blur: var(--lg-blur-md);
+  --glass-saturation: var(--lg-saturation);
+  --surface-glass: var(--lg-tint);
+  --surface-glass-strong: var(--lg-tint-strong);
+  --shadow-glass: var(--lg-shadow);
+}
+
+/* ---------- 2. Material utilities ---------- */
+/* Panel-grade material. Also the base for Tier-1 data-slot rules. */
+html[data-ui-theme="default"] :is(.lg-surface, .lg-overlay, .lg-control) {
+  position: relative;
+  background: var(--lg-tint);
+  border-color: var(--lg-edge-hi);
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+}
+html[data-ui-theme="default"] .lg-overlay {
+  background: var(--lg-tint-strong);
+  backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+}
+html[data-ui-theme="default"] .lg-control {
+  background: var(--lg-tint-control);
+  box-shadow: var(--lg-shadow-control);
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  transition:
+    transform 280ms cubic-bezier(0.34, 1.8, 0.5, 1),
+    background 150ms ease-out,
+    box-shadow 200ms ease-out;
+}
+html[data-ui-theme="default"] .lg-control:active {
+  transform: scale(0.96);
+}
+
+/* ---------- 3. Optics (L4) — specular + chromatic fringe ---------- */
+/* Pointer-tracked specular highlight. Painted only while the
+   controller marks the hovered element with data-lg-hover, so there
+   is exactly one live highlight and zero idle cost. */
+html[data-ui-theme="default"] [data-lg-hover] {
+  position: relative;
+}
+html[data-ui-theme="default"] [data-lg-hover]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    120px circle at var(--lg-px) var(--lg-py),
+    var(--lg-shine),
+    transparent 70%
+  );
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+}
+
+/* Chromatic edge fringe on panel-grade surfaces: a hue-shifted 1px
+   gradient ring (mask trick keeps the centre clear). Decorative only. */
+html[data-ui-theme="default"]
+  :is(
+    .lg-surface,
+    .lg-overlay,
+    [data-slot="card"],
+    [data-slot="glass-panel"],
+    [data-slot="dialog-content"],
+    [data-slot="alert-dialog-content"],
+    [data-slot="sheet-content"],
+    .lg-menu-positioner
+  )::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    var(--lg-edge-hi) 0%,
+    var(--lg-fringe-cool) 28%,
+    transparent 46%,
+    transparent 60%,
+    var(--lg-fringe-warm) 78%,
+    var(--lg-edge-lo) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  z-index: 1;
+}
+html[data-ui-theme="default"]
+  :is(
+    [data-slot="card"],
+    [data-slot="dialog-content"],
+    [data-slot="alert-dialog-content"],
+    [data-slot="sheet-content"],
+    .lg-menu-positioner
+  ) {
+  position: relative;
+}
+
+/* ---------- 4. Tier 1 — floating surfaces ---------- */
+/* Modal / popover surfaces — override the shared .glass-modal-surface
+   (lines ~204–231, used by ALL themes) additively under theme scope. */
+html[data-ui-theme="default"] .glass-modal-surface {
+  background: var(--lg-tint-strong);
+  border: 1px solid var(--lg-edge-hi);
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+}
+/* Dropdown menus — glass on the POSITIONER (WebKit: backdrop-filter on
+   the popup breaks under the transformed positioner; see popover.tsx).
+   The popup goes transparent so the positioner's glass shows through. */
+html[data-ui-theme="default"] .lg-menu-positioner {
+  background: var(--lg-tint-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+}
+html[data-ui-theme="default"] .lg-menu-positioner [data-slot="dropdown-menu-content"] {
+  background: transparent;
+  box-shadow: none;
+}
+html[data-ui-theme="default"] [data-slot="tooltip-content"] {
+  background: var(--lg-tint-strong);
+  border-color: var(--lg-edge-hi);
+  box-shadow: var(--lg-shadow-control);
+  color: var(--foreground);
+}
+html[data-ui-theme="default"] [data-slot="sheet-content"] {
+  background: var(--lg-tint-strong);
+  border-color: var(--lg-edge-hi);
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+}
+
+/* Cards become glass panels (was opaque bg-card + ring). */
+html[data-ui-theme="default"] [data-slot="card"] {
+  background: var(--lg-tint);
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+  border-radius: var(--lg-radius-panel);
+}
+html[data-ui-theme="default"] [data-slot="card-footer"] {
+  background: color-mix(in oklch, var(--lg-tint) 60%, transparent);
+}
+
+/* ---------- 5. Tier 2 — controls ---------- */
+/* Buttons: translucent variants become glass; primary keeps its pigment
+   but gains a glass gloss (inset highlights). data-variant is stamped
+   by button.tsx. */
+html[data-ui-theme="default"]
+  [data-slot="button"]:is(
+    [data-variant="outline"],
+    [data-variant="secondary"],
+    [data-variant="ghost"]
+  ) {
+  position: relative;
+  background: var(--lg-tint-control);
+  border-color: var(--lg-edge-hi);
+  border-bottom-color: var(--lg-edge-lo);
+  box-shadow: var(--lg-shadow-control);
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  border-radius: var(--lg-radius-control);
+}
+html[data-ui-theme="default"]
+  [data-slot="button"]:is(
+    [data-variant="outline"],
+    [data-variant="secondary"],
+    [data-variant="ghost"]
+  ):hover {
+  background: color-mix(in oklch, var(--lg-tint-control) 60%, var(--lg-tint-strong));
+}
+html[data-ui-theme="default"] [data-slot="button"][data-variant="default"] {
+  position: relative;
+  box-shadow:
+    0 6px 20px color-mix(in oklch, var(--primary) 35%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 45%, transparent),
+    inset 0 -1px 1px color-mix(in oklch, black 18%, transparent);
+  border-radius: var(--lg-radius-control);
+}
+/* Jelly press — all button variants. */
+html[data-ui-theme="default"] [data-slot="button"] {
+  transition:
+    transform 280ms cubic-bezier(0.34, 1.8, 0.5, 1),
+    background 150ms ease-out,
+    color 150ms ease-out,
+    border-color 150ms ease-out,
+    box-shadow 200ms ease-out;
+}
+html[data-ui-theme="default"] [data-slot="button"]:active {
+  transform: scale(0.96);
+}
+
+/* Inputs / textareas / select triggers / command input — glass wells. */
+html[data-ui-theme="default"] :is(
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"]
+) {
+  background: var(--lg-tint-control);
+  border-color: var(--lg-edge-hi);
+  border-bottom-color: var(--lg-edge-lo);
+  box-shadow: inset 0 1px 2px color-mix(in oklch, black 6%, transparent);
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+}
+
+/* Tabs list — a glass trough; active trigger floats as a lens pill. */
+html[data-ui-theme="default"] [data-slot="tabs-list"] {
+  background: var(--lg-tint-control);
+  border: 1px solid var(--lg-edge-hi);
+  box-shadow: inset 0 1px 2px color-mix(in oklch, black 6%, transparent);
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  border-radius: var(--lg-radius-control);
+}
+html[data-ui-theme="default"] [data-slot="tabs-trigger"] {
+  border-radius: calc(var(--lg-radius-control) - 4px);
+  transition: transform 280ms cubic-bezier(0.34, 1.8, 0.5, 1), background 150ms ease-out;
+}
+html[data-ui-theme="default"] [data-slot="tabs-trigger"][data-state="active"],
+html[data-ui-theme="default"] [data-slot="tabs-trigger"][data-selected] {
+  background: var(--lg-tint-strong);
+  box-shadow: var(--lg-shadow-control);
+}
+
+/* Badges — translucent variants pick up a light glass film. */
+html[data-ui-theme="default"]
+  [data-slot="badge"]:is([data-variant="secondary"], [data-variant="outline"]) {
+  background: var(--lg-tint-control);
+  border-color: var(--lg-edge-hi);
+  box-shadow: inset 0 1px 0 var(--lg-edge-hi);
+}
+
+/* Switch / checkbox tracks — glass wells with a glossy thumb. */
+html[data-ui-theme="default"] :is(
+  [data-slot="switch"],
+  [data-slot="checkbox"]
+):not([data-checked]):not([data-state="checked"]) {
+  background: var(--lg-tint-control);
+  border-color: var(--lg-edge-hi);
+  box-shadow: inset 0 1px 2px color-mix(in oklch, black 8%, transparent);
+}
+
+/* os-glass legacy constants — the marker classes are appended to the
+   constant strings in os-glass.ts; under default theme they adopt the
+   v2 material (other themes keep the original Tailwind styling). */
+html[data-ui-theme="default"] .os-glass-surface {
+  background: var(--lg-tint);
+  border-color: var(--lg-edge-hi);
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+}
+html[data-ui-theme="default"] .os-glass-control {
+  background: var(--lg-tint-control);
+  border-color: var(--lg-edge-hi);
+  box-shadow: var(--lg-shadow-control);
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+  transition:
+    transform 280ms cubic-bezier(0.34, 1.8, 0.5, 1),
+    background 150ms ease-out,
+    box-shadow 200ms ease-out;
+}
+html[data-ui-theme="default"] .os-glass-control:active {
+  transform: scale(0.96);
+}
+
+/* ---------- 6. Tier 3 — optics only (zero blur, GPU budget savers) -- */
+html[data-ui-theme="default"] :is(
+  [data-slot="dropdown-menu-item"],
+  [data-slot="select-item"],
+  [data-slot="command-item"]
+) {
+  border-radius: calc(var(--lg-radius-control) - 6px);
+}
+html[data-ui-theme="default"] [data-slot="separator"] {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--lg-edge-lo) 20%,
+    var(--lg-edge-lo) 80%,
+    transparent
+  );
+}
+html[data-ui-theme="default"] [data-slot="skeleton"] {
+  background: var(--lg-tint-control);
+}
+
+/* ---------- 7. Release wobble (set by controller on pointerup) ----- */
+@keyframes lg-jelly {
+  0% { transform: scale(0.96); }
+  40% { transform: scale(1.02); }
+  70% { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+html[data-ui-theme="default"] [data-lg-wobble] {
+  animation: lg-jelly 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform;
+}
+
+/* ---------- 8. WebGL canvas glue (L0) ---------- */
+/* While the canvas is mounted, hide the static CSS atmosphere (it is
+   the no-WebGL fallback) and let the canvas show through the scroll
+   region (which normally paints bg-muted/40). */
+html[data-ui-theme="default"][data-lg-canvas] [data-atmosphere]::before {
+  display: none;
+}
+html[data-ui-theme="default"][data-lg-canvas] [role="region"][aria-label="Main content"] {
+  background: transparent;
+}
+html[data-ui-theme="default"] .lg-backdrop-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+/* The sidebar/inset live above the fixed canvas. */
+html[data-ui-theme="default"][data-lg-canvas] [data-slot="sidebar-wrapper"] > *:not(.lg-backdrop-canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- 9. L3 — Chromium SVG displacement (gated) ---------- */
+/* Written as separate rules that only exist under the runtime flag:
+   Safari can drop an entire backdrop-filter value containing url(),
+   so the plain blur+saturate base rules above must stay standalone. */
+html[data-lg-displacement][data-ui-theme="default"] :is(
+  .glass-modal-surface,
+  [data-slot="sheet-content"],
+  .lg-menu-positioner
+) {
+  backdrop-filter: url(#lg-displace-panel) blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+}
+html[data-lg-displacement][data-ui-theme="default"][data-lg-quality="high"] :is(
+  [data-slot="card"],
+  [data-slot="glass-panel"]
+) {
+  backdrop-filter: url(#lg-displace-panel) blur(var(--lg-blur-md)) saturate(var(--lg-saturation));
+}
+/* Controls refract only while interacted with (hover/active) to keep
+   the per-frame filter count bounded. */
+html[data-lg-displacement][data-ui-theme="default"][data-lg-quality="high"]
+  [data-slot="button"]:is(
+    [data-variant="outline"],
+    [data-variant="secondary"],
+    [data-variant="ghost"]
+  ):is(:hover, :active) {
+  backdrop-filter: url(#lg-displace-control) blur(var(--lg-blur-sm)) saturate(var(--lg-saturation));
+}
+html[data-lg-displacement][data-ui-theme="default"] :is(
+  .glass-modal-surface,
+  [data-slot="sheet-content"]
+):active {
+  backdrop-filter: url(#lg-displace-panel-active) blur(var(--lg-blur-lg)) saturate(var(--lg-saturation));
+}
+
+/* ---------- 10. Degradation & a11y ---------- */
+/* Low tier: thicker tint, lighter blur, no canvas/displacement (the
+   controller never sets those flags on low tier). */
+html[data-ui-theme="default"][data-lg-quality="low"][data-color-mode="light"] {
+  --lg-blur-sm: 4px;
+  --lg-blur-md: 12px;
+  --lg-blur-lg: 18px;
+  --lg-tint: color-mix(in oklch, white 78%, transparent);
+  --lg-tint-strong: color-mix(in oklch, white 90%, transparent);
+  --lg-tint-control: color-mix(in oklch, white 70%, transparent);
+}
+html[data-ui-theme="default"][data-lg-quality="low"][data-color-mode="dark"] {
+  --lg-blur-sm: 4px;
+  --lg-blur-md: 8px;
+  --lg-blur-lg: 14px;
+  --lg-tint: color-mix(in oklch, oklch(0.2 0.02 264) 65%, transparent);
+  --lg-tint-strong: color-mix(in oklch, oklch(0.18 0.02 264) 85%, transparent);
+  --lg-tint-control: color-mix(in oklch, white 12%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-ui-theme="default"][data-color-mode="light"] {
+    --lg-tint: color-mix(in oklch, white 94%, transparent);
+    --lg-tint-strong: color-mix(in oklch, white 97%, transparent);
+    --lg-tint-control: color-mix(in oklch, white 92%, transparent);
+    --lg-blur-sm: 0px;
+    --lg-blur-md: 0px;
+    --lg-blur-lg: 0px;
+  }
+  html[data-ui-theme="default"][data-color-mode="dark"] {
+    --lg-tint: color-mix(in oklch, oklch(0.18 0.02 264) 92%, transparent);
+    --lg-tint-strong: color-mix(in oklch, oklch(0.15 0.02 264) 96%, transparent);
+    --lg-tint-control: color-mix(in oklch, oklch(0.26 0.02 264) 90%, transparent);
+    --lg-blur-sm: 0px;
+    --lg-blur-md: 0px;
+    --lg-blur-lg: 0px;
+  }
+}
+
+/* Existing @supports fallback (line ~2049) already re-points
+   --surface-glass when backdrop-filter is unsupported; extend the same
+   guard to the v2 tints. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-ui-theme="default"][data-color-mode="light"] {
+    --lg-tint: color-mix(in oklch, white 94%, transparent);
+    --lg-tint-strong: color-mix(in oklch, white 97%, transparent);
+    --lg-tint-control: color-mix(in oklch, white 92%, transparent);
+  }
+  html[data-ui-theme="default"][data-color-mode="dark"] {
+    --lg-tint: color-mix(in oklch, oklch(0.18 0.02 264) 92%, transparent);
+    --lg-tint-strong: color-mix(in oklch, oklch(0.15 0.02 264) 96%, transparent);
+    --lg-tint-control: color-mix(in oklch, oklch(0.26 0.02 264) 90%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-ui-theme="default"] [data-slot="button"],
+  html[data-ui-theme="default"] [data-slot="tabs-trigger"],
+  html[data-ui-theme="default"] .lg-control,
+  html[data-ui-theme="default"] .os-glass-control,
+  html[data-ui-theme="default"] [data-lg-wobble] {
+    transition: none !important;
+    animation: none !important;
+  }
+  html[data-ui-theme="default"] [data-slot="button"]:active,
+  html[data-ui-theme="default"] .lg-control:active,
+  html[data-ui-theme="default"] .os-glass-control:active {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  html[data-ui-theme="default"] :is(
+    .lg-surface, .lg-overlay, .lg-control,
+    .os-glass-surface, .os-glass-control,
+    .glass-modal-surface,
+    [data-slot="card"], [data-slot="glass-panel"]
+  ) {
+    background: Canvas;
+    color: CanvasText;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+}
+
+/* Focus rings on glass — primary outline + opaque halo so the ring
+   never sits directly on unpredictable refracted background. */
+html[data-ui-theme="default"] :is(
+  .lg-control,
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"],
+  [data-slot="tabs-trigger"]
+):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--background) 85%, transparent);
+}
+
+/* Contrast guard on dense glass: panels flagged data-lg-ink get the
+   strong tint so long-form text keeps AA contrast. */
+html[data-ui-theme="default"] [data-lg-ink] {
+  background: var(--lg-tint-strong);
+}

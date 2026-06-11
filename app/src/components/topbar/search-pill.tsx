@@ -31,6 +31,7 @@ export function SearchPill({ className }: SearchPillProps) {
       type="button"
       aria-label={ui.searchPlaceholder}
       data-open={open ? "true" : undefined}
+      data-lg-lens="pill"
       onClick={() => setOpen(true)}
       className={cn(
         "topbar-search-pill group min-w-[180px] max-w-[460px] flex-1 justify-start",
@@ -61,6 +62,7 @@ export function SearchIconTrigger({ className }: SearchPillProps) {
       type="button"
       aria-label={ui.searchPlaceholder}
       data-open={open ? "true" : undefined}
+      data-lg-lens="pill"
       onClick={() => setOpen(true)}
       className={cn(
         "topbar-clock-trigger topbar-mobile-icon-trigger flex-shrink-0",

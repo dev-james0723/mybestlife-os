@@ -32,6 +32,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        data-lg-lens="overlay"
         className={cn(
           // Glass on the positioner (same layer Floating UI uses for translate):
           // backdrop-filter on the Popup *child* breaks under a transformed

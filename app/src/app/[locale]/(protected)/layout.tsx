@@ -7,6 +7,7 @@ import { IdeaCaptureSheet } from "@/components/idea-capture/IdeaCaptureSheet";
 import { OSBuddyDock } from "@/components/os-buddy/OSBuddyDock";
 import { OSBuddyShortcutController } from "@/components/os-buddy/OSBuddyShortcutController";
 import { FocusRealityBoundary } from "@/components/daily-planner/focus/focus-reality-boundary";
+import { LiquidGlassRoot } from "@/components/liquid-glass/liquid-glass-root";
 
 export default function ProtectedLayout({
   children,
@@ -16,6 +17,7 @@ export default function ProtectedLayout({
   return (
     <SidebarProvider>
       <FocusRealityBoundary>
+        <LiquidGlassRoot />
         <SyncThemeFromProfile />
         <OnboardingGate />
         <AppSidebar />
