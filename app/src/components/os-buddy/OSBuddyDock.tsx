@@ -3114,36 +3114,14 @@ export function OSBuddyDock() {
             : { bottom: viewport.height - dockPoint.y + quickSnapDockGap, top: "auto" }),
         }
       : undefined;
-  const quickSnapPasteWidth =
-    viewport.width > 0 ? Math.min(148, Math.max(112, viewport.width - 24)) : 136;
-  const quickSnapPasteLeft =
-    viewport.width > 0
-      ? clamp(
-          dockPoint.x + buddyBox.width / 2 - quickSnapPasteWidth / 2,
-          12,
-          Math.max(12, viewport.width - quickSnapPasteWidth - 12),
-        )
-      : 0;
-  const quickSnapPasteTop =
-    viewport.width > 0 && viewport.height > 0
-      ? quickSnapVertical === "below"
-        ? dockPoint.y + buddyBox.height + 10
-        : Math.max(12, dockPoint.y - 46)
-      : 0;
-  const quickSnapPasteFixedStyle =
-    viewport.width > 0 && viewport.height > 0
-      ? {
-          left: quickSnapPasteLeft,
-          top: quickSnapPasteTop,
-          bottom: "auto",
-          width: quickSnapPasteWidth,
-        }
-      : undefined;
   const quickSnapPasteSinkFixedStyle =
     viewport.width > 0 && viewport.height > 0
       ? {
-          left: quickSnapPasteLeft + quickSnapPasteWidth / 2,
-          top: quickSnapPasteTop + 18,
+          left: dockPoint.x + buddyBox.width / 2,
+          top:
+            quickSnapVertical === "below"
+              ? dockPoint.y + buddyBox.height + 18
+              : Math.max(8, dockPoint.y - 18),
         }
       : undefined;
   const shouldHideDockForOverlayMiniGame = isOverlayMiniGameOpen || isOverlayMiniGamePresent;
@@ -3190,9 +3168,11 @@ export function OSBuddyDock() {
             />
             <button
               type="button"
-              className="os-buddy-quick-snap-paste-target"
-              style={quickSnapPasteFixedStyle}
+              className="os-buddy-pixel-bubble os-buddy-quick-snap-paste-target"
               data-airpilot-os-buddy-action="quick-snap-paste"
+              data-horizontal={bubbleHorizontal}
+              data-vertical={bubbleVertical}
+              data-state="visible"
               aria-label="Paste into OS Buddy Quick Snap"
               onClick={handleQuickSnapPasteRequest}
               onPointerDown={handleQuickSnapPasteRequest}
@@ -3273,7 +3253,10 @@ export function OSBuddyDock() {
           onPointerCancel={(event) => void finishPointer(event, "cancel")}
           onContextMenu={(event) => {
             event.preventDefault();
-            if (isQuickSnapActive && quickSnapState !== "saving") cancelQuickSnap();
+            if (isQuickSnapActive || longPressTriggeredRef.current) {
+              if (isQuickSnapActive && quickSnapState !== "saving") focusQuickSnapPasteTarget();
+              return;
+            }
             openMenu(event.clientX + 6, event.clientY + 6);
           }}
           onClick={(event) => {

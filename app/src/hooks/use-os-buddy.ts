@@ -95,6 +95,17 @@ function readStorageJson<T>(key: string, fallback: T): T {
   }
 }
 
+function readStoredPositionOverride(): OSBuddyPosition | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(POSITION_STORAGE_KEY);
+    if (!raw) return null;
+    return normalizePosition(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
 function writeStorageJson(key: string, value: unknown) {
   if (typeof window === "undefined") return;
   try {
@@ -141,6 +152,7 @@ function getFallbackProfile(): PartialProfileFallback {
 function profileFromSource(
   profile: UserProfile | undefined,
   fallback: PartialProfileFallback,
+  positionOverride?: OSBuddyPosition | null,
 ): PartialProfileFallback {
   const petId = normalizePetId(profile?.os_buddy_pet_id ?? fallback.os_buddy_pet_id);
   return {
@@ -150,7 +162,9 @@ function profileFromSource(
       typeof profile?.os_buddy_enabled === "boolean"
         ? profile.os_buddy_enabled
         : fallback.os_buddy_enabled,
-    os_buddy_position: normalizePosition(profile?.os_buddy_position ?? fallback.os_buddy_position),
+    os_buddy_position: normalizePosition(
+      positionOverride ?? profile?.os_buddy_position ?? fallback.os_buddy_position,
+    ),
     os_buddy_onboarding_completed:
       typeof profile?.os_buddy_onboarding_completed === "boolean"
         ? profile.os_buddy_onboarding_completed
@@ -179,7 +193,11 @@ export function useOSBuddy() {
   const setOSBuddyEnabledOverride = useOSBuddyStore((s) => s.setOSBuddyEnabledOverride);
 
   const fallback = getFallbackProfile();
-  const source = useMemo(() => profileFromSource(profile, fallback), [fallback, profile]);
+  const positionOverride = readStoredPositionOverride();
+  const source = useMemo(
+    () => profileFromSource(profile, fallback, positionOverride),
+    [fallback, positionOverride, profile],
+  );
 
   const petId = source.os_buddy_pet_id;
   const pet = getOSBuddyPet(petId);

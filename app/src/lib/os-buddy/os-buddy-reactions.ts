@@ -244,10 +244,6 @@ export function handleOSBuddyReaction(params: {
       return;
     case "buddy:longpress":
       temporarilySetMood("playful", 1_200);
-      showBubble(t(locale, "OS Buddy menu opened.", "OS Buddy 選單已打開。"), "user-triggered", {
-        force: true,
-        durationMs: 1_700,
-      });
       return;
 
     case "buddy:walk:start":
