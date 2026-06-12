@@ -95,6 +95,15 @@ class LensRegistry {
   snapshotCount = 0;
   /** Timestamp until which the backdrop should keep re-rendering (drift + sync). */
   activityUntil = 0;
+  /**
+   * Global refraction multiplier (0..1) the backdrop lerps toward
+   * `fadeTarget` each frame. Touch compositors scroll asynchronously
+   * from JS, so during fast flicks the measured lens rects trail the
+   * cards and paint as ghost panels — the controller drops the target
+   * to 0 for the flick and restores it once the scroll settles.
+   */
+  fade = 1;
+  fadeTarget = 1;
 
   register(el: Element) {
     if (this.entries.has(el)) return;

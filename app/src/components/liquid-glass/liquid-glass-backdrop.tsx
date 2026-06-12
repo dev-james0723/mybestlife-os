@@ -574,6 +574,15 @@ function WallpaperLensPass({ colorMode }: { colorMode: "light" | "dark" }) {
       uniforms.uTime.value = state.clock.getElapsedTime();
     }
 
+    // Ease the global refraction fade: drop fast (a stale rect must never
+    // linger as a ghost mid-flick), recover gently once the scroll settles.
+    const fadeDelta = lensRegistry.fadeTarget - lensRegistry.fade;
+    if (Math.abs(fadeDelta) > 0.001) {
+      lensRegistry.fade += fadeDelta * (fadeDelta < 0 ? 0.4 : 0.08);
+    } else {
+      lensRegistry.fade = lensRegistry.fadeTarget;
+    }
+
     const count = lensRegistry.snapshotCount;
     uniforms.uLensCount.value = count;
     for (let i = 0; i < count; i++) {
@@ -585,12 +594,17 @@ function WallpaperLensPass({ colorMode }: { colorMode: "light" | "dark" }) {
         lens.h / 2
       );
       uniforms.uLensRadius.value[i] = lens.r;
-      uniforms.uLensStrength.value[i] = lens.strength;
+      uniforms.uLensStrength.value[i] = lens.strength * lensRegistry.fade;
     }
 
     // Keep rendering while the controller reports activity (scroll, press
     // tweens, transitions) so drift + rect sync stay live, then idle.
-    if (performance.now() < lensRegistry.activityUntil) invalidate();
+    if (
+      performance.now() < lensRegistry.activityUntil ||
+      lensRegistry.fade !== lensRegistry.fadeTarget
+    ) {
+      invalidate();
+    }
   });
 
   return (

@@ -123,14 +123,6 @@ export function LiquidGlassController() {
 
   /* Lens discovery + measurement loop */
   useEffect(() => {
-    // Touch compositors (iOS/Android) scroll content asynchronously from
-    // JS, so canvas-side lens rects lag behind fast scrolls and read as
-    // ghost panels floating in the wallpaper. Skip shader refraction
-    // there — cards still get real glass from CSS backdrop-filter, which
-    // the compositor moves in perfect sync.
-    if (window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
-      return;
-    }
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         lensRegistry.setVisible(entry.target, entry.isIntersecting);
@@ -191,7 +183,42 @@ export function LiquidGlassController() {
       lensRegistry.keepAlive(ms);
       if (!rafId) rafId = requestAnimationFrame(tick);
     };
-    const onScroll = () => wake(400);
+    /* Touch compositors scroll asynchronously from JS, so during fast
+       flicks the measured lens rects trail the cards and the refraction
+       paints as a ghost panel. Velocity-gate the effect there: quick
+       flicks fade the refraction out, and it blooms back ~160ms after
+       the last fast event once the rects are in sync again. Slow,
+       deliberate scrolling keeps the lenses on. */
+    const touchDevice = window.matchMedia(
+      "(hover: none) and (pointer: coarse)"
+    ).matches;
+    let lastScrollTarget: EventTarget | null = null;
+    let lastScrollTop = 0;
+    let lastScrollTime = 0;
+    let fadeRestoreTimer = 0;
+    const onScroll = (e: Event) => {
+      wake(400);
+      if (!touchDevice) return;
+      const el =
+        e.target instanceof Element ? e.target : document.scrollingElement;
+      const top = el ? el.scrollTop : window.scrollY;
+      const now = performance.now();
+      if (e.target === lastScrollTarget && now > lastScrollTime) {
+        const velocity = Math.abs(top - lastScrollTop) / (now - lastScrollTime);
+        if (velocity > 1.2) {
+          lensRegistry.fadeTarget = 0;
+          lensRegistry.keepAlive(400);
+          window.clearTimeout(fadeRestoreTimer);
+          fadeRestoreTimer = window.setTimeout(() => {
+            lensRegistry.fadeTarget = 1;
+            lensRegistry.keepAlive(800);
+          }, 160);
+        }
+      }
+      lastScrollTarget = e.target;
+      lastScrollTop = top;
+      lastScrollTime = now;
+    };
     const onResize = () => wake(400);
     // Framer Motion page transitions & sidebar collapse move lenses without
     // scroll events — transitionrun/animationstart bubble from those.
@@ -211,6 +238,8 @@ export function LiquidGlassController() {
       mo.disconnect();
       io.disconnect();
       if (rafId) cancelAnimationFrame(rafId);
+      window.clearTimeout(fadeRestoreTimer);
+      lensRegistry.fadeTarget = 1;
       window.removeEventListener("scroll", onScroll, { capture: true });
       window.removeEventListener("resize", onResize);
       document.removeEventListener("transitionrun", onMotion, true);
