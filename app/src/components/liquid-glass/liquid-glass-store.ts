@@ -21,6 +21,7 @@ export const MAX_LENSES = 12;
 /* ---------------------------------------------------------------- */
 
 export const LG_SCENES = [
+  "stardust",
   "aurora",
   "ocean",
   "nebula",
@@ -37,10 +38,11 @@ export const LG_SCENE_INDEX: Record<LiquidGlassScene, number> = {
   nebula: 2,
   bokeh: 3,
   butterflies: 4,
+  stardust: 5,
 };
 
 export const LG_SCENE_STORAGE_KEY = "mylifeos-lg-scene";
-export const LG_DEFAULT_SCENE: LiquidGlassScene = "aurora";
+export const LG_DEFAULT_SCENE: LiquidGlassScene = "stardust";
 
 export function parseLiquidGlassScene(value: unknown): LiquidGlassScene {
   return LG_SCENES.includes(value as LiquidGlassScene)

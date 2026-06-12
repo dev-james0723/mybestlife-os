@@ -283,6 +283,59 @@ const FRAGMENT = /* glsl */ `
     return col;
   }
 
+  /* ---------- scene 5: Stardust (default) ---------- */
+  /* One glowing mote per grid cell: gaussian halo + hot core + twinkle. */
+  vec3 dustLayer(
+    vec2 p, float t, float seed,
+    float sizeMin, float sizeMax, float glowK,
+    vec3 tintA, vec3 tintB
+  ) {
+    vec2 id = floor(p);
+    vec2 gv = fract(p) - 0.5;
+    vec2 rnd = hash2(id + seed);
+    vec2 c = (rnd - 0.5) * 0.5
+           + 0.10 * vec2(sin(t * (0.25 + 0.35 * rnd.x) + rnd.x * 6.28),
+                         cos(t * (0.21 + 0.30 * rnd.y) + rnd.y * 6.28));
+    float d = length(gv - c);
+    float r = mix(sizeMin, sizeMax, fract(rnd.x * 5.17));
+    float glow = exp(-pow(d / r, 2.0) * 4.0);
+    float core = smoothstep(r * 0.32, 0.0, d);
+    float tw = 0.62 + 0.38 * sin(t * (0.7 + 2.2 * rnd.y) + rnd.x * 40.0);
+    // a slice of motes stays dormant so the field never feels gridded
+    float alive = step(0.25, fract(rnd.y * 9.73));
+    vec3 tint = mix(tintA, tintB, fract(rnd.y * 7.31));
+    return tint * (glow * glowK + core * 0.9) * tw * alive;
+  }
+
+  vec3 sceneStardust(vec2 uv, vec2 auv, float t) {
+    // quiet, deep base so the motes carry the scene
+    vec3 top = mix(vec3(0.040, 0.046, 0.105), vec3(0.890, 0.905, 0.955), uLight);
+    vec3 bot = mix(vec3(0.090, 0.066, 0.165), vec3(0.960, 0.930, 0.910), uLight);
+    vec3 col = mix(top, bot, uv.y);
+
+    // two vast, slow ambient glows for depth (warm low-left, cool top-right)
+    float gA = exp(-pow(length(auv - vec2(0.25 + 0.05 * sin(t * 0.05), 0.78)) / 0.55, 2.0));
+    float gB = exp(-pow(length(auv - vec2(1.05 + 0.06 * cos(t * 0.04), 0.18)) / 0.60, 2.0));
+    col += mix(vec3(0.16, 0.09, 0.06), vec3(0.10, 0.05, 0.02), uLight) * gA;
+    col += mix(vec3(0.05, 0.08, 0.16), vec3(0.03, 0.05, 0.10), uLight) * gB;
+
+    // palette: champagne gold / ice blue / soft rose
+    vec3 gold = vec3(1.00, 0.84, 0.58);
+    vec3 ice  = vec3(0.60, 0.78, 1.00);
+    vec3 rose = vec3(1.00, 0.62, 0.76);
+    float k = mix(1.0, 0.62, uLight);
+
+    // four parallax layers, nearer = larger + faster rise
+    col += dustLayer(auv * 2.6 + vec2(t * 0.010, t * 0.026), t, 11.0, 0.16, 0.26, 0.32, gold, ice) * 0.40 * k;
+    col += dustLayer(auv * 4.6 + vec2(-t * 0.014, t * 0.040) + 3.7, t, 29.0, 0.09, 0.15, 0.45, gold, rose) * 0.50 * k;
+    col += dustLayer(auv * 8.5 + vec2(t * 0.020, t * 0.060) + 8.1, t, 47.0, 0.045, 0.075, 0.62, ice, gold) * 0.62 * k;
+    col += dustLayer(auv * 15.0 + vec2(-t * 0.026, t * 0.090) + 13.4, t, 71.0, 0.025, 0.042, 0.55, gold, ice) * 0.55 * k;
+
+    // gentle cinematic vignette (dark mode only)
+    col *= 1.0 - (1.0 - uLight) * 0.22 * pow(length(uv - 0.5) * 1.35, 2.0);
+    return col;
+  }
+
   /* ---------- dispatch + lens refraction ---------- */
 
   vec3 sceneColor(int id, vec2 cssPx) {
@@ -297,7 +350,8 @@ const FRAGMENT = /* glsl */ `
     else if (id == 1) col = sceneOcean(uv, auv, cssPx, t);
     else if (id == 2) col = sceneNebula(uv, auv, cssPx, t);
     else if (id == 3) col = sceneBokeh(uv, auv, cssPx, t);
-    else              col = sceneButterflies(uv, auv, cssPx, t, aspect);
+    else if (id == 4) col = sceneButterflies(uv, auv, cssPx, t, aspect);
+    else              col = sceneStardust(uv, auv, t);
 
     // micro-grain so the lens band always has fine detail to bend
     float n = vnoise(cssPx * 0.018) * 0.5 + vnoise(cssPx * 0.004);

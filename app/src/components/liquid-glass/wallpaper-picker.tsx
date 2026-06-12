@@ -35,6 +35,14 @@ import {
 
 /** Static gradient previews approximating each animated scene. */
 const SCENE_PREVIEW: Record<LiquidGlassScene, string> = {
+  stardust:
+    "radial-gradient(circle 7% at 26% 36%, oklch(0.90 0.10 85) 0%, transparent 100%)," +
+    "radial-gradient(circle 5% at 58% 22%, oklch(0.85 0.07 250) 0%, transparent 100%)," +
+    "radial-gradient(circle 4% at 76% 58%, oklch(0.88 0.09 20) 0%, transparent 100%)," +
+    "radial-gradient(circle 3% at 42% 70%, oklch(0.92 0.08 85) 0%, transparent 100%)," +
+    "radial-gradient(circle 2.5% at 66% 82%, oklch(0.88 0.06 250) 0%, transparent 100%)," +
+    "radial-gradient(ellipse 80% 70% at 20% 85%, oklch(0.28 0.05 50 / 0.55) 0%, transparent 70%)," +
+    "linear-gradient(180deg, oklch(0.17 0.03 270) 0%, oklch(0.22 0.05 300) 100%)",
   aurora:
     "radial-gradient(ellipse 90% 40% at 30% 32%, oklch(0.75 0.17 165 / 0.85) 0%, transparent 70%)," +
     "radial-gradient(ellipse 90% 36% at 68% 58%, oklch(0.62 0.19 300 / 0.8) 0%, transparent 70%)," +

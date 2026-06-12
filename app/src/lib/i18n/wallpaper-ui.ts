@@ -16,6 +16,7 @@ const en: WallpaperUiCopy = {
     "A living backdrop that the Liquid Glass surfaces blur and refract. Pick the scene that fits your mood.",
   pickerAria: "Choose animated background",
   sceneNames: {
+    stardust: "Stardust",
     aurora: "Aurora Flow",
     ocean: "Ocean Caustics",
     nebula: "Cosmic Nebula",
@@ -29,6 +30,7 @@ const zhTW: WallpaperUiCopy = {
   description: "流動的背景光影，讓液態玻璃介面折射出真實質感。挑一個合心情的場景。",
   pickerAria: "選擇動態背景",
   sceneNames: {
+    stardust: "星塵微光",
     aurora: "極光流動",
     ocean: "海洋光影",
     nebula: "宇宙星雲",
@@ -42,6 +44,7 @@ const zhCN: WallpaperUiCopy = {
   description: "流动的背景光影，让液态玻璃界面折射出真实质感。挑一个合心情的场景。",
   pickerAria: "选择动态背景",
   sceneNames: {
+    stardust: "星尘微光",
     aurora: "极光流动",
     ocean: "海洋光影",
     nebula: "宇宙星云",
@@ -56,6 +59,7 @@ const ja: WallpaperUiCopy = {
     "リキッドガラスが光をぼかし屈折させる、生きた背景。気分に合うシーンを選びましょう。",
   pickerAria: "アニメーション背景を選択",
   sceneNames: {
+    stardust: "スターダスト",
     aurora: "オーロラ",
     ocean: "海中の光",
     nebula: "星雲",
@@ -70,6 +74,7 @@ const ko: WallpaperUiCopy = {
     "리퀴드 글래스가 빛을 흐리고 굴절시키는 살아있는 배경. 기분에 맞는 장면을 골라보세요.",
   pickerAria: "움직이는 배경 선택",
   sceneNames: {
+    stardust: "스타더스트",
     aurora: "오로라",
     ocean: "바닷속 빛",
     nebula: "우주 성운",
@@ -84,6 +89,7 @@ const fr: WallpaperUiCopy = {
     "Un arrière-plan vivant que les surfaces Liquid Glass floutent et réfractent. Choisissez la scène qui vous ressemble.",
   pickerAria: "Choisir le fond animé",
   sceneNames: {
+    stardust: "Poussière d'étoiles",
     aurora: "Aurore boréale",
     ocean: "Reflets marins",
     nebula: "Nébuleuse",
@@ -98,6 +104,7 @@ const it: WallpaperUiCopy = {
     "Uno sfondo vivo che le superfici Liquid Glass sfocano e rifrangono. Scegli la scena adatta al tuo umore.",
   pickerAria: "Scegli lo sfondo animato",
   sceneNames: {
+    stardust: "Polvere di stelle",
     aurora: "Aurora boreale",
     ocean: "Riflessi marini",
     nebula: "Nebulosa",
@@ -112,6 +119,7 @@ const es: WallpaperUiCopy = {
     "Un fondo vivo que las superficies Liquid Glass difuminan y refractan. Elige la escena que va contigo.",
   pickerAria: "Elegir fondo animado",
   sceneNames: {
+    stardust: "Polvo de estrellas",
     aurora: "Aurora boreal",
     ocean: "Reflejos marinos",
     nebula: "Nebulosa",
@@ -126,6 +134,7 @@ const vi: WallpaperUiCopy = {
     "Phông nền sống động được các bề mặt Liquid Glass làm mờ và khúc xạ. Chọn khung cảnh hợp tâm trạng của bạn.",
   pickerAria: "Chọn hình nền động",
   sceneNames: {
+    stardust: "Bụi sao",
     aurora: "Cực quang",
     ocean: "Ánh sáng đại dương",
     nebula: "Tinh vân",
