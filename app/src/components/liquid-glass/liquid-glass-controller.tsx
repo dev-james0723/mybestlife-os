@@ -123,6 +123,14 @@ export function LiquidGlassController() {
 
   /* Lens discovery + measurement loop */
   useEffect(() => {
+    // Touch compositors (iOS/Android) scroll content asynchronously from
+    // JS, so canvas-side lens rects lag behind fast scrolls and read as
+    // ghost panels floating in the wallpaper. Skip shader refraction
+    // there — cards still get real glass from CSS backdrop-filter, which
+    // the compositor moves in perfect sync.
+    if (window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
+      return;
+    }
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         lensRegistry.setVisible(entry.target, entry.isIntersecting);
