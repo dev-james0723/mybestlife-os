@@ -28,11 +28,7 @@
       "Bash(echo \"TSC=$?\")",
       "Bash(echo \"LINT=$?\")",
       "Bash(echo \"BUILD=$?\")",
-      "Bash(echo \"TESTS=$?\")",
-      "mcp__ef749820-3888-4382-8c01-cbdfc29aa1f0__deploy_to_vercel",
-      "mcp__ef749820-3888-4382-8c01-cbdfc29aa1f0__web_fetch_vercel_url",
-      "mcp__ef749820-3888-4382-8c01-cbdfc29aa1f0__get_access_to_vercel_url",
-      "mcp__ef749820-3888-4382-8c01-cbdfc29aa1f0__get_runtime_logs"
+      "Bash(echo \"TESTS=$?\")"
     ]
   }
 }

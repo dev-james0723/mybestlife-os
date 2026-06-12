@@ -3,11 +3,6 @@
 import { useMemo } from "react";
 import { Check, Sparkles } from "lucide-react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -25,12 +20,8 @@ import {
 } from "./liquid-glass-store";
 
 /**
- * Liquid Glass wallpaper picker — the animated-background selector.
- *
- * Three entry points share the same swatches + store:
- *  - WallpaperQuickButton: topbar pill (popover list, mobile + desktop)
- *  - WallpaperSwitcher: full card on Settings → appearance
- * Only rendered under the default (Liquid Glass) theme.
+ * Animated wallpaper picker — Settings → appearance card.
+ * Only rendered under the default UI theme.
  */
 
 /** Static gradient previews approximating each animated scene. */
@@ -71,74 +62,6 @@ const SCENE_PREVIEW: Record<LiquidGlassScene, string> = {
 function useWallpaperCopy() {
   const language = useAppStore((s) => s.language);
   return useMemo(() => getWallpaperUiCopy(language), [language]);
-}
-
-/** Compact vertical list used inside the topbar popover. */
-function WallpaperSceneList() {
-  const ui = useWallpaperCopy();
-  const scene = useLiquidGlassStore((s) => s.scene);
-  const setScene = useLiquidGlassStore((s) => s.setScene);
-
-  return (
-    <div className="flex flex-col gap-1" role="listbox" aria-label={ui.pickerAria}>
-      {LG_SCENES.map((id) => {
-        const selected = id === scene;
-        return (
-          <button
-            key={id}
-            type="button"
-            role="option"
-            aria-selected={selected}
-            onClick={() => setScene(id)}
-            className={cn(
-              "flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
-              selected ? "bg-muted font-medium" : "hover:bg-muted/60"
-            )}
-          >
-            <span
-              aria-hidden
-              className="h-8 w-12 shrink-0 rounded-md ring-1 ring-foreground/15"
-              style={{ background: SCENE_PREVIEW[id] }}
-            />
-            <span className="flex-1 truncate">{ui.sceneNames[id]}</span>
-            {selected ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Topbar quick switcher — glass pill with a popover scene list. */
-export function WallpaperQuickButton({ className }: { className?: string }) {
-  const ui = useWallpaperCopy();
-  const { uiTheme } = useTheme();
-  if (uiTheme !== "default") return null;
-
-  return (
-    <Popover>
-      <PopoverTrigger
-        render={
-          <button
-            type="button"
-            aria-label={ui.pickerAria}
-            className={cn(
-              "topbar-clock-trigger topbar-mobile-icon-trigger flex-shrink-0",
-              className
-            )}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden />
-          </button>
-        }
-      />
-      <PopoverContent align="end" sideOffset={8} className="w-60 p-2">
-        <p className="px-2 pb-1.5 pt-1 text-xs font-medium text-muted-foreground">
-          {ui.title}
-        </p>
-        <WallpaperSceneList />
-      </PopoverContent>
-    </Popover>
-  );
 }
 
 /** Settings → appearance card with large previews. */

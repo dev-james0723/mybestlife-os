@@ -3,11 +3,10 @@
 import dynamic from "next/dynamic";
 import { useTheme } from "@/lib/theme-context";
 import { LiquidGlassController } from "./liquid-glass-controller";
-import { LiquidGlassFilters } from "./liquid-glass-filters";
 import { useLiquidGlassStore } from "./liquid-glass-store";
 
 /**
- * Liquid Glass v2 — root mount (protected layout).
+ * Animated wallpaper — root mount (protected layout).
  *
  * Renders nothing unless the active UI theme is "default", so the other
  * themes (astronaut / academia / forest) never pay for any of this — the
@@ -27,7 +26,6 @@ export function LiquidGlassRoot() {
   return (
     <>
       <LiquidGlassController />
-      <LiquidGlassFilters />
       {canvasEnabled ? <LiquidGlassBackdrop colorMode={colorMode} /> : null}
     </>
   );

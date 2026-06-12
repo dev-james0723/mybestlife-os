@@ -49,7 +49,6 @@ function GlassPanel({
   return (
     <div
       data-slot="glass-panel"
-      data-lg-lens="panel"
       data-variant={variant ?? "default"}
       data-interactive={interactive ? "true" : undefined}
       className={cn(glassPanelVariants({ variant, interactive, className }))}

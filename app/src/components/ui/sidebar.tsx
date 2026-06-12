@@ -243,7 +243,6 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          data-lg-lens="island"
           className="flex size-full flex-col bg-sidebar/75 backdrop-blur-lg backdrop-saturate-150 group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border dark:bg-sidebar/50"
         >
           {children}
