@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Orbitron, Space_Grotesk, Playfair_Display, Lora, Fraunces, DM_Sans } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
@@ -59,6 +59,15 @@ const fontVars = [
 export const metadata: Metadata = {
   title: getAppDisplayName("en"),
   description: "Comprehensive personal productivity system with AI-powered features",
+};
+
+// Without an explicit export the production build ships no viewport meta tag,
+// so phones fall back to the 980px legacy layout viewport and every
+// fixed-position layer (topbar, FABs, dock) lands in the wrong place.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

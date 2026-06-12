@@ -1186,10 +1186,12 @@ export function IdeaCaptureSheet() {
         className={cn(
           "fixed right-6 z-40 size-14 rounded-full",
           "bottom-[max(5.75rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] sm:bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]",
+          // Slide above the floating menu FAB while the mobile nav is hidden
+          "[[data-nav-hidden]_&]:bottom-[max(10.5rem,calc(env(safe-area-inset-bottom,0px)+9.25rem))] sm:[[data-nav-hidden]_&]:bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]",
           "bg-primary text-primary-foreground",
           "shadow-lg shadow-foreground/10 dark:shadow-primary/20",
           "ring-1 ring-foreground/5 dark:ring-primary/30",
-          "transition-[transform,box-shadow] duration-200 ease-out",
+          "transition-[transform,box-shadow,bottom] duration-200 ease-out",
           "hover:bg-primary/90 hover:scale-105 hover:shadow-xl",
           "active:scale-95",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

@@ -26,6 +26,15 @@ export function ProtectedScrollLayout({
   const showFab = isMobile && navHidden && !openMobile;
   const shellHidden = Boolean(isMobile && navHidden);
 
+  // Let sibling floating layers (e.g. the Idea Capture FAB) restack around
+  // the menu FAB, which occupies the bottom-right slot while the nav is hidden.
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-nav-hidden", showFab);
+    return () => {
+      document.documentElement.removeAttribute("data-nav-hidden");
+    };
+  }, [showFab]);
+
   useEffect(() => {
     if (!openMobile) return;
     const prev = document.body.style.overflow;

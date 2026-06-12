@@ -4468,15 +4468,23 @@ html[data-ui-theme="default"]
   mask-composite: exclude;
   z-index: 1;
 }
-html[data-ui-theme="default"]
-  :is(
-    [data-slot="card"],
-    [data-slot="dialog-content"],
-    [data-slot="alert-dialog-content"],
-    [data-slot="sheet-content"],
-    .lg-menu-positioner
-  ) {
-  position: relative;
+/* Positioned context for the fringe ring / gloss pseudos. Lives in the
+   components layer so positioning utilities (fixed/absolute/sticky) on
+   dialogs, sheets and floating buttons still win — an unlayered rule
+   here used to clobber `fixed` and dropped every FAB/modal into the
+   document flow. */
+@layer components {
+  html[data-ui-theme="default"]
+    :is(
+      [data-slot="card"],
+      [data-slot="dialog-content"],
+      [data-slot="alert-dialog-content"],
+      [data-slot="sheet-content"],
+      .lg-menu-positioner,
+      [data-slot="button"]
+    ) {
+    position: relative;
+  }
 }
 
 /* ---------- 4. Tier 1 — floating surfaces ---------- */
@@ -4540,7 +4548,6 @@ html[data-ui-theme="default"]
     [data-variant="secondary"],
     [data-variant="ghost"]
   ) {
-  position: relative;
   background: var(--lg-tint-control);
   border-color: var(--lg-edge-hi);
   border-bottom-color: var(--lg-edge-lo);
@@ -4558,7 +4565,6 @@ html[data-ui-theme="default"]
   background: color-mix(in oklch, var(--lg-tint-control) 60%, var(--lg-tint-strong));
 }
 html[data-ui-theme="default"] [data-slot="button"][data-variant="default"] {
-  position: relative;
   box-shadow:
     0 6px 20px color-mix(in oklch, var(--primary) 35%, transparent),
     inset 0 1px 0 color-mix(in oklch, white 45%, transparent),
