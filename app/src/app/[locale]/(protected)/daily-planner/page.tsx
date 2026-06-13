@@ -83,6 +83,16 @@ import {
   lucideIconToQuickTaskKey,
 } from "@/lib/quick-task-icon";
 import { resolveQuickTaskRaster } from "@/lib/daily-planner/quick-task-preset-meta";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { QuickTaskPresetKey } from "@/lib/daily-planner/quick-task-preset-meta";
 import { normalizeQuickTasksJson } from "@/lib/daily-planner/normalize-quick-task";
 import { applyPlanQualitySuggestedChange } from "@/lib/daily-planner/focus/plan-quality";
@@ -1316,6 +1326,9 @@ export default function DailyPlannerPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateMode, setTemplateMode] = useState<"save" | "load">("save");
+  const [pendingTemplate, setPendingTemplate] = useState<ScheduleTemplate | null>(
+    null,
+  );
   const [createAiDialogOpen, setCreateAiDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
@@ -1769,18 +1782,24 @@ export default function DailyPlannerPage() {
     [createTemplate, tasks],
   );
 
-  const handleLoadTemplate = useCallback(
+  const applyTemplate = useCallback(
     (template: ScheduleTemplate) => {
-      if (
-        tasks.length > 0 &&
-        !window.confirm(copy.confirmLoadTemplate)
-      )
-        return;
       updateTasks(template.tasks.map(withUid));
       setTemplateDialogOpen(false);
       toast.success(copy.toastTemplateLoaded(template.name));
     },
-    [tasks, updateTasks, copy],
+    [updateTasks, copy],
+  );
+
+  const handleLoadTemplate = useCallback(
+    (template: ScheduleTemplate) => {
+      if (tasks.length > 0) {
+        setPendingTemplate(template);
+        return;
+      }
+      applyTemplate(template);
+    },
+    [tasks, applyTemplate],
   );
 
   const handleDeleteTemplate = useCallback(
@@ -3011,6 +3030,33 @@ export default function DailyPlannerPage() {
         onDeleteTemplate={handleDeleteTemplate}
         copy={copy}
       />
+
+      <AlertDialog
+        open={pendingTemplate !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingTemplate(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.loadTemplate}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {copy.confirmLoadTemplate}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{copy.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingTemplate) applyTemplate(pendingTemplate);
+                setPendingTemplate(null);
+              }}
+            >
+              {copy.loadTemplate}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Pre-task Ritual */}
       <PreTaskRitualModal

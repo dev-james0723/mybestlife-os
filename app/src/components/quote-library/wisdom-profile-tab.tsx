@@ -1,12 +1,22 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getQuoteCategoryLabel,
@@ -34,10 +44,11 @@ export function WisdomProfileTab() {
   const createJournalEntry = useCreateJournalEntry();
 
   const count = quotes?.length ?? 0;
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleSendToJournal = async () => {
+  const confirmSendToJournal = async () => {
+    setConfirmOpen(false);
     if (!profile?.monthly_insight) return;
-    if (!window.confirm(copy.sendToJournalConfirm)) return;
     try {
       const today = new Date().toISOString().slice(0, 10);
       const insight = profile.monthly_insight;
@@ -180,7 +191,7 @@ export function WisdomProfileTab() {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => void handleSendToJournal()}
+              onClick={() => setConfirmOpen(true)}
               disabled={createJournalEntry.isPending}
               className="gap-1.5 text-muted-foreground hover:text-foreground"
             >
@@ -201,6 +212,23 @@ export function WisdomProfileTab() {
           </Card>
         </section>
       ) : null}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.sendToJournal}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {copy.sendToJournalConfirm}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{copy.buttonCancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmSendToJournal()}>
+              {copy.sendToJournal}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
