@@ -16,7 +16,12 @@ export function ImageZoomViewer({ src, alt, onClose }: ImageZoomViewerProps) {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [src, onClose]);
 
   if (!src) return null;

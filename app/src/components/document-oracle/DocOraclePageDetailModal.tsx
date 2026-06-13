@@ -46,10 +46,18 @@ export function DocOraclePageDetailModal(props: {
     if (!page) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
     };
-  }, [page]);
+  }, [page, onClose]);
 
   if (!page || !mounted) return null;
 

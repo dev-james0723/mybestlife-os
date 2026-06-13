@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { ChevronDown, Compass, ExternalLink, Link2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -391,9 +392,7 @@ export function ConstellationDetailPanel({
                       variant="outline"
                       className="h-7 w-full justify-start gap-1.5 border-dashed border-border/60 bg-transparent text-xs text-muted-foreground hover:bg-muted/50"
                       onClick={() => {
-                        if (typeof window !== "undefined") {
-                          window.alert(c.manualLinkComingSoon);
-                        }
+                        toast.info(c.manualLinkComingSoon);
                       }}
                     >
                       <Link2 className="h-3.5 w-3.5" />
@@ -695,9 +694,7 @@ export function ConstellationDetailPanel({
               onClick={() => {
                 // TODO(phase17): persistence-backed manual links go here.
                 // For now we surface the intent without faking persistence.
-                if (typeof window !== "undefined") {
-                  window.alert(c.manualLinkComingSoon);
-                }
+                toast.info(c.manualLinkComingSoon);
               }}
             >
               <Link2 className="h-3.5 w-3.5" />
