@@ -23,6 +23,7 @@ function item(overrides: Partial<KnowledgeItem>): KnowledgeItem {
     id: overrides.id ?? "item-1",
     userId: "user-1",
     title: "Untitled",
+    isFavorite: false,
     contentType: "article",
     aiTags: [],
     manualTags: [],

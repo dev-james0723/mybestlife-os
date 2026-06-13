@@ -31,6 +31,7 @@ export function mapRowToItem(row: Record<string, unknown>): KnowledgeItem {
     id: row.id as string,
     userId: row.user_id as string,
     title: row.title as string,
+    isFavorite: row.is_favorite === true,
     contentType: normalizeContentType(row.content_type),
     sourceUrl: (row.source_url as string) || undefined,
     sourceDomain: (row.source_domain as string) || undefined,

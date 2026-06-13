@@ -16,6 +16,7 @@ import { canOpenKnowledgeLightbox } from "@/lib/knowledge/lightbox-resolve";
 import { getKnowledgeUploadBadgePresentation } from "@/lib/knowledge/file-kind-presentation";
 import { getSourceTypeInfo } from "@/lib/knowledge/labels";
 import { KnowledgeThumbnailLightbox } from "./KnowledgeThumbnailLightbox";
+import { KnowledgeFavoriteStar } from "./KnowledgeFavoriteStar";
 import { SourceTypeBadge } from "./source/SourceTypeBadge";
 import { SocialEmbed } from "./source/SocialEmbed";
 import { getCardSummaryPreview } from "@/lib/knowledge/knowledge-list-utils";
@@ -120,7 +121,13 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
           aria-hidden
         />
 
-        <div className="pointer-events-none absolute left-2 right-2 top-2 z-10 flex items-start justify-between gap-2">
+        <KnowledgeFavoriteStar
+          item={item}
+          variant="card"
+          className="absolute right-2 top-2 z-20"
+        />
+
+        <div className="pointer-events-none absolute left-2 right-2 top-2 z-10 flex items-start justify-between gap-2 pr-10">
           <div className="min-w-0 flex-1">
             {uploadBadge ? (
               <SourceTypeBadge
@@ -496,7 +503,7 @@ function RenderModeBadge({ mode }: { mode: RenderMode }) {
   const label = renderModeBadgeLabel(mode);
   if (!label) return null;
   return (
-    <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white shadow backdrop-blur-md">
+    <span className="absolute right-11 top-2 z-10 inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white shadow backdrop-blur-md">
       {label}
     </span>
   );

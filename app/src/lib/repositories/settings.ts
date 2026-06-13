@@ -13,6 +13,7 @@ import {
   type OSBuddyBirthdayProfile,
 } from "@/lib/os-buddy/os-buddy-birthday";
 import { normalizeIdeaQuickFilters } from "@/lib/ideas/quick-filters";
+import { normalizeKnowledgeCommandLightOpacity } from "@/lib/knowledge/command-light-preferences";
 import { normalizeKnowledgeQuickFilters } from "@/lib/knowledge/quick-filters";
 
 export type UpdateProfileInput = Partial<
@@ -43,6 +44,7 @@ export type UpdateProfileInput = Partial<
     | "block_minutes"
     | "quick_tasks"
     | "knowledge_quick_filters"
+    | "knowledge_command_light_opacity"
     | "idea_quick_filters"
     | "display_currency"
     | "quick_save_enabled"
@@ -96,6 +98,7 @@ const OS_BUDDY_FREE_ROAM_PROFILE_COLUMNS = [
 ] as const;
 const OS_BUDDY_SHORTCUT_PROFILE_COLUMNS = ["os_buddy_shortcut_settings"] as const;
 const KNOWLEDGE_QUICK_FILTER_PROFILE_COLUMNS = ["knowledge_quick_filters"] as const;
+const KNOWLEDGE_COMMAND_LIGHT_PROFILE_COLUMNS = ["knowledge_command_light_opacity"] as const;
 const IDEA_QUICK_FILTER_PROFILE_COLUMNS = ["idea_quick_filters"] as const;
 const LOCAL_SETTINGS_PROFILE_KEY = "mylifeos:settings-profile:v1";
 const LOCAL_NOTIFICATION_PREFERENCES_KEY = "mylifeos:notification-preferences:v1";
@@ -168,6 +171,7 @@ function defaultLocalProfile(now = new Date().toISOString()): UserProfile {
     block_minutes: 10,
     quick_tasks: null,
     knowledge_quick_filters: [],
+    knowledge_command_light_opacity: 82,
     idea_quick_filters: [],
     display_currency: "USD",
     quick_save_enabled: false,
@@ -372,6 +376,9 @@ function normalizeUserProfile(row: Record<string, unknown>): UserProfile {
   return {
     ...base,
     knowledge_quick_filters: normalizeKnowledgeQuickFilters(row.knowledge_quick_filters),
+    knowledge_command_light_opacity: normalizeKnowledgeCommandLightOpacity(
+      row.knowledge_command_light_opacity,
+    ),
     idea_quick_filters: normalizeIdeaQuickFilters(row.idea_quick_filters),
     display_currency,
     weather_lat: coerceNumOrNull(row.weather_lat),
@@ -514,6 +521,13 @@ export const settingsRepository = {
       ...(input.display_currency !== undefined
         ? { display_currency: input.display_currency.trim().toUpperCase() }
         : {}),
+      ...(input.knowledge_command_light_opacity !== undefined
+        ? {
+            knowledge_command_light_opacity: normalizeKnowledgeCommandLightOpacity(
+              input.knowledge_command_light_opacity,
+            ),
+          }
+        : {}),
       ...(input.os_buddy_pet_id !== undefined
         ? { os_buddy_pet_id: coerceOSBuddyPetId(input.os_buddy_pet_id) }
         : {}),
@@ -579,6 +593,15 @@ export const settingsRepository = {
         isMissingProfilesColumnError(error, "knowledge_quick_filters")
       ) {
         payload = omitKeys(payload, KNOWLEDGE_QUICK_FILTER_PROFILE_COLUMNS);
+        continue;
+      }
+
+      if (
+        error &&
+        "knowledge_command_light_opacity" in payload &&
+        isMissingProfilesColumnError(error, "knowledge_command_light_opacity")
+      ) {
+        payload = omitKeys(payload, KNOWLEDGE_COMMAND_LIGHT_PROFILE_COLUMNS);
         continue;
       }
 

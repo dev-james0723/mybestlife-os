@@ -21,6 +21,7 @@ import { MarkdownPreview } from "./source/MarkdownPreview";
 import { CodeBlock } from "./source/CodeBlock";
 import { SourceTypeBadge } from "./source/SourceTypeBadge";
 import { KnowledgeThumbnailLightbox } from "./KnowledgeThumbnailLightbox";
+import { KnowledgeFavoriteStar } from "./KnowledgeFavoriteStar";
 import { FullscreenPreviewPortal } from "./source/FullscreenPreviewPortal";
 import { isYouTubePageUrl } from "@/lib/knowledge/youtube";
 import {
@@ -423,13 +424,13 @@ export function KnowledgeDetailSheet() {
           className={cn(
             // Card chrome lives on the inner layer so translateY moves the whole sheet, not only scroll content.
             "!rounded-none !border-0 !bg-transparent !shadow-none !ring-0",
+            "knowledge-detail-sheet-content",
             "scheme-light dark:scheme-dark",
           )}
         >
           <div
             className={cn(
-              "flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-t-2xl",
-              "bg-popover bg-clip-padding text-sm text-popover-foreground shadow-xl ring-1 ring-foreground/10",
+              "flex min-h-0 w-full flex-1 flex-col",
               "max-h-full min-h-0 will-change-transform",
             )}
             style={{
@@ -437,6 +438,14 @@ export function KnowledgeDetailSheet() {
               transition: sheetDragActive ? "none" : "transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)",
             }}
           >
+            <div
+              key={item.id}
+              className={cn(
+                "knowledge-detail-glass-shell flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-t-2xl",
+                "text-sm text-popover-foreground",
+              )}
+            >
+              <div className="knowledge-detail-glass-content flex min-h-0 flex-1 flex-col">
           {/* Drag handle + close button */}
           <div className="relative flex shrink-0 justify-center">
             <div
@@ -636,49 +645,56 @@ export function KnowledgeDetailSheet() {
 
             {/* Thumbnail / embedded social preview + regenerate */}
             <div className="space-y-2">
-              {sourceIsSocialEmbed ? (
-                <SocialEmbed
-                  item={item}
-                  unavailableLabel=""
-                  className="aspect-video bg-muted"
-                />
-              ) : item.thumbnailUrl ? (
-                <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-                  {canOpenKnowledgeLightbox(item) ? (
-                    <button
-                      type="button"
-                      className="absolute inset-0 z-[2] cursor-zoom-in bg-transparent"
-                      aria-label={knowledgeUi.lightbox.openPreview}
-                      onClick={() => setThumbLightboxOpen(true)}
-                    />
-                  ) : null}
-                  <OptimizedThumbnailImage
-                    src={item.thumbnailUrl}
-                    alt={item.title}
-                    className="relative z-0 h-full w-full object-contain"
-                    sizes="(max-width: 768px) 100vw, 560px"
-                    variant="detail"
+              <div className="relative">
+                {sourceIsSocialEmbed ? (
+                  <SocialEmbed
+                    item={item}
+                    unavailableLabel=""
+                    className="aspect-video bg-muted"
                   />
-                </div>
-              ) : item.thumbnailStyle === "na" ? (
-                <div className="relative aspect-video rounded-lg bg-muted px-5">
-                  <div className="flex h-full items-center justify-center text-center">
-                    <p className="line-clamp-4 text-lg font-semibold leading-snug text-foreground">
-                      {item.title}
-                    </p>
+                ) : item.thumbnailUrl ? (
+                  <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
+                    {canOpenKnowledgeLightbox(item) ? (
+                      <button
+                        type="button"
+                        className="absolute inset-0 z-[2] cursor-zoom-in bg-transparent"
+                        aria-label={knowledgeUi.lightbox.openPreview}
+                        onClick={() => setThumbLightboxOpen(true)}
+                      />
+                    ) : null}
+                    <OptimizedThumbnailImage
+                      src={item.thumbnailUrl}
+                      alt={item.title}
+                      className="relative z-0 h-full w-full object-contain"
+                      sizes="(max-width: 768px) 100vw, 560px"
+                      variant="detail"
+                    />
                   </div>
-                </div>
-              ) : (
-                <div
-                  className={cn(
-                    "flex aspect-video items-center justify-center rounded-lg text-4xl",
-                    colors.bg,
-                    colors.darkBg,
-                  )}
-                >
-                  {colors.icon}
-                </div>
-              )}
+                ) : item.thumbnailStyle === "na" ? (
+                  <div className="relative aspect-video rounded-lg bg-muted px-5">
+                    <div className="flex h-full items-center justify-center text-center">
+                      <p className="line-clamp-4 text-lg font-semibold leading-snug text-foreground">
+                        {item.title}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={cn(
+                      "flex aspect-video items-center justify-center rounded-lg text-4xl",
+                      colors.bg,
+                      colors.darkBg,
+                    )}
+                  >
+                    {colors.icon}
+                  </div>
+                )}
+                <KnowledgeFavoriteStar
+                  item={item}
+                  variant="detail"
+                  className="absolute right-3 top-3 z-20"
+                />
+              </div>
               {sourceIsYoutube ? (
                 <Button
                   variant="outline"
@@ -1098,6 +1114,8 @@ export function KnowledgeDetailSheet() {
                 </Button>
               </span>
             </div>
+            </div>
+              </div>
             </div>
           </div>
           </div>

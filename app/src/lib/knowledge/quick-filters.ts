@@ -5,6 +5,7 @@ import { SOURCE_TYPES } from "@/types/knowledge-source";
 import { KNOWLEDGE_CATEGORY_ORDER } from "@/lib/knowledge/labels";
 
 export const KNOWLEDGE_BUILTIN_QUICK_FILTER_IDS = [
+  "favorite",
   "recent",
   "social",
   "github",
@@ -103,6 +104,7 @@ export const KNOWLEDGE_DEFAULT_QUICK_FILTER_LABELS: Record<
   KnowledgeBuiltinQuickFilterId,
   string
 > = {
+  favorite: "Favorite",
   recent: "Recent",
   social: "Social",
   github: "GitHub",
@@ -116,6 +118,7 @@ const DEFAULT_ICON_BY_BUILTIN: Record<
   KnowledgeBuiltinQuickFilterId,
   KnowledgeQuickFilterIconKey
 > = {
+  favorite: "star",
   recent: "clock",
   social: "users",
   github: "gitBranch",
@@ -431,7 +434,13 @@ export function normalizeKnowledgeQuickFilters(
   });
 
   for (const def of defaults) {
-    if (!seen.has(def.id)) deduped.push(def);
+    if (seen.has(def.id)) continue;
+    if (def.id === "favorite") {
+      deduped.unshift(def);
+    } else {
+      deduped.push(def);
+    }
+    seen.add(def.id);
   }
 
   return deduped;
@@ -504,6 +513,8 @@ export function matchesBuiltInKnowledgeQuickFilter(
 ): boolean {
   const recentCutoffMs = nowMs - 7 * 24 * 60 * 60 * 1000;
   switch (id) {
+    case "favorite":
+      return item.isFavorite;
     case "recent": {
       const ts = new Date(item.dateAdded).getTime();
       return Number.isFinite(ts) && ts >= recentCutoffMs;

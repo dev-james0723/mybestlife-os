@@ -24,6 +24,7 @@ import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { useProfile } from "@/hooks/use-settings";
 import { useCommandLightInteraction } from "@/hooks/use-command-light-interaction";
+import { knowledgeCommandLightOpacityToCssValue } from "@/lib/knowledge/command-light-preferences";
 import { normalizeKnowledgeQuickFilters } from "@/lib/knowledge/quick-filters";
 import { cn } from "@/lib/utils";
 
@@ -330,6 +331,9 @@ export function KnowledgeLayout({
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const currentView = useKnowledgeStore((s) => s.currentView);
   const profile = useProfile();
+  const commandLightOpacity = knowledgeCommandLightOpacityToCssValue(
+    profile.data?.knowledge_command_light_opacity,
+  );
 
   useEffect(() => {
     hydrate(initialItems, initialCollections);
@@ -340,6 +344,18 @@ export function KnowledgeLayout({
       normalizeKnowledgeQuickFilters(profile.data?.knowledge_quick_filters),
     );
   }, [profile.data?.knowledge_quick_filters, setQuickFilterDefinitions]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.style.setProperty(
+      "--knowledge-command-light-user-opacity",
+      commandLightOpacity,
+    );
+    return () => {
+      root.style.removeProperty("--knowledge-command-light-user-opacity");
+    };
+  }, [commandLightOpacity]);
 
   useEffect(() => {
     // Constellation View has manual node dragging / firework layout.

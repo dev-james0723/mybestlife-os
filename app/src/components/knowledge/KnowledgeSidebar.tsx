@@ -90,7 +90,7 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
             <span className="tabular-nums text-[10px] text-muted-foreground">{items.length}</span>
           </button>
 
-          <div className="relative grid grid-cols-2 gap-1 before:pointer-events-none before:absolute before:bottom-1 before:left-1/2 before:top-1 before:w-[0.5px] before:-translate-x-1/2 before:bg-black/45 dark:before:bg-white/55">
+          <div className="grid grid-cols-2 gap-1">
             {CONTENT_TYPES.map((type) => {
               const colors = typeColors[type];
               const isActive = activeTypeFilters.includes(type);

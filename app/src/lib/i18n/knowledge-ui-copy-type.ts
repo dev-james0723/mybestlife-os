@@ -66,6 +66,13 @@ export type KnowledgeUiCopy = {
   aiProcessing: string;
   failedAt: (step: string) => string;
   connectionsCount: (count: number) => string;
+  favorite: {
+    add: string;
+    remove: string;
+    addedToast: string;
+    removedToast: string;
+    failedToast: string;
+  };
   sidebarTitle: string;
   library: string;
   /** Sidebar section heading above category filters (articles, repositories, …). */
@@ -140,6 +147,7 @@ export type KnowledgeUiCopy = {
   previousPage: string;
   nextPage: string;
   quickFilters: {
+    favorite: string;
     recent: string;
     social: string;
     github: string;
@@ -183,6 +191,12 @@ export type KnowledgeUiCopy = {
     noFilters: string;
     savedToast: string;
     saveFailedToast: string;
+    commandLightOpacityTitle: string;
+    commandLightOpacityDescription: string;
+    commandLightOpacityLabel: string;
+    commandLightOpacityQuiet: string;
+    commandLightOpacityVivid: string;
+    commandLightOpacitySaveFailedToast: string;
     textValuePlaceholder: string;
     tagValuePlaceholder: string;
     daysValuePlaceholder: string;
@@ -235,6 +249,25 @@ export type KnowledgeUiCopy = {
     resultsReadyStatus: string;
     noStrongMatchesStatus: string;
     errorStatus: string;
+    modeInfoButtonLabel: (title: string) => string;
+    modeInfo: {
+      hybrid: {
+        title: string;
+        description: string;
+      };
+      semantic: {
+        title: string;
+        description: string;
+      };
+      keyword: {
+        title: string;
+        description: string;
+      };
+      recent: {
+        title: string;
+        description: string;
+      };
+    };
     examplesLabel: string;
     exampleQueries: string[];
     resultsHeading: (count: number) => string;

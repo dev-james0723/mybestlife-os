@@ -49,6 +49,7 @@ export type KnowledgeItem = {
   id: string;
   userId: string;
   title: string;
+  isFavorite: boolean;
   contentType: ContentType;
   sourceUrl?: string;
   sourceDomain?: string;

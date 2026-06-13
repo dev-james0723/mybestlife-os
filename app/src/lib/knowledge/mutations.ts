@@ -1564,6 +1564,31 @@ export async function updateKnowledgeItem(
   return mapRowToItem(data as Record<string, unknown>);
 }
 
+export async function setKnowledgeFavorite(
+  id: string,
+  isFavorite: boolean,
+): Promise<KnowledgeItem> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("knowledge_items")
+    .update({
+      is_favorite: isFavorite,
+      date_modified: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return mapRowToItem(data as Record<string, unknown>);
+}
+
 export async function generateKnowledgeDeferredSection(
   itemId: string,
   section: KnowledgeDeferredDetailSection,

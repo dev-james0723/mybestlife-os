@@ -79,6 +79,10 @@ type QuickFilterTone = {
 };
 
 const BUILTIN_QUICK_FILTER_TONES: Record<KnowledgeBuiltinQuickFilterId, QuickFilterTone> = {
+  favorite: {
+    active:
+      "border-amber-400/65 bg-amber-200/85 text-amber-950 shadow-[0_8px_22px_rgba(217,119,6,0.14),inset_0_1px_0_rgba(255,255,255,0.58)] dark:border-amber-300/50 dark:bg-amber-400/24 dark:text-amber-50 dark:shadow-[0_8px_22px_rgba(251,191,36,0.13),inset_0_1px_0_rgba(255,255,255,0.10)]",
+  },
   recent: {
     active:
       "border-sky-400/60 bg-sky-200/80 text-sky-950 shadow-[0_8px_22px_rgba(14,116,144,0.14),inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-sky-300/45 dark:bg-sky-400/22 dark:text-sky-50 dark:shadow-[0_8px_22px_rgba(56,189,248,0.12),inset_0_1px_0_rgba(255,255,255,0.10)]",
@@ -119,6 +123,7 @@ const KNOWLEDGE_DROPDOWN_CONTENT_CLASS =
   "bg-transparent shadow-none ring-0 [&_[data-slot=select-scroll-down-button]]:bg-transparent [&_[data-slot=select-scroll-up-button]]:bg-transparent";
 
 const CUSTOM_QUICK_FILTER_TONES: QuickFilterTone[] = [
+  BUILTIN_QUICK_FILTER_TONES.favorite,
   BUILTIN_QUICK_FILTER_TONES.recent,
   BUILTIN_QUICK_FILTER_TONES.social,
   BUILTIN_QUICK_FILTER_TONES.hasMedia,

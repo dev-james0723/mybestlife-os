@@ -16,6 +16,7 @@ function item(overrides: Partial<KnowledgeItem> = {}): KnowledgeItem {
     id: "item-1",
     userId: "user-1",
     title: "Stripe checkout notes",
+    isFavorite: false,
     contentType: "article",
     aiTags: [],
     manualTags: [],
@@ -41,7 +42,7 @@ describe("knowledge quick filters", () => {
     expect(normalized.every((def) => def.visible && def.builtIn)).toBe(true);
   });
 
-  it("preserves custom filters and appends missing built-ins", () => {
+  it("preserves custom filters and inserts the missing favorite built-in first", () => {
     const normalized = normalizeKnowledgeQuickFilters([
       {
         id: "custom-tag-ai",
@@ -61,7 +62,8 @@ describe("knowledge quick filters", () => {
       },
     ]);
 
-    expect(normalized[0]?.id).toBe("custom-tag-ai");
+    expect(normalized[0]?.id).toBe("favorite");
+    expect(normalized[1]?.id).toBe("custom-tag-ai");
     expect(normalized.find((def) => def.id === "recent")?.visible).toBe(false);
     expect(normalized.map((def) => def.id)).toContain("needsReview");
   });
@@ -84,6 +86,9 @@ describe("knowledge quick filters", () => {
   });
 
   it("matches built-in predicates", () => {
+    expect(matchesBuiltInKnowledgeQuickFilter(item({ isFavorite: true }), "favorite", NOW)).toBe(
+      true,
+    );
     expect(matchesBuiltInKnowledgeQuickFilter(item(), "recent", NOW)).toBe(true);
     expect(
       matchesBuiltInKnowledgeQuickFilter(

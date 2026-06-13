@@ -11,6 +11,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -35,8 +36,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAppStore } from "@/stores/app-store";
+import { useProfile } from "@/hooks/use-settings";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
+import {
+  MAX_KNOWLEDGE_COMMAND_LIGHT_OPACITY,
+  MIN_KNOWLEDGE_COMMAND_LIGHT_OPACITY,
+  knowledgeCommandLightOpacityToCssValue,
+  normalizeKnowledgeCommandLightOpacity,
+} from "@/lib/knowledge/command-light-preferences";
 import { getCategoryLabel, getSourceTypeInfo, KNOWLEDGE_CATEGORY_ORDER } from "@/lib/knowledge/labels";
 import {
   createKnowledgeQuickFilterDefinition,
@@ -93,16 +101,31 @@ function statusLabel(status: string): string {
   return status;
 }
 
+function applyKnowledgeCommandLightOpacityVar(value: number) {
+  if (typeof document === "undefined") return;
+  document.documentElement.style.setProperty(
+    "--knowledge-command-light-user-opacity",
+    knowledgeCommandLightOpacityToCssValue(value),
+  );
+}
+
 export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
   const copy = ui.quickFilterManager;
   const queryClient = useQueryClient();
+  const profile = useProfile();
   const quickFilterDefinitions = useKnowledgeStore((s) => s.quickFilterDefinitions);
   const setQuickFilterDefinitions = useKnowledgeStore((s) => s.setQuickFilterDefinitions);
   const [draft, setDraft] = useState<KnowledgeQuickFilterDefinition[]>(() =>
     cloneDefinitions(quickFilterDefinitions),
   );
+  const profileCommandLightOpacity = normalizeKnowledgeCommandLightOpacity(
+    profile.data?.knowledge_command_light_opacity,
+  );
+  const [commandLightOpacityDraft, setCommandLightOpacityDraft] = useState<number | null>(null);
+  const commandLightOpacity = commandLightOpacityDraft ?? profileCommandLightOpacity;
+  const commandLightOpacityDirty = commandLightOpacityDraft !== null;
 
   useEffect(() => {
     if (!open) return;
@@ -130,12 +153,36 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
       );
       setQuickFilterDefinitions(saved.knowledge_quick_filters ?? next);
       toast.success(copy.savedToast);
+      setCommandLightOpacityDraft(null);
       onOpenChange(false);
     },
     onError: () => {
       toast.error(copy.saveFailedToast);
     },
   });
+
+  const commandLightOpacityMutation = useMutation({
+    mutationFn: async (value: number) =>
+      settingsRepository.updateProfile({
+        knowledge_command_light_opacity: normalizeKnowledgeCommandLightOpacity(value),
+      }),
+    onSuccess: (saved) => {
+      queryClient.setQueryData<UserProfile | undefined>(["profile"], saved);
+    },
+    onError: () => {
+      toast.error(copy.commandLightOpacitySaveFailedToast);
+    },
+  });
+  const saveCommandLightOpacity = commandLightOpacityMutation.mutate;
+
+  useEffect(() => {
+    if (!open || !commandLightOpacityDirty) return;
+    applyKnowledgeCommandLightOpacityVar(commandLightOpacity);
+    const timeout = window.setTimeout(() => {
+      saveCommandLightOpacity(commandLightOpacity);
+    }, 450);
+    return () => window.clearTimeout(timeout);
+  }, [commandLightOpacity, commandLightOpacityDirty, open, saveCommandLightOpacity]);
 
   const updateDefinition = (
     id: string,
@@ -183,13 +230,24 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
     setDraft(getDefaultKnowledgeQuickFilters());
   };
 
+  const updateCommandLightOpacity = (value: number) => {
+    const next = normalizeKnowledgeCommandLightOpacity(value);
+    setCommandLightOpacityDraft(next);
+    applyKnowledgeCommandLightOpacityVar(next);
+  };
+
   const saveDraft = () => {
     if (hasIncompleteDraft) return;
     saveMutation.mutate(draft);
   };
 
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) setCommandLightOpacityDraft(null);
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent
         size="5xl"
         className="flex max-h-[min(88dvh,760px)] grid-rows-[auto_minmax(0,1fr)_auto] flex-col overflow-hidden p-0"
@@ -228,41 +286,49 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
-          {draft.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
-              {copy.noFilters}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {draft.map((def, index) => (
-                <QuickFilterDefinitionEditor
-                  key={def.id}
-                  def={def}
-                  index={index}
-                  total={draft.length}
-                  copy={copy}
-                  typeLabels={ui.typeLabels}
-                  builtInLabels={ui.quickFilters}
-                  onUpdate={(updater) => updateDefinition(def.id, updater)}
-                  onMove={moveDefinition}
-                  onRemove={() => removeDefinition(def.id)}
-                  onAddRule={() =>
-                    updateDefinition(def.id, (current) => ({
-                      ...current,
-                      rules: [...current.rules, createKnowledgeQuickFilterRule("text")],
-                    }))
-                  }
-                  onRemoveRule={(ruleId) =>
-                    updateDefinition(def.id, (current) => ({
-                      ...current,
-                      rules: current.rules.filter((rule) => rule.id !== ruleId),
-                    }))
-                  }
-                  onUpdateRule={(ruleId, updater) => updateRule(def.id, ruleId, updater)}
-                />
-              ))}
-            </div>
-          )}
+          <div className="space-y-3">
+            {draft.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
+                {copy.noFilters}
+              </div>
+            ) : (
+              <>
+                {draft.map((def, index) => (
+                  <QuickFilterDefinitionEditor
+                    key={def.id}
+                    def={def}
+                    index={index}
+                    total={draft.length}
+                    copy={copy}
+                    typeLabels={ui.typeLabels}
+                    builtInLabels={ui.quickFilters}
+                    onUpdate={(updater) => updateDefinition(def.id, updater)}
+                    onMove={moveDefinition}
+                    onRemove={() => removeDefinition(def.id)}
+                    onAddRule={() =>
+                      updateDefinition(def.id, (current) => ({
+                        ...current,
+                        rules: [...current.rules, createKnowledgeQuickFilterRule("text")],
+                      }))
+                    }
+                    onRemoveRule={(ruleId) =>
+                      updateDefinition(def.id, (current) => ({
+                        ...current,
+                        rules: current.rules.filter((rule) => rule.id !== ruleId),
+                      }))
+                    }
+                    onUpdateRule={(ruleId, updater) => updateRule(def.id, ruleId, updater)}
+                  />
+                ))}
+              </>
+            )}
+            <CommandLightOpacityControl
+              copy={copy}
+              value={commandLightOpacity}
+              isSaving={commandLightOpacityMutation.isPending}
+              onChange={updateCommandLightOpacity}
+            />
+          </div>
         </div>
 
         <DialogFooter className="mt-0">
@@ -286,6 +352,83 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CommandLightOpacityControl({
+  copy,
+  value,
+  isSaving,
+  onChange,
+}: {
+  copy: ReturnType<typeof getKnowledgeUiCopy>["quickFilterManager"];
+  value: number;
+  isSaving: boolean;
+  onChange: (value: number) => void;
+}) {
+  const normalized = normalizeKnowledgeCommandLightOpacity(value);
+  const fill = `${normalized}%`;
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-cyan-200/60 bg-[linear-gradient(135deg,rgba(236,254,255,0.86),rgba(250,245,255,0.82),rgba(255,251,235,0.74))] p-3 shadow-sm dark:border-cyan-200/18 dark:bg-[linear-gradient(135deg,rgba(8,47,73,0.42),rgba(59,7,100,0.32),rgba(63,63,70,0.30))]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200/70 bg-white/72 text-cyan-700 shadow-inner dark:border-cyan-100/20 dark:bg-white/10 dark:text-cyan-200">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {copy.commandLightOpacityTitle}
+            </h3>
+            <p className="mt-0.5 max-w-2xl text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              {copy.commandLightOpacityDescription}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-cyan-800 dark:text-cyan-100">
+          <span>{normalized}%</span>
+          {isSaving ? (
+            <span className="rounded-full border border-cyan-200/70 bg-white/65 px-2 py-0.5 text-[11px] text-cyan-700 dark:border-cyan-100/20 dark:bg-white/10 dark:text-cyan-200">
+              {copy.saving}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <div className="relative flex h-9 items-center">
+          <div
+            aria-hidden
+            className="absolute inset-x-0 h-2 rounded-full border border-white/60 bg-white/60 shadow-inner dark:border-white/10 dark:bg-black/24"
+          />
+          <div
+            aria-hidden
+            className="absolute h-2 rounded-full bg-[linear-gradient(90deg,#22d3ee_0%,#a855f7_36%,#ec4899_58%,#f59e0b_78%,#84cc16_100%)] shadow-[0_0_18px_rgba(34,211,238,0.34)]"
+            style={{ width: fill }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white bg-cyan-100 shadow-[0_4px_14px_rgba(14,116,144,0.28)] dark:border-cyan-950 dark:bg-cyan-200"
+            style={{ left: fill }}
+          />
+          <input
+            type="range"
+            min={MIN_KNOWLEDGE_COMMAND_LIGHT_OPACITY}
+            max={MAX_KNOWLEDGE_COMMAND_LIGHT_OPACITY}
+            step={5}
+            value={normalized}
+            aria-label={copy.commandLightOpacityLabel}
+            aria-valuetext={`${normalized}%`}
+            onChange={(event) => onChange(Number(event.currentTarget.value))}
+            className="relative z-10 m-0 h-9 w-full cursor-pointer appearance-none rounded-full bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-transparent [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-transparent"
+          />
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <span>{copy.commandLightOpacityQuiet}</span>
+          <span>{copy.commandLightOpacityVivid}</span>
+        </div>
+      </div>
+    </section>
   );
 }
 

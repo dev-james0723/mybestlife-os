@@ -7,6 +7,8 @@ import type { KnowledgeItem } from "@/types/knowledge";
 
 /** `no-referrer` breaks Facebook / Threads plugin iframes; keep origin for cross-site requests. */
 const EMBED_REFERRER_POLICY = "strict-origin-when-cross-origin" as const;
+const STANDARD_EMBED_MAX_WIDTH = 640;
+const DETAIL_EMBED_FRAME_CLASS = "mx-auto w-full max-w-[640px]";
 
 type Props = {
   item: KnowledgeItem;
@@ -105,13 +107,20 @@ export function SocialEmbed({
   const showChrome = !compact;
 
   if (directIframe) {
+    const frameMaxWidth = Math.min(
+      directIframe.width ?? STANDARD_EMBED_MAX_WIDTH,
+      STANDARD_EMBED_MAX_WIDTH,
+    );
+
     return (
       <>
         <div
           className={cn(
             "relative overflow-hidden rounded-lg border bg-background",
+            !compact && DETAIL_EMBED_FRAME_CLASS,
             className,
           )}
+          style={!compact ? { maxWidth: frameMaxWidth } : undefined}
         >
           <iframe
             ref={iframeRef}
@@ -163,6 +172,7 @@ export function SocialEmbed({
       <div
         className={cn(
           "relative overflow-hidden rounded-lg border bg-background",
+          !compact && DETAIL_EMBED_FRAME_CLASS,
           className,
         )}
       >
@@ -320,7 +330,7 @@ const TRUSTED_EMBED_HOSTS = new Set([
 
 function parseSingleIframe(
   html: string,
-): { src: string; height: number } | null {
+): { src: string; height: number; width?: number } | null {
   if (!html) return null;
   const trimmed = html.trim();
   if (!/^<iframe\b/i.test(trimmed)) return null;
@@ -347,7 +357,14 @@ function parseSingleIframe(
   const height = Number.isFinite(parsedHeight) && parsedHeight >= 220 && parsedHeight <= 1600
     ? parsedHeight
     : 640;
-  return { src, height };
+  const widthMatch = trimmed.match(/\bwidth\s*=\s*["']?(\d+)/i);
+  const parsedWidth = widthMatch ? Number.parseInt(widthMatch[1], 10) : NaN;
+  const width =
+    Number.isFinite(parsedWidth) && parsedWidth >= 260 && parsedWidth <= STANDARD_EMBED_MAX_WIDTH
+      ? parsedWidth
+      : undefined;
+
+  return { src, height, width };
 }
 
 function buildEmbedDocument(fragment: string, provider: string): string {
@@ -385,10 +402,12 @@ function buildEmbedDocument(fragment: string, provider: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   html, body { margin: 0; padding: 0; background: transparent; font-family: -apple-system, system-ui, sans-serif; }
-  body { padding: 8px; }
-  iframe, blockquote, div { max-width: 100% !important; }
+  body { box-sizing: border-box; padding: 8px; }
+  body > iframe, body > blockquote, body > div { box-sizing: border-box !important; display: block; max-width: 100% !important; margin-left: auto !important; margin-right: auto !important; }
+  iframe, blockquote { max-width: 100% !important; }
+  iframe { display: block; }
   img, video { max-width: 100%; height: auto; }
-  .twitter-tweet, .instagram-media, blockquote.reddit-card { margin: 0 auto !important; }
+  .twitter-tweet, .instagram-media, .fb-post, .fb-video, .threads-post, blockquote.reddit-card { margin-left: auto !important; margin-right: auto !important; }
 </style>
 </head><body>
 ${fragment}

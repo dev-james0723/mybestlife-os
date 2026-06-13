@@ -56,6 +56,13 @@ export const knowledgeOverridesZhCN = {
   aiProcessing: "AI 处理中…",
   failedAt: (step: string) => `失败：${step}`,
   connectionsCount: (count: number) => `${count} 个关联`,
+  favorite: {
+    add: "加入收藏",
+    remove: "取消收藏",
+    addedToast: "已加入收藏。",
+    removedToast: "已取消收藏。",
+    failedToast: "无法更新收藏。",
+  },
   sidebarTitle: "知识",
   library: "资料库",
   categories: "分类",
@@ -86,6 +93,9 @@ export const knowledgeOverridesZhCN = {
   emptyStateNoKnowledgeDescription: "添加第一条知识以开始使用。",
   emptyStateNoMatchesTitle: "未找到匹配项",
   emptyStateNoMatchesDescription: "尝试调整搜索或筛选条件。",
+  quickFilters: {
+    favorite: "收藏",
+  },
   tableType: "类型",
   tableTitle: "标题",
   tableAiSummary: "AI 摘要",
@@ -94,6 +104,31 @@ export const knowledgeOverridesZhCN = {
   tableDate: "日期",
   tableProcessing: "处理中…",
   tableFailed: "失败",
+  inquiryAgent: {
+    modeInfoButtonLabel: (title: string) => `了解 ${title}`,
+    modeInfo: {
+      hybrid: {
+        title: "Hybrid Mode",
+        description:
+          "默认建议使用。会综合语义、关键词、最近更新和关联，找出更平衡的结果。",
+      },
+      semantic: {
+        title: "Semantic Mode",
+        description:
+          "会看内容的意思是否相近，即使你输入的字和原文不完全一样也能找到。",
+      },
+      keyword: {
+        title: "Keyword Mode",
+        description:
+          "会用你输入的字匹配标题、标签、摘要和正文，适合记得明确字眼时使用。",
+      },
+      recent: {
+        title: "Recent Mode",
+        description:
+          "会优先显示最近新增或更新的知识，适合你记得内容是最近保存过的时候。",
+      },
+    },
+  },
   aiPanel: {
     title: "询问你的知识库",
     closePanel: "关闭 AI 面板",

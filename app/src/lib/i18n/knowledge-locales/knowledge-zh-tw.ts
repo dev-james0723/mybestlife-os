@@ -80,6 +80,13 @@ export const knowledgeOverridesZhTW = {
   aiProcessing: "AI 處理中…",
   failedAt: (step: string) => `失敗：${step}`,
   connectionsCount: (count: number) => `${count} 個關聯`,
+  favorite: {
+    add: "加入最愛",
+    remove: "從最愛移除",
+    addedToast: "已加入最愛。",
+    removedToast: "已從最愛移除。",
+    failedToast: "無法更新最愛。",
+  },
   sidebarTitle: "知識",
   library: "圖書館",
   categories: "分類",
@@ -114,6 +121,9 @@ export const knowledgeOverridesZhTW = {
   emptyStateNoKnowledgeDescription: "新增第一筆知識以開始使用。",
   emptyStateNoMatchesTitle: "找不到符合項目",
   emptyStateNoMatchesDescription: "試著調整搜尋或篩選條件。",
+  quickFilters: {
+    favorite: "最愛",
+  },
   tableType: "類型",
   tableTitle: "標題",
   tableAiSummary: "AI 摘要",
@@ -122,6 +132,31 @@ export const knowledgeOverridesZhTW = {
   tableDate: "日期",
   tableProcessing: "處理中…",
   tableFailed: "失敗",
+  inquiryAgent: {
+    modeInfoButtonLabel: (title: string) => `了解 ${title}`,
+    modeInfo: {
+      hybrid: {
+        title: "Hybrid Mode",
+        description:
+          "預設建議使用。會綜合語意、關鍵字、最近更新和關聯，找出較平衡的結果。",
+      },
+      semantic: {
+        title: "Semantic Mode",
+        description:
+          "會看內容的意思是否相近，即使你輸入的字和原文不完全一樣也能找到。",
+      },
+      keyword: {
+        title: "Keyword Mode",
+        description:
+          "會用你輸入的字比對標題、標籤、摘要和正文，適合記得明確字眼時使用。",
+      },
+      recent: {
+        title: "Recent Mode",
+        description:
+          "會優先顯示最近新增或更新的知識，適合你記得內容是最近存過的時候。",
+      },
+    },
+  },
   aiPanel: {
     title: "詢問你的知識庫",
     closePanel: "關閉 AI 面板",

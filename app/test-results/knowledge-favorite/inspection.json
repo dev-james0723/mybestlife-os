@@ -1,0 +1,71 @@
+{
+  "desktop": {
+    "url": "http://127.0.0.1:3000/en/knowledge-base",
+    "title": "My Best Life OS",
+    "h1": "Knowledge Base",
+    "bodySample": "My Best Life OSCommand CenterSelfPeopleCareerBuild & ExecuteResourcesKnowledgeLearningMy GardenUUserSearch...⌘K—--:--Knowledge BaseCapture links, articles, papers, notes, files, media, code, and snippets, then search and ask AI across everything you saved.KnowledgeLibraryAll items0📄Article🔗Link🎬Video💬Social Post🎙️Audio📑Document🔬Research Paper📚Book💻Code🧩Repository📊Dataset📽️Presentation📷Photo❞Quote📝Note📁FileTagsAll knowledgeAsk My Knowledge BaseOpen the cited answer panelCaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click to addReason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 itemsKnowledge retrievalRetrieve My Knowledge0 knowledge matches. Find matching knowledge before asking the answer panel.0 knowledge matchesContent types20▼TagsLatest▼GalleryBoardTableConstellationFavoriteRecentSocial",
+    "favoriteButtons": [
+      {
+        "text": "Favorite",
+        "ariaLabel": null,
+        "ariaPressed": "false",
+        "title": null,
+        "rect": {
+          "x": 556,
+          "y": 781.5,
+          "width": 85.359375,
+          "height": 32
+        }
+      }
+    ],
+    "quickFilterTexts": [
+      "Command Center",
+      "Self",
+      "People",
+      "Career",
+      "Build & Execute",
+      "Resources",
+      "Search...⌘K",
+      "Open menu",
+      "Notifications (coming soon)",
+      "Switch to dark mode",
+      "--:--",
+      "Collapse directory panel",
+      "All items0",
+      "📄Article",
+      "🔗Link",
+      "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click to add",
+      "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 items"
+    ],
+    "cardCount": 0
+  },
+  "mobile": {
+    "url": "http://127.0.0.1:3000/en/knowledge-base",
+    "title": "My Best Life OS",
+    "bodySample": "My Best Life OSCommand CenterSelfPeopleCareerBuild & ExecuteResourcesKnowledgeLearningMy GardenUUserSearch...⌘K—--:--Knowledge BaseCapture links, articles, papers, notes, files, media, code, and snippets, then search and ask AI across everything you saved.KnowledgeLibraryAll items0📄Article🔗Link🎬Video💬Social Post🎙️Audio📑Document🔬Research Paper📚Book💻Code🧩Repository📊Dataset📽️Presentation📷Photo❞Quote📝Note📁FileTagsAll knowledgeAsk My Knowledge BaseOpen the cited answer panelCaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click to addReason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 itemsKnowledge retrievalRetrieve My Knowledge0 knowledge matches. Find matching knowledge before asking the answer panel.0 knowledge matchesContent types20▼TagsLatest▼GalleryBoardTableConstellationFavoriteRecentSocial",
+    "favoriteButtons": [
+      {
+        "text": "Favorite",
+        "ariaLabel": null,
+        "ariaPressed": "false",
+        "title": null,
+        "rect": {
+          "x": 32,
+          "y": 901.5,
+          "width": 44,
+          "height": 44
+        }
+      }
+    ],
+    "quickFilterTexts": [
+      "Search...⌘K",
+      "Open menu",
+      "Notifications (coming soon)",
+      "Switch to dark mode",
+      "--:--",
+      "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click to add",
+      "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 items"
+    ],
+    "cardCount": 0
+  }
+}

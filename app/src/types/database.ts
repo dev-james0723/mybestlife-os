@@ -75,6 +75,7 @@ export type UserProfile = {
   block_minutes: BlockMinutesOption;
   quick_tasks: QuickTaskDef[] | null;
   knowledge_quick_filters: KnowledgeQuickFilterDefinition[];
+  knowledge_command_light_opacity: number;
   idea_quick_filters: IdeaQuickFilterDefinition[];
   /** ISO 4217 (uppercase). Finance display + FX base. */
   display_currency: string;

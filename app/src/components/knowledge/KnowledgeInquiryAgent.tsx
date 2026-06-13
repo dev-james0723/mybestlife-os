@@ -11,6 +11,7 @@ import {
   Copy,
   GitCompareArrows,
   GraduationCap,
+  Info,
   ListChecks,
   Loader2,
   Mic,
@@ -223,6 +224,7 @@ export function KnowledgeInquiryAgent() {
   const [retrievalWarnings, setRetrievalWarnings] = useState<string[]>([]);
   const [retrievalRunId, setRetrievalRunId] = useState<string | null>(null);
   const [isRetrievalOpen, setIsRetrievalOpen] = useState(false);
+  const [activeModeInfo, setActiveModeInfo] = useState<RetrievalMode | null>(null);
   const [retrievalRecipes, setRetrievalRecipes] = useState<RetrievalRecipe[]>([]);
   const [pinnedResultKeys, setPinnedResultKeys] = useState<string[]>([]);
   const [compareResultKeys, setCompareResultKeys] = useState<string[]>([]);
@@ -709,31 +711,82 @@ export function KnowledgeInquiryAgent() {
             </div>
           </form>
 
-          <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <div
+            className="grid gap-2 sm:flex sm:flex-wrap sm:items-start"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setActiveModeInfo(null);
+            }}
+          >
             <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Mode
             </span>
-            <div className="grid w-full grid-cols-2 gap-1 rounded-lg border border-lime-900/10 bg-white/48 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] dark:border-lime-300/12 dark:bg-black/20 sm:w-auto sm:grid-cols-4">
-              {RETRIEVAL_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={cn(
-                    "min-h-11 rounded-md px-3 py-2 text-xs font-medium capitalize transition-colors sm:min-h-9",
-                    retrievalMode === mode
-                      ? "bg-lime-300 text-slate-950 shadow-[0_7px_18px_rgba(132,176,45,0.2)]"
-                      : "text-muted-foreground hover:bg-lime-300/10 hover:text-foreground",
-                  )}
-                  aria-pressed={retrievalMode === mode}
-                  onClick={() => {
-                    setRetrievalMode(mode);
-                    if (committedInquiry.trim()) runInquiry(committedInquiry, mode);
-                  }}
-                >
-                  {mode}
-                </button>
-              ))}
+            <div className="grid w-full min-w-0 gap-1.5 sm:w-auto">
+              <div className="grid w-full grid-cols-2 gap-1 rounded-lg border border-lime-900/10 bg-white/48 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] dark:border-lime-300/12 dark:bg-black/20 sm:min-w-[360px] sm:grid-cols-4">
+                {RETRIEVAL_MODES.map((mode) => {
+                  const modeInfo = ui.modeInfo[mode];
+                  const modeInfoId = `knowledge-retrieval-${mode}-mode-info`;
+
+                  return (
+                    <div key={mode} className="relative min-w-0">
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex min-h-11 w-full items-center justify-center rounded-md px-3 py-2 pr-7 text-xs font-medium capitalize transition-colors sm:min-h-9",
+                          retrievalMode === mode
+                            ? "bg-lime-300 text-slate-950 shadow-[0_7px_18px_rgba(132,176,45,0.2)]"
+                            : "text-muted-foreground hover:bg-lime-300/10 hover:text-foreground",
+                        )}
+                        aria-pressed={retrievalMode === mode}
+                        onClick={() => {
+                          setActiveModeInfo(null);
+                          setRetrievalMode(mode);
+                          if (committedInquiry.trim()) runInquiry(committedInquiry, mode);
+                        }}
+                      >
+                        <span className="min-w-0 truncate">{mode}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          "absolute right-1 top-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-lime-900/10 bg-white/82 text-lime-800 shadow-sm transition-colors hover:border-lime-700/30 hover:bg-lime-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 dark:border-lime-300/16 dark:bg-black/42 dark:text-lime-100 dark:hover:border-lime-200/30 dark:hover:bg-lime-300/12",
+                          activeModeInfo === mode && "border-lime-700/30 bg-lime-100 text-lime-900 dark:border-lime-200/34 dark:bg-lime-300/18 dark:text-lime-50",
+                        )}
+                        aria-label={ui.modeInfoButtonLabel(modeInfo.title)}
+                        aria-expanded={activeModeInfo === mode}
+                        aria-controls={modeInfoId}
+                        aria-describedby={activeModeInfo === mode ? modeInfoId : undefined}
+                        onClick={() => {
+                          setActiveModeInfo((current) => (current === mode ? null : mode));
+                        }}
+                      >
+                        <Info className="h-3 w-3" aria-hidden />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <AnimatePresence initial={false} mode="wait">
+                {activeModeInfo ? (
+                  <motion.div
+                    key={activeModeInfo}
+                    id={`knowledge-retrieval-${activeModeInfo}-mode-info`}
+                    role="tooltip"
+                    initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+                    animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+                    transition={{ duration: 0.16 }}
+                    className="rounded-md border border-lime-900/12 bg-white/82 px-3 py-2 text-xs shadow-[0_10px_26px_rgba(72,98,30,0.14)] backdrop-blur dark:border-lime-300/14 dark:bg-black/42 dark:shadow-[0_14px_34px_rgba(0,0,0,0.32)] sm:max-w-md"
+                  >
+                    <p className="font-semibold text-foreground">
+                      {ui.modeInfo[activeModeInfo].title}
+                    </p>
+                    <p className="mt-1 leading-5 text-muted-foreground">
+                      {ui.modeInfo[activeModeInfo].description}
+                    </p>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger

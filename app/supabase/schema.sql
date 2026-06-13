@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   block_minutes INT DEFAULT 10 CHECK (block_minutes IN (5, 10, 15, 20, 30)),
   quick_tasks JSONB DEFAULT NULL,
   knowledge_quick_filters JSONB DEFAULT NULL,
+  knowledge_command_light_opacity integer NOT NULL DEFAULT 82
+    CHECK (knowledge_command_light_opacity BETWEEN 0 AND 100),
   idea_quick_filters JSONB DEFAULT NULL,
   display_currency TEXT DEFAULT 'USD' CHECK (display_currency ~ '^[A-Z]{3}$'),
   quick_save_enabled boolean NOT NULL DEFAULT false,

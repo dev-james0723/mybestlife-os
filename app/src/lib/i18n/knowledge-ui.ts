@@ -108,6 +108,13 @@ const en: KnowledgeUiCopy = {
   aiProcessing: "AI is processing...",
   failedAt: (step) => `Failed: ${step}`,
   connectionsCount: (count) => `${count} connection${count === 1 ? "" : "s"}`,
+  favorite: {
+    add: "Add to favorites",
+    remove: "Remove from favorites",
+    addedToast: "Added to favorites.",
+    removedToast: "Removed from favorites.",
+    failedToast: "Could not update favorite.",
+  },
   sidebarTitle: "Knowledge",
   library: "Library",
   categories: "Categories",
@@ -167,6 +174,7 @@ const en: KnowledgeUiCopy = {
   previousPage: "Previous page",
   nextPage: "Next page",
   quickFilters: {
+    favorite: "Favorite",
     recent: "Recent",
     social: "Social",
     github: "GitHub",
@@ -212,6 +220,13 @@ const en: KnowledgeUiCopy = {
     noFilters: "No quick filters configured.",
     savedToast: "Quick filters saved",
     saveFailedToast: "Could not save quick filters",
+    commandLightOpacityTitle: "Command button glow",
+    commandLightOpacityDescription:
+      "Control how strong the animated gradient waves and touch spotlight feel on the three Knowledge Base command buttons.",
+    commandLightOpacityLabel: "Glow opacity",
+    commandLightOpacityQuiet: "Off",
+    commandLightOpacityVivid: "Vivid",
+    commandLightOpacitySaveFailedToast: "Could not save command button glow",
     textValuePlaceholder: "Words to find",
     tagValuePlaceholder: "Tag text",
     daysValuePlaceholder: "Days",
@@ -303,6 +318,29 @@ const en: KnowledgeUiCopy = {
     resultsReadyStatus: "Results ready",
     noStrongMatchesStatus: "No strong matches",
     errorStatus: "Error",
+    modeInfoButtonLabel: (title) => `Explain ${title}`,
+    modeInfo: {
+      hybrid: {
+        title: "Hybrid Mode",
+        description:
+          "Best default. It blends semantic meaning, exact keywords, freshness, and links to find balanced matches.",
+      },
+      semantic: {
+        title: "Semantic Mode",
+        description:
+          "Looks for ideas with a similar meaning, even when the exact words are different.",
+      },
+      keyword: {
+        title: "Keyword Mode",
+        description:
+          "Matches the words you typed against titles, tags, summaries, and saved text.",
+      },
+      recent: {
+        title: "Recent Mode",
+        description:
+          "Prioritizes knowledge you saved or updated recently, useful when you remember it was new.",
+      },
+    },
     examplesLabel: "Try",
     exampleQueries: [
       "SaaS payment page with Stripe checkout",

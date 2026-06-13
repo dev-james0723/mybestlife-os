@@ -74,6 +74,7 @@ function buildFixtureItem(userId: string): KnowledgeItem {
     id: DOC_ORACLE_FIXTURE_DOCUMENT_ID,
     userId,
     title: "Doc Oracle redesign QA fixture",
+    isFavorite: false,
     contentType: "file",
     filePath: fixtureAssetPath("source.pdf"),
     aiTldr: "Local Doc Oracle fixture with completed analysis, pages, sections, visuals, glossary, and chat data.",
