@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,16 +32,25 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card
+    <GlassPanel
+      interactive={onClick ? true : undefined}
       className={cn(
-        "transition-all shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]",
-        onClick && "cursor-pointer hover:shadow-md",
+        "p-6",
+        onClick &&
+          "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className
       )}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        onClick();
+      }}
     >
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold tracking-tight">{value}</p>
@@ -71,7 +80,6 @@ export function StatCard({
             <Icon className="h-6 w-6" />
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </GlassPanel>
   );
 }
