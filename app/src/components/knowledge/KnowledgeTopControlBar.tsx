@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   KNOWLEDGE_CARDS_PER_PAGE_OPTIONS,
   isKnowledgeCardsPerPagePreset,
@@ -34,6 +34,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Check,
   ChevronDown,
   Columns3,
@@ -41,12 +46,12 @@ import {
   SlidersHorizontal,
   Sparkles,
   Table,
+  Tag as TagIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { getCommonUiCopy } from "@/lib/i18n/common-ui";
-import { filterHorizontalScrollClassName } from "@/components/shared/filter-scroll";
 import {
   getKnowledgeQuickFilterDisplayLabel,
   isKnowledgeBuiltinQuickFilterId,
@@ -55,6 +60,9 @@ import {
 } from "@/lib/knowledge/quick-filters";
 import { KNOWLEDGE_QUICK_FILTER_ICON_COMPONENTS } from "./knowledgeQuickFilterIcons";
 import { KnowledgeQuickFiltersDialog } from "./KnowledgeQuickFiltersDialog";
+import { TagTaxonomyPanel } from "./tags/TagTaxonomyPanel";
+import { useTagFilter } from "@/hooks/use-tag-taxonomy";
+import { getTagBreadcrumb } from "@/lib/knowledge/tags/build-tree";
 
 const SORT_KEYS: KnowledgeSortKey[] = [
   "latest",
@@ -128,6 +136,7 @@ function quickFilterToneFor(def: KnowledgeQuickFilterDefinition): QuickFilterTon
 export function KnowledgeTopControlBar() {
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
   const [customPageSizeOpen, setCustomPageSizeOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
   const common = getCommonUiCopy(language);
@@ -144,9 +153,16 @@ export function KnowledgeTopControlBar() {
   const setCardsPerPage = useKnowledgeStore((s) => s.setCardsPerPage);
   const currentView = useKnowledgeStore((s) => s.currentView);
   const setView = useKnowledgeStore((s) => s.setView);
+  const { taxonomy, activeTagId } = useTagFilter();
   const [customPageSizeDraft, setCustomPageSizeDraft] = useState(() =>
     String(cardsPerPage),
   );
+
+  const activeTagTrail = useMemo(
+    () => (activeTagId ? getTagBreadcrumb(activeTagId, taxonomy) : []),
+    [activeTagId, taxonomy],
+  );
+  const activeTagLabel = activeTagTrail[activeTagTrail.length - 1]?.name;
 
   const pageSizeSelectValue =
     customPageSizeOpen || !isKnowledgeCardsPerPagePreset(cardsPerPage)
@@ -212,15 +228,15 @@ export function KnowledgeTopControlBar() {
 
   return (
     <div className="flex shrink-0 flex-col gap-2.5 border-b border-border/40 bg-muted/10 px-4 py-3 sm:px-5">
-      <div className="grid min-w-0 gap-2 lg:grid-cols-[auto_auto] lg:items-center lg:justify-start lg:gap-3">
-        <div className={cn(filterHorizontalScrollClassName, "lg:flex-nowrap")}>
+      <div className="grid min-w-0 gap-2">
+        <div className="grid min-w-0 gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <OSControl
                   size="sm"
                   osSize="compact"
-                  className="w-[160px] shrink-0 justify-between border-border/60 bg-background/80 font-normal lg:w-[128px] 2xl:w-[140px]"
+                  className="h-9 w-full min-w-0 justify-between border-border/60 bg-background/80 font-normal"
                 />
               }
             >
@@ -231,7 +247,7 @@ export function KnowledgeTopControlBar() {
               </span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="start">
+            <DropdownMenuContent align="start">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                   {ui.contentTypesMenuTitle}
@@ -263,24 +279,11 @@ export function KnowledgeTopControlBar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as KnowledgeSortKey)}>
-            <SelectTrigger className="h-9 w-[132px] shrink-0 border-border/60 bg-background/80 text-xs lg:w-[108px] 2xl:w-[120px]">
-              <SelectValue placeholder={ui.sortLabel} />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_KEYS.map((key) => (
-                <SelectItem key={key} value={key} className="text-xs">
-                  {ui.sortLabels[key]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex w-auto shrink-0 items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <Select value={pageSizeSelectValue} onValueChange={handlePageSizeChange}>
               <SelectTrigger
                 aria-label={ui.cardsPerPageLabel}
-                className="h-9 w-[112px] shrink-0 border-border/60 bg-background/80 text-xs lg:w-[96px] 2xl:w-[104px]"
+                className="h-9 min-w-0 flex-1 border-border/60 bg-background/80 text-xs"
               >
                 <SelectValue placeholder={ui.cardsPerPageLabel} />
               </SelectTrigger>
@@ -297,7 +300,7 @@ export function KnowledgeTopControlBar() {
             </Select>
 
             {pageSizeSelectValue === "custom" ? (
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex min-w-0 shrink-0 items-center gap-1">
                 <Input
                   type="number"
                   inputMode="numeric"
@@ -327,17 +330,61 @@ export function KnowledgeTopControlBar() {
               </div>
             ) : null}
           </div>
+
+          <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
+            <PopoverTrigger
+              render={
+                <OSControl
+                  size="sm"
+                  osSize="compact"
+                  className="h-9 w-full min-w-0 justify-between border-border/60 bg-background/80 font-normal"
+                />
+              }
+            >
+              <span className="flex min-w-0 items-center gap-1.5">
+                <TagIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                <span className="truncate">
+                  {activeTagId && activeTagLabel
+                    ? `${ui.tagTaxonomy.sectionTitle}: ${activeTagLabel}`
+                    : ui.tagTaxonomy.sectionTitle}
+                </span>
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              side="bottom"
+              className="w-[min(calc(100vw-2rem),var(--anchor-width))] p-3"
+            >
+              <TagTaxonomyPanel onAfterSelect={() => setTagsOpen(false)} />
+            </PopoverContent>
+          </Popover>
         </div>
 
-        <OSSegmentedControl
-          items={viewOptions}
-          value={currentView}
-          onValueChange={setView}
-          ariaLabel={ui.pageTitle}
-          className="max-sm:[&>button]:min-w-0 max-sm:[&>button]:flex-1 lg:justify-self-end lg:[&>button]:min-h-8 lg:[&>button]:min-w-8 lg:[&>button]:rounded-lg lg:[&>button]:px-2 lg:[&>button]:text-xs lg:[&_svg]:size-3.5 lg:max-xl:[&>button>span:last-child]:sr-only"
-          labelMode="desktop"
-          layoutId="knowledge-view-active-pill"
-        />
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as KnowledgeSortKey)}>
+            <SelectTrigger className="h-9 w-full border-border/60 bg-background/80 text-xs sm:w-[168px]">
+              <SelectValue placeholder={ui.sortLabel} />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_KEYS.map((key) => (
+                <SelectItem key={key} value={key} className="text-xs">
+                  {ui.sortLabels[key]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <OSSegmentedControl
+            items={viewOptions}
+            value={currentView}
+            onValueChange={setView}
+            ariaLabel={ui.pageTitle}
+            className="max-sm:[&>button]:min-w-0 max-sm:[&>button]:flex-1 lg:[&>button]:min-h-8 lg:[&>button]:min-w-8 lg:[&>button]:rounded-lg lg:[&>button]:px-2 lg:[&>button]:text-xs lg:[&_svg]:size-3.5 lg:max-xl:[&>button>span:last-child]:sr-only"
+            labelMode="desktop"
+            layoutId="knowledge-view-active-pill"
+          />
+        </div>
       </div>
 
       <div

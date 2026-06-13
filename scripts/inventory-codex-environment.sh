@@ -14,11 +14,20 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+first_line_command() {
+  local output
+  set +e
+  output="$("$@" 2>&1)"
+  set -e
+  output="${output%%$'\n'*}"
+  printf '%s' "$output"
+}
+
 safe_version() {
   local name="$1"
   shift
   if have "$name"; then
-    "$@" 2>&1 | head -1
+    first_line_command "$@"
   else
     printf 'missing'
   fi
@@ -77,6 +86,7 @@ repo = Path(sys.argv[1])
 home = Path(sys.argv[2])
 roots = [
     ("repo", repo / ".agents" / "skills"),
+    ("project", repo / ".codex" / "skills"),
     ("user", home / ".agents" / "skills"),
     ("system", Path("/etc/codex/skills")),
 ]
@@ -198,7 +208,11 @@ def read_toml(path):
 
 for path in sys.argv[1:]:
     print(f"### `{path}`")
-    data = read_toml(path)
+    try:
+        data = read_toml(path)
+    except Exception as exc:
+        print(f"\nCould not parse TOML safely: {exc}\n")
+        continue
     if data is None:
         print("\nmissing\n")
         continue

@@ -18,6 +18,55 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+safe_extract_zip() {
+  local zip_path="$1"
+  local target_dir="$2"
+
+  if have python3; then
+    python3 - "$zip_path" "$target_dir" <<'PY'
+import sys
+import zipfile
+from pathlib import Path, PurePosixPath
+
+zip_path = Path(sys.argv[1])
+target_dir = Path(sys.argv[2]).resolve()
+
+with zipfile.ZipFile(zip_path) as zf:
+    for info in zf.infolist():
+        name = info.filename
+        pure = PurePosixPath(name)
+        if pure.is_absolute() or any(part in {"", ".."} for part in pure.parts):
+            raise SystemExit(f"Unsafe zip entry refused: {name}")
+        mode = (info.external_attr >> 16) & 0o170000
+        if mode == 0o120000:
+            raise SystemExit(f"Symlink zip entry refused: {name}")
+        destination = (target_dir / Path(*pure.parts)).resolve()
+        try:
+            destination.relative_to(target_dir)
+        except ValueError:
+            raise SystemExit(f"Zip entry escapes target directory: {name}")
+    zf.extractall(target_dir)
+PY
+    return
+  fi
+
+  if have unzip; then
+    while IFS= read -r entry; do
+      case "$entry" in
+        ""|/*|../*|*/../*|*"/.."|*"\\"*)
+          warn "Unsafe zip entry refused: $entry"
+          return 1
+          ;;
+      esac
+    done < <(unzip -Z1 "$zip_path")
+    unzip -q "$zip_path" -d "$target_dir"
+    return
+  fi
+
+  warn "Need python3 or unzip to restore."
+  return 1
+}
+
 confirm() {
   local prompt="$1"
   if [[ ! -t 0 ]]; then
@@ -36,20 +85,7 @@ confirm() {
 
 mkdir -p "$RESTORE_WORK" "$HOME/.codex" "$HOME/.agents/skills"
 
-if have unzip; then
-  unzip -q "$ZIP_PATH" -d "$RESTORE_WORK"
-elif have python3; then
-  python3 - "$ZIP_PATH" "$RESTORE_WORK" <<'PY'
-import sys
-import zipfile
-
-with zipfile.ZipFile(sys.argv[1]) as zf:
-    zf.extractall(sys.argv[2])
-PY
-else
-  warn "Need unzip or python3 to restore."
-  exit 1
-fi
+safe_extract_zip "$ZIP_PATH" "$RESTORE_WORK" || exit 1
 
 EXPORT_DIR="$RESTORE_WORK/.codex-profile-export"
 [[ -d "$EXPORT_DIR" ]] || {

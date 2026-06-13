@@ -30,6 +30,21 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+first_line_command() {
+  local output
+  set +e
+  output="$("$@" 2>&1)"
+  set -e
+  output="${output%%$'\n'*}"
+  printf '%s' "$output"
+}
+
+command_available() {
+  local command_name="$1"
+  [[ -n "$command_name" ]] || return 1
+  command -v "$command_name" >/dev/null 2>&1 || [[ -x "$command_name" ]]
+}
+
 count_skills() {
   local dir="$1"
   if [[ -d "$dir" ]]; then
@@ -49,7 +64,7 @@ list_skill_names() {
 }
 
 if have codex; then
-  ok "Codex CLI installed: $(codex --version 2>&1 | head -1)"
+  ok "Codex CLI installed: $(first_line_command codex --version)"
 else
   block "Codex CLI missing"
 fi
@@ -108,12 +123,18 @@ if tomllib is None:
     print("WARN tomllib unavailable")
     raise SystemExit
 
+count = 0
 for path in sys.argv[1:]:
     p = Path(path)
     if not p.exists():
         continue
-    data = tomllib.loads(p.read_text(encoding="utf-8", errors="replace"))
+    try:
+        data = tomllib.loads(p.read_text(encoding="utf-8", errors="replace"))
+    except Exception as exc:
+        print(f"WARN could not parse {p}: {exc}")
+        continue
     for name, cfg in collect_servers(data):
+        count += 1
         cmd = str(cfg.get("command", "")).strip()
         if cmd:
             print(f"COMMAND {name} {cmd}")
@@ -126,16 +147,21 @@ for path in sys.argv[1:]:
             if isinstance(value, list):
                 for item in value:
                     print(f"ENV {name} {item}")
+print(f"COUNT {count}")
 PY
 )"
+  MCP_COUNT="0"
   while IFS= read -r line; do
     [[ -n "$line" ]] || continue
     kind="$(printf '%s' "$line" | awk '{print $1}')"
     server="$(printf '%s' "$line" | awk '{print $2}')"
     value="$(printf '%s' "$line" | cut -d' ' -f3-)"
     case "$kind" in
+      COUNT)
+        MCP_COUNT="$server"
+        ;;
       COMMAND)
-        if have "$value"; then
+        if command_available "$value"; then
           ok "MCP command for $server is installed: $value"
         else
           warn "MCP command for $server is missing: $value"
@@ -153,6 +179,11 @@ PY
         ;;
     esac
   done <<< "$MCP_CHECK_OUTPUT"
+  if [[ "$MCP_COUNT" == "0" ]]; then
+    warn "No MCP servers detected in Codex config"
+  else
+    ok "MCP servers detected: $MCP_COUNT"
+  fi
 else
   warn "python3 missing; cannot parse MCP config"
 fi

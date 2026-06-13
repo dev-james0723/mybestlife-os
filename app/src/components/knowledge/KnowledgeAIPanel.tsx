@@ -305,7 +305,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   }, []);
 
   const seedCollectionPrompt = useCallback((name: string) => {
-    setInput(`Focus this Ask Your KB answer on "${name}". `);
+    setInput(`Focus this Ask My Knowledge Base answer on "${name}". `);
   }, []);
 
   const seedWorkflowPrompt = useCallback((workflow: string) => {
@@ -316,19 +316,19 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     () => [
       {
         label: "Synthesize",
-        description: "Turn related sources into one cited brief.",
+        description: "Turn related knowledge into one cited brief.",
         prompt:
           "Synthesize the most relevant saved knowledge into a concise brief. Group the answer by themes, cite the strongest sources, and call out uncertainty.",
       },
       {
         label: "Contradictions",
-        description: "Find tension, disagreement, and weak evidence.",
+        description: "Find tension, disagreement, and weak support.",
         prompt:
-          "Find contradictions, tensions, and weak evidence across my saved knowledge. Separate strong contradictions from softer disagreements and cite each point.",
+          "Find contradictions, tensions, and weak support across my saved knowledge. Separate strong contradictions from softer disagreements and cite each point.",
       },
       {
         label: "Action plan",
-        description: "Convert evidence into next steps.",
+        description: "Convert knowledge into next steps.",
         prompt:
           "Using my saved knowledge, turn the useful findings into a practical action plan with priorities, next steps, and source-backed rationale.",
       },

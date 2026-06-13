@@ -21,6 +21,21 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+first_line_command() {
+  local output
+  set +e
+  output="$("$@" 2>&1)"
+  set -e
+  output="${output%%$'\n'*}"
+  printf '%s' "$output"
+}
+
+command_available() {
+  local command_name="$1"
+  [[ -n "$command_name" ]] || return 1
+  command -v "$command_name" >/dev/null 2>&1 || [[ -x "$command_name" ]]
+}
+
 sanitize_remote() {
   sed -E \
     -e 's#(https?://)[^/@]+@#\1***@#g' \
@@ -31,7 +46,7 @@ version_line() {
   local name="$1"
   shift
   if have "$name"; then
-    ok "$name: $("$@" 2>&1 | head -1)"
+    ok "$name: $(first_line_command "$@")"
   else
     warn "$name: missing"
   fi
@@ -191,7 +206,7 @@ PY
         mcp_count="$server"
         ;;
       COMMAND)
-        if have "$value"; then
+        if command_available "$value"; then
           ok "MCP command available for $server: $value"
         else
           warn "MCP command missing for $server: $value"
@@ -321,15 +336,15 @@ else
 fi
 
 if have codex; then
-  ok "codex: $(codex --version 2>&1 | head -1)"
+  ok "codex: $(first_line_command codex --version)"
 else
   warn "codex: missing"
 fi
 
 if have vercel; then
-  VERCEL_VERSION="$(vercel --version 2>&1 | head -1)"
+  VERCEL_VERSION="$(first_line_command vercel --version)"
   ok "vercel: $VERCEL_VERSION"
-  warn "Vercel CLI 54.11.1 or newer is recommended. Upgrade with: npm i -g vercel@latest"
+  warn "Vercel CLI latest is recommended for best Codex/Vercel compatibility. Upgrade with: npm i -g vercel@latest"
 else
   warn "vercel: missing"
 fi

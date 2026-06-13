@@ -119,6 +119,8 @@ codex mcp login <server-name>
 
 More detail: [Codex Skills Migration](CODEX_SKILLS_MIGRATION.md).
 
+`./scripts/verify-cloud-codex-skills.sh` reports `READY`, `PARTIAL`, or `BLOCKED` with reasons. Treat `PARTIAL` as a concrete to-do list for missing env vars, MCP commands, `tmux`, `tailscale`, or optional skill locations.
+
 ## Daily phone workflow
 
 1. Open Tailscale on your phone.
@@ -233,4 +235,4 @@ Common fixes:
 - MCP server env missing: set the named env var manually without printing its value.
 - Missing env values: edit `app/.env.local`; keep values out of Git.
 - Supabase migrations: do not run hosted `db push` until you intentionally choose the project and confirm the action.
-- Vercel CLI old or missing: install or upgrade with `npm i -g vercel@latest`.
+- Vercel CLI old or missing: install or upgrade with `npm i -g vercel@latest` for the latest Codex/Vercel compatibility.

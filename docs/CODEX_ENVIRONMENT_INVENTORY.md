@@ -1,6 +1,6 @@
 # Codex Environment Inventory
 
-Generated: 2026-06-10T12:15:33Z
+Generated: 2026-06-13T06:22:38Z
 
 ## Machine
 
@@ -37,6 +37,10 @@ origin	https://github.com/dev-james0723/mybestlife-os.git (push)
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | /Users/ouxianxing/My_life_os/.agents/skills/supabase | yes | supabase | Use when doing ANY task involving Supabase. Triggers: Supabase products (Database, Auth, Edge Functions, Realtime, Storage, Vectors, Cron, Queues); client libraries and SSR integrations (supabase-js, @supabase/ssr) in Next.js, React, SvelteKit, Astro, Remix; auth issues (login, logout, sessions, JWT, cookies, getSession, getUser, getClaims, RLS); Supabase CLI or MCP server; schema changes, migrations, security audits, Postgres extensions (pg_graphql, pg_cron, pg_vector). | no | yes | yes | no |
 | /Users/ouxianxing/My_life_os/.agents/skills/supabase-postgres-best-practices | yes | supabase-postgres-best-practices | Postgres performance optimization and best practices from Supabase. Use this skill when writing, reviewing, or optimizing Postgres queries, schema designs, or database configurations. | no | yes | no | no |
+
+### project skills: `/Users/ouxianxing/My_life_os/.codex/skills`
+
+missing
 
 ### user skills: `/Users/ouxianxing/.agents/skills`
 

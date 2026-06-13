@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Radar, RotateCw, SignalZero } from "lucide-react";
 
@@ -11,12 +11,28 @@ import { getSignalsWidgetCopy } from "@/lib/i18n/signals-widget-ui";
 import { getSignalsUiCopy } from "@/lib/i18n/signals-ui";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { useSignalsSummary } from "@/hooks/signals/use-signals-summary";
-import { formatRelative, SourceIcon, TopicChip } from "@/components/signals/signal-chrome";
+import { formatRelative, SourceIcon } from "@/components/signals/signal-chrome";
 import { SignalThumbnail } from "@/components/signals/SignalThumbnail";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { SignalItem } from "@/lib/signals/types";
 
 const CARD_BASE =
   "block rounded-xl border border-border/60 bg-card/70 px-4 py-3.5 text-left shadow-sm";
+const DASHBOARD_SIGNALS_GALLERY_INTERVAL_MS = 5_000;
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  return reduced;
+}
 
 /**
  * Dashboard "Today's Signals" widget — the structural twin of
@@ -38,13 +54,8 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
     return (
       <div className={cn(CARD_BASE, className)} aria-busy="true">
         <WidgetHeader copy={copy} />
-        <div className="mt-3 space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="space-y-1.5">
-              <Skeleton className="h-4 w-[85%]" />
-              <Skeleton className="h-3 w-[55%]" />
-            </div>
-          ))}
+        <div className="mt-3 overflow-hidden rounded-xl border border-border/50">
+          <Skeleton className="h-64 w-full rounded-none sm:h-72" />
         </div>
       </div>
     );
@@ -105,48 +116,150 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
       {items.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{copy.caughtUp}</p>
       ) : (
-        <ul className="mt-3 space-y-2.5">
-          {items.map((signal) => (
-            <li
+        <SignalsWidgetGallery
+          items={items}
+          copy={copy}
+          uiCopy={uiCopy}
+          signalsHref={signalsHref}
+          dateLocale={dateLocale}
+        />
+      )}
+    </div>
+  );
+}
+
+function SignalsWidgetGallery({
+  items,
+  copy,
+  uiCopy,
+  signalsHref,
+  dateLocale,
+}: {
+  items: SignalItem[];
+  copy: ReturnType<typeof getSignalsWidgetCopy>;
+  uiCopy: ReturnType<typeof getSignalsUiCopy>;
+  signalsHref: string;
+  dateLocale: ReturnType<typeof getDateFnsLocale>;
+}) {
+  const reducedMotion = usePrefersReducedMotion();
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const count = items.length;
+  const activeIndex = count === 0 ? 0 : Math.min(index, count - 1);
+
+  useEffect(() => {
+    if (reducedMotion || paused || count <= 1) return;
+    const id = window.setInterval(() => {
+      setIndex((current) => (current + 1) % count);
+    }, DASHBOARD_SIGNALS_GALLERY_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [count, paused, reducedMotion]);
+
+  return (
+    <div
+      className="mt-3"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div className="relative overflow-hidden rounded-xl border border-border/55 bg-muted/30 shadow-sm">
+        <div
+          className={cn(
+            "flex",
+            reducedMotion
+              ? "transition-none"
+              : "transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          )}
+          style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+        >
+          {items.map((signal, i) => (
+            <Link
               key={signal.id}
-              className="border-t border-border/40 pt-2.5 first:border-t-0 first:pt-0"
+              href={`${signalsHref}?focus=${encodeURIComponent(signal.id)}`}
+              prefetch={false}
+              aria-label={`${copy.ariaOpen}: ${signal.headline}`}
+              aria-hidden={i !== activeIndex}
+              tabIndex={i === activeIndex ? 0 : -1}
+              className="relative block h-64 w-full shrink-0 overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 sm:h-72"
             >
-              {/* Deep-link: focus + highlight this exact card on the page (§9). */}
-              <Link
-                href={`${signalsHref}?focus=${encodeURIComponent(signal.id)}`}
-                prefetch={false}
-                className="-mx-1 flex min-h-11 gap-2.5 rounded-xl px-1 py-1 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-              >
-                <SignalThumbnail
-                  signal={signal}
-                  copy={uiCopy}
-                  rounded="rounded-lg"
-                  className="size-12 shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-                    {signal.headline}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                  <TopicChip label={signal.topic} className="py-0" />
-                  <span className="inline-flex items-center gap-1 font-medium text-foreground/70">
-                    <SourceIcon source={signal.source} size={14} />
-                    {signal.source.name}
+              <SignalThumbnail
+                signal={signal}
+                copy={uiCopy}
+                rounded="rounded-none"
+                className="absolute inset-0 h-full w-full"
+                iconClassName="text-white/65"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0.34)_42%,rgba(0,0,0,0.86)_100%)]"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-x-0 bottom-0 h-28 bg-[radial-gradient(80%_90%_at_18%_100%,rgba(255,255,255,0.2),transparent_70%)]"
+              />
+
+              <ChevronRight className="absolute right-3 top-3 z-10 h-5 w-5 rounded-full bg-black/25 p-0.5 text-white/80 ring-1 ring-white/20 backdrop-blur-sm" />
+
+              <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 p-4 text-white sm:p-5 sm:pl-16">
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                  <span className="rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-white backdrop-blur-md">
+                    {signal.topic}
                   </span>
-                    <span aria-hidden className="opacity-50">·</span>
-                    <span>{formatRelative(signal.publishedAt, dateLocale)}</span>
-                  </div>
-                  {signal.whyRelevantToUser && (
-                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/90">
-                      {signal.whyRelevantToUser}
-                    </p>
+                  {signal.isDemo && (
+                    <span className="rounded-full border border-white/20 bg-black/25 px-2.5 py-1 text-white/80 backdrop-blur-md">
+                      {copy.demoTag}
+                    </span>
                   )}
                 </div>
-              </Link>
-            </li>
+
+                <h3 className="line-clamp-3 text-lg font-semibold leading-tight tracking-tight text-white drop-shadow-sm sm:text-xl">
+                  {signal.headline}
+                </h3>
+
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-white/82">
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <SourceIcon
+                      source={signal.source}
+                      size={16}
+                      className="border-white/30 bg-white/90"
+                    />
+                    <span className="max-w-[11rem] truncate">{signal.source.name}</span>
+                  </span>
+                  <span aria-hidden className="text-white/45">
+                    ·
+                  </span>
+                  <span>{formatRelative(signal.publishedAt, dateLocale)}</span>
+                </div>
+
+                {signal.whyRelevantToUser && (
+                  <p className="line-clamp-2 text-sm leading-snug text-white/86">
+                    {signal.whyRelevantToUser}
+                  </p>
+                )}
+              </div>
+            </Link>
           ))}
-        </ul>
-      )}
+        </div>
+
+        {count > 1 && (
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/22 px-2 py-1 backdrop-blur-md">
+            {items.map((signal, i) => (
+              <button
+                key={signal.id}
+                type="button"
+                aria-label={`${i + 1}`}
+                aria-current={i === activeIndex}
+                onClick={() => setIndex(i)}
+                className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  i === activeIndex ? "w-5 bg-white" : "w-1.5 bg-white/45 hover:bg-white/75",
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

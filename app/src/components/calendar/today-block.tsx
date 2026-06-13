@@ -19,6 +19,7 @@ import { DashboardWeatherWidget } from "@/components/calendar/dashboard-weather-
 import { TimelinePreview } from "@/components/calendar/timeline-preview";
 import { FreeWindowChips } from "@/components/calendar/free-window-chips";
 import { AISummaryCard } from "@/components/calendar/ai-summary-card";
+import type { TodayContextState } from "@/hooks/use-today-context";
 
 /**
  * Homepage "Today" block — premium calm summary.
@@ -32,7 +33,18 @@ import { AISummaryCard } from "@/components/calendar/ai-summary-card";
  *   │  quick action buttons                                   │
  *   └─────────────────────────────────────────────────────────┘
  */
+type TodayBlockViewProps = {
+  today: TodayContextState;
+  showWeatherWidget?: boolean;
+};
+
 export function TodayBlock() {
+  const today = useTodayContext();
+
+  return <TodayBlockView today={today} />;
+}
+
+export function TodayBlockView({ today, showWeatherWidget = true }: TodayBlockViewProps) {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
@@ -40,8 +52,7 @@ export function TodayBlock() {
   const calendarHref = useLocalizedPath("/calendar");
   const plannerHref = useLocalizedPath("/daily-planner");
 
-  const { context, summary, conflicts, isLoadingSummary, isLoadingCalendar } =
-    useTodayContext();
+  const { context, summary, conflicts, isLoadingSummary, isLoadingCalendar } = today;
 
   const { result: weather } = useWeather();
 
@@ -120,7 +131,9 @@ export function TodayBlock() {
         </header>
 
         {/* Weather widget — glanceable today status, links to Weather page */}
-        <DashboardWeatherWidget load={load} hasOutdoorEvents={hasOutdoorEvents} />
+        {showWeatherWidget && (
+          <DashboardWeatherWidget load={load} hasOutdoorEvents={hasOutdoorEvents} />
+        )}
 
         {/* Alert strip */}
         {(overdueCount > 0 || conflictCount > 0) && (

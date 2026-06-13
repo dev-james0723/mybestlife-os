@@ -8,6 +8,7 @@ This repo now has a redacted export/import workflow so the cloud devbox can reco
 
 - Codex native skills: built-in or installed skill folders that Codex can discover on the current machine.
 - Repo-level skills: project skills under `.agents/skills` in this repository.
+- Project-local Codex skills: optional skills under `.codex/skills` in this repository, if that directory exists.
 - User-level skills: personal skills under `~/.agents/skills` on the current machine.
 - MCP servers: tool server definitions in Codex config, usually in `~/.codex/config.toml` or `.codex/config.toml`.
 - Shell tools: commands the MCP servers and workflows depend on, such as `node`, `python3`, `docker`, `gh`, `vercel`, `supabase`, `tmux`, and `tailscale`.
@@ -33,6 +34,8 @@ Outputs:
 
 Review the export before moving it. It should contain redacted config, skills, tool versions, MCP server names, and required env variable names only.
 
+The export script skips secret-like skill files by path, including `.env` files, OAuth material, cookies, tokens, credentials, private keys, `.pem`, `.p12`, and `.key` files. Skipped paths are listed in `.codex-profile-export/skipped-secret-like-files.txt` without printing their contents.
+
 ## Cloud import steps
 
 Copy the redacted zip to the cloud devbox:
@@ -51,6 +54,62 @@ cd ~/projects/mybestlife-os
 ```
 
 The restore script does not restore secrets. If `~/.codex/config.toml` already exists, it leaves it in place and writes a redacted template for manual merge.
+
+The verifier prints one of:
+
+- `READY`: the local checks passed.
+- `PARTIAL`: Codex can run, but some skills, MCP env vars, optional tools, or phone-workflow tools are missing.
+- `BLOCKED`: Codex CLI or another required base layer is missing.
+
+## Input Contract
+
+Run the export steps from the laptop or source machine that already has the Codex profile you want to migrate. Run the restore and verify steps from the cloud devbox after `codex-profile-export-redacted.zip` has been uploaded to the repository root.
+
+The restore workflow expects:
+
+- `codex-profile-export-redacted.zip` in the repo root, unless you pass another zip path as the first argument.
+- A cloned `mybestlife-os` repository.
+- A shell user allowed to create `~/.codex` and `~/.agents/skills`.
+- Manual access to account logins, OAuth approvals, 2FA, and secret values.
+
+## Validation Gate
+
+Use this gate to validate the migration before you rely on Codex from the phone.
+
+Before treating the cloud setup as complete, run:
+
+```bash
+./scripts/verify-cloud-codex-skills.sh
+./scripts/doctor.sh
+```
+
+Then start Codex from the repo root and check:
+
+```text
+/skills
+/mcp
+```
+
+Do not call the migration complete while the verifier prints `BLOCKED`. Treat `PARTIAL` as usable only after you understand the listed missing items.
+
+## Execution Modes
+
+- Inventory is read-only reporting. It creates `docs/CODEX_ENVIRONMENT_INVENTORY.md` and `logs/codex-environment-inventory.txt`.
+- Export is a redacted package build. It copies allowed skills and templates into `.codex-profile-export/` and `codex-profile-export-redacted.zip`.
+- Restore is real local execution on the cloud devbox. It creates missing Codex directories, restores missing skills, and writes redacted config templates, but it does not restore secrets.
+- Manual account login is always real execution and must be done by you: `gh auth login`, `tailscale up`, `codex`, and `codex mcp login <server-name>`.
+
+## Receipt Paths
+
+Use these files as handoff evidence for the next run:
+
+- `docs/CODEX_ENVIRONMENT_INVENTORY.md`
+- `logs/codex-environment-inventory.txt`
+- `.codex-profile-export/README.md`
+- `.codex-profile-export/mcp-servers.redacted.md`
+- `.codex-profile-export/manual-secrets-needed.md`
+- `.codex-profile-export/skipped-secret-like-files.txt`
+- `codex-profile-export-redacted.zip`
 
 ## Phone workflow
 

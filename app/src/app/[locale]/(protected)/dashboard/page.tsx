@@ -21,7 +21,8 @@ import { OSPageHeader, OSPrimaryAction } from "@/components/ui/os-primitives";
 import { MotivationCard } from "@/components/dashboard/motivation-card";
 import { DailyInspirationCard } from "@/components/dashboard/daily-inspiration-card";
 import { QuoteInspirationCard } from "@/components/dashboard/quote-inspiration-card";
-import { TodayBlock } from "@/components/calendar/today-block";
+import { TodayBlockView } from "@/components/calendar/today-block";
+import { DashboardWeatherWidget } from "@/components/calendar/dashboard-weather-widget";
 import { DashboardSignalsWidget } from "@/components/signals/DashboardSignalsWidget";
 import { DashboardStudyRow } from "@/components/dashboard/dashboard-study-row";
 import { GlassStatCard } from "@/components/dashboard/glass-stat-card";
@@ -39,6 +40,7 @@ import { useTasks } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useGratefulThings } from "@/hooks/use-grateful-things";
 import { useJapaneseStudySessions } from "@/hooks/use-japanese-study";
+import { useTodayContext, type TodayContextState } from "@/hooks/use-today-context";
 import { useProfile } from "@/hooks/use-settings";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { useAppStore } from "@/stores/app-store";
@@ -100,6 +102,15 @@ function DashboardSectionHeader({
   );
 }
 
+function DashboardWeatherSlot({ today }: { today: TodayContextState }) {
+  const load = today.context?.load ?? "Balanced";
+  const hasOutdoorEvents =
+    today.context?.items.some((item) => item.source_type === "external" && !!item.location) ??
+    false;
+
+  return <DashboardWeatherWidget load={load} hasOutdoorEvents={hasOutdoorEvents} />;
+}
+
 export default function DashboardPage() {
   const { language } = useAppStore();
   const hrefGrateful = useLocalizedPath("/grateful-things");
@@ -112,6 +123,7 @@ export default function DashboardPage() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: gratefulThings, isLoading: gratefulLoading } = useGratefulThings();
   const { data: studySessions, isLoading: studyLoading } = useJapaneseStudySessions();
+  const today = useTodayContext();
 
   const [clock, setClock] = useState(() => new Date());
   const [refreshSpin, setRefreshSpin] = useState(false);
@@ -295,9 +307,11 @@ export default function DashboardPage() {
         data-motion-reveal
       >
         <main className="min-w-0 space-y-6">
-          <TodayBlock />
+          <DashboardWeatherSlot today={today} />
 
           <DashboardSignalsWidget />
+
+          <TodayBlockView today={today} showWeatherWidget={false} />
 
           <section className="space-y-3">
             <DashboardSectionHeader

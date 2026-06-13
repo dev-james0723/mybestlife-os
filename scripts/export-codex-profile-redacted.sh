@@ -19,6 +19,15 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+first_line_command() {
+  local output
+  set +e
+  output="$("$@" 2>&1)"
+  set -e
+  output="${output%%$'\n'*}"
+  printf '%s' "$output"
+}
+
 if [[ -e "$EXPORT_DIR" ]]; then
   ARCHIVE_DIR="$REPO_ROOT/.codex-profile-export.previous-$TIMESTAMP"
   log "Existing .codex-profile-export found; moving it to $(basename "$ARCHIVE_DIR")."
@@ -78,6 +87,48 @@ copy_if_exists() {
   fi
 }
 
+is_secret_like_path() {
+  local rel_lower
+  rel_lower="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$rel_lower" in
+    .env|.env.*|.env/*|*/.env|*/.env.*|*/.env/*|\
+    *token*|*oauth*|*cookie*|*secret*|*client_secret*|*client-secret*|\
+    *service_account*|*service-account*|*credential*|*id_rsa*|*id_ed25519*|\
+    *private*key*|*.pem|*.p12|*.key)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+file_contains_secret_value() {
+  local file="$1"
+  local byte_count
+  byte_count="$(wc -c < "$file" | tr -d ' ')"
+  if [[ "$byte_count" -gt 5000000 ]] || ! have python3; then
+    return 1
+  fi
+
+  python3 - "$file" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+data = Path(sys.argv[1]).read_bytes()
+patterns = [
+    re.compile(rb"(?<![A-Za-z0-9])sk-(?:proj-)?[A-Za-z0-9_-]{24,}"),
+    re.compile(rb"(?<![A-Za-z0-9])gh[psou]_[A-Za-z0-9_]{24,}"),
+    re.compile(rb"(?<![A-Za-z0-9])xox[baprs]-[A-Za-z0-9-]{24,}"),
+    re.compile(rb"(?<![A-Za-z0-9])ya29\.[A-Za-z0-9_.-]{24,}"),
+    re.compile(rb"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    re.compile(rb"(?<![A-Z0-9])AKIA[0-9A-Z]{16}(?![A-Z0-9])"),
+]
+raise SystemExit(0 if any(pattern.search(data) for pattern in patterns) else 1)
+PY
+}
+
 copy_skill_tree_safe() {
   local source_root="$1"
   local target_root="$2"
@@ -88,12 +139,21 @@ copy_skill_tree_safe() {
     return
   fi
 
-  local pattern='(^|/)(\.env|.*token.*|.*secret.*|.*credential.*|.*private.*key.*|.*\.pem|.*\.p12|.*\.key)$'
+  while IFS= read -r -d '' dir; do
+    local rel_dir="${dir#$source_root/}"
+    if [[ "$rel_dir" != "$dir" ]] && ! is_secret_like_path "$rel_dir"; then
+      mkdir -p "$target_root/$rel_dir"
+    fi
+  done < <(find "$source_root" -type d -print0)
+
   while IFS= read -r -d '' file; do
     local rel="${file#$source_root/}"
-    local rel_lower="${rel,,}"
-    if [[ "$rel_lower" =~ $pattern ]]; then
+    if is_secret_like_path "$rel"; then
       printf '%s\n' "$source_root/$rel" >> "$skipped_file"
+      continue
+    fi
+    if file_contains_secret_value "$file"; then
+      printf '%s (content pattern skipped)\n' "$source_root/$rel" >> "$skipped_file"
       continue
     fi
     if [[ -L "$file" ]]; then
@@ -113,18 +173,19 @@ write_tool_versions() {
       if command -v "$tool" >/dev/null 2>&1; then
         printf '%s: ' "$tool"
         case "$tool" in
-          node|npm|pnpm|yarn|bun) "$tool" --version 2>&1 | head -1 ;;
-          python3) python3 --version 2>&1 | head -1 ;;
-          pip) pip --version 2>&1 | head -1 ;;
-          docker) docker --version 2>&1 | head -1 ;;
-          gh|vercel|supabase|firebase|netlify|railway|wrangler|codex) "$tool" --version 2>&1 | head -1 ;;
-          tailscale) tailscale version 2>&1 | head -1 ;;
-          tmux) tmux -V 2>&1 | head -1 ;;
-          rg) rg --version 2>&1 | head -1 ;;
-          jq) jq --version 2>&1 | head -1 ;;
-          cursor) cursor --version 2>&1 | head -1 ;;
-          uv) uv --version 2>&1 | head -1 ;;
+          node|npm|pnpm|yarn|bun) first_line_command "$tool" --version ;;
+          python3) first_line_command python3 --version ;;
+          pip) first_line_command pip --version ;;
+          docker) first_line_command docker --version ;;
+          gh|vercel|supabase|firebase|netlify|railway|wrangler|codex) first_line_command "$tool" --version ;;
+          tailscale) first_line_command tailscale version ;;
+          tmux) first_line_command tmux -V ;;
+          rg) first_line_command rg --version ;;
+          jq) first_line_command jq --version ;;
+          cursor) first_line_command cursor --version ;;
+          uv) first_line_command uv --version ;;
         esac
+        printf '\n'
       else
         printf '%s: missing\n' "$tool"
       fi
@@ -183,7 +244,11 @@ for path in sys.argv[1:]:
     if tomllib is None:
         print("\ntomllib unavailable\n")
         continue
-    data = tomllib.loads(p.read_text(encoding="utf-8", errors="replace"))
+    try:
+        data = tomllib.loads(p.read_text(encoding="utf-8", errors="replace"))
+    except Exception as exc:
+        print(f"\nCould not parse TOML safely: {exc}\n")
+        continue
     servers = collect_servers(data)
     if not servers:
         print("\nNo MCP servers detected.\n")
