@@ -10,20 +10,21 @@ import { cn } from "@/lib/utils"
  * `html[data-ui-theme="default"]` in `globals.css` (`--surface-glass`,
  * `--border-glass`, `--shadow-glass`, `--glass-blur`,
  * `--glass-saturation`). Under other themes those variables are
- * undefined, so the wrapper falls back to a transparent block — callers
- * remain free to compose theme-specific styles via `className`.
+ * undefined, so the wrapper falls back to a solid card surface
+ * (`--card` / `--border`) — i.e. glass on the default theme, a plain
+ * opaque card elsewhere. Callers may still override via `className`.
  *
  * This component is purely presentational: it adds no interactive
  * behaviour, no business logic, and never alters the children it wraps.
  */
 const glassPanelVariants = cva(
-  "relative rounded-2xl border [background:var(--surface-glass)] [border-color:var(--border-glass)] [box-shadow:var(--shadow-glass)] [backdrop-filter:blur(var(--glass-blur,20px))_saturate(var(--glass-saturation,135%))] [-webkit-backdrop-filter:blur(var(--glass-blur,20px))_saturate(var(--glass-saturation,135%))]",
+  "relative rounded-2xl border [background:var(--surface-glass,var(--card))] [border-color:var(--border-glass,var(--border))] [box-shadow:var(--shadow-glass,0_1px_2px_rgba(0,0,0,0.05))] [backdrop-filter:blur(var(--glass-blur,20px))_saturate(var(--glass-saturation,135%))] [-webkit-backdrop-filter:blur(var(--glass-blur,20px))_saturate(var(--glass-saturation,135%))]",
   {
     variants: {
       variant: {
         default: "",
         strong:
-          "rounded-xl [background:var(--surface-glass-strong)] [border-color:var(--border-glass-strong)]",
+          "rounded-xl [background:var(--surface-glass-strong,var(--card))] [border-color:var(--border-glass-strong,var(--border))]",
       },
       interactive: {
         true: "transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:[border-color:var(--border-glass-strong)] focus-within:[border-color:var(--border-glass-strong)]",

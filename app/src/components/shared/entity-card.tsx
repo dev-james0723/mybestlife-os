@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { cn } from "@/lib/utils";
 
 interface EntityCardProps {
@@ -28,11 +28,12 @@ export function EntityCard({
   children,
 }: EntityCardProps) {
   return (
-    <Card
+    <GlassPanel
+      interactive={onClick ? true : undefined}
       className={cn(
-        "rounded-2xl bg-card shadow-sm ring-1 ring-foreground/10 transition-[box-shadow,transform,outline-color] duration-150",
+        "p-4",
         onClick &&
-          "cursor-pointer hover:shadow-md hover:ring-foreground/20 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:active:translate-y-0",
+          "cursor-pointer active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:active:translate-y-0",
         className
       )}
       role={onClick ? "button" : undefined}
@@ -45,8 +46,7 @@ export function EntityCard({
         onClick();
       }}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3">
           {icon && (
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               {icon}
@@ -80,7 +80,6 @@ export function EntityCard({
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </GlassPanel>
   );
 }
