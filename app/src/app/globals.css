@@ -295,51 +295,123 @@
 
 .knowledge-detail-glass-content {
   position: relative;
-  z-index: 1;
+  z-index: 3;
+}
+
+.knowledge-detail-close-button {
+  position: absolute;
+  z-index: 80;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .knowledge-detail-glass-shell {
-    animation: knowledge-detail-glass-emerge 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: knowledge-detail-glass-emerge 2300ms cubic-bezier(0.18, 0.84, 0.22, 1) both;
     transform-origin: 50% 100%;
+    will-change: opacity, transform, backdrop-filter;
+  }
+
+  .knowledge-detail-glass-shell::before {
+    animation: knowledge-detail-glass-sheen 2300ms cubic-bezier(0.18, 0.84, 0.22, 1) both;
+    will-change: opacity, transform, filter;
   }
 
   .knowledge-detail-glass-shell::after {
-    animation: knowledge-detail-mist-clear 820ms ease-out both;
+    animation: knowledge-detail-mist-clear 2300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: opacity, transform, filter;
   }
 
   .knowledge-detail-glass-content {
-    animation: knowledge-detail-content-reveal 640ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+    animation: knowledge-detail-content-reveal 1050ms cubic-bezier(0.22, 0.72, 0.22, 1) 1300ms both;
+    will-change: opacity, transform, filter;
   }
 }
 
 @keyframes knowledge-detail-glass-emerge {
   0% {
-    opacity: 0.58;
-    transform: translate3d(0, 2.75rem, 0) scale(0.985);
+    opacity: 0.26;
+    transform: translate3d(0, 5rem, 0) scale(0.975);
+    -webkit-backdrop-filter: blur(2px) saturate(105%) contrast(1);
+    backdrop-filter: blur(2px) saturate(105%) contrast(1);
   }
-  46% {
-    opacity: 0.84;
-    transform: translate3d(0, -0.18rem, 0) scale(1.002);
+  18% {
+    opacity: 0.56;
+    transform: translate3d(0, 2.2rem, 0) scale(0.985);
+    -webkit-backdrop-filter: blur(8px) saturate(118%) contrast(1.01);
+    backdrop-filter: blur(8px) saturate(118%) contrast(1.01);
+  }
+  42% {
+    opacity: 0.9;
+    transform: translate3d(0, 0.25rem, 0) scale(0.998);
+    -webkit-backdrop-filter: blur(22px) saturate(152%) contrast(1.03);
+    backdrop-filter: blur(22px) saturate(152%) contrast(1.03);
+  }
+  62% {
+    opacity: 0.98;
+    transform: translate3d(0, -0.3rem, 0) scale(1.004);
+    -webkit-backdrop-filter: blur(34px) saturate(188%) contrast(1.05);
+    backdrop-filter: blur(34px) saturate(188%) contrast(1.05);
+  }
+  80% {
+    opacity: 1;
+    transform: translate3d(0, 0.08rem, 0) scale(1);
+    -webkit-backdrop-filter: blur(30px) saturate(176%) contrast(1.04);
+    backdrop-filter: blur(30px) saturate(176%) contrast(1.04);
   }
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
+    -webkit-backdrop-filter: blur(28px) saturate(168%) contrast(1.04);
+    backdrop-filter: blur(28px) saturate(168%) contrast(1.04);
+  }
+}
+
+@keyframes knowledge-detail-glass-sheen {
+  0% {
+    opacity: 0.32;
+    transform: translate3d(-3%, 1.2rem, 0) scale(1.05);
+    filter: blur(10px);
+  }
+  38% {
+    opacity: 0.95;
+    transform: translate3d(1.5%, 0.05rem, 0) scale(1.03);
+    filter: blur(2px);
+  }
+  68% {
+    opacity: 0.7;
+    transform: translate3d(0.5%, -0.4rem, 0) scale(1.015);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0.82;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
   }
 }
 
 @keyframes knowledge-detail-mist-clear {
   0% {
-    opacity: 0.7;
-    transform: translate3d(0, 1.5rem, 0) scale(1.04);
-    filter: blur(10px);
+    opacity: 0.14;
+    transform: translate3d(0, 2.2rem, 0) scale(0.98);
+    filter: blur(14px);
   }
-  58% {
-    opacity: 0.28;
+  22% {
+    opacity: 0.52;
+    transform: translate3d(0, 0.9rem, 0) scale(1.02);
+    filter: blur(20px);
+  }
+  54% {
+    opacity: 0.9;
+    transform: translate3d(0, 0.1rem, 0) scale(1.05);
+    filter: blur(26px);
+  }
+  74% {
+    opacity: 0.42;
+    transform: translate3d(0, -0.55rem, 0) scale(1.02);
+    filter: blur(14px);
   }
   100% {
     opacity: 0.08;
-    transform: translate3d(0, -0.75rem, 0) scale(1);
+    transform: translate3d(0, -1rem, 0) scale(1);
     filter: blur(0);
   }
 }
@@ -347,11 +419,23 @@
 @keyframes knowledge-detail-content-reveal {
   0% {
     opacity: 0;
-    transform: translate3d(0, 0.65rem, 0);
-    filter: blur(7px);
+    transform: translate3d(0, 1rem, 0);
+    filter: blur(12px);
   }
-  40% {
+  24% {
+    opacity: 0;
+    transform: translate3d(0, 0.95rem, 0);
+    filter: blur(12px);
+  }
+  52% {
     opacity: 0.22;
+    transform: translate3d(0, 0.56rem, 0);
+    filter: blur(8px);
+  }
+  78% {
+    opacity: 0.72;
+    transform: translate3d(0, 0.18rem, 0);
+    filter: blur(3px);
   }
   100% {
     opacity: 1;
@@ -4459,6 +4543,7 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
   --knowledge-command-light-x: 72%;
   --knowledge-command-light-y: 28%;
   --knowledge-command-light-active: 0;
+  --knowledge-command-light-user-opacity-safe: var(--knowledge-command-light-user-opacity, 0.82);
   --knowledge-command-aurora-opacity-base: 0.72;
   --knowledge-command-aurora-opacity-active: 0.18;
   --knowledge-command-aurora-saturate: 1.25;
@@ -4495,12 +4580,25 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
     130% 130%,
     150% 150%,
     170% 100%;
-  opacity: calc(
-    var(--knowledge-command-aurora-opacity-base) +
-      (var(--knowledge-command-light-active) * var(--knowledge-command-aurora-opacity-active))
+  opacity: clamp(
+    0,
+    calc(
+      var(--knowledge-command-light-user-opacity-safe) *
+        (
+          var(--knowledge-command-aurora-opacity-base) +
+            (var(--knowledge-command-light-active) * var(--knowledge-command-aurora-opacity-active))
+        )
+    ),
+    1
   );
-  filter: saturate(var(--knowledge-command-aurora-saturate));
-  transition: opacity 260ms ease;
+  filter: saturate(
+    calc(
+      1 + ((var(--knowledge-command-aurora-saturate) - 1) * var(--knowledge-command-light-user-opacity-safe))
+    )
+  );
+  transition:
+    opacity 180ms ease,
+    filter 260ms ease;
 }
 
 .knowledge-command-light-aurora::before,
@@ -4515,9 +4613,16 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
   background: var(--knowledge-command-flow-bg);
   filter: blur(var(--knowledge-command-flow-blur)) saturate(1.22);
   mix-blend-mode: screen;
-  opacity: calc(
-    var(--knowledge-command-flow-opacity) +
-      (var(--knowledge-command-light-active) * var(--knowledge-command-flow-opacity-active))
+  opacity: clamp(
+    0,
+    calc(
+      var(--knowledge-command-light-user-opacity-safe) *
+        (
+          var(--knowledge-command-flow-opacity) +
+            (var(--knowledge-command-light-active) * var(--knowledge-command-flow-opacity-active))
+        )
+    ),
+    1
   );
   transform: translate3d(-12%, 2%, 0) rotate(-7deg) scale(1.05);
   transition: opacity 260ms ease;
@@ -4528,15 +4633,26 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
   background: var(--knowledge-command-wave-bg);
   filter: blur(4px) saturate(1.08);
   mix-blend-mode: soft-light;
-  opacity: var(--knowledge-command-wave-opacity);
+  opacity: clamp(
+    0,
+    calc(var(--knowledge-command-light-user-opacity-safe) * var(--knowledge-command-wave-opacity)),
+    1
+  );
   transform: translate3d(8%, 0, 0) rotate(4deg) scale(1.02);
 }
 
 .knowledge-command-light-cursor {
   background: var(--knowledge-command-cursor-bg);
-  opacity: calc(
-    var(--knowledge-command-cursor-opacity-base) +
-      (var(--knowledge-command-light-active) * var(--knowledge-command-cursor-opacity-active))
+  opacity: clamp(
+    0,
+    calc(
+      var(--knowledge-command-light-user-opacity-safe) *
+        (
+          var(--knowledge-command-cursor-opacity-base) +
+            (var(--knowledge-command-light-active) * var(--knowledge-command-cursor-opacity-active))
+        )
+    ),
+    1
   );
   transform: scale(calc(1 + (var(--knowledge-command-light-active) * 0.018)));
   transition:

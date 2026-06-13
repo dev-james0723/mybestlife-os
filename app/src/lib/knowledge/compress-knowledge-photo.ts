@@ -1,6 +1,12 @@
 /**
  * Client-only: produce a smaller JPEG for Knowledge card thumbnails (faster gallery load).
  */
+import {
+  computeKnowledgeThumbnailCrop,
+  detectKnowledgeThumbnailSubjectBoxes,
+  KNOWLEDGE_CARD_THUMBNAIL_ASPECT,
+} from "@/lib/knowledge/thumbnail-subject-crop";
+
 const MAX_DIMENSION = 720;
 const JPEG_QUALITY = 0.72;
 
@@ -12,10 +18,16 @@ export async function compressImageForKnowledgeThumbnail(file: File): Promise<Bl
 
   try {
     const { width, height } = bitmap;
-    const maxSide = Math.max(width, height);
-    const scale = maxSide > MAX_DIMENSION ? MAX_DIMENSION / maxSide : 1;
-    const outW = Math.max(1, Math.round(width * scale));
-    const outH = Math.max(1, Math.round(height * scale));
+    const subjectBoxes = await detectKnowledgeThumbnailSubjectBoxes(bitmap);
+    const crop = computeKnowledgeThumbnailCrop({
+      width,
+      height,
+      subjectBoxes,
+      targetAspect: KNOWLEDGE_CARD_THUMBNAIL_ASPECT,
+    });
+    const scale = crop.sw > MAX_DIMENSION ? MAX_DIMENSION / crop.sw : 1;
+    const outW = Math.max(1, Math.round(crop.sw * scale));
+    const outH = Math.max(1, Math.round(outW / KNOWLEDGE_CARD_THUMBNAIL_ASPECT));
 
     const canvas = document.createElement("canvas");
     canvas.width = outW;
@@ -23,7 +35,7 @@ export async function compressImageForKnowledgeThumbnail(file: File): Promise<Bl
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("NO_2D_CONTEXT");
 
-    ctx.drawImage(bitmap, 0, 0, outW, outH);
+    ctx.drawImage(bitmap, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, outW, outH);
 
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY),

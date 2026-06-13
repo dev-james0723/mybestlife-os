@@ -396,7 +396,7 @@ function renderCardVisual(args: {
           <OptimizedThumbnailImage
             src={visualUrl}
             alt=""
-            className="h-full w-full object-cover"
+            className={cardThumbnailImageClassName(item)}
             sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
             variant="card"
           />
@@ -439,7 +439,7 @@ function renderCardVisual(args: {
         <OptimizedThumbnailImage
           src={item.thumbnailUrl}
           alt=""
-          className="h-full w-full object-cover"
+          className={cardThumbnailImageClassName(item)}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
           variant="card"
         />
@@ -471,7 +471,7 @@ function renderCardVisual(args: {
       <OptimizedThumbnailImage
         src={item.thumbnailUrl}
         alt=""
-        className="h-full w-full object-cover"
+        className={cardThumbnailImageClassName(item)}
         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
         variant="card"
       />
@@ -497,6 +497,11 @@ function renderCardVisual(args: {
       {legacyColors.icon}
     </div>
   );
+}
+
+function cardThumbnailImageClassName(item: KnowledgeItem): string {
+  const isUploadedPhoto = item.contentType === "photo" && item.sourceType === "file_upload";
+  return cn("h-full w-full object-cover", isUploadedPhoto && "object-top");
 }
 
 function RenderModeBadge({ mode }: { mode: RenderMode }) {

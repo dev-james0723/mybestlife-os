@@ -1,0 +1,266 @@
+[
+  {
+    "name": "desktop-1280",
+    "viewport": {
+      "width": 1280,
+      "height": 832
+    },
+    "reducedMotion": "no-preference",
+    "minHeight": 44,
+    "initialMetrics": [
+      {
+        "label": "Gallery",
+        "selected": "true",
+        "width": 214.3,
+        "height": 44,
+        "top": 450.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Board",
+        "selected": "false",
+        "width": 214.3,
+        "height": 44,
+        "top": 450.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Table",
+        "selected": "false",
+        "width": 214.3,
+        "height": 44,
+        "top": 450.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Constellation",
+        "selected": "false",
+        "width": 214.3,
+        "height": 44,
+        "top": 450.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      }
+    ],
+    "clickResults": [
+      "Gallery",
+      "Board",
+      "Table"
+    ],
+    "liquidSheenCountBeforeConstellation": 1,
+    "switcherVisibleAfterConstellation": false,
+    "pageErrors": [],
+    "consoleErrors": [],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-focused/desktop-1280.png",
+    "pass": true
+  },
+  {
+    "name": "desktop-1440",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "reducedMotion": "no-preference",
+    "minHeight": 44,
+    "initialMetrics": [
+      {
+        "label": "Gallery",
+        "selected": "true",
+        "width": 214.3,
+        "height": 44,
+        "top": 518.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Board",
+        "selected": "false",
+        "width": 214.3,
+        "height": 44,
+        "top": 518.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Table",
+        "selected": "false",
+        "width": 214.3,
+        "height": 44,
+        "top": 518.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Constellation",
+        "selected": "false",
+        "width": 214.3,
+        "height": 44,
+        "top": 518.5,
+        "labelDisplay": "block",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      }
+    ],
+    "clickResults": [
+      "Gallery",
+      "Board",
+      "Table"
+    ],
+    "liquidSheenCountBeforeConstellation": 1,
+    "switcherVisibleAfterConstellation": false,
+    "pageErrors": [],
+    "consoleErrors": [],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-focused/desktop-1440.png",
+    "pass": true
+  },
+  {
+    "name": "mobile-390",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "reducedMotion": "no-preference",
+    "minHeight": 44,
+    "initialMetrics": [
+      {
+        "label": "Gallery",
+        "selected": "true",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Board",
+        "selected": "false",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Table",
+        "selected": "false",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Constellation",
+        "selected": "false",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      }
+    ],
+    "clickResults": [
+      "Gallery",
+      "Board",
+      "Table"
+    ],
+    "liquidSheenCountBeforeConstellation": 1,
+    "switcherVisibleAfterConstellation": false,
+    "pageErrors": [],
+    "consoleErrors": [],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-focused/mobile-390.png",
+    "pass": true
+  },
+  {
+    "name": "mobile-390-reduce",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "reducedMotion": "reduce",
+    "minHeight": 44,
+    "initialMetrics": [
+      {
+        "label": "Gallery",
+        "selected": "true",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Board",
+        "selected": "false",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Table",
+        "selected": "false",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      },
+      {
+        "label": "Constellation",
+        "selected": "false",
+        "width": 76,
+        "height": 44,
+        "top": 466.5,
+        "labelDisplay": "none",
+        "labelWhiteSpace": "nowrap",
+        "labelOverflow": "hidden",
+        "labelTextOverflow": "ellipsis"
+      }
+    ],
+    "clickResults": [
+      "Gallery",
+      "Board",
+      "Table"
+    ],
+    "liquidSheenCountBeforeConstellation": 0,
+    "switcherVisibleAfterConstellation": false,
+    "pageErrors": [],
+    "consoleErrors": [],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-focused/mobile-390-reduce.png",
+    "pass": true
+  }
+]

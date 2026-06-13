@@ -1,0 +1,3116 @@
+[
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "390",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Topbar search failed"
+    ],
+    "warnings": [
+      "Console errors: 2",
+      "Quick Capture clicked without detected layer",
+      "Clock tools clicked without detected layer"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-liquid/en-knowledge-base-390-no-preference.png",
+    "metrics": {
+      "url": "http://127.0.0.1:3000/en/knowledge-base",
+      "title": "My Best Life OS",
+      "h1": "Knowledge Base",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 11,
+      "interactiveCount": 28,
+      "interactiveSample": [
+        {
+          "index": 0,
+          "tag": "button",
+          "role": null,
+          "text": "Search...⌘K",
+          "ariaLabel": "Search...",
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 6,
+            "width": 180,
+            "height": 44
+          }
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "—",
+          "ariaLabel": "Weather loading — open Weather page",
+          "disabled": false,
+          "rect": {
+            "x": 212,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 2,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Open menu",
+          "disabled": false,
+          "rect": {
+            "x": 269,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 3,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Notifications (coming soon)",
+          "disabled": true,
+          "rect": {
+            "x": 326,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 4,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Switch to dark mode",
+          "disabled": false,
+          "rect": {
+            "x": 372,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 5,
+          "tag": "button",
+          "role": null,
+          "text": "--:--",
+          "ariaLabel": "Clock, timer and stopwatch. Now --:--",
+          "disabled": false,
+          "rect": {
+            "x": 429,
+            "y": 6,
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "index": 6,
+          "tag": "button",
+          "role": null,
+          "text": "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click ",
+          "ariaLabel": "Add knowledge. Drop files, links, or text here.",
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 230,
+            "width": 358,
+            "height": 109
+          }
+        },
+        {
+          "index": 7,
+          "tag": "button",
+          "role": null,
+          "text": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, proje",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 355,
+            "width": 358,
+            "height": 109
+          }
+        },
+        {
+          "index": 8,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge retrievalRetrieve My Knowledge0 knowledge matches. Find matching knowl",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 483,
+            "width": 358,
+            "height": 129
+          }
+        },
+        {
+          "index": 9,
+          "tag": "button",
+          "role": null,
+          "text": "Content types",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 652,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 10,
+          "tag": "button",
+          "role": "combobox",
+          "text": "20▼",
+          "ariaLabel": "Cards per page",
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 704,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "Tags",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 756,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": "combobox",
+          "text": "Latest▼",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 808,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": "tab",
+          "text": "Gallery",
+          "ariaLabel": "Switch to Gallery view",
+          "disabled": false,
+          "rect": {
+            "x": 37,
+            "y": 865,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": "tab",
+          "text": "Board",
+          "ariaLabel": "Switch to Board view",
+          "disabled": false,
+          "rect": {
+            "x": 117,
+            "y": 865,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": "tab",
+          "text": "Table",
+          "ariaLabel": "Switch to Table view",
+          "disabled": false,
+          "rect": {
+            "x": 197,
+            "y": 865,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": "tab",
+          "text": "Constellation",
+          "ariaLabel": "Switch to Constellation view",
+          "disabled": false,
+          "rect": {
+            "x": 277,
+            "y": 865,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "Favorite",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "Recent",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 82,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "Social",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 132,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "GitHub",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 182,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 21,
+          "tag": "button",
+          "role": null,
+          "text": "Has media",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 232,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 22,
+          "tag": "button",
+          "role": null,
+          "text": "Has source link",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 282,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 23,
+          "tag": "button",
+          "role": null,
+          "text": "AI-tagged",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 332,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 24,
+          "tag": "button",
+          "role": null,
+          "text": "Needs review",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 382,
+            "y": 924,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 25,
+          "tag": "button",
+          "role": null,
+          "text": "Manage quick filters",
+          "ariaLabel": "Manage quick filters",
+          "disabled": false,
+          "rect": {
+            "x": 314,
+            "y": 925,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 26,
+          "tag": "button",
+          "role": null,
+          "text": "Add Knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 137,
+            "y": 1134,
+            "width": 116,
+            "height": 44
+          }
+        },
+        {
+          "index": 27,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Quick Capture",
+          "disabled": false,
+          "rect": {
+            "x": 310,
+            "y": 696,
+            "width": 56,
+            "height": 56
+          }
+        }
+      ],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": {
+        "tag": "button",
+        "role": null,
+        "text": "Search...⌘K",
+        "ariaLabel": "Search..."
+      },
+      "timing": {
+        "domContentLoaded": 1348,
+        "loadEventEnd": 0,
+        "responseStart": 423,
+        "responseEnd": 1347,
+        "transferSize": 21159
+      },
+      "vitals": {
+        "lcp": 1404,
+        "cls": 0
+      },
+      "resourceSummary": {
+        "count": 27,
+        "totalTransferSize": 3809488,
+        "byType": {
+          "link": {
+            "count": 19,
+            "transferSize": 404285,
+            "duration": 894
+          },
+          "script": {
+            "count": 4,
+            "transferSize": 3370729,
+            "duration": 4967
+          },
+          "css": {
+            "count": 1,
+            "transferSize": 29588,
+            "duration": 35
+          },
+          "img": {
+            "count": 3,
+            "transferSize": 4886,
+            "duration": 442
+          }
+        },
+        "slowResources": [
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1781360533903",
+            "type": "script",
+            "duration": 3434,
+            "transferSize": 2718903
+          },
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/app/layout.js",
+            "type": "script",
+            "duration": 1062,
+            "transferSize": 565866
+          }
+        ]
+      }
+    },
+    "interactions": [
+      {
+        "key": "quick-capture",
+        "label": "Quick Capture",
+        "selector": "button[aria-label=\"Quick Capture\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      },
+      {
+        "key": "topbar-search",
+        "label": "Topbar search",
+        "selector": "button[aria-label*=\"Search\"], button:has-text(\"Search\")",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "error",
+        "error": "locator.click: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[aria-label*=\"Search\"], button:has-text(\"Search\")').first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" aria-label=\"Search...\" class=\"topbar-search-pill group min-w-[180px] max-w-[460px] flex-1 justify-start sm:min-w-[220px] md:w-[320px] lg:w-[380px] xl:w-[420px]\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <nextjs-portal></nextjs-portal> from <script data-nextjs-dev-overlay=\"true\">…</script> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <nextjs-portal></nextjs-portal> from <script data-nextjs-dev-overlay=\"true\">…</script> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    8 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <nextjs-portal></nextjs-portal> from <script data-nextjs-dev-overlay=\"true\">…</script> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n"
+      },
+      {
+        "key": "theme-toggle",
+        "label": "Theme toggle",
+        "selector": "button[aria-label^=\"Switch to\"]",
+        "expectsLayer": false,
+        "viewports": "all",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      },
+      {
+        "key": "clock",
+        "label": "Clock tools",
+        "selector": "button[aria-label^=\"Clock\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      }
+    ],
+    "elementInteractions": [
+      {
+        "id": "runtime-audit-0",
+        "tag": "button",
+        "role": null,
+        "label": "Search... Search...⌘K",
+        "rect": {
+          "x": -109,
+          "y": 2,
+          "width": 180,
+          "height": 44
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-1",
+        "tag": "button",
+        "role": null,
+        "label": "Open menu",
+        "rect": {
+          "x": 144,
+          "y": 2,
+          "width": 44,
+          "height": 44
+        },
+        "status": "detached"
+      },
+      {
+        "id": "runtime-audit-2",
+        "tag": "button",
+        "role": null,
+        "label": "Clock, timer and stopwatch. Now --:-- --:--",
+        "rect": {
+          "x": 304,
+          "y": 2,
+          "width": 70,
+          "height": 44
+        },
+        "status": "detached"
+      },
+      {
+        "id": "runtime-audit-3",
+        "tag": "button",
+        "role": null,
+        "label": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 items",
+        "rect": {
+          "x": 16,
+          "y": 353,
+          "width": 358,
+          "height": 109
+        },
+        "status": "detached"
+      },
+      {
+        "id": "runtime-audit-4",
+        "tag": "button",
+        "role": null,
+        "label": "Content types",
+        "rect": {
+          "x": 32,
+          "y": 650,
+          "width": 326,
+          "height": 44
+        },
+        "status": "detached"
+      },
+      {
+        "id": "runtime-audit-5",
+        "tag": "button",
+        "role": "combobox",
+        "label": "Cards per page 20▼",
+        "rect": {
+          "x": 32,
+          "y": 702,
+          "width": 326,
+          "height": 44
+        },
+        "status": "detached"
+      }
+    ],
+    "consoleErrors": [
+      "Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component. Move this work to useEffect instead.",
+      "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <FocusRealityBoundary>\n      <SyncThemeFromProfile>\n      <OnboardingGate>\n      <AppSidebar>\n      <SidebarInset>\n        <main data-slot=\"sidebar-inset\" className=\"relative f...\">\n          <ProtectedScrollLayout>\n            <div className=\"relative f...\">\n              <div ref={{current:null}} role=\"region\" aria-label=\"Main content\" className=\"flex min-h...\">\n                <AppTopbar slideHidden={false}>\n                  <motion.header role=\"banner\" className=\"topbar-gla...\">\n                    <header role=\"banner\" className=\"topbar-gla...\" style={{}} ref={function useMotionRef.useCallback}>\n                      <TopbarInnerRow>\n                        <div className=\"flex min-h...\">\n                          <SearchPill>\n                            <button\n                              type=\"button\"\n                              aria-label=\"Search...\"\n                              data-open={undefined}\n                              onClick={function onClick}\n                              className=\"topbar-search-pill group min-w-[180px] max-w-[460px] flex-1 justify-start sm:...\"\n-                             data-runtime-audit-id=\"runtime-audit-0\"\n                            >\n                          <div>\n                          <EnterStagger enabled={true}>\n                            <EnterItem>\n                            <EnterItem enabled={true}>\n                              <UtilityPill>\n                                <div className=\"topbar-pill\" role=\"group\" aria-label=\"App utilities\">\n                                  <PillButton label=\"Open menu\" onClick={function onClick}>\n                                    <button\n                                      type=\"button\"\n                                      aria-label=\"Open menu\"\n                                      onClick={function onClick}\n                                      disabled={undefined}\n                                      data-active={undefined}\n                                      className=\"topbar-pill-btn\"\n-                                     data-runtime-audit-id=\"runtime-audit-1\"\n                                    >\n                                  ...\n                            <EnterItem enabled={true}>\n                              <ClockPill>\n                                <div className=\"relative\">\n                                  <button\n                                    ref={{current:null}}\n                                    type=\"button\"\n                                    aria-label=\"Clock, timer and stopwatch. Now --:--\"\n                                    aria-expanded={false}\n                                    data-open={undefined}\n                                    onClick={function onClick}\n                                    className=\"topbar-clock-trigger\"\n-                                   data-runtime-audit-id=\"runtime-audit-2\"\n                                  >\n                  ...\n                ...\n      ...\n      ...\n"
+    ],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "1280",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Theme toggle failed"
+    ],
+    "warnings": [
+      "Console errors: 2",
+      "Quick Capture clicked without detected layer",
+      "Topbar search clicked without detected layer"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-liquid/en-knowledge-base-1280-no-preference.png",
+    "metrics": {
+      "url": "http://127.0.0.1:3000/en/knowledge-base",
+      "title": "My Best Life OS",
+      "h1": "Knowledge Base",
+      "viewport": {
+        "width": 1280,
+        "height": 832
+      },
+      "scroll": {
+        "width": 1280,
+        "height": 832,
+        "overflowX": 0
+      },
+      "osSlots": 11,
+      "interactiveCount": 59,
+      "interactiveSample": [
+        {
+          "index": 0,
+          "tag": "div",
+          "role": null,
+          "text": "My Best Life OSCommand CenterSelfPeopleCareerBuild & ExecuteResourcesKnowledgeLe",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 240,
+            "height": 832
+          }
+        },
+        {
+          "index": 1,
+          "tag": "button",
+          "role": null,
+          "text": "Command Center",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 101,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 2,
+          "tag": "button",
+          "role": null,
+          "text": "Self",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 149,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 3,
+          "tag": "button",
+          "role": null,
+          "text": "People",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 197,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 4,
+          "tag": "button",
+          "role": null,
+          "text": "Career",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 245,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 5,
+          "tag": "button",
+          "role": null,
+          "text": "Build & Execute",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 293,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 6,
+          "tag": "button",
+          "role": null,
+          "text": "Resources",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 341,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 7,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 389,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 8,
+          "tag": "button",
+          "role": null,
+          "text": "Learning",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 437,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "My Garden",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 493,
+            "width": 202,
+            "height": 46
+          }
+        },
+        {
+          "index": 10,
+          "tag": "button",
+          "role": null,
+          "text": "UUser",
+          "ariaLabel": "User account menu",
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 755,
+            "width": 202,
+            "height": 48
+          }
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "Search...⌘K",
+          "ariaLabel": "Search...",
+          "disabled": false,
+          "rect": {
+            "x": 264,
+            "y": 6,
+            "width": 434,
+            "height": 44
+          }
+        },
+        {
+          "index": 12,
+          "tag": "a",
+          "role": null,
+          "text": "—",
+          "ariaLabel": "Weather loading — open Weather page",
+          "disabled": false,
+          "rect": {
+            "x": 1127,
+            "y": 6,
+            "width": 66,
+            "height": 44
+          }
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Open menu",
+          "disabled": false,
+          "rect": {
+            "x": 1210,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Notifications (coming soon)",
+          "disabled": true,
+          "rect": {
+            "x": 1267,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Switch to dark mode",
+          "disabled": false,
+          "rect": {
+            "x": 1313,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": null,
+          "text": "--:--",
+          "ariaLabel": "Clock, timer and stopwatch. Now --:--",
+          "disabled": false,
+          "rect": {
+            "x": 1374,
+            "y": 6,
+            "width": 82,
+            "height": 44
+          }
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Collapse directory panel",
+          "disabled": false,
+          "rect": {
+            "x": 477,
+            "y": 237,
+            "width": 28,
+            "height": 28
+          }
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "All items0",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 311,
+            "width": 214,
+            "height": 32
+          }
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "📄Article",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "🔗Link",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 21,
+          "tag": "button",
+          "role": null,
+          "text": "🎬Video",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 383,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 22,
+          "tag": "button",
+          "role": null,
+          "text": "💬Social Post",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 383,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 23,
+          "tag": "button",
+          "role": null,
+          "text": "🎙️Audio",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 419,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 24,
+          "tag": "button",
+          "role": null,
+          "text": "📑Document",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 419,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 25,
+          "tag": "button",
+          "role": null,
+          "text": "🔬Research Paper",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 455,
+            "width": 105,
+            "height": 36
+          }
+        },
+        {
+          "index": 26,
+          "tag": "button",
+          "role": null,
+          "text": "📚Book",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 455,
+            "width": 105,
+            "height": 36
+          }
+        },
+        {
+          "index": 27,
+          "tag": "button",
+          "role": null,
+          "text": "💻Code",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 495,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 28,
+          "tag": "button",
+          "role": null,
+          "text": "🧩Repository",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 495,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 29,
+          "tag": "button",
+          "role": null,
+          "text": "📊Dataset",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 531,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 30,
+          "tag": "button",
+          "role": null,
+          "text": "📽️Presentation",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 531,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 31,
+          "tag": "button",
+          "role": null,
+          "text": "📷Photo",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 567,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 32,
+          "tag": "button",
+          "role": null,
+          "text": "❞Quote",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 567,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 33,
+          "tag": "button",
+          "role": null,
+          "text": "📝Note",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 603,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 34,
+          "tag": "button",
+          "role": null,
+          "text": "📁File",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 603,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 35,
+          "tag": "input",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Search tags...",
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 708,
+            "width": 214,
+            "height": 28
+          }
+        },
+        {
+          "index": 36,
+          "tag": "button",
+          "role": null,
+          "text": "All knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 744,
+            "width": 214,
+            "height": 28
+          }
+        },
+        {
+          "index": 37,
+          "tag": "button",
+          "role": null,
+          "text": "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click ",
+          "ariaLabel": "Add knowledge. Drop files, links, or text here.",
+          "disabled": false,
+          "rect": {
+            "x": 536,
+            "y": 226,
+            "width": 919,
+            "height": 93
+          }
+        },
+        {
+          "index": 38,
+          "tag": "button",
+          "role": null,
+          "text": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, proje",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 536,
+            "y": 335,
+            "width": 919,
+            "height": 93
+          }
+        },
+        {
+          "index": 39,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge retrievalRetrieve My Knowledge0 knowledge matches. Find matching knowl",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 536,
+            "y": 447,
+            "width": 919,
+            "height": 93
+          }
+        }
+      ],
+      "tooSmallTargets": [],
+      "compactTargets": [
+        {
+          "index": 1,
+          "tag": "button",
+          "role": null,
+          "text": "Command Center",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 101,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 2,
+          "tag": "button",
+          "role": null,
+          "text": "Self",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 149,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 3,
+          "tag": "button",
+          "role": null,
+          "text": "People",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 197,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 4,
+          "tag": "button",
+          "role": null,
+          "text": "Career",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 245,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 5,
+          "tag": "button",
+          "role": null,
+          "text": "Build & Execute",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 293,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 6,
+          "tag": "button",
+          "role": null,
+          "text": "Resources",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 341,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 7,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 389,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 8,
+          "tag": "button",
+          "role": null,
+          "text": "Learning",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 437,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Collapse directory panel",
+          "disabled": false,
+          "rect": {
+            "x": 477,
+            "y": 237,
+            "width": 28,
+            "height": 28
+          }
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "All items0",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 311,
+            "width": 214,
+            "height": 32
+          }
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "📄Article",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "🔗Link",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        }
+      ],
+      "focusedAfterTab": {
+        "tag": "button",
+        "role": null,
+        "text": "Command Center",
+        "ariaLabel": null
+      },
+      "timing": {
+        "domContentLoaded": 1436,
+        "loadEventEnd": 0,
+        "responseStart": 629,
+        "responseEnd": 1435,
+        "transferSize": 21157
+      },
+      "vitals": {
+        "lcp": 1468,
+        "cls": 0.0032729688974527213
+      },
+      "resourceSummary": {
+        "count": 28,
+        "totalTransferSize": 9394986,
+        "byType": {
+          "link": {
+            "count": 19,
+            "transferSize": 404282,
+            "duration": 661
+          },
+          "script": {
+            "count": 5,
+            "transferSize": 8956230,
+            "duration": 8894
+          },
+          "css": {
+            "count": 1,
+            "transferSize": 29588,
+            "duration": 22
+          },
+          "img": {
+            "count": 3,
+            "transferSize": 4886,
+            "duration": 871
+          }
+        },
+        "slowResources": [
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/app/%5Blocale%5D/(protected)/knowledge-base/page.js",
+            "type": "script",
+            "duration": 5360,
+            "transferSize": 5585505
+          },
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1781360559238",
+            "type": "script",
+            "duration": 2401,
+            "transferSize": 2718903
+          }
+        ]
+      }
+    },
+    "interactions": [
+      {
+        "key": "quick-capture",
+        "label": "Quick Capture",
+        "selector": "button[aria-label=\"Quick Capture\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      },
+      {
+        "key": "topbar-search",
+        "label": "Topbar search",
+        "selector": "button[aria-label*=\"Search\"], button:has-text(\"Search\")",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      },
+      {
+        "key": "theme-toggle",
+        "label": "Theme toggle",
+        "selector": "button[aria-label^=\"Switch to\"]",
+        "expectsLayer": false,
+        "viewports": "all",
+        "status": "error",
+        "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      {
+        "key": "utility-menu",
+        "label": "Utility menu",
+        "selector": "button[aria-label=\"Open menu\"]",
+        "expectsLayer": false,
+        "viewports": "desktop",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      },
+      {
+        "key": "clock",
+        "label": "Clock tools",
+        "selector": "button[aria-label^=\"Clock\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "opened",
+        "layer": {
+          "tag": "div",
+          "role": "dialog",
+          "slot": null,
+          "text": "ClockTimerStopwatch22:22:56Saturday, Jun 13Close"
+        },
+        "escapeClosed": true
+      }
+    ],
+    "elementInteractions": [
+      {
+        "id": "runtime-audit-0",
+        "tag": "div",
+        "role": null,
+        "label": "My Best Life OSCommand CenterSelfPeopleCareerBuild & ExecuteResourcesKnowledgeLearningMy GardenTodaySat, Jun 13FocusDeep",
+        "rect": {
+          "x": -199,
+          "y": 0,
+          "width": 240,
+          "height": 832
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-1",
+        "tag": "button",
+        "role": null,
+        "label": "Command Center",
+        "rect": {
+          "x": 25,
+          "y": 101,
+          "width": 202,
+          "height": 32
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-2",
+        "tag": "button",
+        "role": null,
+        "label": "Self",
+        "rect": {
+          "x": 25,
+          "y": 149,
+          "width": 202,
+          "height": 32
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-3",
+        "tag": "button",
+        "role": null,
+        "label": "People",
+        "rect": {
+          "x": 25,
+          "y": 197,
+          "width": 202,
+          "height": 32
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-4",
+        "tag": "button",
+        "role": null,
+        "label": "Career",
+        "rect": {
+          "x": 25,
+          "y": 245,
+          "width": 202,
+          "height": 32
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-5",
+        "tag": "button",
+        "role": null,
+        "label": "Build & Execute",
+        "rect": {
+          "x": 25,
+          "y": 293,
+          "width": 202,
+          "height": 32
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      }
+    ],
+    "consoleErrors": [
+      "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>\n      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>\n        <LoadingBoundary name=\"knowledge-...\" loading={[...]}>\n          <Suspense name=\"knowledge-...\" fallback={<Fragment>}>\n            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <InnerLayoutRouter url=\"/en/knowle...\" tree={[...]} params={{locale:\"en\"}} cacheNode={{rsc:{...}, ...}} ...>\n                    <SegmentViewNode type=\"page\" pagePath=\"[locale]/(...\">\n                      <SegmentTrieNode>\n                      <KnowledgeBasePage>\n                        <KnowledgeLayout initialItems={[...]} initialCollections={[...]} userId=\"00000000-0...\">\n                          <PageShell title=\"Knowledge ...\" description=\"Capture li...\">\n                            <div className=\"space-y-8 ...\">\n                              <div\n                                data-motion-reveal={true}\n-                               style={{translate:\"none\",rotate:\"none\",scale:\"none\",transform:\"translate3...\",opacity:\"0.0431\",visibility:\"...\"}}\n                              >\n                              <div\n                                data-motion-reveal={true}\n-                               style={{translate:\"none\",rotate:\"none\",scale:\"none\",transform:\"translate(...\",opacity:\"0\",visibility:\"hidden\"}}\n                              >\n                    ...\n                  ...\n      ...\n",
+      "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>\n      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>\n        <LoadingBoundary name=\"knowledge-...\" loading={[...]}>\n          <Suspense name=\"knowledge-...\" fallback={<Fragment>}>\n            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <InnerLayoutRouter url=\"/en/knowle...\" tree={[...]} params={{locale:\"en\"}} cacheNode={{rsc:{...}, ...}} ...>\n                    <SegmentViewNode type=\"page\" pagePath=\"[locale]/(...\">\n                      <SegmentTrieNode>\n                      <KnowledgeBasePage>\n                        <KnowledgeLayout initialItems={[...]} initialCollections={[...]} userId=\"00000000-0...\">\n                          <PageShell title=\"Knowledge ...\" description=\"Capture li...\">\n                            <div className=\"space-y-8 ...\">\n                              <div\n                                data-motion-reveal={true}\n-                               style={{visibility:\"inherit\",opacity:\"1\"}}\n                              >\n                              <div\n                                data-motion-reveal={true}\n-                               style={{visibility:\"inherit\",opacity:\"1\"}}\n                              >\n                    ...\n                  ...\n      ...\n"
+    ],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "1440",
+    "reducedMotion": "no-preference",
+    "status": "fail",
+    "failures": [
+      "Page errors: 1"
+    ],
+    "warnings": [],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-liquid/en-knowledge-base-1440-no-preference.png",
+    "metrics": {
+      "url": "http://127.0.0.1:3000/en/knowledge-base",
+      "title": "My Best Life OS",
+      "h1": "Knowledge Base",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "scroll": {
+        "width": 1440,
+        "height": 900,
+        "overflowX": 0
+      },
+      "osSlots": 11,
+      "interactiveCount": 59,
+      "interactiveSample": [
+        {
+          "index": 0,
+          "tag": "div",
+          "role": null,
+          "text": "My Best Life OSCommand CenterSelfPeopleCareerBuild & ExecuteResourcesKnowledgeLe",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 240,
+            "height": 900
+          }
+        },
+        {
+          "index": 1,
+          "tag": "button",
+          "role": null,
+          "text": "Command Center",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 101,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 2,
+          "tag": "button",
+          "role": null,
+          "text": "Self",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 149,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 3,
+          "tag": "button",
+          "role": null,
+          "text": "People",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 197,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 4,
+          "tag": "button",
+          "role": null,
+          "text": "Career",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 245,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 5,
+          "tag": "button",
+          "role": null,
+          "text": "Build & Execute",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 293,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 6,
+          "tag": "button",
+          "role": null,
+          "text": "Resources",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 341,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 7,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 389,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 8,
+          "tag": "button",
+          "role": null,
+          "text": "Learning",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 437,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "My Garden",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 493,
+            "width": 202,
+            "height": 46
+          }
+        },
+        {
+          "index": 10,
+          "tag": "button",
+          "role": null,
+          "text": "UUser",
+          "ariaLabel": "User account menu",
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 823,
+            "width": 202,
+            "height": 48
+          }
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "Search...⌘K",
+          "ariaLabel": "Search...",
+          "disabled": false,
+          "rect": {
+            "x": 264,
+            "y": 6,
+            "width": 434,
+            "height": 44
+          }
+        },
+        {
+          "index": 12,
+          "tag": "a",
+          "role": null,
+          "text": "—",
+          "ariaLabel": "Weather loading — open Weather page",
+          "disabled": false,
+          "rect": {
+            "x": 1127,
+            "y": 6,
+            "width": 66,
+            "height": 44
+          }
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Open menu",
+          "disabled": false,
+          "rect": {
+            "x": 1210,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Notifications (coming soon)",
+          "disabled": true,
+          "rect": {
+            "x": 1267,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Switch to dark mode",
+          "disabled": false,
+          "rect": {
+            "x": 1313,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": null,
+          "text": "--:--",
+          "ariaLabel": "Clock, timer and stopwatch. Now --:--",
+          "disabled": false,
+          "rect": {
+            "x": 1374,
+            "y": 6,
+            "width": 82,
+            "height": 44
+          }
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Collapse directory panel",
+          "disabled": false,
+          "rect": {
+            "x": 477,
+            "y": 237,
+            "width": 28,
+            "height": 28
+          }
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "All items0",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 311,
+            "width": 214,
+            "height": 32
+          }
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "📄Article",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "🔗Link",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 21,
+          "tag": "button",
+          "role": null,
+          "text": "🎬Video",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 383,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 22,
+          "tag": "button",
+          "role": null,
+          "text": "💬Social Post",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 383,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 23,
+          "tag": "button",
+          "role": null,
+          "text": "🎙️Audio",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 419,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 24,
+          "tag": "button",
+          "role": null,
+          "text": "📑Document",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 419,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 25,
+          "tag": "button",
+          "role": null,
+          "text": "🔬Research Paper",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 455,
+            "width": 105,
+            "height": 36
+          }
+        },
+        {
+          "index": 26,
+          "tag": "button",
+          "role": null,
+          "text": "📚Book",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 455,
+            "width": 105,
+            "height": 36
+          }
+        },
+        {
+          "index": 27,
+          "tag": "button",
+          "role": null,
+          "text": "💻Code",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 495,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 28,
+          "tag": "button",
+          "role": null,
+          "text": "🧩Repository",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 495,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 29,
+          "tag": "button",
+          "role": null,
+          "text": "📊Dataset",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 531,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 30,
+          "tag": "button",
+          "role": null,
+          "text": "📽️Presentation",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 531,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 31,
+          "tag": "button",
+          "role": null,
+          "text": "📷Photo",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 567,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 32,
+          "tag": "button",
+          "role": null,
+          "text": "❞Quote",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 567,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 33,
+          "tag": "button",
+          "role": null,
+          "text": "📝Note",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 603,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 34,
+          "tag": "button",
+          "role": null,
+          "text": "📁File",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 603,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 35,
+          "tag": "input",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Search tags...",
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 708,
+            "width": 214,
+            "height": 28
+          }
+        },
+        {
+          "index": 36,
+          "tag": "button",
+          "role": null,
+          "text": "All knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 744,
+            "width": 214,
+            "height": 28
+          }
+        },
+        {
+          "index": 37,
+          "tag": "button",
+          "role": null,
+          "text": "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click ",
+          "ariaLabel": "Add knowledge. Drop files, links, or text here.",
+          "disabled": false,
+          "rect": {
+            "x": 536,
+            "y": 226,
+            "width": 919,
+            "height": 93
+          }
+        },
+        {
+          "index": 38,
+          "tag": "button",
+          "role": null,
+          "text": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, proje",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 536,
+            "y": 335,
+            "width": 919,
+            "height": 93
+          }
+        },
+        {
+          "index": 39,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge retrievalRetrieve My Knowledge0 knowledge matches. Find matching knowl",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 536,
+            "y": 447,
+            "width": 919,
+            "height": 93
+          }
+        }
+      ],
+      "tooSmallTargets": [],
+      "compactTargets": [
+        {
+          "index": 1,
+          "tag": "button",
+          "role": null,
+          "text": "Command Center",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 101,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 2,
+          "tag": "button",
+          "role": null,
+          "text": "Self",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 149,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 3,
+          "tag": "button",
+          "role": null,
+          "text": "People",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 197,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 4,
+          "tag": "button",
+          "role": null,
+          "text": "Career",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 245,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 5,
+          "tag": "button",
+          "role": null,
+          "text": "Build & Execute",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 293,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 6,
+          "tag": "button",
+          "role": null,
+          "text": "Resources",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 341,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 7,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 389,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 8,
+          "tag": "button",
+          "role": null,
+          "text": "Learning",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 25,
+            "y": 437,
+            "width": 202,
+            "height": 32
+          }
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Collapse directory panel",
+          "disabled": false,
+          "rect": {
+            "x": 477,
+            "y": 237,
+            "width": 28,
+            "height": 28
+          }
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "All items0",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 311,
+            "width": 214,
+            "height": 32
+          }
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "📄Article",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 281,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "🔗Link",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 390,
+            "y": 347,
+            "width": 105,
+            "height": 32
+          }
+        }
+      ],
+      "focusedAfterTab": {
+        "tag": "button",
+        "role": null,
+        "text": "Command Center",
+        "ariaLabel": null
+      },
+      "timing": {
+        "domContentLoaded": 2434,
+        "loadEventEnd": 0,
+        "responseStart": 278,
+        "responseEnd": 2418,
+        "transferSize": 21156
+      },
+      "vitals": {
+        "lcp": 2524,
+        "cls": 0.0005010843326688957
+      },
+      "resourceSummary": {
+        "count": 28,
+        "totalTransferSize": 9332978,
+        "byType": {
+          "link": {
+            "count": 19,
+            "transferSize": 404282,
+            "duration": 794
+          },
+          "script": {
+            "count": 5,
+            "transferSize": 8894222,
+            "duration": 13016
+          },
+          "css": {
+            "count": 1,
+            "transferSize": 29588,
+            "duration": 643
+          },
+          "img": {
+            "count": 3,
+            "transferSize": 4886,
+            "duration": 1130
+          }
+        },
+        "slowResources": [
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/app/%5Blocale%5D/(protected)/knowledge-base/page.js",
+            "type": "script",
+            "duration": 5714,
+            "transferSize": 5585505
+          },
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1781360583372",
+            "type": "script",
+            "duration": 4969,
+            "transferSize": 2718903
+          },
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/app/layout.js",
+            "type": "script",
+            "duration": 1487,
+            "transferSize": 503854
+          }
+        ]
+      }
+    },
+    "interactions": [],
+    "elementInteractions": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": [
+      "Invalid or unexpected token"
+    ]
+  },
+  {
+    "route": "/en/knowledge-base",
+    "viewport": "390",
+    "reducedMotion": "reduce",
+    "status": "warn",
+    "failures": [],
+    "warnings": [
+      "Console errors: 1"
+    ],
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/knowledge-view-switcher-liquid/en-knowledge-base-390-reduce.png",
+    "metrics": {
+      "url": "http://127.0.0.1:3000/en/knowledge-base",
+      "title": "My Best Life OS",
+      "h1": "Knowledge Base",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844,
+        "overflowX": 0
+      },
+      "osSlots": 11,
+      "interactiveCount": 29,
+      "interactiveSample": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "My Best Life OS",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 12,
+            "y": 6,
+            "width": 136,
+            "height": 44
+          }
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "—",
+          "ariaLabel": "Weather loading — open Weather page",
+          "disabled": false,
+          "rect": {
+            "x": 160,
+            "y": 6,
+            "width": 68,
+            "height": 44
+          }
+        },
+        {
+          "index": 2,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Search...",
+          "disabled": false,
+          "rect": {
+            "x": 234,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 3,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Switch to dark mode",
+          "disabled": false,
+          "rect": {
+            "x": 284,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 4,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Clock, timer and stopwatch. Now 22:23",
+          "disabled": false,
+          "rect": {
+            "x": 334,
+            "y": 6,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 5,
+          "tag": "button",
+          "role": null,
+          "text": "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click ",
+          "ariaLabel": "Add knowledge. Drop files, links, or text here.",
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 218,
+            "width": 358,
+            "height": 109
+          }
+        },
+        {
+          "index": 6,
+          "tag": "button",
+          "role": null,
+          "text": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, proje",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 343,
+            "width": 358,
+            "height": 109
+          }
+        },
+        {
+          "index": 7,
+          "tag": "button",
+          "role": null,
+          "text": "Knowledge retrievalRetrieve My KnowledgeFind matching knowledge before asking th",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 16,
+            "y": 467,
+            "width": 358,
+            "height": 109
+          }
+        },
+        {
+          "index": 8,
+          "tag": "button",
+          "role": null,
+          "text": "Content types",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 620,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 9,
+          "tag": "button",
+          "role": "combobox",
+          "text": "20▼",
+          "ariaLabel": "Cards per page",
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 672,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 10,
+          "tag": "button",
+          "role": null,
+          "text": "Tags",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 724,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": "combobox",
+          "text": "Latest▼",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 776,
+            "width": 326,
+            "height": 44
+          }
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": "tab",
+          "text": "Gallery",
+          "ariaLabel": "Switch to Gallery view",
+          "disabled": false,
+          "rect": {
+            "x": 37,
+            "y": 833,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": "tab",
+          "text": "Board",
+          "ariaLabel": "Switch to Board view",
+          "disabled": false,
+          "rect": {
+            "x": 117,
+            "y": 833,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": "tab",
+          "text": "Table",
+          "ariaLabel": "Switch to Table view",
+          "disabled": false,
+          "rect": {
+            "x": 197,
+            "y": 833,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": "tab",
+          "text": "Constellation",
+          "ariaLabel": "Switch to Constellation view",
+          "disabled": false,
+          "rect": {
+            "x": 277,
+            "y": 833,
+            "width": 76,
+            "height": 44
+          }
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": null,
+          "text": "Favorite",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 32,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "Recent",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 82,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "Social",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 132,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "GitHub",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 182,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "Has media",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 232,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 21,
+          "tag": "button",
+          "role": null,
+          "text": "Has source link",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 282,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 22,
+          "tag": "button",
+          "role": null,
+          "text": "AI-tagged",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 332,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 23,
+          "tag": "button",
+          "role": null,
+          "text": "Needs review",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 382,
+            "y": 892,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 24,
+          "tag": "button",
+          "role": null,
+          "text": "Manage quick filters",
+          "ariaLabel": "Manage quick filters",
+          "disabled": false,
+          "rect": {
+            "x": 314,
+            "y": 893,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "index": 25,
+          "tag": "button",
+          "role": null,
+          "text": "Add Knowledge",
+          "ariaLabel": null,
+          "disabled": false,
+          "rect": {
+            "x": 137,
+            "y": 1102,
+            "width": 116,
+            "height": 44
+          }
+        },
+        {
+          "index": 26,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Open menu",
+          "disabled": false,
+          "rect": {
+            "x": 321,
+            "y": 719,
+            "width": 50,
+            "height": 50
+          }
+        },
+        {
+          "index": 27,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Quick Capture",
+          "disabled": false,
+          "rect": {
+            "x": 310,
+            "y": 696,
+            "width": 56,
+            "height": 56
+          }
+        },
+        {
+          "index": 28,
+          "tag": "button",
+          "role": null,
+          "text": "",
+          "ariaLabel": "Xiaoba, your OS Buddy",
+          "disabled": false,
+          "rect": {
+            "x": 24,
+            "y": 756,
+            "width": 62,
+            "height": 67
+          }
+        }
+      ],
+      "tooSmallTargets": [],
+      "compactTargets": [],
+      "focusedAfterTab": {
+        "tag": "a",
+        "role": null,
+        "text": "My Best Life OS",
+        "ariaLabel": null
+      },
+      "timing": {
+        "domContentLoaded": 3025,
+        "loadEventEnd": 8936,
+        "responseStart": 1060,
+        "responseEnd": 3024,
+        "transferSize": 21159
+      },
+      "vitals": {
+        "lcp": 3020,
+        "cls": 0
+      },
+      "resourceSummary": {
+        "count": 132,
+        "totalTransferSize": 16240842,
+        "byType": {
+          "link": {
+            "count": 69,
+            "transferSize": 455117,
+            "duration": 3768
+          },
+          "script": {
+            "count": 6,
+            "transferSize": 15588464,
+            "duration": 18617
+          },
+          "css": {
+            "count": 2,
+            "transferSize": 58244,
+            "duration": 104
+          },
+          "img": {
+            "count": 54,
+            "transferSize": 137912,
+            "duration": 2017
+          },
+          "fetch": {
+            "count": 1,
+            "transferSize": 1105,
+            "duration": 70
+          }
+        },
+        "slowResources": [
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/app/%5Blocale%5D/(protected)/layout.js",
+            "type": "script",
+            "duration": 7533,
+            "transferSize": 6632231
+          },
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/app/%5Blocale%5D/(protected)/knowledge-base/page.js",
+            "type": "script",
+            "duration": 5492,
+            "transferSize": 5585505
+          },
+          {
+            "name": "http://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1781360592238",
+            "type": "script",
+            "duration": 4713,
+            "transferSize": 2718903
+          }
+        ]
+      }
+    },
+    "interactions": [
+      {
+        "key": "quick-capture",
+        "label": "Quick Capture",
+        "selector": "button[aria-label=\"Quick Capture\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "opened",
+        "layer": {
+          "tag": "div",
+          "role": "dialog",
+          "slot": "sheet-content",
+          "text": "CaptureIdeaProjectTaskKnowledgeGoalBp▼Font▼Size▼TextHighlightCustomWhat's on your mind?0Open ideasSaveCapture another"
+        },
+        "escapeClosed": true
+      },
+      {
+        "key": "topbar-search",
+        "label": "Topbar search",
+        "selector": "button[aria-label*=\"Search\"], button:has-text(\"Search\")",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "opened",
+        "layer": {
+          "tag": "div",
+          "role": "dialog",
+          "slot": "dialog-content",
+          "text": "Command paletteESCNavigateDashboardCommand CenterBrainCommand CenterLife CompanionCommand CenterDaily PlannerCommand Cen"
+        },
+        "escapeClosed": true
+      },
+      {
+        "key": "theme-toggle",
+        "label": "Theme toggle",
+        "selector": "button[aria-label^=\"Switch to\"]",
+        "expectsLayer": false,
+        "viewports": "all",
+        "status": "clicked",
+        "layer": null,
+        "escapeClosed": null
+      },
+      {
+        "key": "clock",
+        "label": "Clock tools",
+        "selector": "button[aria-label^=\"Clock\"]",
+        "expectsLayer": true,
+        "viewports": "all",
+        "status": "opened",
+        "layer": {
+          "tag": "div",
+          "role": "dialog",
+          "slot": null,
+          "text": "ClockTimerStopwatch22:23:25Saturday, Jun 13Close"
+        },
+        "escapeClosed": true
+      }
+    ],
+    "elementInteractions": [
+      {
+        "id": "runtime-audit-0",
+        "tag": "button",
+        "role": null,
+        "label": "Search...",
+        "rect": {
+          "x": 234,
+          "y": 6,
+          "width": 44,
+          "height": 44
+        },
+        "status": "clicked",
+        "openedLayer": true,
+        "navigated": null,
+        "layer": {
+          "tag": "div",
+          "role": "dialog",
+          "slot": "dialog-content",
+          "text": "Command paletteESCNavigateDashboardCommand CenterBrainCommand CenterLife CompanionCommand CenterDaily PlannerCommand Cen"
+        }
+      },
+      {
+        "id": "runtime-audit-1",
+        "tag": "button",
+        "role": null,
+        "label": "Clock, timer and stopwatch. Now 22:23",
+        "rect": {
+          "x": 334,
+          "y": 6,
+          "width": 44,
+          "height": 44
+        },
+        "status": "clicked",
+        "openedLayer": true,
+        "navigated": null,
+        "layer": {
+          "tag": "div",
+          "role": "dialog",
+          "slot": null,
+          "text": "ClockTimerStopwatch22:23:27Saturday, Jun 13Close"
+        }
+      },
+      {
+        "id": "runtime-audit-2",
+        "tag": "button",
+        "role": null,
+        "label": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 items",
+        "rect": {
+          "x": 16,
+          "y": 343,
+          "width": 358,
+          "height": 109
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-3",
+        "tag": "button",
+        "role": null,
+        "label": "Knowledge retrievalRetrieve My KnowledgeFind matching knowledge before asking the answer panel.Ready",
+        "rect": {
+          "x": 16,
+          "y": 467,
+          "width": 358,
+          "height": 109
+        },
+        "status": "clicked",
+        "openedLayer": false,
+        "navigated": null,
+        "layer": null
+      },
+      {
+        "id": "runtime-audit-4",
+        "tag": "button",
+        "role": null,
+        "label": "Content types",
+        "rect": {
+          "x": 32,
+          "y": 620,
+          "width": 326,
+          "height": 44
+        },
+        "status": "clicked",
+        "openedLayer": true,
+        "navigated": null,
+        "layer": {
+          "tag": "div",
+          "role": "menu",
+          "slot": "dropdown-menu-content",
+          "text": "Content types📄Article🔗Link🎬Video💬Social Post🎙️Audio📑Document🔬Research Paper📚Book💻Code🧩Repository📊Dataset📽️Pr"
+        }
+      },
+      {
+        "id": "runtime-audit-5",
+        "tag": "button",
+        "role": "combobox",
+        "label": "Cards per page 20▼",
+        "rect": {
+          "x": 32,
+          "y": 672,
+          "width": 326,
+          "height": 44
+        },
+        "status": "clicked",
+        "openedLayer": true,
+        "navigated": null,
+        "layer": {
+          "tag": "div",
+          "role": "listbox",
+          "slot": null,
+          "text": "10 / page15 / page20 / page25 / page30 / page50 / page60 / page100 / pageCustom"
+        }
+      }
+    ],
+    "consoleErrors": [
+      "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <SegmentViewNode type=\"layout\" pagePath=\"[locale]/(...\">\n      <SegmentTrieNode>\n      <ProtectedLayout>\n        <SidebarProvider>\n          <div data-slot=\"sidebar-wr...\" data-atmosphere={true} style={{...}} className=\"group/side...\">\n            <FocusRealityBoundary>\n              <SyncThemeFromProfile>\n              <OnboardingGate>\n              <AppSidebar>\n              <SidebarInset>\n              <IdeaCaptureSheet>\n                <TooltipProvider delay={250}>\n                  <TooltipProvider data-slot=\"tooltip-pr...\" delay={250}>\n                    <FloatingDelayGroup delay={{open:250, ...}} timeoutMs={400}>\n                      <Button>\n                      <input\n                        ref={{current:null}}\n                        type=\"file\"\n                        accept=\"image/jpeg,image/png,image/webp,image/gif,image/heic\"\n                        multiple={true}\n                        onChange={function IdeaCaptureSheet.useCallback[handleFileChange]}\n                        className=\"hidden\"\n                        aria-hidden=\"true\"\n                        tabIndex={-1}\n-                       style={{caret-color:\"transparent\"}}\n                      >\n                      ...\n              ...\n              ...\n"
+    ],
+    "httpErrors": [],
+    "expectedHttpErrors": [],
+    "pageErrors": []
+  }
+]

@@ -402,7 +402,7 @@ export function KnowledgeTopControlBar() {
             value={currentView}
             onValueChange={setView}
             ariaLabel={ui.pageTitle}
-            className="h-8 min-h-8 w-full min-w-0 p-0.5 sm:w-full [&>button]:h-7 [&>button]:min-h-7 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:rounded-[0.65rem] [&>button]:px-2 [&>button]:text-xs [&_svg]:size-3.5 max-[420px]:[&>button]:gap-0 max-[520px]:[&>button>span:last-child]:sr-only"
+            className="w-full min-w-0 sm:w-full [&>button]:min-w-0 [&>button]:flex-1 [&>button>span:last-child]:min-w-0 [&>button>span:last-child]:truncate [&>button>span:last-child]:whitespace-nowrap max-[420px]:[&>button]:gap-0 max-[520px]:[&>button>span:last-child]:sr-only"
             labelMode="desktop"
             layoutId="knowledge-view-active-pill"
           />

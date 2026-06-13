@@ -337,7 +337,7 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
           </div>
         </div>
 
-        <DialogFooter className="mt-0">
+        <DialogFooter className="mx-0 mb-0 mt-0 gap-2 px-4 pb-5 pt-3 sm:px-5">
           <Button
             type="button"
             variant="ghost"
@@ -421,7 +421,7 @@ function CommandLightOpacityControl({
             type="range"
             min={MIN_KNOWLEDGE_COMMAND_LIGHT_OPACITY}
             max={MAX_KNOWLEDGE_COMMAND_LIGHT_OPACITY}
-            step={5}
+            step={1}
             value={normalized}
             aria-label={copy.commandLightOpacityLabel}
             aria-valuetext={`${normalized}%`}

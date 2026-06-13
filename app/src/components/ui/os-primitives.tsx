@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, type Transition } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -242,6 +242,20 @@ export interface OSSegmentedControlProps<T extends string> {
   selectionGlow?: boolean;
 }
 
+type SegmentMovementDirection = -1 | 0 | 1;
+type SegmentLiquidMotion = {
+  direction: SegmentMovementDirection;
+  wave: number;
+};
+
+function getSegmentMovementDirection(
+  fromIndex: number,
+  toIndex: number,
+): SegmentMovementDirection {
+  if (fromIndex === -1 || toIndex === -1) return 0;
+  return Math.sign(toIndex - fromIndex) as SegmentMovementDirection;
+}
+
 export function OSSegmentedControl<T extends string>({
   items,
   value,
@@ -255,6 +269,29 @@ export function OSSegmentedControl<T extends string>({
   selectionGlow = false,
 }: OSSegmentedControlProps<T>) {
   const reduceMotion = useHydrationSafeReducedMotion();
+  const activeIndex = items.findIndex((item) => item.id === value);
+  const [liquidMotion, setLiquidMotion] = React.useState<SegmentLiquidMotion>({
+    direction: 0,
+    wave: 0,
+  });
+  const movementDirection = liquidMotion.direction;
+  const liquidOrigin =
+    movementDirection < 0
+      ? "right center"
+      : movementDirection > 0
+        ? "left center"
+      : "center";
+  const liquidTravel = movementDirection < 0 ? "right-to-left" : "left-to-right";
+  const liquidTailPull = movementDirection < 0 ? 1 : -1;
+  const liquidPillTransition: Transition = reduceMotion
+    ? { duration: 0 }
+    : { type: "spring", stiffness: 360, damping: 22, mass: 0.82 };
+  const liquidSheenTransition: Transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.64, ease: OS_MOTION.ease };
+  const liquidSplashTransition: Transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.78, ease: OS_MOTION.ease, times: [0, 0.42, 1] };
 
   return (
     <div
@@ -265,7 +302,7 @@ export function OSSegmentedControl<T extends string>({
         osSegmentedShellClassName,
         osGlassControlClassName,
         osSheenClassName,
-        "w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:w-fit [&::-webkit-scrollbar]:hidden",
+        "w-full overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:w-fit sm:overflow-visible [&::-webkit-scrollbar]:hidden",
         className,
       )}
     >
@@ -284,6 +321,14 @@ export function OSSegmentedControl<T extends string>({
             data-selection-glow={selectionGlow && active ? "active" : undefined}
             onClick={() => {
               if (item.id === value) return;
+              const nextIndex = items.findIndex(
+                (candidate) => candidate.id === item.id,
+              );
+              const nextDirection = getSegmentMovementDirection(activeIndex, nextIndex);
+              setLiquidMotion((previous) => ({
+                direction: nextDirection,
+                wave: previous.wave + 1,
+              }));
               runOSViewTransition(() => onValueChange(item.id), Boolean(reduceMotion));
             }}
             className={cn(
@@ -296,16 +341,121 @@ export function OSSegmentedControl<T extends string>({
             {active ? (
               <motion.span
                 layoutId={reduceMotion ? undefined : layoutId}
-                className="absolute inset-0 -z-10 rounded-[1rem] bg-lime-300 shadow-[0_10px_30px_rgba(190,242,100,0.16),inset_0_1px_0_rgba(255,255,255,0.45)]"
-                transition={{
-                  duration: reduceMotion ? 0 : OS_MOTION.tabMs,
-                  ease: OS_MOTION.ease,
-                }}
-              />
+                initial={
+                  reduceMotion
+                    ? false
+                    : {
+                        scaleX: movementDirection === 0 ? 1 : 1.2,
+                        scaleY: 0.88,
+                      }
+                }
+                animate={{ scaleX: 1, scaleY: 1 }}
+                style={{ transformOrigin: liquidOrigin }}
+                className="absolute inset-0 -z-10 overflow-visible rounded-[1rem] bg-lime-300 shadow-[0_10px_30px_rgba(190,242,100,0.16),inset_0_1px_0_rgba(255,255,255,0.56),inset_0_-1px_0_rgba(132,204,22,0.32)]"
+                transition={liquidPillTransition}
+              >
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_22%_0%,rgba(255,255,255,0.72),transparent_34%),linear-gradient(100deg,rgba(255,255,255,0.20),transparent_42%,rgba(255,255,255,0.16))]"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-[1px] rounded-[0.95rem] border border-white/25"
+                />
+                {!reduceMotion ? (
+                  <motion.span
+                    aria-hidden
+                    data-liquid-travel={liquidTravel}
+                    initial={{
+                      opacity: movementDirection === 0 ? 0.2 : 0.68,
+                      scaleX: movementDirection === 0 ? 0.82 : 1.35,
+                      x: movementDirection < 0 ? "155%" : "-70%",
+                    }}
+                    animate={{
+                      opacity: 0,
+                      scaleX: 0.72,
+                      x: movementDirection < 0 ? "-120%" : "210%",
+                    }}
+                    className="absolute inset-y-1 w-2/5 rounded-full bg-white/45 blur-md"
+                    transition={liquidSheenTransition}
+                  />
+                ) : null}
+                <AnimatePresence initial={false}>
+                  {!reduceMotion && movementDirection !== 0 ? (
+                    <motion.span
+                      key={`liquid-bridge-${liquidMotion.wave}`}
+                      aria-hidden
+                      data-liquid-bridge={liquidTravel}
+                      initial={{
+                        opacity: 0.8,
+                        scaleX: 0.34,
+                        scaleY: 0.32,
+                        x: liquidTailPull * 48,
+                        rotate: liquidTailPull * 7,
+                      }}
+                      animate={{
+                        opacity: [0.8, 0.55, 0],
+                        scaleX: [0.34, 1.75, 1.06],
+                        scaleY: [0.32, 1.12, 0.58],
+                        x: [
+                          liquidTailPull * 48,
+                          liquidTailPull * 10,
+                          liquidTailPull * -22,
+                        ],
+                        rotate: [
+                          liquidTailPull * 7,
+                          liquidTailPull * -3,
+                          liquidTailPull * -9,
+                        ],
+                      }}
+                      className={cn(
+                        "pointer-events-none absolute top-1/2 h-14 w-[88%] -translate-y-1/2 rounded-[999px] bg-[radial-gradient(ellipse_at_center,rgba(247,255,224,0.95)_0%,rgba(190,242,100,0.76)_42%,rgba(132,204,22,0.22)_72%,transparent_100%)] opacity-0 blur-[2px] shadow-[0_0_30px_rgba(190,242,100,0.36)]",
+                        movementDirection < 0 ? "left-[58%]" : "right-[58%]",
+                      )}
+                      transition={liquidSplashTransition}
+                    />
+                  ) : null}
+                  {!reduceMotion && movementDirection !== 0 ? (
+                    <motion.span
+                      key={`liquid-drop-${liquidMotion.wave}`}
+                      aria-hidden
+                      data-liquid-drop={liquidTravel}
+                      initial={{
+                        opacity: 0.72,
+                        scale: 0.46,
+                        x: liquidTailPull * 34,
+                        y: -2,
+                        rotate: liquidTailPull * -18,
+                      }}
+                      animate={{
+                        opacity: [0.72, 0.9, 0],
+                        scale: [0.46, 1.08, 0.42],
+                        x: [
+                          liquidTailPull * 34,
+                          liquidTailPull * 4,
+                          liquidTailPull * -14,
+                        ],
+                        y: [-2, 7, 0],
+                        rotate: [
+                          liquidTailPull * -18,
+                          liquidTailPull * 10,
+                          liquidTailPull * 22,
+                        ],
+                      }}
+                      className={cn(
+                        "pointer-events-none absolute top-1/2 h-11 w-16 -translate-y-1/2 rounded-[56%_44%_62%_38%/44%_56%_36%_64%] bg-[radial-gradient(circle_at_34%_24%,rgba(255,255,255,0.92),rgba(217,249,157,0.82)_34%,rgba(132,204,22,0.38)_68%,transparent_100%)] blur-[1px] shadow-[0_0_26px_rgba(190,242,100,0.34),inset_0_1px_0_rgba(255,255,255,0.62)]",
+                        movementDirection < 0 ? "left-[86%]" : "right-[86%]",
+                      )}
+                      transition={liquidSplashTransition}
+                    />
+                  ) : null}
+                </AnimatePresence>
+              </motion.span>
             ) : null}
             {Icon ? <Icon className="size-4" aria-hidden /> : null}
             <span
               className={cn(
+                "min-w-0 whitespace-nowrap",
                 labelMode === "desktop" && "hidden sm:inline",
                 labelMode === "sr-only" && "sr-only",
               )}

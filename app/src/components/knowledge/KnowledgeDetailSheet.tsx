@@ -470,7 +470,7 @@ export function KnowledgeDetailSheet() {
               render={
                 <Button
                   variant="ghost"
-                  className="absolute top-2 right-3"
+                  className="knowledge-detail-close-button absolute right-3 top-2 z-[80]"
                   size="icon-sm"
                 />
               }
@@ -483,7 +483,7 @@ export function KnowledgeDetailSheet() {
           {/* Scrollable body */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
             {/* Header */}
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-4 pr-14">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-4 pr-16">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 {item.sourceType ? (
                   uploadBadge ? (
@@ -530,7 +530,7 @@ export function KnowledgeDetailSheet() {
                   </span>
                 )}
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                 {sourceIsYoutube && (
                   <>
                     <Button
@@ -565,10 +565,10 @@ export function KnowledgeDetailSheet() {
                     href={item.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+                    className="inline-flex h-7 max-w-[13rem] items-center gap-1 rounded-md border border-input bg-background px-2 text-[11px] font-medium text-foreground transition-colors hover:bg-accent sm:max-w-none"
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {ui.openKnowledgeSource}
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{ui.openKnowledgeSource}</span>
                   </a>
                 )}
               </div>
@@ -591,11 +591,11 @@ export function KnowledgeDetailSheet() {
                   onBlur={handleTitleBlur}
                   onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
                   autoFocus
-                  className="text-lg font-semibold"
+                  className="mx-auto max-w-3xl text-center text-xl font-semibold sm:text-2xl"
                 />
               ) : (
                 <SheetTitle
-                  className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
+                  className="mx-auto max-w-3xl cursor-pointer px-2 text-center text-xl font-semibold leading-tight transition-colors hover:text-primary sm:text-2xl"
                   onClick={() => setEditingTitle(true)}
                 >
                   {item.title}
