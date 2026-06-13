@@ -1,0 +1,35 @@
+[
+  {
+    "viewport": {
+      "name": "desktop",
+      "width": 1280,
+      "height": 900
+    },
+    "url": "http://127.0.0.1:3000/en/daily-planner",
+    "found": true,
+    "metrics": {
+      "width": 185.18,
+      "height": 104.16,
+      "ratio": 1.778,
+      "aspectRatio": "16 / 9",
+      "backgroundSize": "cover"
+    },
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/os-buddy-resting-space-aspect/desktop.png",
+    "errors": []
+  },
+  {
+    "viewport": {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    "url": "http://127.0.0.1:3000/en/daily-planner",
+    "found": false,
+    "metrics": null,
+    "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/os-buddy-resting-space-aspect/mobile.png",
+    "errors": [
+      "Invalid or unexpected token",
+      "Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component. Move this work to useEffect instead."
+    ]
+  }
+]

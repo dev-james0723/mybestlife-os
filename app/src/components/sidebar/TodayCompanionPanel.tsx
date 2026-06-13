@@ -611,7 +611,7 @@ function OSBuddyRestingSpace({ buddyLine }: { buddyLine: string }) {
       <div
         id={OS_BUDDY_RESTING_SPACE_DROPZONE_ID}
         className={cn(
-          "today-companion-rest-room relative h-[62px] overflow-hidden rounded-lg border bg-white/55 transition dark:bg-black/25",
+          "today-companion-rest-room relative aspect-video w-full overflow-hidden rounded-lg border bg-white/55 transition dark:bg-black/25",
           isRestingInSidebar
             ? "border-emerald-300/55 shadow-[inset_0_0_28px_rgba(16,185,129,0.08)] dark:border-emerald-300/35"
             : "border-slate-200/80 dark:border-white/[0.12]",

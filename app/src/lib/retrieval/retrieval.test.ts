@@ -52,7 +52,7 @@ function permission(
   };
 }
 
-describe("Ask Your KB retrieval", () => {
+describe("Ask My Knowledge Base retrieval", () => {
   it("preserves deterministic matcher ranking behavior", () => {
     const results = matchKnowledgeItems(
       [
@@ -84,7 +84,7 @@ describe("Ask Your KB retrieval", () => {
     const source = item({
       id: "doc-1",
       title: "Retrieval design",
-      aiSummary: "A shared index for Ask Your KB.",
+      aiSummary: "A shared index for Ask My Knowledge Base.",
       rawContent,
       manualTags: ["retrieval"],
     });
@@ -146,7 +146,7 @@ describe("Ask Your KB retrieval", () => {
           analysis_id: "analysis-1",
           source_page_number: 4,
           title: "Retrieval architecture diagram",
-          description: "A diagram linking Ask Your KB to cited sources.",
+          description: "A diagram linking Ask My Knowledge Base to cited knowledge.",
           retrieval_tags: ["architecture", "ask-kb"],
         },
       ],
@@ -170,7 +170,7 @@ describe("Ask Your KB retrieval", () => {
       {
         id: "project-1",
         user_id: "user-1",
-        name: "Ask Your KB upgrade",
+        name: "Ask My Knowledge Base upgrade",
         description: "Cited semantic retrieval across Life OS domains.",
         status: "active",
         priority: "high",
@@ -267,7 +267,7 @@ describe("Ask Your KB retrieval", () => {
     expect(run.warnings).toContain("keyword_retrieval_scope_excludes_knowledge");
   });
 
-  it("rejects citations that are not present in retrieved evidence", () => {
+  it("rejects citations that are not present in retrieved knowledge", () => {
     const evidence: RetrievalResult[] = [
       {
         id: "R1",

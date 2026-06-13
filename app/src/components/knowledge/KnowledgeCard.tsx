@@ -98,7 +98,7 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
         }
       }}
     >
-      <div className="relative aspect-[16/10] shrink-0 overflow-hidden bg-muted">
+      <div className="relative aspect-video shrink-0 overflow-hidden bg-muted">
         <div className="pointer-events-none absolute inset-0 z-0">
           {renderCardVisual({ item, isProcessing, ui, legacyColors })}
         </div>
@@ -389,7 +389,7 @@ function renderCardVisual(args: {
           <OptimizedThumbnailImage
             src={visualUrl}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
             variant="card"
           />
@@ -432,7 +432,7 @@ function renderCardVisual(args: {
         <OptimizedThumbnailImage
           src={item.thumbnailUrl}
           alt=""
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
           variant="card"
         />
@@ -464,7 +464,7 @@ function renderCardVisual(args: {
       <OptimizedThumbnailImage
         src={item.thumbnailUrl}
         alt=""
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 360px"
         variant="card"
       />

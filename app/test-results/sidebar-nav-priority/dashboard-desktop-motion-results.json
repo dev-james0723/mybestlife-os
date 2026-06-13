@@ -1,0 +1,166 @@
+{
+  "url": "http://127.0.0.1:3000/en/dashboard",
+  "content": {
+    "top": 93,
+    "bottom": 798,
+    "left": 17,
+    "right": 235,
+    "width": 218,
+    "height": 705,
+    "opacity": "1",
+    "display": "flex",
+    "visibility": "visible",
+    "color": "oklch(0.145 0 0)"
+  },
+  "panel": null,
+  "footer": {
+    "top": 798,
+    "bottom": 879,
+    "left": 17,
+    "right": 235,
+    "width": 218,
+    "height": 81,
+    "opacity": "1",
+    "display": "flex",
+    "visibility": "visible",
+    "color": "oklch(0.145 0 0)"
+  },
+  "contentScroll": {
+    "scrollTop": 0,
+    "scrollHeight": 705,
+    "clientHeight": 705
+  },
+  "items": [
+    {
+      "label": "Command Center",
+      "visible": true,
+      "rect": {
+        "top": 107,
+        "bottom": 127,
+        "left": 73,
+        "right": 189.91,
+        "width": 116.91,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "Self",
+      "visible": true,
+      "rect": {
+        "top": 155,
+        "bottom": 175,
+        "left": 73,
+        "right": 100.69,
+        "width": 27.69,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "People",
+      "visible": true,
+      "rect": {
+        "top": 203,
+        "bottom": 223,
+        "left": 73,
+        "right": 119.28,
+        "width": 46.28,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "Career",
+      "visible": true,
+      "rect": {
+        "top": 251,
+        "bottom": 271,
+        "left": 73,
+        "right": 118.3,
+        "width": 45.3,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "Build & Execute",
+      "visible": true,
+      "rect": {
+        "top": 299,
+        "bottom": 319,
+        "left": 73,
+        "right": 177.63,
+        "width": 104.63,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "Resources",
+      "visible": true,
+      "rect": {
+        "top": 347,
+        "bottom": 367,
+        "left": 73,
+        "right": 143.84,
+        "width": 70.84,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "Knowledge",
+      "visible": true,
+      "rect": {
+        "top": 395,
+        "bottom": 415,
+        "left": 73,
+        "right": 147.61,
+        "width": 74.61,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    },
+    {
+      "label": "Learning",
+      "visible": true,
+      "rect": {
+        "top": 443,
+        "bottom": 463,
+        "left": 73,
+        "right": 131.48,
+        "width": 58.48,
+        "height": 20,
+        "opacity": "1",
+        "display": "block",
+        "visibility": "visible",
+        "color": "oklch(0.145 0 0)"
+      }
+    }
+  ],
+  "assertions": {
+    "allMainItemsVisible": true
+  }
+}

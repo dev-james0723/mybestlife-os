@@ -112,6 +112,12 @@ const BUILTIN_QUICK_FILTER_TONES: Record<KnowledgeBuiltinQuickFilterId, QuickFil
 const QUICK_FILTER_IDLE_CLASS =
   "border-border/60 bg-background/70 text-muted-foreground shadow-none hover:border-foreground/20 hover:bg-muted/60 hover:text-foreground dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
 
+const KNOWLEDGE_DROPDOWN_POSITIONER_CLASS =
+  "glass-modal-surface overflow-hidden rounded-xl";
+
+const KNOWLEDGE_DROPDOWN_CONTENT_CLASS =
+  "bg-transparent shadow-none ring-0 [&_[data-slot=select-scroll-down-button]]:bg-transparent [&_[data-slot=select-scroll-up-button]]:bg-transparent";
+
 const CUSTOM_QUICK_FILTER_TONES: QuickFilterTone[] = [
   BUILTIN_QUICK_FILTER_TONES.recent,
   BUILTIN_QUICK_FILTER_TONES.social,
@@ -247,7 +253,11 @@ export function KnowledgeTopControlBar() {
               </span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent
+              align="start"
+              positionerClassName={KNOWLEDGE_DROPDOWN_POSITIONER_CLASS}
+              className={KNOWLEDGE_DROPDOWN_CONTENT_CLASS}
+            >
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                   {ui.contentTypesMenuTitle}
@@ -287,7 +297,11 @@ export function KnowledgeTopControlBar() {
               >
                 <SelectValue placeholder={ui.cardsPerPageLabel} />
               </SelectTrigger>
-              <SelectContent align="start">
+              <SelectContent
+                align="start"
+                positionerClassName={KNOWLEDGE_DROPDOWN_POSITIONER_CLASS}
+                className={KNOWLEDGE_DROPDOWN_CONTENT_CLASS}
+              >
                 {KNOWLEDGE_CARDS_PER_PAGE_OPTIONS.map((count) => (
                   <SelectItem key={count} value={String(count)} className="text-xs">
                     {ui.formatCardsPerPageOption(count)}
@@ -354,19 +368,22 @@ export function KnowledgeTopControlBar() {
             <PopoverContent
               align="start"
               side="bottom"
-              className="w-[min(calc(100vw-2rem),var(--anchor-width))] p-3"
+              className="w-[min(calc(100vw-2rem),var(--anchor-width))] bg-transparent p-3 shadow-none ring-0"
             >
               <TagTaxonomyPanel onAfterSelect={() => setTagsOpen(false)} />
             </PopoverContent>
           </Popover>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid min-w-0 gap-2">
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as KnowledgeSortKey)}>
-            <SelectTrigger className="h-9 w-full border-border/60 bg-background/80 text-xs sm:w-[168px]">
-              <SelectValue placeholder={ui.sortLabel} />
+            <SelectTrigger className="h-9 w-full min-w-0 justify-between border-border/60 bg-background/80 text-xs">
+              <SelectValue placeholder={ui.sortLabel}>{ui.sortLabels[sortBy]}</SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent
+              positionerClassName={KNOWLEDGE_DROPDOWN_POSITIONER_CLASS}
+              className={KNOWLEDGE_DROPDOWN_CONTENT_CLASS}
+            >
               {SORT_KEYS.map((key) => (
                 <SelectItem key={key} value={key} className="text-xs">
                   {ui.sortLabels[key]}
@@ -380,7 +397,7 @@ export function KnowledgeTopControlBar() {
             value={currentView}
             onValueChange={setView}
             ariaLabel={ui.pageTitle}
-            className="max-sm:[&>button]:min-w-0 max-sm:[&>button]:flex-1 lg:[&>button]:min-h-8 lg:[&>button]:min-w-8 lg:[&>button]:rounded-lg lg:[&>button]:px-2 lg:[&>button]:text-xs lg:[&_svg]:size-3.5 lg:max-xl:[&>button>span:last-child]:sr-only"
+            className="h-8 min-h-8 w-full min-w-0 p-0.5 sm:w-full [&>button]:h-7 [&>button]:min-h-7 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:rounded-[0.65rem] [&>button]:px-2 [&>button]:text-xs [&_svg]:size-3.5 max-[420px]:[&>button]:gap-0 max-[520px]:[&>button>span:last-child]:sr-only"
             labelMode="desktop"
             layoutId="knowledge-view-active-pill"
           />
@@ -388,14 +405,14 @@ export function KnowledgeTopControlBar() {
       </div>
 
       <div
-        className="flex min-w-0 items-center gap-1.5"
+        className="flex min-w-0 items-center gap-2"
         role="group"
         aria-label={ui.quickFilterManager.title}
       >
         {visibleQuickFilters.length > 0 ? (
           <div className="relative min-w-0 flex-1">
             <div
-              className="flex min-w-0 gap-1 overflow-x-auto pb-0.5 pr-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 pr-6 sm:gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               style={{
                 WebkitMaskImage:
                   "linear-gradient(to right, #000 calc(100% - 2rem), transparent)",
@@ -419,7 +436,7 @@ export function KnowledgeTopControlBar() {
                     size="sm"
                     osSize="compact"
                     className={cn(
-                      "shrink-0 gap-1 rounded-full border px-2.5 text-[11px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]",
+                      "shrink-0 gap-1 rounded-full border px-3 text-[11px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]",
                       isActive ? tone.active : QUICK_FILTER_IDLE_CLASS,
                     )}
                     aria-pressed={isActive}

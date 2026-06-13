@@ -40,6 +40,7 @@ import {
   OSIconControl,
   OSPrimaryAction,
 } from "@/components/ui/os-primitives";
+import { useCommandLightInteraction } from "@/hooks/use-command-light-interaction";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useAppStore } from "@/stores/app-store";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
@@ -83,10 +84,10 @@ type RetrievalRecipe = {
   createdAt: string;
 };
 
-type EvidenceWorkflowId = "changed" | "contradictions" | "tasks" | "study-pack";
+type KnowledgeWorkflowId = "changed" | "contradictions" | "tasks" | "study-pack";
 
-const EVIDENCE_WORKFLOWS: Array<{
-  id: EvidenceWorkflowId;
+const KNOWLEDGE_WORKFLOWS: Array<{
+  id: KnowledgeWorkflowId;
   icon: LucideIcon;
   prompt: string;
 }> = [
@@ -94,25 +95,25 @@ const EVIDENCE_WORKFLOWS: Array<{
     id: "changed",
     icon: Clock3,
     prompt:
-      "Using the current retrieved evidence, answer: what changed since last week? If the evidence does not include dates, say so clearly. Cite each claim and call out uncertainty.",
+      "Using the current retrieved knowledge, answer: what changed since last week? If the knowledge does not include dates, say so clearly. Cite each claim and call out uncertainty.",
   },
   {
     id: "contradictions",
     icon: AlertTriangle,
     prompt:
-      "Using the current retrieved evidence, find contradictions, tensions, or disagreements. Separate strong contradictions from weak tension and cite every point.",
+      "Using the current retrieved knowledge, find contradictions, tensions, or disagreements. Separate strong contradictions from weak tension and cite every point.",
   },
   {
     id: "tasks",
     icon: ListChecks,
     prompt:
-      "Using the current retrieved evidence, turn the useful findings into a practical task or project plan with owners, priorities, and source citations.",
+      "Using the current retrieved knowledge, turn the useful findings into a practical task or project plan with owners, priorities, and citations.",
   },
   {
     id: "study-pack",
     icon: GraduationCap,
     prompt:
-      "Using the current retrieved evidence, build a compact study pack with key ideas, source-backed notes, recall questions, and citations.",
+      "Using the current retrieved knowledge, build a compact study pack with key ideas, source-backed notes, recall questions, and citations.",
   },
 ];
 
@@ -191,7 +192,7 @@ function shortRecipeName(query: string) {
 }
 
 function workflowLabel(
-  workflow: EvidenceWorkflowId,
+  workflow: KnowledgeWorkflowId,
   ui: ReturnType<typeof getKnowledgeUiCopy>["inquiryAgent"],
 ) {
   if (workflow === "changed") return ui.workflowChanged;
@@ -338,8 +339,15 @@ export function KnowledgeInquiryAgent() {
       retrievalMode,
       selectedSourceDomains,
       setAgentStateValue,
+      setCommittedInquiry,
+      setDraftInquiry,
+      setIsRetrievalOpen,
+      setRetrievalRunId,
+      setRetrievalWarnings,
       setSearchQuery,
       setSortBy,
+      setServerResults,
+      setSourceChips,
       smartCollections,
     ],
   );
@@ -353,7 +361,7 @@ export function KnowledgeInquiryAgent() {
       setAgentStateValue("transcribing");
       timersRef.current.push(setTimeout(() => runInquiry(next), 280));
     },
-    [clearTimers, runInquiry, setAgentStateValue],
+    [clearTimers, runInquiry, setAgentStateValue, setDraftInquiry],
   );
 
   const speech = useSpeechRecognition({
@@ -375,7 +383,7 @@ export function KnowledgeInquiryAgent() {
       );
       setRetrievalStorageReady(true);
     });
-  }, []);
+  }, [setIsRetrievalOpen]);
 
   useEffect(() => {
     if (!retrievalStorageReady) return;
@@ -419,13 +427,13 @@ export function KnowledgeInquiryAgent() {
     setAgentStateValue("idle");
   };
 
-  const openRetrievalPanel = useCallback(() => {
+  function openRetrievalPanel() {
     setIsRetrievalOpen(true);
     if (typeof window === "undefined") return;
     window.requestAnimationFrame(() => {
       window.document.getElementById("knowledge-inquiry-input")?.focus();
     });
-  }, []);
+  }
 
   const toggleSpeech = () => {
     if (speech.isListening) {
@@ -452,6 +460,9 @@ export function KnowledgeInquiryAgent() {
           speech.status === "unsupported"
         ? "error"
         : agentState;
+  const inlineStatusLabel =
+    speechMessage ??
+    (visibleAgentState === "idle" ? null : statusLabel(visibleAgentState, ui));
 
   const displayMatches =
     visibleAgentState === "no-strong-matches"
@@ -467,7 +478,7 @@ export function KnowledgeInquiryAgent() {
   const scopeLabel =
     selectedSourceDomains.length > 0
       ? `${selectedSourceDomains.length} source${selectedSourceDomains.length === 1 ? "" : "s"}`
-      : "All readable sources";
+      : "All readable knowledge";
   const collapsedStatus = hasRetrievalActivity
     ? ui.resultsHeading(activeResultCount)
     : statusLabel(visibleAgentState, ui);
@@ -537,11 +548,6 @@ export function KnowledgeInquiryAgent() {
     );
   };
 
-  const runEvidenceWorkflow = (workflow: EvidenceWorkflowId) => {
-    const config = EVIDENCE_WORKFLOWS.find((entry) => entry.id === workflow);
-    openAIPanel(config?.prompt ?? committedInquiry, retrievalRunId);
-  };
-
   const updateSourceScope = (domain: RetrievalSourceDomain, enabled: boolean) => {
     const current =
       selectedSourceDomains.length > 0
@@ -560,31 +566,32 @@ export function KnowledgeInquiryAgent() {
       className="max-w-full"
       aria-label={ui.openRetrieval}
     >
-      <AnimatePresence initial={false} mode="wait">
-        {!isRetrievalOpen ? (
-          <RetrievalTriggerButton
-            key="retrieval-trigger"
-            ui={ui}
-            status={collapsedStatus}
-            hasActivity={hasRetrievalActivity}
-            reduceMotion={Boolean(reduceMotion)}
-            panelId={RETRIEVAL_PANEL_ID}
-            onOpen={openRetrievalPanel}
-          />
-        ) : (
+      <RetrievalTriggerButton
+        ui={ui}
+        status={collapsedStatus}
+        hasActivity={hasRetrievalActivity}
+        isOpen={isRetrievalOpen}
+        reduceMotion={Boolean(reduceMotion)}
+        panelId={RETRIEVAL_PANEL_ID}
+        onToggle={() => (isRetrievalOpen ? setIsRetrievalOpen(false) : openRetrievalPanel())}
+      />
+
+      <AnimatePresence initial={false}>
+        {isRetrievalOpen ? (
           <motion.div
             key="retrieval-panel"
             id={RETRIEVAL_PANEL_ID}
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="rounded-xl border border-lime-900/10 bg-[linear-gradient(135deg,rgba(247,250,239,0.94)_0%,rgba(233,241,215,0.9)_48%,rgba(220,232,188,0.82)_100%)] shadow-[0_18px_54px_rgba(79,103,34,0.14),inset_0_1px_0_rgba(255,255,255,0.54)] dark:border-lime-300/18 dark:bg-[linear-gradient(135deg,#11140e_0%,#151b10_48%,#202911_100%)] dark:shadow-[0_22px_64px_rgba(6,12,4,0.48),inset_0_1px_0_rgba(255,255,255,0.06)]"
+            initial={reduceMotion ? false : { height: 0, opacity: 0, y: -10 }}
+            animate={reduceMotion ? undefined : { height: "auto", opacity: 1, y: 0 }}
+            exit={reduceMotion ? undefined : { height: 0, opacity: 0, y: -8 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="min-w-0 overflow-hidden"
             aria-labelledby="knowledge-inquiry-agent-title"
           >
+            <div className="mt-2 rounded-xl border border-lime-900/10 bg-[linear-gradient(135deg,rgba(247,250,239,0.94)_0%,rgba(233,241,215,0.9)_48%,rgba(220,232,188,0.82)_100%)] shadow-[0_18px_54px_rgba(79,103,34,0.14),inset_0_1px_0_rgba(255,255,255,0.54)] dark:border-lime-300/18 dark:bg-[linear-gradient(135deg,#11140e_0%,#151b10_48%,#202911_100%)] dark:shadow-[0_22px_64px_rgba(6,12,4,0.48),inset_0_1px_0_rgba(255,255,255,0.06)]">
             <div
               className={cn(
-                "grid gap-4 p-4 max-[480px]:pb-24 sm:p-5",
+                "grid gap-4 p-4 sm:p-5",
                 hasRetrievalActivity
                   ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.72fr)]"
                   : "xl:grid-cols-1",
@@ -643,13 +650,19 @@ export function KnowledgeInquiryAgent() {
                 </p>
               ) : null}
               <div className="flex flex-col gap-2 border-t border-lime-900/10 pt-2 dark:border-lime-300/10 sm:flex-row sm:items-center sm:justify-between">
-                <div
-                  id="knowledge-inquiry-status"
-                  className="min-h-5 text-xs text-muted-foreground"
-                  aria-live="polite"
-                >
-                  {speechMessage ?? statusLabel(visibleAgentState, ui)}
-                </div>
+                {inlineStatusLabel ? (
+                  <div
+                    id="knowledge-inquiry-status"
+                    className="min-h-5 text-xs text-muted-foreground"
+                    aria-live="polite"
+                  >
+                    {inlineStatusLabel}
+                  </div>
+                ) : (
+                  <div id="knowledge-inquiry-status" className="sr-only">
+                    {ui.idleStatus}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-end gap-2">
                   {draftInquiry.trim() ? (
@@ -696,12 +709,12 @@ export function KnowledgeInquiryAgent() {
             </div>
           </form>
 
-          <div className="flex flex-wrap items-center gap-2 max-[480px]:pr-20">
+          <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
             <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Mode
             </span>
-            <div className="flex flex-wrap gap-1 rounded-lg border border-lime-900/10 bg-white/48 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] dark:border-lime-300/12 dark:bg-black/20">
+            <div className="grid w-full grid-cols-2 gap-1 rounded-lg border border-lime-900/10 bg-white/48 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] dark:border-lime-300/12 dark:bg-black/20 sm:w-auto sm:grid-cols-4">
               {RETRIEVAL_MODES.map((mode) => (
                 <button
                   key={mode}
@@ -728,16 +741,16 @@ export function KnowledgeInquiryAgent() {
                   <OSControl
                     type="button"
                     osSize="compact"
-                    className="h-8 gap-1.5 border-lime-900/10 bg-white/54 px-2.5 text-xs text-muted-foreground hover:border-lime-700/20 hover:bg-white/72 dark:border-lime-300/12 dark:bg-black/20 dark:hover:border-lime-300/22 dark:hover:bg-black/28 max-[480px]:ml-10 max-[480px]:max-w-[calc(100%-5rem)]"
+                    className="h-10 w-full min-w-0 justify-between gap-1.5 border-lime-900/10 bg-white/54 px-2.5 text-xs text-muted-foreground hover:border-lime-700/20 hover:bg-white/72 dark:border-lime-300/12 dark:bg-black/20 dark:hover:border-lime-300/22 dark:hover:bg-black/28 sm:h-8 sm:w-auto sm:justify-start"
                   />
                 }
               >
-                Scope
-                <span className="text-foreground">{scopeLabel}</span>
+                <span className="shrink-0">Scope</span>
+                <span className="min-w-0 truncate text-foreground">{scopeLabel}</span>
                 <ChevronDown className="h-3.5 w-3.5 opacity-60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-64">
-                <DropdownMenuLabel>Readable sources</DropdownMenuLabel>
+                <DropdownMenuLabel>Readable knowledge</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {sourceChips.length > 0 ? (
                   sourceChips.map((chip) => {
@@ -760,20 +773,20 @@ export function KnowledgeInquiryAgent() {
                   })
                 ) : (
                   <div className="px-2 py-2 text-xs leading-5 text-muted-foreground">
-                    Run a retrieval to load readable source scope.
+                    Run retrieval to load readable knowledge scope.
                   </div>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 max-[480px]:pl-10 max-[480px]:pr-20">
+          <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">{ui.examplesLabel}</span>
             {ui.exampleQueries.map((example) => (
               <button
                 key={example}
                 type="button"
-                className="min-h-11 rounded-md border border-lime-900/10 bg-white/54 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-lime-700/25 hover:bg-lime-300/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/12 dark:bg-black/18 dark:hover:border-lime-300/25 sm:min-h-9"
+                className="min-h-11 w-full rounded-md border border-lime-900/10 bg-white/54 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-lime-700/25 hover:bg-lime-300/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/12 dark:bg-black/18 dark:hover:border-lime-300/25 sm:min-h-9 sm:w-auto"
                 onClick={() => runInquiry(example)}
               >
                 {example}
@@ -781,11 +794,11 @@ export function KnowledgeInquiryAgent() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 max-[480px]:pr-20">
+          <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
             <OSControl
               type="button"
               osSize="compact"
-              className="gap-1.5"
+              className="w-full justify-center gap-1.5 sm:w-auto"
               disabled={!draftInquiry.trim() && !committedInquiry.trim()}
               onClick={saveCurrentRecipe}
             >
@@ -844,7 +857,7 @@ export function KnowledgeInquiryAgent() {
               <span className="text-[11px] font-medium text-muted-foreground">
                 {ui.workflowsLabel}
               </span>
-              {EVIDENCE_WORKFLOWS.map((workflow) => {
+              {KNOWLEDGE_WORKFLOWS.map((workflow) => {
                 const Icon = workflow.icon;
                 return (
                   <OSControl
@@ -852,7 +865,9 @@ export function KnowledgeInquiryAgent() {
                     type="button"
                     osSize="compact"
                     className="gap-1.5"
-                    onClick={() => runEvidenceWorkflow(workflow.id)}
+                    onClick={() =>
+                      openAIPanel(workflow.prompt, retrievalRunId, { handoff: true })
+                    }
                   >
                     <Icon className="h-3.5 w-3.5" />
                     {workflowLabel(workflow.id, ui)}
@@ -885,8 +900,9 @@ export function KnowledgeInquiryAgent() {
               onClear={() => setCompareResultKeys([])}
               onCompare={() =>
                 openAIPanel(
-                  "Compare the selected Ask Your KB sources. Summarize agreements, contradictions, unique evidence, and practical next steps. Cite every point.",
+                  "Compare the selected knowledge. Summarize agreements, contradictions, unique points, and practical next steps. Cite every point.",
                   retrievalRunId,
+                  { handoff: true },
                 )
               }
             />
@@ -918,7 +934,7 @@ export function KnowledgeInquiryAgent() {
                       window.open(result.sourceUrl, "_blank", "noopener,noreferrer");
                     }
                   }}
-                  onAskAi={() => openAIPanel(committedInquiry, retrievalRunId)}
+                  onAskAi={() => openAIPanel(committedInquiry, retrievalRunId, { handoff: true })}
                   onApplyPrompt={
                     retrievalRunId
                       ? () => {
@@ -944,7 +960,7 @@ export function KnowledgeInquiryAgent() {
                   ui={ui}
                   reduceMotion={Boolean(reduceMotion)}
                   onOpen={() => selectItem(match.item.id)}
-                  onAskAi={() => openAIPanel(committedInquiry)}
+                  onAskAi={() => openAIPanel(committedInquiry, retrievalRunId, { handoff: true })}
                 />
               ))}
             </div>
@@ -963,7 +979,7 @@ export function KnowledgeInquiryAgent() {
                   ui={ui}
                   reduceMotion={Boolean(reduceMotion)}
                   onOpen={() => selectItem(match.item.id)}
-                  onAskAi={() => openAIPanel(committedInquiry)}
+                  onAskAi={() => openAIPanel(committedInquiry, retrievalRunId, { handoff: true })}
                 />
               ))}
             </div>
@@ -984,8 +1000,9 @@ export function KnowledgeInquiryAgent() {
         </div>
         ) : null}
       </div>
+            </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </section>
   );
@@ -995,19 +1012,28 @@ function RetrievalTriggerButton({
   ui,
   status,
   hasActivity,
+  isOpen,
   reduceMotion,
   panelId,
-  onOpen,
+  onToggle,
 }: {
   ui: ReturnType<typeof getKnowledgeUiCopy>["inquiryAgent"];
   status: string;
   hasActivity: boolean;
+  isOpen: boolean;
   reduceMotion: boolean;
   panelId: string;
-  onOpen: () => void;
+  onToggle: () => void;
 }) {
+  const {
+    ref: commandLightRef,
+    style: commandLightStyle,
+    handlers: commandLightHandlers,
+  } = useCommandLightInteraction(reduceMotion);
+
   return (
     <motion.button
+      ref={commandLightRef}
       type="button"
       initial={reduceMotion ? false : { opacity: 0, y: 4 }}
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -1015,17 +1041,27 @@ function RetrievalTriggerButton({
       whileHover={reduceMotion ? undefined : { y: -1 }}
       whileTap={reduceMotion ? undefined : { scale: 0.995 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
-      className="group relative flex min-h-[86px] w-full overflow-hidden rounded-xl border border-lime-300/55 bg-[linear-gradient(135deg,#fbfdf5_0%,#eef7da_52%,#d9ebb1_100%)] p-3 text-left text-slate-900 shadow-[0_14px_34px_rgba(79,103,34,0.13)] outline-none transition-[border-color,box-shadow,filter] hover:border-lime-400/65 hover:shadow-[0_18px_42px_rgba(79,103,34,0.18)] focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/24 dark:bg-[linear-gradient(135deg,#10140b_0%,#1c2a10_52%,#4f661a_100%)] dark:text-lime-50 dark:shadow-[0_18px_44px_rgba(57,80,21,0.28)] dark:hover:border-lime-200/45 dark:hover:shadow-[0_20px_52px_rgba(69,96,24,0.36)] sm:p-3.5"
-      aria-expanded="false"
+      className="knowledge-command-light-button knowledge-command-light-button--retrieve group relative flex min-h-[86px] w-full touch-pan-y isolate overflow-hidden rounded-xl border border-lime-300/55 bg-[linear-gradient(135deg,#fbfdf5_0%,#eef7da_52%,#d9ebb1_100%)] p-3 text-left text-slate-900 shadow-[0_14px_34px_rgba(79,103,34,0.13)] outline-none transition-[border-color,box-shadow,filter] hover:border-lime-400/65 hover:shadow-[0_18px_42px_rgba(79,103,34,0.18)] focus-visible:ring-2 focus-visible:ring-lime-300/50 dark:border-lime-300/24 dark:bg-[linear-gradient(135deg,#10140b_0%,#1c2a10_52%,#4f661a_100%)] dark:text-lime-50 dark:shadow-[0_18px_44px_rgba(57,80,21,0.28)] dark:hover:border-lime-200/45 dark:hover:shadow-[0_20px_52px_rgba(69,96,24,0.36)] sm:p-3.5"
+      style={commandLightStyle}
+      aria-expanded={isOpen}
       aria-controls={panelId}
-      onClick={onOpen}
+      onClick={onToggle}
+      {...commandLightHandlers}
     >
       <span
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(132,204,22,0.16),transparent_28%),linear-gradient(90deg,transparent,rgba(132,204,22,0.12),transparent)] opacity-70 transition-opacity group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_18%_20%,rgba(217,249,157,0.2),transparent_28%),linear-gradient(90deg,transparent,rgba(190,242,100,0.12),transparent)] dark:opacity-75"
+        className="knowledge-command-light-aurora"
+        data-high-stimulus="true"
+        data-reduced-during-focus="true"
         aria-hidden
       />
-      <span className="relative z-10 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <span className="flex min-w-0 items-start gap-3">
+      <span
+        className="knowledge-command-light-cursor"
+        data-high-stimulus="true"
+        data-reduced-during-focus="true"
+        aria-hidden
+      />
+      <span className="relative z-10 flex w-full min-w-0 items-start">
+        <span className="flex min-w-0 items-start gap-3 pr-20 sm:pr-36">
           <span className="mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-lime-300/60 bg-white/72 shadow-inner dark:border-lime-200/20 dark:bg-black/28">
             <Image
               src="/images/knowledge/source-retrieval-mark.png"
@@ -1050,9 +1086,15 @@ function RetrievalTriggerButton({
             </span>
           </span>
         </span>
-        <span className="inline-flex h-9 max-w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-lime-300/60 bg-white/70 px-3 text-xs font-semibold text-lime-800 shadow-sm dark:border-lime-200/25 dark:bg-black/20 dark:text-lime-50/90 sm:self-center">
-          <span className="truncate">{status}</span>
-          <ChevronDown className="h-3.5 w-3.5 -rotate-90 opacity-75" aria-hidden />
+        <span className="absolute right-0 top-0 inline-flex h-8 max-w-[46%] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-lime-300/60 bg-white/70 px-2.5 text-[11px] font-semibold text-lime-800 shadow-sm dark:border-lime-200/25 dark:bg-black/20 dark:text-lime-50/90 sm:h-9 sm:px-3 sm:text-xs">
+          <span className="truncate">{isOpen ? ui.collapseRetrieval : status}</span>
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 opacity-75 transition-transform duration-300",
+              isOpen ? "rotate-180" : "-rotate-90",
+            )}
+            aria-hidden
+          />
         </span>
       </span>
     </motion.button>
@@ -1213,10 +1255,10 @@ function RetrievalResultCard({
 
   const copyPrompt = async () => {
     const prompt = [
-      "Use this Ask Your KB evidence to help answer my inquiry.",
+      "Use this retrieved knowledge to help answer my inquiry.",
       "",
       `Inquiry: ${inquiry}`,
-      `Evidence ${result.id}: ${result.title}`,
+      `Knowledge ${result.id}: ${result.title}`,
       `Source: ${result.sourceDomain}`,
       result.pageNumber != null ? `Page: ${result.pageNumber}` : null,
       result.sectionPath ? `Section: ${result.sectionPath}` : null,

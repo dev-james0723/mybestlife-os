@@ -76,7 +76,7 @@ function formatConversation(messages: ChatMessage[]): string {
 }
 
 function formatEvidenceBlock(results: RetrievalResult[]): string {
-  if (results.length === 0) return "(no retrieved evidence)";
+  if (results.length === 0) return "(no retrieved knowledge)";
   return results
     .slice(0, 12)
     .map((result) => {
@@ -136,13 +136,13 @@ function retrievalAssistantSystemInstruction(locale?: string): string {
   const lang = locale?.startsWith("zh")
     ? "Chinese when the user writes Chinese"
     : "the same language the user writes in";
-  return `You are Ask Your KB, the cited Knowledge Base assistant inside MyLifeOS.
+  return `You are Ask My Knowledge Base, the cited Knowledge Base assistant inside MyLifeOS.
 
 Rules:
 - Answer in ${lang}.
-- Use only the ASK YOUR KB RETRIEVED EVIDENCE in the user message.
-- Cite only evidence IDs that appear in the evidence block, such as R1 or R2.
-- If evidence is insufficient, say that clearly and suggest how to narrow the search or add sources.
+- Use only the ASK MY KNOWLEDGE BASE RETRIEVED KNOWLEDGE in the user message.
+- Cite only knowledge IDs that appear in the knowledge block, such as R1 or R2.
+- If knowledge is insufficient, say that clearly and suggest how to narrow the search or add knowledge.
 - If sources outside Knowledge Base or Doc Oracle materially change the answer, include a short "Connected context" section naming those source domains.
 - Do not invent titles, URLs, dates, page numbers, or source domains.
 - Return strict JSON only: {"answer":"markdown string","citations":[{"resultId":"R1","quote":"short exact supporting phrase"}]}.`;
@@ -150,9 +150,9 @@ Rules:
 
 function noEvidenceReply(locale?: string) {
   if (locale?.startsWith("zh")) {
-    return "我在 Ask Your KB 的可讀來源中找不到足夠證據回答這個問題。你可以縮小問題、選擇其他來源範圍，或先把相關資料加入 Knowledge Base。";
+    return "我在 Ask My Knowledge Base 的可讀知識中找不到足夠內容回答這個問題。你可以縮小問題、調整知識範圍，或先把相關資料加入 Knowledge Base。";
   }
-  return "I could not find enough evidence in Ask Your KB to answer that. Try narrowing the question, changing the source scope, or adding the relevant source to your Knowledge Base.";
+  return "I could not find enough knowledge in Ask My Knowledge Base to answer that. Try narrowing the question, changing the knowledge scope, or adding the relevant material to your Knowledge Base.";
 }
 
 async function fallbackContextPackAnswer(params: {

@@ -28,7 +28,7 @@ interface PromptRunDialogProps {
   prompt: AnyPrompt | null;
   /** When opening for a re-run, seed variable fields from a prior execution. */
   initialVariables?: Record<string, string>;
-  /** Optional Ask Your KB retrieval run whose evidence should ground the prompt. */
+  /** Optional Ask My Knowledge Base retrieval run whose knowledge should ground the prompt. */
   retrievalRunId?: string | null;
   onClose: () => void;
 }
@@ -150,7 +150,7 @@ export function PromptRunDialog({
           {retrievalRunId ? (
             <div className="pt-2">
               <Badge variant="outline" className="w-fit text-[11px]">
-                Use current Ask Your KB evidence
+                Use current Ask My Knowledge Base knowledge
               </Badge>
             </div>
           ) : null}

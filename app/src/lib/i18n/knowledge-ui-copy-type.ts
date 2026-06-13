@@ -403,6 +403,11 @@ export type KnowledgeUiCopy = {
     shortDescription: string;
     contentOverview: string;
     keyInsights: string;
+    generateSection: string;
+    generatingSection: string;
+    viewGeneratedSection: string;
+    hideSection: string;
+    deferredSectionFailed: string;
     keyQuotes: string;
     questionsThisAnswers: string;
     actionItems: string;
@@ -482,6 +487,7 @@ export type KnowledgeUiCopy = {
     // ── Social / provider metadata ──
     postedBy: (name: string) => string;
     viewOriginal: string;
+    openKnowledgeSource: string;
     viewOnYouTube: string;
     viewOnGitHub: string;
     viewOnProvider: (provider: string) => string;

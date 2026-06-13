@@ -228,15 +228,24 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const aiPanelQuery = useKnowledgeStore((s) => s.aiPanelQuery);
   const aiPanelRetrievalRunId = useKnowledgeStore((s) => s.aiPanelRetrievalRunId);
+  const aiPanelHandoffId = useKnowledgeStore((s) => s.aiPanelHandoffId);
+  const aiPanelHandoffQuery = useKnowledgeStore((s) => s.aiPanelHandoffQuery);
   const items = useKnowledgeStore((s) => s.items);
   const smartCollections = useKnowledgeStore((s) => s.smartCollections);
   const selectItem = useKnowledgeStore((s) => s.selectItem);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [input, setInput] = useState(aiPanelQuery);
+  const [input, setInput] = useState(
+    aiPanelHandoffQuery?.trim() ? "" : aiPanelQuery,
+  );
   const [isThinking, setIsThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimerRef = useRef<number | null>(null);
+  const lastHandledHandoffRef = useRef(0);
+  const [isTypingHandoff, setIsTypingHandoff] = useState(false);
+  const [sendHintActive, setSendHintActive] = useState(false);
   const recentUserMessages = useMemo(
     () => messages.filter((msg) => msg.role === "user").slice(-6).reverse(),
     [messages],
@@ -252,7 +261,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     () => new Set(items.map((item) => item.sourceDomain).filter(Boolean)).size,
     [items],
   );
-  const evidenceReadyCount = useMemo(
+  const knowledgeReadyCount = useMemo(
     () =>
       items.filter(
         (item) =>
@@ -277,10 +286,10 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   }, [hydrated, userId, messages]);
 
   useEffect(() => {
-    if (aiPanelQuery && messages.length === 0) {
+    if (aiPanelQuery && messages.length === 0 && !isTypingHandoff && !aiPanelHandoffQuery) {
       queueMicrotask(() => setInput(aiPanelQuery));
     }
-  }, [aiPanelQuery, messages.length]);
+  }, [aiPanelHandoffQuery, aiPanelQuery, isTypingHandoff, messages.length]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -295,21 +304,86 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     }
   }, [userId]);
 
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const prompt = (aiPanelHandoffQuery ?? aiPanelQuery).trim();
+    if (!prompt || aiPanelHandoffId === 0 || lastHandledHandoffRef.current === aiPanelHandoffId) {
+      return;
+    }
+
+    if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+    setSendHintActive(false);
+    setIsTypingHandoff(true);
+
+    const bootstrapTimer = window.setTimeout(() => {
+      lastHandledHandoffRef.current = aiPanelHandoffId;
+      clearConversation();
+      setInput("");
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      inputRef.current?.focus({ preventScroll: true });
+
+      const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (prefersReducedMotion) {
+        setInput(prompt);
+        setIsTypingHandoff(false);
+        setSendHintActive(true);
+        inputRef.current?.focus({ preventScroll: true });
+        return;
+      }
+
+      let index = 0;
+      const stepSize = Math.max(2, Math.ceil(prompt.length / 72));
+      const typeNext = () => {
+        index = Math.min(prompt.length, index + stepSize);
+        setInput(prompt.slice(0, index));
+        if (index < prompt.length) {
+          typingTimerRef.current = window.setTimeout(typeNext, 18);
+          return;
+        }
+        setIsTypingHandoff(false);
+        setSendHintActive(true);
+        inputRef.current?.focus({ preventScroll: true });
+      };
+
+      typingTimerRef.current = window.setTimeout(typeNext, 180);
+    }, 0);
+
+    return () => window.clearTimeout(bootstrapTimer);
+  }, [aiPanelHandoffId, aiPanelHandoffQuery, aiPanelQuery, clearConversation]);
+
   const startNewConversation = useCallback(() => {
     clearConversation();
     setInput("");
+    setIsTypingHandoff(false);
+    setSendHintActive(false);
   }, [clearConversation]);
 
   const seedPrompt = useCallback((prompt: string) => {
     setInput(prompt);
+    setSendHintActive(false);
   }, []);
 
   const seedCollectionPrompt = useCallback((name: string) => {
     setInput(`Focus this Ask My Knowledge Base answer on "${name}". `);
+    setSendHintActive(false);
   }, []);
 
   const seedWorkflowPrompt = useCallback((workflow: string) => {
     setInput(workflow);
+    setSendHintActive(false);
+  }, []);
+
+  const handleInputChange = useCallback((value: string) => {
+    setInput(value);
+    setSendHintActive(false);
   }, []);
 
   const workflowPrompts = useMemo(
@@ -318,7 +392,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
         label: "Synthesize",
         description: "Turn related knowledge into one cited brief.",
         prompt:
-          "Synthesize the most relevant saved knowledge into a concise brief. Group the answer by themes, cite the strongest sources, and call out uncertainty.",
+          "Synthesize the most relevant saved knowledge into a concise brief. Group the answer by themes, cite the strongest knowledge, and call out uncertainty.",
       },
       {
         label: "Contradictions",
@@ -341,12 +415,14 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     ],
     [],
   );
+  const showSendHint = sendHintActive && input.trim().length > 0 && !isThinking;
 
   const handleSend = useCallback(
     async (query?: string) => {
       const q = (query || input).trim();
       if (!q) return;
 
+      setSendHintActive(false);
       const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: q };
       const nextThread = [...messages, userMsg];
       setMessages(nextThread);
@@ -503,151 +579,55 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   );
 
   const emptyState = (
-    <div
-      className={cn(
-        "space-y-4",
-        isTopLayout &&
-          "grid gap-5 space-y-0 xl:grid-cols-[minmax(280px,0.78fr)_minmax(0,1.22fr)] xl:items-stretch",
-      )}
-    >
-      <div
-        className={cn(
-          "py-6 text-center",
-          isTopLayout &&
-            "relative overflow-hidden rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_24%_18%,rgba(119,170,255,0.16),transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]",
-        )}
-      >
-        {isTopLayout ? (
-          <>
-            <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
-            <div className="flex items-start gap-3">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-[0_18px_48px_rgba(38,88,160,0.28),inset_0_1px_0_rgba(255,255,255,0.14)]">
-                <Image
-                  src="/images/knowledge/ask-my-kb-mark.png"
-                  alt="Ask My KB knowledge core mark"
-                  width={96}
-                  height={96}
-                  className="h-full w-full object-cover"
-                  priority={false}
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-cyan-200/80">
-                  Knowledge intelligence
-                </p>
-                <h3 className="text-balance text-lg font-semibold leading-tight text-foreground">
-                  Ask across memory, evidence, and projects
-                </h3>
-                <p className="mt-2 max-w-[36rem] text-xs leading-5 text-muted-foreground">
-                  {ui.welcomeDescription}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {[
-                { label: "Items", value: items.length },
-                { label: "Evidence", value: evidenceReadyCount },
-                { label: "Domains", value: sourceDomainCount },
-              ].map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                >
-                  <div className="text-base font-semibold tabular-nums text-foreground">
-                    {metric.value}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {metric.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="mx-auto mb-3 h-12 w-12 overflow-hidden rounded-xl">
-              <Image
-                src="/images/knowledge/ask-my-kb-mark.png"
-                alt="Ask My KB knowledge core mark"
-                width={96}
-                height={96}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <h3 className="text-sm font-medium mb-1">{ui.welcomeTitle}</h3>
-            <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
-          </>
-        )}
+    <div className="space-y-4">
+      <div className="py-6 text-center">
+        <div className="mx-auto mb-3 h-12 w-12 overflow-hidden rounded-xl">
+          <Image
+            src="/images/knowledge/ask-my-kb-mark.png"
+            alt="Ask My Knowledge Base knowledge core mark"
+            width={96}
+            height={96}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        <h3 className="mb-1 text-sm font-medium">{ui.welcomeTitle}</h3>
+        <p className="text-xs text-muted-foreground">{ui.welcomeDescription}</p>
       </div>
-      {isTopLayout ? (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {workflowPrompts.map((workflow) => (
-            <button
-              key={workflow.label}
-              type="button"
-              className="group relative overflow-hidden rounded-[1.1rem] border border-border/60 bg-background/64 p-3 text-left shadow-[0_14px_36px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-background/90"
-              onClick={() => seedWorkflowPrompt(workflow.prompt)}
-              disabled={isThinking}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-foreground">{workflow.label}</div>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    {workflow.description}
-                  </p>
-                </div>
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/40 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-cyan-200">
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </button>
-          ))}
-          {ui.suggestedQueries.slice(0, 2).map((sq) => (
-            <button
-              key={sq}
-              type="button"
-              className="group flex w-full items-center justify-between rounded-[1.1rem] border border-border/60 bg-muted/25 px-3 py-2.5 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
-              onClick={() => handleSend(sq)}
-              disabled={isThinking}
-            >
-              <span>{sq}</span>
-              <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {ui.suggestedQueries.map((sq) => (
-            <button
-              key={sq}
-              type="button"
-              className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
-              onClick={() => handleSend(sq)}
-              disabled={isThinking}
-            >
-              <span>{sq}</span>
-              <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="space-y-2">
+        {ui.suggestedQueries.map((sq) => (
+          <button
+            key={sq}
+            type="button"
+            className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-left text-xs shadow-sm transition-colors hover:bg-muted/50"
+            onClick={() => handleSend(sq)}
+            disabled={isThinking}
+          >
+            <span>{sq}</span>
+            <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
+        ))}
+      </div>
     </div>
   );
 
   const messageList = (
-    <div className="space-y-3">
+    <div className={cn("space-y-3", isTopLayout && "mx-auto max-w-4xl px-1 py-4")}>
       {messages.map((msg) => (
         <div
           key={msg.id}
           className={cn(
-            "max-w-[88%] rounded-lg px-3 py-2 text-sm break-words",
-            isTopLayout && "max-w-[min(860px,92%)]",
+            "max-w-[88%] break-words rounded-lg px-3 py-2 text-sm",
+            isTopLayout &&
+              "max-w-[min(860px,92%)] rounded-2xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
             msg.role === "user"
               ? "ml-auto bg-primary text-primary-foreground"
               : "bg-muted",
             isTopLayout &&
               msg.role === "user" &&
-              "max-w-[min(680px,82%)]",
+              "max-w-[min(680px,82%)] border-cyan-200/30 bg-cyan-300 text-slate-950 shadow-[0_12px_32px_rgba(103,232,249,0.16)]",
+            isTopLayout &&
+              msg.role === "assistant" &&
+              "bg-white/[0.055] text-foreground",
           )}
         >
           {msg.role === "user" ? (
@@ -659,7 +639,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
                   <div className="mt-0.5 h-5 w-5 shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/30">
                     <Image
                       src="/images/knowledge/ask-my-kb-mark.png"
-                      alt="Ask My KB knowledge core mark"
+                      alt="Ask My Knowledge Base knowledge core mark"
                       width={40}
                       height={40}
                       className="h-full w-full object-cover"
@@ -784,7 +764,12 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
         </div>
       ))}
       {isThinking && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div
+          className={cn(
+            "flex items-center gap-2 text-xs text-muted-foreground",
+            isTopLayout && "mx-auto max-w-4xl px-1",
+          )}
+        >
           <Sparkles className="h-3 w-3 animate-pulse text-primary" />
           {ui.thinking}
         </div>
@@ -792,14 +777,79 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     </div>
   );
 
+  const topEmptyState = (
+    <div className="flex min-h-[340px] flex-1 flex-col items-center justify-center px-4 py-7 text-center sm:min-h-[360px] sm:py-8">
+      <div className="mb-6 h-16 w-16 overflow-hidden rounded-2xl border border-cyan-200/20 bg-cyan-300/10 shadow-[0_18px_46px_rgba(103,232,249,0.15),inset_0_1px_0_rgba(255,255,255,0.12)]">
+        <Image
+          src="/images/knowledge/ask-my-kb-mark.png"
+          alt="Ask My Knowledge Base knowledge core mark"
+          width={112}
+          height={112}
+          className="h-full w-full object-cover"
+          priority={false}
+        />
+      </div>
+      <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-cyan-200/75">
+        Knowledge Base Intelligence
+      </p>
+      <h3 className="text-balance text-2xl font-semibold leading-tight text-foreground">
+        Ask My Knowledge Base
+      </h3>
+      <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+        Ask across saved knowledge, projects, and notes. Answers draw from the knowledge they use and keep citations close.
+      </p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {ui.suggestedQueries.slice(0, 2).map((sq) => (
+          <button
+            key={sq}
+            type="button"
+            className="rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-cyan-200/30 hover:bg-cyan-300/10 hover:text-foreground"
+            onClick={() => handleSend(sq)}
+            disabled={isThinking}
+          >
+            {sq}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const topQuickActions = (
+    <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-2 min-[1680px]:grid-cols-4">
+      {workflowPrompts.map((workflow) => (
+        <button
+          key={workflow.label}
+          type="button"
+          className="group relative min-h-[68px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.045] p-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[76px] sm:p-3"
+          onClick={() => seedWorkflowPrompt(workflow.prompt)}
+          disabled={isThinking}
+        >
+          <div className="flex h-full items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs font-semibold leading-5 text-foreground sm:text-sm">
+                {workflow.label}
+              </div>
+              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground sm:mt-1 sm:text-xs sm:leading-5">
+                {workflow.description}
+              </p>
+            </div>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-muted-foreground transition-[background-color,color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:bg-cyan-300 group-hover:text-slate-950">
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   const topLayoutRail = (
-    <aside className="flex max-h-60 min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] lg:max-h-none">
-      <div className="rounded-[1.05rem] border border-white/10 bg-black/20 p-3">
+    <aside className="hidden min-h-0 flex-col overflow-hidden border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] lg:flex lg:h-full lg:max-h-none lg:w-[292px] lg:shrink-0 lg:border-b-0 lg:border-r">
+      <div className="rounded-xl border border-white/10 bg-black/22 p-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-black/40">
+          <div className="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-[0_12px_32px_rgba(30,90,170,0.18)]">
             <Image
               src="/images/knowledge/ask-my-kb-mark.png"
-              alt="Ask My KB knowledge core mark"
+              alt="Ask My Knowledge Base knowledge core mark"
               width={80}
               height={80}
               className="h-full w-full object-cover"
@@ -807,12 +857,28 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold leading-tight text-foreground">Workspace</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Evidence console</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">Knowledge console</p>
           </div>
         </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-black/24 p-1.5">
+          {[
+            { label: "Items", value: items.length },
+            { label: "Knowledge", value: knowledgeReadyCount },
+            { label: "Domains", value: sourceDomainCount },
+          ].map((metric) => (
+            <div key={metric.label} className="rounded-lg bg-white/[0.035] px-2 py-2 text-center">
+              <p className="text-sm font-semibold tabular-nums text-foreground">{metric.value}</p>
+              <p className="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+                {metric.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <button
           type="button"
-          className="mt-3 flex w-full items-center justify-between rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-xs font-medium text-cyan-50 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-cyan-300/16"
+          className="mt-3 flex w-full items-center justify-between rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-xs font-medium text-cyan-50 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-cyan-300/16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35"
           onClick={startNewConversation}
         >
           <span className="inline-flex items-center gap-2">
@@ -821,17 +887,6 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
           </span>
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2">
-          <p className="text-base font-semibold tabular-nums">{messages.length}</p>
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Turns</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2">
-          <p className="text-base font-semibold tabular-nums">{smartCollections.length}</p>
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Projects</p>
-        </div>
       </div>
 
       <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
@@ -877,12 +932,12 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             <div className="flex items-center justify-between rounded-xl bg-background/35 px-2.5 py-2">
               <span className="inline-flex items-center gap-1.5">
                 <Route className="h-3.5 w-3.5" />
-                Evidence
+                Knowledge ready
               </span>
-              <span className="font-medium tabular-nums text-foreground">{evidenceReadyCount}</span>
+              <span className="font-medium tabular-nums text-foreground">{knowledgeReadyCount}</span>
             </div>
             <div className="rounded-xl bg-background/35 px-2.5 py-2">
-              {aiPanelRetrievalRunId ? "Retrieved evidence attached" : "Hybrid retrieval ready"}
+              {aiPanelRetrievalRunId ? "Knowledge attached" : "Hybrid retrieval ready"}
             </div>
             {aiPanelQuery ? (
               <button
@@ -921,7 +976,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
               ))
             ) : (
               <p className="rounded-xl border border-dashed border-border/60 bg-background/25 px-2.5 py-2 text-xs leading-5 text-muted-foreground">
-                Add knowledge to unlock source-aware prompts.
+                Add knowledge to unlock knowledge-aware prompts.
               </p>
             )}
           </div>
@@ -951,29 +1006,119 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     </aside>
   );
 
-  const panelBody = isTopLayout ? (
-    <div className="grid min-h-full min-w-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-      {topLayoutRail}
-      <div className="min-w-0">
-        {messages.length === 0 ? emptyState : messageList}
-      </div>
-    </div>
-  ) : messages.length === 0 ? (
+  const panelBody = messages.length === 0 ? (
     emptyState
   ) : (
     messageList
   );
 
+  if (isTopLayout) {
+    return (
+      <div className="flex h-full min-w-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_12%_8%,rgba(77,151,255,0.12),transparent_34%),radial-gradient(circle_at_94%_22%,rgba(190,242,100,0.10),transparent_32%)] lg:flex-row">
+        {topLayoutRail}
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {!hideHeader ? (
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-3 text-sm font-medium">
+                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/30 shadow-[0_10px_28px_rgba(30,90,170,0.24)]">
+                  <Image
+                    src="/images/knowledge/ask-my-kb-mark.png"
+                    alt="Ask My Knowledge Base knowledge core mark"
+                    width={72}
+                    height={72}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <span className="block truncate">{ui.title}</span>
+                  <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
+                    {aiPanelRetrievalRunId ? "Answering with selected knowledge" : "Cited answers over saved knowledge"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {messages.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    onClick={clearConversation}
+                    aria-label={ui.clearConversation}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    {ui.clearConversation}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={closeAIPanel} aria-label={ui.closePanel}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <ScrollArea className="min-h-[440px] flex-1 px-4 py-3 sm:min-h-0 sm:px-5" ref={scrollRef}>
+            {messages.length === 0 ? topEmptyState : messageList}
+          </ScrollArea>
+
+          <div className="shrink-0 border-t border-white/10 bg-background/45 p-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-xl max-[480px]:pb-40 sm:p-4">
+            {topQuickActions}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSend();
+              }}
+              className="mx-auto flex max-w-4xl gap-2 rounded-2xl border border-white/10 bg-black/20 p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.08)]"
+            >
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder={ui.inputPlaceholder}
+                className="h-10 flex-1 border-transparent bg-transparent text-sm shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-cyan-300/35"
+                disabled={isThinking}
+                aria-label={ui.inputAria}
+              />
+              <div className="relative shrink-0">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!input.trim() || isThinking}
+                  aria-label={ui.sendAria}
+                  className={cn(
+                    "relative z-10 h-10 shrink-0 rounded-xl border-transparent bg-cyan-300 text-slate-950 shadow-[0_10px_24px_rgba(103,232,249,0.18)] hover:bg-cyan-200 disabled:opacity-50",
+                    showSendHint && "knowledge-send-hint-button",
+                  )}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+                {showSendHint ? (
+                  <>
+                    <span className="knowledge-send-hint-ring" aria-hidden />
+                    <span className="pointer-events-none absolute -top-11 right-0 z-20 flex items-center gap-1.5 whitespace-nowrap rounded-full border border-cyan-200/50 bg-cyan-950/90 px-2 py-1 text-[11px] font-semibold text-cyan-50 shadow-lg">
+                      <ArrowRight className="knowledge-send-hint-arrow h-3.5 w-3.5 rotate-90 text-cyan-200" />
+                      {ui.send}
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            </form>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex h-full min-w-0 flex-col", isTopLayout && "bg-[radial-gradient(circle_at_12%_8%,rgba(77,151,255,0.12),transparent_34%),radial-gradient(circle_at_94%_22%,rgba(190,242,100,0.10),transparent_32%)]")}>
+    <div className="flex h-full min-w-0 flex-col">
       {!hideHeader ? (
-      <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border/70 p-4", isTopLayout && "border-white/10 px-4 py-3")}>
+      <div className="flex shrink-0 flex-col gap-1 border-b border-border/70 p-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3 text-sm font-medium">
-            <div className={cn("relative h-8 w-8 shrink-0 overflow-hidden rounded-lg", isTopLayout && "h-9 w-9 rounded-xl border border-white/10 bg-black/30 shadow-[0_10px_28px_rgba(30,90,170,0.24)]")}>
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg">
               <Image
                 src="/images/knowledge/ask-my-kb-mark.png"
-                alt="Ask My KB knowledge core mark"
+                alt="Ask My Knowledge Base knowledge core mark"
                 width={72}
                 height={72}
                 className="h-full w-full object-cover"
@@ -981,11 +1126,6 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             </div>
             <div className="min-w-0">
               <span className="block truncate">{ui.title}</span>
-              {isTopLayout ? (
-                <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
-                  {aiPanelRetrievalRunId ? "Answering with selected evidence" : "Cited answers over saved knowledge"}
-                </span>
-              ) : null}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -1007,53 +1147,54 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             </Button>
           </div>
         </div>
-        {!isTopLayout ? (
-          <p className="text-[10px] leading-snug text-muted-foreground">{ui.historyPersistHint}</p>
-        ) : null}
+        <p className="text-[10px] leading-snug text-muted-foreground">{ui.historyPersistHint}</p>
       </div>
       ) : null}
 
-      <ScrollArea className={cn("flex-1 p-4", isTopLayout && "px-4 py-3 sm:px-5")} ref={scrollRef}>
+      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         {panelBody}
       </ScrollArea>
 
-      <div className={cn("shrink-0 border-t border-border/70 p-4", isTopLayout && "border-white/10 p-3 sm:p-4")}>
+      <div className="shrink-0 border-t border-border/70 p-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleSend();
           }}
-          className={cn(
-            "flex gap-2",
-            isTopLayout &&
-              "rounded-2xl border border-white/10 bg-black/20 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-          )}
+          className="flex gap-2"
         >
           <Input
+            ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             placeholder={ui.inputPlaceholder}
-            className={cn(
-              "flex-1 border-border/70 bg-muted/25 text-sm shadow-sm",
-              isTopLayout &&
-                "h-10 border-transparent bg-transparent shadow-none focus-visible:ring-cyan-300/35",
-            )}
+            className="flex-1 border-border/70 bg-muted/25 text-sm shadow-sm"
             disabled={isThinking}
             aria-label={ui.inputAria}
           />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!input.trim() || isThinking}
-            aria-label={ui.sendAria}
-            className={cn(
-              "h-9 shrink-0 border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50",
-              isTopLayout &&
-                "h-10 rounded-xl bg-cyan-300 text-slate-950 shadow-[0_10px_24px_rgba(103,232,249,0.18)] hover:bg-cyan-200",
-            )}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <div className="relative shrink-0">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!input.trim() || isThinking}
+              aria-label={ui.sendAria}
+              className={cn(
+                "relative z-10 h-9 shrink-0 border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50",
+                showSendHint && "knowledge-send-hint-button",
+              )}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+            {showSendHint ? (
+              <>
+                <span className="knowledge-send-hint-ring" aria-hidden />
+                <span className="pointer-events-none absolute -top-10 right-0 z-20 flex items-center gap-1.5 whitespace-nowrap rounded-full border border-primary/35 bg-popover px-2 py-1 text-[11px] font-semibold text-foreground shadow-lg">
+                  <ArrowRight className="knowledge-send-hint-arrow h-3.5 w-3.5 rotate-90 text-primary" />
+                  {ui.send}
+                </span>
+              </>
+            ) : null}
+          </div>
         </form>
       </div>
     </div>

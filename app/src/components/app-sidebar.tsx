@@ -378,7 +378,6 @@ export function AppSidebar() {
             )}
           </>
         )}
-
         {showCompanionPanel ? <TodayCompanionPanel onNavigate={handleSidebarNavigate} /> : null}
       </SidebarContent>
 

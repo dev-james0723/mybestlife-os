@@ -36,6 +36,21 @@ Rules:
 - When includeRelatedContext is false, omit the relatedContext key entirely or set it to null.
 - Respond ONLY with valid JSON. No markdown wrapping.`;
 
+const SUMMARY_ONLY_SYSTEM_PROMPT = `You are a knowledge base assistant that processes content into lightweight knowledge cards.
+Given a piece of content and its source type, produce a compact JSON response with ONLY these fields:
+
+- "tldr": Exactly ONE sentence (one-sentence summary). Cap at ~24 words in English or a comparable length in other languages. The most essential takeaway.
+- "summary": A short description: 2-4 sentences of clean, well-written prose. No filler, no bullet list inside this field.
+- "depthIndicator": One of "intro", "intermediate", "technical", or "reference" — indicating the content's depth level.
+- "relatedContext": (ONLY when includeRelatedContext is true in the user message) A single short paragraph (2-4 sentences): themes, entities, or background a reader should know — grounded only in the caption/text provided. No speculation. Same language as tldr/summary.
+
+Do not generate key insights, quotes, questions, or action items. They are generated later only if the user asks.
+
+Rules:
+- Be precise and substantive. No generic filler like "This article discusses..."
+- When includeRelatedContext is false, omit the relatedContext key entirely or set it to null.
+- Respond ONLY with valid JSON. No markdown wrapping.`;
+
 const FALLBACK_LANGUAGE_RULE =
   "Detect the dominant language of the source content and produce ALL output (tldr, summary, " +
   "relatedContext when requested, keyInsights, questionsAnswered, actionItems) in that exact same language.\n\n" +
@@ -63,6 +78,8 @@ export async function generateSummary(
     targetLanguage?: AppLocale;
     /** Social cards: add relatedContext paragraph mapped to ai_content_overview. */
     includeRelatedContext?: boolean;
+    /** Use the cheaper default card pass unless a caller explicitly needs full structured details. */
+    detailLevel?: "summary-only" | "full";
   } = {},
 ): Promise<AISummaryResult> {
   const apiKey = getGeminiServerApiKey();
@@ -79,7 +96,11 @@ export async function generateSummary(
     ? languageDirective(options.targetLanguage)
     : FALLBACK_LANGUAGE_RULE;
 
-  const systemInstruction = `${BASE_SYSTEM_PROMPT}\n\nLanguage requirement:\n${languageRule}`;
+  const systemPrompt =
+    options.detailLevel === "summary-only"
+      ? SUMMARY_ONLY_SYSTEM_PROMPT
+      : BASE_SYSTEM_PROMPT;
+  const systemInstruction = `${systemPrompt}\n\nLanguage requirement:\n${languageRule}`;
 
   const includeRc = Boolean(options.includeRelatedContext);
 

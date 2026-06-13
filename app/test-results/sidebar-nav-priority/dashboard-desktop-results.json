@@ -1,0 +1,154 @@
+{
+  "url": "http://127.0.0.1:3000/en/dashboard",
+  "htmlClasses": "__variable_246ccd __variable_c29908 __variable_b77edb __variable_dd5b2f __variable_0a80b4 __variable_c1a059 __variable_eb41fe __variable_0d7163 h-full antialiased",
+  "bodyTextSample": "My Best Life OS\nCommand Center\nSelf\nPeople\nCareer\nBuild & Execute\nResources\nKnowledge\nLearning\nMy Garden\nU\nUser\nSearch...\n⌘K\n—\n--:--",
+  "content": {
+    "top": 93,
+    "bottom": 798,
+    "left": 17,
+    "right": 235,
+    "width": 218,
+    "height": 705
+  },
+  "contentChildren": [
+    {
+      "tag": "DIV",
+      "className": "flex flex-col",
+      "text": "Command CenterSelfPeopleCareerBuild & ExecuteResourcesKnowledgeLearningMy Garden",
+      "rect": {
+        "top": 93,
+        "bottom": 547,
+        "left": 17,
+        "right": 235,
+        "width": 218,
+        "height": 454
+      }
+    }
+  ],
+  "panel": null,
+  "footer": {
+    "top": 798,
+    "bottom": 879,
+    "left": 17,
+    "right": 235,
+    "width": 218,
+    "height": 81
+  },
+  "contentScroll": {
+    "scrollTop": 0,
+    "scrollHeight": 705,
+    "clientHeight": 705
+  },
+  "items": [
+    {
+      "label": "Command Center",
+      "visible": true,
+      "rect": {
+        "top": 107,
+        "bottom": 127,
+        "left": 73,
+        "right": 189.91,
+        "width": 116.91,
+        "height": 20
+      },
+      "text": "Command Center"
+    },
+    {
+      "label": "Self",
+      "visible": true,
+      "rect": {
+        "top": 155,
+        "bottom": 175,
+        "left": 73,
+        "right": 100.69,
+        "width": 27.69,
+        "height": 20
+      },
+      "text": "Self"
+    },
+    {
+      "label": "People",
+      "visible": true,
+      "rect": {
+        "top": 203,
+        "bottom": 223,
+        "left": 73,
+        "right": 119.28,
+        "width": 46.28,
+        "height": 20
+      },
+      "text": "People"
+    },
+    {
+      "label": "Career",
+      "visible": true,
+      "rect": {
+        "top": 251,
+        "bottom": 271,
+        "left": 73,
+        "right": 118.3,
+        "width": 45.3,
+        "height": 20
+      },
+      "text": "Career"
+    },
+    {
+      "label": "Build & Execute",
+      "visible": true,
+      "rect": {
+        "top": 299,
+        "bottom": 319,
+        "left": 73,
+        "right": 177.63,
+        "width": 104.63,
+        "height": 20
+      },
+      "text": "Build & Execute"
+    },
+    {
+      "label": "Resources",
+      "visible": true,
+      "rect": {
+        "top": 347,
+        "bottom": 367,
+        "left": 73,
+        "right": 143.84,
+        "width": 70.84,
+        "height": 20
+      },
+      "text": "Resources"
+    },
+    {
+      "label": "Knowledge",
+      "visible": true,
+      "rect": {
+        "top": 395,
+        "bottom": 415,
+        "left": 73,
+        "right": 147.61,
+        "width": 74.61,
+        "height": 20
+      },
+      "text": "Knowledge"
+    },
+    {
+      "label": "Learning",
+      "visible": true,
+      "rect": {
+        "top": 443,
+        "bottom": 463,
+        "left": 73,
+        "right": 131.48,
+        "width": 58.48,
+        "height": 20
+      },
+      "text": "Learning"
+    }
+  ],
+  "assertions": {
+    "allMainItemsVisible": true,
+    "learningBeforeCompanion": false,
+    "companionInsideScrollableContent": false
+  },
+  "consoleMessages": []
+}

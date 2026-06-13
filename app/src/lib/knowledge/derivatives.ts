@@ -5,11 +5,9 @@
  * `DerivativeResult` patch that the mutations layer applies atomically.
  *
  * Rules (from the product spec):
- *   - article_url: summary + insights + action items + Ask enabled
- *   - youtube_video / youtube_shorts: summary + tldr + insights + quotes +
- *     content overview + chat starters; Ask enabled
- *   - social_*: summary mandatory, NO insights/quotes/actions, Ask disabled
- *   - github_repository: short summary + tldr + key insights
+ *   - all source families now default to tldr + short summary only.
+ *   - insights/questions/quotes/actions are generated on-demand from the card UI.
+ *   - social_*: summary mandatory, Ask disabled
  *   - code_* / markup / plain_text: tldr + short "what this is/does" summary
  *   - voice_memo / file_upload: fall through to generic summary pipeline
  */
@@ -17,7 +15,6 @@
 import { generateSummary } from "@/lib/knowledge/ai/generateSummary";
 import { generateTitleSuggestion } from "@/lib/knowledge/ai/generateTitleSuggestion";
 import { suggestTags } from "@/lib/knowledge/ai/suggestTags";
-import { generateYoutubeKnowledgeDigest } from "@/lib/knowledge/ai/youtubeDigest";
 import type { DepthIndicator } from "@/types/knowledge";
 import type { SourceType } from "@/types/knowledge-source";
 import type { AppLocale } from "@/lib/i18n/app-locale";
@@ -108,7 +105,7 @@ async function runFullDerivatives(input: DerivativeInput): Promise<DerivativeRes
     input.aiInputText,
     input.title,
     input.contentType,
-    { targetLanguage: input.targetLanguage },
+    { targetLanguage: input.targetLanguage, detailLevel: "summary-only" },
   );
   const tags = input.skipTagSuggestions
     ? []
@@ -128,10 +125,10 @@ async function runFullDerivatives(input: DerivativeInput): Promise<DerivativeRes
   return {
     tldr: summary.tldr,
     summary: summary.summary,
-    keyInsights: summary.keyInsights,
-    keyQuotes: summary.keyQuotes,
-    questionsAnswered: summary.questionsAnswered,
-    actionItems: summary.actionItems,
+    keyInsights: [],
+    keyQuotes: [],
+    questionsAnswered: [],
+    actionItems: [],
     depthIndicator: summary.depthIndicator,
     tags,
     suggestedTitle: suggestedTitle || undefined,
@@ -139,34 +136,7 @@ async function runFullDerivatives(input: DerivativeInput): Promise<DerivativeRes
 }
 
 async function runYouTubeDerivatives(input: DerivativeInput): Promise<DerivativeResult> {
-  try {
-    const digest = await generateYoutubeKnowledgeDigest({
-      pageUrl: input.youtubePageUrl!,
-      title: input.title,
-      contextBlock: input.aiInputText,
-      targetLanguage: input.targetLanguage,
-    });
-    const tags = input.skipTagSuggestions
-      ? []
-      : await suggestTags(input.aiInputText, input.title, {
-          knownTags: input.knownTags,
-        }).catch(() => [] as string[]);
-    return {
-      tldr: digest.tldr,
-      summary: digest.summary,
-      contentOverview: digest.contentOverview,
-      keyInsights: digest.keyInsights,
-      keyQuotes: digest.keyQuotes,
-      actionItems: digest.actionItems,
-      questionsAnswered: digest.questionsAnswered,
-      chatStarters: digest.suggestedChatQuestions?.slice(0, 6) ?? [],
-      depthIndicator: digest.depthIndicator,
-      tags,
-    };
-  } catch (err) {
-    console.warn("[derivatives] YouTube digest failed, falling back to summary:", err);
-    return await runFullDerivatives(input);
-  }
+  return await runFullDerivatives(input);
 }
 
 async function runSocialDerivatives(input: DerivativeInput): Promise<DerivativeResult> {
@@ -176,7 +146,7 @@ async function runSocialDerivatives(input: DerivativeInput): Promise<DerivativeR
     input.aiInputText,
     input.title,
     "note", // social posts behave more like short notes
-    { includeRelatedContext: true },
+    { detailLevel: "summary-only" },
   );
   const tags = input.skipTagSuggestions
     ? []
@@ -193,7 +163,7 @@ async function runSocialDerivatives(input: DerivativeInput): Promise<DerivativeR
   return {
     tldr: summary.tldr,
     summary: summary.summary,
-    contentOverview: summary.relatedContext,
+    contentOverview: undefined,
     keyInsights: [],
     keyQuotes: [],
     actionItems: [],
@@ -207,6 +177,7 @@ async function runSocialDerivatives(input: DerivativeInput): Promise<DerivativeR
 async function runGitHubDerivatives(input: DerivativeInput): Promise<DerivativeResult> {
   const summary = await generateSummary(input.aiInputText, input.title, "article", {
     targetLanguage: input.targetLanguage,
+    detailLevel: "summary-only",
   });
   const tags = input.skipTagSuggestions
     ? []
@@ -216,10 +187,10 @@ async function runGitHubDerivatives(input: DerivativeInput): Promise<DerivativeR
   return {
     tldr: summary.tldr,
     summary: summary.summary,
-    keyInsights: summary.keyInsights.slice(0, 5),
+    keyInsights: [],
     keyQuotes: [], // repos have no quotes
     actionItems: [],
-    questionsAnswered: summary.questionsAnswered.slice(0, 4),
+    questionsAnswered: [],
     depthIndicator: summary.depthIndicator ?? "reference",
     tags,
   };
@@ -228,6 +199,7 @@ async function runGitHubDerivatives(input: DerivativeInput): Promise<DerivativeR
 async function runCodeDerivatives(input: DerivativeInput): Promise<DerivativeResult> {
   const summary = await generateSummary(input.aiInputText, input.title, "note", {
     targetLanguage: input.targetLanguage,
+    detailLevel: "summary-only",
   });
   const tags = input.skipTagSuggestions
     ? []
@@ -237,7 +209,7 @@ async function runCodeDerivatives(input: DerivativeInput): Promise<DerivativeRes
   return {
     tldr: summary.tldr,
     summary: summary.summary,
-    keyInsights: summary.keyInsights.slice(0, 4),
+    keyInsights: [],
     keyQuotes: [],
     actionItems: [],
     questionsAnswered: [],

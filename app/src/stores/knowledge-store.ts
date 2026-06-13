@@ -37,6 +37,10 @@ export type PendingKnowledgeAdd =
   | { tab: "url"; url: string }
   | { tab: "text"; text: string };
 
+type OpenAIPanelOptions = {
+  handoff?: boolean;
+};
+
 export const KNOWLEDGE_CARDS_PER_PAGE_OPTIONS = [
   10,
   15,
@@ -92,6 +96,8 @@ interface KnowledgeStore {
   pendingKnowledgeAdd: PendingKnowledgeAdd | null;
   aiPanelQuery: string;
   aiPanelRetrievalRunId: string | null;
+  aiPanelHandoffId: number;
+  aiPanelHandoffQuery: string | null;
   sortBy: KnowledgeSortKey;
 
   // ── Constellation View state (Phase 7+) ───────────────────────────
@@ -135,7 +141,11 @@ interface KnowledgeStore {
   setSortBy: (sort: KnowledgeSortKey) => void;
   /** Clears search, types, categories, quick filters, collection, and tag filter. */
   clearAllListFilters: () => void;
-  openAIPanel: (query?: string, retrievalRunId?: string | null) => void;
+  openAIPanel: (
+    query?: string,
+    retrievalRunId?: string | null,
+    options?: OpenAIPanelOptions,
+  ) => void;
   closeAIPanel: () => void;
   openAddModal: (pending?: PendingKnowledgeAdd | null) => void;
   closeAddModal: () => void;
@@ -182,6 +192,8 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
   pendingKnowledgeAdd: null,
   aiPanelQuery: "",
   aiPanelRetrievalRunId: null,
+  aiPanelHandoffId: 0,
+  aiPanelHandoffQuery: null,
   sortBy: "latest",
 
   constellationMode: "global",
@@ -289,13 +301,25 @@ export const useKnowledgeStore = create<KnowledgeStore>()((set) => ({
       currentPage: 1,
     }),
 
-  openAIPanel: (query, retrievalRunId) =>
-    set({
-      isAIPanelOpen: true,
-      aiPanelQuery: query ?? "",
-      aiPanelRetrievalRunId: retrievalRunId ?? null,
+  openAIPanel: (query, retrievalRunId, options) =>
+    set((state) => {
+      const normalizedQuery = query ?? "";
+      const shouldHandoff =
+        Boolean(options?.handoff) || Boolean(normalizedQuery.trim() && retrievalRunId);
+      return {
+        isAIPanelOpen: true,
+        aiPanelQuery: normalizedQuery,
+        aiPanelRetrievalRunId: retrievalRunId ?? null,
+        aiPanelHandoffId:
+          shouldHandoff && normalizedQuery.trim()
+            ? state.aiPanelHandoffId + 1
+            : state.aiPanelHandoffId,
+        aiPanelHandoffQuery:
+          shouldHandoff && normalizedQuery.trim() ? normalizedQuery : null,
+      };
     }),
-  closeAIPanel: () => set({ isAIPanelOpen: false }),
+  closeAIPanel: () =>
+    set({ isAIPanelOpen: false, aiPanelHandoffId: 0, aiPanelHandoffQuery: null }),
 
   openAddModal: (pending) =>
     set({

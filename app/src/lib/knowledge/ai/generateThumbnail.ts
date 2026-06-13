@@ -7,6 +7,12 @@ import {
   normalizeThumbnailStyle,
   type GeneratableThumbnailStyle,
 } from "@/lib/knowledge/thumbnail-style-config";
+import {
+  KNOWLEDGE_THUMBNAIL_HEIGHT,
+  KNOWLEDGE_THUMBNAIL_RESOLUTION_LABEL,
+  KNOWLEDGE_THUMBNAIL_WIDTH,
+  normalizeKnowledgeThumbnailImage,
+} from "@/lib/knowledge/ai/thumbnailImage";
 
 const GENERATE_CONTENT_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
@@ -73,15 +79,15 @@ function buildPlaceholderSvg(title: string, style: GeneratableThumbnailStyle): s
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${KNOWLEDGE_THUMBNAIL_WIDTH}" height="${KNOWLEDGE_THUMBNAIL_HEIGHT}" viewBox="0 0 ${KNOWLEDGE_THUMBNAIL_WIDTH} ${KNOWLEDGE_THUMBNAIL_HEIGHT}">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="${from}"/>
       <stop offset="100%" stop-color="${to}"/>
     </linearGradient>
   </defs>
-  <rect width="400" height="240" fill="url(#bg)" rx="8"/>
-  <text x="200" y="126" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" font-weight="600" fill="${accent}">${escaped}</text>
+  <rect width="${KNOWLEDGE_THUMBNAIL_WIDTH}" height="${KNOWLEDGE_THUMBNAIL_HEIGHT}" fill="url(#bg)" rx="18"/>
+  <text x="${KNOWLEDGE_THUMBNAIL_WIDTH / 2}" y="${KNOWLEDGE_THUMBNAIL_HEIGHT / 2 + 18}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="36" font-weight="600" fill="${accent}">${escaped}</text>
 </svg>`;
 }
 
@@ -123,8 +129,9 @@ export async function generateThumbnail(params: {
   if (apiKey) {
     const stylePrompt = KNOWLEDGE_THUMBNAIL_GEMINI_PROMPTS[generatable];
     const prompt =
-      `Generate one 400x240 landscape thumbnail image for a card (knowledge, project, or task).\n` +
+      `Generate one ${KNOWLEDGE_THUMBNAIL_RESOLUTION_LABEL} 16:9 landscape thumbnail image for a card (knowledge, project, or task).\n` +
       `You must return an actual image in the response (inline image data), not only a text description.\n` +
+      `The whole composition must fit inside the 16:9 frame with no important subject cropped.\n` +
       `Topic: ${params.title}\n` +
       `Context: ${params.summary.slice(0, 200)}\n` +
       `Style: ${stylePrompt}`;
@@ -179,8 +186,12 @@ export async function generateThumbnail(params: {
         }
 
         const buffer = Buffer.from(image.data, "base64");
-        const ext = image.mimeType.split("/")[1] || "png";
-        const url = await uploadToStorage(buffer, ext, image.mimeType);
+        const normalized = await normalizeKnowledgeThumbnailImage(buffer);
+        const url = await uploadToStorage(
+          normalized.data,
+          normalized.ext,
+          normalized.contentType,
+        );
         return { url };
       } catch (err) {
         console.error(`[knowledge-thumbnail] ${model} error:`, err);

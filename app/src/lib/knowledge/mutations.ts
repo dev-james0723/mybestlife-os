@@ -43,6 +43,10 @@ import {
   type DerivativeResult,
 } from "@/lib/knowledge/derivatives";
 import {
+  generateDeferredKnowledgeDetail,
+  type KnowledgeDeferredDetailSection,
+} from "@/lib/knowledge/ai/generateDeferredDetail";
+import {
   runKnowledgeGeminiTaxonomyForItem,
   shouldRunKnowledgeGeminiTaxonomy,
 } from "@/lib/knowledge/ai/runKnowledgeGeminiTaxonomy";
@@ -1558,6 +1562,103 @@ export async function updateKnowledgeItem(
     .single();
   if (error) throw error;
   return mapRowToItem(data as Record<string, unknown>);
+}
+
+export async function generateKnowledgeDeferredSection(
+  itemId: string,
+  section: KnowledgeDeferredDetailSection,
+): Promise<KnowledgeItem> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: row, error } = await supabase
+    .from("knowledge_items")
+    .select("*")
+    .eq("id", itemId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (error || !row) throw new Error("Item not found");
+
+  const sourceUrl = typeof row.source_url === "string" ? row.source_url : "";
+  const title = typeof row.title === "string" ? row.title : "Untitled";
+  const sourceType =
+    (typeof row.source_type === "string" ? row.source_type : undefined) ??
+    (sourceUrl ? classifyUrl(sourceUrl)?.sourceType : undefined) ??
+    "plain_text";
+  const contentType = typeof row.content_type === "string" ? row.content_type : "note";
+  const transcript =
+    typeof row.youtube_transcript === "string" ? row.youtube_transcript.trim() : "";
+  const rawContent = typeof row.raw_content === "string" ? row.raw_content.trim() : "";
+
+  let aiInputText = "";
+  if (sourceUrl && parseGitHubRepoUrl(sourceUrl)) {
+    const repo = await ingestGitHubRepo(sourceUrl).catch(() => null);
+    aiInputText = (repo?.aiInputText ?? repo?.rawContent ?? "").trim();
+  }
+
+  if (!aiInputText) {
+    const syntheticIngest: NormalizedIngest = {
+      sourceType: sourceType as SourceType,
+      provider: (row.provider as NormalizedIngest["provider"]) ?? "web",
+      category:
+        (row.category as NormalizedIngest["category"]) ??
+        (sourceType.startsWith("social_") ? "social_media" : "article"),
+      label: (row.label as string) ?? "Item",
+      title,
+      titleSource: ((row.title_source as string) ?? "extracted") as "extracted" | "fallback",
+      sourceUrl: sourceUrl || undefined,
+      sourceDomain: (row.source_domain as string) || undefined,
+      rawContent: [rawContent, transcript ? `Transcript:\n${transcript}` : ""]
+        .filter(Boolean)
+        .join("\n\n"),
+      aiInputText: [rawContent, transcript ? `Transcript:\n${transcript}` : ""]
+        .filter(Boolean)
+        .join("\n\n"),
+      metadata: (row.source_metadata as NormalizedIngest["metadata"]) ?? {},
+      extractionStatus:
+        (row.extraction_status as NormalizedIngest["extractionStatus"]) ?? "success",
+      transcriptStatus:
+        (row.transcript_status as NormalizedIngest["transcriptStatus"]) ?? "not_applicable",
+      askEnabled: (row.ask_enabled as boolean) ?? true,
+      contentType: contentType as NormalizedIngest["contentType"],
+    };
+    aiInputText = await resolveAiInputTextForProcessing(syntheticIngest);
+  }
+
+  if (!aiInputText.trim()) {
+    throw new Error("No content available for detail generation");
+  }
+
+  const targetLanguage = await loadProfileLanguage();
+  const items = await generateDeferredKnowledgeDetail({
+    section,
+    title,
+    contentType,
+    aiInputText,
+    tldr: typeof row.ai_tldr === "string" ? row.ai_tldr : null,
+    summary: typeof row.ai_summary === "string" ? row.ai_summary : null,
+    targetLanguage,
+  });
+
+  const update =
+    section === "keyInsights"
+      ? { ai_key_insights: items }
+      : { ai_questions_answered: items };
+
+  const { data: updated, error: updateError } = await supabase
+    .from("knowledge_items")
+    .update({ ...update, date_modified: new Date().toISOString() })
+    .eq("id", itemId)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (updateError || !updated) throw updateError ?? new Error("Item update failed");
+  return mapRowToItem(updated as Record<string, unknown>);
 }
 
 export async function deleteKnowledgeItem(id: string): Promise<void> {

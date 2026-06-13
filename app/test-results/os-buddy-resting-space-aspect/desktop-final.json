@@ -1,0 +1,24 @@
+{
+  "metrics": {
+    "width": 188.69,
+    "height": 106.14,
+    "ratio": 1.778,
+    "aspectRatio": "16 / 9",
+    "backgroundSize": "cover",
+    "panelFooterGap": 4.6,
+    "centerHit": {
+      "inRest": true,
+      "inFooter": false,
+      "tag": "button"
+    },
+    "bottomHit": {
+      "inRest": true,
+      "inFooter": false,
+      "tag": "button"
+    }
+  },
+  "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/os-buddy-resting-space-aspect/desktop-final.png",
+  "errors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ]
+}

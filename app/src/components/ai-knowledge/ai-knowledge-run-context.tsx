@@ -16,7 +16,7 @@ type AnyPrompt = LibraryPrompt | CustomPrompt;
 export type OpenRunOptions = {
   /** Pre-fill variable fields (e.g. re-run from Activity log). */
   initialVariables?: Record<string, string>;
-  /** Ground this run in an Ask Your KB evidence set. */
+  /** Ground this run in an Ask My Knowledge Base knowledge set. */
   retrievalRunId?: string | null;
 };
 

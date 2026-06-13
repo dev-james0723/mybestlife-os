@@ -18,11 +18,12 @@ import { KnowledgeDetailSheet } from "./KnowledgeDetailSheet";
 import { AddKnowledgeModal } from "./AddKnowledgeModal";
 import { PageShell } from "@/components/shared/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, FileText, Link2, Type, UploadCloud, X } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { useProfile } from "@/hooks/use-settings";
+import { useCommandLightInteraction } from "@/hooks/use-command-light-interaction";
 import { normalizeKnowledgeQuickFilters } from "@/lib/knowledge/quick-filters";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +62,12 @@ function firstUrlFromDroppedText(value: string): string | null {
 }
 
 function KnowledgeAddDropZone({ ui }: { ui: ReturnType<typeof getKnowledgeUiCopy> }) {
+  const reduceMotion = useReducedMotion();
+  const {
+    ref: commandLightRef,
+    style: commandLightStyle,
+    handlers: commandLightHandlers,
+  } = useCommandLightInteraction(reduceMotion);
   const openAddModal = useKnowledgeStore((s) => s.openAddModal);
   const [isDragOver, setIsDragOver] = useState(false);
   const lastDropAtRef = useRef(0);
@@ -101,8 +108,10 @@ function KnowledgeAddDropZone({ ui }: { ui: ReturnType<typeof getKnowledgeUiCopy
 
   return (
     <button
+      ref={commandLightRef}
       type="button"
       onClick={handleClick}
+      {...commandLightHandlers}
       onDragEnter={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -120,20 +129,29 @@ function KnowledgeAddDropZone({ ui }: { ui: ReturnType<typeof getKnowledgeUiCopy
       }}
       onDrop={handleDrop}
       className={cn(
-        "group relative flex min-h-[86px] w-full overflow-hidden rounded-xl border p-3 text-left text-slate-900 outline-none transition-[border-color,box-shadow,filter,transform] focus-visible:ring-2 focus-visible:ring-amber-300/55 sm:p-3.5",
+        "knowledge-command-light-button knowledge-command-light-button--capture group relative flex min-h-[86px] w-full touch-pan-y isolate overflow-hidden rounded-xl border p-3 text-left text-slate-900 outline-none transition-[border-color,box-shadow,filter,transform] focus-visible:ring-2 focus-visible:ring-amber-300/55 sm:p-3.5",
         "border-amber-200/70 bg-[linear-gradient(135deg,#fffdf7_0%,#fff7dd_52%,#f6dfad_100%)] shadow-[0_14px_34px_rgba(146,104,21,0.13)] hover:-translate-y-0.5 hover:border-amber-300/80 hover:shadow-[0_18px_42px_rgba(146,104,21,0.18)]",
         "dark:border-amber-200/24 dark:bg-[linear-gradient(135deg,#12100d_0%,#2b2414_52%,#765a24_100%)] dark:text-amber-50 dark:shadow-[0_18px_46px_rgba(118,87,30,0.25)] dark:hover:border-amber-100/45 dark:hover:shadow-[0_22px_56px_rgba(130,96,31,0.34)]",
         isDragOver &&
           "border-amber-400/85 shadow-[0_20px_52px_rgba(217,119,6,0.2)] dark:border-amber-100/70 dark:shadow-[0_24px_68px_rgba(245,158,11,0.34)]",
       )}
+      style={commandLightStyle}
       aria-label="Add knowledge. Drop files, links, or text here."
     >
       <span
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(251,191,36,0.24),transparent_31%),linear-gradient(90deg,transparent,rgba(251,191,36,0.18),transparent)] opacity-70 transition-opacity group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_18%_22%,rgba(253,230,138,0.2),transparent_31%),linear-gradient(90deg,transparent,rgba(251,191,36,0.13),transparent)] dark:opacity-80"
+        className="knowledge-command-light-aurora"
+        data-high-stimulus="true"
+        data-reduced-during-focus="true"
         aria-hidden
       />
-      <span className="relative z-10 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <span className="flex min-w-0 items-start gap-3">
+      <span
+        className="knowledge-command-light-cursor"
+        data-high-stimulus="true"
+        data-reduced-during-focus="true"
+        aria-hidden
+      />
+      <span className="relative z-10 flex w-full min-w-0 items-start">
+        <span className="flex min-w-0 items-start gap-3 pr-20 sm:pr-36">
           <span className="mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-amber-200/80 bg-white/72 shadow-inner dark:border-amber-100/20 dark:bg-black/28">
             <Image
               src="/images/knowledge/add-knowledge-mark.png"
@@ -156,12 +174,12 @@ function KnowledgeAddDropZone({ ui }: { ui: ReturnType<typeof getKnowledgeUiCopy
             </span>
           </span>
         </span>
-        <span className="flex shrink-0 flex-col gap-2 self-start sm:self-center">
-          <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-200/80 bg-white/65 px-3 text-xs font-semibold text-amber-800 shadow-sm dark:border-amber-100/24 dark:bg-black/20 dark:text-amber-50/92">
+        <span className="absolute right-0 top-0 flex max-w-[46%] shrink-0 flex-col items-end gap-1.5">
+          <span className="inline-flex h-8 max-w-full items-center justify-center gap-1.5 rounded-lg border border-amber-200/80 bg-white/65 px-2.5 text-[11px] font-semibold text-amber-800 shadow-sm dark:border-amber-100/24 dark:bg-black/20 dark:text-amber-50/92 sm:h-9 sm:px-3 sm:text-xs">
             <UploadCloud className="h-3.5 w-3.5" aria-hidden />
-            or click to add
+            <span className="truncate">or click to add</span>
           </span>
-          <span className="hidden justify-end gap-1.5 text-amber-700/55 dark:text-amber-50/60 sm:flex" aria-hidden>
+          <span className="hidden justify-end gap-1.5 text-amber-700/55 dark:text-amber-50/60 md:flex" aria-hidden>
             <FileText className="h-3.5 w-3.5" />
             <Link2 className="h-3.5 w-3.5" />
             <Type className="h-3.5 w-3.5" />
@@ -173,31 +191,58 @@ function KnowledgeAddDropZone({ ui }: { ui: ReturnType<typeof getKnowledgeUiCopy
 }
 
 function KnowledgeAskCommandSection({ userId }: { userId: string }) {
+  const reduceMotion = useReducedMotion();
+  const {
+    ref: commandLightRef,
+    style: commandLightStyle,
+    handlers: commandLightHandlers,
+  } = useCommandLightInteraction(reduceMotion);
   const isAIPanelOpen = useKnowledgeStore((s) => s.isAIPanelOpen);
   const openAIPanel = useKnowledgeStore((s) => s.openAIPanel);
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const items = useKnowledgeStore((s) => s.items);
-  const smartCollections = useKnowledgeStore((s) => s.smartCollections);
   const aiPanelRetrievalRunId = useKnowledgeStore((s) => s.aiPanelRetrievalRunId);
+  const aiPanelHandoffId = useKnowledgeStore((s) => s.aiPanelHandoffId);
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language).aiPanel;
   const panelId = "knowledge-ask-my-kb-panel";
 
+  useEffect(() => {
+    if (!isAIPanelOpen || aiPanelHandoffId === 0) return;
+    const timer = window.setTimeout(() => {
+      window.document
+        .getElementById(panelId)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 140);
+    return () => window.clearTimeout(timer);
+  }, [aiPanelHandoffId, isAIPanelOpen, panelId]);
+
   return (
     <section className="max-w-full" aria-label={ui.title}>
       <button
+        ref={commandLightRef}
         type="button"
         onClick={() => (isAIPanelOpen ? closeAIPanel() : openAIPanel())}
-        className="group relative flex min-h-[86px] w-full overflow-hidden rounded-xl border border-cyan-200/80 bg-[linear-gradient(135deg,#fbfdff_0%,#edf8ff_50%,#d8eff8_100%)] p-3 text-left text-slate-900 shadow-[0_14px_34px_rgba(14,116,144,0.12)] outline-none transition-[border-color,box-shadow,filter,transform] hover:-translate-y-0.5 hover:border-cyan-300/85 hover:shadow-[0_18px_44px_rgba(14,116,144,0.17)] focus-visible:ring-2 focus-visible:ring-cyan-300/55 dark:border-cyan-200/22 dark:bg-[linear-gradient(135deg,#0b1118_0%,#102033_50%,#16516a_100%)] dark:text-cyan-50 dark:shadow-[0_18px_48px_rgba(21,88,116,0.24)] dark:hover:border-cyan-100/42 dark:hover:shadow-[0_22px_58px_rgba(22,104,136,0.33)] sm:p-3.5"
+        {...commandLightHandlers}
+        className="knowledge-command-light-button knowledge-command-light-button--ask group relative flex min-h-[86px] w-full touch-pan-y isolate overflow-hidden rounded-xl border border-cyan-200/80 bg-[linear-gradient(135deg,#fbfdff_0%,#edf8ff_50%,#d8eff8_100%)] p-3 text-left text-slate-900 shadow-[0_14px_34px_rgba(14,116,144,0.12)] outline-none transition-[border-color,box-shadow,filter,transform] hover:-translate-y-0.5 hover:border-cyan-300/85 hover:shadow-[0_18px_44px_rgba(14,116,144,0.17)] focus-visible:ring-2 focus-visible:ring-cyan-300/55 dark:border-cyan-200/22 dark:bg-[linear-gradient(135deg,#0b1118_0%,#102033_50%,#16516a_100%)] dark:text-cyan-50 dark:shadow-[0_18px_48px_rgba(21,88,116,0.24)] dark:hover:border-cyan-100/42 dark:hover:shadow-[0_22px_58px_rgba(22,104,136,0.33)] sm:p-3.5"
+        style={commandLightStyle}
         aria-expanded={isAIPanelOpen}
         aria-controls={panelId}
       >
         <span
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_24%,rgba(56,189,248,0.18),transparent_30%),linear-gradient(90deg,transparent,rgba(14,165,233,0.12),transparent)] opacity-70 transition-opacity group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_16%_24%,rgba(125,211,252,0.2),transparent_30%),linear-gradient(90deg,transparent,rgba(103,232,249,0.12),transparent)] dark:opacity-80"
+          className="knowledge-command-light-aurora"
+          data-high-stimulus="true"
+          data-reduced-during-focus="true"
           aria-hidden
         />
-        <span className="relative z-10 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="flex min-w-0 items-start gap-3">
+        <span
+          className="knowledge-command-light-cursor"
+          data-high-stimulus="true"
+          data-reduced-during-focus="true"
+          aria-hidden
+        />
+        <span className="relative z-10 flex w-full min-w-0 items-start">
+          <span className="flex min-w-0 items-start gap-3 pr-20 sm:pr-36">
             <span className="mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-cyan-200/80 bg-white/72 shadow-inner dark:border-cyan-100/20 dark:bg-black/28">
               <Image
                 src="/images/knowledge/ask-my-kb-mark.png"
@@ -213,20 +258,27 @@ function KnowledgeAskCommandSection({ userId }: { userId: string }) {
                 Reason over memory
               </span>
               <span className="mt-0.5 block text-base font-semibold leading-tight text-slate-950 dark:text-cyan-50">
-                Ask My KB
+                Ask My Knowledge Base
               </span>
               <span className="mt-1 block max-w-2xl text-xs leading-5 text-slate-600 dark:text-cyan-50/76 sm:text-sm">
-                Chat with saved knowledge, history, projects, and cited evidence.
+                Chat with saved knowledge, history, projects, and citations.
               </span>
             </span>
           </span>
-          <span className="inline-flex h-9 max-w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-cyan-200/80 bg-white/65 px-3 text-xs font-semibold text-cyan-800 shadow-sm dark:border-cyan-100/24 dark:bg-black/20 dark:text-cyan-50/92 sm:self-center">
-            <span className="truncate">
+          <span className="absolute right-0 top-0 inline-flex h-8 max-w-24 shrink-0 items-center justify-center gap-1 rounded-lg border border-cyan-200/80 bg-white/65 px-2 text-[11px] font-semibold text-cyan-800 shadow-sm dark:border-cyan-100/24 dark:bg-black/20 dark:text-cyan-50/92 sm:h-9 sm:max-w-[46%] sm:gap-1.5 sm:px-3 sm:text-xs">
+            <span className="truncate sm:hidden">
               {isAIPanelOpen
                 ? "Close"
                 : aiPanelRetrievalRunId
-                  ? "Evidence attached"
-                  : `${items.length} items · ${smartCollections.length} projects`}
+                  ? "Attached"
+                  : `${items.length} items`}
+            </span>
+            <span className="hidden truncate sm:inline">
+              {isAIPanelOpen
+                ? "Close"
+                : aiPanelRetrievalRunId
+                  ? "Knowledge attached"
+                  : `${items.length} items`}
             </span>
             {isAIPanelOpen ? (
               <X className="h-3.5 w-3.5 opacity-75" aria-hidden />
@@ -248,7 +300,7 @@ function KnowledgeAskCommandSection({ userId }: { userId: string }) {
             className="min-w-0 overflow-hidden"
           >
             <div className="mt-2 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <div className="flex h-[min(72dvh,680px)] min-h-[430px] min-w-0 flex-col overflow-hidden rounded-[1rem] border border-border/70 bg-card shadow-sm sm:min-h-[460px]">
+              <div className="flex h-[calc(100dvh-1rem)] min-h-[760px] min-w-0 flex-col overflow-hidden rounded-[1rem] border border-border/70 bg-card shadow-sm sm:h-[min(90dvh,840px)] sm:min-h-[640px] lg:h-[min(72dvh,680px)] lg:min-h-[460px]">
                 <KnowledgeAIPanel userId={userId} layout="top" hideHeader />
               </div>
             </div>

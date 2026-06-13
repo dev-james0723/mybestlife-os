@@ -73,7 +73,7 @@ export function resolveAskKbRetrievalScope(params: {
 
   const allowed = new Set<RetrievalSourceDomain>(readableLifeAgentDomains);
 
-  // Ask Your KB is mounted inside Knowledge Base, so preserve the existing
+  // Ask My Knowledge Base is mounted inside Knowledge Base, so preserve the existing
   // first-party KB search even before users configure Life Agent permissions.
   allowed.add("knowledge");
   for (const domain of KNOWLEDGE_EXTENSION_DOMAINS) allowed.add(domain);

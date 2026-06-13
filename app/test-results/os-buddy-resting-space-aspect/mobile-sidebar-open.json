@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:3000/en/daily-planner",
+  "metrics": {
+    "width": 226.02,
+    "height": 127.13,
+    "ratio": 1.778,
+    "aspectRatio": "16 / 9",
+    "backgroundSize": "cover",
+    "sidebarWidth": 260
+  },
+  "screenshotPath": "/Users/ouxianxing/My_life_os/app/test-results/os-buddy-resting-space-aspect/mobile-sidebar-open.png",
+  "errors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ]
+}

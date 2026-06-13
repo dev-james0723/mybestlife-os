@@ -598,7 +598,7 @@ html.focus-mode [data-focus-hideable] {
 }
 
 .today-companion-rest-room__bg {
-  background-size: 100% 100%;
+  background-size: cover;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
@@ -2222,7 +2222,8 @@ html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .toda
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-rest-room {
-  height: 3.65rem !important;
+  aspect-ratio: 16 / 9;
+  height: auto !important;
 }
 
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-drop-cue {
@@ -3418,6 +3419,24 @@ html[data-ui-theme="default"][data-color-mode="light"] [data-calendar-surface] {
 /* ============================================================
    Daily Planner — time summary image glass cards
    ============================================================ */
+.planner-time-summary-grid {
+  display: none;
+}
+
+.planner-time-summary-carousel {
+  display: block;
+}
+
+@media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+  .planner-time-summary-grid {
+    display: grid;
+  }
+
+  .planner-time-summary-carousel {
+    display: none;
+  }
+}
+
 .time-summary-card {
   isolation: isolate;
   transition:
@@ -4255,7 +4274,225 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
   --sidebar-accent: hsl(var(--muted));
 }
 
+.knowledge-command-light-button {
+  --knowledge-command-light-x: 72%;
+  --knowledge-command-light-y: 28%;
+  --knowledge-command-light-active: 0;
+  --knowledge-command-aurora-opacity-base: 0.72;
+  --knowledge-command-aurora-opacity-active: 0.18;
+  --knowledge-command-aurora-saturate: 1.25;
+  --knowledge-command-cursor-opacity-base: 0.12;
+  --knowledge-command-cursor-opacity-active: 0.68;
+}
+
+.knowledge-command-light-aurora,
+.knowledge-command-light-cursor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.knowledge-command-light-aurora {
+  background: var(--knowledge-command-aurora-bg);
+  background-position:
+    center,
+    2% 18%,
+    96% 8%,
+    48% 100%,
+    0% 50%;
+  background-size:
+    100% 100%,
+    122% 122%,
+    130% 130%,
+    150% 150%,
+    170% 100%;
+  opacity: calc(
+    var(--knowledge-command-aurora-opacity-base) +
+      (var(--knowledge-command-light-active) * var(--knowledge-command-aurora-opacity-active))
+  );
+  filter: saturate(var(--knowledge-command-aurora-saturate));
+  transition: opacity 260ms ease;
+}
+
+.knowledge-command-light-cursor {
+  background: var(--knowledge-command-cursor-bg);
+  opacity: calc(
+    var(--knowledge-command-cursor-opacity-base) +
+      (var(--knowledge-command-light-active) * var(--knowledge-command-cursor-opacity-active))
+  );
+  transform: scale(calc(1 + (var(--knowledge-command-light-active) * 0.018)));
+  transition:
+    opacity 240ms ease,
+    transform 240ms ease;
+}
+
+.knowledge-command-light-button--capture {
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.82), rgba(251, 191, 36, 0.3) 18%, transparent 36%),
+    radial-gradient(ellipse at 18% 20%, rgba(45, 212, 191, 0.2), transparent 39%),
+    radial-gradient(ellipse at 84% 12%, rgba(236, 72, 153, 0.18), transparent 36%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.28), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.52) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.9), rgba(251, 191, 36, 0.42) 12%, rgba(244, 114, 182, 0.2) 25%, transparent 44%);
+}
+
+.knowledge-command-light-button--ask {
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.82), rgba(125, 211, 252, 0.24) 18%, transparent 36%),
+    radial-gradient(ellipse at 18% 20%, rgba(45, 212, 191, 0.3), transparent 39%),
+    radial-gradient(ellipse at 84% 12%, rgba(168, 85, 247, 0.23), transparent 36%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.2), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.5) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.92), rgba(103, 232, 249, 0.34) 12%, rgba(192, 132, 252, 0.17) 25%, transparent 44%);
+}
+
+.knowledge-command-light-button--retrieve {
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.78), rgba(190, 242, 100, 0.28) 18%, transparent 36%),
+    radial-gradient(ellipse at 18% 20%, rgba(34, 211, 238, 0.2), transparent 39%),
+    radial-gradient(ellipse at 84% 12%, rgba(168, 85, 247, 0.18), transparent 36%),
+    radial-gradient(ellipse at 52% 108%, rgba(132, 204, 22, 0.28), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.48) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.88), rgba(190, 242, 100, 0.38) 12%, rgba(34, 211, 238, 0.16) 25%, transparent 44%);
+}
+
+.dark .knowledge-command-light-button {
+  --knowledge-command-aurora-opacity-base: 0.72;
+  --knowledge-command-aurora-opacity-active: 0.24;
+  --knowledge-command-aurora-saturate: 1.42;
+  --knowledge-command-cursor-opacity-base: 0.16;
+  --knowledge-command-cursor-opacity-active: 0.74;
+}
+
+.dark .knowledge-command-light-button--capture {
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.4), rgba(251, 191, 36, 0.34) 17%, transparent 38%),
+    radial-gradient(ellipse at 16% 18%, rgba(45, 212, 191, 0.18), transparent 38%),
+    radial-gradient(ellipse at 86% 12%, rgba(236, 72, 153, 0.24), transparent 37%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.22), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(251, 191, 36, 0.14) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.5), rgba(251, 191, 36, 0.4) 13%, rgba(244, 114, 182, 0.2) 28%, transparent 48%);
+}
+
+.dark .knowledge-command-light-button--ask {
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.36), rgba(103, 232, 249, 0.32) 17%, transparent 38%),
+    radial-gradient(ellipse at 16% 18%, rgba(45, 212, 191, 0.28), transparent 38%),
+    radial-gradient(ellipse at 86% 12%, rgba(168, 85, 247, 0.3), transparent 37%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.16), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(103, 232, 249, 0.14) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.52), rgba(103, 232, 249, 0.36) 13%, rgba(217, 70, 239, 0.2) 28%, transparent 48%);
+}
+
+.dark .knowledge-command-light-button--retrieve {
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.36), rgba(190, 242, 100, 0.3) 17%, transparent 38%),
+    radial-gradient(ellipse at 16% 18%, rgba(34, 211, 238, 0.18), transparent 38%),
+    radial-gradient(ellipse at 86% 12%, rgba(168, 85, 247, 0.22), transparent 37%),
+    radial-gradient(ellipse at 52% 108%, rgba(132, 204, 22, 0.2), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(190, 242, 100, 0.13) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.48), rgba(190, 242, 100, 0.34) 13%, rgba(34, 211, 238, 0.18) 28%, transparent 48%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .knowledge-command-light-aurora {
+    animation: knowledge-command-aurora-drift 8.5s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes knowledge-command-aurora-drift {
+  0% {
+    background-position:
+      center,
+      0% 22%,
+      100% 4%,
+      52% 104%,
+      0% 50%;
+    filter: hue-rotate(0deg) saturate(1.2);
+  }
+  50% {
+    background-position:
+      center,
+      18% 4%,
+      78% 28%,
+      42% 88%,
+      52% 50%;
+    filter: hue-rotate(14deg) saturate(1.34);
+  }
+  100% {
+    background-position:
+      center,
+      8% 28%,
+      92% 18%,
+      58% 96%,
+      100% 50%;
+    filter: hue-rotate(-10deg) saturate(1.28);
+  }
+}
+
+.knowledge-send-hint-button {
+  isolation: isolate;
+  box-shadow:
+    0 0 0 2px rgba(103, 232, 249, 0.38),
+    0 0 0 8px rgba(103, 232, 249, 0.1),
+    0 14px 34px rgba(103, 232, 249, 0.22);
+}
+
+.knowledge-send-hint-ring {
+  position: absolute;
+  inset: -0.45rem;
+  z-index: 0;
+  border: 2px solid rgba(103, 232, 249, 0.72);
+  border-radius: 1rem;
+  pointer-events: none;
+  animation: knowledge-send-ring-pulse 1.15s ease-in-out infinite;
+}
+
+.knowledge-send-hint-arrow {
+  animation: knowledge-send-arrow-nudge 0.72s ease-in-out infinite;
+}
+
+@keyframes knowledge-send-ring-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes knowledge-send-arrow-nudge {
+  0%,
+  100% {
+    transform: translateY(0) rotate(90deg);
+  }
+  50% {
+    transform: translateY(4px) rotate(90deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .knowledge-command-light-aurora,
+  .knowledge-command-light-cursor {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .knowledge-send-hint-ring,
+  .knowledge-send-hint-arrow {
+    animation: none !important;
+  }
+
   html.mylifeos-low-stimulation-mode *,
   html.mylifeos-low-stimulation-mode *::before,
   html.mylifeos-low-stimulation-mode *::after {

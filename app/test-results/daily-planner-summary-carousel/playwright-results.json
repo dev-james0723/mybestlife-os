@@ -1,0 +1,638 @@
+{
+  "checks": [
+    {
+      "name": "mobile uses carousel",
+      "pass": true
+    },
+    {
+      "name": "mobile initially shows Available",
+      "pass": true
+    },
+    {
+      "name": "no mobile horizontal overflow",
+      "pass": true,
+      "overflowX": 0
+    },
+    {
+      "name": "mobile auto reaches Planned",
+      "pass": true,
+      "elapsedMs": 5945
+    },
+    {
+      "name": "mobile auto reaches Remaining",
+      "pass": true,
+      "elapsedMs": 4327
+    },
+    {
+      "name": "mobile auto loops back to Available",
+      "pass": true,
+      "elapsedMs": 4553
+    },
+    {
+      "name": "mobile manual swipe drags track",
+      "pass": true
+    },
+    {
+      "name": "mobile manual swipe advances to Planned",
+      "pass": true
+    },
+    {
+      "name": "tablet uses carousel",
+      "pass": true
+    },
+    {
+      "name": "no tablet horizontal overflow",
+      "pass": true,
+      "overflowX": 0
+    },
+    {
+      "name": "desktop uses three-card grid",
+      "pass": true
+    },
+    {
+      "name": "no desktop horizontal overflow",
+      "pass": true,
+      "overflowX": 0
+    }
+  ],
+  "screenshots": {
+    "mobileInitial": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/mobile-initial.png",
+    "mobileAutoPlanned": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/mobile-after-auto-planned.png",
+    "mobileAutoRemaining": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/mobile-after-auto-remaining.png",
+    "mobileAutoLoop": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/mobile-after-auto-loop.png",
+    "mobileManualSwipe": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/mobile-after-manual-swipe.png",
+    "tablet": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/tablet-carousel.png",
+    "desktop": "/Users/ouxianxing/My_life_os/app/test-results/daily-planner-summary-carousel/desktop-grid.png"
+  },
+  "timings": {
+    "mobileToPlanned": 5945,
+    "mobileToRemaining": 4327,
+    "mobileLoopToAvailable": 4553
+  },
+  "errors": {
+    "mobile": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "manual": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "tablet": [
+      "Invalid or unexpected token"
+    ],
+    "desktop": [
+      "Invalid or unexpected token"
+    ]
+  },
+  "mobileInitial": {
+    "url": "http://localhost:3000/en/daily-planner",
+    "now": 4970,
+    "carouselDisplay": "block",
+    "gridDisplay": "none",
+    "transform": "matrix(1, 0, 0, 1, -324, 0)",
+    "transitionDuration": "0.64s",
+    "visibleTexts": [
+      "Available17h(1020min)"
+    ],
+    "cards": [
+      {
+        "text": "Remaining17h(1020min)",
+        "left": -291,
+        "top": 520,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 33,
+        "top": 520,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": true,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Planned0min",
+        "left": 357,
+        "top": 520,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 681,
+        "top": 520,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 1005,
+        "top": 520,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      }
+    ],
+    "gridCards": [
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Planned0min",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      }
+    ],
+    "overflowX": 0
+  },
+  "mobileAfterPlanned": {
+    "url": "http://localhost:3000/en/daily-planner",
+    "now": 11668,
+    "carouselDisplay": "block",
+    "gridDisplay": "none",
+    "transform": "matrix(1, 0, 0, 1, -639.516, 0)",
+    "transitionDuration": "0.64s",
+    "visibleTexts": [
+      "Planned0min"
+    ],
+    "cards": [
+      {
+        "text": "Remaining17h(1020min)",
+        "left": -607,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": -283,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Planned0min",
+        "left": 41,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": true,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 365,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 689,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      }
+    ],
+    "gridCards": [
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Planned0min",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      }
+    ],
+    "overflowX": 0
+  },
+  "mobileAfterRemaining": {
+    "url": "http://localhost:3000/en/daily-planner",
+    "now": 16849,
+    "carouselDisplay": "block",
+    "gridDisplay": "none",
+    "transform": "matrix(1, 0, 0, 1, -950.425, 0)",
+    "transitionDuration": "0.64s",
+    "visibleTexts": [
+      "Remaining17h(1020min)"
+    ],
+    "cards": [
+      {
+        "text": "Remaining17h(1020min)",
+        "left": -917,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": -593,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Planned0min",
+        "left": -269,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 55,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": true,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 379,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      }
+    ],
+    "gridCards": [
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Planned0min",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      }
+    ],
+    "overflowX": 0
+  },
+  "mobileAfterLoop": {
+    "url": "http://localhost:3000/en/daily-planner",
+    "now": 22289,
+    "carouselDisplay": "block",
+    "gridDisplay": "none",
+    "transform": "matrix(1, 0, 0, 1, -1294.88, 0)",
+    "transitionDuration": "0.64s",
+    "visibleTexts": [
+      "Available17h(1020min)"
+    ],
+    "cards": [
+      {
+        "text": "Remaining17h(1020min)",
+        "left": -1262,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": -938,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Planned0min",
+        "left": -614,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": -290,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": false,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 34,
+        "top": 691,
+        "width": 324,
+        "height": 324,
+        "fullyInViewport": true,
+        "intersectsCarousel": true
+      }
+    ],
+    "gridCards": [
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Planned0min",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      }
+    ],
+    "overflowX": 0
+  },
+  "manualSwipe": [
+    {
+      "label": "before",
+      "transform": "matrix(1, 0, 0, 1, -324, 0)",
+      "transitionDuration": "0.64s",
+      "visibleText": [
+        "Available17h(1020min)"
+      ]
+    },
+    {
+      "label": "after-down",
+      "transform": "matrix(1, 0, 0, 1, -324, 0)",
+      "transitionDuration": "0s",
+      "visibleText": [
+        "Available17h(1020min)"
+      ]
+    },
+    {
+      "label": "move-1",
+      "transform": "matrix(1, 0, 0, 1, -359.64, 0)",
+      "transitionDuration": "0s",
+      "visibleText": []
+    },
+    {
+      "label": "move-2",
+      "transform": "matrix(1, 0, 0, 1, -395.28, 0)",
+      "transitionDuration": "0s",
+      "visibleText": []
+    },
+    {
+      "label": "move-3",
+      "transform": "matrix(1, 0, 0, 1, -430.92, 0)",
+      "transitionDuration": "0s",
+      "visibleText": []
+    },
+    {
+      "label": "move-4",
+      "transform": "matrix(1, 0, 0, 1, -460.08, 0)",
+      "transitionDuration": "0s",
+      "visibleText": []
+    },
+    {
+      "label": "move-5",
+      "transform": "matrix(1, 0, 0, 1, -460.08, 0)",
+      "transitionDuration": "0s",
+      "visibleText": []
+    },
+    {
+      "label": "move-6",
+      "transform": "matrix(1, 0, 0, 1, -460.08, 0)",
+      "transitionDuration": "0s",
+      "visibleText": []
+    },
+    {
+      "label": "after-up",
+      "transform": "matrix(1, 0, 0, 1, -648, 0)",
+      "transitionDuration": "0.64s",
+      "visibleText": [
+        "Planned0min"
+      ]
+    }
+  ],
+  "tablet": {
+    "url": "http://localhost:3000/en/daily-planner",
+    "now": 4193,
+    "carouselDisplay": "block",
+    "gridDisplay": "none",
+    "transform": "matrix(1, 0, 0, 1, -416, 0)",
+    "transitionDuration": "0.64s",
+    "visibleTexts": [
+      "Available17h(1020min)"
+    ],
+    "cards": [
+      {
+        "text": "Remaining17h(1020min)",
+        "left": -30,
+        "top": 561,
+        "width": 416,
+        "height": 416,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 386,
+        "top": 561,
+        "width": 416,
+        "height": 416,
+        "fullyInViewport": true,
+        "intersectsCarousel": true
+      },
+      {
+        "text": "Planned0min",
+        "left": 802,
+        "top": 561,
+        "width": 416,
+        "height": 416,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 1218,
+        "top": 561,
+        "width": 416,
+        "height": 416,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 1634,
+        "top": 561,
+        "width": 416,
+        "height": 416,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      }
+    ],
+    "gridCards": [
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Planned0min",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0
+      }
+    ],
+    "overflowX": 0
+  },
+  "desktop": {
+    "url": "http://localhost:3000/en/daily-planner",
+    "now": 4220,
+    "carouselDisplay": "none",
+    "gridDisplay": "grid",
+    "transform": "none",
+    "transitionDuration": "0.64s",
+    "visibleTexts": [],
+    "cards": [
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Planned0min",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      },
+      {
+        "text": "Available17h(1020min)",
+        "left": 0,
+        "top": 0,
+        "width": 0,
+        "height": 0,
+        "fullyInViewport": false,
+        "intersectsCarousel": false
+      }
+    ],
+    "gridCards": [
+      {
+        "text": "Available17h(1020min)",
+        "left": 285,
+        "top": 479,
+        "width": 362,
+        "height": 362
+      },
+      {
+        "text": "Planned0min",
+        "left": 659,
+        "top": 479,
+        "width": 362,
+        "height": 362
+      },
+      {
+        "text": "Remaining17h(1020min)",
+        "left": 1033,
+        "top": 479,
+        "width": 362,
+        "height": 362
+      }
+    ],
+    "overflowX": 0
+  }
+}

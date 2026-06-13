@@ -148,6 +148,10 @@ import { TimelineView } from "@/components/daily-planner/timeline-view";
 import { MiniCalendarPopover } from "@/components/daily-planner/mini-calendar-popover";
 import { VisualScheduleGenerator } from "@/components/daily-planner/visual-schedule-generator";
 import { TimeSummaryCard } from "@/components/daily-planner/time-summary-card";
+import {
+  TimeSummaryCarousel,
+  type TimeSummaryCarouselItem,
+} from "@/components/daily-planner/time-summary-carousel";
 import { FreePlanBoard } from "@/components/daily-planner/free-plan-board";
 import { FreePlanSummary } from "@/components/daily-planner/free-plan-summary";
 import { PlanningModeToggle } from "@/components/daily-planner/planning-mode-toggle";
@@ -1250,6 +1254,82 @@ export default function DailyPlannerPage() {
     return { totalBlocks, plannedMin, availableMin, remainingMin };
   }, [tasks, planRange.durationMin, blockMinutes]);
 
+  const timeSummaryItems = useMemo<TimeSummaryCarouselItem[]>(
+    () => [
+      {
+        id: "available",
+        title: copy.available,
+        content: (
+          <TimeSummaryCard
+            title={copy.available}
+            value={fmtBlocks(
+              Math.max(0, Math.floor(summary.availableMin / blockMinutes)),
+            )}
+            icon={<CalendarClock className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
+            iconClassName="bg-violet-500/20 text-violet-200 ring-1 ring-violet-300/25"
+            backgroundImage="/images/daily-planner/available.png"
+          />
+        ),
+      },
+      {
+        id: "planned",
+        title: copy.planned,
+        content: (
+          <TimeSummaryCard
+            title={copy.planned}
+            value={fmtBlocks(summary.totalBlocks)}
+            icon={<ListChecks className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
+            iconClassName="bg-sky-500/20 text-sky-200 ring-1 ring-sky-300/25"
+            backgroundImage="/images/daily-planner/planned.png"
+            glassIntensity="medium"
+          />
+        ),
+      },
+      {
+        id: "remaining",
+        title: copy.remaining,
+        content: (
+          <TimeSummaryCard
+            title={copy.remaining}
+            value={
+              <>
+                {summary.remainingMin < 0 && "⚠ "}
+                {summary.remainingMin < 0 ? copy.overBy : ""}
+                {fmtBlocks(
+                  Math.abs(Math.floor(summary.remainingMin / blockMinutes)),
+                )}
+              </>
+            }
+            icon={<Hourglass className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
+            iconClassName={cn(
+              "ring-1",
+              summary.remainingMin < 0
+                ? "bg-red-500/20 text-red-200 ring-red-300/25"
+                : "bg-emerald-500/20 text-emerald-200 ring-emerald-300/25",
+            )}
+            valueClassName={cn(
+              summary.remainingMin < 0
+                ? "text-red-200"
+                : "text-emerald-200",
+            )}
+            backgroundImage="/images/daily-planner/remaining.png"
+          />
+        ),
+      },
+    ],
+    [
+      blockMinutes,
+      copy.available,
+      copy.overBy,
+      copy.planned,
+      copy.remaining,
+      fmtBlocks,
+      summary.availableMin,
+      summary.remainingMin,
+      summary.totalBlocks,
+    ],
+  );
+
   const focusSessionsByPlannerTaskId = useMemo(() => {
     const grouped: Record<string, PlannerFocusSession[]> = {};
     for (const session of focusSessions) {
@@ -2336,50 +2416,17 @@ export default function DailyPlannerPage() {
             </div>
           ) : (
           /* Time budget — three icon tiles */
-          <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-            <TimeSummaryCard
-              title={copy.available}
-              value={fmtBlocks(
-                Math.max(0, Math.floor(summary.availableMin / blockMinutes)),
-              )}
-              icon={<CalendarClock className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
-              iconClassName="bg-violet-500/20 text-violet-200 ring-1 ring-violet-300/25"
-              backgroundImage="/images/daily-planner/available.png"
+          <>
+            <TimeSummaryCarousel
+              items={timeSummaryItems}
+              label={`${copy.available} / ${copy.planned} / ${copy.remaining}`}
             />
-            <TimeSummaryCard
-              title={copy.planned}
-              value={fmtBlocks(summary.totalBlocks)}
-              icon={<ListChecks className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
-              iconClassName="bg-sky-500/20 text-sky-200 ring-1 ring-sky-300/25"
-              backgroundImage="/images/daily-planner/planned.png"
-              glassIntensity="medium"
-            />
-            <TimeSummaryCard
-              title={copy.remaining}
-              value={
-                <>
-                  {summary.remainingMin < 0 && "⚠ "}
-                  {summary.remainingMin < 0 ? copy.overBy : ""}
-                  {fmtBlocks(
-                    Math.abs(Math.floor(summary.remainingMin / blockMinutes)),
-                  )}
-                </>
-              }
-              icon={<Hourglass className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
-              iconClassName={cn(
-                "ring-1",
-                summary.remainingMin < 0
-                  ? "bg-red-500/20 text-red-200 ring-red-300/25"
-                  : "bg-emerald-500/20 text-emerald-200 ring-emerald-300/25",
-              )}
-              valueClassName={cn(
-                summary.remainingMin < 0
-                  ? "text-red-200"
-                  : "text-emerald-200",
-              )}
-              backgroundImage="/images/daily-planner/remaining.png"
-            />
-          </div>
+            <div className="planner-time-summary-grid min-w-0 grid-cols-3 gap-3">
+              {timeSummaryItems.map((item) => (
+                <div key={item.id}>{item.content}</div>
+              ))}
+            </div>
+          </>
           )}
       </OSFrostedPanel>
 

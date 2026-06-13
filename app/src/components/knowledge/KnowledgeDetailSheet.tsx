@@ -10,9 +10,9 @@ import {
   deleteKnowledgeItem,
   retryProcessing,
   generateYouTubeKnowledgeTranscript,
+  generateKnowledgeDeferredSection,
 } from "@/lib/knowledge/mutations";
 import { KnowledgeYoutubeChatDialog } from "./KnowledgeYoutubeChatDialog";
-import { KnowledgeDocumentChatDialog } from "./KnowledgeDocumentChatDialog";
 import { KnowledgePdfViewer } from "./KnowledgePdfViewer";
 import { KnowledgeWordEditor } from "./KnowledgeWordEditor";
 import { ThumbnailStylePicker } from "./ThumbnailStylePicker";
@@ -58,9 +58,7 @@ import {
   Plus,
   AlertCircle,
   RefreshCw,
-  Quote,
   HelpCircle,
-  CheckSquare,
   Loader2,
   Code2,
   Eye,
@@ -94,6 +92,8 @@ function sanitizeHtmlForPreview(source: string): string {
 /** Pull past this distance (px) on the top handle to dismiss the sheet. */
 const SHEET_DRAG_DISMISS_PX = 110;
 
+type DeferredKnowledgeSection = "keyInsights" | "questionsAnswered";
+
 export function KnowledgeDetailSheet() {
   const language = useAppStore((s) => s.language);
   const knowledgeUi = getKnowledgeUiCopy(language);
@@ -102,6 +102,7 @@ export function KnowledgeDetailSheet() {
   const items = useKnowledgeStore((s) => s.items);
   const selectItem = useKnowledgeStore((s) => s.selectItem);
   const removeItem = useKnowledgeStore((s) => s.removeItem);
+  const upsertItem = useKnowledgeStore((s) => s.upsertItem);
 
   const item = useMemo(
     () => items.find((i) => i.id === selectedItemId) ?? null,
@@ -119,8 +120,15 @@ export function KnowledgeDetailSheet() {
   const [codeViewMode, setCodeViewMode] = useState<CodeViewMode>("source");
   const [htmlFullPageOpen, setHtmlFullPageOpen] = useState(false);
   const [videoChatOpen, setVideoChatOpen] = useState(false);
-  const [documentChatOpen, setDocumentChatOpen] = useState(false);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [deferredLoadingSection, setDeferredLoadingSection] =
+    useState<DeferredKnowledgeSection | null>(null);
+  const [expandedAiSections, setExpandedAiSections] = useState<
+    Record<DeferredKnowledgeSection, boolean>
+  >({
+    keyInsights: false,
+    questionsAnswered: false,
+  });
   const [sheetDragY, setSheetDragY] = useState(0);
   const [sheetDragActive, setSheetDragActive] = useState(false);
   const sheetDragRef = useRef({ pointerId: -1, startY: 0 });
@@ -153,6 +161,11 @@ export function KnowledgeDetailSheet() {
     setHtmlFullPageOpen(false);
     setThumbnailRegenerateOpen(false);
     setThumbLightboxOpen(false);
+    setDeferredLoadingSection(null);
+    setExpandedAiSections({
+      keyInsights: false,
+      questionsAnswered: false,
+    });
   }, [item?.id]);
 
   useEffect(() => {
@@ -273,6 +286,41 @@ export function KnowledgeDetailSheet() {
     }
   }, [item, retrying, ui.retryFailed, ui.retryingAiProcessing]);
 
+  const handleDeferredSection = useCallback(
+    async (section: DeferredKnowledgeSection) => {
+      if (!item || deferredLoadingSection) return;
+
+      const existing =
+        section === "keyInsights"
+          ? item.aiKeyInsights
+          : item.aiQuestionsAnswered;
+
+      if (existing.length > 0) {
+        setExpandedAiSections((prev) => ({
+          ...prev,
+          [section]: !prev[section],
+        }));
+        return;
+      }
+
+      setDeferredLoadingSection(section);
+      try {
+        const updated = await generateKnowledgeDeferredSection(item.id, section);
+        upsertItem(updated);
+        setExpandedAiSections((prev) => ({
+          ...prev,
+          [section]: true,
+        }));
+      } catch (e) {
+        console.error("[knowledge] deferred section failed:", e);
+        toast.error(ui.deferredSectionFailed);
+      } finally {
+        setDeferredLoadingSection(null);
+      }
+    },
+    [deferredLoadingSection, item, ui.deferredSectionFailed, upsertItem],
+  );
+
   const handleDelete = useCallback(async () => {
     if (!item || deleting) return;
     const id = item.id;
@@ -358,6 +406,13 @@ export function KnowledgeDetailSheet() {
     Boolean(item.rawContent) &&
     item.category !== "social_media" &&
     (isKnowledgePdfItem(item) || isKnowledgeDocxItem(item));
+  const sourceByline =
+    item.sourceMetadata?.channel ??
+    item.sourceMetadata?.subreddit ??
+    item.sourceMetadata?.handle ??
+    item.sourceMetadata?.author ??
+    item.sourceDomain ??
+    null;
 
   return (
     <>
@@ -419,72 +474,95 @@ export function KnowledgeDetailSheet() {
           {/* Scrollable body */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
             {/* Header */}
-            <div className="flex items-center gap-2 px-4 pr-14 min-w-0 flex-wrap">
-              {item.sourceType ? (
-                uploadBadge ? (
-                  <SourceTypeBadge
-                    info={{
-                      ...getSourceTypeInfo("file_upload"),
-                      label: uploadBadge.label,
-                      accent: {
-                        ...getSourceTypeInfo("file_upload").accent,
-                        iconName: uploadBadge.iconName,
-                      },
-                    }}
-                    size="sm"
-                  />
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-4 pr-14">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                {item.sourceType ? (
+                  uploadBadge ? (
+                    <SourceTypeBadge
+                      info={{
+                        ...getSourceTypeInfo("file_upload"),
+                        label: uploadBadge.label,
+                        accent: {
+                          ...getSourceTypeInfo("file_upload").accent,
+                          iconName: uploadBadge.iconName,
+                        },
+                      }}
+                      size="sm"
+                    />
+                  ) : (
+                    <SourceTypeBadge
+                      sourceType={item.sourceType}
+                      labelOverride={item.label}
+                      size="sm"
+                    />
+                  )
                 ) : (
-                  <SourceTypeBadge
-                    sourceType={item.sourceType}
-                    labelOverride={item.label}
-                    size="sm"
-                  />
-                )
-              ) : (
-                <Badge
-                  className={cn(
-                    "text-[10px] shrink-0 capitalize",
-                    colors.bg,
-                    colors.text,
-                    colors.border,
-                    colors.darkBg,
-                    colors.darkText,
-                  )}
-                >
-                  {colors.icon} {knowledgeUi.typeLabels[item.contentType]}
-                </Badge>
-              )}
-              {item.depthIndicator && (
-                <Badge variant="outline" className="text-[10px] shrink-0">
-                  {knowledgeUi.depthLabels[item.depthIndicator] ?? item.depthIndicator}
-                </Badge>
-              )}
-              {item.sourceMetadata?.channel && (
-                <span className="text-xs text-muted-foreground truncate">
-                  {item.sourceMetadata.channel}
-                </span>
-              )}
-              {item.sourceMetadata?.subreddit && (
-                <span className="text-xs text-muted-foreground truncate">
-                  {item.sourceMetadata.subreddit}
-                </span>
-              )}
-              {item.sourceMetadata?.handle && !item.sourceMetadata?.subreddit && (
-                <span className="text-xs text-muted-foreground truncate">
-                  {item.sourceMetadata.handle}
-                </span>
-              )}
-              {item.sourceUrl && (
-                <a
-                  href={item.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 truncate"
-                >
-                  <ExternalLink className="h-3 w-3 shrink-0" />
-                  {item.sourceDomain || ui.sourceFallback}
-                </a>
-              )}
+                  <Badge
+                    className={cn(
+                      "text-[10px] shrink-0 capitalize",
+                      colors.bg,
+                      colors.text,
+                      colors.border,
+                      colors.darkBg,
+                      colors.darkText,
+                    )}
+                  >
+                    {colors.icon} {knowledgeUi.typeLabels[item.contentType]}
+                  </Badge>
+                )}
+                {item.depthIndicator && (
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {knowledgeUi.depthLabels[item.depthIndicator] ?? item.depthIndicator}
+                  </Badge>
+                )}
+                {sourceByline && (
+                  <span className="min-w-0 truncate text-xs text-muted-foreground">
+                    {sourceByline}
+                  </span>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                {sourceIsYoutube && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      disabled={transcriptLoading || item.status === "processing"}
+                      onClick={() => void handleGenerateTranscript()}
+                    >
+                      {transcriptLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Captions className="h-3.5 w-3.5" />
+                      )}
+                      {transcriptLoading ? ui.generatingTranscript : ui.generateTranscript}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => setVideoChatOpen(true)}
+                    >
+                      <MessagesSquare className="h-3.5 w-3.5" />
+                      {ui.askAboutVideo}
+                    </Button>
+                  </>
+                )}
+                {item.sourceUrl && (
+                  <a
+                    href={item.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {ui.openKnowledgeSource}
+                  </a>
+                )}
+              </div>
             </div>
 
             {item.extractionStatus && item.extractionStatus !== "success" && (
@@ -562,10 +640,10 @@ export function KnowledgeDetailSheet() {
                 <SocialEmbed
                   item={item}
                   unavailableLabel=""
-                  className="bg-muted"
+                  className="aspect-video bg-muted"
                 />
               ) : item.thumbnailUrl ? (
-                <div className="relative rounded-lg overflow-hidden h-[160px] bg-muted">
+                <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
                   {canOpenKnowledgeLightbox(item) ? (
                     <button
                       type="button"
@@ -577,13 +655,13 @@ export function KnowledgeDetailSheet() {
                   <OptimizedThumbnailImage
                     src={item.thumbnailUrl}
                     alt={item.title}
-                    className="relative z-0 h-full w-full object-cover"
+                    className="relative z-0 h-full w-full object-contain"
                     sizes="(max-width: 768px) 100vw, 560px"
                     variant="detail"
                   />
                 </div>
               ) : item.thumbnailStyle === "na" ? (
-                <div className="relative h-[160px] rounded-lg bg-muted px-5">
+                <div className="relative aspect-video rounded-lg bg-muted px-5">
                   <div className="flex h-full items-center justify-center text-center">
                     <p className="line-clamp-4 text-lg font-semibold leading-snug text-foreground">
                       {item.title}
@@ -593,7 +671,7 @@ export function KnowledgeDetailSheet() {
               ) : (
                 <div
                   className={cn(
-                    "h-[160px] rounded-lg flex items-center justify-center text-4xl",
+                    "flex aspect-video items-center justify-center rounded-lg text-4xl",
                     colors.bg,
                     colors.darkBg,
                   )}
@@ -687,182 +765,105 @@ export function KnowledgeDetailSheet() {
               </>
             ) : null}
 
-            {(sourceIsYoutube || item.askEnabled !== false) && (
-              <div className="flex flex-wrap gap-2">
-                {sourceIsYoutube && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    disabled={transcriptLoading || item.status === "processing"}
-                    onClick={() => void handleGenerateTranscript()}
-                  >
-                    {transcriptLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Captions className="h-3.5 w-3.5" />
-                    )}
-                    {transcriptLoading ? ui.generatingTranscript : ui.generateTranscript}
-                  </Button>
+            {(item.aiTldr || item.aiSummary) && (
+              <div className="space-y-3">
+                {item.aiTldr && (
+                  <section className="rounded-lg border border-border/60 bg-muted/35 px-4 py-3">
+                    <h4 className="text-xs font-medium text-muted-foreground">
+                      {ui.oneSentenceSummary}
+                    </h4>
+                    <p className="mt-1.5 text-sm font-medium leading-snug">
+                      {item.aiTldr}
+                    </p>
+                  </section>
                 )}
-                {sourceIsYoutube ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    onClick={() => setVideoChatOpen(true)}
-                  >
-                    <MessagesSquare className="h-3.5 w-3.5" />
-                    {ui.askAboutVideo}
-                  </Button>
-                ) : (
-                  item.askEnabled !== false &&
-                  item.category !== "social_media" && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="gap-1.5 text-xs"
-                      onClick={() => setDocumentChatOpen(true)}
-                    >
-                      <MessagesSquare className="h-3.5 w-3.5" />
-                      {ui.askDocument}
-                    </Button>
-                  )
-                )}
-                {item.sourceUrl && (
-                  <a
-                    href={item.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {sourceIsYoutube
-                      ? ui.viewOnYouTube
-                      : item.provider === "github"
-                        ? ui.viewOnGitHub
-                        : ui.viewOriginal}
-                  </a>
-                )}
-              </div>
-            )}
 
-            {/* One-sentence summary */}
-            {item.aiTldr && (
-              <div className="rounded-lg bg-primary/5 px-4 py-3 space-y-1.5">
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  {ui.oneSentenceSummary}
-                </h4>
-                <p className="text-sm font-medium leading-snug">{item.aiTldr}</p>
-              </div>
-            )}
-
-            {/* AI Section */}
-            {(item.aiSummary || item.aiKeyInsights.length > 0) && (
-              <div className="rounded-lg bg-primary/5 p-4 space-y-4">
                 {item.aiSummary && (
-                  <div>
-                    <h4 className="text-xs font-medium flex items-center gap-1.5 mb-1.5">
+                  <section className="rounded-lg border border-border/60 bg-background px-4 py-3">
+                    <h4 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                       <Sparkles className="h-3 w-3 text-primary" />
                       {ui.shortDescription}
                     </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                       {item.aiSummary}
                     </p>
-                  </div>
-                )}
-                {item.aiContentOverview && (
-                  <div>
-                    <h4 className="text-xs font-medium flex items-center gap-1.5 mb-1.5">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      {ui.contentOverview}
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {item.aiContentOverview}
-                    </p>
-                  </div>
-                )}
-                {item.aiKeyInsights.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-medium flex items-center gap-1.5 mb-1.5">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      {ui.keyInsights}
-                    </h4>
-                    <ul className="space-y-1">
-                      {item.aiKeyInsights.map((insight, i) => (
-                        <li
-                          key={i}
-                          className="text-sm text-muted-foreground flex gap-2"
-                        >
-                          <span className="text-primary shrink-0">•</span>
-                          {insight}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  </section>
                 )}
               </div>
             )}
 
-            {/* Key Quotes */}
-            {item.aiKeyQuotes.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium flex items-center gap-1.5">
-                  <Quote className="h-3 w-3" />
-                  {ui.keyQuotes}
-                </h4>
-                <div className="space-y-2">
-                  {item.aiKeyQuotes.map((quote, i) => (
-                    <blockquote
-                      key={i}
-                      className="border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground italic leading-relaxed"
-                    >
-                      &ldquo;{quote}&rdquo;
-                    </blockquote>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                className="flex min-h-[4.75rem] w-full flex-col items-start justify-between rounded-lg border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:bg-accent"
+                disabled={Boolean(deferredLoadingSection)}
+                onClick={() => void handleDeferredSection("keyInsights")}
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  {ui.keyInsights}
+                </span>
+                <span className="mt-2 text-xs text-muted-foreground">
+                  {deferredLoadingSection === "keyInsights"
+                    ? ui.generatingSection
+                    : item.aiKeyInsights.length > 0 && expandedAiSections.keyInsights
+                      ? ui.hideSection
+                      : item.aiKeyInsights.length > 0
+                        ? ui.viewGeneratedSection
+                        : ui.generateSection}
+                </span>
+              </button>
 
-            {/* Questions This Answers */}
-            {item.aiQuestionsAnswered.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium flex items-center gap-1.5">
-                  <HelpCircle className="h-3 w-3" />
+              <button
+                type="button"
+                className="flex min-h-[4.75rem] w-full flex-col items-start justify-between rounded-lg border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:bg-accent"
+                disabled={Boolean(deferredLoadingSection)}
+                onClick={() => void handleDeferredSection("questionsAnswered")}
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <HelpCircle className="h-4 w-4 text-primary" />
                   {ui.questionsThisAnswers}
+                </span>
+                <span className="mt-2 text-xs text-muted-foreground">
+                  {deferredLoadingSection === "questionsAnswered"
+                    ? ui.generatingSection
+                    : item.aiQuestionsAnswered.length > 0 && expandedAiSections.questionsAnswered
+                      ? ui.hideSection
+                      : item.aiQuestionsAnswered.length > 0
+                        ? ui.viewGeneratedSection
+                        : ui.generateSection}
+                </span>
+              </button>
+            </div>
+
+            {expandedAiSections.keyInsights && item.aiKeyInsights.length > 0 && (
+              <div className="rounded-lg border border-border/60 bg-muted/25 p-4">
+                <h4 className="flex items-center gap-1.5 text-xs font-medium">
+                  <Sparkles className="h-3 w-3 text-primary" />
+                  {ui.keyInsights}
                 </h4>
-                <ul className="space-y-1">
-                  {item.aiQuestionsAnswered.map((q, i) => (
-                    <li
-                      key={i}
-                      className="text-sm text-muted-foreground flex gap-2"
-                    >
-                      <span className="text-primary shrink-0">?</span>
-                      {q}
+                <ul className="mt-2 space-y-1.5">
+                  {item.aiKeyInsights.map((insight, i) => (
+                    <li key={i} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
+                      <span className="shrink-0 text-primary">•</span>
+                      <span>{insight}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Action Items */}
-            {item.aiActionItems.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium flex items-center gap-1.5">
-                  <CheckSquare className="h-3 w-3" />
-                  {ui.actionItems}
+            {expandedAiSections.questionsAnswered && item.aiQuestionsAnswered.length > 0 && (
+              <div className="rounded-lg border border-border/60 bg-muted/25 p-4">
+                <h4 className="flex items-center gap-1.5 text-xs font-medium">
+                  <HelpCircle className="h-3 w-3 text-primary" />
+                  {ui.questionsThisAnswers}
                 </h4>
-                <ul className="space-y-1">
-                  {item.aiActionItems.map((action, i) => (
-                    <li
-                      key={i}
-                      className="text-sm text-muted-foreground flex gap-2"
-                    >
-                      <span className="text-primary shrink-0">→</span>
-                      {action}
+                <ul className="mt-2 space-y-1.5">
+                  {item.aiQuestionsAnswered.map((q, i) => (
+                    <li key={i} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
+                      <span className="shrink-0 text-primary">?</span>
+                      <span>{q}</span>
                     </li>
                   ))}
                 </ul>
@@ -1138,13 +1139,6 @@ export function KnowledgeDetailSheet() {
         item={item}
         open={videoChatOpen}
         onOpenChange={setVideoChatOpen}
-        copy={ui}
-      />
-
-      <KnowledgeDocumentChatDialog
-        item={item}
-        open={documentChatOpen}
-        onOpenChange={setDocumentChatOpen}
         copy={ui}
       />
 
