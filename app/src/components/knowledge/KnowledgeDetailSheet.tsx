@@ -665,7 +665,7 @@ export function KnowledgeDetailSheet() {
                     <OptimizedThumbnailImage
                       src={item.thumbnailUrl}
                       alt={item.title}
-                      className="relative z-0 h-full w-full object-contain"
+                      className="relative z-0 h-full w-full object-cover"
                       sizes="(max-width: 768px) 100vw, 560px"
                       variant="detail"
                     />

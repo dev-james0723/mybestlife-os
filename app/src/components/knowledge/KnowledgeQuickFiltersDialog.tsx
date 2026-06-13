@@ -123,14 +123,25 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
   const profileCommandLightOpacity = normalizeKnowledgeCommandLightOpacity(
     profile.data?.knowledge_command_light_opacity,
   );
-  const [commandLightOpacityDraft, setCommandLightOpacityDraft] = useState<number | null>(null);
-  const commandLightOpacity = commandLightOpacityDraft ?? profileCommandLightOpacity;
-  const commandLightOpacityDirty = commandLightOpacityDraft !== null;
+  const [commandLightOpacity, setCommandLightOpacity] = useState(
+    profileCommandLightOpacity,
+  );
+  const [commandLightOpacityDirty, setCommandLightOpacityDirty] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setDraft(cloneDefinitions(quickFilterDefinitions));
   }, [open, quickFilterDefinitions]);
+
+  useEffect(() => {
+    if (!open) {
+      setCommandLightOpacityDirty(false);
+      return;
+    }
+    if (commandLightOpacityDirty) return;
+    setCommandLightOpacity(profileCommandLightOpacity);
+    applyKnowledgeCommandLightOpacityVar(profileCommandLightOpacity);
+  }, [commandLightOpacityDirty, open, profileCommandLightOpacity]);
 
   const hasIncompleteDraft = useMemo(
     () => hasIncompleteKnowledgeQuickFilterDraft(draft),
@@ -153,7 +164,6 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
       );
       setQuickFilterDefinitions(saved.knowledge_quick_filters ?? next);
       toast.success(copy.savedToast);
-      setCommandLightOpacityDraft(null);
       onOpenChange(false);
     },
     onError: () => {
@@ -232,7 +242,8 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
 
   const updateCommandLightOpacity = (value: number) => {
     const next = normalizeKnowledgeCommandLightOpacity(value);
-    setCommandLightOpacityDraft(next);
+    setCommandLightOpacity(next);
+    setCommandLightOpacityDirty(true);
     applyKnowledgeCommandLightOpacityVar(next);
   };
 
@@ -241,13 +252,8 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
     saveMutation.mutate(draft);
   };
 
-  const handleDialogOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) setCommandLightOpacityDraft(null);
-    onOpenChange(nextOpen);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         size="5xl"
         className="flex max-h-[min(88dvh,760px)] grid-rows-[auto_minmax(0,1fr)_auto] flex-col overflow-hidden p-0"

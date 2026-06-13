@@ -4459,19 +4459,18 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
   --knowledge-command-light-x: 72%;
   --knowledge-command-light-y: 28%;
   --knowledge-command-light-active: 0;
-  --knowledge-command-aurora-opacity-base: 0.54;
+  --knowledge-command-aurora-opacity-base: 0.72;
   --knowledge-command-aurora-opacity-active: 0.18;
-  --knowledge-command-aurora-saturate: 1.62;
-  --knowledge-command-flow-opacity: 0.78;
-  --knowledge-command-flow-opacity-active: 0.14;
-  --knowledge-command-wave-opacity: 0.48;
-  --knowledge-command-flow-blur: 3px;
-  --knowledge-command-aurora-duration: 5.8s;
-  --knowledge-command-flow-duration: 5.4s;
-  --knowledge-command-ripple-duration: 4.9s;
+  --knowledge-command-aurora-saturate: 1.25;
+  --knowledge-command-flow-opacity: 0.28;
+  --knowledge-command-flow-opacity-active: 0.06;
+  --knowledge-command-wave-opacity: 0.2;
+  --knowledge-command-flow-blur: 10px;
+  --knowledge-command-flow-duration: 9.4s;
+  --knowledge-command-ripple-duration: 7.2s;
   --knowledge-command-flow-delay: -0.8s;
-  --knowledge-command-cursor-opacity-base: 0.02;
-  --knowledge-command-cursor-opacity-active: 0.86;
+  --knowledge-command-cursor-opacity-base: 0.04;
+  --knowledge-command-cursor-opacity-active: 0.74;
 }
 
 .knowledge-command-light-aurora,
@@ -4485,25 +4484,22 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
 .knowledge-command-light-aurora {
   background: var(--knowledge-command-aurora-bg);
   background-position:
-    4% 8%,
-    46% 72%,
-    96% 20%,
-    58% 45%,
+    center,
+    2% 18%,
+    96% 8%,
+    48% 100%,
     0% 50%;
   background-size:
-    148% 148%,
-    156% 156%,
-    140% 140%,
-    186% 186%,
-    220% 120%;
+    100% 100%,
+    122% 122%,
+    130% 130%,
+    150% 150%,
+    170% 100%;
   opacity: calc(
-    (
-      var(--knowledge-command-aurora-opacity-base) +
-        (var(--knowledge-command-light-active) * var(--knowledge-command-aurora-opacity-active))
-    ) * var(--knowledge-command-light-user-opacity, 0.82)
+    var(--knowledge-command-aurora-opacity-base) +
+      (var(--knowledge-command-light-active) * var(--knowledge-command-aurora-opacity-active))
   );
-  filter: saturate(var(--knowledge-command-aurora-saturate)) contrast(1.08);
-  mix-blend-mode: normal;
+  filter: saturate(var(--knowledge-command-aurora-saturate));
   transition: opacity 260ms ease;
 }
 
@@ -4515,58 +4511,34 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
 }
 
 .knowledge-command-light-aurora::before {
-  inset: -72% -46%;
+  inset: -58% -36%;
   background: var(--knowledge-command-flow-bg);
-  background-position:
-    12% 50%,
-    52% 48%,
-    50% 50%;
-  background-size:
-    152% 152%,
-    180% 180%,
-    200% 200%;
-  filter: blur(var(--knowledge-command-flow-blur)) saturate(1.44) contrast(1.08);
+  filter: blur(var(--knowledge-command-flow-blur)) saturate(1.22);
   mix-blend-mode: screen;
   opacity: calc(
-    (
-      var(--knowledge-command-flow-opacity) +
-        (var(--knowledge-command-light-active) * var(--knowledge-command-flow-opacity-active))
-    ) * var(--knowledge-command-light-user-opacity, 0.82)
+    var(--knowledge-command-flow-opacity) +
+      (var(--knowledge-command-light-active) * var(--knowledge-command-flow-opacity-active))
   );
-  transform: translate3d(-18%, 4%, 0) rotate(-10deg) scale(1.1);
+  transform: translate3d(-12%, 2%, 0) rotate(-7deg) scale(1.05);
   transition: opacity 260ms ease;
 }
 
 .knowledge-command-light-aurora::after {
-  inset: -34%;
+  inset: -24%;
   background: var(--knowledge-command-wave-bg);
-  background-position:
-    0% 50%,
-    50% 52%,
-    100% 50%;
-  background-size:
-    220% 100%,
-    160% 160%,
-    140% 140%;
-  filter: blur(1px) saturate(1.18) contrast(1.06);
-  mix-blend-mode: overlay;
-  opacity: calc(
-    var(--knowledge-command-wave-opacity) *
-      var(--knowledge-command-light-user-opacity, 0.82)
-  );
-  transform: translate3d(12%, 0, 0) rotate(5deg) scale(1.04);
+  filter: blur(4px) saturate(1.08);
+  mix-blend-mode: soft-light;
+  opacity: var(--knowledge-command-wave-opacity);
+  transform: translate3d(8%, 0, 0) rotate(4deg) scale(1.02);
 }
 
 .knowledge-command-light-cursor {
   background: var(--knowledge-command-cursor-bg);
   opacity: calc(
-    (
-      var(--knowledge-command-cursor-opacity-base) +
-        (var(--knowledge-command-light-active) * var(--knowledge-command-cursor-opacity-active))
-    ) * var(--knowledge-command-light-user-opacity, 0.82)
+    var(--knowledge-command-cursor-opacity-base) +
+      (var(--knowledge-command-light-active) * var(--knowledge-command-cursor-opacity-active))
   );
-  filter: saturate(1.28);
-  transform: scale(calc(1 + (var(--knowledge-command-light-active) * 0.026)));
+  transform: scale(calc(1 + (var(--knowledge-command-light-active) * 0.018)));
   transition:
     opacity 240ms ease,
     transform 240ms ease;
@@ -4574,87 +4546,147 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
 
 .knowledge-command-light-button--capture {
   --knowledge-command-flow-bg:
-    radial-gradient(ellipse at 18% 44%, rgba(34, 211, 238, 0.64), transparent 31%),
-    radial-gradient(ellipse at 76% 48%, rgba(236, 72, 153, 0.52), transparent 32%),
-    conic-gradient(from 220deg at 52% 54%, rgba(45, 212, 191, 0.26), rgba(217, 70, 239, 0.42), rgba(251, 146, 60, 0.5), rgba(132, 204, 22, 0.28), rgba(45, 212, 191, 0.26));
+    radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.82), transparent 23%),
+    radial-gradient(circle at 42% 46%, rgba(45, 212, 191, 0.26), transparent 31%),
+    radial-gradient(circle at 76% 52%, rgba(244, 114, 182, 0.22), transparent 28%),
+    radial-gradient(ellipse at 56% 64%, rgba(250, 204, 21, 0.26), transparent 34%),
+    linear-gradient(104deg, transparent 14%, rgba(255, 255, 255, 0.36) 46%, transparent 76%);
   --knowledge-command-wave-bg:
-    linear-gradient(104deg, transparent 0 9%, rgba(255, 255, 255, 0.42) 15%, transparent 24%, rgba(251, 146, 60, 0.26) 34%, transparent 47%, rgba(45, 212, 191, 0.26) 64%, transparent 82%),
-    radial-gradient(ellipse at 50% 66%, rgba(251, 191, 36, 0.36), transparent 46%),
-    radial-gradient(ellipse at 18% 22%, rgba(34, 211, 238, 0.22), transparent 38%);
+    repeating-linear-gradient(105deg, transparent 0 15%, rgba(255, 255, 255, 0.24) 18%, transparent 27%),
+    radial-gradient(ellipse at 48% 58%, rgba(251, 191, 36, 0.18), transparent 48%);
   --knowledge-command-flow-delay: -1.2s;
-  --knowledge-command-aurora-duration: 5.9s;
-  --knowledge-command-flow-duration: 5.2s;
-  --knowledge-command-ripple-duration: 4.8s;
+  --knowledge-command-flow-duration: 9.8s;
+  --knowledge-command-ripple-duration: 7.6s;
   --knowledge-command-aurora-bg:
-    radial-gradient(ellipse at 10% 12%, rgba(34, 211, 238, 0.46), transparent 36%),
-    radial-gradient(ellipse at 42% 78%, rgba(236, 72, 153, 0.34), transparent 40%),
-    radial-gradient(ellipse at 92% 18%, rgba(251, 146, 60, 0.56), transparent 42%),
-    conic-gradient(from 210deg at 54% 52%, rgba(20, 184, 166, 0.22), rgba(217, 70, 239, 0.3), rgba(250, 204, 21, 0.36), rgba(34, 211, 238, 0.22)),
-    linear-gradient(108deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.46) 46%, transparent 78%);
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.82), rgba(251, 191, 36, 0.3) 18%, transparent 36%),
+    radial-gradient(ellipse at 18% 20%, rgba(45, 212, 191, 0.2), transparent 39%),
+    radial-gradient(ellipse at 84% 12%, rgba(236, 72, 153, 0.18), transparent 36%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.28), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.52) 48%, transparent 76%);
   --knowledge-command-cursor-bg:
-    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.96), rgba(251, 191, 36, 0.62) 12%, rgba(236, 72, 153, 0.3) 28%, transparent 52%);
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.9), rgba(251, 191, 36, 0.42) 12%, rgba(244, 114, 182, 0.2) 25%, transparent 44%);
 }
 
 .knowledge-command-light-button--ask {
   --knowledge-command-flow-bg:
-    radial-gradient(ellipse at 18% 44%, rgba(34, 211, 238, 0.7), transparent 31%),
-    radial-gradient(ellipse at 76% 48%, rgba(168, 85, 247, 0.58), transparent 32%),
-    conic-gradient(from 220deg at 52% 54%, rgba(45, 212, 191, 0.32), rgba(14, 165, 233, 0.48), rgba(217, 70, 239, 0.5), rgba(251, 191, 36, 0.28), rgba(45, 212, 191, 0.32));
+    radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.82), transparent 23%),
+    radial-gradient(circle at 42% 46%, rgba(45, 212, 191, 0.34), transparent 31%),
+    radial-gradient(circle at 76% 52%, rgba(168, 85, 247, 0.26), transparent 28%),
+    radial-gradient(ellipse at 56% 64%, rgba(103, 232, 249, 0.26), transparent 34%),
+    linear-gradient(104deg, transparent 14%, rgba(255, 255, 255, 0.34) 46%, transparent 76%);
   --knowledge-command-wave-bg:
-    linear-gradient(104deg, transparent 0 9%, rgba(255, 255, 255, 0.42) 15%, transparent 24%, rgba(34, 211, 238, 0.32) 36%, transparent 50%, rgba(217, 70, 239, 0.28) 66%, transparent 82%),
-    radial-gradient(ellipse at 50% 66%, rgba(34, 211, 238, 0.4), transparent 46%),
-    radial-gradient(ellipse at 82% 22%, rgba(168, 85, 247, 0.26), transparent 38%);
+    repeating-linear-gradient(105deg, transparent 0 15%, rgba(255, 255, 255, 0.22) 18%, transparent 27%),
+    radial-gradient(ellipse at 48% 58%, rgba(34, 211, 238, 0.2), transparent 48%);
   --knowledge-command-flow-delay: -0.4s;
-  --knowledge-command-aurora-duration: 5.5s;
-  --knowledge-command-flow-duration: 4.9s;
-  --knowledge-command-ripple-duration: 4.6s;
+  --knowledge-command-flow-duration: 8.9s;
+  --knowledge-command-ripple-duration: 6.9s;
   --knowledge-command-aurora-bg:
-    radial-gradient(ellipse at 10% 12%, rgba(34, 211, 238, 0.58), transparent 36%),
-    radial-gradient(ellipse at 42% 78%, rgba(217, 70, 239, 0.34), transparent 40%),
-    radial-gradient(ellipse at 92% 18%, rgba(14, 165, 233, 0.52), transparent 42%),
-    conic-gradient(from 210deg at 54% 52%, rgba(20, 184, 166, 0.28), rgba(59, 130, 246, 0.34), rgba(217, 70, 239, 0.34), rgba(250, 204, 21, 0.22)),
-    linear-gradient(108deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.44) 46%, transparent 78%);
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.82), rgba(125, 211, 252, 0.24) 18%, transparent 36%),
+    radial-gradient(ellipse at 18% 20%, rgba(45, 212, 191, 0.3), transparent 39%),
+    radial-gradient(ellipse at 84% 12%, rgba(168, 85, 247, 0.23), transparent 36%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.2), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.5) 48%, transparent 76%);
   --knowledge-command-cursor-bg:
-    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.98), rgba(103, 232, 249, 0.56) 12%, rgba(217, 70, 239, 0.32) 28%, transparent 52%);
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.92), rgba(103, 232, 249, 0.34) 12%, rgba(192, 132, 252, 0.17) 25%, transparent 44%);
 }
 
 .knowledge-command-light-button--retrieve {
   --knowledge-command-flow-bg:
-    radial-gradient(ellipse at 18% 44%, rgba(34, 211, 238, 0.52), transparent 31%),
-    radial-gradient(ellipse at 76% 48%, rgba(168, 85, 247, 0.48), transparent 32%),
-    conic-gradient(from 220deg at 52% 54%, rgba(132, 204, 22, 0.52), rgba(34, 211, 238, 0.38), rgba(217, 70, 239, 0.36), rgba(250, 204, 21, 0.32), rgba(132, 204, 22, 0.52));
+    radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.78), transparent 23%),
+    radial-gradient(circle at 42% 46%, rgba(34, 211, 238, 0.24), transparent 31%),
+    radial-gradient(circle at 76% 52%, rgba(168, 85, 247, 0.22), transparent 28%),
+    radial-gradient(ellipse at 56% 64%, rgba(190, 242, 100, 0.3), transparent 34%),
+    linear-gradient(104deg, transparent 14%, rgba(255, 255, 255, 0.32) 46%, transparent 76%);
   --knowledge-command-wave-bg:
-    linear-gradient(104deg, transparent 0 9%, rgba(255, 255, 255, 0.38) 15%, transparent 24%, rgba(190, 242, 100, 0.32) 36%, transparent 50%, rgba(34, 211, 238, 0.26) 66%, transparent 82%),
-    radial-gradient(ellipse at 50% 66%, rgba(190, 242, 100, 0.44), transparent 46%),
-    radial-gradient(ellipse at 82% 22%, rgba(34, 211, 238, 0.24), transparent 38%);
+    repeating-linear-gradient(105deg, transparent 0 15%, rgba(255, 255, 255, 0.22) 18%, transparent 27%),
+    radial-gradient(ellipse at 48% 58%, rgba(132, 204, 22, 0.2), transparent 48%);
   --knowledge-command-flow-delay: -1.8s;
-  --knowledge-command-aurora-duration: 6.2s;
-  --knowledge-command-flow-duration: 5.6s;
-  --knowledge-command-ripple-duration: 5s;
+  --knowledge-command-flow-duration: 10.3s;
+  --knowledge-command-ripple-duration: 8s;
   --knowledge-command-aurora-bg:
-    radial-gradient(ellipse at 10% 12%, rgba(34, 211, 238, 0.38), transparent 36%),
-    radial-gradient(ellipse at 42% 78%, rgba(168, 85, 247, 0.28), transparent 40%),
-    radial-gradient(ellipse at 92% 18%, rgba(190, 242, 100, 0.58), transparent 42%),
-    conic-gradient(from 210deg at 54% 52%, rgba(132, 204, 22, 0.36), rgba(34, 211, 238, 0.24), rgba(217, 70, 239, 0.24), rgba(250, 204, 21, 0.28)),
-    linear-gradient(108deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.4) 46%, transparent 78%);
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.78), rgba(190, 242, 100, 0.28) 18%, transparent 36%),
+    radial-gradient(ellipse at 18% 20%, rgba(34, 211, 238, 0.2), transparent 39%),
+    radial-gradient(ellipse at 84% 12%, rgba(168, 85, 247, 0.18), transparent 36%),
+    radial-gradient(ellipse at 52% 108%, rgba(132, 204, 22, 0.28), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.48) 48%, transparent 76%);
   --knowledge-command-cursor-bg:
-    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.94), rgba(190, 242, 100, 0.6) 12%, rgba(34, 211, 238, 0.3) 28%, transparent 52%);
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.88), rgba(190, 242, 100, 0.38) 12%, rgba(34, 211, 238, 0.16) 25%, transparent 44%);
 }
 
 .dark .knowledge-command-light-button {
-  --knowledge-command-aurora-opacity-base: 0.66;
-  --knowledge-command-aurora-opacity-active: 0.2;
-  --knowledge-command-aurora-saturate: 1.72;
-  --knowledge-command-flow-opacity: 0.86;
-  --knowledge-command-flow-opacity-active: 0.12;
-  --knowledge-command-wave-opacity: 0.56;
-  --knowledge-command-cursor-opacity-base: 0.03;
-  --knowledge-command-cursor-opacity-active: 0.88;
+  --knowledge-command-aurora-opacity-base: 0.72;
+  --knowledge-command-aurora-opacity-active: 0.24;
+  --knowledge-command-aurora-saturate: 1.42;
+  --knowledge-command-flow-opacity: 0.36;
+  --knowledge-command-flow-opacity-active: 0.08;
+  --knowledge-command-wave-opacity: 0.24;
+  --knowledge-command-cursor-opacity-base: 0.05;
+  --knowledge-command-cursor-opacity-active: 0.78;
+}
+
+.dark .knowledge-command-light-button--capture {
+  --knowledge-command-flow-bg:
+    radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.48), transparent 23%),
+    radial-gradient(circle at 42% 46%, rgba(45, 212, 191, 0.22), transparent 31%),
+    radial-gradient(circle at 76% 52%, rgba(244, 114, 182, 0.3), transparent 28%),
+    radial-gradient(ellipse at 56% 64%, rgba(250, 204, 21, 0.24), transparent 34%),
+    linear-gradient(104deg, transparent 14%, rgba(251, 191, 36, 0.18) 46%, transparent 76%);
+  --knowledge-command-wave-bg:
+    repeating-linear-gradient(105deg, transparent 0 15%, rgba(255, 255, 255, 0.1) 18%, transparent 27%),
+    radial-gradient(ellipse at 48% 58%, rgba(251, 191, 36, 0.18), transparent 48%);
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.4), rgba(251, 191, 36, 0.34) 17%, transparent 38%),
+    radial-gradient(ellipse at 16% 18%, rgba(45, 212, 191, 0.18), transparent 38%),
+    radial-gradient(ellipse at 86% 12%, rgba(236, 72, 153, 0.24), transparent 37%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.22), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(251, 191, 36, 0.14) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.5), rgba(251, 191, 36, 0.4) 13%, rgba(244, 114, 182, 0.2) 28%, transparent 48%);
+}
+
+.dark .knowledge-command-light-button--ask {
+  --knowledge-command-flow-bg:
+    radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.44), transparent 23%),
+    radial-gradient(circle at 42% 46%, rgba(45, 212, 191, 0.34), transparent 31%),
+    radial-gradient(circle at 76% 52%, rgba(168, 85, 247, 0.34), transparent 28%),
+    radial-gradient(ellipse at 56% 64%, rgba(103, 232, 249, 0.28), transparent 34%),
+    linear-gradient(104deg, transparent 14%, rgba(103, 232, 249, 0.18) 46%, transparent 76%);
+  --knowledge-command-wave-bg:
+    repeating-linear-gradient(105deg, transparent 0 15%, rgba(255, 255, 255, 0.1) 18%, transparent 27%),
+    radial-gradient(ellipse at 48% 58%, rgba(34, 211, 238, 0.2), transparent 48%);
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.36), rgba(103, 232, 249, 0.32) 17%, transparent 38%),
+    radial-gradient(ellipse at 16% 18%, rgba(45, 212, 191, 0.28), transparent 38%),
+    radial-gradient(ellipse at 86% 12%, rgba(168, 85, 247, 0.3), transparent 37%),
+    radial-gradient(ellipse at 52% 108%, rgba(250, 204, 21, 0.16), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(103, 232, 249, 0.14) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.52), rgba(103, 232, 249, 0.36) 13%, rgba(217, 70, 239, 0.2) 28%, transparent 48%);
+}
+
+.dark .knowledge-command-light-button--retrieve {
+  --knowledge-command-flow-bg:
+    radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.42), transparent 23%),
+    radial-gradient(circle at 42% 46%, rgba(34, 211, 238, 0.22), transparent 31%),
+    radial-gradient(circle at 76% 52%, rgba(168, 85, 247, 0.28), transparent 28%),
+    radial-gradient(ellipse at 56% 64%, rgba(190, 242, 100, 0.3), transparent 34%),
+    linear-gradient(104deg, transparent 14%, rgba(190, 242, 100, 0.16) 46%, transparent 76%);
+  --knowledge-command-wave-bg:
+    repeating-linear-gradient(105deg, transparent 0 15%, rgba(255, 255, 255, 0.1) 18%, transparent 27%),
+    radial-gradient(ellipse at 48% 58%, rgba(132, 204, 22, 0.18), transparent 48%);
+  --knowledge-command-aurora-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.36), rgba(190, 242, 100, 0.3) 17%, transparent 38%),
+    radial-gradient(ellipse at 16% 18%, rgba(34, 211, 238, 0.18), transparent 38%),
+    radial-gradient(ellipse at 86% 12%, rgba(168, 85, 247, 0.22), transparent 37%),
+    radial-gradient(ellipse at 52% 108%, rgba(132, 204, 22, 0.2), transparent 44%),
+    linear-gradient(110deg, transparent 12%, rgba(190, 242, 100, 0.13) 48%, transparent 76%);
+  --knowledge-command-cursor-bg:
+    radial-gradient(circle at var(--knowledge-command-light-x) var(--knowledge-command-light-y), rgba(255, 255, 255, 0.48), rgba(190, 242, 100, 0.34) 13%, rgba(34, 211, 238, 0.18) 28%, transparent 48%);
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .knowledge-command-light-aurora {
-    animation: knowledge-command-aurora-drift var(--knowledge-command-aurora-duration) ease-in-out infinite alternate both;
+    animation: knowledge-command-aurora-drift 8.5s ease-in-out infinite alternate;
   }
 
   .knowledge-command-light-aurora::before {
@@ -4671,65 +4703,49 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
 @keyframes knowledge-command-aurora-drift {
   0% {
     background-position:
-      0% 10%,
-      40% 82%,
-      100% 16%,
-      46% 42%,
+      center,
+      0% 22%,
+      100% 4%,
+      52% 104%,
       0% 50%;
-    filter: hue-rotate(-8deg) saturate(1.38) contrast(1.05);
+    filter: hue-rotate(0deg) saturate(1.2);
   }
   50% {
     background-position:
-      28% 4%,
-      62% 62%,
-      78% 34%,
-      62% 58%,
-      54% 50%;
-    filter: hue-rotate(18deg) saturate(1.66) contrast(1.12);
+      center,
+      18% 4%,
+      78% 28%,
+      42% 88%,
+      52% 50%;
+    filter: hue-rotate(14deg) saturate(1.34);
   }
   100% {
     background-position:
-      12% 28%,
-      52% 92%,
-      94% 8%,
-      42% 46%,
+      center,
+      8% 28%,
+      92% 18%,
+      58% 96%,
       100% 50%;
-    filter: hue-rotate(-14deg) saturate(1.5) contrast(1.08);
+    filter: hue-rotate(-10deg) saturate(1.28);
   }
 }
 
 @keyframes knowledge-command-idle-current {
   0% {
-    background-position:
-      8% 52%,
-      44% 48%,
-      50% 50%;
-    filter: blur(var(--knowledge-command-flow-blur)) hue-rotate(-10deg) saturate(1.28);
-    transform: translate3d(-20%, 5%, 0) rotate(-11deg) scale(1.1);
+    filter: blur(var(--knowledge-command-flow-blur)) hue-rotate(-8deg) saturate(1.16);
+    transform: translate3d(-14%, 4%, 0) rotate(-8deg) scale(1.04);
   }
   36% {
-    background-position:
-      54% 38%,
-      62% 56%,
-      62% 50%;
-    filter: blur(calc(var(--knowledge-command-flow-blur) + 1px)) hue-rotate(12deg) saturate(1.7);
-    transform: translate3d(7%, -4%, 0) rotate(4deg) scale(1.18);
+    filter: blur(calc(var(--knowledge-command-flow-blur) + 2px)) hue-rotate(8deg) saturate(1.34);
+    transform: translate3d(4%, -3%, 0) rotate(2deg) scale(1.11);
   }
   68% {
-    background-position:
-      88% 58%,
-      50% 40%,
-      76% 50%;
-    filter: blur(var(--knowledge-command-flow-blur)) hue-rotate(22deg) saturate(1.58);
-    transform: translate3d(18%, 3%, 0) rotate(10deg) scale(1.13);
+    filter: blur(calc(var(--knowledge-command-flow-blur) + 1px)) hue-rotate(15deg) saturate(1.28);
+    transform: translate3d(13%, 3%, 0) rotate(8deg) scale(1.07);
   }
   100% {
-    background-position:
-      18% 46%,
-      38% 62%,
-      42% 50%;
-    filter: blur(var(--knowledge-command-flow-blur)) hue-rotate(-6deg) saturate(1.32);
-    transform: translate3d(-12%, -2%, 0) rotate(-5deg) scale(1.11);
+    filter: blur(var(--knowledge-command-flow-blur)) hue-rotate(-5deg) saturate(1.18);
+    transform: translate3d(-8%, -2%, 0) rotate(-4deg) scale(1.05);
   }
 }
 
@@ -4737,23 +4753,20 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
   0% {
     background-position:
       0% 50%,
-      44% 62%,
-      100% 50%;
-    transform: translate3d(14%, 2%, 0) rotate(6deg) scale(1.05);
+      48% 58%;
+    transform: translate3d(10%, 2%, 0) rotate(5deg) scale(1.02);
   }
   50% {
     background-position:
-      58% 50%,
-      62% 46%,
-      42% 50%;
-    transform: translate3d(-6%, -2%, 0) rotate(-3deg) scale(1.1);
+      52% 50%,
+      56% 48%;
+    transform: translate3d(-4%, -2%, 0) rotate(-2deg) scale(1.06);
   }
   100% {
     background-position:
       100% 50%,
-      40% 66%,
-      0% 50%;
-    transform: translate3d(-14%, 3%, 0) rotate(-6deg) scale(1.06);
+      42% 62%;
+    transform: translate3d(-10%, 3%, 0) rotate(-5deg) scale(1.03);
   }
 }
 

@@ -21,7 +21,7 @@ export async function normalizeKnowledgeThumbnailImage(
     .resize({
       width: KNOWLEDGE_THUMBNAIL_WIDTH,
       height: KNOWLEDGE_THUMBNAIL_HEIGHT,
-      fit: "contain",
+      fit: "cover",
       background: "#f8fafc",
     })
     .flatten({ background: "#f8fafc" })

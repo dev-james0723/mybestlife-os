@@ -1,8 +1,7 @@
 "use client";
 
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useGSAP } from "@gsap/react";
 import { cn } from "@/lib/utils";
 import { isPremiumMotionEnabled } from "@/lib/motion/config";
 import {
@@ -24,15 +23,15 @@ export function PageTransition({ children, className }: PageTransitionProps) {
   const reduceMotion = useReducedMotion();
   const enabled = isPremiumMotionEnabled();
 
-  registerGSAP();
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !enabled) {
+      return;
+    }
 
-  useGSAP(
-    () => {
-      const root = rootRef.current;
-      if (!root || !enabled) {
-        return;
-      }
+    registerGSAP();
 
+    const context = gsap.context(() => {
       if (reduceMotion) {
         gsap.set(root, { autoAlpha: 1, clearProps: "transform" });
         gsap.set(root.querySelectorAll(MOTION_REVEAL_SELECTOR), {
@@ -65,7 +64,7 @@ export function PageTransition({ children, className }: PageTransitionProps) {
         root.closest<HTMLElement>('[role="region"][aria-label="Main content"]') ??
         undefined;
 
-      const triggers = ScrollTrigger.batch(revealTargets, {
+      ScrollTrigger.batch(revealTargets, {
         scroller,
         start: "top 88%",
         once: true,
@@ -85,18 +84,10 @@ export function PageTransition({ children, className }: PageTransitionProps) {
           );
         },
       });
+    }, root);
 
-      return () => {
-        entrance.kill();
-        triggers.forEach((trigger) => trigger.kill());
-      };
-    },
-    {
-      dependencies: [pathname, reduceMotion, enabled],
-      scope: rootRef,
-      revertOnUpdate: true,
-    },
-  );
+    return () => context.revert();
+  }, [pathname, reduceMotion, enabled]);
 
   return (
     <div ref={rootRef} className={cn("motion-page-transition", className)}>

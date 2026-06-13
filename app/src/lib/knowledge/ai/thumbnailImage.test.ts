@@ -32,13 +32,13 @@ describe("normalizeKnowledgeThumbnailImage", () => {
     expect(KNOWLEDGE_THUMBNAIL_JPEG_QUALITY).toBeLessThan(90);
   });
 
-  it("letterboxes non-16:9 model output instead of cropping it", async () => {
+  it("covers non-16:9 model output instead of adding side gutters", async () => {
     const source = await sharp({
       create: {
         width: 1200,
         height: 1200,
         channels: 4,
-        background: "#e0f2fe",
+        background: "#123456",
       },
     })
       .png()
@@ -46,8 +46,15 @@ describe("normalizeKnowledgeThumbnailImage", () => {
 
     const result = await normalizeKnowledgeThumbnailImage(source);
     const metadata = await sharp(result.data).metadata();
+    const { data, info } = await sharp(result.data)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const midLeft = (Math.floor((info.height - 1) / 2) * info.width) * info.channels;
 
     expect(metadata.width).toBe(KNOWLEDGE_THUMBNAIL_WIDTH);
     expect(metadata.height).toBe(KNOWLEDGE_THUMBNAIL_HEIGHT);
+    expect(data[midLeft]).toBeLessThan(80);
+    expect(data[midLeft + 1]).toBeLessThan(100);
+    expect(data[midLeft + 2]).toBeLessThan(130);
   });
 });
