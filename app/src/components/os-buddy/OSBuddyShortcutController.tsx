@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useOSBuddy } from "@/hooks/use-os-buddy";
 import { useProfile } from "@/hooks/use-settings";
 import { useAppStore } from "@/stores/app-store";
+import { useOSBuddyStore } from "@/stores/os-buddy-store";
 import {
   DESKTOP_SHORTCUT_DOUBLE_PRESS_WINDOW_MS,
   TWO_FINGER_DOUBLE_TAP_MAX_DISTANCE_PX,
@@ -54,11 +55,13 @@ export function OSBuddyShortcutController() {
   const locale = useAppStore((s) => s.language);
   const { data: profile } = useProfile();
   const { enabled, setEnabled } = useOSBuddy();
+  const isRestingInSidebar = useOSBuddyStore((s) => s.isRestingInSidebar);
 
   const settingsRef = useRef<OSBuddyShortcutSettings>(
     validateOSBuddyShortcutSettings(undefined),
   );
   const enabledRef = useRef(enabled);
+  const isRestingInSidebarRef = useRef(isRestingInSidebar);
   const previousDesktopPressRef = useRef<OSBuddyDesktopShortcutPress | null>(null);
   const togglingRef = useRef(false);
   const touchSessionRef = useRef<TwoFingerTapSession | null>(null);
@@ -72,14 +75,33 @@ export function OSBuddyShortcutController() {
     enabledRef.current = enabled;
   }, [enabled]);
 
+  useEffect(() => {
+    isRestingInSidebarRef.current = isRestingInSidebar;
+  }, [isRestingInSidebar]);
+
   const toggleBuddy = useCallback(async () => {
     if (togglingRef.current) return;
-    const nextEnabled = !enabledRef.current;
-    enabledRef.current = nextEnabled;
     togglingRef.current = true;
     try {
-      await setEnabled(nextEnabled);
-      toast.success(toastLabel(locale, nextEnabled));
+      const store = useOSBuddyStore.getState();
+      const isOnScreen = enabledRef.current && !isRestingInSidebarRef.current;
+
+      if (isOnScreen) {
+        isRestingInSidebarRef.current = true;
+        store.dockInRestingSpace("resting");
+        toast.success(toastLabel(locale, false));
+        return;
+      }
+
+      const enablePromise = enabledRef.current ? Promise.resolve() : setEnabled(true);
+      enabledRef.current = true;
+      isRestingInSidebarRef.current = false;
+      store.releaseFromRestingSpace();
+      store.showBubble("Hi, I'm back.", "user-triggered", {
+        force: true,
+        durationMs: 2_400,
+      });
+      await enablePromise;
     } finally {
       togglingRef.current = false;
     }

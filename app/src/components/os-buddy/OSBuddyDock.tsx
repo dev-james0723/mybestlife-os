@@ -1272,6 +1272,49 @@ export function OSBuddyDock() {
     [resetQuickSnapRuntime, setMood],
   );
 
+  useEffect(() => {
+    if (!isRestingInSidebar) return;
+
+    clearLongPressTimer();
+    clearSingleClickTimer();
+    cancelWalkAnimationFrame();
+    setAirPilotSessionActive(false);
+
+    dragSessionRef.current = null;
+    longPressTriggeredRef.current = false;
+    lastTapRef.current = null;
+    lastWalkExitTapRef.current = null;
+    activeWalkPointerIdRef.current = null;
+    walkPointerRef.current = null;
+    walkTargetRef.current = null;
+    walkDirectionRef.current = null;
+    airGrabOffsetRef.current = null;
+    fileDragOverBuddyRef.current = false;
+    airPilotHoverTargetRef.current = setAirPilotHighlightedTarget({
+      previous: airPilotHoverTargetRef.current,
+      next: null,
+    });
+
+    const cleanupTimer = window.setTimeout(() => {
+      resetPlayBallRuntime();
+      resetQuickSnapRuntime({ preserveBubble: true });
+      setFileDropItems([]);
+      setIsFileDragOverBuddy(false);
+      setIsFileDropRouting(false);
+      setOverlayMiniGamePresent(false);
+      setSecretModeActive(false);
+    }, 0);
+
+    return () => window.clearTimeout(cleanupTimer);
+  }, [
+    cancelWalkAnimationFrame,
+    clearLongPressTimer,
+    clearSingleClickTimer,
+    isRestingInSidebar,
+    resetPlayBallRuntime,
+    resetQuickSnapRuntime,
+  ]);
+
   const armQuickSnap = useCallback(() => {
     clearLongPressTimer();
     clearSingleClickTimer();

@@ -578,19 +578,45 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
   },
 
   dockInRestingSpace: (restingState = "resting") => {
+    if (bubbleClearTimer) {
+      clearTimeout(bubbleClearTimer);
+      bubbleClearTimer = null;
+    }
+    if (bubbleVanishTimer) {
+      clearTimeout(bubbleVanishTimer);
+      bubbleVanishTimer = null;
+    }
+
     set((state) => ({
       isRestingInSidebar: true,
       restingState,
+      bubble: null,
       isFreeRoaming: false,
       freeRoamStartedAt: null,
       freeRoamUntil: null,
       freeRoamRuntimePosition: null,
       isMenuOpen: false,
+      isDragging: false,
+      dragDirection: null,
       isPetPickerOpen: false,
       isMiniGameOpen: false,
       activeMiniGame: null,
       isWalkModeActive: false,
       isReturningHome: false,
+      isAirControlActive: false,
+      airControlStatus: "idle",
+      airControlGesture: null,
+      airControlTarget: null,
+      airControlRawPoint: null,
+      airPilotSelectState: "tracking",
+      airControlLandmarks: [],
+      airControlLastSeenAt: null,
+      airTouchState: "inactive",
+      airPilotPlusMode: "off",
+      airPilotPlusCountdown: inactiveAirPilotPlusCountdown(),
+      airPilotPlusDomain: null,
+      airPilotPlusActionPreview: null,
+      airPilotPlusActionPreviewLabel: null,
       previousMood: state.mood,
       mood: restingState === "sleeping" ? "sleepy" : restingState === "headache" ? "error" : "idle",
     }));

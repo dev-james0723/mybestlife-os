@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Maximize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
@@ -9,6 +9,9 @@ import type { KnowledgeItem } from "@/types/knowledge";
 const EMBED_REFERRER_POLICY = "strict-origin-when-cross-origin" as const;
 const STANDARD_EMBED_MAX_WIDTH = 640;
 const DETAIL_EMBED_FRAME_CLASS = "mx-auto w-full max-w-[640px]";
+const DETAIL_EMBED_MAX_VIEWPORT_HEIGHT = "min(74dvh, 720px)";
+const MIN_EMBED_ASPECT_RATIO = 0.35;
+const MAX_EMBED_ASPECT_RATIO = 2.4;
 
 type Props = {
   item: KnowledgeItem;
@@ -52,6 +55,7 @@ export function SocialEmbed({
   const provider = effectiveEmbedProvider(item);
 
   const directIframe = useMemo(() => parseSingleIframe(embedHtml), [embedHtml]);
+  const embedAspectRatio = inferEmbedAspectRatio(item, directIframe);
 
   const srcDoc = useMemo(() => {
     if (!embedHtml || directIframe) return null;
@@ -111,16 +115,25 @@ export function SocialEmbed({
       directIframe.width ?? STANDARD_EMBED_MAX_WIDTH,
       STANDARD_EMBED_MAX_WIDTH,
     );
+    const frameStyle = !compact
+      ? buildDetailFrameStyle(frameMaxWidth, embedAspectRatio)
+      : undefined;
+    const iframeStyle = buildDirectIframeStyle({
+      compact,
+      fallbackHeight: directIframe.height,
+      aspectRatio: embedAspectRatio,
+    });
 
     return (
       <>
         <div
+          data-knowledge-social-embed="direct"
           className={cn(
             "relative overflow-hidden rounded-lg border bg-background",
             !compact && DETAIL_EMBED_FRAME_CLASS,
             className,
           )}
-          style={!compact ? { maxWidth: frameMaxWidth } : undefined}
+          style={frameStyle}
         >
           <iframe
             ref={iframeRef}
@@ -130,15 +143,9 @@ export function SocialEmbed({
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
             allowFullScreen
             referrerPolicy={EMBED_REFERRER_POLICY}
-            // Allow the user to scroll inside the embed when the post is
-            // taller than the visible iframe height.
-            scrolling={compact ? "no" : "auto"}
-            className="block w-full"
-            style={{
-              height: directIframe.height,
-              minHeight: compact ? 0 : 320,
-              border: 0,
-            }}
+            scrolling={compact || embedAspectRatio ? "no" : "auto"}
+            className={cn("block w-full", compact && "h-full")}
+            style={iframeStyle}
           />
           {showChrome && (
             <button
@@ -160,6 +167,7 @@ export function SocialEmbed({
             title={item.title}
             src={directIframe.src}
             mode="direct"
+            aspectRatio={embedAspectRatio}
             onClose={() => setFullscreen(false)}
           />
         )}
@@ -170,6 +178,7 @@ export function SocialEmbed({
   return (
     <>
       <div
+        data-knowledge-social-embed="srcdoc"
         className={cn(
           "relative overflow-hidden rounded-lg border bg-background",
           !compact && DETAIL_EMBED_FRAME_CLASS,
@@ -209,6 +218,7 @@ export function SocialEmbed({
           title={item.title}
           srcDoc={srcDoc!}
           mode="srcDoc"
+          aspectRatio={embedAspectRatio}
           onClose={() => setFullscreen(false)}
         />
       )}
@@ -221,16 +231,20 @@ type FullscreenOverlayProps =
       title: string;
       mode: "direct";
       src: string;
+      aspectRatio: EmbedAspectRatio | null;
       onClose: () => void;
     }
   | {
       title: string;
       mode: "srcDoc";
       srcDoc: string;
+      aspectRatio: EmbedAspectRatio | null;
       onClose: () => void;
     };
 
 function FullscreenEmbedOverlay(props: FullscreenOverlayProps) {
+  const fullscreenFrameStyle = buildFullscreenFrameStyle(props.aspectRatio);
+
   return (
     <div
       role="dialog"
@@ -253,7 +267,10 @@ function FullscreenEmbedOverlay(props: FullscreenOverlayProps) {
         </button>
       </div>
       <div className="flex-1 overflow-hidden px-2 pb-4 sm:px-6">
-        <div className="mx-auto h-full max-w-[720px] overflow-hidden rounded-lg bg-background shadow-2xl">
+        <div
+          className="mx-auto h-full max-w-[720px] overflow-hidden rounded-lg bg-background shadow-2xl"
+          style={fullscreenFrameStyle}
+        >
           {props.mode === "direct" ? (
             <iframe
               title={props.title}
@@ -262,7 +279,7 @@ function FullscreenEmbedOverlay(props: FullscreenOverlayProps) {
               allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen"
               allowFullScreen
               referrerPolicy={EMBED_REFERRER_POLICY}
-              scrolling="auto"
+              scrolling={props.aspectRatio ? "no" : "auto"}
               className="block h-full w-full"
               style={{ border: 0 }}
             />
@@ -282,6 +299,56 @@ function FullscreenEmbedOverlay(props: FullscreenOverlayProps) {
       </div>
     </div>
   );
+}
+
+type EmbedAspectRatio = {
+  css: string;
+  value: number;
+};
+
+function buildDetailFrameStyle(
+  maxWidth: number,
+  aspectRatio: EmbedAspectRatio | null,
+): CSSProperties {
+  if (!aspectRatio) {
+    return { maxWidth };
+  }
+
+  return {
+    maxWidth,
+    width: `min(100%, ${maxWidth}px, calc(${DETAIL_EMBED_MAX_VIEWPORT_HEIGHT} * ${aspectRatio.value}))`,
+  };
+}
+
+function buildDirectIframeStyle(args: {
+  compact: boolean;
+  fallbackHeight: number;
+  aspectRatio: EmbedAspectRatio | null;
+}): CSSProperties {
+  if (args.compact) {
+    return { height: "100%", border: 0 };
+  }
+  if (args.aspectRatio) {
+    return {
+      aspectRatio: args.aspectRatio.css,
+      height: "auto",
+      border: 0,
+    };
+  }
+  return {
+    height: args.fallbackHeight,
+    minHeight: 320,
+    border: 0,
+  };
+}
+
+function buildFullscreenFrameStyle(
+  aspectRatio: EmbedAspectRatio | null,
+): CSSProperties | undefined {
+  if (!aspectRatio) return undefined;
+  return {
+    width: `min(100%, 720px, calc((100dvh - 5rem) * ${aspectRatio.value}))`,
+  };
 }
 
 /**
@@ -365,6 +432,78 @@ function parseSingleIframe(
       : undefined;
 
   return { src, height, width };
+}
+
+function inferEmbedAspectRatio(
+  item: KnowledgeItem,
+  directIframe: { height: number; width?: number } | null,
+): EmbedAspectRatio | null {
+  const metadataRatio = parseEmbedAspectRatio(item.sourceMetadata?.aspectRatio);
+  if (metadataRatio) return metadataRatio;
+
+  if (directIframe?.width && directIframe.height) {
+    const ratio = parseEmbedAspectRatio(`${directIframe.width}/${directIframe.height}`);
+    if (ratio) return ratio;
+  }
+
+  const provider = effectiveEmbedProvider(item);
+  const contentKind = item.sourceMetadata?.contentKind;
+  const sourceUrl = item.sourceUrl ?? "";
+
+  if (
+    item.sourceType === "social_instagram_reel" ||
+    (provider === "instagram" && contentKind === "reel") ||
+    /instagram\.com\/reels?\//i.test(sourceUrl)
+  ) {
+    return parseEmbedAspectRatio("9/16");
+  }
+
+  if (
+    item.sourceType === "social_instagram_post" ||
+    (provider === "instagram" && (contentKind === "post" || !contentKind))
+  ) {
+    return parseEmbedAspectRatio("1/1");
+  }
+
+  if (
+    item.sourceType === "social_facebook_video_post" ||
+    (provider === "facebook" && contentKind === "video")
+  ) {
+    return parseEmbedAspectRatio("16/9");
+  }
+
+  return null;
+}
+
+function parseEmbedAspectRatio(value: string | undefined): EmbedAspectRatio | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+
+  const numeric = Number.parseFloat(raw);
+  if (
+    Number.isFinite(numeric) &&
+    numeric >= MIN_EMBED_ASPECT_RATIO &&
+    numeric <= MAX_EMBED_ASPECT_RATIO &&
+    !/[/:]/.test(raw)
+  ) {
+    return { css: `${numeric} / 1`, value: numeric };
+  }
+
+  const parts = raw.replace(":", "/").split("/");
+  if (parts.length !== 2) return null;
+
+  const width = Number.parseFloat(parts[0].trim());
+  const height = Number.parseFloat(parts[1].trim());
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  const ratio = width / height;
+  if (ratio < MIN_EMBED_ASPECT_RATIO || ratio > MAX_EMBED_ASPECT_RATIO) {
+    return null;
+  }
+
+  return { css: `${width} / ${height}`, value: ratio };
 }
 
 function buildEmbedDocument(fragment: string, provider: string): string {

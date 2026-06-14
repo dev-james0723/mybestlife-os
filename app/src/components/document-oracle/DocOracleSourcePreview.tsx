@@ -12,6 +12,9 @@ registerGSAP();
 const primaryActionBtn =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition-[background,transform] duration-150 ease-out hover:bg-primary/90 active:translate-y-px";
 
+const sourcePreviewFrameClass =
+  "h-[min(68dvh,620px)] min-h-[420px] resize-y overflow-hidden rounded-2xl border border-border bg-muted sm:h-[min(74dvh,760px)] sm:min-h-[560px] md:h-[min(78dvh,900px)] md:min-h-[660px] xl:h-[min(82dvh,960px)] xl:min-h-[720px]";
+
 export function DocOracleSourcePreview(props: {
   filePath: string | null | undefined;
   previewPage: number | null;
@@ -89,8 +92,8 @@ export function DocOracleSourcePreview(props: {
           {previewPage != null && previewPage > 0 ? `Open source at page ${previewPage}` : "Open source"}
         </a>
       </div>
-      <div data-doc-oracle-source-frame className="min-h-[220px] flex-1 overflow-hidden rounded-2xl border border-border bg-muted sm:min-h-[280px] md:min-h-[360px]">
-        <iframe title="Section source PDF" src={iframeSrc} className="h-full min-h-[220px] w-full bg-neutral-900 sm:min-h-[280px] md:min-h-[360px]" />
+      <div data-doc-oracle-source-frame className={sourcePreviewFrameClass}>
+        <iframe title="Section source PDF" src={iframeSrc} className="h-full w-full bg-neutral-900" />
       </div>
       {previewPage != null && previewPage > 0 ? (
         <p data-doc-oracle-source-meta className="text-[11px] text-muted-foreground">

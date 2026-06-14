@@ -656,7 +656,7 @@ export function KnowledgeDetailSheet() {
                   <SocialEmbed
                     item={item}
                     unavailableLabel=""
-                    className="aspect-video bg-muted"
+                    className="bg-muted"
                   />
                 ) : item.thumbnailUrl ? (
                   <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">

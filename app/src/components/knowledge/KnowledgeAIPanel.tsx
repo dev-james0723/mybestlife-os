@@ -815,12 +815,12 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   );
 
   const topQuickActions = (
-    <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-2 min-[1680px]:grid-cols-4">
+    <div className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
       {workflowPrompts.map((workflow) => (
         <button
           key={workflow.label}
           type="button"
-          className="group relative min-h-[68px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.045] p-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[76px] sm:p-3"
+          className="group relative min-h-[68px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.045] p-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[76px] sm:p-3 lg:min-h-[56px] lg:p-2.5 min-[1440px]:min-h-[76px] min-[1440px]:p-3"
           onClick={() => seedWorkflowPrompt(workflow.prompt)}
           disabled={isThinking}
         >
@@ -829,7 +829,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
               <div className="text-xs font-semibold leading-5 text-foreground sm:text-sm">
                 {workflow.label}
               </div>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground sm:mt-1 sm:text-xs sm:leading-5">
+              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground sm:mt-1 sm:text-xs sm:leading-5 lg:hidden min-[1440px]:block">
                 {workflow.description}
               </p>
             </div>
@@ -844,9 +844,9 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
 
   const topLayoutRail = (
     <aside className="hidden min-h-0 flex-col overflow-hidden border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] lg:flex lg:h-full lg:max-h-none lg:w-[292px] lg:shrink-0 lg:border-b-0 lg:border-r">
-      <div className="rounded-xl border border-white/10 bg-black/22 p-3">
+      <div className="rounded-xl border border-slate-900/10 bg-white/75 p-3 text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-black/22 dark:text-foreground">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-[0_12px_32px_rgba(30,90,170,0.18)]">
+          <div className="h-10 w-10 overflow-hidden rounded-xl border border-slate-900/10 bg-white/80 shadow-[0_12px_32px_rgba(30,90,170,0.18)] dark:border-white/10 dark:bg-black/40">
             <Image
               src="/images/knowledge/ask-my-kb-mark.png"
               alt="Ask My Knowledge Base knowledge core mark"
@@ -856,20 +856,20 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight text-foreground">Workspace</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Knowledge console</p>
+            <p className="text-sm font-semibold leading-tight text-slate-950 dark:text-foreground">Workspace</p>
+            <p className="mt-0.5 text-[11px] text-slate-600 dark:text-muted-foreground">Knowledge console</p>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-black/24 p-1.5">
+        <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-xl border border-slate-900/10 bg-slate-950/[0.06] p-1.5 dark:border-white/10 dark:bg-black/24">
           {[
             { label: "Items", value: items.length },
             { label: "Knowledge", value: knowledgeReadyCount },
             { label: "Domains", value: sourceDomainCount },
           ].map((metric) => (
-            <div key={metric.label} className="rounded-lg bg-white/[0.035] px-2 py-2 text-center">
-              <p className="text-sm font-semibold tabular-nums text-foreground">{metric.value}</p>
-              <p className="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+            <div key={metric.label} className="rounded-lg bg-white/65 px-2 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:bg-white/[0.035] dark:shadow-none">
+              <p className="text-sm font-semibold tabular-nums text-slate-950 dark:text-foreground">{metric.value}</p>
+              <p className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-600 dark:text-muted-foreground">
                 {metric.label}
               </p>
             </div>
@@ -878,7 +878,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
 
         <button
           type="button"
-          className="mt-3 flex w-full items-center justify-between rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-xs font-medium text-cyan-50 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-cyan-300/16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35"
+          className="mt-3 flex w-full items-center justify-between rounded-xl border border-cyan-700/20 bg-cyan-100/80 px-3 py-2 text-left text-xs font-semibold text-slate-800 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-50 dark:hover:bg-cyan-300/16"
           onClick={startNewConversation}
         >
           <span className="inline-flex items-center gap-2">
@@ -1061,7 +1061,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             {messages.length === 0 ? topEmptyState : messageList}
           </ScrollArea>
 
-          <div className="shrink-0 border-t border-white/10 bg-background/45 p-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-xl max-[480px]:pb-40 sm:p-4">
+          <div className="shrink-0 border-t border-white/10 bg-background/45 p-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-xl max-[480px]:pb-40 sm:p-4 lg:p-3">
             {topQuickActions}
             <form
               onSubmit={(e) => {

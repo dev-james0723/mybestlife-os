@@ -157,6 +157,145 @@ describe("OS Buddy AirPilot lifecycle state", () => {
   });
 });
 
+describe("OS Buddy resting space lifecycle", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-08T00:00:00.000Z"));
+    useOSBuddyStore.setState({
+      bubble: null,
+      isRestingInSidebar: false,
+      restingState: "resting",
+      mood: "playful",
+      isMenuOpen: false,
+      isDragging: false,
+      dragDirection: null,
+      isWalkModeActive: false,
+      isReturningHome: false,
+      isFreeRoaming: false,
+      isMiniGameOpen: false,
+      activeMiniGame: null,
+    });
+  });
+
+  afterEach(() => {
+    useOSBuddyStore.setState({
+      bubble: null,
+      isRestingInSidebar: false,
+      restingState: "resting",
+      isAirControlActive: false,
+      airControlStatus: "idle",
+      airControlGesture: null,
+      airControlTarget: null,
+      airControlRawPoint: null,
+      airPilotSelectState: "tracking",
+      airControlLandmarks: [],
+      airControlLastSeenAt: null,
+      airTouchState: "inactive",
+      airPilotPlusMode: "off",
+      airPilotPlusCountdown: {
+        kind: "inactive",
+        startedAt: null,
+        durationMs: 0,
+        progress: 0,
+        label: null,
+      },
+      airPilotPlusDomain: null,
+      airPilotPlusActionPreview: null,
+      airPilotPlusActionPreviewLabel: null,
+      isMenuOpen: false,
+      isDragging: false,
+      dragDirection: null,
+      isWalkModeActive: false,
+      isReturningHome: false,
+      isFreeRoaming: false,
+      isMiniGameOpen: false,
+      activeMiniGame: null,
+      mood: "idle",
+    });
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("parks OS Buddy in resting space without leaving runtime modes alive", () => {
+    useOSBuddyStore.getState().showBubble("Busy.");
+    useOSBuddyStore.setState({
+      isMenuOpen: true,
+      isDragging: true,
+      dragDirection: "right",
+      isWalkModeActive: true,
+      isReturningHome: true,
+      isFreeRoaming: true,
+      freeRoamStartedAt: 1,
+      freeRoamUntil: 2,
+      freeRoamRuntimePosition: { x: 12, y: 24 },
+      isMiniGameOpen: true,
+      activeMiniGame: "play-ball",
+      isAirControlActive: true,
+      airControlStatus: "tracking",
+      airControlGesture: "Pinch",
+      airControlTarget: { x: 120, y: 240 },
+      airControlRawPoint: { x: 122, y: 242 },
+      airPilotSelectState: "locked",
+      airControlLandmarks: [{ x: 0.1, y: 0.2, z: 0 }],
+      airControlLastSeenAt: 456,
+      airTouchState: "grabbed",
+      airPilotPlusMode: "plusActive",
+      airPilotPlusCountdown: {
+        kind: "plusExit",
+        startedAt: 500,
+        durationMs: 1_500,
+        progress: 0.3,
+        label: "AI Pilot Plus exiting...",
+      },
+      airPilotPlusDomain: "projects",
+      airPilotPlusActionPreview: { type: "ADD_GOAL" },
+      airPilotPlusActionPreviewLabel: "projects: add goal",
+    });
+
+    useOSBuddyStore.getState().dockInRestingSpace("resting");
+
+    const state = useOSBuddyStore.getState();
+    expect(state.isRestingInSidebar).toBe(true);
+    expect(state.restingState).toBe("resting");
+    expect(state.bubble).toBeNull();
+    expect(state.isMenuOpen).toBe(false);
+    expect(state.isDragging).toBe(false);
+    expect(state.dragDirection).toBeNull();
+    expect(state.isWalkModeActive).toBe(false);
+    expect(state.isReturningHome).toBe(false);
+    expect(state.isFreeRoaming).toBe(false);
+    expect(state.freeRoamRuntimePosition).toBeNull();
+    expect(state.isMiniGameOpen).toBe(false);
+    expect(state.activeMiniGame).toBeNull();
+    expect(state.isAirControlActive).toBe(false);
+    expect(state.airControlStatus).toBe("idle");
+    expect(state.airControlGesture).toBeNull();
+    expect(state.airControlTarget).toBeNull();
+    expect(state.airControlRawPoint).toBeNull();
+    expect(state.airPilotSelectState).toBe("tracking");
+    expect(state.airControlLandmarks).toEqual([]);
+    expect(state.airControlLastSeenAt).toBeNull();
+    expect(state.airTouchState).toBe("inactive");
+    expect(state.airPilotPlusMode).toBe("off");
+    expect(state.airPilotPlusCountdown.kind).toBe("inactive");
+    expect(state.airPilotPlusDomain).toBeNull();
+    expect(state.airPilotPlusActionPreview).toBeNull();
+
+    vi.advanceTimersByTime(6_000);
+    expect(useOSBuddyStore.getState().bubble).toBeNull();
+  });
+
+  it("releases OS Buddy from resting space for shortcut wakeups", () => {
+    useOSBuddyStore.getState().dockInRestingSpace("sleeping");
+    useOSBuddyStore.getState().releaseFromRestingSpace();
+
+    const state = useOSBuddyStore.getState();
+    expect(state.isRestingInSidebar).toBe(false);
+    expect(state.restingState).toBe("resting");
+    expect(state.mood).toBe("idle");
+  });
+});
+
 describe("OS Buddy bubble lifecycle", () => {
   beforeEach(() => {
     vi.useFakeTimers();
