@@ -76,6 +76,7 @@ import {
   parseKnowledgeRawContent,
   type CodeViewMode,
 } from "@/lib/knowledge/code-content";
+import { buildTranscriptSections } from "@/lib/knowledge/transcript-sections";
 import { useAppStore } from "@/stores/app-store";
 import { formatKnowledgeDate, getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { getKnowledgeUploadBadgePresentation } from "@/lib/knowledge/file-kind-presentation";
@@ -143,6 +144,10 @@ export function KnowledgeDetailSheet() {
   const parsedRawContent = useMemo(
     () => parseKnowledgeRawContent(item?.rawContent),
     [item?.rawContent],
+  );
+  const transcriptSections = useMemo(
+    () => buildTranscriptSections(item?.youtubeTranscript ?? ""),
+    [item?.youtubeTranscript],
   );
 
   useEffect(() => {
@@ -264,7 +269,8 @@ export function KnowledgeDetailSheet() {
     if (!item || transcriptLoading) return;
     setTranscriptLoading(true);
     try {
-      await generateYouTubeKnowledgeTranscript(item.id);
+      const updated = await generateYouTubeKnowledgeTranscript(item.id);
+      upsertItem(updated);
       toast.success(ui.transcriptSavedToast);
     } catch (e) {
       const msg = e instanceof Error ? e.message : ui.transcriptFailed;
@@ -272,7 +278,7 @@ export function KnowledgeDetailSheet() {
     } finally {
       setTranscriptLoading(false);
     }
-  }, [item, transcriptLoading, ui.transcriptFailed, ui.transcriptSavedToast]);
+  }, [item, transcriptLoading, ui.transcriptFailed, ui.transcriptSavedToast, upsertItem]);
 
   const handleRetry = useCallback(async () => {
     if (!item || retrying) return;
@@ -895,8 +901,24 @@ export function KnowledgeDetailSheet() {
                     {ui.transcriptSection}
                   </h4>
                   {item.youtubeTranscript ? (
-                    <div className="max-h-[40vh] overflow-y-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed whitespace-pre-wrap break-words">
-                      {item.youtubeTranscript}
+                    <div className="max-h-[44vh] overflow-y-auto rounded-md border bg-muted/20">
+                      <ol className="divide-y divide-border/60">
+                        {transcriptSections.map((section, index) => (
+                          <li key={`${index}-${section.title}`} className="space-y-2 p-3 sm:p-4">
+                            <div className="space-y-1">
+                              <p className="text-[11px] font-medium text-muted-foreground">
+                                {ui.transcriptTopicLabel(index + 1)}
+                              </p>
+                              <h5 className="text-sm font-semibold leading-snug text-foreground">
+                                {section.title || ui.transcriptUntitledTopic}
+                              </h5>
+                            </div>
+                            <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-muted-foreground">
+                              {section.body}
+                            </p>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground leading-relaxed">{ui.transcriptEmpty}</p>

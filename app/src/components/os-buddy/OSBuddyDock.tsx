@@ -64,9 +64,11 @@ import {
 import { routeOSBuddyDroppedFile } from "@/lib/os-buddy/os-buddy-file-drop-routing";
 import {
   buildLocalQuickSnapAck,
-  createOSBuddyQuickSnapPayloadFromClipboardData,
+  createOSBuddyQuickSnapPayloadFromParts,
   createOSBuddyQuickSnapPayloadFromNavigatorClipboard,
+  hasOSBuddyQuickSnapPayloadPartContent,
   QUICK_SNAP_SHIFT_DOUBLE_TAP_MS,
+  readOSBuddyQuickSnapPayloadPartsFromClipboardData,
   registerQuickSnapShiftTap,
   type OSBuddyQuickSnapAckContext,
   type OSBuddyQuickSnapDestination,
@@ -121,6 +123,10 @@ const PLAY_BALL_MISS_FORCE_MS = 2_000;
 const FILE_DROP_CATCH_RADIUS_PX = 42;
 const QUICK_SNAP_CLOUD_DISPERSE_MS = 420;
 const QUICK_SNAP_SUCCESS_RESET_MS = 900;
+const QUICK_SNAP_CLOUD_IMAGE_URLS = [
+  "/assets/os-buddy/quick-snap/magic-cloud-idea.png",
+  "/assets/os-buddy/quick-snap/magic-cloud-knowledge.png",
+] as const;
 const BIRTHDAY_EASTER_EGG_STORAGE_KEY = "mblos:os-buddy-birthday-easter-eggs";
 const AIRPILOT_SESSION_ACTIVE_KEY = "mblos:airpilot-session-active";
 const BIRTHDAY_EASTER_EGG_WINDOW_MS = 5_000;
@@ -143,6 +149,19 @@ type PlayBallChaseState = {
   startedAt: number;
 };
 type QuickSnapRuntimeState = "idle" | "armed" | "ready" | "saving" | "success" | "error";
+
+let quickSnapCloudImagePreloads: HTMLImageElement[] | null = null;
+
+function preloadQuickSnapCloudImages() {
+  if (typeof window === "undefined" || quickSnapCloudImagePreloads) return;
+
+  quickSnapCloudImagePreloads = QUICK_SNAP_CLOUD_IMAGE_URLS.map((src) => {
+    const image = new window.Image();
+    image.decoding = "async";
+    image.src = src;
+    return image;
+  });
+}
 
 type DragSession = {
   pointerId: number;
@@ -779,6 +798,11 @@ export function OSBuddyDock() {
   const restoredAirPilotSessionRef = useRef(false);
   const fileDragOverBuddyRef = useRef(false);
   const quickSnapPasteTargetRef = useRef<HTMLTextAreaElement | null>(null);
+  const quickSnapPendingDestinationRef =
+    useRef<OSBuddyQuickSnapDestination | null>(null);
+  const quickSnapPayloadFrameRef = useRef<number | null>(null);
+  const quickSnapPayloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const quickSnapPayloadStageIdRef = useRef(0);
   const quickSnapShiftStateRef = useRef<OSBuddyQuickSnapShiftTapState>({
     count: 0,
     lastAt: null,
@@ -803,6 +827,11 @@ export function OSBuddyDock() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !enabled) return;
+    preloadQuickSnapCloudImages();
+  }, [enabled, mounted]);
 
   // Load persisted Air Touch calibration + debug preference (numbers only).
   useEffect(() => {
@@ -1194,6 +1223,15 @@ export function OSBuddyDock() {
   }, [cancelPlayBallChaseFrame]);
 
   const clearQuickSnapTimers = useCallback(() => {
+    quickSnapPayloadStageIdRef.current += 1;
+    if (quickSnapPayloadFrameRef.current != null) {
+      window.cancelAnimationFrame(quickSnapPayloadFrameRef.current);
+      quickSnapPayloadFrameRef.current = null;
+    }
+    if (quickSnapPayloadTimerRef.current) {
+      clearTimeout(quickSnapPayloadTimerRef.current);
+      quickSnapPayloadTimerRef.current = null;
+    }
     if (quickSnapSingleShiftTimerRef.current) {
       clearTimeout(quickSnapSingleShiftTimerRef.current);
       quickSnapSingleShiftTimerRef.current = null;
@@ -1220,6 +1258,7 @@ export function OSBuddyDock() {
       setQuickSnapPayload(null);
       setQuickSnapCloudsDismissing(false);
       setQuickSnapClipboardPending(false);
+      quickSnapPendingDestinationRef.current = null;
       if (!options?.preserveBubble) clearBubble();
     },
     [clearBubble, clearQuickSnapTimers],
@@ -1241,6 +1280,8 @@ export function OSBuddyDock() {
     setMenuOpen(false);
     setPetPickerOpen(false);
     clearBubble();
+    preloadQuickSnapCloudImages();
+    quickSnapPendingDestinationRef.current = null;
     setQuickSnapPayload(null);
     setQuickSnapCloudsDismissing(false);
     setQuickSnapClipboardPending(false);
@@ -1261,10 +1302,29 @@ export function OSBuddyDock() {
     setPetPickerOpen,
   ]);
 
+  const revealQuickSnapClouds = useCallback(() => {
+    preloadQuickSnapCloudImages();
+    quickSnapPendingDestinationRef.current = null;
+    if (quickSnapSingleShiftTimerRef.current) {
+      clearTimeout(quickSnapSingleShiftTimerRef.current);
+      quickSnapSingleShiftTimerRef.current = null;
+    }
+    quickSnapShiftStateRef.current = { count: 0, lastAt: null };
+    clearBubble();
+    setQuickSnapPayload(null);
+    setQuickSnapCloudsDismissing(false);
+    setQuickSnapClipboardPending(false);
+    setQuickSnapState("ready");
+  }, [clearBubble]);
+
   const stageQuickSnapPayload = useCallback(
     (payload: OSBuddyQuickSnapPayload | null) => {
       setQuickSnapClipboardPending(false);
       if (!payload) {
+        quickSnapPendingDestinationRef.current = null;
+        setQuickSnapPayload(null);
+        setQuickSnapCloudsDismissing(false);
+        setQuickSnapState("armed");
         temporarilySetMood("error", 1_000);
         showBubble(
           locale === "zh-TW"
@@ -1287,21 +1347,60 @@ export function OSBuddyDock() {
     [clearBubble, focusQuickSnapPasteTarget, locale, showBubble, temporarilySetMood],
   );
 
+  const scheduleQuickSnapPayloadStage = useCallback(
+    (buildPayload: () => OSBuddyQuickSnapPayload | null) => {
+      if (quickSnapPayloadFrameRef.current != null) {
+        window.cancelAnimationFrame(quickSnapPayloadFrameRef.current);
+        quickSnapPayloadFrameRef.current = null;
+      }
+      if (quickSnapPayloadTimerRef.current) {
+        clearTimeout(quickSnapPayloadTimerRef.current);
+        quickSnapPayloadTimerRef.current = null;
+      }
+
+      const stageId = quickSnapPayloadStageIdRef.current + 1;
+      quickSnapPayloadStageIdRef.current = stageId;
+      revealQuickSnapClouds();
+
+      quickSnapPayloadFrameRef.current = window.requestAnimationFrame(() => {
+        quickSnapPayloadFrameRef.current = null;
+        quickSnapPayloadTimerRef.current = setTimeout(() => {
+          quickSnapPayloadTimerRef.current = null;
+          if (quickSnapPayloadStageIdRef.current !== stageId) return;
+
+          try {
+            stageQuickSnapPayload(buildPayload());
+          } catch (error) {
+            if (process.env.NODE_ENV !== "production") {
+              console.warn(
+                "[os-buddy-quick-snap] paste parse failed:",
+                error instanceof Error ? error.message : String(error),
+              );
+            }
+            stageQuickSnapPayload(null);
+          }
+        }, 0);
+      });
+    },
+    [revealQuickSnapClouds, stageQuickSnapPayload],
+  );
+
   const readQuickSnapClipboard = useCallback(async () => {
     if (quickSnapClipboardPending || quickSnapState === "idle" || quickSnapState === "saving") {
       return false;
     }
 
+    revealQuickSnapClouds();
     setQuickSnapClipboardPending(true);
     const payload = await createOSBuddyQuickSnapPayloadFromNavigatorClipboard();
-    if (payload) {
-      stageQuickSnapPayload(payload);
-      return true;
-    }
-
-    setQuickSnapClipboardPending(false);
-    return false;
-  }, [quickSnapClipboardPending, quickSnapState, stageQuickSnapPayload]);
+    stageQuickSnapPayload(payload);
+    return Boolean(payload);
+  }, [
+    quickSnapClipboardPending,
+    quickSnapState,
+    revealQuickSnapClouds,
+    stageQuickSnapPayload,
+  ]);
 
   const handleQuickSnapPasteRequest = useCallback(
     (event?: {
@@ -1323,11 +1422,19 @@ export function OSBuddyDock() {
       event.preventDefault();
       event.stopPropagation();
       event.currentTarget.value = "";
-      stageQuickSnapPayload(
-        createOSBuddyQuickSnapPayloadFromClipboardData(event.clipboardData),
+      const payloadParts = readOSBuddyQuickSnapPayloadPartsFromClipboardData(
+        event.clipboardData,
+      );
+      if (!hasOSBuddyQuickSnapPayloadPartContent(payloadParts)) {
+        stageQuickSnapPayload(null);
+        return;
+      }
+
+      scheduleQuickSnapPayloadStage(() =>
+        createOSBuddyQuickSnapPayloadFromParts(payloadParts),
       );
     },
-    [quickSnapState, stageQuickSnapPayload],
+    [quickSnapState, scheduleQuickSnapPayloadStage, stageQuickSnapPayload],
   );
 
   useEffect(() => {
@@ -1373,7 +1480,11 @@ export function OSBuddyDock() {
   const commitQuickSnap = useCallback(
     async (destination: OSBuddyQuickSnapDestination) => {
       const payload = quickSnapPayload;
-      if (!payload || quickSnapState === "saving") return;
+      if (quickSnapState === "saving") return;
+      if (!payload) {
+        quickSnapPendingDestinationRef.current = destination;
+        return;
+      }
 
       clearQuickSnapTimers();
       setQuickSnapState("saving");
@@ -1439,6 +1550,15 @@ export function OSBuddyDock() {
       upsertKnowledgeItem,
     ],
   );
+
+  useEffect(() => {
+    if (!quickSnapPayload || quickSnapState !== "ready") return;
+    const pendingDestination = quickSnapPendingDestinationRef.current;
+    if (!pendingDestination) return;
+
+    quickSnapPendingDestinationRef.current = null;
+    void commitQuickSnap(pendingDestination);
+  }, [commitQuickSnap, quickSnapPayload, quickSnapState]);
 
   useEffect(() => {
     if (pathnameRef.current === pathname) return;
@@ -3198,7 +3318,7 @@ export function OSBuddyDock() {
           </>
         ) : null}
 
-        {quickSnapPayload && (quickSnapState === "ready" || quickSnapState === "saving") ? (
+        {quickSnapState === "ready" || quickSnapState === "saving" ? (
           <OSBuddyQuickSnapClouds
             fixedStyle={quickSnapCloudFixedStyle}
             dismissing={quickSnapCloudsDismissing}

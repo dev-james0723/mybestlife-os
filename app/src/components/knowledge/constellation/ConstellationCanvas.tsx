@@ -1552,6 +1552,14 @@ export const ConstellationCanvas = forwardRef<
       }
 
       const now = frameNowRef.current || performance.now();
+      const livingPulse = prefersReducedMotion
+        ? 0
+        : 0.5 +
+          Math.sin(now / (isSelected || dominant ? 1150 : 2300) + hashStringUnit(node.id) * Math.PI * 2) *
+            0.5;
+      const breath = prefersReducedMotion
+        ? 0
+        : livingPulse * (isSelected ? 0.12 : dominant || isHovered ? 0.08 : 0.045);
       const sparkStarted = newNodeSparkRef.current.get(node.id);
       const sparkT =
         sparkStarted === undefined
@@ -1574,14 +1582,15 @@ export const ConstellationCanvas = forwardRef<
               ? 3
               : depth === 2
                 ? 2.45
-                : 2.05);
+              : 2.05);
+      const breathingGlowR = glowR * (1 + breath);
       const grad = ctx.createRadialGradient(
         node.x,
         node.y,
         r * 0.4,
         node.x,
         node.y,
-        glowR,
+        breathingGlowR,
       );
       grad.addColorStop(0, palette.glow);
       grad.addColorStop(1, graphShell.glowGradientEnd);
@@ -1589,17 +1598,22 @@ export const ConstellationCanvas = forwardRef<
       ctx.globalAlpha =
         alpha *
         glowTone *
-        (isSelected ? 0.95 : isHovered || dominant ? 0.78 : depth === 2 ? 0.55 : 0.48);
+        Math.min(
+          1,
+          (isSelected ? 0.95 : isHovered || dominant ? 0.78 : depth === 2 ? 0.55 : 0.48) +
+            breath * 0.18,
+        );
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(node.x, node.y, glowR, 0, 2 * Math.PI);
+      ctx.arc(node.x, node.y, breathingGlowR, 0, 2 * Math.PI);
       ctx.fill();
 
       // Core dot.
+      const coreR = r * (1 + breath * (isSelected ? 0.38 : 0.22));
       ctx.globalAlpha = alpha;
       ctx.fillStyle = palette.core;
       ctx.beginPath();
-      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+      ctx.arc(node.x, node.y, coreR, 0, 2 * Math.PI);
       ctx.fill();
 
       // Selected / matched ring.
@@ -1611,7 +1625,7 @@ export const ConstellationCanvas = forwardRef<
             : graphShell.matchedRingFallback;
         ctx.lineWidth = isSelected ? 1.8 : 1.2;
         ctx.beginPath();
-        ctx.arc(node.x, node.y, r + (isSelected ? 3 : 2.2), 0, 2 * Math.PI);
+        ctx.arc(node.x, node.y, coreR + (isSelected ? 3 : 2.2), 0, 2 * Math.PI);
         ctx.stroke();
       }
 
@@ -1780,7 +1794,12 @@ export const ConstellationCanvas = forwardRef<
 
       const style =
         EDGE_STYLE[link.type] ?? EDGE_STYLE["explicit_link" as ConstellationEdgeType];
-      const alpha = computeEdgeAlpha(link, style.opacity);
+      const now = frameNowRef.current || performance.now();
+      const edgeBreath =
+        prefersReducedMotion || interactionQualityRef.current
+          ? 1
+          : 1 + Math.sin(now / 3300 + hashStringUnit(link.id) * Math.PI * 2) * 0.08;
+      const alpha = Math.min(1, computeEdgeAlpha(link, style.opacity) * edgeBreath);
       const width = Number(linkWidth(link));
       const dash = linkLineDash(link);
       const { sourceId, targetId } = linkEndpointIds(link);
@@ -1834,7 +1853,6 @@ export const ConstellationCanvas = forwardRef<
           highlighted ||
           selectedNodeId !== null ||
           hoveredId !== null);
-      const now = frameNowRef.current || performance.now();
       const pulsePhase = (now / (strong || highlighted ? 1450 : 2400) + hashStringUnit(link.id)) % 1;
 
       ctx.save();
@@ -2225,7 +2243,8 @@ export const ConstellationCanvas = forwardRef<
       {/* Cinematic backdrop — soft constellation atmosphere */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        data-surface={graphSurfaceMode}
+        className="constellation-universe-backdrop pointer-events-none absolute inset-0"
         style={{ background: graphShell.canvasBackdropCss }}
       />
 

@@ -301,6 +301,14 @@ function rgbaEdgeMuted(opacity: number, isLight: boolean): string {
   return rgbaSlate(Math.max(0.08, o));
 }
 
+function hashStringUnit(value: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h = Math.imul(h ^ value.charCodeAt(i), 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
 function cameraDepthFactor(
   node: Pick<SphereNode, "x" | "y" | "z">,
   camera: THREE.Camera | null | undefined,
@@ -1036,6 +1044,10 @@ const ConstellationSphere3DInner = forwardRef<
       const mat = glow.material as THREE.SpriteMaterial;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const baseScale = ((glow as any).__baseScale as number) ?? 12;
+      const livingPulse =
+        1 +
+        Math.sin(performance.now() / 1350 + hashStringUnit(node.id) * Math.PI * 2) *
+          0.035;
 
       let opacity = 0.92 * depthOpacity;
       let scaleMul = depthScale;
@@ -1062,7 +1074,7 @@ const ConstellationSphere3DInner = forwardRef<
       if (Math.abs(mat.opacity - opacity) > OPACITY_UPDATE_EPS) {
         mat.opacity = opacity;
       }
-      const target = baseScale * scaleMul;
+      const target = baseScale * scaleMul * livingPulse;
       if (Math.abs(glow.scale.x - target) > SCALE_UPDATE_EPS) {
         glow.scale.set(target, target, 1);
       }
@@ -1259,6 +1271,12 @@ const ConstellationSphere3DInner = forwardRef<
         overscrollBehavior: "none",
       }}
     >
+      <div
+        aria-hidden
+        data-surface={graphSurfaceMode}
+        className="constellation-universe-backdrop constellation-universe-backdrop--sphere pointer-events-none absolute inset-0"
+        style={{ background: graphShell.sphere3dBackdropCss }}
+      />
       {showPerfWarning && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[11px] font-medium text-amber-200/95 shadow-[0_8px_24px_-12px_rgba(251,191,36,0.35)] backdrop-blur-sm">
           Large graph — try filtering for a smoother 3D experience.

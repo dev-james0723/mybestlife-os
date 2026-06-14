@@ -293,6 +293,12 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
           <div className="space-y-3">
+            <CommandLightOpacityControl
+              copy={copy}
+              value={commandLightOpacity}
+              isSaving={commandLightOpacityMutation.isPending}
+              onChange={updateCommandLightOpacity}
+            />
             {draft.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
                 {copy.noFilters}
@@ -328,12 +334,6 @@ export function KnowledgeQuickFiltersDialog({ open, onOpenChange }: Props) {
                 ))}
               </>
             )}
-            <CommandLightOpacityControl
-              copy={copy}
-              value={commandLightOpacity}
-              isSaving={commandLightOpacityMutation.isPending}
-              onChange={updateCommandLightOpacity}
-            />
           </div>
         </div>
 

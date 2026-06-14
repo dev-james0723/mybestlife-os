@@ -34,8 +34,8 @@ type FrozenColumnsState = {
   keys: string[];
 };
 
-const BOARD_COLUMN_WIDTH = "248px";
-const LANDSCAPE_BOARD_COLUMN_WIDTH = "clamp(260px, 34vw, 320px)";
+const BOARD_COLUMN_WIDTH = "280px";
+const LANDSCAPE_BOARD_COLUMN_WIDTH = "clamp(288px, 36vw, 360px)";
 const BOARD_COLUMN_GAP = "0.75rem";
 
 function getFrozenColumnLeft(index: number) {

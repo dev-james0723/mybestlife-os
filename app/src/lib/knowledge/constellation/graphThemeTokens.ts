@@ -233,11 +233,12 @@ export function graphDetailShellClass(
 ): string {
   if (mode === "light") {
     if (variant === "panel")
-      return "h-full w-80 border-l border-slate-200/70 bg-white/55 backdrop-blur-xl";
+      return "h-full w-80 border-l border-white/45 bg-white/58 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.28),inset_1px_0_0_rgba(255,255,255,0.7),inset_-1px_0_0_rgba(255,255,255,0.24)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/48";
     if (variant === "drawer") return "h-full w-full bg-white";
     return "flex h-full max-h-full min-h-0 w-full flex-col overflow-hidden bg-white/92";
   }
-  if (variant === "panel") return "h-full w-80 border-l border-white/5 bg-slate-950/40 backdrop-blur";
+  if (variant === "panel")
+    return "h-full w-80 border-l border-white/12 bg-white/[0.065] shadow-[0_24px_90px_-34px_rgba(0,0,0,0.82),inset_1px_0_0_rgba(255,255,255,0.16),inset_-1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.055]";
   if (variant === "drawer") return "h-full w-full bg-slate-950";
   return "flex h-full max-h-full min-h-0 w-full flex-col overflow-hidden bg-slate-950/95";
 }

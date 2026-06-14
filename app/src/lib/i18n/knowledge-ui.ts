@@ -184,7 +184,7 @@ const en: KnowledgeUiCopy = {
     needsReview: "Needs review",
   },
   quickFilterManager: {
-    manageButton: "Manage quick filters",
+    manageButton: "Manage",
     title: "Manage quick filters",
     description:
       "Create personal filter buttons from source, tags, status, media, dates, and text rules.",
@@ -584,6 +584,8 @@ const en: KnowledgeUiCopy = {
     transcriptFailed: "Could not get a transcript for this video",
     transcriptSection: "Transcript",
     transcriptEmpty: "No transcript yet. Use “Generate transcript” to pull captions when available.",
+    transcriptTopicLabel: (index) => `Topic ${index}`,
+    transcriptUntitledTopic: "Transcript topic",
     askAboutVideo: "Ask about this video",
     videoChatTitle: "Ask about this video",
     videoChatIntro:

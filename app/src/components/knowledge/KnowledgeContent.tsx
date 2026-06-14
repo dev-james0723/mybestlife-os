@@ -42,7 +42,7 @@ export function KnowledgeContent({ userId }: KnowledgeContentProps) {
 
   if (currentView === "constellation") {
     return (
-      <div className="min-h-[520px] min-w-0 flex-1 overflow-hidden">
+      <div className="min-h-[clamp(640px,76dvh,900px)] min-w-0 flex-1 overflow-hidden">
         <ConstellationView userId={userId} />
       </div>
     );

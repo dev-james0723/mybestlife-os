@@ -495,6 +495,186 @@
   }
 }
 
+/* Knowledge Constellation cinematic universe surface. */
+.constellation-view-shell {
+  isolation: isolate;
+}
+
+.constellation-view-shell:fullscreen,
+.constellation-view-shell:-webkit-full-screen {
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  background: #050712;
+}
+
+.constellation-graph-stage {
+  transform-origin: 50% 54%;
+}
+
+.constellation-detail-panel-frame {
+  flex: 0 0 auto;
+  transform-origin: 100% 50%;
+}
+
+.constellation-universe-backdrop {
+  overflow: hidden;
+  opacity: 1;
+}
+
+.constellation-universe-backdrop::before,
+.constellation-universe-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  pointer-events: none;
+}
+
+.constellation-universe-backdrop::before {
+  background:
+    radial-gradient(ellipse 48% 18% at 48% 50%, rgba(217, 249, 157, 0.075), transparent 68%),
+    radial-gradient(ellipse 62% 22% at 50% 52%, rgba(125, 211, 252, 0.13), transparent 66%),
+    radial-gradient(ellipse 46% 18% at 57% 49%, rgba(244, 114, 182, 0.08), transparent 70%),
+    radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.09), transparent 18%),
+    radial-gradient(circle at 76% 70%, rgba(186, 230, 253, 0.07), transparent 20%);
+  filter: blur(10px) saturate(1.08);
+  opacity: 0.78;
+  transform: rotate(-17deg) scale(1.08);
+}
+
+.constellation-universe-backdrop::after {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.23) 0 0.7px, transparent 1.35px),
+    radial-gradient(circle, rgba(125, 211, 252, 0.14) 0 0.85px, transparent 1.6px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.12) 0 0.55px, transparent 1.15px);
+  background-position:
+    0 0,
+    38px 24px,
+    18px 58px;
+  background-size:
+    112px 112px,
+    168px 168px,
+    74px 74px;
+  opacity: 0.34;
+  filter: blur(0.1px);
+}
+
+.constellation-universe-backdrop[data-surface="light"]::before {
+  opacity: 0.38;
+  filter: blur(14px) saturate(0.92);
+}
+
+.constellation-universe-backdrop[data-surface="light"]::after {
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+}
+
+.constellation-universe-backdrop--sphere::before {
+  opacity: 0.66;
+  transform: rotate(-19deg) scale(1.18);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .constellation-universe-backdrop::before {
+    animation: constellation-galaxy-drift 28s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+  }
+
+  .constellation-universe-backdrop::after {
+    animation: constellation-starfield-drift 42s linear infinite;
+    will-change: transform, opacity;
+  }
+
+  .constellation-view-shell[data-fullscreen-active="true"] .constellation-graph-stage {
+    animation: constellation-cinematic-open 1600ms cubic-bezier(0.16, 0.84, 0.2, 1) both;
+    will-change: opacity, transform, filter;
+  }
+
+  .constellation-view-shell[data-fullscreen-active="true"] .constellation-detail-panel-frame {
+    animation: constellation-liquid-panel-slide 1450ms cubic-bezier(0.16, 0.84, 0.2, 1) 220ms both;
+    will-change: opacity, transform, filter;
+  }
+}
+
+@keyframes constellation-galaxy-drift {
+  0% {
+    opacity: 0.64;
+    transform: rotate(-19deg) translate3d(-1.5%, -0.7%, 0) scale(1.04);
+  }
+  45% {
+    opacity: 0.82;
+    transform: rotate(-15deg) translate3d(1.2%, 0.6%, 0) scale(1.1);
+  }
+  100% {
+    opacity: 0.72;
+    transform: rotate(-18deg) translate3d(0.8%, -1%, 0) scale(1.16);
+  }
+}
+
+@keyframes constellation-starfield-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-42px, 28px, 0);
+  }
+}
+
+@keyframes constellation-cinematic-open {
+  0% {
+    opacity: 0.18;
+    transform: translate3d(0, 2.2rem, 0) scale(0.955);
+    filter: blur(16px) saturate(0.84);
+  }
+  38% {
+    opacity: 0.74;
+    transform: translate3d(0, 0.5rem, 0) scale(0.985);
+    filter: blur(7px) saturate(1);
+  }
+  72% {
+    opacity: 0.96;
+    transform: translate3d(0, -0.15rem, 0) scale(1.006);
+    filter: blur(1.5px) saturate(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes constellation-liquid-panel-slide {
+  0% {
+    opacity: 0;
+    transform: translate3d(3.8rem, 0, 0) scaleX(0.965);
+    filter: blur(18px) saturate(0.86);
+  }
+  36% {
+    opacity: 0.58;
+    transform: translate3d(1.1rem, 0, 0) scaleX(0.985);
+    filter: blur(9px) saturate(1.08);
+  }
+  72% {
+    opacity: 0.96;
+    transform: translate3d(-0.22rem, 0, 0) scaleX(1.006);
+    filter: blur(1.5px) saturate(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scaleX(1);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .constellation-universe-backdrop::before,
+  .constellation-universe-backdrop::after,
+  .constellation-view-shell[data-fullscreen-active="true"] .constellation-graph-stage,
+  .constellation-view-shell[data-fullscreen-active="true"] .constellation-detail-panel-frame {
+    animation: none !important;
+  }
+}
+
 /* AI task dialog + nested parent blur — theme-specific hues (data-ui-theme from ThemeProvider) */
 html[data-ui-theme="astronaut"][data-color-mode="light"] {
   --nested-parent-dialog-blur: 11px;
@@ -1504,8 +1684,10 @@ html.focus-mode [data-focus-hideable] {
   position: fixed;
   z-index: 2147483003;
   pointer-events: auto;
+  contain: layout style;
   transform-origin: 50% 100%;
-  animation: os-buddy-quick-snap-clouds-enter 260ms cubic-bezier(0.16, 1.14, 0.3, 1) both;
+  will-change: transform, opacity;
+  animation: os-buddy-quick-snap-clouds-enter 150ms cubic-bezier(0.16, 1.14, 0.3, 1) both;
 }
 
 .os-buddy-quick-snap-clouds[data-state="dismissing"] {
@@ -1559,15 +1741,16 @@ html.focus-mode [data-focus-hideable] {
   inset: -27px -40px -25px;
   z-index: -1;
   pointer-events: none;
+  will-change: transform;
   filter:
     drop-shadow(0 16px 24px color-mix(in oklch, var(--quick-snap-cloud-shadow) 64%, transparent))
     drop-shadow(0 0 18px color-mix(in oklch, var(--quick-snap-cloud-glow) 72%, transparent))
     drop-shadow(0 0 38px color-mix(in oklch, var(--quick-snap-cloud-gold) 34%, transparent));
-  animation: os-buddy-quick-snap-cloud-float 3.4s ease-in-out infinite;
+  animation: os-buddy-quick-snap-cloud-float 1.55s ease-in-out infinite;
 }
 
 .os-buddy-quick-snap-cloud--knowledge .os-buddy-quick-snap-cloud-shape {
-  animation-delay: 180ms;
+  animation-delay: 120ms;
 }
 
 .os-buddy-quick-snap-cloud-shape::before,
@@ -1597,6 +1780,7 @@ html.focus-mode [data-focus-hideable] {
   background-size: contain;
   opacity: 0.96;
   transform: translateY(2px) scale(1.06);
+  will-change: transform, opacity;
   transition:
     filter 180ms ease,
     opacity 180ms ease,
@@ -1842,10 +2026,19 @@ html.focus-mode [data-focus-hideable] {
 @keyframes os-buddy-quick-snap-cloud-float {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(-4px, 0, 0) rotate(-0.35deg);
   }
-  50% {
-    transform: translate3d(0, -3px, 0);
+  18% {
+    transform: translate3d(5px, -2px, 0) rotate(0.4deg);
+  }
+  38% {
+    transform: translate3d(-7px, -4px, 0) rotate(-0.55deg);
+  }
+  62% {
+    transform: translate3d(7px, -3px, 0) rotate(0.5deg);
+  }
+  82% {
+    transform: translate3d(-3px, -1px, 0) rotate(-0.25deg);
   }
 }
 
@@ -1906,13 +2099,11 @@ html.focus-mode [data-focus-hideable] {
 @keyframes os-buddy-quick-snap-clouds-enter {
   0% {
     opacity: 0;
-    transform: translateY(5px) scale(0.94);
-    filter: blur(2px);
+    transform: translate3d(0, 2px, 0) scale(0.98);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 

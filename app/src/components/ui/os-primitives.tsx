@@ -285,13 +285,13 @@ export function OSSegmentedControl<T extends string>({
   const liquidTailPull = movementDirection < 0 ? 1 : -1;
   const liquidPillTransition: Transition = reduceMotion
     ? { duration: 0 }
-    : { type: "spring", stiffness: 360, damping: 22, mass: 0.82 };
+    : { type: "spring", stiffness: 240, damping: 26, mass: 1.18 };
   const liquidSheenTransition: Transition = reduceMotion
     ? { duration: 0 }
-    : { duration: 0.64, ease: OS_MOTION.ease };
+    : { duration: 0.96, ease: OS_MOTION.ease };
   const liquidSplashTransition: Transition = reduceMotion
     ? { duration: 0 }
-    : { duration: 0.78, ease: OS_MOTION.ease, times: [0, 0.42, 1] };
+    : { duration: 1.18, ease: OS_MOTION.ease, times: [0, 0.52, 1] };
 
   return (
     <div

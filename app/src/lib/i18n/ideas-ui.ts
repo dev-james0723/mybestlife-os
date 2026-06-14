@@ -348,7 +348,7 @@ const en: IdeasUiCopy = {
     archived: "Archived",
   },
   quickFilterManager: {
-    manageButton: "Manage quick filters",
+    manageButton: "Manage",
     title: "Manage idea quick filters",
     description:
       "Create personal filter buttons from source, category, status, tags, links, attachments, dates, and text rules.",

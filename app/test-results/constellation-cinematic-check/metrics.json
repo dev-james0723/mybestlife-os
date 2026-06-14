@@ -1,0 +1,449 @@
+{
+  "shell": {
+    "x": 536,
+    "y": 568,
+    "width": 880,
+    "height": 760
+  },
+  "stage": {
+    "x": 536,
+    "y": 657,
+    "width": 880,
+    "height": 671
+  },
+  "backdrop": {
+    "x": 536,
+    "y": 657,
+    "width": 880,
+    "height": 671
+  },
+  "panel": null,
+  "fullscreenData": "false",
+  "buttons": [
+    {
+      "text": "Command Center",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Self",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "People",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Career",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Build & Execute",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Resources",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Knowledge",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Learning",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Customize Today panel",
+      "title": "Customize Today panel",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Customize Quick Launch",
+      "title": "Customize Quick Launch",
+      "pressed": ""
+    },
+    {
+      "text": "Drop here",
+      "aria": "",
+      "title": "Let Xiaoba rest",
+      "pressed": ""
+    },
+    {
+      "text": "Capture",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "DBDev Bypassdev-bypass@mylifeos.local",
+      "aria": "Dev Bypass account menu",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Search...⌘K",
+      "aria": "Search...",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Open menu",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Notifications (coming soon)",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Switch to dark mode",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "00:13",
+      "aria": "Clock, timer and stopwatch. Now 00:13",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Collapse directory panel",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "All items0",
+      "aria": "",
+      "title": "",
+      "pressed": "true"
+    },
+    {
+      "text": "📄Article",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "🔗Link",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "🎬Video",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "💬Social Post",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "🎙️Audio",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📑Document",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "🔬Research Paper",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📚Book",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "💻Code",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "🧩Repository",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📊Dataset",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📽️Presentation",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📷Photo",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "❞Quote",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📝Note",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "📁File",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "All knowledge",
+      "aria": "",
+      "title": "",
+      "pressed": "true"
+    },
+    {
+      "text": "Ask My Knowledge BaseOpen the cited answer panel",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "CaptureAdd KnowledgeDrop files here ✨ PDFs, notes, images, audio, videoor click to add",
+      "aria": "Add knowledge. Drop files, links, or text here.",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Reason over memoryAsk My Knowledge BaseChat with saved knowledge, history, projects, and citations.0 items0 items",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Knowledge retrievalRetrieve My KnowledgeFind matching knowledge before asking the answer panel.Ready",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Reset all",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Close",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Node types",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Relations",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Display",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Advanced",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "Gallery",
+      "aria": "Switch to Gallery view",
+      "title": "Switch to Gallery view",
+      "pressed": "false"
+    },
+    {
+      "text": "Board",
+      "aria": "Switch to Board view",
+      "title": "Switch to Board view",
+      "pressed": "false"
+    },
+    {
+      "text": "Table",
+      "aria": "Switch to Table view",
+      "title": "Switch to Table view",
+      "pressed": "false"
+    },
+    {
+      "text": "Constellation",
+      "aria": "Switch to Constellation view",
+      "title": "Switch to Constellation view",
+      "pressed": "true"
+    },
+    {
+      "text": "Global",
+      "aria": "",
+      "title": "",
+      "pressed": "true"
+    },
+    {
+      "text": "Local",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "3D SphereBeta",
+      "aria": "",
+      "title": "3D Sphere",
+      "pressed": "false"
+    },
+    {
+      "text": "Labels",
+      "aria": "Labels",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "Hide orphans",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "",
+      "aria": "Refresh knowledge data",
+      "title": "Refresh data — reload graph from the database",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Reset layout",
+      "title": "Reset layout — clear manual node positions",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Fullscreen canvas",
+      "title": "Fullscreen canvas",
+      "pressed": "false"
+    },
+    {
+      "text": "Filters",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "Legend",
+      "aria": "",
+      "title": "",
+      "pressed": "false"
+    },
+    {
+      "text": "Details",
+      "aria": "",
+      "title": "Show details panel",
+      "pressed": "false"
+    },
+    {
+      "text": "Add Knowledge",
+      "aria": "",
+      "title": "",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Quick Capture",
+      "title": "Quick Capture (⌘⇧I)",
+      "pressed": ""
+    },
+    {
+      "text": "",
+      "aria": "Xiaoba, your OS Buddy",
+      "title": "",
+      "pressed": ""
+    }
+  ],
+  "fullscreenButton": {
+    "text": "",
+    "aria": "Fullscreen canvas",
+    "title": "Fullscreen canvas",
+    "pressed": "false"
+  },
+  "afterFullscreen": {
+    "fullscreenElementMatchesShell": true,
+    "fullscreenData": "true",
+    "shell": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1000
+    },
+    "stage": {
+      "x": 0,
+      "y": 89,
+      "width": 1120,
+      "height": 911
+    },
+    "panel": {
+      "x": 1120,
+      "y": 0,
+      "width": 320,
+      "height": 1000
+    },
+    "backdrop": {
+      "x": 0,
+      "y": 89,
+      "width": 1120,
+      "height": 911
+    }
+  },
+  "errors": []
+}

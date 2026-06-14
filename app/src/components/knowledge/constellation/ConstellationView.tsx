@@ -215,6 +215,7 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
   const canvasRef = useRef<ConstellationCanvasHandle | null>(null);
   const sphereRef = useRef<ConstellationSphere3DHandle | null>(null);
   const graphFullscreenRef = useRef<HTMLDivElement | null>(null);
+  const fullscreenOpenedInspectorRef = useRef(false);
   const [graphFullscreenActive, setGraphFullscreenActive] = useState(false);
   const [graphFullscreenSupported, setGraphFullscreenSupported] =
     useState(false);
@@ -656,6 +657,30 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
     }
   }, []);
 
+  useEffect(() => {
+    if (graphFullscreenActive) {
+      if (!inspectorOpen) {
+        fullscreenOpenedInspectorRef.current = true;
+        setInspectorOpen(true);
+      }
+      return;
+    }
+
+    if (
+      fullscreenOpenedInspectorRef.current &&
+      inspectorOpen &&
+      selectedNodeId === null
+    ) {
+      fullscreenOpenedInspectorRef.current = false;
+      setInspectorOpen(false);
+    }
+  }, [
+    graphFullscreenActive,
+    inspectorOpen,
+    selectedNodeId,
+    setInspectorOpen,
+  ]);
+
   // Auto-focus first match when search has matches — without filtering
   // the rest away, so the user keeps their bearing.
   const matchedIds = filtered.matchedNodeIds;
@@ -677,16 +702,16 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
   useEffect(() => {
     if (!graphFullscreenActive) return;
     let cancelled = false;
-    const id = requestAnimationFrame(() => {
+    const timer = window.setTimeout(() => {
       requestAnimationFrame(() => {
         if (cancelled) return;
         if (isSphere) sphereRef.current?.fitGraph();
         else handleFitGraph();
       });
-    });
+    }, 540);
     return () => {
       cancelled = true;
-      cancelAnimationFrame(id);
+      window.clearTimeout(timer);
     };
   }, [graphFullscreenActive, isSphere, handleFitGraph]);
 
@@ -702,12 +727,19 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
   const showNarrowInspector =
     !isLgUp && !!selectedNode && hasFilteredResults && !isEmpty;
 
-  const { t: graphT } = useGraphSurface();
+  const { mode: graphSurfaceMode, t: graphT } = useGraphSurface();
   const graphShell = graphT.shell;
+  const showStageBackdrop =
+    isEmpty ||
+    filtersFilteredEverythingOut ||
+    (connectionsState === "loading" && connections.length === 0) ||
+    !hasFilteredResults;
 
   return (
     <div
-      className={`relative flex h-full min-h-[520px] w-full overflow-hidden ${graphShell.pageTextClass}`}
+      ref={graphFullscreenRef}
+      data-fullscreen-active={graphFullscreenActive ? "true" : "false"}
+      className={`constellation-view-shell relative flex h-full min-h-[clamp(640px,76dvh,900px)] w-full overflow-hidden ${graphShell.pageTextClass}`}
       style={{ background: graphShell.pageBg }}
     >
       {/* Left: Filters (desktop) */}
@@ -740,9 +772,7 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
               requestAnimationFrame(() => sphereRef.current?.focusNode(id));
             }
           }}
-          graphFullscreenSupported={
-            graphFullscreenSupported && hasFilteredResults && !isEmpty
-          }
+          graphFullscreenSupported={graphFullscreenSupported}
           graphFullscreenActive={graphFullscreenActive}
           onToggleGraphFullscreen={() => void toggleGraphFullscreen()}
         />
@@ -769,9 +799,16 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div
-            ref={graphFullscreenRef}
-            className="relative min-h-0 flex-1 overflow-hidden"
+            className="constellation-graph-stage relative min-h-0 flex-1 overflow-hidden"
           >
+            {showStageBackdrop && (
+              <div
+                aria-hidden
+                data-surface={graphSurfaceMode}
+                className="constellation-universe-backdrop pointer-events-none absolute inset-0"
+                style={{ background: graphShell.canvasBackdropCss }}
+              />
+            )}
             {graphFullscreenActive && (
               <div className="pointer-events-none absolute inset-0 z-[100] flex justify-end p-3">
                 <Button
@@ -914,7 +951,7 @@ export function ConstellationView({ userId }: ConstellationViewProps) {
           Closing the panel via its X also clears the selection so
           the graph fully reclaims the space. */}
       {inspectorOpen && (
-        <div className="hidden lg:block">
+        <div className="constellation-detail-panel-frame hidden h-full lg:block">
           <ConstellationDetailPanel
             selectedNode={selectedNode}
             incidentEdges={incidentEdges}

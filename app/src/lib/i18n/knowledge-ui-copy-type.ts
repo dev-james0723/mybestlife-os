@@ -493,6 +493,8 @@ export type KnowledgeUiCopy = {
     transcriptFailed: string;
     transcriptSection: string;
     transcriptEmpty: string;
+    transcriptTopicLabel: (index: number) => string;
+    transcriptUntitledTopic: string;
     askAboutVideo: string;
     videoChatTitle: string;
     videoChatIntro: string;

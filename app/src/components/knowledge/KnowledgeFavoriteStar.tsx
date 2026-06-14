@@ -138,9 +138,12 @@ export function KnowledgeFavoriteStar({
         "pointer-events-auto relative inline-flex shrink-0 items-center justify-center overflow-visible rounded-full border border-white/25 bg-black/45 text-white shadow-[0_8px_20px_rgba(0,0,0,0.22)] backdrop-blur-md transition-[background-color,border-color,box-shadow,color,transform] hover:scale-105 hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70 disabled:cursor-wait disabled:opacity-80",
         sizeClass,
         isActive &&
-          "border-amber-200/70 bg-amber-400/24 text-amber-200 shadow-[0_8px_24px_rgba(245,158,11,0.28)]",
+          "border-amber-950/35 bg-amber-300/95 text-amber-900 shadow-[0_8px_24px_rgba(0,0,0,0.28),0_0_0_1px_rgba(120,53,15,0.16)] hover:bg-amber-300",
         variant === "detail" &&
           "border-white/35 bg-black/50 shadow-[0_10px_28px_rgba(0,0,0,0.28)]",
+        variant === "detail" &&
+          isActive &&
+          "border-amber-950/35 bg-amber-300/95 text-amber-900 shadow-[0_10px_28px_rgba(0,0,0,0.26),0_0_0_1px_rgba(120,53,15,0.16)]",
         className,
       )}
       disabled={pending}
@@ -164,7 +167,10 @@ export function KnowledgeFavoriteStar({
       </AnimatePresence>
       <motion.span
         key={spinKey}
-        className="inline-flex"
+        className={cn(
+          "inline-flex",
+          isActive && "drop-shadow-[0_1px_0_rgba(255,255,255,0.45)]",
+        )}
         initial={shouldSpin ? { rotate: 0, scale: 1 } : false}
         animate={
           shouldSpin

@@ -50,8 +50,9 @@ export const KNOWLEDGE_CARDS_PER_PAGE_OPTIONS = [
   50,
   60,
   100,
+  500,
 ] as const;
-export const DEFAULT_KNOWLEDGE_CARDS_PER_PAGE = 20;
+export const DEFAULT_KNOWLEDGE_CARDS_PER_PAGE = 500;
 export const MIN_KNOWLEDGE_CARDS_PER_PAGE = 1;
 export const MAX_KNOWLEDGE_CARDS_PER_PAGE = 500;
 

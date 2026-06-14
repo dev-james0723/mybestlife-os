@@ -51,6 +51,14 @@ export type OSBuddyQuickSnapPayload = {
   pastedAt: number;
 };
 
+export type OSBuddyQuickSnapPayloadParts = {
+  files?: File[];
+  plainText?: string | null;
+  html?: string | null;
+  uriList?: string | null;
+  now?: number;
+};
+
 export type OSBuddyQuickSnapAckContext = {
   destination: OSBuddyQuickSnapDestination;
   primaryKind: OSBuddyQuickSnapPrimaryKind;
@@ -191,13 +199,9 @@ function filesFromClipboardData(data: DataTransfer) {
   return files;
 }
 
-export function createOSBuddyQuickSnapPayloadFromParts(input: {
-  files?: File[];
-  plainText?: string | null;
-  html?: string | null;
-  uriList?: string | null;
-  now?: number;
-}): OSBuddyQuickSnapPayload | null {
+export function createOSBuddyQuickSnapPayloadFromParts(
+  input: OSBuddyQuickSnapPayloadParts,
+): OSBuddyQuickSnapPayload | null {
   const entries: OSBuddyQuickSnapEntry[] = [];
   const plainText = cleanClipboardText(input.plainText).slice(0, MAX_TEXT_CHARS);
   const html = cleanClipboardText(input.html).slice(0, MAX_TEXT_CHARS);
@@ -250,13 +254,33 @@ export function createOSBuddyQuickSnapPayloadFromClipboardData(
   data: DataTransfer,
   now?: number,
 ) {
-  return createOSBuddyQuickSnapPayloadFromParts({
+  return createOSBuddyQuickSnapPayloadFromParts(
+    readOSBuddyQuickSnapPayloadPartsFromClipboardData(data, now),
+  );
+}
+
+export function readOSBuddyQuickSnapPayloadPartsFromClipboardData(
+  data: DataTransfer,
+  now?: number,
+): OSBuddyQuickSnapPayloadParts {
+  return {
     files: filesFromClipboardData(data),
     plainText: data.getData("text/plain"),
     html: data.getData("text/html"),
     uriList: data.getData("text/uri-list"),
     now,
-  });
+  };
+}
+
+export function hasOSBuddyQuickSnapPayloadPartContent(
+  input: OSBuddyQuickSnapPayloadParts,
+) {
+  return Boolean(
+    (input.files?.length ?? 0) > 0 ||
+      cleanClipboardText(input.plainText) ||
+      cleanClipboardText(input.html) ||
+      cleanClipboardText(input.uriList),
+  );
 }
 
 function clipboardFileName(mime: string | null, index: number) {
