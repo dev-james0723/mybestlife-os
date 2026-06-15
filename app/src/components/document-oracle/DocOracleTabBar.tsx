@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   BookOpen,
   FileText,
@@ -15,6 +16,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const TAB_EASE = [0.22, 1, 0.36, 1] as const;
 
 const PRIMARY_TABS = [
   { id: "overview", label: "Overview", Icon: BookOpen },
@@ -40,6 +43,7 @@ function DocOracleTabButton({
   Icon,
   active,
   compact = false,
+  reduceMotion,
   onSelect,
 }: {
   id: DocOracleTabId;
@@ -47,6 +51,7 @@ function DocOracleTabButton({
   Icon: LucideIcon;
   active: boolean;
   compact?: boolean;
+  reduceMotion: boolean;
   onSelect: (value: DocOracleTabId) => void;
 }) {
   return (
@@ -60,8 +65,8 @@ function DocOracleTabButton({
       id={`doc-oracle-tab-${id}`}
       onClick={() => onSelect(id)}
       className={cn(
-        "group relative isolate h-11 shrink-0 overflow-hidden rounded-xl",
-        compact ? "min-w-[7.25rem]" : "min-w-[6.5rem] flex-1 sm:min-w-[7rem]",
+        "group relative isolate h-11 min-w-0 overflow-hidden rounded-xl",
+        compact ? "w-full" : "w-full sm:flex-1",
         "inline-flex items-center justify-center gap-2 px-3",
         "touch-manipulation select-none text-[12px] font-semibold leading-tight tracking-tight",
         "border backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]",
@@ -72,7 +77,7 @@ function DocOracleTabButton({
         "before:bg-gradient-to-br before:from-white/12 before:via-transparent before:to-transparent",
         active
           ? [
-              "z-[1] border-primary/45 bg-primary text-primary-foreground",
+              "z-[1] border-primary/45 text-primary-foreground",
               "shadow-[0_12px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.25)]",
               "before:from-white/30 before:opacity-90",
             ]
@@ -84,6 +89,14 @@ function DocOracleTabButton({
             ],
       )}
     >
+      {active ? (
+        <motion.span
+          layoutId={compact ? "doc-oracle-tool-tab-pill" : "doc-oracle-primary-tab-pill"}
+          className="absolute inset-0 rounded-xl bg-primary"
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: TAB_EASE }}
+          aria-hidden
+        />
+      ) : null}
       <Icon
         className={cn(
           "relative z-[1] size-[17px] shrink-0",
@@ -91,7 +104,7 @@ function DocOracleTabButton({
         )}
         aria-hidden
       />
-      <span className="relative z-[1] whitespace-nowrap text-center leading-tight">{label}</span>
+      <span className="relative z-[1] min-w-0 truncate text-center leading-tight">{label}</span>
     </button>
   );
 }
@@ -104,16 +117,35 @@ export function DocOracleTabBar({
   onValueChange: (value: string) => void;
 }) {
   const [toolsOpen, setToolsOpen] = useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
+  const rootRef = useRef<HTMLDivElement>(null);
   const activeTool = TOOL_TABS.some((tab) => tab.id === value);
-  const showTools = toolsOpen || activeTool;
 
   const handleSelect = (next: DocOracleTabId) => {
     onValueChange(next);
-    if (TOOL_TABS.some((tab) => tab.id === next)) setToolsOpen(false);
+    setToolsOpen(false);
   };
 
+  useEffect(() => {
+    if (!toolsOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const root = rootRef.current;
+      if (!root || root.contains(event.target as Node)) return;
+      setToolsOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setToolsOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [toolsOpen]);
+
   return (
-    <div className="w-full min-w-0 shrink-0 space-y-2 overflow-visible">
+    <div ref={rootRef} className="relative z-30 w-full min-w-0 shrink-0 overflow-visible">
       <div
         className={cn(
           "-mx-1 rounded-2xl border p-1.5 sm:mx-0 sm:rounded-[20px] sm:p-2",
@@ -125,7 +157,7 @@ export function DocOracleTabBar({
         <div
           role="tablist"
           aria-label="Doc Oracle primary navigation"
-          className="flex min-w-0 gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="grid min-w-0 grid-cols-3 gap-1.5 sm:flex"
         >
           {PRIMARY_TABS.map((t) => {
             const active = value === t.id;
@@ -137,16 +169,19 @@ export function DocOracleTabBar({
                 label={label}
                 Icon={Icon}
                 active={active}
+                reduceMotion={reduceMotion}
                 onSelect={handleSelect}
               />
             );
           })}
           <button
             type="button"
-            aria-expanded={showTools}
+            aria-expanded={toolsOpen}
+            aria-haspopup="menu"
+            aria-controls="doc-oracle-tools-menu"
             onClick={() => setToolsOpen((open) => !open)}
             className={cn(
-              "inline-flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border px-3 text-[12px] font-semibold transition",
+              "inline-flex h-11 min-w-0 items-center justify-center rounded-xl border px-3 text-[12px] font-semibold transition",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               activeTool
                 ? "border-primary/45 bg-primary text-primary-foreground"
@@ -160,25 +195,36 @@ export function DocOracleTabBar({
         </div>
       </div>
 
-      {showTools ? (
-        <div
-          role="tablist"
-          aria-label="Doc Oracle tools"
-          className="flex gap-1.5 overflow-x-auto rounded-2xl border border-border bg-card/35 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {TOOL_TABS.map((t) => (
-            <DocOracleTabButton
-              key={t.id}
-              id={t.id}
-              label={t.label}
-              Icon={t.Icon}
-              active={value === t.id}
-              compact
-              onSelect={handleSelect}
-            />
-          ))}
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {toolsOpen ? (
+          <motion.div
+            id="doc-oracle-tools-menu"
+            role="tablist"
+            aria-label="Doc Oracle tools"
+            initial={reduceMotion ? false : { opacity: 0, y: -4, scale: 0.98 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.16, ease: TAB_EASE }}
+            className={cn(
+              "absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 grid min-w-0 grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card/95 p-1.5",
+              "shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-xl [-webkit-backdrop-filter:blur(18px)] sm:left-auto sm:w-[min(34rem,calc(100vw-2rem))] sm:grid-cols-3",
+            )}
+          >
+            {TOOL_TABS.map((t) => (
+              <DocOracleTabButton
+                key={t.id}
+                id={t.id}
+                label={t.label}
+                Icon={t.Icon}
+                active={value === t.id}
+                compact
+                reduceMotion={reduceMotion}
+                onSelect={handleSelect}
+              />
+            ))}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -51,6 +51,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ExternalLink,
+  FileText,
+  Globe2,
   Calendar,
   Sparkles,
   ImageIcon,
@@ -93,6 +95,17 @@ function sanitizeHtmlForPreview(source: string): string {
 
 /** Pull past this distance (px) on the top handle to dismiss the sheet. */
 const SHEET_DRAG_DISMISS_PX = 110;
+const DETAIL_CONTENT_RAIL_CLASS = "mx-auto w-full max-w-3xl";
+const DETAIL_LIQUID_EDGE_CLASS =
+  "border border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.045),inset_0_0_0_1px_rgba(255,255,255,0.012)]";
+const DETAIL_HEADER_PILL_CLASS =
+  `${DETAIL_LIQUID_EDGE_CLASS} h-9 max-w-[9rem] rounded-full bg-background/18 px-3 text-[12px] font-medium backdrop-blur-md dark:bg-white/[0.025] [&>svg]:size-3.5!`;
+const DETAIL_UTILITY_ACTION_CLASS =
+  `${DETAIL_LIQUID_EDGE_CLASS} h-8 min-h-8 min-w-0 gap-1.5 rounded-full bg-background/16 px-2.5 text-[11px] font-medium text-muted-foreground backdrop-blur-md hover:bg-white/[0.045] hover:text-foreground dark:bg-white/[0.025] dark:hover:bg-white/[0.045]`;
+const DETAIL_INFO_CARD_CLASS =
+  `${DETAIL_LIQUID_EDGE_CLASS} rounded-2xl bg-background/28 px-4 py-3.5 backdrop-blur-sm dark:bg-white/[0.018]`;
+const DETAIL_INFO_LABEL_CLASS =
+  "flex items-center gap-2 text-[11px] font-medium leading-none text-muted-foreground";
 
 type DeferredKnowledgeSection = "keyInsights" | "questionsAnswered";
 
@@ -420,6 +433,11 @@ export function KnowledgeDetailSheet() {
     item.sourceMetadata?.author ??
     item.sourceDomain ??
     null;
+  const sourceLabel = item.sourceDomain ?? sourceByline;
+  const openSourceLabel =
+    ui.openKnowledgeSource === "Open Knowledge Source"
+      ? "Open Source"
+      : ui.openKnowledgeSource;
 
   return (
     <>
@@ -452,13 +470,13 @@ export function KnowledgeDetailSheet() {
               )}
             >
               <div className="knowledge-detail-glass-content flex min-h-0 flex-1 flex-col">
-          {/* Drag handle + close button */}
-          <div className="relative flex shrink-0 justify-center">
+          {/* Drag handle */}
+          <div className="flex shrink-0 justify-center">
             <div
               role="button"
               tabIndex={0}
               aria-label={ui.dragHandleClose}
-              className="flex w-full cursor-grab touch-none flex-col items-center justify-start gap-2 py-3 pb-2 active:cursor-grabbing"
+              className="flex w-full cursor-grab touch-none flex-col items-center justify-start gap-2 py-3 pb-1.5 active:cursor-grabbing"
               onPointerDown={onSheetHandlePointerDown}
               onPointerMove={onSheetHandlePointerMove}
               onPointerUp={onSheetHandlePointerUp}
@@ -472,25 +490,19 @@ export function KnowledgeDetailSheet() {
             >
               <div className="h-1 w-10 shrink-0 rounded-full bg-muted-foreground/25 pointer-events-none" />
             </div>
-            <SheetClose
-              render={
-                <Button
-                  variant="ghost"
-                  className="knowledge-detail-close-button absolute right-3 top-2 z-[80]"
-                  size="icon-sm"
-                />
-              }
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">{ui.close}</span>
-            </SheetClose>
           </div>
 
           {/* Scrollable body */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
-            {/* Header */}
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-4 pr-16">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            {/* Header actions */}
+            <div className="px-5 pt-1">
+              <div
+                className={cn(
+                  DETAIL_CONTENT_RAIL_CLASS,
+                  "flex min-w-0 items-center justify-between gap-3",
+                )}
+              >
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 {item.sourceType ? (
                   uploadBadge ? (
                     <SourceTypeBadge
@@ -503,18 +515,21 @@ export function KnowledgeDetailSheet() {
                         },
                       }}
                       size="sm"
+                      className={DETAIL_HEADER_PILL_CLASS}
                     />
                   ) : (
                     <SourceTypeBadge
                       sourceType={item.sourceType}
                       labelOverride={item.label}
                       size="sm"
+                      className={DETAIL_HEADER_PILL_CLASS}
                     />
                   )
                 ) : (
                   <Badge
                     className={cn(
-                      "text-[10px] shrink-0 capitalize",
+                      DETAIL_HEADER_PILL_CLASS,
+                      "shrink capitalize",
                       colors.bg,
                       colors.text,
                       colors.border,
@@ -526,87 +541,128 @@ export function KnowledgeDetailSheet() {
                   </Badge>
                 )}
                 {item.depthIndicator && (
-                  <Badge variant="outline" className="text-[10px] shrink-0">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      DETAIL_LIQUID_EDGE_CLASS,
+                      "h-9 max-w-[7rem] shrink rounded-full bg-background/18 px-3 text-[12px] font-medium text-muted-foreground/90 backdrop-blur-md dark:bg-white/[0.025]",
+                    )}
+                  >
                     {knowledgeUi.depthLabels[item.depthIndicator] ?? item.depthIndicator}
                   </Badge>
                 )}
-                {sourceByline && (
-                  <span className="min-w-0 truncate text-xs text-muted-foreground">
-                    {sourceByline}
-                  </span>
-                )}
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                {sourceIsYoutube && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      disabled={transcriptLoading || item.status === "processing"}
-                      onClick={() => void handleGenerateTranscript()}
-                    >
-                      {transcriptLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Captions className="h-3.5 w-3.5" />
-                      )}
-                      {transcriptLoading ? ui.generatingTranscript : ui.generateTranscript}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      onClick={() => setVideoChatOpen(true)}
-                    >
-                      <MessagesSquare className="h-3.5 w-3.5" />
-                      {ui.askAboutVideo}
-                    </Button>
-                  </>
-                )}
+              <div className="flex shrink-0 items-center gap-1.5">
                 {item.sourceUrl && (
                   <a
                     href={item.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-7 max-w-[13rem] items-center gap-1 rounded-md border border-input bg-background px-2 text-[11px] font-medium text-foreground transition-colors hover:bg-accent sm:max-w-none"
+                    className={cn(
+                      DETAIL_LIQUID_EDGE_CLASS,
+                      "inline-flex h-9 min-w-0 max-w-[9rem] items-center gap-1.5 rounded-full bg-background/18 px-3 text-[12px] font-medium text-foreground/85 backdrop-blur-md transition-colors hover:bg-white/[0.045] hover:text-foreground dark:bg-white/[0.025] max-[374px]:max-w-[7.25rem] sm:max-w-none",
+                    )}
                   >
                     <ExternalLink className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{ui.openKnowledgeSource}</span>
+                    <span className="truncate">{openSourceLabel}</span>
                   </a>
                 )}
+                <SheetClose
+                  render={
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        DETAIL_LIQUID_EDGE_CLASS,
+                        "z-[80] h-9 min-h-9 w-9 min-w-9 rounded-full bg-background/18 text-muted-foreground backdrop-blur-md hover:bg-white/[0.045] hover:text-foreground dark:bg-white/[0.025]",
+                      )}
+                      size="icon-sm"
+                    />
+                  }
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">{ui.close}</span>
+                </SheetClose>
               </div>
+              </div>
+
+              {sourceIsYoutube && (
+                <div
+                  className={cn(
+                    DETAIL_CONTENT_RAIL_CLASS,
+                    "mt-2 flex flex-wrap justify-end gap-1.5",
+                  )}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 min-h-8 min-w-0 gap-1.5 rounded-full px-2.5 text-[11px]"
+                    disabled={transcriptLoading || item.status === "processing"}
+                    onClick={() => void handleGenerateTranscript()}
+                  >
+                    {transcriptLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Captions className="h-3.5 w-3.5" />
+                    )}
+                    {transcriptLoading ? ui.generatingTranscript : ui.generateTranscript}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 min-h-8 min-w-0 gap-1.5 rounded-full px-2.5 text-[11px]"
+                    onClick={() => setVideoChatOpen(true)}
+                  >
+                    <MessagesSquare className="h-3.5 w-3.5" />
+                    {ui.askAboutVideo}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {item.extractionStatus && item.extractionStatus !== "success" && (
-              <div className="mx-4 mt-2 rounded-md border border-amber-300 bg-amber-50/70 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-                {item.extractionStatus === "partial"
-                  ? ui.extractionPartialHint
-                  : ui.extractionFailedHint}
+              <div className="px-5">
+                <div
+                  className={cn(
+                    DETAIL_CONTENT_RAIL_CLASS,
+                    "mt-2 rounded-md border border-amber-300 bg-amber-50/70 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200",
+                  )}
+                >
+                  {item.extractionStatus === "partial"
+                    ? ui.extractionPartialHint
+                    : ui.extractionFailedHint}
+                </div>
               </div>
             )}
 
-            <div className="min-w-0 space-y-5 break-words px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,14px))] pt-2">
+            <div className="min-w-0 space-y-4 break-words px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,14px))] pt-4">
               {/* Title */}
-              {editingTitle ? (
-                <Input
-                  value={titleDraft}
-                  onChange={(e) => setTitleDraft(e.target.value)}
-                  onBlur={handleTitleBlur}
-                  onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
-                  autoFocus
-                  className="mx-auto max-w-3xl text-center text-xl font-semibold sm:text-2xl"
-                />
-              ) : (
-                <SheetTitle
-                  className="mx-auto max-w-3xl cursor-pointer px-2 text-center text-xl font-semibold leading-tight transition-colors hover:text-primary sm:text-2xl"
-                  onClick={() => setEditingTitle(true)}
-                >
-                  {item.title}
-                </SheetTitle>
-              )}
+              <div className={cn(DETAIL_CONTENT_RAIL_CLASS, "space-y-2.5 text-center")}>
+                {sourceLabel && (
+                  <p className="mx-auto flex max-w-full items-center justify-center gap-1.5 truncate text-[11px] font-medium leading-none text-muted-foreground/75">
+                    <Globe2 className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 truncate">{sourceLabel}</span>
+                  </p>
+                )}
+                {editingTitle ? (
+                  <Input
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onBlur={handleTitleBlur}
+                    onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
+                    autoFocus
+                    className="mx-auto max-w-[34rem] text-center text-[1.125rem] font-medium leading-snug sm:text-xl"
+                  />
+                ) : (
+                  <SheetTitle
+                    className="mx-auto max-w-[34rem] cursor-pointer px-1 text-center text-[1.125rem] font-medium leading-snug text-balance transition-colors hover:text-primary sm:text-xl"
+                    onClick={() => setEditingTitle(true)}
+                  >
+                    {item.title}
+                  </SheetTitle>
+                )}
+              </div>
 
             {/* Error state */}
             {item.status === "error" && item.errorDetails && (
@@ -650,8 +706,13 @@ export function KnowledgeDetailSheet() {
             )}
 
             {/* Thumbnail / embedded social preview + regenerate */}
-            <div className="space-y-2">
-              <div className="relative">
+            <div className={cn(DETAIL_CONTENT_RAIL_CLASS, "space-y-2.5")}>
+              <div
+                className={cn(
+                  DETAIL_LIQUID_EDGE_CLASS,
+                  "relative overflow-hidden rounded-2xl bg-muted/16 dark:bg-white/[0.014]",
+                )}
+              >
                 {sourceIsSocialEmbed ? (
                   <SocialEmbed
                     item={item}
@@ -659,7 +720,7 @@ export function KnowledgeDetailSheet() {
                     className="bg-muted"
                   />
                 ) : item.thumbnailUrl ? (
-                  <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
+                  <div className="relative aspect-video overflow-hidden bg-muted">
                     {canOpenKnowledgeLightbox(item) ? (
                       <button
                         type="button"
@@ -677,7 +738,7 @@ export function KnowledgeDetailSheet() {
                     />
                   </div>
                 ) : item.thumbnailStyle === "na" ? (
-                  <div className="relative aspect-video rounded-lg bg-muted px-5">
+                  <div className="relative aspect-video bg-muted px-5">
                     <div className="flex h-full items-center justify-center text-center">
                       <p className="line-clamp-4 text-lg font-semibold leading-snug text-foreground">
                         {item.title}
@@ -687,7 +748,7 @@ export function KnowledgeDetailSheet() {
                 ) : (
                   <div
                     className={cn(
-                      "flex aspect-video items-center justify-center rounded-lg text-4xl",
+                      "flex aspect-video items-center justify-center text-4xl",
                       colors.bg,
                       colors.darkBg,
                     )}
@@ -698,14 +759,14 @@ export function KnowledgeDetailSheet() {
                 <KnowledgeFavoriteStar
                   item={item}
                   variant="detail"
-                  className="absolute right-3 top-3 z-20"
+                  className="absolute right-3 top-3 z-20 h-9 w-9"
                 />
               </div>
               {sourceIsYoutube ? (
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs"
+                  size="xs"
+                  className={DETAIL_UTILITY_ACTION_CLASS}
                   disabled={regenerating}
                   onClick={handleRefreshYoutubeThumb}
                 >
@@ -715,8 +776,8 @@ export function KnowledgeDetailSheet() {
               ) : item.category === "social_media" ? (
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs"
+                  size="xs"
+                  className={DETAIL_UTILITY_ACTION_CLASS}
                   disabled={retrying || item.status === "processing"}
                   onClick={() => void handleRetry()}
                 >
@@ -732,8 +793,8 @@ export function KnowledgeDetailSheet() {
                     render={
                       <Button
                         variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
+                        size="xs"
+                        className={DETAIL_UTILITY_ACTION_CLASS}
                         disabled={regenerating}
                         type="button"
                       >
@@ -788,25 +849,26 @@ export function KnowledgeDetailSheet() {
             ) : null}
 
             {(item.aiTldr || item.aiSummary) && (
-              <div className="space-y-3">
+              <div className={cn(DETAIL_CONTENT_RAIL_CLASS, "space-y-2.5")}>
                 {item.aiTldr && (
-                  <section className="rounded-lg border border-border/60 bg-muted/35 px-4 py-3">
-                    <h4 className="text-xs font-medium text-muted-foreground">
+                  <section className={DETAIL_INFO_CARD_CLASS}>
+                    <h4 className={DETAIL_INFO_LABEL_CLASS}>
+                      <FileText className="h-3.5 w-3.5 text-primary/80" />
                       {ui.oneSentenceSummary}
                     </h4>
-                    <p className="mt-1.5 text-sm font-medium leading-snug">
+                    <p className="mt-2.5 text-[13px] leading-relaxed text-foreground/90">
                       {item.aiTldr}
                     </p>
                   </section>
                 )}
 
                 {item.aiSummary && (
-                  <section className="rounded-lg border border-border/60 bg-background px-4 py-3">
-                    <h4 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <Sparkles className="h-3 w-3 text-primary" />
+                  <section className={DETAIL_INFO_CARD_CLASS}>
+                    <h4 className={DETAIL_INFO_LABEL_CLASS}>
+                      <Sparkles className="h-3.5 w-3.5 text-primary/80" />
                       {ui.shortDescription}
                     </h4>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
                       {item.aiSummary}
                     </p>
                   </section>

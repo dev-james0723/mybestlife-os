@@ -11,6 +11,7 @@ import {
 } from "@/components/document-oracle/docOraclePageHelpers";
 import { DocOraclePageCard } from "@/components/document-oracle/DocOraclePageCard";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type PageFilterId = "all" | "visuals" | "cover" | "contents" | "tables" | "blank" | "visualHeavy";
 type PageSortId = "document" | "visualFirst" | "textHeavy";
@@ -127,7 +128,7 @@ export function DocOraclePagesPanel(props: {
           />
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap gap-2">
             {filterDefs.map((chip) => (
               <button
@@ -135,32 +136,39 @@ export function DocOraclePagesPanel(props: {
                 type="button"
                 onClick={() => setFilter(chip.id)}
                 className={cn(
-                  "shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-medium transition",
+                  "min-h-11 max-w-full rounded-full border px-3 py-1.5 text-[11.5px] font-medium transition sm:min-h-0",
                   filter === chip.id
                     ? "border-primary/45 bg-primary/10 text-primary"
                     : "border-border bg-background/45 text-muted-foreground hover:border-primary/25 hover:text-foreground",
                 )}
               >
-                {chip.label}
+                <span className="line-clamp-1">{chip.label}</span>
               </button>
             ))}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 lg:shrink-0">
             <label htmlFor="doc-oracle-pages-sort" className="text-[11px] text-muted-foreground">
               Sort
             </label>
-            <select
-              id="doc-oracle-pages-sort"
+            <Select
               value={sort}
-              onChange={(e) => setSort(e.target.value as PageSortId)}
-              className="rounded-xl border border-border bg-background/55 px-3 py-2 text-[12px] text-foreground"
+              onValueChange={(value) => value && setSort(value as PageSortId)}
+              itemToStringLabel={(value) => sortDefs.find((s) => s.id === value)?.label ?? String(value)}
             >
-              {sortDefs.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="doc-oracle-pages-sort"
+                className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-background/55 text-[12px] sm:w-48"
+              >
+                <SelectValue placeholder="Sort pages" />
+              </SelectTrigger>
+              <SelectContent align="end" className="max-w-[min(92vw,16rem)]">
+                {sortDefs.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

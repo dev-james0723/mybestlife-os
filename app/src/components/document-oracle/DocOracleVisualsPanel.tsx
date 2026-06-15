@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import type { DocOracleSectionRow, DocOracleVisualRow } from "@/components/document-oracle/DocOracleWorkspace";
 import { DocOracleVisualCard } from "@/components/document-oracle/DocOracleVisualCard";
 import { getRelatedSectionTitleForVisual } from "@/components/document-oracle/docOracleVisualLabels";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const VISUAL_TYPE_FILTERS = [
   { id: "all", label: "All types" },
@@ -35,7 +36,7 @@ function hasAny(t: string, words: string[]): boolean {
   return words.some((w) => t.includes(w));
 }
 
-/** Single primary bucket for filter chips (heuristic over MinerU + semantic fields). */
+/** Single primary bucket for filter chips. */
 function inferVisualFamily(v: DocOracleVisualRow): Exclude<VisualTypeId, "all"> {
   const t = typeBlob(v);
   if (hasAny(t, ["mixed", "composite", "collage", "montage", "layout pack"])) return "mixed";
@@ -118,56 +119,73 @@ export function DocOracleVisualsPanel(props: {
   }, [visuals, q, cat, pageFilter, sort]);
 
   if (visuals.length === 0) {
-    return <p className="text-[13px] text-muted-foreground">No visual assets were detected in this MinerU output.</p>;
+    return <p className="text-[13px] text-muted-foreground">No generated images are available for this document yet.</p>;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <div className="relative min-w-[200px] flex-1">
+    <div className="w-full min-w-0 max-w-full space-y-4">
+      <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_minmax(150px,180px)_minmax(140px,170px)_minmax(160px,190px)] lg:items-center">
+        <div className="relative min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search visuals…"
-            className="w-full rounded-xl border border-border bg-muted/60 py-2 pl-9 pr-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+            className="min-h-11 w-full min-w-0 rounded-xl border border-border bg-muted/60 py-2 pl-9 pr-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
-        <select
+        <Select
           value={cat}
-          onChange={(e) => setCat(e.target.value as VisualTypeId)}
-          className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground lg:min-w-[180px]"
+          onValueChange={(value) => value && setCat(value as VisualTypeId)}
+          itemToStringLabel={(value) => VISUAL_TYPE_FILTERS.find((f) => f.id === value)?.label ?? String(value)}
         >
-          {VISUAL_TYPE_FILTERS.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.label}
-            </option>
-          ))}
-        </select>
-        <select
+          <SelectTrigger className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-muted/60 text-[12px]">
+            <SelectValue placeholder="Visual type" />
+          </SelectTrigger>
+          <SelectContent align="start" className="max-w-[min(92vw,18rem)]">
+            {VISUAL_TYPE_FILTERS.map((f) => (
+              <SelectItem key={f.id} value={f.id}>
+                {f.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
           value={pageFilter}
-          onChange={(e) => setPageFilter(e.target.value)}
-          className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground lg:w-44"
+          onValueChange={(value) => value && setPageFilter(value)}
+          itemToStringLabel={(value) => (value === "all" ? "All pages" : `Page ${value}`)}
         >
-          <option value="all">All pages</option>
-          {pageOptions.map((p) => (
-            <option key={p} value={String(p)}>
-              Page {p}
-            </option>
-          ))}
-        </select>
-        <select
+          <SelectTrigger className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-muted/60 text-[12px]">
+            <SelectValue placeholder="Page" />
+          </SelectTrigger>
+          <SelectContent align="start" className="max-w-[min(92vw,16rem)]">
+            <SelectItem value="all">All pages</SelectItem>
+            {pageOptions.map((p) => (
+              <SelectItem key={p} value={String(p)}>
+                Page {p}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
           value={sort}
-          onChange={(e) => setSort(e.target.value as "doc" | "page" | "category")}
-          className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-[12px] text-foreground lg:w-48"
+          onValueChange={(value) => value && setSort(value as "doc" | "page" | "category")}
+          itemToStringLabel={(value) =>
+            value === "doc" ? "Document order" : value === "page" ? "Page number" : "Visual type"
+          }
         >
-          <option value="doc">Document order</option>
-          <option value="page">Page number</option>
-          <option value="category">Visual type</option>
-        </select>
+          <SelectTrigger className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-muted/60 text-[12px]">
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent align="start" className="max-w-[min(92vw,16rem)]">
+            <SelectItem value="doc">Document order</SelectItem>
+            <SelectItem value="page">Page number</SelectItem>
+            <SelectItem value="category">Visual type</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((v) => (
           <DocOracleVisualCard
             key={v.id}

@@ -141,7 +141,7 @@ function ChatBubble({
       className={cn(
         "relative isolate w-full min-w-0",
         user
-          ? "ml-auto max-w-[90%] md:max-w-[76%] lg:max-w-[76%]"
+          ? "ml-auto max-w-[calc(100%-2.25rem)] sm:max-w-[82%] md:max-w-[76%] lg:max-w-[76%]"
           : "mr-auto w-full max-w-full md:max-w-[96%] lg:max-w-[92%]",
         className,
       )}
@@ -340,7 +340,7 @@ function AssistantMeta(props: {
             {citations.slice(0, 10).map((c, j) => (
               <li
                 key={j}
-                className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-[11.5px] leading-relaxed text-muted-foreground"
+                className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-muted/30 px-3 py-2 text-[11.5px] leading-relaxed text-muted-foreground"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   {c.page != null ? (
@@ -417,7 +417,7 @@ function AssistantMeta(props: {
                   onClick={() => onOpenVisualById?.(v.id)}
                   disabled={!onOpenVisualById}
                   className={cn(
-                    "flex min-w-0 w-full gap-2 overflow-hidden rounded-xl border border-border bg-muted/30 p-2 text-left transition",
+                    "flex w-full min-w-0 gap-2 overflow-hidden rounded-xl border border-border bg-muted/30 p-2 text-left transition",
                     onOpenVisualById ? "hover:border-primary/30" : "opacity-80",
                   )}
                 >
@@ -619,23 +619,20 @@ export function DocOracleChatPanel({
           if (err === "image_generation_not_configured") {
             setImgErrByIdx((prev) => ({
               ...prev,
-              [msgIndex]: "Image explanation is not configured yet.",
+              [msgIndex]: "Preview image could not be generated.",
             }));
             return;
           }
           if (err === "image_generation_failed") {
-            const detail = typeof data.detail === "string" ? data.detail : "";
             setImgErrByIdx((prev) => ({
               ...prev,
-              [msgIndex]: detail
-                ? `Image explanation could not be generated (${detail.slice(0, 120)}).`
-                : "Image explanation could not be generated. Please check Gemini image model configuration.",
+              [msgIndex]: "Preview image could not be generated.",
             }));
             return;
           }
           setImgErrByIdx((prev) => ({
             ...prev,
-            [msgIndex]: "Image explanation could not be generated. Please check Gemini image model configuration.",
+            [msgIndex]: "Preview image could not be generated.",
           }));
           return;
         }
@@ -644,7 +641,7 @@ export function DocOracleChatPanel({
         if (!imageUrl) {
           setImgErrByIdx((prev) => ({
             ...prev,
-            [msgIndex]: "Image explanation could not be generated (missing image URL).",
+            [msgIndex]: "Preview image could not be generated.",
           }));
           return;
         }
@@ -734,8 +731,8 @@ export function DocOracleChatPanel({
         setInput("");
 
         void fetchSessions().then(setSessions);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "chat_failed");
+      } catch {
+        setError("Could not generate an answer. Please try again.");
         messagesRef.current = previous;
         setMessages(previous);
       } finally {
@@ -916,9 +913,9 @@ export function DocOracleChatPanel({
   );
 
   return (
-    <div ref={chatRootRef} className="flex w-full max-w-none flex-1 flex-col min-h-[72dvh] sm:min-h-[640px]">
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
-        <div className="shrink-0 rounded-2xl border border-border bg-card/55 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+    <div ref={chatRootRef} className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden sm:min-h-[640px]">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3">
+        <div className="min-w-0 shrink-0 rounded-2xl border border-border bg-card/55 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
           <div className="flex items-center justify-between gap-3">
             <p className="min-w-0 text-[12px] leading-relaxed text-muted-foreground">
               Grounded answers from this document only.
@@ -1037,8 +1034,8 @@ export function DocOracleChatPanel({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
-        <div className="flex w-full min-w-0 max-w-none flex-col gap-4 pb-32 sm:pb-24">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]">
+        <div className="flex w-full min-w-0 max-w-full flex-col gap-4 pb-28 sm:pb-24">
           {historyLoading ? (
             <p className="text-[12px] text-muted-foreground">Loading conversation…</p>
           ) : null}
@@ -1050,17 +1047,17 @@ export function DocOracleChatPanel({
           {messages.map((m, i) => {
             const key = m.id ? m.id : `${m.role}-${i}-${m.created_at ?? ""}`;
             return m.role === "user" ? (
-              <div key={key} className="flex w-full justify-end" data-doc-oracle-chat-message data-doc-oracle-chat-role="user">
+              <div key={key} className="flex w-full min-w-0 max-w-full justify-end" data-doc-oracle-chat-message data-doc-oracle-chat-role="user">
                 <ChatBubble role="user">
-                  <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                  <div className="min-w-0 max-w-full whitespace-pre-wrap break-words leading-relaxed">{m.content}</div>
                 </ChatBubble>
               </div>
             ) : (
-              <div key={key} className="flex w-full min-w-0 flex-col gap-1" data-doc-oracle-chat-message data-doc-oracle-chat-role="assistant">
+              <div key={key} className="flex w-full min-w-0 max-w-full flex-col gap-1" data-doc-oracle-chat-message data-doc-oracle-chat-role="assistant">
                 <div data-doc-oracle-chat-reveal>
                   <ChatBubble role="assistant">
                     <DocOracleMarkdown
-                      className="w-full max-w-none text-[15px] leading-7 sm:text-[15.5px] [&_blockquote]:max-w-none [&_li]:max-w-none [&_ol]:max-w-none [&_p]:max-w-none [&_ul]:max-w-none"
+                      className="w-full min-w-0 max-w-full overflow-hidden text-[15px] leading-7 sm:text-[15.5px] [&_blockquote]:max-w-full [&_code]:break-words [&_li]:max-w-full [&_ol]:max-w-full [&_p]:max-w-full [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_ul]:max-w-full"
                       source={m.content}
                     />
                   </ChatBubble>
@@ -1089,7 +1086,7 @@ export function DocOracleChatPanel({
                     ) : (
                       <>
                         <ImageIcon className="h-4 w-4" aria-hidden />
-                        Turn into image explanation
+                        Generate visual summary
                       </>
                     )}
                   </button>
@@ -1140,12 +1137,12 @@ export function DocOracleChatPanel({
                 {m.generated_image_url ? (
                   <div className="mt-2 w-full max-w-full space-y-2 rounded-xl border border-border bg-muted/30 p-3 md:max-w-[96%] lg:max-w-[92%]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Image explanation
+                      Generated image
                     </p>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={m.generated_image_url}
-                      alt="Generated explanation diagram"
+                      alt="Generated preview for this document"
                       className="max-h-[min(65dvh,560px)] w-full rounded-lg object-contain"
                     />
                   </div>
@@ -1169,7 +1166,7 @@ export function DocOracleChatPanel({
             rows={2}
             maxLength={12000}
             placeholder="Ask Doc Oracle…"
-            className="min-h-[72px] max-h-[180px] w-full min-w-0 flex-1 resize-y rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-primary/45"
+            className="min-h-[72px] max-h-[180px] w-full min-w-0 flex-1 resize-none rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-primary/45 sm:resize-y"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

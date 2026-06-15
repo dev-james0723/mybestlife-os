@@ -18,31 +18,43 @@ const orbitron = Orbitron({
   variable: "--font-orbitron",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  preload: false,
+  display: "optional",
 });
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
+  preload: false,
+  display: "optional",
 });
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
+  preload: false,
+  display: "optional",
 });
 
 const lora = Lora({
   variable: "--font-lora",
   subsets: ["latin"],
+  preload: false,
+  display: "optional",
 });
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
+  preload: false,
+  display: "optional",
 });
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
+  preload: false,
+  display: "optional",
 });
 
 const fontVars = [

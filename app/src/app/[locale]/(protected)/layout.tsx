@@ -3,9 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ProtectedScrollLayout } from "@/components/protected-scroll-layout";
 import { SyncThemeFromProfile } from "@/components/sync-theme-from-profile";
 import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
-import { IdeaCaptureSheet } from "@/components/idea-capture/IdeaCaptureSheet";
-import { OSBuddyDock } from "@/components/os-buddy/OSBuddyDock";
-import { OSBuddyShortcutController } from "@/components/os-buddy/OSBuddyShortcutController";
+import { ProtectedLazyFeatures } from "@/components/protected-lazy-features";
 import { FocusRealityBoundary } from "@/components/daily-planner/focus/focus-reality-boundary";
 
 export default function ProtectedLayout({
@@ -22,9 +20,7 @@ export default function ProtectedLayout({
         <SidebarInset>
           <ProtectedScrollLayout>{children}</ProtectedScrollLayout>
         </SidebarInset>
-        <IdeaCaptureSheet />
-        <OSBuddyShortcutController />
-        <OSBuddyDock />
+        <ProtectedLazyFeatures />
       </FocusRealityBoundary>
     </SidebarProvider>
   );

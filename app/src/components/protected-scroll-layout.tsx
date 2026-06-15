@@ -95,7 +95,7 @@ export function ProtectedScrollLayout({
           onClick={() => toggleSidebar()}
           className={cn(
             "fixed z-[45] size-14 shrink-0 rounded-full border-0 bg-background text-foreground shadow-lg ring-1 ring-black/5 dark:ring-white/10",
-            "bottom-[max(5rem,calc(env(safe-area-inset-bottom,0px)+3.5rem))] right-4",
+            "bottom-[max(5rem,calc(env(safe-area-inset-bottom,0px)+3.5rem))] right-24",
             NAV_TRANSITION,
             showFab
               ? "pointer-events-auto translate-y-0 scale-100 opacity-100"

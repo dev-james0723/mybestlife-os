@@ -5,6 +5,7 @@ import type { DocOracleVisualRow } from "@/components/document-oracle/DocOracleW
 import { displayVisualDescription, displayVisualTitle } from "@/components/document-oracle/docOracleVisualLabels";
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import { cn } from "@/lib/utils";
+import { cleanDisplayTags, getDisplayVisualCategory } from "@/components/document-oracle/docOracleDisplay";
 
 const primaryActionBtn =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition-[background,transform] duration-150 ease-out hover:bg-primary/90 active:translate-y-px";
@@ -13,7 +14,7 @@ const secondaryActionBtn =
   "inline-flex min-h-10 items-center justify-center rounded-xl border border-border bg-background/55 px-3 py-2 text-[12px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/8";
 
 function tagList(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 16) : [];
+  return cleanDisplayTags(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [], 8).tags;
 }
 
 export function DocOracleVisualPreviewModal(props: {
@@ -28,6 +29,7 @@ export function DocOracleVisualPreviewModal(props: {
 
   const src = knowledgeFilesApiHref(visual.image_path);
   const page = visual.source_page_number;
+  const category = getDisplayVisualCategory(visual.semantic_category || visual.type);
   const sourceHref =
     filePath && page != null && page > 0
       ? `${knowledgeFilesApiHref(filePath)}#page=${page}`
@@ -41,16 +43,16 @@ export function DocOracleVisualPreviewModal(props: {
       role="dialog"
       aria-modal
     >
-      <div className="max-h-[min(92dvh,900px)] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-card p-4 text-foreground shadow-2xl">
+      <div className="max-h-[min(92dvh,900px)] w-full max-w-4xl overflow-y-auto overflow-x-hidden rounded-2xl border border-border bg-card p-4 text-foreground shadow-2xl">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {visual.semantic_category || visual.type || "visual"}
+              {category}
               {page != null ? ` · page ${page}` : " · page unknown"}
             </p>
-            <p className="mt-1 text-base font-semibold text-foreground">{displayVisualTitle(visual)}</p>
+            <p className="mt-1 break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">{displayVisualTitle(visual)}</p>
             {relatedSectionTitle ? (
-              <p className="mt-1 text-[12px] text-primary">Related section: {relatedSectionTitle}</p>
+              <p className="mt-1 break-words text-[12px] text-primary [overflow-wrap:anywhere]">Related section: {relatedSectionTitle}</p>
             ) : null}
           </div>
           <button
@@ -62,30 +64,32 @@ export function DocOracleVisualPreviewModal(props: {
           </button>
         </div>
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" className="mt-3 max-h-[55vh] w-full rounded-xl object-contain" />
+        <div className="mt-3 flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/35">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="Generated preview for this document" className="max-h-[55vh] w-full object-contain" />
+        </div>
 
         {displayVisualDescription(visual) ? (
-          <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{displayVisualDescription(visual)}</p>
+          <p className="mt-3 break-words text-[13px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{displayVisualDescription(visual)}</p>
         ) : null}
 
         <div className="mt-4 space-y-2">
           {tagList(visual.extracted_labels).length ? (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Labels</p>
-              <p className="text-[12px] text-muted-foreground">{tagList(visual.extracted_labels).join(", ")}</p>
+              <p className="break-words text-[12px] text-muted-foreground [overflow-wrap:anywhere]">{tagList(visual.extracted_labels).join(", ")}</p>
             </div>
           ) : null}
           {tagList(visual.retrieval_tags).length ? (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tags</p>
-              <p className="text-[12px] text-muted-foreground">{tagList(visual.retrieval_tags).join(", ")}</p>
+              <p className="break-words text-[12px] text-muted-foreground [overflow-wrap:anywhere]">{tagList(visual.retrieval_tags).join(", ")}</p>
             </div>
           ) : null}
           {tagList(visual.related_terms).length ? (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Related terms</p>
-              <p className="text-[12px] text-muted-foreground">{tagList(visual.related_terms).join(", ")}</p>
+              <p className="break-words text-[12px] text-muted-foreground [overflow-wrap:anywhere]">{tagList(visual.related_terms).join(", ")}</p>
             </div>
           ) : null}
         </div>

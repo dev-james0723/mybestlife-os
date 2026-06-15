@@ -7,6 +7,7 @@ import { InfographicAspectRatioSelector } from "@/components/document-oracle/inf
 import type { InfographicFocusOptionCard } from "@/components/document-oracle/infographic/InfographicFocusSelector";
 import { InfographicFocusSelector } from "@/components/document-oracle/infographic/InfographicFocusSelector";
 import { InfographicStyleSelector } from "@/components/document-oracle/infographic/InfographicStyleSelector";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type FocusApiResponse = {
   document_type: string;
@@ -51,7 +52,7 @@ export function DocOracleInfographicPanel(props: {
       });
       const data = (await res.json()) as FocusApiResponse & { error?: string; detail?: string };
       if (!res.ok) {
-        setFocusErr(data.detail || data.error || `HTTP ${res.status}`);
+        setFocusErr("Could not load suggestions.");
         setFocusData(null);
         return;
       }
@@ -61,7 +62,7 @@ export function DocOracleInfographicPanel(props: {
         focus_options: data.focus_options ?? [],
       });
     } catch {
-      setFocusErr("Network error loading focus options.");
+      setFocusErr("Could not load suggestions.");
       setFocusData(null);
     } finally {
       setFocusLoading(false);
@@ -111,22 +112,22 @@ export function DocOracleInfographicPanel(props: {
         style?: InfographicStyle;
       };
       if (!res.ok) {
-        setGenErr(json.detail || json.error || `HTTP ${res.status}`);
+        setGenErr("Preview image could not be generated.");
         return;
       }
-      if (!json.image_url || !json.prompt_used || !json.model || !json.style) {
-        setGenErr("Unexpected response from server.");
+      if (!json.image_url || !json.style) {
+        setGenErr("Preview image could not be generated.");
         return;
       }
       setResult({
         image_url: json.image_url,
-        prompt_used: json.prompt_used,
-        model: json.model,
+        prompt_used: typeof json.prompt_used === "string" ? json.prompt_used : "",
+        model: typeof json.model === "string" ? json.model : "",
         aspect_ratio: json.aspect_ratio ?? aspect,
         style: json.style,
       });
     } catch {
-      setGenErr("Network error during generation.");
+      setGenErr("Preview image could not be generated.");
     } finally {
       setGenBusy(false);
     }
@@ -142,7 +143,7 @@ export function DocOracleInfographicPanel(props: {
       </header>
 
       {!props.enabled ? (
-        <p>Complete document extraction to unlock infographic generation.</p>
+        <p>Complete document analysis to unlock infographic generation.</p>
       ) : null}
 
       {focusErr ? (
@@ -168,16 +169,23 @@ export function DocOracleInfographicPanel(props: {
         <InfographicAspectRatioSelector value={aspect} onChange={setAspect} disabled={disabled || genBusy} />
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Language</p>
-          <select
+          <Select
             value={language}
             disabled={disabled || genBusy}
-            onChange={(e) => setLanguage(e.target.value as "auto" | "en" | "zh-Hant")}
-            className="w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-[12px] text-foreground"
+            onValueChange={(value) => value && setLanguage(value as "auto" | "en" | "zh-Hant")}
+            itemToStringLabel={(value) =>
+              value === "auto" ? "Auto" : value === "en" ? "English" : value === "zh-Hant" ? "繁體中文" : String(value)
+            }
           >
-            <option value="auto">Auto</option>
-            <option value="en">English</option>
-            <option value="zh-Hant">Traditional Chinese</option>
-          </select>
+            <SelectTrigger className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-muted/50 text-[12px]">
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent align="start" className="max-w-[min(92vw,16rem)]">
+              <SelectItem value="auto">Auto</SelectItem>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="zh-Hant">繁體中文</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

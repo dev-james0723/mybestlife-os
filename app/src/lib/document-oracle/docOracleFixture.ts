@@ -77,21 +77,20 @@ function buildFixtureItem(userId: string): KnowledgeItem {
     isFavorite: false,
     contentType: "file",
     filePath: fixtureAssetPath("source.pdf"),
-    aiTldr: "Local Doc Oracle fixture with completed analysis, pages, sections, visuals, glossary, and chat data.",
-    aiSummary:
-      "A synthetic but schema-faithful document analysis used to verify the Doc Oracle redesign without a live authenticated upload.",
+    aiTldr: "Local Doc Oracle fixture with completed analysis, pages, sections, generated images, glossary, and chat data.",
+    aiSummary: "A synthetic document analysis used to verify the Doc Oracle redesign without a live authenticated upload.",
     aiContentOverview:
-      "The fixture mirrors the normalized Doc Oracle tables produced by MinerU: a root analysis, page rows, section outline, glossary terms, visual assets, chunks, and generated panel data.",
-    aiTags: ["doc-oracle", "fixture", "qa", "redesign"],
-    manualTags: ["local-fixture"],
+      "The fixture includes a document summary, page previews, section outline, glossary terms, generated images, document passages, and generated panel data.",
+    aiTags: ["Document analysis", "QA", "Redesign"],
+    manualTags: ["Local fixture"],
     aiKeyInsights: [
       "The overview should render a completed analysis with dense but readable summary content.",
       "Tabs should have enough page, section, glossary, visual, chat, mind map, infographic, and audio data for screenshot QA.",
-      "No production Supabase rows or Storage objects are required.",
+      "No live user documents or private files are required.",
     ],
     aiKeyQuotes: [
       "Fixture data must never be described as real execution.",
-      "Every visible row follows the Doc Oracle table contracts.",
+      "Every visible panel has consistent test data.",
     ],
     aiQuestionsAnswered: [
       "Can the redesign render without a live document?",
@@ -138,10 +137,10 @@ function buildFixtureAnalysis(): DocOracleAnalysis {
     id: DOC_ORACLE_FIXTURE_ANALYSIS_ID,
     document_title: "Doc Oracle redesign QA fixture",
     summary:
-      "This local fixture represents a completed Doc Oracle analysis for a synthetic product-design document. It covers the redesign goals, content hierarchy, mobile navigation, visual evidence surfaces, grounded answer behavior, and validation checklist.\n\nThe fixture deliberately includes a mix of page types: cover, table of contents, narrative pages, a table-heavy architecture page, visual-heavy evidence pages, and a final QA checklist. It also includes glossary terms, section relationships, page thumbnails, visual assets, chat history, mind map nodes, infographic focus options, and audio-summary focus options.\n\nUse this document only for local visual QA. It is not a live authenticated upload, does not claim to prove production extraction quality, and should not be inserted into Supabase. Its purpose is to make the current Doc Oracle redesign easy to open, screenshot, and inspect even when the dev-bypass account has no knowledge documents.",
+      "This local fixture represents a completed Doc Oracle analysis for a synthetic product-design document. It covers the redesign goals, content hierarchy, mobile navigation, visual evidence surfaces, grounded answer behavior, and validation checklist.\n\nThe fixture deliberately includes a mix of page types: cover, table of contents, narrative pages, a table-heavy architecture page, visual-heavy evidence pages, and a final QA checklist. It also includes glossary terms, section relationships, page thumbnails, generated images, chat history, mind map nodes, infographic focus options, and audio-summary focus options.\n\nUse this document only for local visual QA. It is not a live authenticated upload, does not claim to prove production analysis quality, and should not be treated as a real customer document. Its purpose is to make the current Doc Oracle redesign easy to open, screenshot, and inspect even when the dev-bypass account has no knowledge documents.",
     total_pages: 8,
-    parser: "mineru",
-    parser_version: "fixture-qa-1",
+    parser: null,
+    parser_version: null,
     status: "completed",
     document_type: "product_design_spec",
     language: "en",
@@ -174,18 +173,18 @@ function buildFixtureSections(): DocOracleSectionRow[] {
     },
     {
       id: sectionIds.structure,
-      title: "Information architecture and tab contracts",
+      title: "Information architecture and tab coverage",
       level: 1,
       parent_id: null,
       page_start: 4,
       page_end: 4,
-      summary: "Maps each UI tab to the Supabase row families that feed it.",
-      keywords: ["information architecture", "tabs", "document_pages", "document_sections"],
+      summary: "Maps each UI tab to the content groups that feed it.",
+      keywords: ["information architecture", "tabs", "page previews", "sections"],
       representative_pages: [4],
     },
     {
       id: sectionIds.mobile,
-      title: "Mobile workspace interaction model",
+      title: "Mobile workspace interactions",
       level: 1,
       parent_id: null,
       page_start: 5,
@@ -202,7 +201,7 @@ function buildFixtureSections(): DocOracleSectionRow[] {
       page_start: 6,
       page_end: 7,
       summary: "Explains citations, page anchors, visual cards, and grounded chat answers.",
-      keywords: ["citations", "visual assets", "chunks", "grounding"],
+      keywords: ["citations", "generated images", "document passages", "grounding"],
       representative_pages: [6, 7],
     },
     {
@@ -242,10 +241,10 @@ function buildFixturePages(): DocOraclePageRow[] {
       page_number: 2,
       page_label: "Contents",
       page_type: "toc",
-      raw_text: "Contents: goals, reader problems, information architecture, mobile model, evidence, validation.",
+      raw_text: "Contents: goals, reader problems, information architecture, mobile interactions, evidence, validation.",
       markdown: fixtureMarkdownPage(
         "Contents",
-        "1. Redesign goals and document scope\n2. Reader problems and design priorities\n3. Information architecture and tab contracts\n4. Mobile workspace interaction model\n5. Grounded evidence and visual intelligence\n6. Local validation checklist",
+        "1. Redesign goals and document scope\n2. Reader problems and design priorities\n3. Information architecture and tab coverage\n4. Mobile workspace interactions\n5. Grounded evidence and visual intelligence\n6. Local validation checklist",
       ),
       page_summary: "Table of contents for the synthetic redesign document.",
       interpreted_page_meaning: "Provides outline data for structure navigation and section cards.",
@@ -263,7 +262,7 @@ function buildFixturePages(): DocOraclePageRow[] {
         "The previous Doc Oracle experience repeated the title, summary, stats, and navigation in too many places. Mobile users saw a large tab grid before they saw the document content.",
       markdown: fixtureMarkdownPage(
         "Reader problems and design priorities",
-        "- Reduce repeated identity and summary blocks.\n- Keep the document content visible before secondary tools.\n- Make mobile navigation compact and predictable.\n- Preserve every structured data surface so QA can inspect rows, not placeholders.",
+        "- Reduce repeated identity and summary blocks.\n- Keep the document content visible before secondary tools.\n- Make mobile navigation compact and predictable.\n- Preserve every structured data surface so QA can inspect real content, not placeholders.",
       ),
       page_summary: "Summarizes the problems the redesign should solve.",
       interpreted_page_meaning: "Useful for checking summary, key topics, and suggested questions.",
@@ -278,27 +277,27 @@ function buildFixturePages(): DocOraclePageRow[] {
       page_label: "Architecture",
       page_type: "table",
       raw_text:
-        "Overview uses document_analyses, document_pages, document_sections, document_glossary_terms, document_visual_assets, and document_chunks. Chat uses document_chunks and persisted sessions. Mind map uses document_mind_map_nodes and edges.",
+        "Overview uses the summary, page previews, sections, glossary, generated images, and document passages. Chat uses document passages and saved conversations. Mind map uses topics and relationships.",
       markdown: fixtureMarkdownPage(
-        "Information architecture and tab contracts",
-        "| Surface | Supabase-shaped rows | QA expectation |\n| --- | --- | --- |\n| Overview | analysis, pages, sections, glossary, visuals, chunks | Snapshot, summary, structure map |\n| Pages | document_pages | Search, filters, page detail modal |\n| Visuals | document_visual_assets | Cards, modal, related sections |\n| Chat | chunks, chat sessions, messages | Grounded answer with citations |\n| Mind Map | nodes, edges | Non-empty canvas with relationships |",
+        "Information architecture and tab coverage",
+        "| Surface | Content groups | QA expectation |\n| --- | --- | --- |\n| Overview | Summary, pages, sections, glossary, generated images, passages | Snapshot, summary, structure map |\n| Pages | Page text and previews | Search, filters, page detail modal |\n| Visuals | Generated image records | Cards, modal, related sections |\n| Chat | Document passages, saved conversations, messages | Grounded answer with citations |\n| Mind Map | Topics and relationships | Non-empty canvas with relationships |",
       ),
-      page_summary: "Maps Doc Oracle UI surfaces to the row families they depend on.",
-      interpreted_page_meaning: "This table validates that the fixture matches the live schema families.",
-      keywords: ["schema", "tabs", "contracts", "table"],
-      linked_terms: ["document_pages", "document_chunks", "document_visual_assets"],
+      page_summary: "Maps Doc Oracle UI surfaces to the content groups they depend on.",
+      interpreted_page_meaning: "This table validates that the fixture covers each product surface.",
+      keywords: ["layout", "tabs", "coverage", "table"],
+      linked_terms: ["Page previews", "Document passages", "Generated images"],
       linked_sections: [sectionIds.structure],
       has_visual_assets: true,
       suggested_questions: ["Which tables feed the Overview tab?", "How does chat differ from pages?"],
     }),
     pageRow({
       page_number: 5,
-      page_label: "Mobile Model",
+      page_label: "Mobile Workspace",
       page_type: "text",
       raw_text:
-        "The mobile model uses a compact segmented control, a single source of summary truth, and sticky chat composition. Secondary tools remain available without dominating the first viewport.",
+        "The mobile workspace uses a compact segmented control, a single source of summary truth, and sticky chat composition. Secondary tools remain available without dominating the first viewport.",
       markdown: fixtureMarkdownPage(
-        "Mobile workspace interaction model",
+        "Mobile workspace interactions",
         "The redesign keeps the primary document identity in the top shell, uses compact tab navigation, and avoids repeating summary blocks. Chat should feel reachable but not dominate the overview. Page details and visual previews should open without shifting the underlying layout.",
       ),
       page_summary: "Describes the mobile behavior to inspect in responsive screenshots.",
@@ -314,15 +313,15 @@ function buildFixturePages(): DocOraclePageRow[] {
       page_label: "Visual Evidence",
       page_type: "visual-heavy",
       raw_text:
-        "Visual cards should show semantic category, page, confidence, related section, title, and tags. Broken private storage paths must not block local QA.",
+        "Generated image cards should show category, page, related section, title, and tags. Broken private preview links must not block local QA.",
       markdown: fixtureMarkdownPage(
         "Grounded evidence and visual intelligence",
         "Visual evidence is part of the Doc Oracle reading experience. The fixture includes a journey diagram, a table matrix, a mobile wireframe, and a state map so the visual tab is never empty during QA.",
       ),
-      page_summary: "Explains why the fixture includes rendered images and visual assets.",
+      page_summary: "Explains why the fixture includes generated images and visual evidence.",
       interpreted_page_meaning: "Feeds visual cards, page thumbnails, related visual chips, and modal preview.",
-      keywords: ["visual assets", "evidence", "semantic category", "confidence"],
-      linked_terms: ["Visual asset", "Grounded citation"],
+      keywords: ["generated images", "evidence", "category", "preview"],
+      linked_terms: ["Generated image", "Grounded citation"],
       linked_sections: [sectionIds.evidence],
       has_visual_assets: true,
       suggested_questions: ["Which visuals are most important?", "How are visuals connected to sections?"],
@@ -332,15 +331,15 @@ function buildFixturePages(): DocOraclePageRow[] {
       page_label: "Grounded Answers",
       page_type: "text",
       raw_text:
-        "Doc Oracle answers must cite chunks and pages. If context is insufficient, it should say so clearly rather than inventing facts. Visuals can be attached when relevant.",
+        "Doc Oracle answers must cite passages and pages. If context is insufficient, it should say so clearly rather than inventing facts. Visuals can be attached when relevant.",
       markdown: fixtureMarkdownPage(
         "Grounded answer policy",
-        "- Answer only from retrieved document chunks.\n- Use page citations for factual claims.\n- Attach related pages and visuals when they help explain the answer.\n- Label anything outside the document as a general note.",
+        "- Answer only from relevant document passages.\n- Use page citations for factual claims.\n- Attach related pages and visuals when they help explain the answer.\n- Label anything outside the document as a general note.",
       ),
       page_summary: "Sets expectations for chat answers, citations, and related evidence.",
       interpreted_page_meaning: "Useful for testing canned fixture chat responses and citation rendering.",
-      keywords: ["chat", "citations", "chunks", "related visuals"],
-      linked_terms: ["document_chunks", "Grounded citation"],
+      keywords: ["chat", "citations", "document passages", "related visuals"],
+      linked_terms: ["Document passages", "Grounded citation"],
       linked_sections: [sectionIds.evidence],
       has_visual_assets: false,
       suggested_questions: ["What should Doc Oracle do when evidence is missing?", "How should citations appear?"],
@@ -371,7 +370,7 @@ function buildFixtureGlossary(): DocOracleGlossaryRow[] {
     {
       id: fixtureUuid(0xd401),
       term: "Fixture mode",
-      definition: "A dev-only flow that returns synthetic Doc Oracle rows without reading or writing live Supabase data.",
+      definition: "A dev-only flow that returns synthetic Doc Oracle content without reading or writing live user data.",
       category: "QA",
       pages: [1, 8],
       related_terms: ["Execution state", "Validation"],
@@ -379,31 +378,31 @@ function buildFixtureGlossary(): DocOracleGlossaryRow[] {
     {
       id: fixtureUuid(0xd402),
       term: "Grounded citation",
-      definition: "A citation tied to a document chunk, page number, section path, and short excerpt.",
+      definition: "A citation tied to a document passage, page number, section path, and short excerpt.",
       category: "Evidence",
       pages: [6, 7],
-      related_terms: ["document_chunks", "Related pages"],
+      related_terms: ["Document passages", "Related pages"],
     },
     {
       id: fixtureUuid(0xd403),
-      term: "document_pages",
-      definition: "The normalized page table used by page cards, source previews, search, filters, and page detail modals.",
-      category: "Schema",
+      term: "Page previews",
+      definition: "The page content used by page cards, source previews, search, filters, and page detail modals.",
+      category: "Content",
       pages: [4],
-      related_terms: ["document_analyses", "document_chunks"],
+      related_terms: ["Document summary", "Document passages"],
     },
     {
       id: fixtureUuid(0xd404),
-      term: "document_visual_assets",
-      definition: "The normalized visual asset table used by visual cards, preview modals, and related visual evidence.",
-      category: "Schema",
+      term: "Generated images",
+      definition: "The generated image content used by visual cards, preview modals, and related visual evidence.",
+      category: "Content",
       pages: [4, 6],
-      related_terms: ["Visual asset", "Semantic category"],
+      related_terms: ["Visual evidence", "Preview"],
     },
     {
       id: fixtureUuid(0xd405),
       term: "Compact navigation",
-      definition: "The redesigned tab model that keeps tools available without letting navigation dominate the viewport.",
+      definition: "The redesigned tab design that keeps tools available without letting navigation dominate the viewport.",
       category: "Interaction",
       pages: [3, 5],
       related_terms: ["Segmented navigation", "Mobile workspace"],
@@ -426,7 +425,7 @@ function buildFixtureVisuals(): DocOracleVisualRow[] {
       type: "diagram",
       semantic_category: "journey diagram",
       title: "Doc Oracle local QA journey",
-      description: "A flow from fixture route to workspace, tabs, API mocks, and screenshot evidence.",
+      description: "A flow from fixture route to workspace, tabs, local data, and screenshot evidence.",
       image_path: fixtureAssetPath("visual-journey.svg"),
       source_page_number: 1,
       extracted_labels: ["fixture route", "workspace", "screenshots"],
@@ -438,14 +437,14 @@ function buildFixtureVisuals(): DocOracleVisualRow[] {
     {
       id: visualIds.matrix,
       type: "table",
-      semantic_category: "schema matrix",
-      title: "Tab-to-table contract matrix",
-      description: "A matrix showing how Overview, Pages, Visuals, Chat, and Mind Map depend on specific row families.",
+      semantic_category: "content matrix",
+      title: "Tab content matrix",
+      description: "A matrix showing how Overview, Pages, Visuals, Chat, and Mind Map depend on specific content groups.",
       image_path: fixtureAssetPath("visual-matrix.svg"),
       source_page_number: 4,
-      extracted_labels: ["document_analyses", "document_pages", "document_chunks"],
-      retrieval_tags: ["schema", "tab contracts", "Supabase"],
-      related_terms: ["document_pages", "document_visual_assets"],
+      extracted_labels: ["analysis summary", "page previews", "document passages"],
+      retrieval_tags: ["content map", "tab coverage", "QA"],
+      related_terms: ["Page previews", "Generated images"],
       related_sections: [sectionIds.structure],
       confidence: 0.94,
     },
@@ -468,12 +467,12 @@ function buildFixtureVisuals(): DocOracleVisualRow[] {
       type: "flowchart",
       semantic_category: "state map",
       title: "Grounded-answer evidence state map",
-      description: "A flowchart of retrieval, citation, related pages, related visuals, and insufficient-evidence handling.",
+      description: "A flowchart of document search, citation, related pages, related visuals, and insufficient-evidence handling.",
       image_path: fixtureAssetPath("visual-states.svg"),
       source_page_number: 7,
-      extracted_labels: ["chunks", "citations", "related visuals"],
+      extracted_labels: ["passages", "citations", "related visuals"],
       retrieval_tags: ["chat", "evidence", "grounding"],
-      related_terms: ["Grounded citation", "document_chunks"],
+      related_terms: ["Grounded citation", "Document passages"],
       related_sections: [sectionIds.evidence],
       confidence: 0.95,
     },
@@ -488,14 +487,14 @@ function buildFixtureChunks(sections: DocOracleSectionRow[]) {
       page_number: 1,
       section_path: byTitle.get(sectionIds.root) ?? "Redesign goals and document scope",
       chunk_text:
-        "This fixture is a local-only Doc Oracle analysis. It exists to open the redesign without a live authenticated upload or Supabase Storage object.",
+        "This fixture is a local-only Doc Oracle analysis. It exists to open the redesign without a live authenticated upload or private document file.",
     },
     {
       id: chunkIds[1]!,
       page_number: 4,
       section_path: byTitle.get(sectionIds.structure) ?? "Information architecture and tab contracts",
       chunk_text:
-        "Overview uses analysis, pages, sections, glossary, visuals, and chunks. Chat uses chunks and persisted sessions. Mind Map uses nodes and edges.",
+        "Overview uses the summary, pages, sections, glossary, generated images, and document passages. Chat uses passages and saved conversations. Mind Map uses topics and relationships.",
     },
     {
       id: chunkIds[2]!,
@@ -592,7 +591,7 @@ export function getDocOracleFixtureChatSessions() {
         created_at: FIXTURE_NOW,
         updated_at: FIXTURE_NOW,
         message_count: 2,
-        last_message: "The fixture uses local synthetic rows that mirror Doc Oracle tables.",
+        last_message: "The fixture uses local synthetic content for Doc Oracle QA.",
       },
     ],
   };
@@ -623,7 +622,7 @@ export function getDocOracleFixtureChatMessages() {
         id: fixtureUuid(0xd502),
         role: "assistant" as const,
         content:
-          "Verify the Overview, Pages, Sections, Glossary, Visuals, Chat, Mind Map, Infographic, and Audio Summary tabs. The fixture is local-only and mirrors Doc Oracle row contracts without reading a live authenticated document.",
+          "Verify the Overview, Pages, Sections, Glossary, Visuals, Chat, Mind Map, Infographic, and Audio Summary tabs. The fixture is local-only and uses synthetic content without reading a live authenticated document.",
         citations: [
           {
             chunk_id: chunkIds[3],
@@ -686,7 +685,7 @@ export function getDocOracleFixtureChatAnswer(question: string) {
       },
     ],
     sessionId: DOC_ORACLE_FIXTURE_CHAT_SESSION_ID,
-    model: "fixture-local",
+    model: "",
   };
 }
 
@@ -736,7 +735,7 @@ export function getDocOracleFixtureMindMap(): {
 
   const nodes = [
     mkNode(1, "Doc Oracle fixture", "document_root", 0, 0, [1], "Synthetic root node for local redesign QA."),
-    mkNode(2, "Schema-faithful rows", "concept", -260, -160, [4], "The fixture mirrors analysis, pages, sections, glossary, visuals, and chunks.", {
+    mkNode(2, "Content coverage", "concept", -260, -160, [4], "The fixture covers the summary, pages, sections, glossary, generated images, and passages.", {
       section_ids: [sectionIds.structure],
       source_chunk_ids: [chunkIds[1]!],
     }),
@@ -774,7 +773,7 @@ export function getDocOracleFixtureMindMap(): {
   return {
     nodes,
     edges: [
-      mkEdge(1, nodes[0]!, nodes[1]!, "mirrors schema"),
+      mkEdge(1, nodes[0]!, nodes[1]!, "covers content"),
       mkEdge(2, nodes[0]!, nodes[2]!, "tests mobile"),
       mkEdge(3, nodes[0]!, nodes[3]!, "renders visuals"),
       mkEdge(4, nodes[0]!, nodes[4]!, "validates local QA"),
@@ -794,18 +793,18 @@ export function getDocOracleFixtureInfographicFocusOptions() {
     summary: data.analysis.summary ?? "",
     focus_options: [
       {
-        id: "schema-contracts",
-        label: "Schema contracts",
-        description: "Show how Doc Oracle tabs map to Supabase-shaped rows.",
+        id: "content-coverage",
+        label: "Content coverage",
+        description: "Show how Doc Oracle tabs map to document content groups.",
         source_pages: [4],
-        source_sections: ["Information architecture and tab contracts"],
+        source_sections: ["Information architecture and tab coverage"],
       },
       {
         id: "mobile-qa",
         label: "Mobile QA",
         description: "Highlight compact navigation and first-viewport behavior.",
         source_pages: [5],
-        source_sections: ["Mobile workspace interaction model"],
+        source_sections: ["Mobile workspace interactions"],
       },
       {
         id: "evidence-surfaces",
@@ -821,7 +820,7 @@ export function getDocOracleFixtureInfographicFocusOptions() {
 export function getDocOracleFixtureAudioFocusOptions() {
   return {
     document_summary:
-      "A local Doc Oracle QA fixture with completed analysis rows, visual assets, chat evidence, mind map data, and validation checklist.",
+      "A local Doc Oracle QA fixture with completed analysis content, generated images, chat evidence, mind map data, and validation checklist.",
     focus_options: [
       {
         id: "qa-briefing",
@@ -831,11 +830,11 @@ export function getDocOracleFixtureAudioFocusOptions() {
         source_sections: ["Redesign goals and document scope", "Local validation checklist"],
       },
       {
-        id: "schema-walkthrough",
-        label: "Schema walkthrough",
-        description: "Explain the table families behind the Doc Oracle panels.",
+        id: "content-walkthrough",
+        label: "Content walkthrough",
+        description: "Explain the content groups behind the Doc Oracle panels.",
         source_pages: [4],
-        source_sections: ["Information architecture and tab contracts"],
+        source_sections: ["Information architecture and tab coverage"],
       },
     ],
   };
@@ -845,8 +844,8 @@ export function getDocOracleFixtureGeneratedInfographic(aspectRatio: string, sty
   return {
     image_url: `/api/document-brain/fixture-assets/generated-infographic.svg?aspect=${encodeURIComponent(aspectRatio)}`,
     storage_path: null,
-    prompt_used: "Fixture-only infographic prompt based on local Doc Oracle QA rows.",
-    model: "fixture-local-svg",
+    prompt_used: "Fixture-only infographic prompt based on local Doc Oracle QA content.",
+    model: "",
     aspect_ratio: aspectRatio,
     style,
   };
@@ -861,7 +860,7 @@ export function getDocOracleFixtureGeneratedAudio() {
     chapters: [
       {
         title: "Fixture purpose",
-        text: "The route renders synthetic Doc Oracle rows with the same data shape as the live tables.",
+        text: "The route renders synthetic Doc Oracle content with the same product shape as a real document.",
         source_pages: [1],
       },
       {
@@ -986,9 +985,9 @@ startxref
     return {
       body: svgResponse(`Page ${page}`, "Rendered page thumbnail", "#4f6f52", [
         "Doc Oracle redesign fixture",
-        page === 4 ? "Table contracts and schema rows" : "Synthetic page screenshot",
+        page === 4 ? "Tab coverage and content groups" : "Synthetic page screenshot",
         page === 5 ? "Mobile workspace navigation" : "Local visual verification",
-        page === 8 ? "Validation checklist" : "No Supabase Storage required",
+        page === 8 ? "Validation checklist" : "No private file required",
       ]),
       contentType: "image/svg+xml",
     };
@@ -998,13 +997,13 @@ startxref
       "Local QA Journey",
       "Route to screenshot evidence",
       "#6f5f9b",
-      ["Fixture route", "Workspace props", "Client API mocks", "Visual proof"],
+      ["Fixture route", "Workspace layout", "Local data", "Visual proof"],
     ],
     "visual-matrix.svg": [
-      "Tab Contract Matrix",
-      "Supabase-shaped row families",
+      "Tab Content Matrix",
+      "Content groups",
       "#3f6f9b",
-      ["Overview: analysis + rows", "Pages: document_pages", "Chat: chunks + sessions", "Mind map: nodes + edges"],
+      ["Overview: summary + pages", "Pages: page previews", "Chat: passages + conversations", "Mind map: topics + links"],
     ],
     "visual-mobile.svg": [
       "Mobile Workspace",
@@ -1016,7 +1015,7 @@ startxref
       "Grounded Answer State Map",
       "Citations and related evidence",
       "#7a7f3f",
-      ["Retrieve chunks", "Cite page", "Attach visuals", "State uncertainty"],
+      ["Find passages", "Cite page", "Attach visuals", "State uncertainty"],
     ],
   };
   const visual = visualMap[normalized];

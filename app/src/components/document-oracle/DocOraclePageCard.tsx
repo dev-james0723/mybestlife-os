@@ -50,7 +50,7 @@ export function DocOraclePageCard(props: {
   return (
     <article
       className={cn(
-        "group flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-border bg-card/70 shadow-[0_12px_34px_rgba(0,0,0,0.12)] transition hover:border-primary/25 hover:shadow-[0_16px_42px_rgba(0,0,0,0.16)]",
+        "group flex min-h-[320px] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-2xl border border-border bg-card/70 shadow-[0_12px_34px_rgba(0,0,0,0.12)] transition hover:border-primary/25 hover:shadow-[0_16px_42px_rgba(0,0,0,0.16)]",
       )}
     >
       <button
@@ -64,27 +64,27 @@ export function DocOraclePageCard(props: {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumbSrc!}
-              alt=""
-              className="h-full w-full object-cover object-top"
+              alt={`Generated preview for page ${page.page_number}`}
+              className="h-full w-full object-contain object-top"
               onError={() => setFailedThumbKey(thumbKey)}
             />
           ) : (
             <div className="flex h-full w-full flex-col justify-between p-4 text-neutral-800">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">p.{page.page_number}</p>
-              <p className="line-clamp-5 text-[12px] leading-snug text-neutral-700">{excerptFallback(page)}</p>
+              <p className="line-clamp-5 break-words text-[12px] leading-snug text-neutral-700 [overflow-wrap:anywhere]">{excerptFallback(page)}</p>
             </div>
           )}
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 border-t border-border bg-background/45 px-3.5 py-3 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]">
-          <div className="flex items-center gap-2">
-            <span className="rounded-md border border-border bg-muted/45 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="shrink-0 rounded-md border border-border bg-muted/45 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
               p.{page.page_number}
             </span>
-            <span className="rounded-md border border-border bg-muted/35 px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground/90">
+            <span className="max-w-full truncate rounded-md border border-border bg-muted/35 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/90">
               {displayPageTypeLabel(badge)}
             </span>
-            <span className="ml-auto flex items-center gap-1">
+            <span className="ml-auto flex shrink-0 items-center gap-1">
               {page.has_visual_assets ? (
                 <span className="text-muted-foreground/80" title="Contains visuals">
                   <ImageIcon className="h-3.5 w-3.5" aria-hidden />
@@ -92,8 +92,8 @@ export function DocOraclePageCard(props: {
               ) : null}
             </span>
           </div>
-          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground">{title}</h3>
-          <p className="line-clamp-2 text-[11.5px] leading-relaxed text-muted-foreground">{description}</p>
+          <h3 className="line-clamp-2 break-words text-[13px] font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">{title}</h3>
+          <p className="line-clamp-2 break-words text-[11.5px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{description}</p>
           {tags.length ? (
             <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
               {tags.map((t) => (

@@ -197,6 +197,14 @@ function isConnectedContextSource(source: RetrievalResult): boolean {
   return source.sourceDomain !== "knowledge" && source.sourceDomain !== "doc_oracle";
 }
 
+function getScrollViewport(root: HTMLDivElement | null): HTMLElement | null {
+  return (
+    root?.querySelector<HTMLElement>(
+      '[data-radix-scroll-area-viewport], [data-slot="scroll-area-viewport"]',
+    ) ?? root
+  );
+}
+
 interface KnowledgeAIPanelProps {
   userId: string;
   layout?: "drawer" | "top";
@@ -292,7 +300,8 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   }, [aiPanelHandoffQuery, aiPanelQuery, isTypingHandoff, messages.length]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const viewport = getScrollViewport(scrollRef.current);
+    viewport?.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
   }, [messages, isThinking]);
 
   const clearConversation = useCallback(() => {
@@ -324,7 +333,8 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
       lastHandledHandoffRef.current = aiPanelHandoffId;
       clearConversation();
       setInput("");
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      const viewport = getScrollViewport(scrollRef.current);
+      viewport?.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
       inputRef.current?.focus({ preventScroll: true });
 
       const prefersReducedMotion =
@@ -416,6 +426,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
     [],
   );
   const showSendHint = sendHintActive && input.trim().length > 0 && !isThinking;
+  const hasConversation = messages.length > 0;
 
   const handleSend = useCallback(
     async (query?: string) => {
@@ -611,30 +622,30 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   );
 
   const messageList = (
-    <div className={cn("space-y-3", isTopLayout && "mx-auto max-w-4xl px-1 py-4")}>
+    <div className={cn("min-w-0 space-y-3", isTopLayout && "mx-auto w-full max-w-4xl px-0 py-4 sm:px-1")}>
       {messages.map((msg) => (
         <div
           key={msg.id}
           className={cn(
-            "max-w-[88%] break-words rounded-lg px-3 py-2 text-sm",
+            "min-w-0 break-words rounded-lg px-3 py-2 text-sm",
             isTopLayout &&
               "max-w-[min(860px,92%)] rounded-2xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
             msg.role === "user"
-              ? "ml-auto bg-primary text-primary-foreground"
-              : "bg-muted",
+              ? "ml-auto max-w-[88%] bg-primary text-primary-foreground"
+              : "max-w-[88%] bg-muted",
             isTopLayout &&
               msg.role === "user" &&
-              "max-w-[min(680px,82%)] border-cyan-200/30 bg-cyan-300 text-slate-950 shadow-[0_12px_32px_rgba(103,232,249,0.16)]",
+              "max-w-[calc(100%-2.25rem)] border-cyan-200/30 bg-cyan-300 text-slate-950 shadow-[0_12px_32px_rgba(103,232,249,0.16)] sm:max-w-[min(680px,82%)]",
             isTopLayout &&
               msg.role === "assistant" &&
-              "bg-white/[0.055] text-foreground",
+              "w-full max-w-full overflow-hidden bg-white/[0.055] text-foreground sm:max-w-[min(860px,92%)]",
           )}
         >
           {msg.role === "user" ? (
-            <div className="whitespace-pre-wrap">{msg.content}</div>
+            <div className="min-w-0 max-w-full whitespace-pre-wrap break-words">{msg.content}</div>
           ) : (
-            <div className="space-y-3">
-              <div className="flex gap-2">
+            <div className="min-w-0 max-w-full space-y-3">
+              <div className="flex min-w-0 max-w-full gap-2">
                 {isTopLayout ? (
                   <div className="mt-0.5 h-5 w-5 shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/30">
                     <Image
@@ -648,21 +659,21 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
                 ) : (
                   <Sparkles className="mt-1 h-3 w-3 shrink-0 text-primary" />
                 )}
-                <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed [&_a]:underline [&_code]:rounded [&_code]:bg-background/70 [&_code]:px-1 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_ul]:list-disc">
+                <div className="min-w-0 max-w-full flex-1 overflow-hidden space-y-2 text-sm leading-relaxed [&_a]:underline [&_code]:break-words [&_code]:rounded [&_code]:bg-background/70 [&_code]:px-1 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_ul]:list-disc">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
 
               {msg.citations && msg.citations.length > 0 && (
-                <div className={cn("space-y-1.5", isTopLayout && "grid gap-1.5 space-y-0 md:grid-cols-2")}>
+                <div className={cn("space-y-1.5", isTopLayout && "grid min-w-0 max-w-full grid-cols-1 gap-1.5 space-y-0 sm:grid-cols-2")}>
                   {msg.citations.slice(0, 4).map((citation) => (
                     <div
                       key={`${msg.id}:${citation.resultId}:${citation.quote ?? ""}`}
-                      className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-[11px] leading-snug"
+                      className="min-w-0 max-w-full overflow-hidden rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-[11px] leading-snug"
                     >
-                      <div className="flex items-center gap-1.5 font-medium">
+                      <div className="flex min-w-0 items-center gap-1.5 font-medium">
                         <BookOpen className="h-3 w-3 text-primary" />
-                        <span>{citation.resultId}</span>
+                        <span className="shrink-0">{citation.resultId}</span>
                         <span className="truncate text-muted-foreground">
                           {citation.title}
                         </span>
@@ -678,9 +689,9 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
               )}
 
               {msg.sources && msg.sources.length > 0 && (
-                <div className={cn("space-y-1.5", isTopLayout && "grid gap-1.5 space-y-0 md:grid-cols-3")}>
+                <div className={cn("space-y-1.5", isTopLayout && "grid min-w-0 max-w-full grid-cols-1 gap-1.5 space-y-0 sm:grid-cols-2 md:grid-cols-3")}>
                   {msg.sources.some(isConnectedContextSource) ? (
-                    <div className={cn("rounded-md border border-primary/20 bg-primary/10 px-2.5 py-2 text-[11px] leading-snug", isTopLayout && "md:col-span-3")}>
+                    <div className={cn("min-w-0 max-w-full overflow-hidden rounded-md border border-primary/20 bg-primary/10 px-2.5 py-2 text-[11px] leading-snug", isTopLayout && "sm:col-span-2 md:col-span-3")}>
                       <div className="flex items-center gap-1.5 font-medium text-primary">
                         <Search className="h-3 w-3" />
                         {ui.connectedContextTitle}
@@ -693,12 +704,12 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
                   {msg.sources.slice(0, 3).map((source) => (
                     <div
                       key={`${msg.id}:${source.id}:${source.sourceId}`}
-                      className="rounded-md border border-border/60 bg-background/60 px-2.5 py-2"
+                      className="min-w-0 max-w-full overflow-hidden rounded-md border border-border/60 bg-background/60 px-2.5 py-2"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium">
-                            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium">
+                            <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">
                               {source.id}
                             </span>
                             <span className="truncate">{source.title}</span>
@@ -815,12 +826,22 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
   );
 
   const topQuickActions = (
-    <div className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+    <div
+      className={cn(
+        hasConversation
+          ? "mb-1 flex gap-2 overflow-x-auto pb-0 [-ms-overflow-style:none] [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+          : "mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4",
+      )}
+    >
       {workflowPrompts.map((workflow) => (
         <button
           key={workflow.label}
           type="button"
-          className="group relative min-h-[68px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.045] p-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[76px] sm:p-3 lg:min-h-[56px] lg:p-2.5 min-[1440px]:min-h-[76px] min-[1440px]:p-3"
+          className={cn(
+            "group relative min-h-[68px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.045] p-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[border-color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[76px] sm:p-3 lg:min-h-[56px] lg:p-2.5 min-[1440px]:min-h-[76px] min-[1440px]:p-3",
+            hasConversation &&
+              "max-[480px]:min-h-9 max-[480px]:min-w-[9rem] max-[480px]:shrink-0 max-[480px]:rounded-full max-[480px]:px-3 max-[480px]:py-1.5",
+          )}
           onClick={() => seedWorkflowPrompt(workflow.prompt)}
           disabled={isThinking}
         >
@@ -829,7 +850,12 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
               <div className="text-xs font-semibold leading-5 text-foreground sm:text-sm">
                 {workflow.label}
               </div>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground sm:mt-1 sm:text-xs sm:leading-5 lg:hidden min-[1440px]:block">
+              <p
+                className={cn(
+                  "mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground sm:mt-1 sm:text-xs sm:leading-5 lg:hidden min-[1440px]:block",
+                  hasConversation && "max-[480px]:hidden",
+                )}
+              >
                 {workflow.description}
               </p>
             </div>
@@ -1057,25 +1083,36 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             </div>
           ) : null}
 
-          <ScrollArea className="min-h-[440px] flex-1 px-4 py-3 sm:min-h-0 sm:px-5" ref={scrollRef}>
+          <ScrollArea className="min-h-0 flex-1 px-3 py-3 sm:px-5" ref={scrollRef}>
             {messages.length === 0 ? topEmptyState : messageList}
           </ScrollArea>
 
-          <div className="shrink-0 border-t border-white/10 bg-background/45 p-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-xl max-[480px]:pb-40 sm:p-4 lg:p-3">
+          <div
+            className={cn(
+              "shrink-0 border-t border-white/10 bg-background/45 p-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-xl max-[480px]:pr-[calc(env(safe-area-inset-right,0px)+4.75rem)] max-[480px]:pb-[calc(env(safe-area-inset-bottom,0px)+0.875rem)] sm:p-4 lg:p-3",
+              hasConversation && "max-[480px]:pt-2",
+            )}
+          >
             {topQuickActions}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 void handleSend();
               }}
-              className="mx-auto flex max-w-4xl gap-2 rounded-2xl border border-white/10 bg-black/20 p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.08)]"
+              className={cn(
+                "mx-auto flex max-w-4xl gap-2 rounded-2xl border border-white/10 bg-black/20 p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.08)]",
+                hasConversation && "max-[480px]:p-1",
+              )}
             >
               <Input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={ui.inputPlaceholder}
-                className="h-10 flex-1 border-transparent bg-transparent text-sm shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-cyan-300/35"
+                className={cn(
+                  "h-10 flex-1 border-transparent bg-transparent text-sm shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-cyan-300/35",
+                  hasConversation && "max-[480px]:h-9",
+                )}
                 disabled={isThinking}
                 aria-label={ui.inputAria}
               />
@@ -1087,6 +1124,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
                   aria-label={ui.sendAria}
                   className={cn(
                     "relative z-10 h-10 shrink-0 rounded-xl border-transparent bg-cyan-300 text-slate-950 shadow-[0_10px_24px_rgba(103,232,249,0.18)] hover:bg-cyan-200 disabled:opacity-50",
+                    hasConversation && "max-[480px]:h-9",
                     showSendHint && "knowledge-send-hint-button",
                   )}
                 >

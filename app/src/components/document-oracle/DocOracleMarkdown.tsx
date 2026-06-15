@@ -40,10 +40,10 @@ export function DocOracleMarkdown({ source, className }: Props) {
         "[&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/35 [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground",
         "[&_img]:my-3 [&_img]:max-h-[420px] [&_img]:w-auto [&_img]:max-w-full [&_img]:rounded-xl [&_img]:border [&_img]:border-border",
         "[&_hr]:my-5 [&_hr]:border-border",
-        "[&_table]:my-4 [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:rounded-xl [&_table]:border [&_table]:border-border",
+        "[&_table]:my-4 [&_table]:w-full [&_table]:max-w-full [&_table]:table-fixed [&_table]:overflow-hidden [&_table]:rounded-xl [&_table]:border [&_table]:border-border",
         "[&_thead]:bg-muted/60",
-        "[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[12px] [&_th]:font-semibold [&_th]:text-foreground",
-        "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-[12.5px] [&_td]:text-muted-foreground",
+        "[&_th]:min-w-0 [&_th]:break-words [&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[12px] [&_th]:font-semibold [&_th]:text-foreground [&_th]:[overflow-wrap:anywhere]",
+        "[&_td]:min-w-0 [&_td]:break-words [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-[12.5px] [&_td]:text-muted-foreground [&_td]:[overflow-wrap:anywhere]",
         "[&_p]:my-2",
         className,
       )}

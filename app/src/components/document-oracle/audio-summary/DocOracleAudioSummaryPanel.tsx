@@ -5,6 +5,7 @@ import { AudioFocusSelector, type AudioFocusOptionCard } from "@/components/docu
 import { AudioSummaryPlayer } from "@/components/document-oracle/audio-summary/AudioSummaryPlayer";
 import { AudioTranscript, type AudioChapter } from "@/components/document-oracle/audio-summary/AudioTranscript";
 import { VoiceSelector } from "@/components/document-oracle/audio-summary/VoiceSelector";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type FocusApi = {
   document_summary: string;
@@ -63,7 +64,7 @@ export function DocOracleAudioSummaryPanel(props: {
       });
       const data = (await res.json()) as FocusApi & { error?: string; detail?: string };
       if (!res.ok) {
-        setFocusErr(data.detail || data.error || `HTTP ${res.status}`);
+        setFocusErr("Could not load audio suggestions.");
         setFocus(null);
         return;
       }
@@ -72,7 +73,7 @@ export function DocOracleAudioSummaryPanel(props: {
         focus_options: data.focus_options ?? [],
       });
     } catch {
-      setFocusErr("Network error loading audio focus options.");
+      setFocusErr("Could not load audio suggestions.");
       setFocus(null);
     } finally {
       setFocusLoading(false);
@@ -137,11 +138,11 @@ export function DocOracleAudioSummaryPanel(props: {
         provider?: string;
       };
       if (!res.ok) {
-        setErr(json.detail || json.error || `HTTP ${res.status}`);
+        setErr("Audio summary could not be generated.");
         return;
       }
       if (!json.audio_url || typeof json.transcript !== "string") {
-        setErr("Unexpected server response.");
+        setErr("Audio summary could not be generated.");
         return;
       }
       const chaptersRaw = Array.isArray(json.chapters) ? json.chapters : [];
@@ -165,7 +166,7 @@ export function DocOracleAudioSummaryPanel(props: {
       });
       void loadHistory();
     } catch {
-      setErr("Network error while generating audio.");
+      setErr("Audio summary could not be generated.");
     } finally {
       setBusy(false);
     }
@@ -180,7 +181,7 @@ export function DocOracleAudioSummaryPanel(props: {
         <p className="text-[12px] leading-relaxed">Generate a hosted audio briefing from this PDF.</p>
       </header>
 
-      {!props.enabled ? <p>Complete extraction to unlock audio summaries.</p> : null}
+      {!props.enabled ? <p>Complete document analysis to unlock audio summaries.</p> : null}
 
       {focusErr ? (
         <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-50">
@@ -256,16 +257,23 @@ export function DocOracleAudioSummaryPanel(props: {
 
       <div className="space-y-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Language</p>
-        <select
+        <Select
           value={language}
           disabled={disabled || busy}
-          onChange={(e) => setLanguage(e.target.value as "auto" | "en" | "zh-Hant")}
-          className="w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-[12px] text-foreground"
+          onValueChange={(value) => value && setLanguage(value as "auto" | "en" | "zh-Hant")}
+          itemToStringLabel={(value) =>
+            value === "auto" ? "Auto" : value === "en" ? "English" : value === "zh-Hant" ? "繁體中文" : String(value)
+          }
         >
-          <option value="auto">Auto</option>
-          <option value="en">English</option>
-          <option value="zh-Hant">Traditional Chinese</option>
-        </select>
+          <SelectTrigger className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-muted/50 text-[12px]">
+            <SelectValue placeholder="Language" />
+          </SelectTrigger>
+          <SelectContent align="start" className="max-w-[min(92vw,16rem)]">
+            <SelectItem value="auto">Auto</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="zh-Hant">繁體中文</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
@@ -299,7 +307,7 @@ export function DocOracleAudioSummaryPanel(props: {
       {result ? (
         <div className="space-y-4">
           <p className="text-[11px] text-muted-foreground">
-            Provider: {result.provider} · approx. {Math.max(1, Math.round(result.duration_seconds))} s
+            Audio summary · approx. {Math.max(1, Math.round(result.duration_seconds))} s
           </p>
           <AudioSummaryPlayer src={result.audio_url} />
           <AudioTranscript

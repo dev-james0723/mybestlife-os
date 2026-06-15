@@ -17,6 +17,7 @@ import type {
 } from "@/components/document-oracle/docOracleWorkspaceTypes";
 import type { DocOraclePageRow, DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 import type { KnowledgeItem } from "@/types/knowledge";
+import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { SuggestedQuestionCategory } from "@/lib/document-brain/suggested-questions";
 import { Stagger } from "@/components/motion/Stagger";
 import { AnimatedCollapse } from "@/components/motion/AnimatedCollapse";
@@ -32,6 +33,7 @@ export function DocOracleOverviewPanel(props: {
   glossary: DocOracleGlossaryRow[];
   visuals: DocOracleVisualRow[];
   chunkCount: number;
+  appLocale: AppLocale;
   overviewBody: string;
   topicList: string[];
   suggestedQuestionCategories: SuggestedQuestionCategory[];
@@ -51,6 +53,7 @@ export function DocOracleOverviewPanel(props: {
     glossary,
     visuals,
     chunkCount,
+    appLocale,
     overviewBody,
     topicList,
     suggestedQuestionCategories,
@@ -85,16 +88,18 @@ export function DocOracleOverviewPanel(props: {
       <DocumentSnapshotCard
         readyAnalysis={readyAnalysis}
         item={item}
+        pages={pages}
         pageCount={pageCount}
         sectionCount={sections.length}
         chunkCount={chunkCount}
         glossaryCount={glossary.length}
         visualCount={visuals.length}
+        appLocale={appLocale}
       />
 
       <section className="rounded-2xl border border-border bg-card/80 p-4 shadow-[0_12px_34px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] dark:bg-card/70 dark:shadow-[0_14px_42px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-5">
         <h3 className="text-[13px] font-semibold tracking-tight text-foreground">Executive summary</h3>
-        <p className="mt-1 text-[12px] text-muted-foreground">Synthesized overview from document analysis.</p>
+        <p className="mt-1 text-[12px] text-muted-foreground">A concise overview from this document.</p>
         <div
           className={cn(
             "mt-3 overflow-y-auto rounded-xl border border-border bg-muted/35 p-4 transition-[max-height] duration-300 ease-out will-change-[max-height] sm:p-5",
@@ -129,7 +134,7 @@ export function DocOracleOverviewPanel(props: {
             className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/55 px-4 py-3 text-left text-[12px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/8"
             aria-expanded={previewOpen}
           >
-            <span>{previewOpen ? "Hide extracted source preview" : "Show extracted source preview"}</span>
+            <span>{previewOpen ? "Hide document text preview" : "Show document text preview"}</span>
             <ChevronDown
               className={cn("h-4 w-4 shrink-0 transition-transform duration-300 ease-out", previewOpen && "rotate-180")}
               aria-hidden
@@ -163,7 +168,7 @@ export function DocOracleOverviewPanel(props: {
             <span className="min-w-0">
               <span className="block text-[13px] font-semibold text-foreground">Structure map</span>
               <span className="block truncate text-[12px] text-muted-foreground">
-                Optional visual navigation for pages, sections, glossary, visuals, and source.
+                Optional navigation for pages, sections, glossary, visuals, and source.
               </span>
             </span>
           </span>

@@ -34,6 +34,7 @@ import { knowledgeFilesApiHref, sourcePdfHref } from "@/components/document-orac
 import { formatDocOraclePageRangeWithLabel } from "@/components/document-oracle/docOraclePageRange";
 import { displayVisualDescription } from "@/components/document-oracle/docOracleVisualLabels";
 import { cn } from "@/lib/utils";
+import { cleanDisplayTags, sanitizeDisplayTag } from "@/components/document-oracle/docOracleDisplay";
 
 function thumbUrl(page: DocOraclePageRow): string | null {
   const u = page.rendered_image_url?.trim();
@@ -53,12 +54,12 @@ const ghostBtn =
   "inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background/60 px-4 py-3 text-[13px] font-medium text-foreground transition hover:border-primary/35 hover:bg-primary/8 sm:flex-none sm:py-2.5";
 
 function pageTypeBadges(page: DocOraclePageRow, badge: ReturnType<typeof inferPageTypeBadge>): string[] {
-  const out: string[] = [];
+  const out: (string | null)[] = [];
   out.push(displayPageTypeLabel(badge));
   if (page.has_visual_assets) out.push("has visuals");
   const pt = (page.page_type || "").trim();
   if (pt && pt.toLowerCase() !== badge) out.push(pt);
-  return Array.from(new Set(out.map((s) => s.trim()).filter(Boolean)));
+  return cleanDisplayTags(out, 4).tags;
 }
 
 function combinedVisualDescription(visuals: DocOracleVisualRow[]): string {
@@ -130,6 +131,8 @@ export function DocOraclePageDetailView(props: {
   const relatedGlossary = useMemo(() => glossaryTermsForPage(page, glossary), [page, glossary]);
   const keywords = useMemo(() => pageKeywordsList(page), [page]);
   const linked = useMemo(() => linkedTermsList(page), [page]);
+  const keywordTags = useMemo(() => cleanDisplayTags(keywords, 8).tags, [keywords]);
+  const linkedTags = useMemo(() => cleanDisplayTags(linked, 8).tags, [linked]);
   const questions = useMemo(() => pageDetailSuggestedQuestions(page), [page]);
   const hero = thumbUrl(page);
   const heroKey = `${page.id}:${hero ?? ""}`;
@@ -212,17 +215,16 @@ export function DocOraclePageDetailView(props: {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={hero}
-                  alt=""
+                  alt={`Generated preview for page ${page.page_number}`}
                   className="max-h-[min(52vh,560px)] w-full object-contain object-center sm:max-h-[min(60vh,640px)]"
                   onError={() => setFailedHeroKey(heroKey)}
                 />
               </div>
             ) : (
               <div className={cn(cardShell, "border-dashed bg-card/45")}>
-                <p className="text-[12px] font-medium text-muted-foreground">No full-page screenshot yet</p>
+                <p className="text-[12px] font-medium text-muted-foreground">Preview image could not be generated.</p>
                 <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground/90">
-                  This page has no `rendered_image_url` / `rendered_image_path`. Text summary still appears on the
-                  right.
+                  The page summary is still available.
                 </p>
               </div>
             )}
@@ -240,50 +242,49 @@ export function DocOraclePageDetailView(props: {
                 {badges.map((b) => (
                   <span
                     key={b}
-                    className="rounded-full border border-border bg-background/55 px-2.5 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
+                    className="max-w-full truncate rounded-full border border-border bg-background/55 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground"
                   >
                     {b}
                   </span>
                 ))}
               </div>
-              <p id="doc-oracle-page-detail-title" className="mt-3 text-base font-semibold leading-snug text-foreground">
+              <p id="doc-oracle-page-detail-title" className="mt-3 break-words text-base font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">
                 {title}
               </p>
               {relatedSection ? (
-                <p className="mt-1 text-[11px] text-muted-foreground">
+                <p className="mt-1 break-words text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
                   Section: <span className="text-foreground/80">{relatedSection.title}</span>
                 </p>
               ) : null}
               {primaryDescription ? (
-                <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{primaryDescription}</p>
+                <p className="mt-3 break-words text-[13px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{primaryDescription}</p>
               ) : null}
               {secondaryDescription ? (
-                <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground/95">{secondaryDescription}</p>
+                <p className="mt-3 break-words text-[13px] leading-relaxed text-muted-foreground/95 [overflow-wrap:anywhere]">{secondaryDescription}</p>
               ) : null}
               {fallbackLong && !primaryDescription ? (
-                <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{fallbackLong}</p>
+                <p className="mt-3 break-words text-[13px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{fallbackLong}</p>
               ) : null}
             </section>
 
-            {keywords.length + linked.length > 0 ? (
+            {keywordTags.length + linkedTags.length > 0 ? (
               <section className={cardShell} aria-labelledby="doc-oracle-page-kw-h">
                 <h3 id="doc-oracle-page-kw-h" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Keywords
                 </h3>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {keywords.map((k) => (
+                  {keywordTags.map((k) => (
                     <span
                       key={`k-${k}`}
                       className="max-w-full truncate rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11.5px] text-primary"
                     >
-                      {k.startsWith("#") ? k : `#${k.replace(/^#+/, "")}`}
+                      {k}
                     </span>
                   ))}
-                  {linked.map((t) => (
+                  {linkedTags.map((t) => (
                     <span
                       key={`l-${t}`}
                       className="max-w-full truncate rounded-full border border-border bg-background/45 px-3 py-1 text-[11px] text-muted-foreground"
-                      title="Linked term"
                     >
                       {t}
                     </span>
@@ -304,9 +305,9 @@ export function DocOraclePageDetailView(props: {
                     <li key={g.id} className="rounded-xl border border-border bg-background/45 px-3 py-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-[13px] font-semibold text-foreground">{g.term}</p>
-                        {g.category ? (
+                        {sanitizeDisplayTag(g.category) ? (
                           <span className="shrink-0 rounded-full border border-border bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            {g.category}
+                            {sanitizeDisplayTag(g.category)}
                           </span>
                         ) : null}
                       </div>
@@ -348,7 +349,7 @@ export function DocOraclePageDetailView(props: {
                       ))}
                     </div>
                   ) : null}
-                  <p className="mt-2 text-[10px] font-medium text-primary">Open in Sections tab →</p>
+                  <p className="mt-2 text-[10px] font-medium text-primary">Open in Sections tab</p>
                 </button>
               ) : (
                 <p className="mt-3 text-[12px] text-muted-foreground">No section range matched this page.</p>
@@ -357,10 +358,10 @@ export function DocOraclePageDetailView(props: {
 
             <section className={cardShell} aria-labelledby="doc-oracle-page-vis-h">
               <h3 id="doc-oracle-page-vis-h" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Visual assets · this page
+                Generated images · this page
               </h3>
               <div className="mt-3">
-                <DocOracleRelatedVisuals visuals={visualsOnPage} onOpen={onOpenVisual} emptyMessage="No extracted visuals on this page." />
+                <DocOracleRelatedVisuals visuals={visualsOnPage} onOpen={onOpenVisual} emptyMessage="No generated images on this page." />
               </div>
             </section>
 
@@ -372,7 +373,7 @@ export function DocOraclePageDetailView(props: {
                 {visualNarrative ? (
                   <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{visualNarrative}</p>
                 ) : (
-                  <p className="mt-3 text-[12px] text-muted-foreground">No visual descriptions extracted for this page.</p>
+                  <p className="mt-3 text-[12px] text-muted-foreground">No visual description is available for this page.</p>
                 )}
               </section>
             ) : (
@@ -380,7 +381,7 @@ export function DocOraclePageDetailView(props: {
                 <h3 id="doc-oracle-page-visd-empty" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Visual description
                 </h3>
-                <p className="mt-3 text-[12px] text-muted-foreground">No extracted visuals on this page.</p>
+                <p className="mt-3 text-[12px] text-muted-foreground">No generated images on this page.</p>
               </section>
             )}
 
@@ -409,7 +410,7 @@ export function DocOraclePageDetailView(props: {
 
             <details className={cardShell}>
               <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Page markdown
+                Page text
               </summary>
               <div className="mt-3 max-h-[280px] overflow-y-auto rounded-xl border border-border bg-background/50 p-3">
                 <DocOracleMarkdown className="text-[12px]" source={page.markdown || ""} />

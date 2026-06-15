@@ -1,4 +1,5 @@
 import type { DocOraclePageRow } from "@/components/document-oracle/docOraclePageTypes";
+import { cleanDisplayTags, sanitizeDisplayTag } from "@/components/document-oracle/docOracleDisplay";
 
 const TITLE_MAX = 80;
 const CARD_DESC_MAX = 220;
@@ -148,33 +149,32 @@ export function inferPageTypeBadge(page: DocOraclePageRow): PageTypeBadgeId {
 export function displayPageTypeLabel(id: PageTypeBadgeId): string {
   switch (id) {
     case "toc":
-      return "contents";
+      return "Contents";
+    case "visual":
+      return "Images";
     default:
-      return id;
+      return sanitizeDisplayTag(id) ?? "Page";
   }
 }
 
 export function buildFallbackTags(_page: DocOraclePageRow, badge: PageTypeBadgeId): string[] {
   const out: string[] = [];
-  if (badge === "cover") out.push("cover");
-  else if (badge === "toc") out.push("toc");
-  else if (badge === "blank") out.push("blank");
-  else if (badge === "table") out.push("table");
-  else if (badge === "visual") out.push("visual");
-  else out.push("text");
+  if (badge === "cover") out.push("Cover");
+  else if (badge === "toc") out.push("Contents");
+  else if (badge === "blank") out.push("Blank");
+  else if (badge === "table") out.push("Tables");
+  else if (badge === "visual") out.push("Images");
+  else out.push("Text");
   return out;
 }
 
 export function getPageTagsForCard(page: DocOraclePageRow, badge: PageTypeBadgeId): { tags: string[]; overflow: number } {
-  const kw = pageKeywordsList(page).map((t) => (t.startsWith("#") ? t : `#${t.replace(/^#+/, "")}`));
+  const kw = pageKeywordsList(page);
   const maxShow = 5;
   if (kw.length === 0) {
-    const fb = buildFallbackTags(page, badge);
-    return { tags: fb.slice(0, maxShow), overflow: 0 };
+    return cleanDisplayTags(buildFallbackTags(page, badge), maxShow);
   }
-  const shown = kw.slice(0, maxShow);
-  const overflow = Math.max(0, kw.length - shown.length);
-  return { tags: shown, overflow };
+  return cleanDisplayTags(kw, maxShow);
 }
 
 export function pageSearchBlob(page: DocOraclePageRow, title: string): string {

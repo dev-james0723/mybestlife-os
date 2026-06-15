@@ -251,11 +251,16 @@ function SignalsWidgetGallery({
                 aria-label={`${i + 1}`}
                 aria-current={i === activeIndex}
                 onClick={() => setIndex(i)}
-                className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  i === activeIndex ? "w-5 bg-white" : "w-1.5 bg-white/45 hover:bg-white/75",
-                )}
-              />
+                className="flex h-6 min-w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    i === activeIndex ? "w-5 bg-white" : "w-1.5 bg-white/45 hover:bg-white/75",
+                  )}
+                />
+              </button>
             ))}
           </div>
         )}

@@ -21,6 +21,8 @@ import type {
   DocOracleVisualRow,
 } from "@/components/document-oracle/DocOracleWorkspace";
 import { AnimatedCollapse } from "@/components/motion/AnimatedCollapse";
+import { cleanDisplayTags } from "@/components/document-oracle/docOracleDisplay";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { gsap, registerGSAP } from "@/lib/motion/register-gsap";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +32,7 @@ const primaryActionBtn =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-sm transition-[background,transform] duration-150 ease-out hover:bg-primary/90 active:translate-y-px";
 
 function kwList(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 12) : [];
+  return cleanDisplayTags(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [], 8).tags;
 }
 
 function repPages(v: unknown): number[] {
@@ -346,31 +348,34 @@ export function DocOracleSectionsPanel(props: {
 
         {/* Narrow screens: compact dropdown */}
         <div className="md:hidden">
-          <label className="sr-only" htmlFor="doc-oracle-section-select">
-            Section
-          </label>
-          <select
-            id="doc-oracle-section-select"
-            className="w-full rounded-xl border border-border bg-muted/60 px-3 py-2.5 text-[13px] text-foreground"
-            value={selectedSection?.id ?? ""}
-            onChange={(e) => {
-              const id = e.target.value;
+          <Select
+            value={selectedSection?.id ?? "__none"}
+            onValueChange={(id) => {
+              if (id === "__none") return;
               const row = sections.find((s) => s.id === id);
               if (row) selectSection(row);
             }}
+            itemToStringLabel={(id) => (id === "__none" ? "Choose a section" : sections.find((s) => s.id === id)?.title ?? "Choose a section")}
           >
-            <option value="">Choose a section…</option>
-            {flat.map(({ node, depth }) => (
-              <option key={node.id} value={node.id}>
-                {"—".repeat(depth)} {node.title}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-11 min-h-11 w-full min-w-0 rounded-xl bg-muted/60 text-[13px]">
+              <SelectValue placeholder="Choose a section..." />
+            </SelectTrigger>
+            <SelectContent align="start" className="max-w-[min(92vw,22rem)]">
+              <SelectItem value="__none">Choose a section...</SelectItem>
+              {flat.map(({ node, depth }) => (
+                <SelectItem key={node.id} value={node.id}>
+                  <span className="truncate">
+                    {"-".repeat(depth)} {node.title}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="hidden min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2 md:block">
           {sections.length === 0 ? (
-            <p className="p-2 text-[13px] text-muted-foreground">No sections yet.</p>
+            <p className="p-2 text-[13px] text-muted-foreground">No sections are available yet.</p>
           ) : (
             <SectionNavTree
               nodes={tree}

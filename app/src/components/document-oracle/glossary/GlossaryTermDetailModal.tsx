@@ -15,6 +15,7 @@ import { isGenericGlossaryDefinition } from "@/components/document-oracle/glossa
 import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePaths";
 import { formatDocOraclePageRangeWithLabel } from "@/components/document-oracle/docOraclePageRange";
 import { cn } from "@/lib/utils";
+import { sanitizeDisplayTag } from "@/components/document-oracle/docOracleDisplay";
 
 type Props = {
   open: boolean;
@@ -64,7 +65,9 @@ export function GlossaryTermDetailModal(props: Props) {
   if (!term) return null;
 
   const pages = normalizeGlossaryPages(term.pages);
-  const related = normalizeGlossaryRelatedTerms(term.related_terms);
+  const related = normalizeGlossaryRelatedTerms(term.related_terms)
+    .map((raw) => ({ raw, label: sanitizeDisplayTag(raw) }))
+    .filter((item): item is { raw: string; label: string } => Boolean(item.label));
   const rawDef = term.definition?.trim() || "";
   const defIsGeneric = isGenericGlossaryDefinition(rawDef);
   const badge = categoryLabel;
@@ -162,22 +165,22 @@ export function GlossaryTermDetailModal(props: Props) {
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {related.map((r) => {
-                  const hit = resolveRelated(r);
+                  const hit = resolveRelated(r.raw);
                   return (
                     <button
-                      key={r}
+                      key={r.raw}
                       type="button"
                       className="max-w-full truncate rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[12px] font-medium text-foreground transition hover:border-primary/35 hover:bg-primary/8"
                       onClick={() => {
                         if (hit) {
                           onOpenRelatedTerm(hit);
                         } else {
-                          onSearchRelated(r);
+                          onSearchRelated(r.raw);
                           onOpenChange(false);
                         }
                       }}
                     >
-                      {r}
+                      {r.label}
                     </button>
                   );
                 })}

@@ -3,6 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   differenceInCalendarDays,
@@ -19,11 +20,8 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { OSPageHeader, OSPrimaryAction } from "@/components/ui/os-primitives";
 import { MotivationCard } from "@/components/dashboard/motivation-card";
-import { DailyInspirationCard } from "@/components/dashboard/daily-inspiration-card";
-import { QuoteInspirationCard } from "@/components/dashboard/quote-inspiration-card";
 import { TodayBlockView } from "@/components/calendar/today-block";
 import { DashboardWeatherWidget } from "@/components/calendar/dashboard-weather-widget";
-import { DashboardSignalsWidget } from "@/components/signals/DashboardSignalsWidget";
 import { DashboardStudyRow } from "@/components/dashboard/dashboard-study-row";
 import { GlassStatCard } from "@/components/dashboard/glass-stat-card";
 import { GlassEntityCard } from "@/components/dashboard/glass-entity-card";
@@ -52,8 +50,44 @@ import { cn } from "@/lib/utils";
 import { PROTECTED_DESKTOP_GUTTER_NEG_X } from "@/lib/layout-shell";
 import type { GratefulThing, JapaneseStudySession, Task } from "@/types/database";
 
+const DashboardSignalsWidget = dynamic(
+  () =>
+    import("@/components/signals/DashboardSignalsWidget").then(
+      (mod) => mod.DashboardSignalsWidget,
+    ),
+  { ssr: false, loading: () => <DashboardPanelFallback className="min-h-72" /> },
+);
+
+const QuoteInspirationCard = dynamic(
+  () =>
+    import("@/components/dashboard/quote-inspiration-card").then(
+      (mod) => mod.QuoteInspirationCard,
+    ),
+  { ssr: false, loading: () => <DashboardPanelFallback className="min-h-72" /> },
+);
+
+const DailyInspirationCard = dynamic(
+  () =>
+    import("@/components/dashboard/daily-inspiration-card").then(
+      (mod) => mod.DailyInspirationCard,
+    ),
+  { ssr: false, loading: () => <DashboardPanelFallback className="min-h-72" /> },
+);
+
 function todayKey() {
   return format(new Date(), "yyyy-MM-dd");
+}
+
+function DashboardPanelFallback({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border/60 bg-card/45 shadow-sm",
+        className,
+      )}
+      aria-busy="true"
+    />
+  );
 }
 
 function studyStreakFromDates(sessionDates: string[]): number {

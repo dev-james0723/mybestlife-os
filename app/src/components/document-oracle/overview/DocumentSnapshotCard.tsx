@@ -1,9 +1,19 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { ImageIcon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DocOracleAnalysis } from "@/components/document-oracle/docOracleWorkspaceTypes";
+import type { DocOraclePageRow } from "@/components/document-oracle/docOraclePageTypes";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { pageRenderedImageHref } from "@/components/document-oracle/source/pageRenderedImageHref";
+import {
+  buildPrimaryDocumentTags,
+  getDisplayDocumentType,
+  getDisplayLanguage,
+} from "@/components/document-oracle/docOracleDisplay";
+import { formatKnowledgeLocalDateTime } from "@/lib/i18n/knowledge-ui";
+import type { AppLocale } from "@/lib/i18n/app-locale";
 
 type SignalStat = {
   label: string;
@@ -78,37 +88,81 @@ function SignalRadar({ stats }: { stats: SignalStat[] }) {
   );
 }
 
-function DocumentThumbnailPreview(props: {
+function firstGeneratedPreview(pages: DocOraclePageRow[]): string | null {
+  const firstWithImage = [...pages]
+    .sort((a, b) => a.page_number - b.page_number)
+    .find((page) => pageRenderedImageHref(page) != null);
+  return firstWithImage ? pageRenderedImageHref(firstWithImage) : null;
+}
+
+function DocumentGeneratedPreview(props: {
   item: KnowledgeItem;
+  pages: DocOraclePageRow[];
   title: string;
   summary: string | null;
 }) {
-  const { item, title, summary } = props;
-  const src = item.thumbnailUrl ?? item.screenshotUrl;
-  const keywords = item.aiTags?.length ? item.aiTags.slice(0, 3) : title.split(/\s+/).filter(Boolean).slice(0, 3);
+  const { item, pages, title, summary } = props;
+  const src = useMemo(() => item.thumbnailUrl ?? item.screenshotUrl ?? firstGeneratedPreview(pages), [item, pages]);
+  const [imageState, setImageState] = useState<"loading" | "loaded" | "failed">(src ? "loading" : "failed");
+
+  useEffect(() => {
+    setImageState(src ? "loading" : "failed");
+  }, [src]);
+
+  const displayTags = useMemo(
+    () =>
+      buildPrimaryDocumentTags({
+        item,
+        documentType: null,
+        pages,
+        visualCount: 0,
+        status: item.status,
+      }),
+    [item, pages],
+  );
+  const isLoading = Boolean(src) && imageState === "loading";
+  const showImage = Boolean(src) && imageState !== "failed";
 
   return (
-    <div className="relative min-h-[230px] overflow-hidden rounded-2xl border border-border bg-background shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-      {src ? (
+    <div className="relative min-h-[230px] w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-background shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+      {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={`${title} thumbnail`} className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={src!}
+          alt="Generated preview for this document"
+          className={cn(
+            "absolute inset-0 h-full w-full bg-neutral-100 object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
+            imageState === "loaded" ? "opacity-100" : "opacity-0",
+          )}
+          onLoad={() => setImageState("loaded")}
+          onError={() => setImageState("failed")}
+        />
       ) : (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(86,127,255,0.35),transparent_34%),radial-gradient(circle_at_82%_78%,rgba(190,255,96,0.22),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(22,28,39,0.96))]" />
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/45 p-6 text-center text-[12px] leading-relaxed text-muted-foreground">
+          <span>{src ? "Preview image could not be generated." : "Preview image is being prepared."}</span>
+        </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/26 to-black/12" />
+      {isLoading ? (
+        <div
+          className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/80 via-background to-muted/55 motion-reduce:animate-none"
+          aria-label="Generating preview image"
+          role="status"
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/18 to-transparent" />
       <div className="relative z-10 flex h-full min-h-[230px] flex-col justify-between p-4 text-white">
         <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] backdrop-blur-md">
           <ImageIcon className="h-3.5 w-3.5" aria-hidden />
-          {src ? "Document thumbnail" : "Thumbnail concept"}
+          Generated image
         </div>
-        <div>
-          <p className="text-pretty text-lg font-semibold leading-tight">{title}</p>
+        <div className="min-w-0">
+          <p className="text-pretty break-words text-lg font-semibold leading-tight [overflow-wrap:anywhere]">{title}</p>
           {summary ? <p className="mt-2 line-clamp-2 text-[12px] leading-relaxed text-white/72">{summary}</p> : null}
-          {keywords.length ? (
+          {displayTags.tags.length ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {keywords.map((keyword) => (
-                <span key={keyword} className="rounded-full border border-white/14 bg-white/10 px-2 py-0.5 text-[10px] text-white/82">
-                  {keyword}
+              {displayTags.tags.slice(0, 3).map((tag) => (
+                <span key={tag} className="max-w-full truncate rounded-full border border-white/14 bg-white/10 px-2 py-0.5 text-[10px] text-white/82">
+                  {tag}
                 </span>
               ))}
             </div>
@@ -122,24 +176,35 @@ function DocumentThumbnailPreview(props: {
 export function DocumentSnapshotCard(props: {
   readyAnalysis: DocOracleAnalysis;
   item: KnowledgeItem;
+  pages: DocOraclePageRow[];
   pageCount: number;
   sectionCount: number;
   chunkCount: number;
   glossaryCount: number;
   visualCount: number;
+  appLocale: AppLocale;
 }) {
-  const { readyAnalysis, item, pageCount, sectionCount, chunkCount, glossaryCount, visualCount } = props;
+  const { readyAnalysis, item, pages, pageCount, sectionCount, chunkCount, glossaryCount, visualCount, appLocale } = props;
   const pagesDisplay =
     readyAnalysis.total_pages != null && readyAnalysis.total_pages > 0 ? readyAnalysis.total_pages : pageCount;
 
   const statItems = [
     { label: "Pages", value: pagesDisplay > 0 ? pagesDisplay : 0, display: pagesDisplay > 0 ? pagesDisplay : "—" },
     { label: "Sections", value: sectionCount, display: sectionCount },
-    { label: "Chunks", value: chunkCount, display: chunkCount },
+    { label: "Passages", value: chunkCount, display: chunkCount },
     { label: "Glossary", value: glossaryCount, display: glossaryCount },
     { label: "Visuals", value: visualCount, display: visualCount },
   ] satisfies SignalStat[];
   const summary = readyAnalysis.summary?.trim() || item.aiSummary || item.aiContentOverview || null;
+  const docType = getDisplayDocumentType(readyAnalysis.document_type, item.contentType);
+  const language = getDisplayLanguage(readyAnalysis.language);
+  const displayTags = buildPrimaryDocumentTags({
+    item,
+    documentType: readyAnalysis.document_type,
+    pages,
+    visualCount,
+    status: readyAnalysis.status,
+  });
 
   return (
     <section
@@ -147,7 +212,7 @@ export function DocumentSnapshotCard(props: {
         "w-full max-w-full overflow-hidden rounded-2xl border border-border bg-card/82 p-4 shadow-[0_16px_44px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl [-webkit-backdrop-filter:blur(18px)] dark:bg-card/72 dark:shadow-[0_18px_54px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] sm:p-5 md:p-6",
       )}
     >
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.78fr)] lg:items-stretch lg:gap-6">
+      <div className="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.78fr)] lg:items-stretch lg:gap-6">
         <div className="min-w-0 space-y-4">
           <div className="flex min-w-0 items-start gap-3">
             <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
@@ -166,23 +231,47 @@ export function DocumentSnapshotCard(props: {
           </div>
 
           <h2 className="w-full min-w-0 max-w-none text-pretty text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
-            Intelligence summary
+            Document analysis
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
             Start with a grounded answer, then jump into pages, sections, visuals, or the original source.
           </p>
 
-          <div className="flex flex-wrap gap-2 text-[11px]">
-            <span className="rounded-full border border-border bg-muted/45 px-2.5 py-1 text-muted-foreground">
-              Type <span className="font-semibold text-foreground">{readyAnalysis.document_type ?? item.contentType}</span>
+          <div className="grid min-w-0 gap-2 text-[11px] sm:grid-cols-2">
+            <span className="min-w-0 rounded-xl border border-border bg-muted/45 px-3 py-2 text-muted-foreground">
+              Type <span className="font-semibold text-foreground">{docType}</span>
             </span>
-            <span className="rounded-full border border-border bg-muted/45 px-2.5 py-1 text-muted-foreground">
-              Language <span className="font-semibold text-foreground">{readyAnalysis.language ?? "mixed"}</span>
+            <span className="min-w-0 rounded-xl border border-border bg-muted/45 px-3 py-2 text-muted-foreground">
+              Language <span className="font-semibold text-foreground">{language}</span>
+            </span>
+            <span className="min-w-0 rounded-xl border border-border bg-muted/45 px-3 py-2 text-muted-foreground">
+              Added <span className="font-semibold text-foreground">{formatKnowledgeLocalDateTime(appLocale, item.dateAdded)}</span>
+            </span>
+            <span className="min-w-0 rounded-xl border border-border bg-muted/45 px-3 py-2 text-muted-foreground">
+              Updated <span className="font-semibold text-foreground">{formatKnowledgeLocalDateTime(appLocale, item.dateModified)}</span>
             </span>
           </div>
+
+          {displayTags.tags.length ? (
+            <div className="flex min-w-0 flex-wrap gap-2 text-[11px]" aria-label="Document tags">
+              {displayTags.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="max-w-full truncate rounded-full border border-border bg-background/55 px-2.5 py-1 text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+              {displayTags.overflow > 0 ? (
+                <span className="rounded-full border border-border bg-background/55 px-2.5 py-1 text-muted-foreground">
+                  +{displayTags.overflow}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        <DocumentThumbnailPreview item={item} title={readyAnalysis.document_title ?? item.title} summary={summary} />
+        <DocumentGeneratedPreview item={item} pages={pages} title={readyAnalysis.document_title ?? item.title} summary={summary} />
       </div>
 
       <div className="mt-5">

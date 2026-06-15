@@ -286,10 +286,10 @@ export function PdfLightboxViewer(props: {
                     <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
                       {src ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={src} alt="" className="block w-full object-contain object-top" />
+                        <img src={src} alt={`Generated preview for ${pageLabel(p)}`} className="block w-full object-contain object-top" />
                       ) : (
                         <div className="flex min-h-[120px] items-center justify-center bg-neutral-100 p-6 text-center text-[12px] text-neutral-600">
-                          No screenshot for this page.
+                          Preview image could not be generated.
                         </div>
                       )}
                     </div>
@@ -300,7 +300,7 @@ export function PdfLightboxViewer(props: {
           ) : (
             <div className="flex min-h-[50dvh] flex-col items-center justify-center gap-4 px-6 py-10 text-center">
               <p className="max-w-md text-[13px] leading-relaxed text-white/70">
-                Page screenshots are not available yet. If the embedded preview below does not load, try again from a
+                Page preview images are not available yet. If the embedded preview below does not load, try again from a
                 desktop browser.
               </p>
               <iframe

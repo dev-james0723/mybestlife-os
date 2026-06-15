@@ -42,6 +42,7 @@ import type {
   DocOracleGlossaryRow,
   DocOracleSectionRow,
 } from "@/components/document-oracle/docOracleWorkspaceTypes";
+import { getDisplayStatus } from "@/components/document-oracle/docOracleDisplay";
 import { gsap, registerGSAP } from "@/lib/motion/register-gsap";
 
 registerGSAP();
@@ -311,13 +312,13 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
           const panelChildren = gsap.utils.toArray<HTMLElement>(":scope > *", panel).slice(0, 8);
           gsap.fromTo(
             panel,
-            { autoAlpha: 0, y: 12, scale: 0.992, filter: "blur(4px)" },
+            { autoAlpha: 0, y: 8, scale: 0.996, filter: "blur(3px)" },
             {
               autoAlpha: 1,
               y: 0,
               scale: 1,
               filter: "blur(0px)",
-              duration: 0.32,
+              duration: 0.22,
               ease: "power3.out",
               overwrite: "auto",
               clearProps: "transform,filter",
@@ -330,7 +331,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               {
                 autoAlpha: 1,
                 y: 0,
-                duration: 0.28,
+                duration: 0.2,
                 ease: "power2.out",
                 stagger: 0.035,
                 overwrite: "auto",
@@ -345,12 +346,14 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
     { scope: workspaceRef, dependencies: [tab], revertOnUpdate: true },
   );
 
+  const statusLabel = getDisplayStatus(analysis?.status ?? (item.status === "ready" ? "completed" : item.status));
+
   return (
-    <div ref={workspaceRef} className="doc-oracle-workspace relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground">
-      <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col gap-3 px-0 py-3 sm:gap-5 sm:px-4 sm:py-8 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl">
+    <div ref={workspaceRef} className="doc-oracle-workspace relative flex min-h-0 w-full min-w-0 max-w-full flex-col overflow-x-hidden pt-[max(0px,env(safe-area-inset-top))] text-foreground md:min-h-[100dvh]">
+      <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col gap-3 overflow-x-hidden px-0 py-3 sm:gap-5 sm:px-4 sm:py-8 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl">
         <div
           data-doc-oracle-shell
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+          className="flex w-full min-w-0 max-w-full flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between sm:px-0"
         >
           <div className="min-w-0 space-y-2">
             <Link
@@ -368,21 +371,11 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
                 <h1 className="text-pretty break-words text-lg font-semibold leading-tight tracking-tight [overflow-wrap:anywhere] sm:text-xl">
                   {analysis?.document_title ?? item.title}
                 </h1>
-                <p className="truncate text-[12px] text-muted-foreground">
-                  {isReady ? (
-                    <>
-                      Doc Oracle · {readyAnalysis.parser ?? "MinerU"}
-                      {readyAnalysis.parser_version ? ` · ${readyAnalysis.parser_version}` : ""}
-                    </>
-                  ) : (
-                    <>
-                      Doc Oracle ·{" "}
-                      {analysis?.status
-                        ? `Analysis: ${analysis.status}`
-                        : "Waiting for extraction (no analysis row yet)"}
-                    </>
-                  )}
-                </p>
+                {!isReady ? (
+                  <p className="text-[12px] text-muted-foreground">
+                    Document analysis: {statusLabel === "Unknown" ? "Processing" : statusLabel}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -413,17 +406,16 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
 
         <div
           data-doc-oracle-shell
-          className={cn("lg-glass-panel flex min-h-[420px] flex-1 flex-col overflow-visible rounded-2xl px-2 py-3 sm:rounded-[20px] sm:px-4 sm:py-6 md:px-5")}
+          className={cn("lg-glass-panel flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden rounded-2xl px-2 py-3 sm:rounded-[20px] sm:px-4 sm:py-6 md:min-h-[420px] md:px-5")}
         >
           {!isReady ? (
             <div
               role="status"
               className="mb-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[13px] leading-relaxed text-amber-950 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] dark:text-amber-50"
             >
-              <p className="font-medium text-amber-950 dark:text-amber-100">Workspace shell — extraction not finished</p>
+              <p className="font-medium text-amber-950 dark:text-amber-100">Document analysis is processing</p>
               <p className="mt-1 text-[12px] text-amber-900/85 dark:text-amber-100/85">
-                When MinerU completes and normalizes, every tab fills with structured intelligence. Re-open after the
-                knowledge card shows <strong className="text-foreground">ready</strong>.
+                Results will appear here when the document is ready.
               </p>
             </div>
           ) : null}
@@ -440,9 +432,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
             >
               {!isReady ? (
                 <p className="text-muted-foreground">
-                  {analysis
-                    ? `Analysis record exists but is not complete yet (status: ${analysis.status}).`
-                    : "No `document_analyses` row yet."}
+                  Document analysis is still processing.
                 </p>
               ) : (
                 <DocOracleOverviewPanel
@@ -453,6 +443,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
                   glossary={glossary}
                   visuals={visuals}
                   chunkCount={chunkCount}
+                  appLocale={appLocale}
                   overviewBody={overviewBody}
                   topicList={topicList}
                   suggestedQuestionCategories={displayedCategories}
@@ -540,7 +531,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               className="mt-0 min-w-0 text-[13px] text-muted-foreground"
             >
               {pages.length === 0 ? (
-                <p>No page rows yet.</p>
+                <p>No pages are available yet.</p>
               ) : (
                 <DocOraclePagesPanel
                   pages={pages}
@@ -560,7 +551,7 @@ Explain what it shows and how it relates to the surrounding document. Cite pages
               className="mt-0 text-[13px] text-muted-foreground"
             >
               {sections.length === 0 ? (
-                <p>No sections yet.</p>
+                <p>No sections are available yet.</p>
               ) : (
                 <DocOracleSectionsPanel
                   sections={sections}

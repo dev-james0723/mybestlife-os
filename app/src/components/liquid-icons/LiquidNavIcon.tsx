@@ -207,7 +207,7 @@ export function LiquidNavIcon({
       width={32}
       height={32}
       unoptimized
-      loading="eager"
+      loading="lazy"
       decoding="async"
       aria-hidden
       data-liquid-nav-icon

@@ -5,6 +5,7 @@ import type { DocOracleGlossaryRow } from "@/components/document-oracle/docOracl
 import { normalizeGlossaryPages, normalizeGlossaryRelatedTerms } from "@/components/document-oracle/glossary/glossaryNormalize";
 import { isGenericGlossaryDefinition } from "@/components/document-oracle/glossary/glossaryCategoryInference";
 import { cn } from "@/lib/utils";
+import { cleanDisplayTags } from "@/components/document-oracle/docOracleDisplay";
 
 type Props = {
   term: DocOracleGlossaryRow;
@@ -16,7 +17,7 @@ type Props = {
 export function GlossaryTermCard(props: Props) {
   const { term, categoryLabel, onOpen, onAskAi } = props;
   const pages = normalizeGlossaryPages(term.pages);
-  const related = normalizeGlossaryRelatedTerms(term.related_terms);
+  const related = cleanDisplayTags(normalizeGlossaryRelatedTerms(term.related_terms), 5).tags;
   const def = term.definition?.trim() || "";
   const showDef = def && !isGenericGlossaryDefinition(def);
   const previewDef = showDef ? def.slice(0, 160) + (def.length > 160 ? "…" : "") : null;
@@ -39,13 +40,13 @@ export function GlossaryTermCard(props: Props) {
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-foreground">{term.term}</p>
-        <span className="shrink-0 rounded-full border border-border bg-muted/35 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+        <p className="min-w-0 flex-1 break-words text-[15px] font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">{term.term}</p>
+        <span className="max-w-[45%] shrink-0 truncate rounded-full border border-border bg-muted/35 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           {categoryLabel}
         </span>
       </div>
       {previewDef ? (
-        <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed text-muted-foreground">{previewDef}</p>
+        <p className="mt-2 line-clamp-3 break-words text-[12.5px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{previewDef}</p>
       ) : (
         <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
           Tap for details, pages, and related terms — or ask Doc Oracle for a clearer explanation.

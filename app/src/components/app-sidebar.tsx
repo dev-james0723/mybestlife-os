@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type MouseEvent } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { motion, type Variants } from "framer-motion";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { stripLeadingLocaleFromPathname, withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
@@ -38,8 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { TodayCompanionPanel } from "@/components/sidebar/TodayCompanionPanel";
-import { LiquidNavIcon } from "@/components/liquid-icons/LiquidNavIcon";
+import { DeferredLiquidNavIcon } from "@/components/liquid-icons/DeferredLiquidNavIcon";
 import { useFocusNavigation } from "@/components/daily-planner/focus/focus-reality-boundary";
 import { navigationCategories, type NavCategory } from "@/lib/constants/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -51,12 +50,16 @@ import { getSidebarFooterCopy } from "@/lib/i18n/sidebar-ui";
 import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
 import { cn } from "@/lib/utils";
-import { useSsrSafeReducedMotion } from "@/hooks/use-ssr-safe-reduced-motion";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { UiTheme } from "@/types/database";
 import type { ColorMode } from "@/types/database";
 import type { LiquidIconTargetType } from "@/lib/liquid-icons/navigation-assets";
+
+const LazyTodayCompanionPanel = dynamic(
+  () => import("@/components/sidebar/TodayCompanionPanel").then((mod) => mod.TodayCompanionPanel),
+  { ssr: false },
+);
 
 /**
  * IconWell — wraps a Lucide-style icon in a span that the default theme
@@ -80,7 +83,7 @@ function IconWell({
 }) {
   return (
     <span data-glass-icon-well>
-      <LiquidNavIcon
+      <DeferredLiquidNavIcon
         fallbackIcon={icon}
         targetType={targetType}
         targetId={targetId}
@@ -93,33 +96,9 @@ function IconWell({
 }
 
 /**
- * Framer Motion variants for the default theme's liquid-glass sidebar.
- * Only applied when `uiTheme === "default"`; other themes render the
- * plain Fragment/primitives with no motion wrapping at all.
- */
-const navContainerVariants: Variants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.06, delayChildren: 0.15 },
-  },
-};
-const navItemVariants: Variants = {
-  hidden: { x: -12, opacity: 0 },
-  show: {
-    x: 0,
-    opacity: 1,
-    transition: { duration: 0.3, ease: "easeOut" },
-  },
-};
-const navItemVariantsReduced: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.01 } },
-};
-
-/**
- * Conditional motion wrappers. Under the default theme we use Framer
- * Motion; under other themes we render an inert Fragment/div so layout
- * and behavior stay byte-identical to before the glass treatment.
+ * Conditional wrappers for the default theme's nav grouping.
+ * Sidebar entrance motion is handled by CSS now so the protected shell does
+ * not eagerly load Framer Motion before the user reaches page content.
  */
 type StaggerContainerProps = {
   enabled: boolean;
@@ -127,27 +106,15 @@ type StaggerContainerProps = {
 };
 function StaggerContainer({ enabled, children }: StaggerContainerProps) {
   if (!enabled) return <>{children}</>;
-  return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      variants={navContainerVariants}
-      className="flex flex-col"
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="flex flex-col">{children}</div>;
 }
 type StaggerItemProps = {
   enabled: boolean;
-  variants: Variants;
   children: React.ReactNode;
 };
-function StaggerItem({ enabled, variants, children }: StaggerItemProps) {
+function StaggerItem({ enabled, children }: StaggerItemProps) {
   if (!enabled) return <>{children}</>;
-  return (
-    <motion.div variants={variants}>{children}</motion.div>
-  );
+  return <div>{children}</div>;
 }
 
 /** Every primary nav category — keeps the sidebar list complete (incl. Resources). */
@@ -162,9 +129,7 @@ const PRIORITY_CATEGORIES: string[] = [
   "learning",
 ];
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const NAV_STAGGER_DELAY_MS = 150;
-const NAV_STAGGER_CHILD_MS = 60;
-const NAV_STAGGER_ITEM_MS = 300;
+const COMPANION_PANEL_REVEAL_DELAY_MS = 300;
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -183,15 +148,8 @@ export function AppSidebar() {
   const focusNavigation = useFocusNavigation();
   const footer = getSidebarFooterCopy(language);
   const tui = getThemeUiCopy(language);
-  const prefersReducedMotion = useSsrSafeReducedMotion();
   const currentTime = useCurrentTime();
-  // Motion wrappers only engage under the `default` theme. Other themes
-  // get the plain Fragment/div fallback so their existing visuals and
-  // layout are literally byte-identical to before.
   const isGlassTheme = uiTheme === "default";
-  const ItemVariants = prefersReducedMotion
-    ? navItemVariantsReduced
-    : navItemVariants;
 
   const isNewUser =
     !profile?.created_at ||
@@ -218,13 +176,8 @@ export function AppSidebar() {
   const [showCompanionPanel, setShowCompanionPanel] = useState(false);
   const toggleShowMore = useCallback(() => setShowMore((prev) => !prev), []);
   const menuItemsReady = !authLoading && (!user || !profileLoading);
-  const visibleStaggerItemCount = priorityCategories.length + (showMore ? secondaryCategories.length : 0);
   const companionRevealDelayMs =
-    isGlassTheme && !prefersReducedMotion
-      ? NAV_STAGGER_DELAY_MS +
-        Math.max(0, visibleStaggerItemCount - 1) * NAV_STAGGER_CHILD_MS +
-        NAV_STAGGER_ITEM_MS
-      : 0;
+    isGlassTheme ? COMPANION_PANEL_REVEAL_DELAY_MS : 0;
 
   useEffect(() => {
     if (!menuItemsReady) {
@@ -303,7 +256,6 @@ export function AppSidebar() {
             <StaggerItem
               key={category.categoryId}
               enabled={isGlassTheme}
-              variants={ItemVariants}
             >
               <CategoryGroup
                 category={category}
@@ -350,7 +302,6 @@ export function AppSidebar() {
                   <StaggerItem
                     key={category.categoryId}
                     enabled={isGlassTheme}
-                    variants={ItemVariants}
                   >
                     <CategoryGroup
                       category={category}
@@ -378,7 +329,9 @@ export function AppSidebar() {
             )}
           </>
         )}
-        {showCompanionPanel ? <TodayCompanionPanel onNavigate={handleSidebarNavigate} /> : null}
+        {showCompanionPanel ? (
+          <LazyTodayCompanionPanel onNavigate={handleSidebarNavigate} />
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter className="shrink-0 group-data-[collapsible=icon]:hidden">
@@ -690,7 +643,7 @@ function GardenNavButton({
               isActive && "ring-2 ring-emerald-400/90 ring-offset-2 ring-offset-sidebar"
             )}
           >
-            <LiquidNavIcon
+            <DeferredLiquidNavIcon
               fallbackIcon={Sprout}
               targetType="cta"
               targetId="garden"

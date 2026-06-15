@@ -5,6 +5,7 @@ import { knowledgeFilesApiHref } from "@/components/document-oracle/docOraclePat
 import { displayVisualTitle } from "@/components/document-oracle/docOracleVisualLabels";
 import type { DocOracleVisualRow } from "@/components/document-oracle/docOraclePageTypes";
 import { cn } from "@/lib/utils";
+import { getDisplayVisualCategory } from "@/components/document-oracle/docOracleDisplay";
 
 export function OverviewVisualHighlights(props: {
   visuals: DocOracleVisualRow[];
@@ -44,13 +45,13 @@ export function OverviewVisualHighlights(props: {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={knowledgeFilesApiHref(v.image_path as string)}
-                alt={v.title || "visual"}
-                className="h-28 w-full object-cover sm:h-32"
+                alt="Generated preview for this document"
+                className="h-28 w-full bg-muted object-contain sm:h-32"
               />
               <div className="space-y-1 px-2.5 py-2">
                 <p className="truncate text-[11px] font-semibold text-foreground">{displayVisualTitle(v)}</p>
                 <p className="truncate text-[10px] text-muted-foreground">
-                  {[v.semantic_category, v.type].filter(Boolean).join(" · ") || "Visual"}
+                  {getDisplayVisualCategory(v.semantic_category || v.type)}
                 </p>
               </div>
             </button>

@@ -1,5 +1,6 @@
 import type { DocOraclePageRow } from "@/components/document-oracle/docOraclePageTypes";
 import { pageKeywordsList } from "@/components/document-oracle/docOraclePageHelpers";
+import { cleanDisplayTags } from "@/components/document-oracle/docOracleDisplay";
 
 export type PageDetailSectionRow = {
   id: string;
@@ -106,5 +107,5 @@ export function glossaryTermsForPage(page: DocOraclePageRow, glossary: PageDetai
 }
 
 export function sectionKeywordsChips(section: PageDetailSectionRow): string[] {
-  return kwList(section.keywords).slice(0, 14);
+  return cleanDisplayTags(kwList(section.keywords), 14).tags;
 }

@@ -8,6 +8,15 @@ import {
 } from "@/lib/liquid-icons/navigation-assets";
 import { useTheme } from "@/lib/theme-context";
 
+type WindowWithOptionalIdleCallback = Window &
+  typeof globalThis & {
+    requestIdleCallback?: (
+      callback: IdleRequestCallback,
+      options?: IdleRequestOptions,
+    ) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+
 export function LiquidIconPreloader() {
   const { uiTheme, colorMode, iconPack } = useTheme();
 
@@ -19,32 +28,41 @@ export function LiquidIconPreloader() {
       getLiquidIconPackAssetSrc(iconPack, colorMode, target.assetId),
     );
 
-    const preloadLinks = iconSources.map((src) => {
-      const link = document.createElement("link");
-      link.rel = "prefetch";
-      link.as = "image";
-      link.href = src;
-      link.dataset.liquidIconPreload = "true";
-      link.dataset.iconPack = iconPack;
-      link.dataset.colorMode = colorMode;
-      document.head.appendChild(link);
-      return link;
-    });
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    let preloadLinks: HTMLLinkElement[] = [];
 
-    const preloadedImages = iconSources.map((src) => {
-      const image = new Image(96, 96);
-      image.decoding = "async";
-      image.loading = "eager";
-      image.src = src;
-      return image;
-    });
+    const appendPrefetchLinks = () => {
+      if (cancelled) return;
+      preloadLinks = iconSources.map((src) => {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.as = "image";
+        link.href = src;
+        link.dataset.liquidIconPreload = "true";
+        link.dataset.iconPack = iconPack;
+        link.dataset.colorMode = colorMode;
+        document.head.appendChild(link);
+        return link;
+      });
+    };
+
+    const idleWindow = window as WindowWithOptionalIdleCallback;
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      idleId = idleWindow.requestIdleCallback(appendPrefetchLinks, { timeout: 4_000 });
+    } else {
+      timeoutId = window.setTimeout(appendPrefetchLinks, 2_500);
+    }
 
     return () => {
+      cancelled = true;
+      if (idleId !== null && typeof idleWindow.cancelIdleCallback === "function") {
+        idleWindow.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
       preloadLinks.forEach((link) => {
         link.remove();
-      });
-      preloadedImages.forEach((image) => {
-        image.src = "";
       });
     };
   }, [colorMode, iconPack, uiTheme]);

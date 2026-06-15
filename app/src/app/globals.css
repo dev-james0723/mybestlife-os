@@ -240,22 +240,25 @@
   position: relative;
   isolation: isolate;
   background: rgba(255, 255, 255, 0.64);
+  background-clip: padding-box;
   -webkit-backdrop-filter: blur(24px) saturate(154%) contrast(1.03);
   backdrop-filter: blur(24px) saturate(154%) contrast(1.03);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid transparent;
   box-shadow:
     0 22px 76px rgba(15, 23, 42, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.48),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .dark .knowledge-detail-glass-shell {
   background: rgba(15, 23, 42, 0.68);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: transparent;
   box-shadow:
     0 24px 84px rgba(2, 8, 23, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.028),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.012),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.012);
 }
 
 .knowledge-detail-glass-shell::before,

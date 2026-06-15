@@ -301,7 +301,7 @@ function KnowledgeAskCommandSection({ userId }: { userId: string }) {
             className="min-w-0 overflow-hidden"
           >
             <div className="mt-2 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <div className="flex h-[calc(100dvh-1rem)] min-h-[760px] min-w-0 flex-col overflow-hidden rounded-[1rem] border border-border/70 bg-card shadow-sm sm:h-[min(90dvh,840px)] sm:min-h-[640px] lg:h-[min(86dvh,860px)] lg:min-h-[660px] xl:h-[min(88dvh,900px)]">
+              <div className="flex min-h-[min(560px,calc(100dvh-11rem))] max-h-[calc(100dvh-7.5rem)] min-w-0 flex-col overflow-hidden rounded-[1rem] border border-border/70 bg-card shadow-sm sm:h-[min(90dvh,840px)] sm:min-h-[640px] sm:max-h-none lg:h-[min(86dvh,860px)] lg:min-h-[660px] xl:h-[min(88dvh,900px)]">
                 <KnowledgeAIPanel userId={userId} layout="top" hideHeader />
               </div>
             </div>

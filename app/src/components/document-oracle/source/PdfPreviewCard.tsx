@@ -44,7 +44,7 @@ export function PdfPreviewCard(props: {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumbSrc!}
-              alt=""
+              alt="Generated preview for this document"
               className="h-full w-full object-contain object-center"
               onError={() => setFailedThumbSrc(thumbSrc)}
             />
@@ -54,7 +54,7 @@ export function PdfPreviewCard(props: {
                 <FileText className="h-12 w-12 opacity-40" aria-hidden />
                 <p className="max-w-[240px] text-center text-[12px] leading-relaxed text-neutral-600">
                   {first
-                    ? "First-page screenshot is not available yet. You can still open the full document."
+                    ? "Preview image is not available yet. You can still open the full document."
                     : "No page data yet. Open the original file to view the PDF."}
                 </p>
               </div>
