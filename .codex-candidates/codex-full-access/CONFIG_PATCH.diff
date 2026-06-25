@@ -1,0 +1,14 @@
+diff --git a/.codex/config.toml b/.codex/config.toml
+index 0000000..0000000 100644
+--- a/.codex/config.toml
++++ b/.codex/config.toml
+@@
+-# Repo-local conservative defaults for Codex.
+-# Keep this workspace writable, but do not grant full unrestricted filesystem access by default.
++# Repo-local full-access defaults for Codex.
++# WARNING: this removes approval prompts and sandbox boundaries for this trusted repo.
+ 
+-sandbox_mode = "workspace-write"
+-approval_policy = "on-request"
++sandbox_mode = "danger-full-access"
++approval_policy = "never"

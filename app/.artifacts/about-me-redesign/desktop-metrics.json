@@ -1,0 +1,38 @@
+{
+  "clientWidth": 1280,
+  "docScrollWidth": 1280,
+  "fourthOptionDisabledAfterThree": true,
+  "hasIconPrompt": true,
+  "hasMirrorSignals": true,
+  "hasSourcePicker": true,
+  "horizontalOverflow": false,
+  "meaningfulOverflow": [],
+  "selectedButtons": [
+    "做出令自己有生命力嘅作品",
+    "建立一個有愛嘅家庭",
+    "探索世界"
+  ],
+  "statusText": [
+    "A living profile you can refine over time",
+    "先問權限，再用最多十題、每題最多三個選項，整理你的價值觀、生活張力與自我說明書。",
+    "完成度",
+    "10%",
+    "已選",
+    "3/30",
+    "模式",
+    "AI 檔案",
+    "上傳個人 icon，或用選項生成一個抽象 icon prompt。",
+    "JPEG、PNG、WebP 或 GIF · 最大 5 MB",
+    "AI icon prompt",
+    "Create an abstract personal profile icon inspired by: adventure, artistry, connection, creativity, family, freedom. Use symbolic shapes, no face, no text, calm premium Life OS style, transparent-friendly composition.",
+    "MyBestLifeOS 只會使用你明確授權或上載的 AI memory files，例如 soul.md、identity.md、agent.md。你也可以完全手動建立。",
+    "支援 .md、.txt、.json、.html、.zip。此版本先在瀏覽器內 staging，不會自動上傳。",
+    "未選擇任何檔案",
+    "每題最多選 3 個。你不需要打字，除非你想補充。",
+    "Top signals",
+    "人生方向",
+    "做出令自己有生命力嘅作品, 建立一個有愛嘅家庭, 探索世界",
+    "這些內容仍然是最終資料來源；Ask Myself 只幫你起 draft。"
+  ],
+  "viewport": "1280x900"
+}
