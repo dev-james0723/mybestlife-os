@@ -11,6 +11,7 @@ import { Pin, PinOff, Plus } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { cn } from "@/lib/utils";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import {
   Tooltip,
   TooltipContent,
@@ -67,7 +68,7 @@ export function KnowledgeBoardView({
         return CONTENT_TYPES.map((type) => ({
           key: type,
           label: ui.typeLabels[type],
-          items: items.filter((i) => i.contentType === type),
+          items: items.filter((i) => getKnowledgeDisplayContentType(i) === type),
           color: typeColors[type].text,
         }));
       }
@@ -171,7 +172,7 @@ export function KnowledgeBoardView({
             style={isFrozen ? { left: getFrozenColumnLeft(frozenIndex) } : undefined}
             data-frozen={isFrozen ? "true" : undefined}
             className={cn(
-              "flex min-w-[var(--kb-board-column-width)] w-[var(--kb-board-column-width)] shrink-0 snap-center flex-col md:snap-align-none",
+              "flex min-w-[var(--kb-board-column-width)] w-[var(--kb-board-column-width)] shrink-0 snap-center flex-col overflow-visible md:snap-align-none",
               isLandscapeMode && "h-full snap-none",
               isFrozen &&
                 "sticky z-20 rounded-xl border-r border-border/70 bg-background/95 pr-2 shadow-[10px_0_24px_rgba(15,23,42,0.10)] backdrop-blur dark:shadow-[10px_0_26px_rgba(0,0,0,0.26)]",
@@ -229,8 +230,8 @@ export function KnowledgeBoardView({
             </div>
 
             {/* Column cards */}
-            <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-2 pr-2">
+            <ScrollArea className="min-h-0 flex-1 overflow-visible">
+              <div className="space-y-2 overflow-visible pb-3 pr-2">
                 {col.items.map((item) => (
                   <KnowledgeCard key={item.id} item={item} />
                 ))}

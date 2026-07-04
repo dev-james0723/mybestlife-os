@@ -20,6 +20,7 @@ import { KnowledgeFavoriteStar } from "./KnowledgeFavoriteStar";
 import { SourceTypeBadge } from "./source/SourceTypeBadge";
 import { SocialEmbed } from "./source/SocialEmbed";
 import { getCardSummaryPreview } from "@/lib/knowledge/knowledge-list-utils";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import { scoreKnowledgeItem } from "@/lib/knowledgeMatching";
 import type { PreviewStatus, RenderMode } from "@/types/knowledge-source";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,8 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
   const selectItem = useKnowledgeStore((s) => s.selectItem);
   const activeSearchQuery = useKnowledgeStore((s) => s.searchQuery);
   const smartCollections = useKnowledgeStore((s) => s.smartCollections);
-  const legacyColors = typeColors[item.contentType];
+  const displayContentType = getKnowledgeDisplayContentType(item);
+  const legacyColors = typeColors[displayContentType];
   const isProcessing = item.status === "processing";
   const isError = item.status === "error";
 
@@ -154,7 +156,7 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
             ) : (
               <span className={cn(mediaPill, "capitalize")}>
                 <span className="shrink-0 opacity-90">{legacyColors.icon}</span>
-                <span className="min-w-0 truncate">{ui.typeLabels[item.contentType]}</span>
+                <span className="min-w-0 truncate">{ui.typeLabels[displayContentType]}</span>
               </span>
             )}
           </div>
@@ -178,7 +180,7 @@ export function KnowledgeCard({ item, className }: KnowledgeCardProps) {
 
       <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-3 pt-2.5">
         <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {badgeLabel ?? ui.typeLabels[item.contentType]}
+          {badgeLabel ?? ui.typeLabels[displayContentType]}
         </p>
 
         <h3 className="line-clamp-2 min-h-0 break-words text-[13px] font-semibold leading-snug text-foreground">

@@ -228,20 +228,22 @@ export function TaskControlBar({
       )}
 
       {viewModes.length > 1 && (
-        <OSSegmentedControl
-          items={viewModes.map((mode) => ({
-            id: mode,
-            label: viewLabels[mode],
-            icon: VIEW_ICONS[mode],
-            ariaLabel: viewLabels[mode],
-          }))}
-          value={viewMode}
-          onValueChange={onViewModeChange}
-          ariaLabel={`${copy.pageTitle} view`}
-          className="shrink-0 lg:ml-auto"
-          labelMode="sr-only"
-          layoutId="tasks-view-mode-pill"
-        />
+        <div className="ml-1 flex shrink-0 border-l border-border/60 pl-3 lg:ml-auto">
+          <OSSegmentedControl
+            items={viewModes.map((mode) => ({
+              id: mode,
+              label: viewLabels[mode],
+              icon: VIEW_ICONS[mode],
+              ariaLabel: viewLabels[mode],
+            }))}
+            value={viewMode}
+            onValueChange={onViewModeChange}
+            ariaLabel={`${copy.pageTitle} view`}
+            className="shrink-0"
+            labelMode="sr-only"
+            layoutId="tasks-view-mode-pill"
+          />
+        </div>
       )}
     </div>
   );

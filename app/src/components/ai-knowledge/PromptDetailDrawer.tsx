@@ -12,7 +12,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SlideOverPanel } from "@/components/shared/slide-over-panel";
+import {
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { OSDialogSurface } from "@/components/ui/os-primitives";
 import { useAppStore } from "@/stores/app-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
 import { pickLocalizedText, type CustomPrompt, type LibraryPrompt } from "@/types/prompt";
@@ -34,9 +41,9 @@ interface PromptDetailDrawerProps {
 }
 
 /**
- * Prompt detail slide-over panel. Renders the full prompt body, variable list,
- * tags, and provenance metadata for library prompts. Action bar exposes run,
- * copy, favorite, fork/edit/delete depending on the prompt source.
+ * Prompt detail dialog. Renders the full prompt body, variable list, tags, and
+ * provenance metadata for library prompts. Action bar exposes run, copy,
+ * favorite, fork/edit/delete depending on the prompt source.
  */
 export function PromptDetailDrawer({
   prompt,
@@ -65,92 +72,52 @@ export function PromptDetailDrawer({
 
   if (!prompt) {
     return (
-      <SlideOverPanel open={open} onClose={onClose} title="" width="xl">
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          {ui.states.loading}
-        </p>
-      </SlideOverPanel>
+      <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+        <OSDialogSurface size="2xl">
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {ui.states.loading}
+          </p>
+        </OSDialogSurface>
+      </Dialog>
     );
   }
 
   const categoryLabel = ui.topCategoryLabels[prompt.top_category];
 
   return (
-    <SlideOverPanel
-      open={open}
-      onClose={onClose}
-      title={title}
-      description={description}
-      width="xl"
-      actions={
-        <button
-          type="button"
-          onClick={() => onToggleFavorite(prompt)}
-          aria-label={
-            isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite
-          }
-          aria-pressed={isFavorite}
-          className={cn(
-            "rounded-md p-1.5 transition-colors hover:bg-muted",
-            isFavorite ? "text-amber-500" : "text-muted-foreground",
-          )}
-        >
-          <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
-        </button>
-      }
-      footer={
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onCopyBody(prompt)}
-              className="gap-1.5"
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <OSDialogSurface
+        size="2xl"
+        className="max-h-[min(90vh,860px)] overflow-y-auto"
+      >
+        <DialogHeader className="pr-12">
+          <div className="flex min-w-0 items-start justify-between gap-4">
+            <div className="min-w-0">
+              <DialogTitle className="leading-snug">{title}</DialogTitle>
+              {description ? (
+                <DialogDescription className="mt-1">
+                  {description}
+                </DialogDescription>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => onToggleFavorite(prompt)}
+              aria-label={
+                isFavorite ? ui.promptCard.unfavorite : ui.promptCard.favorite
+              }
+              aria-pressed={isFavorite}
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-muted",
+                isFavorite ? "text-amber-500" : "text-muted-foreground",
+              )}
             >
-              <Copy className="h-3.5 w-3.5" />
-              {ui.detail.copyBody}
-            </Button>
-            {prompt.source === "library" && onFork && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onFork(prompt)}
-                className="gap-1.5"
-              >
-                <GitFork className="h-3.5 w-3.5" />
-                {ui.promptCard.fork}
-              </Button>
-            )}
-            {prompt.source === "custom" && onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(prompt)}
-                className="gap-1.5"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-                {ui.promptCard.edit}
-              </Button>
-            )}
-            {prompt.source === "custom" && onDelete && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => onDelete(prompt)}
-                aria-label={ui.promptCard.delete}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            )}
+              <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+            </button>
           </div>
-          <Button size="sm" onClick={() => onRun(prompt)} className="gap-1.5">
-            <Play className="h-3.5 w-3.5" />
-            {ui.detail.runWithAi}
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-6">
+        </DialogHeader>
+
+        <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge
             variant={prompt.source === "library" ? "secondary" : "outline"}
@@ -249,7 +216,58 @@ export function PromptDetailDrawer({
             )}
           </section>
         )}
-      </div>
-    </SlideOverPanel>
+        </div>
+
+        <DialogFooter className="items-stretch justify-between gap-2 sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCopyBody(prompt)}
+              className="gap-1.5"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              {ui.detail.copyBody}
+            </Button>
+            {prompt.source === "library" && onFork && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onFork(prompt)}
+                className="gap-1.5"
+              >
+                <GitFork className="h-3.5 w-3.5" />
+                {ui.promptCard.fork}
+              </Button>
+            )}
+            {prompt.source === "custom" && onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(prompt)}
+                className="gap-1.5"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                {ui.promptCard.edit}
+              </Button>
+            )}
+            {prompt.source === "custom" && onDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onDelete(prompt)}
+                aria-label={ui.promptCard.delete}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+          <Button size="sm" onClick={() => onRun(prompt)} className="gap-1.5">
+            <Play className="h-3.5 w-3.5" />
+            {ui.detail.runWithAi}
+          </Button>
+        </DialogFooter>
+      </OSDialogSurface>
+    </Dialog>
   );
 }

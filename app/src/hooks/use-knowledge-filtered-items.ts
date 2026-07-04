@@ -19,6 +19,7 @@ import {
   compareKnowledgeItems,
   itemMatchesSearch,
 } from "@/lib/knowledge/knowledge-list-utils";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import {
   getActiveKnowledgeQuickFilterDefinitions,
   knowledgeQuickFiltersNeedMinuteTicker,
@@ -83,7 +84,9 @@ export function useKnowledgeFilteredItems(): {
       );
     }
     if (activeTypeFilters.length > 0) {
-      result = result.filter((i) => activeTypeFilters.includes(i.contentType));
+      result = result.filter((i) =>
+        activeTypeFilters.includes(getKnowledgeDisplayContentType(i)),
+      );
     }
     if (activeCategoryFilters.length > 0) {
       result = result.filter(

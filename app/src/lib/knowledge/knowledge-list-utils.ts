@@ -1,4 +1,5 @@
 import type { KnowledgeItem, SmartCollection } from "@/types/knowledge";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import type { KnowledgeSortKey } from "@/stores/knowledge-store";
 import { getCategoryLabel, getSourceTypeInfo } from "@/lib/knowledge/labels";
 import {
@@ -135,7 +136,7 @@ export function compareKnowledgeItems(
     case "titleAZ":
       return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }) || tieBreak();
     case "contentType": {
-      const c = a.contentType.localeCompare(b.contentType);
+      const c = getKnowledgeDisplayContentType(a).localeCompare(getKnowledgeDisplayContentType(b));
       return c !== 0 ? c : a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
     }
     case "relevance": {

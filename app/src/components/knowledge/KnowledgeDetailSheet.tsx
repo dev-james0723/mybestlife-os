@@ -24,6 +24,7 @@ import { KnowledgeThumbnailLightbox } from "./KnowledgeThumbnailLightbox";
 import { KnowledgeFavoriteStar } from "./KnowledgeFavoriteStar";
 import { FullscreenPreviewPortal } from "./source/FullscreenPreviewPortal";
 import { isYouTubePageUrl } from "@/lib/knowledge/youtube";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import {
   Sheet,
   SheetClose,
@@ -414,7 +415,8 @@ export function KnowledgeDetailSheet() {
 
   if (!item) return null;
 
-  const colors = typeColors[item.contentType];
+  const displayContentType = getKnowledgeDisplayContentType(item);
+  const colors = typeColors[displayContentType];
   const allTags = [...item.aiTags, ...item.manualTags];
   const sourceIsYoutube = item.sourceUrl
     ? isYouTubePageUrl(item.sourceUrl)
@@ -537,7 +539,7 @@ export function KnowledgeDetailSheet() {
                       colors.darkText,
                     )}
                   >
-                    {colors.icon} {knowledgeUi.typeLabels[item.contentType]}
+                    {colors.icon} {knowledgeUi.typeLabels[displayContentType]}
                   </Badge>
                 )}
                 {item.depthIndicator && (

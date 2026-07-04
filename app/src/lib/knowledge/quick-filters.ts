@@ -3,6 +3,7 @@ import { CONTENT_TYPES } from "@/types/knowledge";
 import type { KnowledgeCategory, Provider, SourceType } from "@/types/knowledge-source";
 import { SOURCE_TYPES } from "@/types/knowledge-source";
 import { KNOWLEDGE_CATEGORY_ORDER } from "@/lib/knowledge/labels";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 
 export const KNOWLEDGE_BUILTIN_QUICK_FILTER_IDS = [
   "favorite",
@@ -556,7 +557,7 @@ export function matchesKnowledgeQuickFilterRule(
         ? matchesBuiltInKnowledgeQuickFilter(item, rule.value, nowMs)
         : false;
     case "contentType":
-      return item.contentType === rule.value;
+      return getKnowledgeDisplayContentType(item) === rule.value;
     case "category":
       return item.category === rule.value;
     case "provider":

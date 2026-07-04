@@ -16,6 +16,7 @@ import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { TagTaxonomyPanel } from "./tags/TagTaxonomyPanel";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 
 const KB_DIRECTORY_WIDTH = 248;
 const kbDirectoryTransition = { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const };
@@ -38,7 +39,8 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const item of items) {
-      counts[item.contentType] = (counts[item.contentType] || 0) + 1;
+      const type = getKnowledgeDisplayContentType(item);
+      counts[type] = (counts[type] || 0) + 1;
     }
     return counts;
   }, [items]);

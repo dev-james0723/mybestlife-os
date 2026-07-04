@@ -423,22 +423,17 @@ export function QuoteDetailDialog() {
             </section>
           ) : null}
 
-          <details className="border-t border-border/60 pt-3">
-            <summary className="cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground">
-              Danger area
-            </summary>
-            <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setConfirmDelete(true)}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="size-4" aria-hidden />
-                {copy.buttonDelete}
-              </Button>
-            </div>
-          </details>
+          <div className="border-t border-border/60 pt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDelete(true)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="size-4" aria-hidden />
+              {copy.buttonDelete}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

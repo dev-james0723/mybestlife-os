@@ -30,6 +30,7 @@ import { useAppStore } from "@/stores/app-store";
 import { getKnowledgeUiCopy } from "@/lib/i18n/knowledge-ui";
 import type { KnowledgeItem } from "@/types/knowledge";
 import { friendlyAuthError } from "@/lib/knowledge/auth-error-copy";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import type { RetrievalCitation, RetrievalResult } from "@/lib/retrieval/types";
 
 type Message = {
@@ -996,7 +997,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
                     {item.title}
                   </span>
                   <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                    {knowledgeUi.typeLabels[item.contentType]}
+                    {knowledgeUi.typeLabels[getKnowledgeDisplayContentType(item)]}
                   </span>
                 </button>
               ))

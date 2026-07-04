@@ -11,11 +11,11 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  Sheet,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,8 +41,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  OSBottomSheet,
   OSControl,
+  OSDialogSurface,
   OSPrimaryAction,
 } from "@/components/ui/os-primitives";
 import { formatDate, isOverdue } from "@/lib/utils/date";
@@ -158,9 +158,12 @@ export function TaskDetailPanel({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <OSBottomSheet side="right" className="w-full sm:max-w-lg">
-          <SheetHeader className="gap-2 pr-10">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <OSDialogSurface
+          size="2xl"
+          className="max-h-[min(90vh,860px)] overflow-y-auto"
+        >
+          <DialogHeader className="gap-2 pr-10">
             <div className="flex flex-wrap items-center gap-1.5">
               {isTaskAiGenerated(t) && (
                 <Badge
@@ -188,7 +191,7 @@ export function TaskDetailPanel({
                 </span>
               )}
             </div>
-            <SheetTitle className="sr-only">{t.title}</SheetTitle>
+            <DialogTitle className="sr-only">{t.title}</DialogTitle>
             <Input
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
@@ -200,9 +203,9 @@ export function TaskDetailPanel({
               }}
               className="h-auto border-0 px-0 text-lg font-medium shadow-none focus-visible:ring-0"
             />
-          </SheetHeader>
+          </DialogHeader>
 
-          <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-2">
+          <div className="space-y-5">
             <div className="grid grid-cols-2 gap-3">
               <Field label={copy.labelStatus}>
                 <Select
@@ -425,7 +428,7 @@ export function TaskDetailPanel({
             </div>
           </div>
 
-          <SheetFooter className="flex-row items-center justify-between gap-2">
+          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
             <OSControl
               variant="ghost"
               className="text-destructive hover:text-destructive"
@@ -445,9 +448,9 @@ export function TaskDetailPanel({
                 {copy.close}
               </OSPrimaryAction>
             </div>
-          </SheetFooter>
-        </OSBottomSheet>
-      </Sheet>
+          </DialogFooter>
+        </OSDialogSurface>
+      </Dialog>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>

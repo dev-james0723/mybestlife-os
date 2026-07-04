@@ -17,6 +17,7 @@ import {
   collectionNamesForItem,
   getCardSummaryPreview,
 } from "@/lib/knowledge/knowledge-list-utils";
+import { getKnowledgeDisplayContentType } from "@/lib/knowledge/display-content-type";
 import { scoreKnowledgeItem } from "@/lib/knowledgeMatching";
 import { getKnowledgeUploadBadgePresentation } from "@/lib/knowledge/file-kind-presentation";
 import { SourceTypeBadge } from "./source/SourceTypeBadge";
@@ -101,7 +102,8 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
             </thead>
             <tbody>
               {items.map((item) => {
-                const colors = typeColors[item.contentType];
+                const displayContentType = getKnowledgeDisplayContentType(item);
+                const colors = typeColors[displayContentType];
                 const allTags = [...item.aiTags, ...item.manualTags];
                 const collections = collectionNamesForItem(item, smartCollections);
                 const relevance = searchQuery.trim()
@@ -130,7 +132,7 @@ export function KnowledgeTableView({ items }: KnowledgeTableViewProps) {
                           colors.darkText,
                         )}
                       >
-                        {colors.icon} {ui.typeLabels[item.contentType]}
+                        {colors.icon} {ui.typeLabels[displayContentType]}
                       </Badge>
                     </td>
                     <td className="py-2 align-top font-medium">
@@ -247,7 +249,8 @@ function KnowledgeMobileListItem({
 }) {
   const language = useAppStore((s) => s.language);
   const ui = getKnowledgeUiCopy(language);
-  const colors = typeColors[item.contentType];
+  const displayContentType = getKnowledgeDisplayContentType(item);
+  const colors = typeColors[displayContentType];
   const allTags = [...item.aiTags, ...item.manualTags];
   const visibleTags = allTags.slice(0, 2);
   const extraTagCount = Math.max(0, allTags.length - visibleTags.length);
@@ -316,7 +319,7 @@ function KnowledgeMobileListItem({
             ) : (
               <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-white/[0.18] bg-black/45 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white shadow-sm backdrop-blur-md">
                 <span className="shrink-0">{colors.icon}</span>
-                <span className="min-w-0 truncate">{ui.typeLabels[item.contentType]}</span>
+                <span className="min-w-0 truncate">{ui.typeLabels[displayContentType]}</span>
               </span>
             )}
           </div>
@@ -325,7 +328,7 @@ function KnowledgeMobileListItem({
         <div className="min-w-0 py-0.5">
           <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
             <span className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {badgeLabel ?? ui.typeLabels[item.contentType]}
+              {badgeLabel ?? ui.typeLabels[displayContentType]}
             </span>
             {age ? (
               <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/80">
@@ -409,7 +412,7 @@ function KnowledgeMobileListItem({
 }
 
 function renderMobileListVisual(item: KnowledgeItem) {
-  const colors = typeColors[item.contentType];
+  const colors = typeColors[getKnowledgeDisplayContentType(item)];
   const visualUrl = item.screenshotUrl ?? item.thumbnailUrl;
 
   if (visualUrl) {
