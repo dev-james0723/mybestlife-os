@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-07-04T19:40:41.306Z",
+  "checks": [
+    {
+      "route": "/",
+      "status": 200,
+      "finalUrl": "https://www.mybestlife-os.com/en/login",
+      "title": "My Best Life OS",
+      "bodyTextLength": 289,
+      "screenshot": "root.png",
+      "bodyTextSample": "My Best Life OS\nYour personal operating system for life management\nContinue with Google\nContinue with Apple\nContinue wit"
+    },
+    {
+      "route": "/en/login",
+      "status": 200,
+      "finalUrl": "https://www.mybestlife-os.com/en/login",
+      "title": "My Best Life OS",
+      "bodyTextLength": 289,
+      "screenshot": "en-login.png",
+      "bodyTextSample": "My Best Life OS\nYour personal operating system for life management\nContinue with Google\nContinue with Apple\nContinue wit"
+    },
+    {
+      "route": "/en/knowledge-base",
+      "status": 200,
+      "finalUrl": "https://www.mybestlife-os.com/en/login",
+      "title": "My Best Life OS",
+      "bodyTextLength": 289,
+      "screenshot": "en-knowledge-base.png",
+      "bodyTextSample": "My Best Life OS\nYour personal operating system for life management\nContinue with Google\nContinue with Apple\nContinue wit"
+    },
+    {
+      "route": "/en/tasks",
+      "status": 200,
+      "finalUrl": "https://www.mybestlife-os.com/en/login",
+      "title": "My Best Life OS",
+      "bodyTextLength": 289,
+      "screenshot": "en-tasks.png",
+      "bodyTextSample": "My Best Life OS\nYour personal operating system for life management\nContinue with Google\nContinue with Apple\nContinue wit"
+    },
+    {
+      "route": "/en/ai-knowledge",
+      "status": 200,
+      "finalUrl": "https://www.mybestlife-os.com/en/login",
+      "title": "My Best Life OS",
+      "bodyTextLength": 289,
+      "screenshot": "en-ai-knowledge.png",
+      "bodyTextSample": "My Best Life OS\nYour personal operating system for life management\nContinue with Google\nContinue with Apple\nContinue wit"
+    },
+    {
+      "route": "/en/quote-library",
+      "status": 200,
+      "finalUrl": "https://www.mybestlife-os.com/en/login",
+      "title": "My Best Life OS",
+      "bodyTextLength": 289,
+      "screenshot": "en-quote-library.png",
+      "bodyTextSample": "My Best Life OS\nYour personal operating system for life management\nContinue with Google\nContinue with Apple\nContinue wit"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,61 @@
+{
+  "results": [
+    {
+      "route": "/en/knowledge-base",
+      "name": "knowledge-desktop",
+      "url": "http://127.0.0.1:3000/en/knowledge-base",
+      "title": "My Best Life OS",
+      "hasBody": true,
+      "bodySample": "My Best Life OS Command Center Self People Career Build & Execute Resources Knowledge Learning My Garden Today Sun, Jul 5 Focus Deep Work Next Open day Garden Plant seed Quick Launch Knowledge Planner Tasks Xiaoba's resting space Drop here "
+    },
+    {
+      "route": "/en/tasks",
+      "name": "tasks-desktop",
+      "url": "http://127.0.0.1:3000/en/tasks",
+      "title": "My Best Life OS",
+      "hasBody": true,
+      "bodySample": "My Best Life OS Command Center Self People Career Build & Execute Resources Knowledge Learning My Garden DB Dev Bypass dev-bypass@mylifeos.local Search... ⌘K 26°C Overcast clouds 03:00 Tasks Manage and track your tasks Insights New Task"
+    },
+    {
+      "route": "/en/tasks",
+      "name": "tasks-mobile",
+      "url": "http://127.0.0.1:3000/en/tasks",
+      "title": "My Best Life OS",
+      "hasBody": true,
+      "bodySample": "My Best Life OS 26°C Tasks Manage and track your tasks New Task 0 Total 0 Active 0 In Progress 0 Due Today 0 Overdue 0 High / Urgent 0 Done This Week 0 No Project All Status All Priority All Projects Date Created Filters List Grid Table Boa"
+    },
+    {
+      "route": "/en/ai-knowledge",
+      "name": "ai-knowledge-desktop",
+      "url": "http://127.0.0.1:3000/en/ai-knowledge",
+      "title": "My Best Life OS",
+      "hasBody": true,
+      "bodySample": "My Best Life OS Command Center Self People Career Build & Execute Resources Knowledge Learning My Garden DB Dev Bypass dev-bypass@mylifeos.local Search... ⌘K — 03:00 AI Knowledge Your personal prompt arsenal — curated library, custom prompt"
+    },
+    {
+      "route": "/en/quote-library",
+      "name": "quote-library-desktop",
+      "url": "http://127.0.0.1:3000/en/quote-library",
+      "title": "My Best Life OS",
+      "hasBody": true,
+      "bodySample": "My Best Life OS Command Center Self People Career Build & Execute Resources Knowledge Learning My Garden Today Sun, Jul 5 Focus Deep Work Next Open day Garden Plant seed Quick Launch Tasks Knowledge Planner Xiaoba's resting space Drop here "
+    },
+    {
+      "route": "/en/quote-library",
+      "name": "quote-library-mobile",
+      "url": "http://127.0.0.1:3000/en/quote-library",
+      "title": "My Best Life OS",
+      "hasBody": true,
+      "bodySample": "My Best Life OS 26°C Quote Library Capture the words that shape you, and let them find you when you need them. Add quote All quotes Collections My Wisdom Profile Favorites only created_at_desc Your library is waiting Paste a line that moved"
+    }
+  ],
+  "consoleMessages": [
+    "warning: GSAP target [object NodeList] not found. https://gsap.com",
+    "warning: The resource http://127.0.0.1:3000/_next/static/media/22a5144ee8d83bca-s.p.woff2?v=1783191592753 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "warning: The resource http://127.0.0.1:3000/_next/static/media/7d4881bb7e1bf84d-s.p.woff2?v=1783191592753 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "warning: The resource http://127.0.0.1:3000/_next/static/media/22a5144ee8d83bca-s.p.woff2?v=1783191592753 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "warning: The resource http://127.0.0.1:3000/_next/static/media/7d4881bb7e1bf84d-s.p.woff2?v=1783191592753 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "warning: [dotlottie-web] Persistent buffer size mismatch detected. Expected 1440 bytes for canvas 18x20, but got 1292 bytes. This may indicate a WASM memory allocation issue or invalid canvas dimensions.",
+    "warning: [dotlottie-web] Persistent buffer size mismatch detected. Expected 1440 bytes for canvas 18x20, but got 1292 bytes. This may indicate a WASM memory allocation issue or invalid canvas dimensions."
+  ]
+}

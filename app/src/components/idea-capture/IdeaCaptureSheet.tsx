@@ -4,20 +4,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useGSAP } from "@gsap/react";
 import {
   AlertCircle,
   BookOpen,
+  Boxes,
   Check,
   CheckSquare,
+  Code2,
+  FileText,
   FolderKanban,
+  Heart,
   Image as ImageIcon,
   Lightbulb,
   Loader2,
   Mic,
   Plus,
+  Quote,
   Square,
   Sparkles,
+  StickyNote,
   Target,
+  UserRound,
+  Users,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,11 +55,13 @@ import { getDailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
 import { useAppStore } from "@/stores/app-store";
 import { useIdeaCaptureStore, selectHasDraft } from "@/stores/ideaCaptureStore";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
+import { useQuoteLibraryStore } from "@/stores/quote-library-store";
 import { useIdeaCaptureTrigger } from "@/hooks/useIdeaCaptureTrigger";
 import { useGeminiVoiceCapture } from "@/hooks/useGeminiVoiceCapture";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { hasDraft } from "@/types/idea";
 import { stripHtml } from "@/lib/utils/html";
+import { gsap, registerGSAP } from "@/lib/motion/register-gsap";
 import {
   EASE_HEAVY_GRACEFUL,
   EASE_IN_OUT_CUBIC,
@@ -63,11 +74,23 @@ import { CreateProjectModal } from "@/components/projects/create-project-modal";
 import { CreatePlannerTaskAiDialog } from "@/components/daily-planner/create-planner-task-ai-dialog";
 import { AddKnowledgeModal } from "@/components/knowledge/AddKnowledgeModal";
 import { CreateGoalAiDialog } from "@/components/goals/CreateGoalAiDialog";
+import { AddQuoteSheet } from "@/components/quote-library/add-quote-sheet";
+import { VaultAddDialog } from "@/components/vault/VaultAddDialog";
+import {
+  QuickAddAssetDialog,
+  QuickAddDocumentDialog,
+  QuickAddGratitudeDialog,
+  QuickAddNoteDialog,
+  QuickAddRelationshipDialog,
+  QuickAddRoleModelDialog,
+} from "./quick-add-domain-dialogs";
 import type {
   AISuggestions,
   DestinationRoute,
   ImageAttachment,
 } from "@/types/idea";
+
+registerGSAP();
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -76,16 +99,51 @@ import type {
  * others act as triggers that open a focused AI modal on top of the sheet
  * (the sheet itself stays open underneath so users can keep capturing).
  */
-type ChipKind = "idea" | "project" | "task" | "knowledge" | "goal";
+type ChipKind =
+  | "knowledge"
+  | "idea"
+  | "task"
+  | "project"
+  | "goal"
+  | "notes"
+  | "documents"
+  | "assets"
+  | "quote"
+  | "software"
+  | "relationships"
+  | "roleModels"
+  | "gratefulThings";
 
-const CHIP_KINDS: ChipKind[] = ["idea", "project", "task", "knowledge", "goal"];
+const CHIP_KINDS: ChipKind[] = [
+  "knowledge",
+  "idea",
+  "task",
+  "project",
+  "goal",
+  "notes",
+  "documents",
+  "assets",
+  "quote",
+  "software",
+  "relationships",
+  "roleModels",
+  "gratefulThings",
+];
 
 const CHIP_ICONS: Record<ChipKind, React.ComponentType<{ className?: string }>> = {
-  idea: Lightbulb,
-  project: FolderKanban,
-  task: CheckSquare,
   knowledge: BookOpen,
+  idea: Lightbulb,
+  task: CheckSquare,
+  project: FolderKanban,
   goal: Target,
+  notes: StickyNote,
+  documents: FileText,
+  assets: Boxes,
+  quote: Quote,
+  software: Code2,
+  relationships: Users,
+  roleModels: UserRound,
+  gratefulThings: Heart,
 };
 
 /** Default planner block size, kept in sync with daily-planner page. */
@@ -162,6 +220,7 @@ function KindChips({
   labels,
   tooltips,
   groupLabel,
+  reducedMotion,
 }: {
   selected: ChipKind;
   onSelect: (k: ChipKind) => void;
@@ -169,9 +228,46 @@ function KindChips({
   labels: Record<ChipKind, string>;
   tooltips: Record<ChipKind, string>;
   groupLabel: string;
+  reducedMotion: boolean;
 }) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const { contextSafe } = useGSAP(
+    () => {
+      if (reducedMotion) return;
+      gsap.from("[data-quick-add-chip]", {
+        y: 8,
+        autoAlpha: 0,
+        duration: 0.24,
+        ease: "power2.out",
+        stagger: 0.018,
+        clearProps: "transform,opacity,visibility",
+      });
+    },
+    { scope: rootRef, dependencies: [reducedMotion] },
+  );
+
+  const playLaunchPulse = contextSafe(
+    (target: HTMLButtonElement, nextKind: Exclude<ChipKind, "idea">) => {
+      if (reducedMotion) {
+        onLaunchModal(nextKind);
+        return;
+      }
+      gsap.killTweensOf(target);
+      gsap
+        .timeline({
+          onComplete: () => {
+            gsap.set(target, { clearProps: "transform" });
+            onLaunchModal(nextKind);
+          },
+        })
+        .to(target, { scale: 0.94, duration: 0.06, ease: "power2.out" })
+        .to(target, { scale: 1, duration: 0.16, ease: "back.out(2.3)" });
+    },
+  );
+
   return (
     <div
+      ref={rootRef}
       role="group"
       aria-label={groupLabel}
       className="-mx-1 flex gap-1.5 overflow-x-auto px-5 pt-3 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -185,16 +281,20 @@ function KindChips({
               render={
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(event) => {
                     if (kind === "idea") {
                       onSelect(kind);
                     } else {
-                      onLaunchModal(kind);
+                      playLaunchPulse(
+                        event.currentTarget,
+                        kind as Exclude<ChipKind, "idea">,
+                      );
                     }
                   }}
                   aria-pressed={kind === "idea" ? active : undefined}
                   aria-label={tooltips[kind]}
                   data-selection-glow={active ? "active" : undefined}
+                  data-quick-add-chip
                   className={cn(
                     "inline-flex min-h-[2rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
                     "transition-[background-color,color,border-color,transform] duration-150 ease-out",
@@ -693,22 +793,38 @@ export function IdeaCaptureSheet() {
   // ── Quick-Add chip labels & tooltips ─────────────────────────────────────
   const chipLabels: Record<ChipKind, string> = useMemo(
     () => ({
-      idea: ui.captureKindIdea,
-      project: ui.captureKindProject,
-      task: ui.captureKindTask,
       knowledge: ui.captureKindKnowledge,
+      idea: ui.captureKindIdea,
+      task: ui.captureKindTask,
+      project: ui.captureKindProject,
       goal: ui.captureKindGoal,
+      notes: ui.captureKindNotes,
+      documents: ui.captureKindDocuments,
+      assets: ui.captureKindAssets,
+      quote: ui.captureKindQuote,
+      software: ui.captureKindSoftware,
+      relationships: ui.captureKindRelationships,
+      roleModels: ui.captureKindRoleModels,
+      gratefulThings: ui.captureKindGratefulThings,
     }),
     [ui]
   );
 
   const chipTooltips: Record<ChipKind, string> = useMemo(
     () => ({
-      idea: ui.captureChipTooltipIdea,
-      project: ui.captureChipTooltipProject,
-      task: ui.captureChipTooltipTask,
       knowledge: ui.captureChipTooltipKnowledge,
+      idea: ui.captureChipTooltipIdea,
+      task: ui.captureChipTooltipTask,
+      project: ui.captureChipTooltipProject,
       goal: ui.captureChipTooltipGoal,
+      notes: ui.captureChipTooltipNotes,
+      documents: ui.captureChipTooltipDocuments,
+      assets: ui.captureChipTooltipAssets,
+      quote: ui.captureChipTooltipQuote,
+      software: ui.captureChipTooltipSoftware,
+      relationships: ui.captureChipTooltipRelationships,
+      roleModels: ui.captureChipTooltipRoleModels,
+      gratefulThings: ui.captureChipTooltipGratefulThings,
     }),
     [ui]
   );
@@ -731,17 +847,30 @@ export function IdeaCaptureSheet() {
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [documentModalOpen, setDocumentModalOpen] = useState(false);
+  const [assetModalOpen, setAssetModalOpen] = useState(false);
+  const [softwareModalOpen, setSoftwareModalOpen] = useState(false);
+  const [relationshipModalOpen, setRelationshipModalOpen] = useState(false);
+  const [roleModelModalOpen, setRoleModelModalOpen] = useState(false);
+  const [gratitudeModalOpen, setGratitudeModalOpen] = useState(false);
 
   const openKnowledgeModal = useKnowledgeStore((s) => s.openAddModal);
   const isKnowledgeModalOpen = useKnowledgeStore((s) => s.isAddModalOpen);
+  const openQuoteSheet = useQuoteLibraryStore((s) => s.openAddSheet);
+  const isQuoteSheetOpen = useQuoteLibraryStore((s) => s.isAddSheetOpen);
 
   // The Knowledge add modal is also mounted by KnowledgeLayout when on the
   // /knowledge route. To avoid double-mounting, this sheet only renders it
   // when we're not on a knowledge page.
   const pathname = usePathname();
   const onKnowledgeRoute = useMemo(
-    () => /\/knowledge(?:\/|$)/.test(pathname ?? ""),
+    () => /\/(?:knowledge|knowledge-base)(?:\/|$)/.test(pathname ?? ""),
     [pathname]
+  );
+  const onQuoteLibraryRoute = useMemo(
+    () => /\/quote-library(?:\/|$)/.test(pathname ?? ""),
+    [pathname],
   );
 
   const plannerCopy = useMemo(
@@ -752,21 +881,45 @@ export function IdeaCaptureSheet() {
   const handleLaunchModal = useCallback(
     (kind: Exclude<ChipKind, "idea">) => {
       switch (kind) {
+        case "knowledge":
+          openKnowledgeModal();
+          break;
         case "project":
           setProjectModalOpen(true);
           break;
         case "task":
           setTaskModalOpen(true);
           break;
-        case "knowledge":
-          openKnowledgeModal();
-          break;
         case "goal":
           setGoalModalOpen(true);
           break;
+        case "notes":
+          setNoteModalOpen(true);
+          break;
+        case "documents":
+          setDocumentModalOpen(true);
+          break;
+        case "assets":
+          setAssetModalOpen(true);
+          break;
+        case "quote":
+          openQuoteSheet();
+          break;
+        case "software":
+          setSoftwareModalOpen(true);
+          break;
+        case "relationships":
+          setRelationshipModalOpen(true);
+          break;
+        case "roleModels":
+          setRoleModelModalOpen(true);
+          break;
+        case "gratefulThings":
+          setGratitudeModalOpen(true);
+          break;
       }
     },
-    [openKnowledgeModal]
+    [openKnowledgeModal, openQuoteSheet]
   );
 
   // ── Rich text editor ─────────────────────────────────────────────────────
@@ -1269,6 +1422,7 @@ export function IdeaCaptureSheet() {
             labels={chipLabels}
             tooltips={chipTooltips}
             groupLabel={ui.ideaCaptureAriaGroupKind}
+            reducedMotion={reducedMotion}
           />
 
           <div className="px-5 pt-3">
@@ -1388,10 +1542,61 @@ export function IdeaCaptureSheet() {
         onOpenChange={setGoalModalOpen}
       />
 
+      {noteModalOpen && (
+        <QuickAddNoteDialog
+          open={noteModalOpen}
+          onOpenChange={setNoteModalOpen}
+        />
+      )}
+
+      {documentModalOpen && (
+        <QuickAddDocumentDialog
+          open={documentModalOpen}
+          onOpenChange={setDocumentModalOpen}
+        />
+      )}
+
+      {assetModalOpen && (
+        <QuickAddAssetDialog
+          open={assetModalOpen}
+          onOpenChange={setAssetModalOpen}
+        />
+      )}
+
+      {softwareModalOpen && (
+        <VaultAddDialog
+          open={softwareModalOpen}
+          onOpenChange={setSoftwareModalOpen}
+        />
+      )}
+
+      {relationshipModalOpen && (
+        <QuickAddRelationshipDialog
+          open={relationshipModalOpen}
+          onOpenChange={setRelationshipModalOpen}
+        />
+      )}
+
+      {roleModelModalOpen && (
+        <QuickAddRoleModelDialog
+          open={roleModelModalOpen}
+          onOpenChange={setRoleModelModalOpen}
+        />
+      )}
+
+      {gratitudeModalOpen && (
+        <QuickAddGratitudeDialog
+          open={gratitudeModalOpen}
+          onOpenChange={setGratitudeModalOpen}
+        />
+      )}
+
       {/* The Knowledge add modal is also rendered by KnowledgeLayout when on
           /knowledge — guard against double-mount by only rendering it here
           off-route. */}
       {!onKnowledgeRoute && isKnowledgeModalOpen && <AddKnowledgeModal />}
+
+      {!onQuoteLibraryRoute && isQuoteSheetOpen && <AddQuoteSheet />}
     </TooltipProvider>
   );
 }
