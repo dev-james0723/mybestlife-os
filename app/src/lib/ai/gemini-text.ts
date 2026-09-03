@@ -3,6 +3,8 @@
  * Same API key env vars as {@link app/api/daily-planner/schedule-image/route.ts} image generation.
  */
 
+import { isGeminiPrepayCreditsDepleted } from "./gemini-errors";
+
 const GENERATE_CONTENT_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -144,6 +146,10 @@ export function isGeminiRegionBlockedErrorMessage(message: string): boolean {
 function shouldRetryGeminiModel(httpStatus: number, bodyText: string): boolean {
   if (httpStatus === 401 || httpStatus === 403) return false;
   if (isGeminiRegionBlockedHttpResponse(httpStatus, bodyText)) return false;
+  // Gemini quotas are model-specific. A Pro model can report a zero/empty
+  // quota while Flash remains available for the same API key, so a 429 is a
+  // useful signal to advance through the caller's explicit fallback chain.
+  if (httpStatus === 429) return !isGeminiPrepayCreditsDepleted(httpStatus, bodyText);
   if (httpStatus === 404) return true;
   const t = bodyText.toLowerCase();
   if (httpStatus === 400) {

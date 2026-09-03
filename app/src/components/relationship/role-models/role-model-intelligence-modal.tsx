@@ -19,6 +19,10 @@ import {
   useGenerateNeuralSkill,
 } from "@/hooks/use-role-model-neural-skills";
 import { findPresetSkillForRoleModel } from "@/lib/mind-council/role-model-skill-map";
+import {
+  formatNeuralSkillGenerationError,
+  neuralSkillFallbackNotice,
+} from "@/lib/relationships/neural-skill-generation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -411,8 +415,12 @@ export function RoleModelIntelligenceModal({
                       context: buildContext(roleModel),
                     },
                     {
-                      onSuccess: () => toast.success("Neural Skill created."),
-                      onError: () => toast.error("Could not create Neural Skill."),
+                      onSuccess: (saved) => {
+                        const notice = neuralSkillFallbackNotice(saved.model_used);
+                        if (notice) toast.message(notice);
+                        else toast.success("Neural Skill created.");
+                      },
+                      onError: (error) => toast.error(formatNeuralSkillGenerationError(error)),
                     },
                   );
                 }}

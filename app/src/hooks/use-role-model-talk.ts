@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { findPresetSkillForRoleModel } from "@/lib/mind-council/role-model-skill-map";
 import {
+  formatNeuralSkillGenerationError,
+  neuralSkillFallbackNotice,
+} from "@/lib/relationships/neural-skill-generation";
+import {
   useGenerateNeuralSkill,
   useRoleModelMindSkills,
 } from "@/hooks/use-role-model-neural-skills";
@@ -71,9 +75,11 @@ export function useRoleModelTalk(
         context: buildContext(rm),
       });
       setPending(null);
+      const notice = neuralSkillFallbackNotice(saved.model_used);
+      if (notice) toast.message(notice);
       route(saved.mind_skill_id, opts);
-    } catch {
-      toast.error("Could not create a Neural Skill. Please try again.");
+    } catch (error) {
+      toast.error(formatNeuralSkillGenerationError(error));
     }
   }, [pending, generate, buildContext, route]);
 

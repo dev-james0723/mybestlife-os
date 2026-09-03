@@ -9,8 +9,13 @@ import {
 import type { MindSkill } from "@/lib/mind-council/types";
 import { useAppStore } from "@/stores/app-store";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
+import {
+  buildNeuralSkillSystemPrompt,
+  mergeNeuralSkillIntoCache,
+  readNeuralSkillApiResponse,
+  wrapNeuralSkillGenerationError,
+} from "@/lib/relationships/neural-skill-generation";
 import type {
-  NeuralSkillContent,
   RoleModelInsightContextPayload,
   RoleModelNeuralSkill,
 } from "@/types/role-model-intelligence";
@@ -57,8 +62,14 @@ export function useUpsertNeuralSkill() {
   return useMutation({
     mutationFn: (input: UpsertNeuralSkillInput) =>
       roleModelNeuralSkillsRepository.upsert(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: neuralSkillKeys.all });
+    onSuccess: (saved) => {
+      // Make a just-created lens available before Talk To navigates to Mind
+      // Council. Invalidating alone leaves a race where the destination sees
+      // the previous cached [] and rejects the custom-rm-* deep link.
+      qc.setQueryData<RoleModelNeuralSkill[]>(neuralSkillKeys.all, (current) =>
+        mergeNeuralSkillIntoCache(current, saved),
+      );
+      void qc.invalidateQueries({ queryKey: neuralSkillKeys.all });
     },
   });
 }
@@ -76,23 +87,33 @@ export function useGenerateNeuralSkill() {
       roleModelName: string;
       context: RoleModelInsightContextPayload;
     }): Promise<RoleModelNeuralSkill> => {
-      const res = await fetch("/api/ai/role-model/distill-skill", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roleModelId: args.roleModelId,
-          language: locale,
-          context: args.context,
-        }),
-      });
-      const json = (await res.json()) as { result?: NeuralSkillContent; error?: string };
-      if (!res.ok || !json.result) throw new Error(json.error ?? "distill_failed");
-      return upsert.mutateAsync({
-        role_model_id: args.roleModelId,
-        mind_skill_id: neuralSkillIdForRoleModel(args.roleModelId),
-        skill_json: json.result,
-        avatar_gradient: gradientForName(args.roleModelName),
-      });
+      let response: Response;
+      try {
+        response = await fetch("/api/ai/role-model/distill-skill", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            roleModelId: args.roleModelId,
+            language: locale,
+            context: args.context,
+          }),
+        });
+      } catch (error) {
+        throw wrapNeuralSkillGenerationError(error, "generate");
+      }
+
+      const generated = await readNeuralSkillApiResponse(response);
+      try {
+        return await upsert.mutateAsync({
+          role_model_id: args.roleModelId,
+          mind_skill_id: neuralSkillIdForRoleModel(args.roleModelId),
+          skill_json: generated.result,
+          avatar_gradient: gradientForName(args.roleModelName),
+          model_used: generated.meta?.modelUsed ?? null,
+        });
+      } catch (error) {
+        throw wrapNeuralSkillGenerationError(error, "persist");
+      }
     },
   });
 }
@@ -108,7 +129,7 @@ export function neuralSkillToMindSkill(ns: RoleModelNeuralSkill): MindSkill {
     category: "philosophy",
     lensTitle: content.lensTitle,
     lensSubtitle: content.lensSubtitle || "Neural Skill distilled from your Role Model.",
-    systemPromptHint: content.systemPromptHint,
+    systemPromptHint: buildNeuralSkillSystemPrompt(content),
     avatarGradient: ns.avatar_gradient,
   };
 }
