@@ -59,6 +59,12 @@ function createReservationClient(input: {
         order() {
           return query;
         },
+        async maybeSingle() {
+          return {
+            data: matches(filters) && current ? { ...current } : null,
+            error: null,
+          };
+        },
         async limit() {
           const scanned = matches(filters) && current ? [{ ...current }] : [];
           if (current && input.afterScan) current = input.afterScan(current);
@@ -170,7 +176,7 @@ describe("document upload reservation cleanup", () => {
     expect(mocks.deleteDocumentFileServer).not.toHaveBeenCalled();
   });
 
-  it("does not return an already-cancelled reservation to duplicate cleanup", async () => {
+  it("returns a cancelled tombstone for retry without refreshing its timestamp", async () => {
     const client = createReservationClient({
       row: reservation("cancelled", FRESH_AT),
     });
@@ -181,7 +187,11 @@ describe("document upload reservation cleanup", () => {
       uploadId: UPLOAD_ID,
     });
 
-    expect(result).toEqual({});
+    expect(result.reservation).toMatchObject({
+      id: UPLOAD_ID,
+      status: "cancelled",
+      storage_path: STORAGE_PATH,
+    });
     expect(client.current()).toMatchObject({
       status: "cancelled",
       updated_at: FRESH_AT,

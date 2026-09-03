@@ -111,8 +111,22 @@ export async function cancelDocumentUploadReservation(input: {
     .select(RESERVATION_COLUMNS)
     .maybeSingle();
   if (error) return { error: error.message };
-  return data
-    ? { reservation: data as DocumentUploadReservation }
+  if (data) return { reservation: data as DocumentUploadReservation };
+
+  // A prior cleanup may already have written the cancelled tombstone but then
+  // failed to remove the Storage object. Return that same owner-scoped row so
+  // DELETE remains retryable without refreshing its stale-cleanup timestamp.
+  const { data: cancelled, error: lookupError } = await input.supabase
+    .from("document_intake_uploads")
+    .select(RESERVATION_COLUMNS)
+    .eq("user_id", input.userId)
+    .eq("id", input.uploadId)
+    .eq("status", "cancelled")
+    .maybeSingle();
+
+  if (lookupError) return { error: lookupError.message };
+  return cancelled
+    ? { reservation: cancelled as DocumentUploadReservation }
     : {};
 }
 

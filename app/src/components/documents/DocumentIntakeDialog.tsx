@@ -533,6 +533,7 @@ function DocumentIntakeDialogSession({
   const savedRef = useRef(false);
   const mountedRef = useRef(true);
   const operationGenerationRef = useRef(0);
+  const intakeOperationRef = useRef(false);
 
   const [sourceMode, setSourceMode] = useState<SourceMode>("upload");
   const [phase, setPhase] = useState<IntakePhase>("idle");
@@ -707,6 +708,8 @@ function DocumentIntakeDialogSession({
         setError(validationError);
         return;
       }
+      if (intakeOperationRef.current) return;
+      intakeOperationRef.current = true;
 
       const generation = ++operationGenerationRef.current;
       abortRef.current?.abort();
@@ -718,7 +721,10 @@ function DocumentIntakeDialogSession({
       if (previousUploadId) {
         setIsCleaning(true);
         await cleanPendingUpload(previousUploadId);
-        if (!isOperationCurrent(generation)) return;
+        if (!isOperationCurrent(generation)) {
+          intakeOperationRef.current = false;
+          return;
+        }
         setIsCleaning(false);
       }
 
@@ -904,6 +910,7 @@ function DocumentIntakeDialogSession({
         );
       } finally {
         if (abortRef.current === controller) abortRef.current = null;
+        intakeOperationRef.current = false;
       }
     },
     [
@@ -1546,7 +1553,12 @@ function FileStateCard({
           {!processing ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {phase === "error" && canRetry ? (
-                <OSPrimaryAction type="button" osSize="compact" onClick={onRetry}>
+                <OSPrimaryAction
+                  type="button"
+                  osSize="compact"
+                  onClick={onRetry}
+                  disabled={disabled}
+                >
                   Retry upload
                 </OSPrimaryAction>
               ) : null}
