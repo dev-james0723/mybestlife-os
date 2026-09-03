@@ -23,21 +23,23 @@ import { OSDialogSurface } from "@/components/ui/os-primitives";
 import { RelationshipFormModal } from "@/components/relationship/forms/relationship-form-modal";
 import { RoleModelForm } from "@/components/relationship/role-model-form";
 import { CreateGratitudeDialog } from "@/components/grateful-things/create-gratitude-dialog";
+import { ConnectedDocumentIntakeDialog } from "@/components/documents/ConnectedDocumentIntakeDialog";
 import { useCreateAsset } from "@/hooks/use-assets";
-import { useCreateDocument } from "@/hooks/use-documents";
 import { useCreateGratefulThing } from "@/hooks/use-grateful-things";
 import { useCreateNote, useNotes } from "@/hooks/use-notes";
 import { useProjects } from "@/hooks/use-projects";
 import { useGoals } from "@/hooks/use-goals";
+import { useIdeas } from "@/hooks/use-ideas";
 import { useTasks } from "@/hooks/use-tasks";
 import { useCreateRelationship } from "@/hooks/use-relationships";
-import { useCreateRoleModel } from "@/hooks/use-role-models";
+import { useCreateRoleModel, useRoleModels } from "@/hooks/use-role-models";
 import { useAppStore } from "@/stores/app-store";
 import { getGratefulThingsUiCopy } from "@/lib/i18n/grateful-things-ui";
 import { getNotesUiCopy } from "@/lib/i18n/notes-ui";
 import { getResourcesUiCopy } from "@/lib/i18n/resources-ui";
 import { NOTE_TYPE_LABELS, NOTE_TYPES, type NoteType } from "@/lib/notes/note-types";
 import { ASSET_CATEGORY_KEYS, isAssetCategoryKey, type AssetCategoryKey } from "@/types/assets";
+import { relationshipToRoleModelInput } from "@/lib/relationships/role-model-conversion";
 
 type QuickAddDialogProps = {
   open: boolean;
@@ -160,118 +162,11 @@ export function QuickAddNoteDialog({ open, onOpenChange }: QuickAddDialogProps) 
 }
 
 export function QuickAddDocumentDialog({ open, onOpenChange }: QuickAddDialogProps) {
-  const createDocument = useCreateDocument();
-  const [form, setForm] = useState({
-    name: "",
-    document_type: "",
-    expiration_date: "",
-    file_url: "",
-    notes: "",
-  });
-
-  const reset = () =>
-    setForm({
-      name: "",
-      document_type: "",
-      expiration_date: "",
-      file_url: "",
-      notes: "",
-    });
-
-  const handleOpenChange = (next: boolean) => {
-    if (!next) reset();
-    onOpenChange(next);
-  };
-
-  const handleCreate = async () => {
-    if (!form.name.trim()) return;
-    await createDocument.mutateAsync({
-      name: form.name.trim(),
-      document_type: form.document_type.trim() || null,
-      expiration_date: form.expiration_date || null,
-      file_url: form.file_url.trim() || null,
-      notes: form.notes.trim() || null,
-    });
-    handleOpenChange(false);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <OSDialogSurface size="xl" className="max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>New document</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-1">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="quick-add-document-name">Name *</Label>
-              <Input
-                id="quick-add-document-name"
-                value={form.name}
-                onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-                placeholder="Passport, lease, ..."
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quick-add-document-type">Type</Label>
-              <Input
-                id="quick-add-document-type"
-                value={form.document_type}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, document_type: event.target.value }))
-                }
-                placeholder="ID, contract, insurance"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Expiration date</Label>
-              <DatePickerInput
-                value={form.expiration_date}
-                onChange={(value) => setForm((prev) => ({ ...prev, expiration_date: value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quick-add-document-url">File URL</Label>
-              <Input
-                id="quick-add-document-url"
-                value={form.file_url}
-                onChange={(event) => setForm((prev) => ({ ...prev, file_url: event.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quick-add-document-notes">Notes</Label>
-            <Textarea
-              id="quick-add-document-notes"
-              value={form.notes}
-              onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-              rows={3}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={createDocument.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={() => void handleCreate()}
-            disabled={!form.name.trim() || createDocument.isPending}
-          >
-            {createDocument.isPending ? "Saving..." : "Create"}
-          </Button>
-        </DialogFooter>
-      </OSDialogSurface>
-    </Dialog>
+    <ConnectedDocumentIntakeDialog
+      open={open}
+      onOpenChange={onOpenChange}
+    />
   );
 }
 
@@ -462,19 +357,43 @@ export function QuickAddAssetDialog({ open, onOpenChange }: QuickAddDialogProps)
 
 export function QuickAddRelationshipDialog({ open, onOpenChange }: QuickAddDialogProps) {
   const { data: projects } = useProjects();
+  const { data: goals } = useGoals();
+  const { data: notes } = useNotes();
+  const { data: ideas } = useIdeas();
+  const { data: roleModels } = useRoleModels();
   const createRelationship = useCreateRelationship();
+  const createRoleModel = useCreateRoleModel();
 
   return (
     <RelationshipFormModal
       open={open}
       onOpenChange={onOpenChange}
       projects={projects ?? []}
-      onSubmit={(payload) => {
-        createRelationship.mutate(payload, {
-          onSuccess: () => onOpenChange(false),
-        });
+      goals={goals ?? []}
+      notes={notes ?? []}
+      ideas={ideas ?? []}
+      roleModelNames={(roleModels ?? []).map((roleModel) => roleModel.name)}
+      onSubmit={({ payload, addToRoleModel }) => {
+        void (async () => {
+          try {
+            const saved = await createRelationship.mutateAsync(payload);
+            if (addToRoleModel) {
+              try {
+                await createRoleModel.mutateAsync(
+                  relationshipToRoleModelInput(saved),
+                );
+              } catch {
+                // The role-model hook reports its own error; the relationship
+                // is already persisted and should not be submitted twice.
+              }
+            }
+            onOpenChange(false);
+          } catch {
+            // Keep the modal open; the relationship hook reports the failure.
+          }
+        })();
       }}
-      isSubmitting={createRelationship.isPending}
+      isSubmitting={createRelationship.isPending || createRoleModel.isPending}
     />
   );
 }

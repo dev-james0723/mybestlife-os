@@ -11,6 +11,8 @@ import {
 
 export type CreateRoleModelInput = {
   name: string;
+  /** Relationship that seeded this profile; enables retry-safe conversion. */
+  source_relationship_id?: string | null;
   /** @deprecated Use `bio` instead. Kept for legacy callers. */
   description?: string | null;
   /** @deprecated Use `photo_url` instead. */
@@ -84,6 +86,8 @@ function buildPayload(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (input.name !== undefined) out.name = input.name;
+  if (input.source_relationship_id !== undefined)
+    out.source_relationship_id = input.source_relationship_id;
   if (input.description !== undefined) out.description = input.description;
   if (input.image_url !== undefined) out.image_url = input.image_url;
   if (input.linked_project_ids !== undefined)
@@ -135,11 +139,11 @@ export const roleModelsRepository = {
     if (input.linked_goal_ids === undefined) payload.linked_goal_ids = [];
     if (input.linked_note_ids === undefined) payload.linked_note_ids = [];
 
-    const { data, error } = await supabase
-      .from("role_models")
-      .insert(payload)
-      .select(SELECT_COLUMNS)
-      .single();
+    const table = supabase.from("role_models");
+    const write = input.source_relationship_id
+      ? table.upsert(payload, { onConflict: "source_relationship_id" })
+      : table.insert(payload);
+    const { data, error } = await write.select(SELECT_COLUMNS).single();
     if (error) throw error;
     return mapRow(data as Record<string, unknown>);
   },

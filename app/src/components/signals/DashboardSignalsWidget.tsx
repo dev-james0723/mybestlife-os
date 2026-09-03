@@ -251,7 +251,7 @@ function SignalsWidgetGallery({
                 aria-label={`${i + 1}`}
                 aria-current={i === activeIndex}
                 onClick={() => setIndex(i)}
-                className="flex h-6 min-w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                className="flex h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 <span
                   aria-hidden="true"

@@ -77,6 +77,7 @@ function buildOptimisticRelationship(
     relationship_strength: input.relationship_strength ?? "new",
     email: input.email ?? null,
     phone: input.phone ?? null,
+    social_links: input.social_links ?? [],
     last_contact_date: input.last_contact_date ?? null,
     last_interaction_notes: input.last_interaction_notes ?? null,
     next_action: input.next_action ?? null,
@@ -86,6 +87,12 @@ function buildOptimisticRelationship(
     general_notes: input.general_notes ?? null,
     tags: input.tags ?? [],
     linked_project_id: input.linked_project_id ?? null,
+    linked_project_ids:
+      input.linked_project_ids ??
+      (input.linked_project_id ? [input.linked_project_id] : []),
+    linked_goal_ids: input.linked_goal_ids ?? [],
+    linked_note_ids: input.linked_note_ids ?? [],
+    linked_idea_ids: input.linked_idea_ids ?? [],
     is_favorite: input.is_favorite ?? false,
     created_at: now,
     updated_at: now,

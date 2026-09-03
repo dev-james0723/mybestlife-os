@@ -34,7 +34,6 @@ import {
   UserCircle,
   Star,
   Archive,
-  FileText,
   Quote,
   Compass,
   CloudSun,
@@ -42,6 +41,14 @@ import {
   HeartHandshake,
   type LucideIcon,
 } from "lucide-react";
+import {
+  FINANCE_ENABLED,
+  HEALTH_ENABLED,
+  LEARNING_ENABLED,
+  LIFE_COMPANION_ENABLED,
+  NOTES_ENABLED,
+  WEEKLY_REVIEW_ENABLED,
+} from "@/lib/features";
 
 export type NavItem = {
   /** Stable key for i18n (matches first path segment, e.g. `/tasks` → `tasks`). */
@@ -71,6 +78,58 @@ export type NavCategory = {
   items: NavItem[];
 };
 
+const lifeCompanionNavItems: NavItem[] = LIFE_COMPANION_ENABLED
+  ? [
+      {
+        itemId: "life-agent",
+        title: "Life Companion",
+        url: "/life-agent",
+        icon: HeartHandshake,
+      },
+    ]
+  : [];
+
+const notesNavItems: NavItem[] = NOTES_ENABLED
+  ? [{ itemId: "notes", title: "Notes", url: "/notes", icon: NotebookPen }]
+  : [];
+
+const financeNavItems: NavItem[] = FINANCE_ENABLED
+  ? [{ itemId: "finance", title: "Finance", url: "/finance", icon: Wallet }]
+  : [];
+
+const healthNavItems: NavItem[] = HEALTH_ENABLED
+  ? [{ itemId: "health", title: "Health", url: "/health", icon: Activity }]
+  : [];
+
+const weeklyReviewNavItems: NavItem[] = WEEKLY_REVIEW_ENABLED
+  ? [
+      {
+        itemId: "weekly-review",
+        title: "Weekly Review",
+        url: "/weekly-review",
+        icon: CalendarCheck,
+      },
+    ]
+  : [];
+
+const learningNavCategories: NavCategory[] = LEARNING_ENABLED
+  ? [
+      {
+        categoryId: "learning",
+        title: "Learning",
+        icon: BookOpen,
+        items: [
+          {
+            itemId: "japanese-study",
+            title: "Japanese Study",
+            url: "/japanese-study",
+            icon: BookOpen,
+          },
+        ],
+      },
+    ]
+  : [];
+
 export const navigationCategories: NavCategory[] = [
   {
     categoryId: "commandCenter",
@@ -79,21 +138,16 @@ export const navigationCategories: NavCategory[] = [
     items: [
       { itemId: "dashboard", title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { itemId: "brain", title: "Brain", url: "/brain", icon: Brain },
-      {
-        itemId: "life-agent",
-        title: "Life Companion",
-        url: "/life-agent",
-        icon: HeartHandshake,
-      },
+      ...lifeCompanionNavItems,
       { itemId: "daily-planner", title: "Daily Planner", url: "/daily-planner", icon: CalendarClock },
       { itemId: "tasks", title: "Tasks", url: "/tasks", icon: CheckSquare },
-      { itemId: "notes", title: "Notes", url: "/notes", icon: NotebookPen },
-      { itemId: "weekly-review", title: "Weekly Review", url: "/weekly-review", icon: CalendarCheck },
+      ...notesNavItems,
+      ...weeklyReviewNavItems,
       { itemId: "calendar", title: "Calendar", url: "/calendar", icon: CalendarDays },
       { itemId: "weather", title: "Weather", url: "/weather", icon: CloudSun },
       { itemId: "signals", title: "Signals", url: "/signals", icon: Radar },
       { itemId: "analytics", title: "Analytics", url: "/analytics", icon: BarChart3 },
-      { itemId: "finance", title: "Finance", url: "/finance", icon: Wallet },
+      ...financeNavItems,
     ],
   },
   {
@@ -105,7 +159,7 @@ export const navigationCategories: NavCategory[] = [
       { itemId: "grateful-things", title: "Grateful Things", url: "/grateful-things", icon: Heart },
       { itemId: "quote-library", title: "Quote Library", url: "/quote-library", icon: Quote },
       { itemId: "bucket-list", title: "Bucket List", url: "/bucket-list", icon: Compass },
-      { itemId: "health", title: "Health", url: "/health", icon: Activity },
+      ...healthNavItems,
       { itemId: "habits", title: "Habits & Routines", url: "/habits", icon: ListChecks },
       { itemId: "journal", title: "Journal", url: "/journal", icon: BookMarked },
     ],
@@ -212,14 +266,6 @@ export const navigationCategories: NavCategory[] = [
         title: "Assets",
         url: "/resources",
         icon: Package,
-        searchParams: { tab: "assets" },
-      },
-      {
-        itemId: "documents",
-        title: "Documents",
-        url: "/resources",
-        icon: FileText,
-        searchParams: { tab: "documents" },
       },
       { itemId: "software-vault", title: "Software Vault", url: "/vault", icon: Package },
     ],
@@ -235,10 +281,5 @@ export const navigationCategories: NavCategory[] = [
       { itemId: "ideas", title: "Idea Capture", url: "/ideas", icon: Lightbulb },
     ],
   },
-  {
-    categoryId: "learning",
-    title: "Learning",
-    icon: BookOpen,
-    items: [{ itemId: "japanese-study", title: "Japanese Study", url: "/japanese-study", icon: BookOpen }],
-  },
+  ...learningNavCategories,
 ];

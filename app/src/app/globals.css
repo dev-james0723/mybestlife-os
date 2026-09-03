@@ -2859,7 +2859,7 @@ html[data-ui-theme="default"] [data-slot="sidebar-footer"] [data-slot="sidebar-m
   border-radius: 20px !important;
 }
 
-/* Space between the last Learning nav row and the Garden CTA — the
+/* Space between the last primary nav row and the Garden CTA — the
    adjacent SidebarGroups were visually glued; margin separates them. */
 html[data-ui-theme="default"] [data-slot="sidebar-group"]:has([data-glass-garden-cta]) {
   margin-top: 0.75rem;

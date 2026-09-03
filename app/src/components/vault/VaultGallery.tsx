@@ -99,7 +99,7 @@ export function VaultGallery({ entries, viewMode, onSelect, emptyState }: Props)
       <div
         className={
           viewMode === "grid"
-            ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            ? "grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             : "space-y-3"
         }
       >
@@ -112,8 +112,10 @@ export function VaultGallery({ entries, viewMode, onSelect, emptyState }: Props)
             transition={
               prefersReducedMotion ? REDUCED_MOTION_FADE : { duration: 0.25, ease: "easeOut" }
             }
+            className={viewMode === "grid" ? "h-full" : undefined}
           >
             <EntityCard
+              className={viewMode === "grid" ? "h-full" : undefined}
               onClick={() => onSelect(entry.id)}
               icon={
                 entry.icon_url ? (

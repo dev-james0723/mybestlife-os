@@ -323,6 +323,7 @@ export type RelationshipUiCopy = {
   relFormSectionContact: string;
   relFormSectionInteraction: string;
   relFormSectionLongForm: string;
+  relFormSectionLinkedItems: string;
   relFormSectionMeta: string;
 
   /** Form field labels */
@@ -336,6 +337,11 @@ export type RelationshipUiCopy = {
   relFieldEmailPlaceholder: string;
   relFieldPhone: string;
   relFieldPhonePlaceholder: string;
+  relFieldSocials: string;
+  relFieldSocialsHint: string;
+  relFieldSocialUrlPlaceholder: string;
+  relFieldAddSocial: string;
+  relFieldRemoveSocial: string;
   relFieldStrength: string;
   relFieldLastContact: string;
   relFieldLastInteractionNotes: string;
@@ -356,6 +362,19 @@ export type RelationshipUiCopy = {
   relFieldLinkedProjectPlaceholder: string;
   relFieldLinkedProjectNone: string;
   relFieldFavorite: string;
+  relFieldFavoriteHint: string;
+  relFieldAddToRoleModel: string;
+  relFieldRoleModelQueued: string;
+  relFieldAlreadyRoleModel: string;
+  relFieldRoleModelHint: string;
+  relLinkedItemsHint: string;
+  relLinkedProjects: string;
+  relLinkedGoals: string;
+  relLinkedNotes: string;
+  relLinkedIdeas: string;
+  relLinkedEmpty: string;
+  /** "{count} selected" */
+  relLinkedSelectedCount: string;
 
   /** Modal CTAs */
   relSaveRelationship: string;
@@ -370,6 +389,8 @@ export type RelationshipUiCopy = {
   relDetailSectionGeneralNotes: string;
   relDetailSectionTags: string;
   relDetailSectionLinkedProject: string;
+  relDetailSectionSocials: string;
+  relDetailSectionLinkedItems: string;
 
   /** Empty / no-results states */
   relNoResultsTitle: string;
@@ -791,6 +812,7 @@ const en: RelationshipUiCopy = {
   relFormSectionContact: "Contact",
   relFormSectionInteraction: "Interaction history",
   relFormSectionLongForm: "Context & notes",
+  relFormSectionLinkedItems: "Linked projects, goals, notes & ideas",
   relFormSectionMeta: "Tags & links",
 
   relFieldPhoto: "Photo",
@@ -803,6 +825,11 @@ const en: RelationshipUiCopy = {
   relFieldEmailPlaceholder: "email@example.com",
   relFieldPhone: "Phone",
   relFieldPhonePlaceholder: "+1 234 567 8900",
+  relFieldSocials: "Socials",
+  relFieldSocialsHint: "Add public profiles so this person is easy to find again.",
+  relFieldSocialUrlPlaceholder: "https://…",
+  relFieldAddSocial: "Add social",
+  relFieldRemoveSocial: "Remove social link",
   relFieldStrength: "Relationship strength",
   relFieldLastContact: "Last contact date",
   relFieldLastInteractionNotes: "Last interaction notes",
@@ -823,7 +850,22 @@ const en: RelationshipUiCopy = {
   relFieldLinkedProject: "Linked project",
   relFieldLinkedProjectPlaceholder: "Select a project",
   relFieldLinkedProjectNone: "No project",
-  relFieldFavorite: "Mark as favorite",
+  relFieldFavorite: "Favourite",
+  relFieldFavoriteHint:
+    "Keep this person easy to find at the top of your relationship list.",
+  relFieldAddToRoleModel: "Add to Role Model",
+  relFieldRoleModelQueued: "Will add to Role Model",
+  relFieldAlreadyRoleModel: "Already in Role Models",
+  relFieldRoleModelHint:
+    "Creates a starter Role Model profile when you save this relationship.",
+  relLinkedItemsHint:
+    "Select anything this relationship influences or helps move forward.",
+  relLinkedProjects: "Projects",
+  relLinkedGoals: "Goals",
+  relLinkedNotes: "Notes",
+  relLinkedIdeas: "Ideas",
+  relLinkedEmpty: "Nothing here yet",
+  relLinkedSelectedCount: "{count} selected",
 
   relSaveRelationship: "Save relationship",
 
@@ -836,6 +878,8 @@ const en: RelationshipUiCopy = {
   relDetailSectionGeneralNotes: "General notes",
   relDetailSectionTags: "Tags",
   relDetailSectionLinkedProject: "Linked project",
+  relDetailSectionSocials: "Socials",
+  relDetailSectionLinkedItems: "Linked work & thinking",
 
   relNoResultsTitle: "No matches found",
   relNoResultsDescription: "Try adjusting your search or filters.",

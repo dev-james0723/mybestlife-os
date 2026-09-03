@@ -13,10 +13,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { Package, Plus, Lock } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 import {
   OSEmptyState,
-  OSIconControl,
   OSPrimaryAction,
 } from "@/components/ui/os-primitives";
 import {
@@ -32,7 +31,8 @@ import {
 import { useTheme } from "@/lib/theme-context";
 import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
-import { useVaultSession, useVaultData } from "@/stores/vault-store";
+import { getVaultUsageCopy } from "@/lib/i18n/vault-usage-ui";
+import { useVaultData } from "@/stores/vault-store";
 import { VaultChrome } from "@/components/vault/chrome/VaultChrome";
 import { VaultFilterBar } from "@/components/vault/VaultFilterBar";
 import { VaultGallery } from "@/components/vault/VaultGallery";
@@ -47,16 +47,16 @@ import { VaultBuildMyStackPanel } from "@/components/vault/VaultBuildMyStackPane
 import { VaultComparePanel } from "@/components/vault/VaultComparePanel";
 import { VaultOverlapInsightsCard } from "@/components/vault/VaultOverlapInsightsCard";
 import { VaultIntelligenceCommandCenter } from "@/components/vault/VaultIntelligenceCommandCenter";
+import { VaultUsageDashboard } from "@/components/vault/VaultUsageDashboard";
 
 export function VaultInterior() {
   const { uiTheme } = useTheme();
   const language = useAppStore((s) => s.language);
   const copy = getVaultUiCopy(language);
+  const usageCopy = getVaultUsageCopy(language);
 
   const { data: entries, isLoading } = useSoftwareVault();
   const deleteMutation = useDeleteSoftwareVaultEntry();
-  const lock = useVaultSession((s) => s.lock);
-
   const selectedEntryId = useVaultData((s) => s.selectedEntryId);
   const selectEntry = useVaultData((s) => s.selectEntry);
   const viewMode = useVaultData((s) => s.viewMode);
@@ -108,9 +108,6 @@ export function VaultInterior() {
         actions={
           <>
             {softwareMode === "my-vault" ? <VaultCostDashboard entries={entryList} /> : null}
-            <OSIconControl osSize="compact" onClick={lock} title={copy.gallery.lockBtn} aria-label={copy.gallery.lockBtn}>
-              <Lock className="h-4 w-4" />
-            </OSIconControl>
             {softwareMode === "my-vault" ? (
               <OSPrimaryAction onClick={() => setAddDialogOpen(true)}>
                 <Plus className="h-4 w-4" />
@@ -120,16 +117,9 @@ export function VaultInterior() {
           </>
         }
       >
-        <div
-          aria-live="polite"
-          className="sr-only"
-          role="status"
-        >
-          {copy.gate.unlockedAnnouncement}
-        </div>
-
         <VaultSoftwareModeTabs
           copy={copy.modes}
+          usageLabel={usageCopy.tab}
           value={softwareMode}
           onValueChange={setSoftwareMode}
         />
@@ -167,6 +157,8 @@ export function VaultInterior() {
               }
             />
           </>
+        ) : softwareMode === "usage" ? (
+          <VaultUsageDashboard entries={entryList} />
         ) : softwareMode === "recommended-stacks" ? (
           <VaultRecommendedStacksPanel copy={copy.recommended} entries={entryList} />
         ) : softwareMode === "build-stack" ? (

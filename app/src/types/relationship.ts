@@ -13,6 +13,81 @@
 import type { Relationship } from "@/types/database";
 
 // ---------------------------------------------------------------------------
+// Social links
+// ---------------------------------------------------------------------------
+
+export const RELATIONSHIP_SOCIAL_PLATFORMS = [
+  "linkedin",
+  "instagram",
+  "x",
+  "facebook",
+  "threads",
+  "youtube",
+  "tiktok",
+  "github",
+  "website",
+  "other",
+] as const;
+
+export type RelationshipSocialPlatform =
+  (typeof RELATIONSHIP_SOCIAL_PLATFORMS)[number];
+
+/** A public profile or website belonging to this person. */
+export type RelationshipSocialLink = {
+  platform: RelationshipSocialPlatform;
+  url: string;
+};
+
+export function isRelationshipSocialPlatform(
+  value: unknown,
+): value is RelationshipSocialPlatform {
+  return (
+    typeof value === "string" &&
+    (RELATIONSHIP_SOCIAL_PLATFORMS as readonly string[]).includes(value)
+  );
+}
+
+/** Normalize the loose JSONB value returned by Supabase at the UI boundary. */
+export function normalizeRelationshipSocialLinks(
+  value: unknown,
+): RelationshipSocialLink[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const candidate = entry as Record<string, unknown>;
+    if (
+      !isRelationshipSocialPlatform(candidate.platform) ||
+      typeof candidate.url !== "string"
+    ) {
+      return [];
+    }
+
+    const url = normalizeRelationshipSocialUrl(candidate.url);
+    if (!url) return [];
+
+    return [
+      {
+        platform: candidate.platform,
+        url,
+      },
+    ];
+  });
+}
+
+/** Allow clickable web URLs only; rejects script/data protocols from JSONB. */
+export function normalizeRelationshipSocialUrl(value: string): string | null {
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Category
 // ---------------------------------------------------------------------------
 
@@ -88,12 +163,29 @@ export function resolveRelationshipStrength(
 // fields they're changing.
 // ---------------------------------------------------------------------------
 
+type RelationshipOptionalOnInsert =
+  | "social_links"
+  | "linked_project_ids"
+  | "linked_goal_ids"
+  | "linked_note_ids"
+  | "linked_idea_ids";
+
 export type RelationshipInsert = Omit<
   Relationship,
-  "id" | "user_id" | "created_at" | "updated_at"
+  | "id"
+  | "user_id"
+  | "created_at"
+  | "updated_at"
+  | RelationshipOptionalOnInsert
 > & {
   /** Optional — defaults to auth.uid() in the DB. */
   user_id?: string;
+  /** Optional for backwards-compatible callers such as the AI quick-add flow. */
+  social_links?: Relationship["social_links"];
+  linked_project_ids?: Relationship["linked_project_ids"];
+  linked_goal_ids?: Relationship["linked_goal_ids"];
+  linked_note_ids?: Relationship["linked_note_ids"];
+  linked_idea_ids?: Relationship["linked_idea_ids"];
 };
 
 export type RelationshipUpdate = Partial<

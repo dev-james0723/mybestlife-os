@@ -33,11 +33,13 @@ import {
   ShieldCheck,
   Lightbulb,
   Link2,
+  Target,
   Pencil,
   Trash2,
   UserRound,
   PenLine,
   RefreshCw,
+  type LucideIcon,
 } from "lucide-react";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
@@ -104,17 +106,22 @@ import { useQueryClient } from "@tanstack/react-query";
 import { relationshipAiReportKey } from "@/hooks/use-relationship-intelligence";
 import { formatDate, formatRelative } from "@/lib/utils/date";
 import type {
+  Goal,
+  Idea,
+  Note,
   Relationship,
   Project,
   RelationshipPromise,
 } from "@/types/database";
+import type { RelationshipSocialPlatform } from "@/types/relationship";
 import type { RelationshipIntelligenceReport } from "@/types/relationship-intelligence";
 
 type Props = {
   relationship: Relationship | null;
   projects: readonly Project[];
-  goals?: readonly import("@/types/database").Goal[];
-  notes?: readonly import("@/types/database").Note[];
+  goals?: readonly Goal[];
+  notes?: readonly Note[];
+  ideas?: readonly Idea[];
   promises: readonly RelationshipPromise[];
   open: boolean;
   onClose: () => void;
@@ -129,6 +136,7 @@ export function RelationshipIntelligenceModal({
   projects,
   goals,
   notes,
+  ideas,
   promises,
   open,
   onClose,
@@ -171,9 +179,29 @@ export function RelationshipIntelligenceModal({
   }
 
   const r = relationship;
-  const linkedProject = r.linked_project_id
-    ? projects.find((p) => p.id === r.linked_project_id)
-    : null;
+  const projectIds = new Set(
+    r.linked_project_ids.length > 0
+      ? r.linked_project_ids
+      : r.linked_project_id
+        ? [r.linked_project_id]
+        : [],
+  );
+  const linkedProjects = projects.filter((project) => projectIds.has(project.id));
+  const linkedGoals = (goals ?? []).filter((goal) =>
+    r.linked_goal_ids.includes(goal.id),
+  );
+  const linkedNotes = (notes ?? []).filter((note) =>
+    r.linked_note_ids.includes(note.id),
+  );
+  const linkedIdeas = (ideas ?? []).filter((idea) =>
+    r.linked_idea_ids.includes(idea.id),
+  );
+  const hasLinkedItems =
+    linkedProjects.length +
+      linkedGoals.length +
+      linkedNotes.length +
+      linkedIdeas.length >
+    0;
   const initials = getInitials(r.person_name);
   const lastContactText = r.last_contact_date
     ? `${formatDate(r.last_contact_date)} · ${formatRelative(r.last_contact_date)}`
@@ -208,6 +236,7 @@ export function RelationshipIntelligenceModal({
         projects,
         goals,
         notes,
+        ideas,
       });
       const fresh = await requestRelationshipAnalysis({
         relationshipId: relId,
@@ -252,7 +281,7 @@ export function RelationshipIntelligenceModal({
           <DialogHeader className={relationshipDialogHeaderClassName}>
             <DialogTitle className="sr-only">{r.person_name}</DialogTitle>
             {/* Hero */}
-            <div className="flex items-start gap-4">
+            <div className="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-x-4 gap-y-3 sm:flex sm:gap-4">
               <Avatar className="h-16 w-16 shrink-0 ring-1 ring-border">
                 {r.photo_url ? (
                   <AvatarImage src={r.photo_url} alt={r.person_name} />
@@ -285,7 +314,7 @@ export function RelationshipIntelligenceModal({
                   </Badge>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className="col-span-2 flex flex-wrap items-center gap-1.5 sm:ml-auto sm:mr-12 sm:flex-nowrap">
                 <RelationshipFavoriteStar
                   active={r.is_favorite}
                   onClick={onToggleFavorite}
@@ -351,6 +380,28 @@ export function RelationshipIntelligenceModal({
                   </Section>
                 )}
 
+                {r.social_links.length > 0 && (
+                  <Section
+                    icon={<Link2 className="h-4 w-4" />}
+                    title={copy.relDetailSectionSocials}
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      {r.social_links.map((social, index) => (
+                        <a
+                          key={`${social.platform}-${social.url}-${index}`}
+                          href={social.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-card/40 px-3 py-1.5 text-sm font-medium transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                        >
+                          {socialPlatformLabel(social.platform)}
+                          <ArrowUpRight className="size-3.5" />
+                        </a>
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
                 {r.next_action && (
                   <Section icon={<ArrowRight className="h-4 w-4" />} title={copy.relDetailSectionNextAction}>
                     <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
@@ -398,16 +449,63 @@ export function RelationshipIntelligenceModal({
                   </Section>
                 )}
 
-                {linkedProject && (
-                  <Section icon={<Briefcase className="h-4 w-4" />} title={copy.relDetailSectionLinkedProject}>
-                    <Link
-                      href={withLocalePrefix(localeSlug, `/projects?openId=${linkedProject.id}`)}
-                      onClick={onClose}
-                      className="group flex items-center justify-between gap-2 rounded-md border border-border bg-card/40 px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
-                    >
-                      <span className="min-w-0 truncate">{linkedProject.name}</span>
-                      <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-                    </Link>
+                {hasLinkedItems && (
+                  <Section
+                    icon={<Briefcase className="h-4 w-4" />}
+                    title={copy.relDetailSectionLinkedItems}
+                  >
+                    <div className="space-y-2">
+                      {linkedProjects.map((project) => (
+                        <LinkedItemRow
+                          key={`project-${project.id}`}
+                          icon={Briefcase}
+                          kind={copy.relLinkedProjects}
+                          title={project.name}
+                          href={withLocalePrefix(
+                            localeSlug,
+                            `/projects?openId=${project.id}`,
+                          )}
+                          onOpen={onClose}
+                        />
+                      ))}
+                      {linkedGoals.map((goal) => (
+                        <LinkedItemRow
+                          key={`goal-${goal.id}`}
+                          icon={Target}
+                          kind={copy.relLinkedGoals}
+                          title={goal.name}
+                          href={withLocalePrefix(localeSlug, "/goals")}
+                          onOpen={onClose}
+                        />
+                      ))}
+                      {linkedNotes.map((note) => (
+                        <LinkedItemRow
+                          key={`note-${note.id}`}
+                          icon={StickyNote}
+                          kind={copy.relLinkedNotes}
+                          title={note.title}
+                          href={withLocalePrefix(localeSlug, "/notes")}
+                          onOpen={onClose}
+                        />
+                      ))}
+                      {linkedIdeas.map((idea) => (
+                        <LinkedItemRow
+                          key={`idea-${idea.id}`}
+                          icon={Lightbulb}
+                          kind={copy.relLinkedIdeas}
+                          title={
+                            idea.title?.trim() ||
+                            idea.content.trim().slice(0, 80) ||
+                            copy.relLinkedIdeas
+                          }
+                          href={withLocalePrefix(
+                            localeSlug,
+                            `/ideas?openId=${idea.id}`,
+                          )}
+                          onOpen={onClose}
+                        />
+                      ))}
+                    </div>
                   </Section>
                 )}
 
@@ -630,6 +728,53 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
       <span className="min-w-0 truncate">{children}</span>
     </div>
   );
+}
+
+function LinkedItemRow({
+  icon: Icon,
+  kind,
+  title,
+  href,
+  onOpen,
+}: {
+  icon: LucideIcon;
+  kind: string;
+  title: string;
+  href: string;
+  onOpen: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onOpen}
+      className="group flex min-h-11 items-center gap-2.5 rounded-xl border border-border bg-card/40 px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
+    >
+      <Icon className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {kind}
+        </span>
+        <span className="block truncate text-foreground">{title}</span>
+      </span>
+      <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+    </Link>
+  );
+}
+
+function socialPlatformLabel(platform: RelationshipSocialPlatform): string {
+  const labels: Record<RelationshipSocialPlatform, string> = {
+    linkedin: "LinkedIn",
+    instagram: "Instagram",
+    x: "X",
+    facebook: "Facebook",
+    threads: "Threads",
+    youtube: "YouTube",
+    tiktok: "TikTok",
+    github: "GitHub",
+    website: "Website",
+    other: "Other",
+  };
+  return labels[platform];
 }
 
 function Prose({ children }: { children: React.ReactNode }) {

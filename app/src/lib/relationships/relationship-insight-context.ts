@@ -13,6 +13,7 @@ import type {
   Project,
   Goal,
   Note,
+  Idea,
 } from "@/types/database";
 
 const MAX_INTERACTIONS = 8;
@@ -52,6 +53,7 @@ export function buildRelationshipInsightContext(input: {
   projects: readonly Project[];
   goals?: readonly Goal[];
   notes?: readonly Note[];
+  ideas?: readonly Idea[];
 }): RelationshipInsightContext {
   const r = input.relationship;
 
@@ -64,14 +66,18 @@ export function buildRelationshipInsightContext(input: {
     ...r.tags.flatMap((t) => tokens(t)),
   ]);
 
-  const linkedProject = r.linked_project_id
-    ? input.projects.find((p) => p.id === r.linked_project_id)
-    : undefined;
+  const linkedProjectIds = new Set(
+    r.linked_project_ids.length > 0
+      ? r.linked_project_ids
+      : r.linked_project_id
+        ? [r.linked_project_id]
+        : [],
+  );
 
   const relatedProjects = input.projects
     .filter(
       (p) =>
-        p.id === r.linked_project_id ||
+        linkedProjectIds.has(p.id) ||
         isRelated(vocab, p.name, p.description),
     )
     .slice(0, MAX_LINKED)
@@ -79,18 +85,49 @@ export function buildRelationshipInsightContext(input: {
       id: p.id,
       name: p.name,
       description: clip(p.description),
-      linked: p.id === r.linked_project_id,
+      linked: linkedProjectIds.has(p.id),
     }));
 
   const relatedGoals = (input.goals ?? [])
-    .filter((g) => isRelated(vocab, g.name, g.description))
+    .filter(
+      (g) =>
+        r.linked_goal_ids.includes(g.id) ||
+        isRelated(vocab, g.name, g.description),
+    )
     .slice(0, MAX_LINKED)
-    .map((g) => ({ id: g.id, name: g.name, description: clip(g.description) }));
+    .map((g) => ({
+      id: g.id,
+      name: g.name,
+      description: clip(g.description),
+      linked: r.linked_goal_ids.includes(g.id),
+    }));
 
   const relatedNotes = (input.notes ?? [])
-    .filter((n) => isRelated(vocab, n.title, n.content))
+    .filter(
+      (n) =>
+        r.linked_note_ids.includes(n.id) ||
+        isRelated(vocab, n.title, n.content),
+    )
     .slice(0, MAX_LINKED)
-    .map((n) => ({ id: n.id, title: n.title, excerpt: clip(n.content) }));
+    .map((n) => ({
+      id: n.id,
+      title: n.title,
+      excerpt: clip(n.content),
+      linked: r.linked_note_ids.includes(n.id),
+    }));
+
+  const relatedIdeas = (input.ideas ?? [])
+    .filter(
+      (idea) =>
+        r.linked_idea_ids.includes(idea.id) ||
+        isRelated(vocab, idea.title ?? idea.content, idea.content),
+    )
+    .slice(0, MAX_LINKED)
+    .map((idea) => ({
+      id: idea.id,
+      title: clip(idea.title ?? idea.content, 120),
+      linked: r.linked_idea_ids.includes(idea.id),
+    }));
 
   return {
     relationship: {
@@ -106,7 +143,11 @@ export function buildRelationshipInsightContext(input: {
       general_notes: clip(r.general_notes, 800),
       tags: r.tags,
       has_photo: Boolean(r.photo_url),
-      linked_project: linkedProject ? linkedProject.name : null,
+      social_links: r.social_links,
+      linked_project_ids: [...linkedProjectIds],
+      linked_goal_ids: r.linked_goal_ids,
+      linked_note_ids: r.linked_note_ids,
+      linked_idea_ids: r.linked_idea_ids,
     },
     interactions: input.interactions.slice(0, MAX_INTERACTIONS).map((i) => ({
       date: i.interaction_date,
@@ -127,5 +168,6 @@ export function buildRelationshipInsightContext(input: {
     related_projects: relatedProjects,
     related_goals: relatedGoals,
     related_notes: relatedNotes,
+    related_ideas: relatedIdeas,
   };
 }

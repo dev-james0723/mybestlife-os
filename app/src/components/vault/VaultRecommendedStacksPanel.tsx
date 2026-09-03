@@ -34,7 +34,13 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { VaultLibraryToolThumb } from "@/components/vault/VaultLibraryToolThumb";
 
@@ -61,24 +67,27 @@ export function VaultRecommendedStacksPanel({ copy, entries }: Props) {
 
   return (
     <div className="space-y-6">
-      <div
-        className="flex flex-wrap gap-2"
-        role="tablist"
-        aria-label={copy.filterAria}
+      <Select
+        value={industry}
+        onValueChange={(value) => setIndustry(value as IndustryFilter)}
       >
-        <FilterChip active={industry === "all"} onClick={() => setIndustry("all")}>
-          {copy.filterAll}
-        </FilterChip>
-        {VAULT_STACK_INDUSTRY_SLUGS.map((slug) => (
-          <FilterChip
-            key={slug}
-            active={industry === slug}
-            onClick={() => setIndustry(slug)}
-          >
-            {copy.industries[slug]}
-          </FilterChip>
-        ))}
-      </div>
+        <SelectTrigger
+          aria-label={copy.filterAria}
+          className="w-full min-w-0 sm:w-80"
+        >
+          <SelectValue>
+            {industry === "all" ? copy.filterAll : copy.industries[industry]}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent align="start" className="max-h-80">
+          <SelectItem value="all">{copy.filterAll}</SelectItem>
+          {VAULT_STACK_INDUSTRY_SLUGS.map((slug) => (
+            <SelectItem key={slug} value={slug}>
+              {copy.industries[slug]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       <ul className="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((stack) => (
@@ -105,33 +114,6 @@ export function VaultRecommendedStacksPanel({ copy, entries }: Props) {
         }}
       />
     </div>
-  );
-}
-
-function FilterChip({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm",
-        active
-          ? "border-primary/40 bg-primary/15 text-foreground"
-          : "border-border/60 bg-background/40 text-muted-foreground hover:border-border hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

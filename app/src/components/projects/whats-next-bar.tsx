@@ -64,12 +64,12 @@ export function WhatsNextBar({ projects, ui, onOpen }: WhatsNextBarProps) {
     : "";
 
   return (
-    <div className="flex flex-col gap-3 rounded-[1.1rem] border border-lime-300/25 bg-lime-300/8 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] supports-backdrop-filter:backdrop-blur-xl dark:border-lime-300/18 dark:bg-lime-300/7 sm:flex-row sm:items-center sm:px-4">
-      <div className="flex min-w-0 items-start gap-3 sm:items-center">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border border-lime-300/25 bg-lime-300/14 text-lime-700 dark:text-lime-200">
+    <div className="flex flex-col gap-4 rounded-[1.1rem] border border-lime-300/25 bg-lime-300/8 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] supports-backdrop-filter:backdrop-blur-xl dark:border-lime-300/18 dark:bg-lime-300/7 sm:flex-row sm:items-center sm:px-5">
+      <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.9rem] border border-lime-300/25 bg-lime-300/14 text-lime-700 dark:text-lime-200">
           <Lightbulb className="h-4 w-4" />
         </span>
-        <p className="min-w-0 flex-1 text-sm leading-6 text-foreground">
+        <p className="min-w-0 flex-1 text-pretty text-sm leading-6 text-foreground">
           {ui.whatsNextPrefix} &quot;{suggestion.project.name}&quot; in {days}{" "}
           days{dueInfo}. {ui.whatsNextSuffix}
         </p>

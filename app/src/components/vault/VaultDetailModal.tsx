@@ -19,6 +19,27 @@ import { useAppStore } from "@/stores/app-store";
 import { getVaultUiCopy } from "@/lib/i18n/vault-ui";
 import { useToggleDefaultStack } from "@/hooks/use-software-vault";
 import { SoftwareProductResearchDialog } from "@/components/vault/SoftwareProductResearchDialog";
+import { getVaultUsageCopy } from "@/lib/i18n/vault-usage-ui";
+
+type RecordUseResponse = {
+  launchCount: number;
+  lastOpenedAt: string;
+};
+
+async function readRecordUseResponse(response: Response): Promise<RecordUseResponse> {
+  const payload = await response.json().catch(() => null) as
+    | (Partial<RecordUseResponse> & { error?: string; message?: string })
+    | null;
+
+  if (!response.ok || typeof payload?.launchCount !== "number" || !payload.lastOpenedAt) {
+    throw new Error(payload?.message ?? payload?.error ?? "record_failed");
+  }
+
+  return {
+    launchCount: payload.launchCount,
+    lastOpenedAt: payload.lastOpenedAt,
+  };
+}
 
 function costLabel(entry: SoftwareVaultEntry): string {
   if (entry.cost_type === "Free") return "Free";
@@ -49,6 +70,7 @@ export function VaultDetailModal({
 }: Props) {
   const language = useAppStore((s) => s.language);
   const copy = getVaultUiCopy(language);
+  const usageCopy = getVaultUsageCopy(language);
   const toggleDefault = useToggleDefaultStack();
   const queryClient = useQueryClient();
   const [researchOpen, setResearchOpen] = useState(false);
@@ -81,11 +103,37 @@ export function VaultDetailModal({
           contextType: "vault",
         }),
       });
-      if (!res.ok) throw new Error("record_failed");
-      await queryClient.invalidateQueries({ queryKey: ["software-vault"] });
-      toast.success("Usage recorded.");
-    } catch {
-      toast.error("Could not record usage.");
+      const recorded = await readRecordUseResponse(res);
+      queryClient.setQueryData<SoftwareVaultEntry[]>(["software-vault"], (current) =>
+        current?.map((item) =>
+          item.id === entry.id
+            ? {
+                ...item,
+                launch_count: recorded.launchCount,
+                last_opened_at: recorded.lastOpenedAt,
+                updated_at: recorded.lastOpenedAt,
+              }
+            : item,
+        ),
+      );
+      queryClient.setQueryData<SoftwareVaultEntry>(["software-vault", entry.id], (current) =>
+        current
+          ? {
+              ...current,
+              launch_count: recorded.launchCount,
+              last_opened_at: recorded.lastOpenedAt,
+              updated_at: recorded.lastOpenedAt,
+            }
+          : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["software-vault"] });
+      toast.success(`${usageCopy.recordSuccess}: ${recorded.launchCount}`);
+    } catch (error) {
+      toast.error(usageCopy.recordFailure, {
+        description: error instanceof Error && error.message !== "record_failed"
+          ? error.message
+          : undefined,
+      });
     } finally {
       setRecordingUse(false);
     }
@@ -109,8 +157,8 @@ export function VaultDetailModal({
       <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
         {entry && (
           <div className="space-y-6">
-            <DialogHeader>
-              <div className="flex items-start justify-between gap-4 pr-10 sm:pr-12">
+            <DialogHeader className="pr-14">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="flex min-w-0 items-center gap-3">
                   {entry.icon_url ? (
                     // eslint-disable-next-line @next/next/no-img-element -- remote app icon URL
@@ -146,56 +194,92 @@ export function VaultDetailModal({
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setResearchOpen(true)} aria-label="Research product">
+                <div
+                  className="flex w-fit shrink-0 items-center gap-1 rounded-xl border border-border/60 bg-muted/25 p-1"
+                  aria-label={usageCopy.toolbar}
+                  role="group"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setResearchOpen(true)}
+                    aria-label={usageCopy.research}
+                    title={usageCopy.research}
+                    className="rounded-lg"
+                  >
                     <Search className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={onEdit} aria-label={copy.detail.edit}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onEdit}
+                    aria-label={copy.detail.edit}
+                    title={copy.detail.edit}
+                    className="rounded-lg"
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={onDelete} aria-label={copy.detail.delete}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onDelete}
+                    aria-label={copy.detail.delete}
+                    title={copy.detail.delete}
+                    className="rounded-lg"
+                  >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>
             </DialogHeader>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{entry.status}</Badge>
-              <Badge variant="outline">{entry.priority}</Badge>
-              <Badge variant="outline">{costLabel(entry)}</Badge>
-              <Button
-                type="button"
-                size="sm"
-                variant={entry.is_default_stack ? "default" : "outline"}
-                onClick={() =>
-                  toggleDefault.mutate({ id: entry.id, isDefault: !entry.is_default_stack })
-                }
-                disabled={toggleDefault.isPending}
-                className="ml-auto"
-              >
-                <Star className={`mr-1.5 h-3.5 w-3.5 ${entry.is_default_stack ? "fill-current" : ""}`} />
-                {entry.is_default_stack ? copy.detail.removeFromDefaultStack : copy.detail.addToDefaultStack}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => void recordUse()}
-                disabled={recordingUse}
-              >
-                <Activity className="mr-1.5 h-3.5 w-3.5" />
-                Record use
-              </Button>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{entry.status}</Badge>
+                <Badge variant="outline">{entry.priority}</Badge>
+                <Badge variant="outline">{costLabel(entry)}</Badge>
+              </div>
+              <div className="flex w-full flex-col items-start gap-2 min-[430px]:flex-row min-[430px]:flex-wrap">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={entry.is_default_stack ? "default" : "outline"}
+                  onClick={() =>
+                    toggleDefault.mutate({ id: entry.id, isDefault: !entry.is_default_stack })
+                  }
+                  disabled={toggleDefault.isPending}
+                  className="max-w-full justify-start"
+                  data-testid="vault-default-stack-action"
+                >
+                  <Star className={`mr-1.5 h-3.5 w-3.5 ${entry.is_default_stack ? "fill-current" : ""}`} />
+                  {entry.is_default_stack ? copy.detail.removeFromDefaultStack : copy.detail.addToDefaultStack}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void recordUse()}
+                  disabled={recordingUse}
+                  className="max-w-full justify-start"
+                  data-testid="vault-record-use"
+                  aria-label={`${usageCopy.recordUse}. ${usageCopy.useCount}: ${entry.launch_count ?? 0}`}
+                >
+                  <Activity className={`mr-1.5 h-3.5 w-3.5 ${recordingUse ? "animate-pulse" : ""}`} />
+                  {recordingUse ? usageCopy.recordingUse : usageCopy.recordUse}
+                  <span
+                    className="ml-1 rounded-full bg-foreground/8 px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+                    aria-live="polite"
+                    data-testid="vault-use-count"
+                  >
+                    {entry.launch_count ?? 0}
+                  </span>
+                </Button>
+              </div>
             </div>
 
             {entry.summary && (
               <p className="text-sm text-muted-foreground">{entry.summary}</p>
             )}
-
-            <Separator />
-
-            <ToolIntelligenceSnapshot entry={entry} relatedApps={relatedApps} />
 
             <Separator />
 
@@ -278,84 +362,6 @@ export function VaultDetailModal({
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function ToolIntelligenceSnapshot({
-  entry,
-  relatedApps,
-}: {
-  entry: SoftwareVaultEntry;
-  relatedApps: SoftwareVaultEntry[];
-}) {
-  const activePaid =
-    entry.status === "Active" && (entry.cost_type === "Subscription" || entry.cost_type === "Paid");
-  const nextAction =
-    entry.status === "Wishlist"
-      ? "Research fit before adding it to the active stack."
-      : activePaid && !entry.is_default_stack
-        ? "Review whether this paid tool has a clear project, recipe, or default role."
-        : entry.biggest_downside
-          ? "Keep using it, but revisit the documented downside during the next stack audit."
-          : "Add a clearer role, downside, or workflow note so future stack reviews have evidence.";
-
-  const cards = [
-    {
-      title: "Role in my life",
-      value:
-        entry.default_tool_for ??
-        entry.why_i_use_it ??
-        "No explicit role saved yet.",
-    },
-    {
-      title: "Workflow fit",
-      value:
-        entry.use_cases ??
-        entry.best_feature ??
-        "Workflow fit is unknown until a use case is saved.",
-    },
-    {
-      title: "Overlap signal",
-      value:
-        relatedApps.length > 0
-          ? `Related to ${relatedApps.map((app) => app.app_name).slice(0, 3).join(", ")}.`
-          : "No obvious same-category/default-job overlap in the current vault.",
-    },
-    {
-      title: "Keep / review",
-      value: activePaid
-        ? entry.is_default_stack
-          ? "Paid but part of the default stack; review ROI, not removal."
-          : "Paid and not in the default stack; review dependency before renewing."
-        : "No active paid subscription pressure detected from saved fields.",
-    },
-    {
-      title: "Alternative",
-      value: entry.best_alternative ?? "No alternative saved yet.",
-    },
-    {
-      title: "Next action",
-      value: nextAction,
-    },
-  ];
-
-  return (
-    <section className="space-y-3" aria-label="Tool intelligence">
-      <div className="flex items-center gap-2">
-        <Sparkles className="size-4 text-primary" aria-hidden />
-        <h3 className="text-sm font-semibold">Tool Intelligence</h3>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {cards.map((card) => (
-          <div key={card.title} className="rounded-lg border border-border/60 bg-muted/20 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {card.title}
-            </p>
-            <p className="mt-1 text-sm leading-relaxed">{card.value}</p>
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }
 

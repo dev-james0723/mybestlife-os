@@ -231,7 +231,12 @@ export function QuickInteractionLogger({
                         onValueChange={(v) => setSelectedId(v)}
                       >
                         <SelectTrigger className={relationshipSelectTriggerClassName}>
-                          <SelectValue placeholder={copy.loggerSelectPerson} />
+                          <SelectValue placeholder={copy.loggerSelectPerson}>
+                            {(value: string | null) =>
+                              relationships.find((r) => r.id === value)
+                                ?.person_name ?? copy.loggerSelectPerson
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {relationships.map((r) => (

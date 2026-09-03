@@ -9,13 +9,15 @@ import {
 
 type Props = {
   copy: VaultUiCopy["modes"];
+  usageLabel: string;
   value: VaultSoftwareMode;
   onValueChange: (mode: VaultSoftwareMode) => void;
 };
 
-export function VaultSoftwareModeTabs({ copy, value, onValueChange }: Props) {
+export function VaultSoftwareModeTabs({ copy, usageLabel, value, onValueChange }: Props) {
   const items = [
     { id: "my-vault" as const, label: copy.myVault },
+    { id: "usage" as const, label: usageLabel },
     { id: "recommended-stacks" as const, label: copy.recommendedStacks },
     { id: "compare" as const, label: copy.compare },
     { id: "build-stack" as const, label: copy.buildMyStack },

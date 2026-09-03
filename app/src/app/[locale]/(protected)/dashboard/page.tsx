@@ -1,54 +1,43 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  differenceInCalendarDays,
-  endOfWeek,
-  format,
-  isWithinInterval,
-  parseISO,
-  startOfDay,
-  startOfWeek,
-} from "date-fns";
-import { EmptyState } from "@/components/shared/empty-state";
+import { format } from "date-fns";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { buttonVariants } from "@/components/ui/button";
-import { OSPageHeader, OSPrimaryAction } from "@/components/ui/os-primitives";
+import { OSPageHeader } from "@/components/ui/os-primitives";
 import { MotivationCard } from "@/components/dashboard/motivation-card";
+import { TodaysKnowledgePickCard } from "@/components/dashboard/todays-knowledge-pick-card";
 import { TodayBlockView } from "@/components/calendar/today-block";
 import { DashboardWeatherWidget } from "@/components/calendar/dashboard-weather-widget";
-import { DashboardStudyRow } from "@/components/dashboard/dashboard-study-row";
 import { GlassStatCard } from "@/components/dashboard/glass-stat-card";
 import { GlassEntityCard } from "@/components/dashboard/glass-entity-card";
 import { GlassTintPanel } from "@/components/dashboard/glass-tint-panel";
 import {
   AlertCircle,
-  Flame,
   FolderKanban,
-  Gift,
   Heart,
   Plus,
 } from "lucide-react";
 import { useTasks } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useGratefulThings } from "@/hooks/use-grateful-things";
-import { useJapaneseStudySessions } from "@/hooks/use-japanese-study";
 import { useTodayContext, type TodayContextState } from "@/hooks/use-today-context";
 import { useProfile } from "@/hooks/use-settings";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
 import { useAppStore } from "@/stores/app-store";
 import { buildDashboardSummary, getDashboardCopy } from "@/lib/i18n/dashboard";
+import { getKnowledgePickDayKey } from "@/lib/dashboard/daily-knowledge-pick";
 import { getDateFnsLocale } from "@/lib/i18n/date-locale";
 import { getGreeting } from "@/lib/greeting";
 import { formatDateShort, isOverdue, isUpcoming } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 import { PROTECTED_DESKTOP_GUTTER_NEG_X } from "@/lib/layout-shell";
-import type { GratefulThing, JapaneseStudySession, Task } from "@/types/database";
+import type { GratefulThing, Task } from "@/types/database";
 
 const DashboardSignalsWidget = dynamic(
   () =>
@@ -90,39 +79,19 @@ function DashboardPanelFallback({ className }: { className?: string }) {
   );
 }
 
-function studyStreakFromDates(sessionDates: string[]): number {
-  const days = [...new Set(sessionDates.map((d) => format(parseISO(d), "yyyy-MM-dd")))].sort();
-  if (days.length === 0) return 0;
-  const last = startOfDay(parseISO(days[days.length - 1]!));
-  const today = startOfDay(new Date());
-  if (differenceInCalendarDays(today, last) > 1) return 0;
-
-  let streak = 1;
-  for (let i = days.length - 1; i > 0; i--) {
-    const cur = startOfDay(parseISO(days[i]!));
-    const prev = startOfDay(parseISO(days[i - 1]!));
-    if (differenceInCalendarDays(cur, prev) === 1) streak++;
-    else break;
-  }
-  return streak;
-}
-
 function DashboardSectionHeader({
   title,
   actionHref,
   actionLabel,
-  meta,
 }: {
   title: string;
   actionHref?: string;
   actionLabel?: string;
-  meta?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
       <div className="min-w-0">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        {meta && <p className="mt-1 text-xs font-medium text-muted-foreground">{meta}</p>}
       </div>
       {actionHref && actionLabel && (
         <Link
@@ -149,14 +118,11 @@ export default function DashboardPage() {
   const { language } = useAppStore();
   const hrefGrateful = useLocalizedPath("/grateful-things");
   const hrefTasks = useLocalizedPath("/tasks");
-  const hrefJapanese = useLocalizedPath("/japanese-study");
-  const hrefAiAssistant = useLocalizedPath("/ai-assistant");
   const queryClient = useQueryClient();
-  const { data: profile } = useProfile();
+  const { data: profile, isPending: profilePending } = useProfile();
   const { data: tasks, isLoading: tasksLoading } = useTasks();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: gratefulThings, isLoading: gratefulLoading } = useGratefulThings();
-  const { data: studySessions, isLoading: studyLoading } = useJapaneseStudySessions();
   const today = useTodayContext();
 
   const [clock, setClock] = useState(() => new Date());
@@ -168,6 +134,7 @@ export default function DashboardPage() {
   }, []);
 
   const locale = getDateFnsLocale(language);
+  const knowledgePickDayKey = getKnowledgePickDayKey(clock, profile?.timezone);
 
   const copy = useMemo(() => getDashboardCopy(language), [language]);
 
@@ -182,25 +149,6 @@ export default function DashboardPage() {
       (t) => t.status !== "done" && t.status !== "cancelled" && t.priority === "urgent"
     );
   }, [tasks]);
-
-  const studyStreak = useMemo(() => {
-    const dates = (studySessions ?? []).map((s) => s.session_date);
-    return studyStreakFromDates(dates);
-  }, [studySessions]);
-
-  const weekStudyMinutes = useMemo(() => {
-    if (!studySessions?.length) return 0;
-    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const end = endOfWeek(new Date(), { weekStartsOn: 1 });
-    return studySessions
-      .filter((s) =>
-        isWithinInterval(parseISO(s.session_date), {
-          start,
-          end,
-        })
-      )
-      .reduce((sum, s) => sum + s.duration_minutes, 0);
-  }, [studySessions]);
 
   const gratefulToday = useMemo(() => {
     const key = todayKey();
@@ -223,28 +171,21 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [tasks]);
 
-  const recentSessions = useMemo(() => {
-    return [...(studySessions ?? [])]
-      .sort((a, b) => b.session_date.localeCompare(a.session_date))
-      .slice(0, 5);
-  }, [studySessions]);
-
   const summaryText = useMemo(() => {
     const urgentTitles = urgentTasks.slice(0, 2).map((t) => t.title);
     return buildDashboardSummary(language, {
       urgentTitles,
       urgentCount: urgentTasks.length,
       activeProjects: activeProjectsCount,
-      studyStreak,
     });
-  }, [urgentTasks, activeProjectsCount, studyStreak, language]);
+  }, [urgentTasks, activeProjectsCount, language]);
 
   const invalidateDashboard = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     void queryClient.invalidateQueries({ queryKey: ["projects"] });
     void queryClient.invalidateQueries({ queryKey: ["notes"] });
     void queryClient.invalidateQueries({ queryKey: ["grateful-things"] });
-    void queryClient.invalidateQueries({ queryKey: ["japanese-study-sessions"] });
+    void queryClient.invalidateQueries({ queryKey: ["dashboard", "knowledge-pick"] });
   }, [queryClient]);
 
   const handleSummaryRefresh = () => {
@@ -253,7 +194,7 @@ export default function DashboardPage() {
     window.setTimeout(() => setRefreshSpin(false), 600);
   };
 
-  const isLoading = tasksLoading || projectsLoading || gratefulLoading || studyLoading;
+  const isLoading = tasksLoading || projectsLoading || gratefulLoading;
 
   if (isLoading) {
     return <LoadingPage />;
@@ -298,6 +239,10 @@ export default function DashboardPage() {
         />
       </div>
 
+      <div data-motion-reveal>
+        <TodayBlockView today={today} showWeatherWidget={false} />
+      </div>
+
       <section
         aria-label={copy.title}
         className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]"
@@ -317,7 +262,7 @@ export default function DashboardPage() {
             title={copy.statActiveProjects}
             value={activeProjectsCount}
             icon={FolderKanban}
-            className="p-5 sm:col-span-2 xl:col-span-1"
+            className="p-5"
           />
           <GlassStatCard
             iconTone="dashboard"
@@ -326,15 +271,16 @@ export default function DashboardPage() {
             icon={AlertCircle}
             className="p-5"
           />
-          <GlassStatCard
-            iconTone="dashboard"
-            title={copy.statStreak}
-            value={copy.days(studyStreak)}
-            icon={Flame}
-            className="p-5"
-          />
         </div>
       </section>
+
+      <div data-motion-reveal>
+        <TodaysKnowledgePickCard
+          dayKey={knowledgePickDayKey}
+          userId={profile?.id}
+          isUserLoading={profilePending}
+        />
+      </div>
 
       <div
         className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)]"
@@ -344,8 +290,6 @@ export default function DashboardPage() {
           <DashboardWeatherSlot today={today} />
 
           <DashboardSignalsWidget />
-
-          <TodayBlockView today={today} showWeatherWidget={false} />
 
           <section className="space-y-3">
             <DashboardSectionHeader
@@ -429,24 +373,6 @@ export default function DashboardPage() {
               })}
             </ul>
           </GlassTintPanel>
-
-          <section className="space-y-3">
-            <DashboardSectionHeader
-              title={copy.recentStudy}
-              actionHref={hrefJapanese}
-              actionLabel={copy.viewAll}
-              meta={copy.weekMinutes(weekStudyMinutes)}
-            />
-            {recentSessions.length === 0 ? (
-              <EmptyState icon={Flame} title={copy.noSessions} description="" />
-            ) : (
-              <div className="space-y-2.5">
-                {recentSessions.map((session: JapaneseStudySession) => (
-                  <DashboardStudyRow key={session.id} session={session} locale={locale} />
-                ))}
-              </div>
-            )}
-          </section>
         </aside>
       </div>
 
@@ -467,18 +393,6 @@ export default function DashboardPage() {
           }}
         />
       </div>
-
-      <OSPrimaryAction
-        render={<Link href={hrefAiAssistant} />}
-        size="icon-lg"
-        className={cn(
-          "fixed right-6 z-40 h-14 min-h-14 w-14 rounded-full p-0",
-          "bottom-[max(9.5rem,calc(env(safe-area-inset-bottom,0px)+9.5rem))]"
-        )}
-        aria-label={copy.openAiAssistantAria}
-      >
-        <Gift className="h-7 w-7" />
-      </OSPrimaryAction>
     </div>
   );
 }

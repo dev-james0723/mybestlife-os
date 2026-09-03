@@ -77,7 +77,7 @@ export function DashboardWeatherWidget({ load, hasOutdoorEvents, className }: Pr
           <button
             type="button"
             onClick={() => refresh()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:bg-muted/40"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 text-xs font-medium text-foreground/80 transition-colors hover:bg-muted/40"
           >
             <RotateCw className="h-3 w-3" />
             {copy.retry}
@@ -85,7 +85,7 @@ export function DashboardWeatherWidget({ load, hasOutdoorEvents, className }: Pr
           <Link
             href={weatherHref}
             prefetch={false}
-            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
           >
             {copy.openWeatherPage}
             <ChevronRight className="h-3 w-3" />
@@ -188,4 +188,3 @@ function AlertPill({ alert, label }: { alert: WeatherAlert; label: string }) {
     </span>
   );
 }
-

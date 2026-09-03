@@ -32,7 +32,6 @@ import {
   X,
   CalendarDays,
   Command,
-  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 import { useProjects, useUpdateProject } from "@/hooks/use-projects";
@@ -69,19 +68,6 @@ import { ProjectMapView } from "@/components/projects/map-view";
 import { ProjectTimelineView } from "@/components/projects/timeline-view";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  getMergedTemplates,
-  type ProjectCreatePreset,
-} from "@/lib/projects/templates";
 import {
   filterHorizontalScrollClassName,
   filterSearchControlClassName,
@@ -175,10 +161,6 @@ export default function ProjectsPage() {
   const { data: ideas } = useIdeas();
   const language = useAppStore((s) => s.language);
   const ui = getProjectsUiCopy(language);
-
-  const [createPreset, setCreatePreset] = useState<ProjectCreatePreset | null>(
-    null,
-  );
 
   // View mode (persisted)
   const [viewMode, setViewMode] = useState<ProjectViewMode>(() => {
@@ -427,7 +409,6 @@ export default function ProjectsPage() {
   );
 
   const openNewProject = useCallback(() => {
-    setCreatePreset(null);
     setShowCreate(true);
   }, []);
 
@@ -450,17 +431,19 @@ export default function ProjectsPage() {
             </>
           }
         >
-          <div
-            aria-hidden="true"
-            className="grid gap-2 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.055] sm:grid-cols-[minmax(16rem,1fr)_8.75rem_8.75rem_8.75rem_auto]"
-          >
-            <div className="h-11 rounded-[0.95rem] bg-slate-200/60 dark:bg-white/10" />
-            <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
-            <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
-            <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
-            <div className="h-11 rounded-[1rem] bg-lime-300/50 dark:bg-lime-300/35" />
+          <div className="space-y-6 sm:space-y-8">
+            <div
+              aria-hidden="true"
+              className="grid gap-3 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-white/10 dark:bg-white/[0.055] sm:grid-cols-[minmax(16rem,1fr)_8.75rem_8.75rem_8.75rem_auto]"
+            >
+              <div className="h-11 rounded-[0.95rem] bg-slate-200/60 dark:bg-white/10" />
+              <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+              <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+              <div className="h-11 rounded-[0.95rem] bg-slate-200/50 dark:bg-white/8" />
+              <div className="h-11 rounded-[1rem] bg-lime-300/50 dark:bg-lime-300/35" />
+            </div>
+            <LoadingCards count={6} columns={3} />
           </div>
-          <LoadingCards count={6} columns={3} />
         </PageShell>
       </div>
     );
@@ -509,43 +492,6 @@ export default function ProjectsPage() {
               <Command className="mr-1.5 h-3.5 w-3.5" />
               <span className="text-xs opacity-70">⌘K</span>
             </OSControl>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <OSControl className="hidden sm:inline-flex" />
-                }
-              >
-                {ui.fromTemplate}
-                <ChevronDown className="ml-1 h-3 w-3 opacity-60" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>{ui.fromTemplate}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {getMergedTemplates().map((t) => (
-                    <DropdownMenuItem
-                      key={t.id}
-                      onClick={() => {
-                        setCreatePreset({
-                          name: t.name,
-                          description: t.description,
-                          status: t.status,
-                          priority: t.priority,
-                          suggestedTasks: t.suggestedTasks,
-                          tags: t.tags,
-                        });
-                        setShowCreate(true);
-                      }}
-                    >
-                      <span className="mr-2" aria-hidden>
-                        {t.icon}
-                      </span>
-                      {t.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <OSPrimaryAction
               onClick={openNewProject}
               className="hidden sm:inline-flex"
@@ -556,285 +502,271 @@ export default function ProjectsPage() {
           </>
         }
       >
-        {/* Insight Strip */}
-        <InsightStrip
-          projects={allProjectsWithMeta}
-          activeFilter={insightFilter}
-          onFilterChange={setInsightFilter}
-          ui={ui}
-        />
-
-        {/* What's Next Suggestion */}
-        <WhatsNextBar projects={allProjectsWithMeta} ui={ui} onOpen={setSelectedProject} />
-
-        {/* Mobile primary actions */}
-        <div className="grid grid-cols-[1fr_auto_auto] gap-2 sm:hidden">
-          <OSPrimaryAction onClick={openNewProject} className="justify-center">
-            <Plus className="mr-1.5 h-4 w-4" />
-            {ui.newProject}
-          </OSPrimaryAction>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <OSIconControl aria-label={ui.fromTemplate} />
-              }
-            >
-              <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-72 w-56 overflow-y-auto">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>{ui.fromTemplate}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {getMergedTemplates().map((t) => (
-                  <DropdownMenuItem
-                    key={t.id}
-                    onClick={() => {
-                      setCreatePreset({
-                        name: t.name,
-                        description: t.description,
-                        status: t.status,
-                        priority: t.priority,
-                        suggestedTasks: t.suggestedTasks,
-                        tags: t.tags,
-                      });
-                      setShowCreate(true);
-                    }}
-                  >
-                    <span className="mr-2" aria-hidden>
-                      {t.icon}
-                    </span>
-                    {t.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <OSIconControl
-            aria-label={ui.commandPaletteHint}
-            onClick={() => setCommandPaletteOpen(true)}
+        <div className="space-y-6 sm:space-y-8">
+          <section
+            aria-label={`${ui.pageTitle} insights`}
+            className="space-y-4 sm:space-y-5"
           >
-            <Command className="h-4 w-4" />
-          </OSIconControl>
-        </div>
-
-        {/* Toolbar */}
-        <div
-          data-slot="projects-toolbar"
-          className={`${filterHorizontalScrollClassName} rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055]`}
-        >
-          {/* Search */}
-          <div className={`${filterSearchControlClassName} lg:max-w-sm`}>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={ui.searchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-11 min-h-11 rounded-[0.95rem] border-slate-200/80 bg-white/76 pl-9 pr-14 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-white/10 dark:bg-white/[0.06]"
+            <InsightStrip
+              projects={allProjectsWithMeta}
+              activeFilter={insightFilter}
+              onFilterChange={setInsightFilter}
+              ui={ui}
             />
-            {search && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground tabular-nums">
-                {filteredProjects.length}
-              </span>
-            )}
+            <WhatsNextBar
+              projects={allProjectsWithMeta}
+              ui={ui}
+              onOpen={setSelectedProject}
+            />
+          </section>
+
+          {/* Mobile primary actions */}
+          <div className="grid grid-cols-[1fr_auto] gap-3 sm:hidden">
+            <OSPrimaryAction onClick={openNewProject} className="justify-center">
+              <Plus className="mr-1.5 h-4 w-4" />
+              {ui.newProject}
+            </OSPrimaryAction>
+            <OSIconControl
+              aria-label={ui.commandPaletteHint}
+              onClick={() => setCommandPaletteOpen(true)}
+            >
+              <Command className="h-4 w-4" />
+            </OSIconControl>
           </div>
 
-          {/* Quick filter chips */}
-          {activeFilters.length > 0 && (
-            <div className="flex shrink-0 flex-nowrap items-center gap-1.5 lg:flex-wrap">
-              {activeFilters.map((f) => (
-                <button
-                  key={f.key}
-                  type="button"
-                  className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-1 rounded-[0.9rem] border border-lime-300/35 bg-lime-300/16 px-3 pr-2 text-xs font-semibold text-slate-800 transition-[background,border-color,transform] duration-150 hover:border-lime-300/55 hover:bg-lime-300/24 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:text-lime-50"
-                  onClick={() => clearFilter(f.key)}
-                >
-                  <span className="truncate">{f.label}</span>
-                  <X className="h-3 w-3" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Filters */}
-          <Select
-            value={statusFilter}
-            onValueChange={(v) =>
-              v && setListFilters((f) => ({ ...f, statusFilter: v }))
-            }
-            itemToStringLabel={(v) =>
-              v === "all"
-                ? ui.allStatus
-                : getProjectStatusLabel(v as Project["status"], ui)
-            }
+          <section
+            className="space-y-5 sm:space-y-6"
+            aria-label={`${ui.pageTitle} workspace`}
           >
-            <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
-              <SelectValue placeholder={ui.filterStatus} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{ui.allStatus}</SelectItem>
-              {statusOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={priorityFilter}
-            onValueChange={(v) =>
-              v && setListFilters((f) => ({ ...f, priorityFilter: v }))
-            }
-            itemToStringLabel={(v) =>
-              v === "all"
-                ? ui.allPriority
-                : getProjectPriorityLabel(v as Project["priority"], ui)
-            }
-          >
-            <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
-              <SelectValue placeholder={ui.filterPriority} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{ui.allPriority}</SelectItem>
-              {priorityOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Sort */}
-          <Select
-            value={sortKey}
-            onValueChange={(v) =>
-              v &&
-              setListFilters((f) => ({
-                ...f,
-                sortKey: v as SortKey,
-              }))
-            }
-            itemToStringLabel={(v) =>
-              sortOptions.find((o) => o.value === v)?.label ?? String(v)
-            }
-          >
-            <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
-              <ArrowUpDown className="h-4 w-4 mr-1.5" />
-              <SelectValue placeholder={ui.sortBy} />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <OSSegmentedControl
-            items={viewModeConfig.map((v) => ({
-              id: v.key,
-              label: v.label,
-              icon: v.icon,
-              ariaLabel: v.label,
-            }))}
-            value={viewMode}
-            onValueChange={setViewMode}
-            ariaLabel={`${ui.pageTitle} view`}
-            className="shrink-0 lg:ml-auto"
-            labelMode="desktop"
-            layoutId="projects-view-mode-pill"
-          />
-        </div>
-
-        {/* Views */}
-        {filteredProjects.length === 0 ? (
-          <EmptyState
-            icon={FolderKanban}
-            title={projects?.length === 0 ? ui.noProjectsTitle : ui.noResultsTitle}
-            description={
-              projects?.length === 0
-                ? ui.noProjectsDescription
-                : ui.noResultsDescription
-            }
-            action={
-              projects?.length === 0
-                ? {
-                    label: ui.noProjectsAction,
-                    onClick: () => {
-                      setCreatePreset(null);
-                      setShowCreate(true);
-                    },
-                  }
-                : undefined
-            }
-          />
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={viewMode}
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 6, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.995 }}
-              transition={{
-                duration: shouldReduceMotion ? 0 : 0.24,
-                ease: [0.16, 1, 0.3, 1],
-              }}
+            {/* Toolbar */}
+            <div
+              data-slot="projects-toolbar"
+              className="grid min-w-0 gap-3 rounded-[1.25rem] border border-slate-200/70 bg-white/68 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.055] sm:p-3.5 2xl:grid-cols-[minmax(0,1fr)_auto] 2xl:items-center 2xl:gap-4"
             >
-              {viewMode === "kanban" && (
-                <ProjectKanbanView
-                  projects={filteredProjects}
-                  statusOptions={statusOptions}
-                  onSelectProject={setSelectedProject}
-                  onStatusChange={handleStatusChange}
-                  onTogglePin={togglePin}
-                  ui={ui}
+              <div className={filterHorizontalScrollClassName}>
+                {/* Search */}
+                <div className={`${filterSearchControlClassName} lg:max-w-sm`}>
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder={ui.searchPlaceholder}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="h-11 min-h-11 rounded-[0.95rem] border-slate-200/80 bg-white/76 pl-9 pr-14 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-white/10 dark:bg-white/[0.06]"
+                  />
+                  {search && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground tabular-nums">
+                      {filteredProjects.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick filter chips */}
+                {activeFilters.length > 0 && (
+                  <div className="flex shrink-0 flex-nowrap items-center gap-1.5 lg:flex-wrap">
+                    {activeFilters.map((f) => (
+                      <button
+                        key={f.key}
+                        type="button"
+                        className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-1 rounded-[0.9rem] border border-lime-300/35 bg-lime-300/16 px-3 pr-2 text-xs font-semibold text-slate-800 transition-[background,border-color,transform] duration-150 hover:border-lime-300/55 hover:bg-lime-300/24 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:text-lime-50"
+                        onClick={() => clearFilter(f.key)}
+                      >
+                        <span className="truncate">{f.label}</span>
+                        <X className="h-3 w-3" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Filters */}
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) =>
+                    v && setListFilters((f) => ({ ...f, statusFilter: v }))
+                  }
+                  itemToStringLabel={(v) =>
+                    v === "all"
+                      ? ui.allStatus
+                      : getProjectStatusLabel(v as Project["status"], ui)
+                  }
+                >
+                  <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
+                    <SelectValue placeholder={ui.filterStatus} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{ui.allStatus}</SelectItem>
+                    {statusOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={priorityFilter}
+                  onValueChange={(v) =>
+                    v && setListFilters((f) => ({ ...f, priorityFilter: v }))
+                  }
+                  itemToStringLabel={(v) =>
+                    v === "all"
+                      ? ui.allPriority
+                      : getProjectPriorityLabel(v as Project["priority"], ui)
+                  }
+                >
+                  <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
+                    <SelectValue placeholder={ui.filterPriority} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{ui.allPriority}</SelectItem>
+                    {priorityOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Sort */}
+                <Select
+                  value={sortKey}
+                  onValueChange={(v) =>
+                    v &&
+                    setListFilters((f) => ({
+                      ...f,
+                      sortKey: v as SortKey,
+                    }))
+                  }
+                  itemToStringLabel={(v) =>
+                    sortOptions.find((o) => o.value === v)?.label ?? String(v)
+                  }
+                >
+                  <SelectTrigger className="h-11 min-h-11 w-[140px] shrink-0 rounded-[0.95rem]">
+                    <ArrowUpDown className="mr-1.5 h-4 w-4" />
+                    <SelectValue placeholder={ui.sortBy} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex min-w-0 items-center border-t border-slate-200/70 pt-3 dark:border-white/10 2xl:border-l 2xl:border-t-0 2xl:pl-4 2xl:pt-0">
+                <OSSegmentedControl
+                  items={viewModeConfig.map((v) => ({
+                    id: v.key,
+                    label: v.label,
+                    icon: v.icon,
+                    ariaLabel: v.label,
+                  }))}
+                  value={viewMode}
+                  onValueChange={setViewMode}
+                  ariaLabel={`${ui.pageTitle} view`}
+                  className="shrink-0"
+                  labelMode="desktop"
+                  layoutId="projects-view-mode-pill"
                 />
-              )}
-              {viewMode === "gallery" && (
-                <ProjectGalleryView
-                  projects={filteredProjects}
-                  onSelectProject={setSelectedProject}
-                  ui={ui}
-                />
-              )}
-              {viewMode === "list" && (
-                <ProjectListView
-                  projects={filteredProjects}
-                  onSelectProject={setSelectedProject}
-                  onTogglePin={togglePin}
-                  onStatusChange={handleStatusChange}
-                  ui={ui}
-                />
-              )}
-              {viewMode === "map" && (
-                <ProjectMapView
-                  projects={filteredProjects}
-                  ideas={ideas ?? []}
-                  onSelectProject={setSelectedProject}
-                  ui={ui}
-                />
-              )}
-              {viewMode === "timeline" && (
-                <ProjectTimelineView
-                  projects={filteredProjects}
-                  onSelectProject={setSelectedProject}
-                  ui={ui}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        )}
+              </div>
+            </div>
+
+            {/* Views */}
+            {filteredProjects.length === 0 ? (
+              <EmptyState
+                icon={FolderKanban}
+                title={
+                  projects?.length === 0
+                    ? ui.noProjectsTitle
+                    : ui.noResultsTitle
+                }
+                description={
+                  projects?.length === 0
+                    ? ui.noProjectsDescription
+                    : ui.noResultsDescription
+                }
+                action={
+                  projects?.length === 0
+                    ? {
+                        label: ui.noProjectsAction,
+                        onClick: openNewProject,
+                      }
+                    : undefined
+                }
+              />
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={viewMode}
+                  initial={
+                    shouldReduceMotion
+                      ? false
+                      : { opacity: 0, y: 6, scale: 0.995 }
+                  }
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={
+                    shouldReduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: -6, scale: 0.995 }
+                  }
+                  transition={{
+                    duration: shouldReduceMotion ? 0 : 0.24,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  {viewMode === "kanban" && (
+                    <ProjectKanbanView
+                      projects={filteredProjects}
+                      statusOptions={statusOptions}
+                      onSelectProject={setSelectedProject}
+                      onStatusChange={handleStatusChange}
+                      onTogglePin={togglePin}
+                      ui={ui}
+                    />
+                  )}
+                  {viewMode === "gallery" && (
+                    <ProjectGalleryView
+                      projects={filteredProjects}
+                      onSelectProject={setSelectedProject}
+                      ui={ui}
+                    />
+                  )}
+                  {viewMode === "list" && (
+                    <ProjectListView
+                      projects={filteredProjects}
+                      onSelectProject={setSelectedProject}
+                      onTogglePin={togglePin}
+                      onStatusChange={handleStatusChange}
+                      ui={ui}
+                    />
+                  )}
+                  {viewMode === "map" && (
+                    <ProjectMapView
+                      projects={filteredProjects}
+                      ideas={ideas ?? []}
+                      onSelectProject={setSelectedProject}
+                      ui={ui}
+                    />
+                  )}
+                  {viewMode === "timeline" && (
+                    <ProjectTimelineView
+                      projects={filteredProjects}
+                      onSelectProject={setSelectedProject}
+                      ui={ui}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </section>
+        </div>
       </PageShell>
 
       {/* Modals */}
       <CreateProjectModal
         open={showCreate}
-        onOpenChange={(v) => {
-          setShowCreate(v);
-          if (!v) setCreatePreset(null);
-        }}
-        preset={createPreset}
+        onOpenChange={setShowCreate}
       />
 
       <ProjectDetailModal
@@ -851,10 +783,7 @@ export default function ProjectsPage() {
         projects={allProjectsWithMeta}
         onSelectProject={setSelectedProject}
         onSetView={setViewMode}
-        onNewProject={() => {
-          setCreatePreset(null);
-          setShowCreate(true);
-        }}
+        onNewProject={openNewProject}
         onNavigatePlanner={() => router.push(dailyPlannerHref)}
         onSetInsightFilter={setInsightFilter}
         ui={ui}

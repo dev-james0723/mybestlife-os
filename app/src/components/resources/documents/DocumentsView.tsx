@@ -21,6 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,8 +32,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileText, Plus, Pencil, Trash2, AlertCircle, ExternalLink, Calendar } from "lucide-react";
-import { useDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from "@/hooks/use-documents";
+import { FileText, Plus, Pencil, Trash2, AlertCircle, ExternalLink, Calendar, Loader2 } from "lucide-react";
+import { ConnectedDocumentIntakeDialog } from "@/components/documents/ConnectedDocumentIntakeDialog";
+import { useDocuments, useUpdateDocument, useDeleteDocument } from "@/hooks/use-documents";
 import { formatDate, formatDateShort, isOverdue } from "@/lib/utils/date";
 import type { Document } from "@/types/database";
 
@@ -42,9 +44,18 @@ const sortOptions = [
   { value: "created_at", label: "Recently added" },
 ];
 
+function isValidExternalDocumentUrl(value: string): boolean {
+  if (!value.trim()) return true;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function DocumentsView() {
   const { data: documents, isLoading } = useDocuments();
-  const createDocument = useCreateDocument();
   const updateDocument = useUpdateDocument();
   const deleteDocument = useDeleteDocument();
 
@@ -55,6 +66,7 @@ export function DocumentsView() {
   const [selected, setSelected] = useState<Document | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [openingFileId, setOpeningFileId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -63,16 +75,6 @@ export function DocumentsView() {
     file_url: "",
     notes: "",
   });
-
-  const resetForm = () => {
-    setForm({
-      name: "",
-      document_type: "",
-      expiration_date: "",
-      file_url: "",
-      notes: "",
-    });
-  };
 
   const filtered = useMemo(() => {
     if (!documents) return [];
@@ -114,28 +116,25 @@ export function DocumentsView() {
     setIsEditing(false);
   };
 
-  const handleCreate = async () => {
-    if (!form.name.trim()) return;
-    await createDocument.mutateAsync({
-      name: form.name.trim(),
-      document_type: form.document_type.trim() || null,
-      expiration_date: form.expiration_date || null,
-      file_url: form.file_url.trim() || null,
-      notes: form.notes.trim() || null,
-    });
-    resetForm();
-    setShowCreate(false);
-  };
-
   const handleUpdate = async () => {
     if (!selected || !form.name.trim()) return;
+    const nextFileUrl = form.file_url.trim();
+    if (!selected.storage_path && !isValidExternalDocumentUrl(nextFileUrl)) {
+      toast.error("Enter a complete http:// or https:// address.");
+      return;
+    }
     await updateDocument.mutateAsync({
       id: selected.id,
       data: {
         name: form.name.trim(),
         document_type: form.document_type.trim() || null,
         expiration_date: form.expiration_date || null,
-        file_url: form.file_url.trim() || null,
+        file_url: nextFileUrl || null,
+        source_kind: selected.storage_path
+          ? selected.source_kind
+          : nextFileUrl
+            ? "external_link"
+            : "manual",
         notes: form.notes.trim() || null,
       },
     });
@@ -147,6 +146,37 @@ export function DocumentsView() {
     await deleteDocument.mutateAsync(selected.id);
     setSelected(null);
     setShowDeleteConfirm(false);
+  };
+
+  const handleOpenFile = async (document: Document) => {
+    if (document.storage_path) {
+      // Open during the click gesture so strict popup blockers do not reject
+      // the tab while we wait for the short-lived private download URL.
+      const fileWindow = window.open("about:blank", "_blank");
+      if (fileWindow) fileWindow.opener = null;
+      setOpeningFileId(document.id);
+      try {
+        const response = await fetch(
+          `/api/documents/intake?storagePath=${encodeURIComponent(document.storage_path)}`,
+        );
+        const body = (await response.json()) as { url?: string; error?: string };
+        if (!response.ok || !body.url) {
+          throw new Error(body.error || "Could not open this file");
+        }
+        if (fileWindow) fileWindow.location.replace(body.url);
+        else window.location.assign(body.url);
+      } catch (error) {
+        fileWindow?.close();
+        toast.error(error instanceof Error ? error.message : "Could not open this file");
+      } finally {
+        setOpeningFileId(null);
+      }
+      return;
+    }
+
+    if (document.file_url) {
+      window.open(document.file_url, "_blank", "noopener,noreferrer");
+    }
   };
 
   const handleSortChange = useCallback((value: string) => {
@@ -164,10 +194,7 @@ export function DocumentsView() {
           <Button
             variant="gradient-pink"
             size="lg"
-            onClick={() => {
-              resetForm();
-              setShowCreate(true);
-            }}
+            onClick={() => setShowCreate(true)}
           >
             <Plus className="size-4" />
             New document
@@ -241,66 +268,10 @@ export function DocumentsView() {
       </PageShell>
 
       {/* ── Create Document Modal ── */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent size="xl" className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>New document</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Passport, lease, …"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <Input
-                  value={form.document_type}
-                  onChange={(e) => setForm((f) => ({ ...f, document_type: e.target.value }))}
-                  placeholder="ID, contract, insurance"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Expiration date</Label>
-                <DatePickerInput
-                  value={form.expiration_date}
-                  onChange={(v) => setForm((f) => ({ ...f, expiration_date: v }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>File URL</Label>
-                <Input
-                  value={form.file_url}
-                  onChange={(e) => setForm((f) => ({ ...f, file_url: e.target.value }))}
-                  placeholder="https://…"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreate} disabled={!form.name.trim() || createDocument.isPending}>
-              {createDocument.isPending ? "Saving…" : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConnectedDocumentIntakeDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+      />
 
       {/* ── Document Detail Modal ── */}
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}>
@@ -332,13 +303,27 @@ export function DocumentsView() {
                       onChange={(v) => setForm((f) => ({ ...f, expiration_date: v }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>File URL</Label>
-                    <Input
-                      value={form.file_url}
-                      onChange={(e) => setForm((f) => ({ ...f, file_url: e.target.value }))}
-                    />
-                  </div>
+                  {selected.storage_path ? (
+                    <div className="space-y-2">
+                      <Label>Uploaded file</Label>
+                      <div className="flex h-10 items-center gap-2 rounded-md border bg-muted/35 px-3 text-sm text-muted-foreground">
+                        <FileText className="size-4 shrink-0" />
+                        <span className="truncate">
+                          {selected.original_file_name ?? "Private document"}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>External link</Label>
+                      <Input
+                        type="url"
+                        value={form.file_url}
+                        onChange={(e) => setForm((f) => ({ ...f, file_url: e.target.value }))}
+                        placeholder="https://…"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Notes</Label>
@@ -353,7 +338,15 @@ export function DocumentsView() {
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleUpdate} disabled={!form.name.trim() || updateDocument.isPending}>
+                <Button
+                  onClick={handleUpdate}
+                  disabled={
+                    !form.name.trim() ||
+                    updateDocument.isPending ||
+                    (!selected.storage_path &&
+                      !isValidExternalDocumentUrl(form.file_url))
+                  }
+                >
                   {updateDocument.isPending ? "Saving…" : "Save"}
                 </Button>
               </DialogFooter>
@@ -394,16 +387,22 @@ export function DocumentsView() {
                   </div>
                 )}
 
-                {selected.file_url && (
-                  <a
-                    href={selected.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                {(selected.storage_path || selected.file_url) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleOpenFile(selected)}
+                    disabled={openingFileId === selected.id}
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Open file
-                  </a>
+                    {openingFileId === selected.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ExternalLink className="h-4 w-4" />
+                    )}
+                    {selected.original_file_name
+                      ? `Open ${selected.original_file_name}`
+                      : "Open file"}
+                  </Button>
                 )}
 
                 {selected.notes && (

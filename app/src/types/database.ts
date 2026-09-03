@@ -913,6 +913,19 @@ export type FinanceBudget = {
 // its canonical type. Re-exported here to preserve existing import paths.
 export type { Asset } from "./assets";
 
+export type DocumentSourceKind =
+  | "manual"
+  | "upload"
+  | "external_link"
+  | "knowledge"
+  | "camera_scan";
+
+export type DocumentAiStatus =
+  | "not_requested"
+  | "skipped"
+  | "complete"
+  | "failed";
+
 export type Document = {
   id: string;
   user_id: string;
@@ -920,6 +933,15 @@ export type Document = {
   document_type: string | null;
   expiration_date: string | null;
   file_url: string | null;
+  source_kind: DocumentSourceKind;
+  storage_bucket: string | null;
+  storage_path: string | null;
+  original_file_name: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  ai_status: DocumentAiStatus;
+  ai_confidence: number | null;
+  ai_metadata: Record<string, unknown>;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -987,6 +1009,8 @@ export type Relationship = {
 
   email: string | null;
   phone: string | null;
+  /** Structured public profiles/websites stored as JSONB. */
+  social_links: import("./relationship").RelationshipSocialLink[];
 
   /** ISO date `YYYY-MM-DD` (no time). */
   last_contact_date: string | null;
@@ -1003,6 +1027,11 @@ export type Relationship = {
   tags: string[];
 
   linked_project_id: string | null;
+  /** Multi-entity links used by the relationship editor. */
+  linked_project_ids: string[];
+  linked_goal_ids: string[];
+  linked_note_ids: string[];
+  linked_idea_ids: string[];
 
   is_favorite: boolean;
 

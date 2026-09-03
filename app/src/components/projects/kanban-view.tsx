@@ -124,7 +124,7 @@ export function ProjectKanbanView({
       collisionDetection={rectIntersection}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none">
+      <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 pt-1 sm:snap-none">
         {columns.map((col) => (
           <KanbanColumn
             key={col.status}
@@ -159,11 +159,11 @@ function KanbanColumn({
   const { setNodeRef, isOver } = useDroppable({ id: `column:${status}` });
 
   return (
-    <div className="flex min-w-[280px] max-w-[320px] shrink-0 snap-center flex-col rounded-xl bg-muted/30 sm:min-w-[300px]">
+    <section className="flex min-w-[min(82vw,20rem)] max-w-[20rem] shrink-0 snap-center flex-col rounded-[1.25rem] border border-slate-200/70 bg-white/42 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/8 dark:bg-white/[0.025] sm:min-w-[20rem]">
       {/* Column header */}
-      <div className="flex items-center justify-between px-3 py-3">
+      <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">{label}</h3>
+          <h3 className="text-sm font-semibold tracking-[-0.01em]">{label}</h3>
           <Badge variant="secondary" className="h-5 px-1.5 text-xs tabular-nums">
             {projects.length}
           </Badge>
@@ -174,7 +174,7 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-1 flex-col rounded-lg transition-colors min-h-[120px]",
+          "mx-2 mb-2 flex min-h-[132px] flex-1 flex-col rounded-[1rem] transition-colors",
           isOver && "bg-primary/5 ring-1 ring-primary/20",
         )}
       >
@@ -183,7 +183,7 @@ function KanbanColumn({
           items={projects.map((p) => p.project.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex flex-1 flex-col gap-2 px-2 pb-2">
+          <div className="flex flex-1 flex-col gap-3 px-1 pb-1">
             {projects.map((p) => (
               <KanbanCard
                 key={p.project.id}
@@ -196,7 +196,7 @@ function KanbanColumn({
           </div>
         </SortableContext>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -246,7 +246,7 @@ function KanbanCard({
     <div ref={setNodeRef} style={style} {...attributes}>
       <Card
         className={cn(
-          "cursor-pointer transition-all hover:shadow-md",
+          "cursor-pointer overflow-hidden border-slate-200/75 bg-card/92 shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-slate-300/80 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-white/9",
           isDragging && "opacity-50 shadow-lg",
           stale && "opacity-75",
           atRisk && "border-l-2 border-l-red-400",
@@ -254,9 +254,9 @@ function KanbanCard({
         )}
         onClick={onSelect}
       >
-        <CardContent className="p-3 space-y-2.5">
+        <CardContent className="space-y-3 p-3.5">
           <div
-            className="relative h-28 w-full overflow-hidden rounded-md"
+            className="relative h-28 w-full overflow-hidden rounded-[0.85rem]"
             style={{ background: gradient }}
           >
             {project.thumbnail_url && (
@@ -278,7 +278,7 @@ function KanbanCard({
 
           {/* Title row */}
           <div className="flex items-start justify-between gap-2">
-            <h4 className="text-sm font-medium leading-snug line-clamp-2">
+            <h4 className="line-clamp-2 text-sm font-semibold leading-5">
               {project.name}
             </h4>
             <div className="flex items-center gap-1 shrink-0">
@@ -311,7 +311,7 @@ function KanbanCard({
 
           {/* One-line summary */}
           {summary && (
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+            <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
               {summary}
             </p>
           )}
@@ -324,7 +324,7 @@ function KanbanCard({
           )}
 
           {/* Meta row */}
-          <div className="mt-2 flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 text-xs leading-5 text-muted-foreground">
             <StatusBadge
               variant="priority"
               value={project.priority}
@@ -344,7 +344,7 @@ function KanbanCard({
 
           {/* Linked entities */}
           {(noteCount > 0 || ideaCount > 0) && (
-            <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground/70">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs leading-5 text-muted-foreground/70">
               {noteCount > 0 && (
                 <span className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
@@ -362,7 +362,7 @@ function KanbanCard({
 
           {/* State indicators */}
           {(stale || atRisk || onFire) && (
-            <div className="mt-2 flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {stale && (
                 <Badge
                   variant="secondary"
@@ -393,7 +393,7 @@ function KanbanCard({
           )}
 
           {/* Health dot */}
-          <div className="mt-2 flex items-center gap-1.5" title={health.reasons.join(" · ")}>
+          <div className="flex items-center gap-1.5" title={health.reasons.join(" · ")}>
             <span
               className={cn(
                 "h-2 w-2 rounded-full",

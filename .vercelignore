@@ -1,6 +1,7 @@
 # Deploy root is My_life_os/; Vercel project Root Directory = app/
 # Keep uploads small and avoid secrets
 site_capture_output/
+app/test-results/
 **/.env.local
 **/.env*.local
 .cursor/

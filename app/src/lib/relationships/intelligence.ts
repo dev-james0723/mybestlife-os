@@ -122,7 +122,13 @@ export function computeContextHealth(input: ContextHealthInput): ContextHealth {
     next_action_date: Boolean(r.next_action_date),
     preferences: Boolean(r.preferences_and_details),
     commitments: Boolean(r.commitments_made) || input.promiseCount > 0,
-    linked_project: Boolean(r.linked_project_id),
+    linked_project: Boolean(
+      r.linked_project_id ||
+        r.linked_project_ids.length > 0 ||
+        r.linked_goal_ids.length > 0 ||
+        r.linked_note_ids.length > 0 ||
+        r.linked_idea_ids.length > 0,
+    ),
     tags: r.tags.length > 0,
     profile_photo: Boolean(r.photo_url),
     memory_image: input.imageCount > 0,

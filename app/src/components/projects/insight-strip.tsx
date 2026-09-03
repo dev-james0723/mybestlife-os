@@ -77,59 +77,59 @@ export function InsightStrip({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {tiles.map((tile) => {
         const Icon = tile.icon;
         const isActive = activeFilter === tile.key;
         const tileContent = (
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg",
-                  tile.bgColor,
-                )}
-              >
-                <Icon className={cn("h-4 w-4", tile.color)} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground truncate">
-                  {tile.label}
-                </p>
-                {tile.isPortfolio ? (
-                  <div className="mt-1 flex h-2 w-full overflow-hidden rounded-full bg-muted">
-                    {Object.entries(stats.statusDistribution).map(
-                      ([status, count]) => (
-                        <div
-                          key={status}
-                          className={cn(
-                            "h-full transition-all",
-                            status === "active" && "bg-green-500",
-                            status === "planning" && "bg-blue-400",
-                            status === "paused" && "bg-amber-400",
-                            status === "completed" && "bg-emerald-500",
-                            status === "cancelled" && "bg-gray-400",
-                          )}
-                          style={{
-                            width: `${(count / Math.max(1, projects.length)) * 100}%`,
-                          }}
-                        />
-                      ),
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-lg font-semibold tabular-nums">
-                    {tile.value}
-                  </p>
-                )}
-              </div>
+          <div className="flex items-center gap-3.5">
+            <div
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.8rem]",
+                tile.bgColor,
+              )}
+            >
+              <Icon className={cn("h-4 w-4", tile.color)} />
             </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs leading-5 text-muted-foreground">
+                {tile.label}
+              </p>
+              {tile.isPortfolio ? (
+                <div className="mt-1.5 flex h-2 w-full min-w-16 overflow-hidden rounded-full bg-muted">
+                  {Object.entries(stats.statusDistribution).map(
+                    ([status, count]) => (
+                      <div
+                        key={status}
+                        className={cn(
+                          "h-full transition-all",
+                          status === "active" && "bg-green-500",
+                          status === "planning" && "bg-blue-400",
+                          status === "paused" && "bg-amber-400",
+                          status === "completed" && "bg-emerald-500",
+                          status === "cancelled" && "bg-gray-400",
+                        )}
+                        style={{
+                          width: `${(count / Math.max(1, projects.length)) * 100}%`,
+                        }}
+                      />
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="mt-0.5 text-lg font-semibold leading-6 tabular-nums">
+                  {tile.value}
+                </p>
+              )}
+            </div>
+          </div>
         );
 
         if (tile.isPortfolio) {
           return (
             <div
               key={tile.key}
-              className="rounded-[1.05rem] border border-slate-200/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:bg-white/[0.05]"
+              className="min-h-[5.25rem] rounded-[1.05rem] border border-slate-200/70 bg-white/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:bg-white/[0.05]"
             >
               {tileContent}
             </div>
@@ -141,7 +141,7 @@ export function InsightStrip({
             key={tile.key}
             type="button"
             className={cn(
-              "min-h-[4.75rem] rounded-[1.05rem] border border-slate-200/70 bg-white/72 p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] transition-[border-color,background,transform,box-shadow] duration-150 hover:border-lime-300/40 hover:bg-lime-300/8 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:active:translate-y-0 dark:border-white/10 dark:bg-white/[0.05] dark:hover:bg-lime-300/7",
+              "min-h-[5.25rem] rounded-[1.05rem] border border-slate-200/70 bg-white/72 p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] transition-[border-color,background,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-lime-300/40 hover:bg-lime-300/8 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0 dark:border-white/10 dark:bg-white/[0.05] dark:hover:bg-lime-300/7",
               isActive &&
                 "border-lime-300/55 bg-lime-300/14 shadow-[0_12px_28px_rgba(190,242,100,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] dark:bg-lime-300/12",
             )}

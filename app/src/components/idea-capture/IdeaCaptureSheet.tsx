@@ -1338,7 +1338,7 @@ export function IdeaCaptureSheet() {
         title={`${fabLabel} (⌘⇧I)`}
         className={cn(
           "fixed right-6 z-40 size-14 rounded-full",
-          "bottom-[max(5.75rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] sm:bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]",
+          "bottom-[max(5.75rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] min-[1025px]:bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]",
           "bg-primary text-primary-foreground",
           "shadow-lg shadow-foreground/10 dark:shadow-primary/20",
           "ring-1 ring-foreground/5 dark:ring-primary/30",

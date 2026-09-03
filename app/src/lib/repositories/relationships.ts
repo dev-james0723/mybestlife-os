@@ -16,6 +16,7 @@ import type {
   RelationshipInsert,
   RelationshipUpdate,
 } from "@/types/relationship";
+import { normalizeRelationshipSocialLinks } from "@/types/relationship";
 
 const SELECT_COLUMNS = [
   "id",
@@ -26,6 +27,7 @@ const SELECT_COLUMNS = [
   "relationship_strength",
   "email",
   "phone",
+  "social_links",
   "last_contact_date",
   "last_interaction_notes",
   "next_action",
@@ -35,12 +37,22 @@ const SELECT_COLUMNS = [
   "general_notes",
   "tags",
   "linked_project_id",
+  "linked_project_ids",
+  "linked_goal_ids",
+  "linked_note_ids",
+  "linked_idea_ids",
   "is_favorite",
   "created_at",
   "updated_at",
 ].join(", ");
 
 function mapRow(row: Record<string, unknown>): Relationship {
+  const linkedProjectId = (row.linked_project_id as string | null) ?? null;
+  const linkedProjectIds = asStringArray(row.linked_project_ids);
+  if (linkedProjectId && !linkedProjectIds.includes(linkedProjectId)) {
+    linkedProjectIds.unshift(linkedProjectId);
+  }
+
   return {
     id: String(row.id),
     user_id: String(row.user_id),
@@ -50,6 +62,7 @@ function mapRow(row: Record<string, unknown>): Relationship {
     relationship_strength: String(row.relationship_strength ?? "new"),
     email: (row.email as string | null) ?? null,
     phone: (row.phone as string | null) ?? null,
+    social_links: normalizeRelationshipSocialLinks(row.social_links),
     last_contact_date: (row.last_contact_date as string | null) ?? null,
     last_interaction_notes:
       (row.last_interaction_notes as string | null) ?? null,
@@ -60,7 +73,11 @@ function mapRow(row: Record<string, unknown>): Relationship {
       (row.preferences_and_details as string | null) ?? null,
     general_notes: (row.general_notes as string | null) ?? null,
     tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
-    linked_project_id: (row.linked_project_id as string | null) ?? null,
+    linked_project_id: linkedProjectId,
+    linked_project_ids: linkedProjectIds,
+    linked_goal_ids: asStringArray(row.linked_goal_ids),
+    linked_note_ids: asStringArray(row.linked_note_ids),
+    linked_idea_ids: asStringArray(row.linked_idea_ids),
     is_favorite: Boolean(row.is_favorite),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
@@ -79,6 +96,7 @@ function buildPayload(
     out.relationship_strength = input.relationship_strength;
   if (input.email !== undefined) out.email = input.email;
   if (input.phone !== undefined) out.phone = input.phone;
+  if (input.social_links !== undefined) out.social_links = input.social_links;
   if (input.last_contact_date !== undefined)
     out.last_contact_date = input.last_contact_date;
   if (input.last_interaction_notes !== undefined)
@@ -95,6 +113,19 @@ function buildPayload(
   if (input.tags !== undefined) out.tags = input.tags;
   if (input.linked_project_id !== undefined)
     out.linked_project_id = input.linked_project_id;
+  if (input.linked_project_ids !== undefined) {
+    out.linked_project_ids = input.linked_project_ids;
+    // Keep the pre-existing singular FK populated for older detail/Brain paths.
+    if (input.linked_project_id === undefined) {
+      out.linked_project_id = input.linked_project_ids[0] ?? null;
+    }
+  }
+  if (input.linked_goal_ids !== undefined)
+    out.linked_goal_ids = input.linked_goal_ids;
+  if (input.linked_note_ids !== undefined)
+    out.linked_note_ids = input.linked_note_ids;
+  if (input.linked_idea_ids !== undefined)
+    out.linked_idea_ids = input.linked_idea_ids;
   if (input.is_favorite !== undefined) out.is_favorite = input.is_favorite;
   return out;
 }
@@ -133,6 +164,15 @@ export const relationshipsRepository = {
     // Defaults the DB also enforces — surfaced here so optimistic snapshots
     // don't have to know about server-side defaults.
     if (input.tags === undefined) payload.tags = [];
+    if (input.social_links === undefined) payload.social_links = [];
+    if (input.linked_project_ids === undefined) {
+      payload.linked_project_ids = input.linked_project_id
+        ? [input.linked_project_id]
+        : [];
+    }
+    if (input.linked_goal_ids === undefined) payload.linked_goal_ids = [];
+    if (input.linked_note_ids === undefined) payload.linked_note_ids = [];
+    if (input.linked_idea_ids === undefined) payload.linked_idea_ids = [];
     if (input.relationship_strength === undefined)
       payload.relationship_strength = "new";
     if (input.is_favorite === undefined) payload.is_favorite = false;
@@ -177,3 +217,8 @@ export const relationshipsRepository = {
     if (error) throw error;
   },
 };
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+}

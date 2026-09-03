@@ -10,12 +10,14 @@ export type VaultSortKey = "recent" | "alpha" | "most-used" | "cost-desc";
 /** Top-level Software Vault experience (personal library + library modes). */
 export type VaultSoftwareMode =
   | "my-vault"
+  | "usage"
   | "recommended-stacks"
   | "compare"
   | "build-stack";
 
 export const VAULT_SOFTWARE_MODES: VaultSoftwareMode[] = [
   "my-vault",
+  "usage",
   "recommended-stacks",
   "compare",
   "build-stack",

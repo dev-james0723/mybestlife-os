@@ -41,6 +41,7 @@ import { RelationshipEmptyState } from "@/components/relationship/empty-states";
 import { RelationshipCard } from "@/components/relationship/cards/relationship-card";
 import { RelationshipFilterBar } from "@/components/relationship/filters/relationship-filter-bar";
 import { RelationshipFormModal } from "@/components/relationship/forms/relationship-form-modal";
+import type { RelationshipFormSubmission } from "@/components/relationship/forms/relationship-form";
 import { RelationshipIntelligenceModal } from "@/components/relationship/intelligence/relationship-intelligence-modal";
 import { RelationshipTimingDashboard } from "@/components/relationship/intelligence/relationship-timing-dashboard";
 import { AIRelationshipCreationWizard } from "@/components/relationship/ai/ai-relationship-creation-wizard";
@@ -62,13 +63,18 @@ import { useAllRelationshipPromises } from "@/hooks/use-relationship-intelligenc
 import { useProjects } from "@/hooks/use-projects";
 import { useGoals } from "@/hooks/use-goals";
 import { useNotes } from "@/hooks/use-notes";
+import { useIdeas } from "@/hooks/use-ideas";
+import {
+  useCreateRoleModel,
+  useRoleModels,
+} from "@/hooks/use-role-models";
 import { isPromiseEffectivelyOverdue } from "@/lib/relationships/intelligence";
 import {
   deleteRelationshipPhoto,
   isRelationshipStorageUrl,
 } from "@/lib/relationships/photo-storage";
+import { relationshipToRoleModelInput } from "@/lib/relationships/role-model-conversion";
 import type { Relationship, RelationshipPromise } from "@/types/database";
-import type { RelationshipInsert } from "@/types/relationship";
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -109,9 +115,12 @@ export function RelationshipsView({
   const { data: projects } = useProjects();
   const { data: goals } = useGoals();
   const { data: notes } = useNotes();
+  const { data: ideas } = useIdeas();
+  const { data: roleModels } = useRoleModels();
   const { data: promises } = useAllRelationshipPromises();
   const createMutation = useCreateRelationship();
   const updateMutation = useUpdateRelationship();
+  const createRoleModelMutation = useCreateRoleModel();
   const deleteMutation = useDeleteRelationship();
   const toggleFavoriteMutation = useToggleRelationshipFavorite();
 
@@ -150,6 +159,11 @@ export function RelationshipsView({
     [selectedId, relationships],
   );
 
+  const roleModelNames = useMemo(
+    () => (roleModels ?? []).map((roleModel) => roleModel.name),
+    [roleModels],
+  );
+
   // ---- Derived list ----
   const visibleRelationships = useMemo(() => {
     const filtered = applyRelationshipFilters(relationships ?? [], filters);
@@ -157,20 +171,39 @@ export function RelationshipsView({
   }, [relationships, filters, sort]);
 
   // ---- Handlers ----
+  const addRoleModelIfRequested = useCallback(
+    async (relationship: Relationship, requested: boolean) => {
+      if (!requested) return;
+      try {
+        await createRoleModelMutation.mutateAsync(
+          relationshipToRoleModelInput(relationship),
+        );
+      } catch {
+        // The role-model hook already shows a localized error. The relationship
+        // itself is safely saved, so do not invite a duplicate retry here.
+      }
+    },
+    [createRoleModelMutation],
+  );
+
   const handleCreate = useCallback(
-    (payload: RelationshipInsert) => {
-      createMutation.mutate(payload, {
-        onSuccess: () => {
+    ({ payload, addToRoleModel }: RelationshipFormSubmission) => {
+      void (async () => {
+        try {
+          const saved = await createMutation.mutateAsync(payload);
+          await addRoleModelIfRequested(saved, addToRoleModel);
           setFormOpen(false);
           setEditing(null);
-        },
-      });
+        } catch {
+          // The relationship hook owns the error toast; keep the form open.
+        }
+      })();
     },
-    [createMutation],
+    [addRoleModelIfRequested, createMutation],
   );
 
   const handleUpdate = useCallback(
-    (payload: RelationshipInsert) => {
+    ({ payload, addToRoleModel }: RelationshipFormSubmission) => {
       if (!editing) return;
       // If the user replaced the photo, best-effort-clean the previous
       // storage object. The form already does this on inline replacement,
@@ -182,17 +215,21 @@ export function RelationshipsView({
       ) {
         void deleteRelationshipPhoto(editing.photo_url);
       }
-      updateMutation.mutate(
-        { id: editing.id, data: payload },
-        {
-          onSuccess: () => {
-            setFormOpen(false);
-            setEditing(null);
-          },
-        },
-      );
+      void (async () => {
+        try {
+          const saved = await updateMutation.mutateAsync({
+            id: editing.id,
+            data: payload,
+          });
+          await addRoleModelIfRequested(saved, addToRoleModel);
+          setFormOpen(false);
+          setEditing(null);
+        } catch {
+          // The relationship hook owns the error toast; keep the form open.
+        }
+      })();
     },
-    [editing, updateMutation],
+    [addRoleModelIfRequested, editing, updateMutation],
   );
 
   const handleDelete = useCallback(() => {
@@ -344,9 +381,14 @@ export function RelationshipsView({
         }}
         initial={editing ?? undefined}
         projects={projects ?? []}
+        goals={goals ?? []}
+        notes={notes ?? []}
+        ideas={ideas ?? []}
+        roleModelNames={roleModelNames}
         onSubmit={editing ? handleUpdate : handleCreate}
         isSubmitting={
-          editing ? updateMutation.isPending : createMutation.isPending
+          (editing ? updateMutation.isPending : createMutation.isPending) ||
+          createRoleModelMutation.isPending
         }
       />
 
@@ -374,6 +416,7 @@ export function RelationshipsView({
         projects={projects ?? []}
         goals={goals ?? []}
         notes={notes ?? []}
+        ideas={ideas ?? []}
         promises={(promises ?? []) as RelationshipPromise[]}
         open={selected !== null}
         onClose={() => setSelectedId(null)}

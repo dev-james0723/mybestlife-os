@@ -267,18 +267,18 @@ export function AppSidebar() {
                 language={language}
                 onNavigate={handleSidebarNavigate}
               />
-              {category.categoryId === "learning" ? (
-                <GardenNavButton
-                  localeSlug={localeSlug}
-                  pathWithoutLocale={pathWithoutLocale}
-                  onNavigate={handleSidebarNavigate}
-                  uiTheme={uiTheme}
-                  colorMode={colorMode}
-                  language={language}
-                />
-              ) : null}
             </StaggerItem>
           ))}
+          <StaggerItem enabled={isGlassTheme}>
+            <GardenNavButton
+              localeSlug={localeSlug}
+              pathWithoutLocale={pathWithoutLocale}
+              onNavigate={handleSidebarNavigate}
+              uiTheme={uiTheme}
+              colorMode={colorMode}
+              language={language}
+            />
+          </StaggerItem>
         </StaggerContainer>
 
         {secondaryCategories.length > 0 && (
@@ -313,16 +313,6 @@ export function AppSidebar() {
                       language={language}
                       onNavigate={handleSidebarNavigate}
                     />
-                    {category.categoryId === "learning" ? (
-                      <GardenNavButton
-                        localeSlug={localeSlug}
-                        pathWithoutLocale={pathWithoutLocale}
-                        onNavigate={handleSidebarNavigate}
-                        uiTheme={uiTheme}
-                        colorMode={colorMode}
-                        language={language}
-                      />
-                    ) : null}
                   </StaggerItem>
                 ))}
               </StaggerContainer>

@@ -128,7 +128,7 @@ export type AssetIntelUiCopy = {
 
 const english: AssetIntelUiCopy = {
   cta: {
-    addWithAi: "Add asset with Xiaoba",
+    addWithAi: "Add Asset with AI",
     addManually: "Add Manually",
     analyzePotential: "Thinking of buying?",
   },

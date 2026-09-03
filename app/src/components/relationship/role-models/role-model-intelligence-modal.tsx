@@ -143,10 +143,10 @@ export function RoleModelIntelligenceModal({
                   "radial-gradient(120% 120% at 0% 0%, rgba(99,102,241,0.18), transparent 55%), radial-gradient(120% 120% at 100% 0%, rgba(14,165,233,0.16), transparent 55%)",
               }}
             />
-            <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:gap-5 sm:p-7">
-              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-muted ring-1 ring-border/60 sm:h-28 sm:w-28">
+            <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-5 sm:p-7">
+              <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl bg-muted ring-1 ring-border/60 sm:h-44 sm:w-44 lg:h-52 lg:w-52">
                 {photo ? (
-                  <RoleModelPhoto src={photo} alt={roleModel.name} pixelSize={120} className="rounded-2xl" />
+                  <RoleModelPhoto src={photo} alt={roleModel.name} pixelSize={208} className="rounded-2xl" />
                 ) : (
                   <Avatar className="h-full w-full rounded-2xl">
                     <AvatarFallback className="rounded-2xl text-2xl">
@@ -167,10 +167,10 @@ export function RoleModelIntelligenceModal({
                 {blurb ? (
                   <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{blurb}</p>
                 ) : null}
-                <div className="flex flex-wrap items-center gap-2 pt-1">
+                <div className="grid gap-2 pt-1 sm:flex sm:flex-wrap sm:items-center">
                   <OSPrimaryAction
                     onClick={() => onTalk(roleModel)}
-                    className="group relative"
+                    className="group relative w-full justify-center sm:order-1 sm:w-auto"
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Talk To {roleModel.name}
@@ -178,23 +178,27 @@ export function RoleModelIntelligenceModal({
                       <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-sky-400/0 transition group-hover:ring-sky-400/40" />
                     )}
                   </OSPrimaryAction>
-                  {onToggleFavorite ? (
-                    <OSIconControl onClick={onToggleFavorite} aria-label="Toggle favorite">
-                      <Star className={cn("h-4 w-4", roleModel.is_favorite && "fill-amber-400 text-amber-500")} />
+                  <p className="text-[11px] text-muted-foreground/70 sm:order-3 sm:basis-full">
+                    {DISCLAIMER}
+                  </p>
+                  <div className="flex items-center gap-2 sm:order-2">
+                    {onToggleFavorite ? (
+                      <OSIconControl onClick={onToggleFavorite} aria-label="Toggle favorite">
+                        <Star className={cn("h-4 w-4", roleModel.is_favorite && "fill-amber-400 text-amber-500")} />
+                      </OSIconControl>
+                    ) : null}
+                    <OSIconControl onClick={onEdit} aria-label="Edit role model">
+                      <Pencil className="h-4 w-4" />
                     </OSIconControl>
-                  ) : null}
-                  <OSIconControl onClick={onEdit} aria-label="Edit role model">
-                    <Pencil className="h-4 w-4" />
-                  </OSIconControl>
-                  <OSIconControl
-                    onClick={onDelete}
-                    aria-label="Delete role model"
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </OSIconControl>
+                    <OSIconControl
+                      onClick={onDelete}
+                      aria-label="Delete role model"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </OSIconControl>
+                  </div>
                 </div>
-                <p className="text-[11px] text-muted-foreground/70">{DISCLAIMER}</p>
               </div>
             </div>
 

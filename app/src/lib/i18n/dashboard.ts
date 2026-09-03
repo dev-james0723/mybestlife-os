@@ -5,7 +5,6 @@ type SummaryParams = {
   urgentTitles: string[];
   urgentCount: number;
   activeProjects: number;
-  studyStreak: number;
 };
 
 function joinTitles(locale: AppLocale, titles: string[]): string {
@@ -32,11 +31,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `你正在進行 ${p.activeProjects} 個專案。`
         : "尚未有進行中的專案，建立一個專案來整理目標。";
-    const streakLine =
-      p.studyStreak > 0
-        ? `日語學習連續紀錄 ${p.studyStreak} 天，維持節奏會更有感。`
-        : "日語學習連續紀錄從今天開始累積，先記錄一小段練習。";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "zh-CN") {
@@ -48,11 +43,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `你正在进行 ${p.activeProjects} 个项目。`
         : "还没有进行中的项目，创建一个项目来整理目标。";
-    const streakLine =
-      p.studyStreak > 0
-        ? `日语学习已连续 ${p.studyStreak} 天，保持节奏更有感。`
-        : "从今天开始累积日语学习连续记录，先记录一小段练习。";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "ja") {
@@ -64,11 +55,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `進行中のプロジェクトは ${p.activeProjects} 件です。`
         : "進行中のプロジェクトはまだありません。関連タスクをまとめてみましょう。";
-    const streakLine =
-      p.studyStreak > 0
-        ? `日本語学習の連続記録は ${p.studyStreak} 日です。継続が力になります。`
-        : "今日から短いセッションを記録して、連続記録を始めましょう。";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "ko") {
@@ -80,11 +67,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `진행 중인 프로젝트는 ${p.activeProjects}개입니다.`
         : "진행 중인 프로젝트가 아직 없습니다. 관련 작업을 묶을 프로젝트를 만들어 보세요.";
-    const streakLine =
-      p.studyStreak > 0
-        ? `일본어 학습 연속 기록은 ${p.studyStreak}일입니다. 꾸준함이 가장 큰 힘입니다.`
-        : "오늘 짧은 일본어 학습을 기록해 연속 기록을 시작해 보세요.";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "fr") {
@@ -98,11 +81,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `Vous faites avancer ${p.activeProjects} projet${p.activeProjects === 1 ? "" : "s"} actif${p.activeProjects === 1 ? "" : "s"}. `
         : "Pas encore de projet actif — créez-en un pour regrouper les tâches liées. ";
-    const streakLine =
-      p.studyStreak > 0
-        ? `Votre série d’étude du japonais : ${p.studyStreak} jour${p.studyStreak === 1 ? "" : "s"} ; la régularité bat l’intensité.`
-        : "Enregistrez une courte session de japonais aujourd’hui pour lancer une série.";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "it") {
@@ -116,11 +95,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `Stai portando avanti ${p.activeProjects} progett${p.activeProjects === 1 ? "o" : "i"} attiv${p.activeProjects === 1 ? "o" : "i"}. `
         : "Nessun progetto attivo: valuta di crearne uno per raggruppare le attività. ";
-    const streakLine =
-      p.studyStreak > 0
-        ? `La tua serie di studio del giapponese è di ${p.studyStreak} giorn${p.studyStreak === 1 ? "o" : "i"}: la costanza batte l’intensità.`
-        : "Registra una breve sessione di giapponese oggi per iniziare una serie.";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "es") {
@@ -134,11 +109,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `Estás avanzando ${p.activeProjects} proyecto${p.activeProjects === 1 ? "" : "s"} activo${p.activeProjects === 1 ? "" : "s"}. `
         : "Aún no hay proyectos activos: crea uno para agrupar tareas relacionadas. ";
-    const streakLine =
-      p.studyStreak > 0
-        ? `Tu racha de estudio de japonés es de ${p.studyStreak} día${p.studyStreak === 1 ? "" : "s"}; la constancia gana a la intensidad.`
-        : "Registra una sesión corta de japonés hoy para empezar una racha.";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   if (locale === "vi") {
@@ -150,11 +121,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
       p.activeProjects > 0
         ? `Bạn đang đẩy ${p.activeProjects} dự án đang hoạt động. `
         : "Chưa có dự án đang hoạt động — hãy tạo một dự án để gom các việc liên quan. ";
-    const streakLine =
-      p.studyStreak > 0
-        ? `Chuỗi học tiếng Nhật của bạn là ${p.studyStreak} ngày; kiên trì quan trọng hơn cường độ.`
-        : "Ghi lại một buổi học tiếng Nhật ngắn hôm nay để bắt đầu chuỗi.";
-    return `${urgentLine}${projLine}${streakLine}`;
+    return `${urgentLine}${projLine}`;
   }
 
   const urgentLine =
@@ -167,11 +134,7 @@ export function buildDashboardSummary(locale: AppLocale, p: SummaryParams): stri
     p.activeProjects > 0
       ? `You are actively moving ${p.activeProjects} project${p.activeProjects === 1 ? "" : "s"} forward. `
       : "No active projects yet — consider spinning one up to bundle related tasks. ";
-  const streakLine =
-    p.studyStreak > 0
-      ? `Your Japanese study streak is ${p.studyStreak} day${p.studyStreak === 1 ? "" : "s"}; consistency beats intensity.`
-      : "Log a short Japanese study session today to begin a streak.";
-  return `${urgentLine}${projLine}${streakLine}`;
+  return `${urgentLine}${projLine}`;
 }
 
 export type DashboardCopy = {
@@ -186,18 +149,21 @@ export type DashboardCopy = {
   newVideo: string;
   upcoming: string;
   viewAll: string;
-  recentStudy: string;
-  weekMinutes: (n: number) => string;
+  knowledgePickTitle: string;
+  knowledgePickDescription: string;
+  knowledgePickOpen: string;
+  knowledgePickBrowse: string;
+  knowledgePickEmpty: string;
+  knowledgePickUnavailable: string;
+  knowledgePickRetry: string;
+  knowledgePickSummaryFallback: string;
   favoriteNotes: string;
   noUpcoming: string;
-  noSessions: string;
   noFavorites: string;
   addGrateful: string;
   statActiveProjects: string;
   statUrgent: string;
-  statStreak: string;
   statNotes: string;
-  days: (n: number) => string;
   gratefulSlotEmpty: (index: number) => string;
   openAiAssistantAria: string;
 };
@@ -215,18 +181,22 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "Get New Video",
     upcoming: "Upcoming Tasks",
     viewAll: "View All",
-    recentStudy: "Recent Study Sessions",
-    weekMinutes: (n) => `${n} minutes this week`,
+    knowledgePickTitle: "Today’s Knowledge Pick",
+    knowledgePickDescription: "One useful item from your library, resurfaced for today.",
+    knowledgePickOpen: "Open pick",
+    knowledgePickBrowse: "Browse Knowledge",
+    knowledgePickEmpty:
+      "No ready items yet. Add something to your Knowledge Base and it can appear here.",
+    knowledgePickUnavailable: "We couldn’t load today’s knowledge pick.",
+    knowledgePickRetry: "Try again",
+    knowledgePickSummaryFallback: "Open this item to revisit the full idea.",
     favoriteNotes: "Favorite Notes",
     noUpcoming: "No upcoming tasks",
-    noSessions: "No study sessions yet",
     noFavorites: "Star notes to see them here",
     addGrateful: "Add a grateful thing",
     statActiveProjects: "Active Projects",
     statUrgent: "Urgent Tasks",
-    statStreak: "Study Streak",
     statNotes: "Total Notes",
-    days: (n) => `${n} day${n === 1 ? "" : "s"}`,
     gratefulSlotEmpty: (i) =>
       i === 0 ? "My 1st grateful thing today" : i === 1 ? "My 2nd grateful thing today" : "My 3rd grateful thing today",
     openAiAssistantAria: "Open AI assistant",
@@ -243,18 +213,21 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "取得新影片",
     upcoming: "即將到來的任務",
     viewAll: "查看全部",
-    recentStudy: "最近學習紀錄",
-    weekMinutes: (n) => `本週已學 ${n} 分鐘`,
+    knowledgePickTitle: "今日知識精選",
+    knowledgePickDescription: "每日從你的知識庫重溫一項值得再看的內容。",
+    knowledgePickOpen: "開啟精選",
+    knowledgePickBrowse: "瀏覽知識庫",
+    knowledgePickEmpty: "暫時未有可供精選的內容。先加入一項知識，之後便會在這裡出現。",
+    knowledgePickUnavailable: "暫時無法載入今日知識精選。",
+    knowledgePickRetry: "再試一次",
+    knowledgePickSummaryFallback: "開啟這項內容，重新掌握完整重點。",
     favoriteNotes: "最愛筆記",
     noUpcoming: "沒有即將到來的任務",
-    noSessions: "尚無學習紀錄",
     noFavorites: "尚未標星任何筆記",
     addGrateful: "新增感恩項目",
     statActiveProjects: "進行中專案",
     statUrgent: "緊急任務",
-    statStreak: "學習連續天數",
     statNotes: "筆記總數",
-    days: (n) => `${n} 天`,
     gratefulSlotEmpty: (i) => `今日第 ${i + 1} 件感恩的事`,
     openAiAssistantAria: "開啟 AI 助理",
   },
@@ -270,18 +243,21 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "获取新视频",
     upcoming: "即将到来的任务",
     viewAll: "查看全部",
-    recentStudy: "最近学习记录",
-    weekMinutes: (n) => `本周已学 ${n} 分钟`,
+    knowledgePickTitle: "今日知识精选",
+    knowledgePickDescription: "每天从你的知识库重温一项值得再看的内容。",
+    knowledgePickOpen: "打开精选",
+    knowledgePickBrowse: "浏览知识库",
+    knowledgePickEmpty: "暂时没有可供精选的内容。先添加一项知识，之后它就能出现在这里。",
+    knowledgePickUnavailable: "暂时无法加载今日知识精选。",
+    knowledgePickRetry: "再试一次",
+    knowledgePickSummaryFallback: "打开这项内容，重新掌握完整重点。",
     favoriteNotes: "收藏笔记",
     noUpcoming: "没有即将到来的任务",
-    noSessions: "尚无学习记录",
     noFavorites: "给笔记加星标后会显示在这里",
     addGrateful: "添加感恩项",
     statActiveProjects: "进行中的项目",
     statUrgent: "紧急任务",
-    statStreak: "学习连续天数",
     statNotes: "笔记总数",
-    days: (n) => `${n} 天`,
     gratefulSlotEmpty: (i) => `今天第 ${i + 1} 件感恩的事`,
     openAiAssistantAria: "打开 AI 助手",
   },
@@ -297,18 +273,21 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "別の動画",
     upcoming: "近日中のタスク",
     viewAll: "すべて表示",
-    recentStudy: "最近の学習",
-    weekMinutes: (n) => `今週 ${n} 分`,
+    knowledgePickTitle: "今日のナレッジピック",
+    knowledgePickDescription: "ライブラリから、今日読み返す価値のある一件を選びました。",
+    knowledgePickOpen: "選んだ項目を開く",
+    knowledgePickBrowse: "ナレッジを見る",
+    knowledgePickEmpty: "選べる項目がまだありません。ナレッジベースに項目を追加してください。",
+    knowledgePickUnavailable: "今日のナレッジピックを読み込めませんでした。",
+    knowledgePickRetry: "再試行",
+    knowledgePickSummaryFallback: "項目を開いて、内容全体を振り返りましょう。",
     favoriteNotes: "お気に入りノート",
     noUpcoming: "近日中のタスクはありません",
-    noSessions: "学習記録はまだありません",
     noFavorites: "スターを付けたノートがここに表示されます",
     addGrateful: "感謝を追加",
     statActiveProjects: "進行中プロジェクト",
     statUrgent: "緊急タスク",
-    statStreak: "学習ストリーク",
     statNotes: "ノート合計",
-    days: (n) => `${n}日`,
     gratefulSlotEmpty: (i) => `今日の感謝 ${i + 1} つ目`,
     openAiAssistantAria: "AIアシスタントを開く",
   },
@@ -324,18 +303,21 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "새 영상",
     upcoming: "다가오는 작업",
     viewAll: "모두 보기",
-    recentStudy: "최근 학습",
-    weekMinutes: (n) => `이번 주 ${n}분`,
+    knowledgePickTitle: "오늘의 지식 추천",
+    knowledgePickDescription: "라이브러리에서 오늘 다시 볼 만한 항목 하나를 골랐습니다.",
+    knowledgePickOpen: "추천 항목 열기",
+    knowledgePickBrowse: "지식 탐색",
+    knowledgePickEmpty: "추천할 준비된 항목이 없습니다. 지식 베이스에 항목을 추가해 주세요.",
+    knowledgePickUnavailable: "오늘의 지식 추천을 불러오지 못했습니다.",
+    knowledgePickRetry: "다시 시도",
+    knowledgePickSummaryFallback: "항목을 열어 전체 내용을 다시 살펴보세요.",
     favoriteNotes: "즐겨찾는 노트",
     noUpcoming: "다가오는 작업이 없습니다",
-    noSessions: "학습 기록이 아직 없습니다",
     noFavorites: "노트에 별을 표시하면 여기에 표시됩니다",
     addGrateful: "감사 항목 추가",
     statActiveProjects: "진행 중 프로젝트",
     statUrgent: "긴급 작업",
-    statStreak: "학습 연속 일수",
     statNotes: "노트 총수",
-    days: (n) => `${n}일`,
     gratefulSlotEmpty: (i) => `오늘의 감사 ${i + 1}번째`,
     openAiAssistantAria: "AI 어시스턴트 열기",
   },
@@ -351,18 +333,22 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "Nouvelle vidéo",
     upcoming: "Tâches à venir",
     viewAll: "Tout voir",
-    recentStudy: "Sessions d’étude récentes",
-    weekMinutes: (n) => `${n} minutes cette semaine`,
+    knowledgePickTitle: "Sélection connaissance du jour",
+    knowledgePickDescription: "Un élément utile de votre bibliothèque à redécouvrir aujourd’hui.",
+    knowledgePickOpen: "Ouvrir la sélection",
+    knowledgePickBrowse: "Parcourir les connaissances",
+    knowledgePickEmpty:
+      "Aucun élément prêt pour le moment. Ajoutez du contenu à votre base de connaissances.",
+    knowledgePickUnavailable: "Impossible de charger la sélection connaissance du jour.",
+    knowledgePickRetry: "Réessayer",
+    knowledgePickSummaryFallback: "Ouvrez cet élément pour revoir l’idée complète.",
     favoriteNotes: "Notes favorites",
     noUpcoming: "Aucune tâche à venir",
-    noSessions: "Pas encore de sessions d’étude",
     noFavorites: "Mettez une étoile aux notes pour les voir ici",
     addGrateful: "Ajouter une gratitude",
     statActiveProjects: "Projets actifs",
     statUrgent: "Tâches urgentes",
-    statStreak: "Série d’étude",
     statNotes: "Total des notes",
-    days: (n) => `${n} jour${n === 1 ? "" : "s"}`,
     gratefulSlotEmpty: (i) =>
       i === 0
         ? "Ma 1re gratitude du jour"
@@ -383,18 +369,22 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "Nuovo video",
     upcoming: "Attività in arrivo",
     viewAll: "Vedi tutto",
-    recentStudy: "Sessioni di studio recenti",
-    weekMinutes: (n) => `${n} minuti questa settimana`,
+    knowledgePickTitle: "Conoscenza scelta per oggi",
+    knowledgePickDescription: "Un elemento utile della tua raccolta da riscoprire oggi.",
+    knowledgePickOpen: "Apri la scelta",
+    knowledgePickBrowse: "Sfoglia conoscenze",
+    knowledgePickEmpty:
+      "Non ci sono ancora elementi pronti. Aggiungi qualcosa alla tua base di conoscenze.",
+    knowledgePickUnavailable: "Non è stato possibile caricare la conoscenza scelta per oggi.",
+    knowledgePickRetry: "Riprova",
+    knowledgePickSummaryFallback: "Apri questo elemento per rivedere l’idea completa.",
     favoriteNotes: "Note preferite",
     noUpcoming: "Nessuna attività in arrivo",
-    noSessions: "Nessuna sessione di studio",
     noFavorites: "Metti la stella alle note per vederle qui",
     addGrateful: "Aggiungi una gratitudine",
     statActiveProjects: "Progetti attivi",
     statUrgent: "Attività urgenti",
-    statStreak: "Serie di studio",
     statNotes: "Note totali",
-    days: (n) => `${n} giorn${n === 1 ? "o" : "i"}`,
     gratefulSlotEmpty: (i) =>
       i === 0
         ? "La mia 1ª gratitudine di oggi"
@@ -415,18 +405,22 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "Nuevo video",
     upcoming: "Tareas próximas",
     viewAll: "Ver todo",
-    recentStudy: "Sesiones de estudio recientes",
-    weekMinutes: (n) => `${n} minutos esta semana`,
+    knowledgePickTitle: "Selección de conocimiento de hoy",
+    knowledgePickDescription: "Un elemento útil de tu biblioteca para redescubrir hoy.",
+    knowledgePickOpen: "Abrir selección",
+    knowledgePickBrowse: "Explorar conocimiento",
+    knowledgePickEmpty:
+      "Todavía no hay elementos listos. Añade contenido a tu base de conocimiento.",
+    knowledgePickUnavailable: "No pudimos cargar la selección de conocimiento de hoy.",
+    knowledgePickRetry: "Volver a intentar",
+    knowledgePickSummaryFallback: "Abre este elemento para retomar la idea completa.",
     favoriteNotes: "Notas favoritas",
     noUpcoming: "No hay tareas próximas",
-    noSessions: "Aún no hay sesiones de estudio",
     noFavorites: "Marca notas con estrella para verlas aquí",
     addGrateful: "Añadir gratitud",
     statActiveProjects: "Proyectos activos",
     statUrgent: "Tareas urgentes",
-    statStreak: "Racha de estudio",
     statNotes: "Total de notas",
-    days: (n) => `${n} día${n === 1 ? "" : "s"}`,
     gratefulSlotEmpty: (i) =>
       i === 0
         ? "Mi 1.ª gratitud de hoy"
@@ -447,18 +441,22 @@ const copies: Record<AppLocale, DashboardCopy> = {
     newVideo: "Video mới",
     upcoming: "Việc sắp tới",
     viewAll: "Xem tất cả",
-    recentStudy: "Buổi học gần đây",
-    weekMinutes: (n) => `${n} phút tuần này`,
+    knowledgePickTitle: "Kiến thức chọn cho hôm nay",
+    knowledgePickDescription: "Một mục hữu ích từ thư viện để bạn xem lại hôm nay.",
+    knowledgePickOpen: "Mở mục đã chọn",
+    knowledgePickBrowse: "Duyệt kho kiến thức",
+    knowledgePickEmpty:
+      "Chưa có mục nào sẵn sàng. Hãy thêm nội dung vào kho kiến thức của bạn.",
+    knowledgePickUnavailable: "Không thể tải kiến thức được chọn cho hôm nay.",
+    knowledgePickRetry: "Thử lại",
+    knowledgePickSummaryFallback: "Mở mục này để xem lại toàn bộ ý tưởng.",
     favoriteNotes: "Ghi chú yêu thích",
     noUpcoming: "Không có việc sắp tới",
-    noSessions: "Chưa có buổi học",
     noFavorites: "Gắn sao cho ghi chú để xem tại đây",
     addGrateful: "Thêm điều biết ơn",
     statActiveProjects: "Dự án đang hoạt động",
     statUrgent: "Việc khẩn cấp",
-    statStreak: "Chuỗi học",
     statNotes: "Tổng ghi chú",
-    days: (n) => `${n} ngày`,
     gratefulSlotEmpty: (i) => `Điều biết ơn thứ ${i + 1} hôm nay`,
     openAiAssistantAria: "Mở trợ lý AI",
   },

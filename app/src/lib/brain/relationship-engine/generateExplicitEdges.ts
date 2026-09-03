@@ -17,7 +17,7 @@
  *   - notes.project_id              → memory → project (part_of_project)
  *   - assets.document_id            → asset → document (generated_from_document)
  *   - daily_plans.tasks[].taskId    → daily_plan → task (linked_to_task)
- *   - relationships.linked_project_id → person → project (linked_to_career)
+ *   - relationships.linked_*_ids      → person → linked Life OS items
  *
  * All explicit edges have strength 0.95 / confidence 0.98 and status
  * "confirmed" — they reflect actual user-set FKs.
@@ -325,22 +325,57 @@ export function generateExplicitEdges(input: {
       );
     }
 
-    // relationships.linked_project_id
-    if (
-      node.type === "relationship_person" &&
-      typeof meta.linked_project_id === "string"
-    ) {
-      pushIfPresent(
-        explicitEdge({
-          userId: input.userId,
-          source: node,
+    if (node.type === "relationship_person") {
+      const relationshipLinks: Array<{
+        field: string;
+        targetType: BrainNodeType;
+        edgeType: "linked_to_career" | "supports_goal" | "explicit_link";
+        reason: string;
+      }> = [
+        {
+          field: "linked_project_ids",
           targetType: "project",
-          targetSourceId: meta.linked_project_id,
           edgeType: "linked_to_career",
-          reason: `Person linked to project.`,
-          knownIds,
-        }),
-      );
+          reason: "Person linked to project.",
+        },
+        {
+          field: "linked_goal_ids",
+          targetType: "goal",
+          edgeType: "supports_goal",
+          reason: "Person linked to goal.",
+        },
+        {
+          field: "linked_note_ids",
+          targetType: "memory",
+          edgeType: "explicit_link",
+          reason: "Person linked to note.",
+        },
+        {
+          field: "linked_idea_ids",
+          targetType: "idea",
+          edgeType: "explicit_link",
+          reason: "Person linked to idea.",
+        },
+      ];
+
+      for (const link of relationshipLinks) {
+        const ids = meta[link.field];
+        if (!Array.isArray(ids)) continue;
+        for (const id of ids) {
+          if (typeof id !== "string") continue;
+          pushIfPresent(
+            explicitEdge({
+              userId: input.userId,
+              source: node,
+              targetType: link.targetType,
+              targetSourceId: id,
+              edgeType: link.edgeType,
+              reason: link.reason,
+              knownIds,
+            }),
+          );
+        }
+      }
     }
   }
 

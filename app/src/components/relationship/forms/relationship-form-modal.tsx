@@ -19,6 +19,7 @@ import { OSDialogSurface } from "@/components/ui/os-primitives";
 import {
   RelationshipForm,
   type RelationshipFormInitial,
+  type RelationshipFormSubmission,
 } from "@/components/relationship/forms/relationship-form";
 import {
   relationshipDialogBodyClassName,
@@ -26,15 +27,18 @@ import {
 } from "@/components/relationship/relationship-os";
 import { useAppStore } from "@/stores/app-store";
 import { getRelationshipUiCopy } from "@/lib/i18n/relationship-ui";
-import type { RelationshipInsert } from "@/types/relationship";
-import type { Project } from "@/types/database";
+import type { Goal, Idea, Note, Project } from "@/types/database";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initial?: RelationshipFormInitial;
   projects: readonly Project[];
-  onSubmit: (payload: RelationshipInsert) => void;
+  goals: readonly Goal[];
+  notes: readonly Note[];
+  ideas: readonly Idea[];
+  roleModelNames?: readonly string[];
+  onSubmit: (submission: RelationshipFormSubmission) => void;
   isSubmitting?: boolean;
 };
 
@@ -43,6 +47,10 @@ export function RelationshipFormModal({
   onOpenChange,
   initial,
   projects,
+  goals,
+  notes,
+  ideas,
+  roleModelNames,
   onSubmit,
   isSubmitting,
 }: Props) {
@@ -53,7 +61,10 @@ export function RelationshipFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <OSDialogSurface className="flex max-h-[88dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <OSDialogSurface
+        size="3xl"
+        className="flex max-h-[88dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0"
+      >
         <DialogHeader className={relationshipDialogHeaderClassName}>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -69,6 +80,10 @@ export function RelationshipFormModal({
               key={initial?.id ?? "__new__"}
               initial={initial}
               projects={projects}
+              goals={goals}
+              notes={notes}
+              ideas={ideas}
+              roleModelNames={roleModelNames}
               onSubmit={onSubmit}
               onCancel={() => onOpenChange(false)}
               isSubmitting={isSubmitting}
