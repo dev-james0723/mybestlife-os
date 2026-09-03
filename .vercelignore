@@ -2,6 +2,10 @@
 # Keep uploads small and avoid secrets
 site_capture_output/
 app/test-results/
+**/node_modules/
+**/.next/
+.git/
+**/.DS_Store
 **/.env.local
 **/.env*.local
 .cursor/
