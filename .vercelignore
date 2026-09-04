@@ -2,6 +2,7 @@
 # Keep uploads small and avoid secrets
 site_capture_output/
 app/test-results/
+services/
 **/node_modules/
 **/.next/
 .git/
