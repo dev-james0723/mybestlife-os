@@ -130,6 +130,7 @@ export function neuralSkillToMindSkill(ns: RoleModelNeuralSkill): MindSkill {
     lensTitle: content.lensTitle,
     lensSubtitle: content.lensSubtitle || "Neural Skill distilled from your Role Model.",
     systemPromptHint: buildNeuralSkillSystemPrompt(content),
+    starterPrompts: content.starterPrompts,
     avatarGradient: ns.avatar_gradient,
   };
 }

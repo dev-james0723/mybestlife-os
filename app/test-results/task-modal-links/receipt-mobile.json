@@ -1,0 +1,119 @@
+{
+  "state": "mocked-browser-validation",
+  "passed": true,
+  "route": "/en/tasks",
+  "fixture": {
+    "task": "Prepare the complete research briefing",
+    "realTags": [
+      "planning",
+      "creative",
+      "deep-work",
+      "client-prep",
+      "research",
+      "follow-through"
+    ],
+    "linkedNames": {
+      "goal": "Complete the autumn research milestone",
+      "note": "Research interview notes",
+      "idea": "Turn the findings into a visual story",
+      "paper": "Deliberate Practice and Expert Performance",
+      "knowledge": "Research synthesis playbook"
+    }
+  },
+  "viewportChecks": [
+    {
+      "viewport": "390x844",
+      "expectedColumns": 1
+    }
+  ],
+  "assertions": {
+    "viewTabsInHeaderBeforeInsights": true,
+    "noViewTabsInFilterBar": true,
+    "allRealTagsVisibleOnListCard": true,
+    "rawMetadataHidden": true,
+    "modalResponsiveColumns": true,
+    "fixedHeaderAndFooter": true,
+    "internalModalScroll": true,
+    "humanReadableLinkedPaperIdeaKnowledgeNote": true,
+    "readOnlyInteractions": true
+  },
+  "screenshots": [
+    "mobile-tasks-page.png",
+    "mobile-task-modal-top.png",
+    "mobile-task-modal-links.png",
+    "mobile-task-modal-notes.png"
+  ],
+  "results": [
+    {
+      "viewport": "390x844",
+      "expectedColumns": 1,
+      "actualColumns": 1,
+      "header": {
+        "viewTabs": [
+          "List",
+          "Grid",
+          "Table",
+          "Board"
+        ],
+        "precedesInsights": true,
+        "filterBarContainsViewTabs": false
+      },
+      "taskCard": {
+        "visibleTags": [
+          "planning",
+          "creative",
+          "deep-work",
+          "client-prep",
+          "research",
+          "follow-through"
+        ],
+        "rawReferenceIdsVisible": false
+      },
+      "modal": {
+        "fixedHeader": true,
+        "fixedFooter": true,
+        "internalScroll": true,
+        "scrollState": {
+          "scrollTop": 1693,
+          "maxScrollTop": 1740
+        },
+        "gridTemplateColumns": "324px",
+        "linkedNames": [
+          "Deliberate Practice and Expert Performance",
+          "Turn the findings into a visual story",
+          "Research synthesis playbook",
+          "Research interview notes"
+        ],
+        "goalResolution": "picker-option",
+        "rawReferenceIdsVisible": false,
+        "legacyDescriptionMetadataVisible": false
+      },
+      "overflow": {
+        "document": 0,
+        "body": 0
+      },
+      "mockedTables": [
+        "goals",
+        "grateful_things",
+        "habit_completions",
+        "habit_links",
+        "habits",
+        "ideas",
+        "knowledge_items",
+        "notes",
+        "projects",
+        "quotes",
+        "task_subtasks",
+        "tasks"
+      ],
+      "requestMethods": {
+        "GET": 19
+      },
+      "mockWriteRequests": 0,
+      "consoleErrors": [
+        "Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component. Move this work to useEffect instead."
+      ],
+      "pageErrors": []
+    }
+  ]
+}

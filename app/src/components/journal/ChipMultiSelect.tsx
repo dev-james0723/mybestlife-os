@@ -73,11 +73,11 @@ export function ChipMultiSelect({
               aria-checked={active}
               onClick={() => toggle(opt)}
               className={cn(
-                "rounded-full border px-2.5 py-1 text-xs transition-colors outline-none",
+                "min-h-9 rounded-xl border px-2.5 py-1 text-xs transition-colors outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring",
                 active
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  ? "border-primary/60 bg-primary/10 text-foreground"
+                  : "border-border/75 bg-card/50 text-muted-foreground hover:bg-card/75",
               )}
             >
               {opt}
@@ -88,7 +88,7 @@ export function ChipMultiSelect({
           <Badge
             key={v}
             variant="secondary"
-            className="gap-1 rounded-full px-2.5 py-1"
+            className="gap-1 rounded-xl px-2.5 py-1"
           >
             {v}
             <button
@@ -108,7 +108,7 @@ export function ChipMultiSelect({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKey}
           placeholder="Add custom…"
-          className="h-7 text-xs"
+          className="h-9 text-xs"
         />
         <Button
           type="button"

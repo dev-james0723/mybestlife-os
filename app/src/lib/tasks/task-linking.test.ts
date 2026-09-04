@@ -8,9 +8,18 @@ import {
   collectPlannerTaskIds,
   computeProjectTaskProgress,
   findGoalTaskRelationId,
+  findTaskEntityRelationIds,
   goalIdsForTask,
+  ideaIdsForTask,
+  knowledgeIdsForTask,
+  linkedEntityIdsForTask,
+  noteIdsForTask,
   taskIdsForGoal,
 } from "./task-linking";
+
+const IDEA_ID = "11111111-1111-4111-8111-111111111111";
+const KNOWLEDGE_ID = "22222222-2222-4222-8222-222222222222";
+const NOTE_ID = "33333333-3333-4333-8333-333333333333";
 
 function task(id: string, over: Partial<Task> = {}): Task {
   return {
@@ -60,7 +69,8 @@ describe("computeProjectTaskProgress", () => {
   it("returns 0% for an empty / all-cancelled set", () => {
     expect(computeProjectTaskProgress([]).completionPct).toBe(0);
     expect(
-      computeProjectTaskProgress([task("x", { status: "cancelled" })]).completionPct,
+      computeProjectTaskProgress([task("x", { status: "cancelled" })])
+        .completionPct,
     ).toBe(0);
   });
 });
@@ -91,7 +101,12 @@ describe("goal <-> task relations", () => {
       target_id: "g1",
     }),
     // unrelated relation type ignored
-    relation({ id: "r4", relation_type: "habit_task", source_id: "g9", target_id: "t1" }),
+    relation({
+      id: "r4",
+      relation_type: "habit_task",
+      source_id: "g9",
+      target_id: "t1",
+    }),
   ];
 
   it("goalIdsForTask returns linked goals (both directions)", () => {
@@ -106,6 +121,80 @@ describe("goal <-> task relations", () => {
   it("findGoalTaskRelationId locates the edge row", () => {
     expect(findGoalTaskRelationId(rels, "t1", "g2")).toBe("r2");
     expect(findGoalTaskRelationId(rels, "t1", "g404")).toBeNull();
+  });
+});
+
+describe("task relationship lookups", () => {
+  const relations = [
+    relation({
+      id: "forward",
+      source_type: "task",
+      source_id: "t1",
+      target_type: "knowledge",
+      target_id: KNOWLEDGE_ID,
+      relation_type: "explicit_link",
+    }),
+    relation({
+      id: "reverse",
+      source_type: "knowledge",
+      source_id: "knowledge-reverse",
+      target_type: "task",
+      target_id: "t1",
+      relation_type: "explicit_link",
+    }),
+    relation({
+      id: "hidden",
+      source_type: "task",
+      source_id: "t1",
+      target_type: "knowledge",
+      target_id: "knowledge-hidden",
+      relation_type: "explicit_link",
+      status: "hidden",
+    }),
+    relation({
+      id: "wrong-entity-type",
+      source_type: "task",
+      source_id: "t1",
+      target_type: "idea",
+      target_id: KNOWLEDGE_ID,
+      relation_type: "explicit_link",
+    }),
+  ];
+
+  it("finds visible entity ids and relation rows in either direction", () => {
+    expect(linkedEntityIdsForTask(relations, "t1", "knowledge").sort()).toEqual(
+      [KNOWLEDGE_ID, "knowledge-reverse"].sort(),
+    );
+    expect(
+      findTaskEntityRelationIds(relations, "t1", "knowledge", KNOWLEDGE_ID),
+    ).toEqual(["forward"]);
+    expect(
+      findTaskEntityRelationIds(
+        relations,
+        "t1",
+        "knowledge",
+        "knowledge-hidden",
+      ),
+    ).toEqual([]);
+  });
+
+  it("unions canonical idea and knowledge links with legacy metadata", () => {
+    const linkedTask = task("t1", {
+      tags: [`idea:${IDEA_ID}`, `knowledge:${KNOWLEDGE_ID}`, `note:${NOTE_ID}`],
+      description: null,
+    });
+    const ideas = [
+      { id: "canonical-idea", linked_task_ids: ["t1"] } as Idea,
+      { id: "other-idea", linked_task_ids: ["t2"] } as Idea,
+    ];
+
+    expect(ideaIdsForTask(ideas, linkedTask).sort()).toEqual(
+      [IDEA_ID, "canonical-idea"].sort(),
+    );
+    expect(knowledgeIdsForTask(relations, linkedTask).sort()).toEqual(
+      [KNOWLEDGE_ID, "knowledge-reverse"].sort(),
+    );
+    expect(noteIdsForTask(linkedTask)).toEqual([NOTE_ID]);
   });
 });
 
@@ -148,5 +237,21 @@ describe("buildTaskLinkIndex", () => {
     expect(index.get("t2")).toMatchObject({ planner: true, habit: true });
     expect(index.get("t3")).toMatchObject({ idea: true, knowledge: true });
     expect(index.get("t2")?.calendar).toBe(false);
+  });
+
+  it("uses legacy relationship metadata as an idea and knowledge fallback", () => {
+    const index = buildTaskLinkIndex({
+      tasks: [
+        task("legacy", {
+          tags: [`idea:${IDEA_ID}`, `knowledge:${KNOWLEDGE_ID}`],
+          description: null,
+        }),
+      ],
+    });
+
+    expect(index.get("legacy")).toMatchObject({
+      idea: true,
+      knowledge: true,
+    });
   });
 });

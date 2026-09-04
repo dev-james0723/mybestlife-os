@@ -13,13 +13,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  OSControl,
+  OSPrimaryAction,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 import {
   Collapsible,
   CollapsibleContent,
@@ -114,22 +112,20 @@ export function AIAddonsPanel({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1">
         {/* Illustration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="size-4 text-primary" aria-hidden />
-              {copy.illustrationTitle}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <OSSolidPanel as="section" className="space-y-4 rounded-xl p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ImageIcon className="size-4 text-primary" aria-hidden />
+            {copy.illustrationTitle}
+          </h3>
+          <div className="space-y-3">
             {illustration ? (
               <>
                 <button
                   type="button"
                   onClick={() => setZoomedSrc(illustration.url)}
-                  className="block w-full overflow-hidden rounded-md border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="block w-full overflow-hidden rounded-xl border border-border/75 bg-muted outline-none transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none"
                   aria-label="Open illustration full screen"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -140,10 +136,9 @@ export function AIAddonsPanel({
                   />
                 </button>
                 <div className="flex flex-wrap gap-2">
-                  <Button
+                  <OSControl
                     type="button"
-                    size="sm"
-                    variant="outline"
+                    osSize="compact"
                     onClick={handleIllustration}
                     disabled={illustrationLoading}
                   >
@@ -158,15 +153,19 @@ export function AIAddonsPanel({
                         {copy.illustrationRegenerate}
                       </>
                     )}
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={downloadImage}>
+                  </OSControl>
+                  <OSControl
+                    type="button"
+                    osSize="compact"
+                    onClick={downloadImage}
+                  >
                     <Download aria-hidden />
                     {copy.illustrationDownload}
-                  </Button>
+                  </OSControl>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border bg-muted/20 p-4">
+              <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border/65 bg-card/40 p-4">
                 <p className="text-sm text-muted-foreground">
                   {copy.illustrationEmpty}
                 </p>
@@ -175,9 +174,9 @@ export function AIAddonsPanel({
                     {copy.addonsSaveFirstHint}
                   </p>
                 )}
-                <Button
+                <OSPrimaryAction
                   type="button"
-                  size="sm"
+                  osSize="compact"
                   onClick={handleIllustration}
                   disabled={illustrationLoading}
                 >
@@ -192,21 +191,19 @@ export function AIAddonsPanel({
                       {copy.illustrationGenerate}
                     </>
                   )}
-                </Button>
+                </OSPrimaryAction>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </OSSolidPanel>
 
         {/* Audio */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="size-4 text-primary" aria-hidden />
-              {copy.audioTitle}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <OSSolidPanel as="section" className="space-y-4 rounded-xl p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Mic className="size-4 text-primary" aria-hidden />
+            {copy.audioTitle}
+          </h3>
+          <div className="space-y-3">
             {audio ? (
               <>
                 <audio
@@ -220,10 +217,9 @@ export function AIAddonsPanel({
                   text={audio.transcript}
                 />
                 <div className="flex flex-wrap gap-2">
-                  <Button
+                  <OSControl
                     type="button"
-                    size="sm"
-                    variant="outline"
+                    osSize="compact"
                     onClick={handleAudio}
                     disabled={audioLoading}
                   >
@@ -238,29 +234,28 @@ export function AIAddonsPanel({
                         {copy.audioRegenerate}
                       </>
                     )}
-                  </Button>
-                  <Button
+                  </OSControl>
+                  <OSControl
                     type="button"
-                    size="sm"
-                    variant="outline"
+                    osSize="compact"
                     onClick={copyTranscript}
                   >
                     <Copy aria-hidden />
                     {copy.audioCopyTranscript}
-                  </Button>
+                  </OSControl>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border bg-muted/20 p-4">
+              <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border/65 bg-card/40 p-4">
                 <p className="text-sm text-muted-foreground">{copy.audioEmpty}</p>
                 {!canGenerate && (
                   <p className="text-xs text-muted-foreground">
                     {copy.addonsSaveFirstHint}
                   </p>
                 )}
-                <Button
+                <OSPrimaryAction
                   type="button"
-                  size="sm"
+                  osSize="compact"
                   onClick={handleAudio}
                   disabled={audioLoading}
                 >
@@ -275,11 +270,11 @@ export function AIAddonsPanel({
                       {copy.audioGenerate}
                     </>
                   )}
-                </Button>
+                </OSPrimaryAction>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </OSSolidPanel>
       </div>
 
       <ImageZoomViewer
@@ -305,7 +300,7 @@ function TranscriptCollapsible({
         render={
           <button
             type="button"
-            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            className="flex min-h-10 w-full items-center justify-between rounded-xl border border-border/75 bg-card/60 px-3 py-2 text-xs font-medium transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         }
       >

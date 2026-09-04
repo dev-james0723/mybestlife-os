@@ -293,7 +293,10 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
   // ----- render ----------------------------------------------------------
 
   return (
-    <div className="space-y-6" aria-busy={saving || undefined}>
+    <div
+      className="space-y-6 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:border-border/75 [&_[data-slot=input]]:bg-card/60 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:border-border/75 [&_[data-slot=textarea]]:bg-card/60 dark:[&_[data-slot=input]]:border-border/75 dark:[&_[data-slot=input]]:bg-card/60 dark:[&_[data-slot=textarea]]:border-border/75 dark:[&_[data-slot=textarea]]:bg-card/60"
+      aria-busy={saving || undefined}
+    >
       {/* Date + Topic — always visible. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -302,6 +305,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
             value={form.entryDate}
             onChange={(v) => setForm((f) => ({ ...f, entryDate: v }))}
             disabled={isLocked}
+            className="border-border/75 bg-card/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] dark:border-border/75 dark:bg-card/60"
           />
         </div>
         <div className="space-y-2">
@@ -310,11 +314,14 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
             <span className="ml-1 text-destructive">{copy.requiredMark}</span>
           </Label>
           <Select
-            value={form.topic || undefined}
+            value={form.topic || null}
             onValueChange={(v) => setTopic(v as Topic)}
             disabled={isLocked}
           >
-            <SelectTrigger aria-invalid={!!errors.topic}>
+            <SelectTrigger
+              aria-invalid={!!errors.topic}
+              className="w-full rounded-xl border-border/75 bg-card/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] dark:border-border/75 dark:bg-card/60"
+            >
               <SelectValue placeholder={copy.topicPlaceholder} />
             </SelectTrigger>
             <SelectContent>
@@ -377,13 +384,16 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   <span className="ml-1 text-destructive">{copy.requiredMark}</span>
                 </Label>
                 <Select
-                  value={form.primaryEmotion || undefined}
+                  value={form.primaryEmotion || null}
                   onValueChange={(v) =>
                     setForm((f) => ({ ...f, primaryEmotion: v as Emotion }))
                   }
                   disabled={isLocked}
                 >
-                  <SelectTrigger aria-invalid={!!errors.primaryEmotion}>
+                  <SelectTrigger
+                    aria-invalid={!!errors.primaryEmotion}
+                    className="w-full rounded-xl border-border/75 bg-card/60 dark:border-border/75 dark:bg-card/60"
+                  >
                     <SelectValue placeholder={copy.primaryEmotionPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -406,13 +416,16 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   {copy.labelSecondaryEmotion}
                 </Label>
                 <Select
-                  value={form.secondaryEmotion || undefined}
+                  value={form.secondaryEmotion || null}
                   onValueChange={(v) =>
                     setForm((f) => ({ ...f, secondaryEmotion: v as Emotion }))
                   }
                   disabled={isLocked}
                 >
-                  <SelectTrigger aria-invalid={!!errors.secondaryEmotion}>
+                  <SelectTrigger
+                    aria-invalid={!!errors.secondaryEmotion}
+                    className="w-full rounded-xl border-border/75 bg-card/60 dark:border-border/75 dark:bg-card/60"
+                  >
                     <SelectValue placeholder={copy.primaryEmotionPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -433,13 +446,13 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
               <div className="space-y-2">
                 <Label className="text-sm font-medium">{copy.labelTarget}</Label>
                 <Select
-                  value={form.target || undefined}
+                  value={form.target || null}
                   onValueChange={(v) =>
                     setForm((f) => ({ ...f, target: v as Target }))
                   }
                   disabled={isLocked}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full rounded-xl border-border/75 bg-card/60 dark:border-border/75 dark:bg-card/60">
                     <SelectValue placeholder={copy.targetPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -557,15 +570,17 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
         )}
       </AnimatePresence>
 
-      {/* Save button — sticky-bottom on mobile, inline on desktop. */}
-      <SaveBar
-        copy={copy}
-        saving={saving}
-        generatingSummary={generatingSummary}
-        saved={isLocked}
-        onSave={handleSave}
-        onReset={resetAll}
-      />
+      {/* The action appears once the progressive form is ready to complete. */}
+      {(showRestOfForm || isLocked) && (
+        <SaveBar
+          copy={copy}
+          saving={saving}
+          generatingSummary={generatingSummary}
+          saved={isLocked}
+          onSave={handleSave}
+          onReset={resetAll}
+        />
+      )}
     </div>
   );
 });
@@ -584,7 +599,7 @@ function CollapsibleSection({
         render={
           <button
             type="button"
-            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
+            className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border/75 bg-card/60 px-3 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         }
       >
@@ -626,19 +641,14 @@ function SaveBar({
         : "";
 
   return (
-    <div
-      className={cn(
-        "sticky bottom-0 -mx-2 flex items-center justify-end gap-2 border-t border-transparent bg-background/95 px-2 py-3 backdrop-blur",
-        "sm:static sm:mx-0 sm:border-transparent sm:bg-transparent sm:p-0 sm:backdrop-blur-none",
-      )}
-    >
+    <div className="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-end">
       {/* Polite live region announces save / summary progress to AT. */}
       <span className="sr-only" role="status" aria-live="polite">
         {statusMessage}
       </span>
 
       {saved && (
-        <OSControl type="button" onClick={onReset}>
+        <OSControl type="button" onClick={onReset} className="w-full sm:w-auto">
           {copy.startNewEntryButton}
         </OSControl>
       )}
@@ -647,6 +657,7 @@ function SaveBar({
         onClick={onSave}
         disabled={saving || saved}
         size="lg"
+        className="w-full sm:w-auto"
       >
         {generatingSummary ? (
           <>

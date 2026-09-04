@@ -226,6 +226,14 @@ export type KeyResult = {
 export type DailyPlanTask = {
   /** Stable id for this planner row (JSON); used for Google Calendar ↔ planner sync. */
   plannerTaskId?: string;
+  /** Whether this slot was placed by the user or by Adaptive Plan. Legacy rows omit this. */
+  scheduleSource?: "manual" | "adaptive";
+  /** Prevents Adaptive Plan from moving this task during a rebalance. */
+  locked?: boolean;
+  /** Earliest wall-clock start (HH:mm) that Adaptive Plan may choose for this task. */
+  earliestStartTime?: string;
+  /** Latest wall-clock end (HH:mm) that Adaptive Plan may choose for this task. */
+  latestEndTime?: string;
   /** Optional gap in block units before this task, from the previous task end (or plan start). */
   gapBlocks?: number;
   taskName?: string;
@@ -242,7 +250,7 @@ export type DailyPlanTask = {
 };
 
 /** Mode the user last selected for a given planner date. Stored on the daily_plans row. */
-export type PlanningMode = "time-block" | "free";
+export type PlanningMode = "time-block" | "free" | "adaptive";
 
 /**
  * One entry in a Free Planning task list. Free Planning is intentionally untimed — duration

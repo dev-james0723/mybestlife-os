@@ -167,12 +167,18 @@ export function CreatePlannerTaskAiDialog({
   const [projectId, setProjectId] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [relatedProjects, setRelatedProjects] = useState<PlannerAiRelatedItem[]>([]);
+  const [relatedProjects, setRelatedProjects] = useState<
+    PlannerAiRelatedItem[]
+  >([]);
   const [relatedNotes, setRelatedNotes] = useState<PlannerAiRelatedItem[]>([]);
-  const [relatedKnowledge, setRelatedKnowledge] = useState<PlannerAiRelatedItem[]>([]);
+  const [relatedKnowledge, setRelatedKnowledge] = useState<
+    PlannerAiRelatedItem[]
+  >([]);
   const [relatedIdeas, setRelatedIdeas] = useState<PlannerAiRelatedItem[]>([]);
   const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
-  const [selectedKnowledgeIds, setSelectedKnowledgeIds] = useState<string[]>([]);
+  const [selectedKnowledgeIds, setSelectedKnowledgeIds] = useState<string[]>(
+    [],
+  );
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<string[]>([]);
   const [webResources, setWebResources] = useState<PlannerAiWebResource[]>([]);
   const [resourceFilter, setResourceFilter] = useState<ResourceFilter>("all");
@@ -180,7 +186,9 @@ export function CreatePlannerTaskAiDialog({
   const [autofillMetadataWithAi, setAutofillMetadataWithAi] = useState(false);
   const [manualAutofillLoading, setManualAutofillLoading] = useState(false);
 
-  const manualAutofillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualAutofillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const manualAutofillSeqRef = useRef(0);
   const manualDidAutofillRef = useRef(false);
 
@@ -242,7 +250,10 @@ export function CreatePlannerTaskAiDialog({
     async (taskTitle: string) => {
       setPhase("loadingQuestions");
       try {
-        const data = await postPlannerAi<{ questions: PlannerAiQuestion[]; source?: string }>({
+        const data = await postPlannerAi<{
+          questions: PlannerAiQuestion[];
+          source?: string;
+        }>({
           mode: "questions",
           taskTitle,
           locale,
@@ -264,7 +275,9 @@ export function CreatePlannerTaskAiDialog({
           ("code" in e ? (e as Error & { code?: string }).code : "") ===
             "unauthorized";
         toast.error(
-          unauthorized ? copy.toastAiPlannerUnauthorized : copy.toastAiPlannerError,
+          unauthorized
+            ? copy.toastAiPlannerUnauthorized
+            : copy.toastAiPlannerError,
         );
         setPhase(unauthorized ? "input" : "error");
       }
@@ -296,15 +309,25 @@ export function CreatePlannerTaskAiDialog({
       setPriority(data.suggestedPriority ?? "medium");
       if (data.suggestedStatus) setStatus(data.suggestedStatus);
       if (data.suggestedDueDate) setDueDate(data.suggestedDueDate);
-      setRelatedProjects(Array.isArray(data.relatedProjects) ? data.relatedProjects : []);
-      setRelatedNotes(Array.isArray(data.relatedNotes) ? data.relatedNotes : []);
+      setRelatedProjects(
+        Array.isArray(data.relatedProjects) ? data.relatedProjects : [],
+      );
+      setRelatedNotes(
+        Array.isArray(data.relatedNotes) ? data.relatedNotes : [],
+      );
       setRelatedKnowledge(
         Array.isArray(data.relatedKnowledge) ? data.relatedKnowledge : [],
       );
-      setRelatedIdeas(Array.isArray(data.relatedIdeas) ? data.relatedIdeas : []);
-      setWebResources(Array.isArray(data.webResources) ? data.webResources : []);
+      setRelatedIdeas(
+        Array.isArray(data.relatedIdeas) ? data.relatedIdeas : [],
+      );
+      setWebResources(
+        Array.isArray(data.webResources) ? data.webResources : [],
+      );
       setSelectedNoteIds(
-        Array.isArray(data.relatedNotes) ? data.relatedNotes.slice(0, 3).map((x) => x.id) : [],
+        Array.isArray(data.relatedNotes)
+          ? data.relatedNotes.slice(0, 3).map((x) => x.id)
+          : [],
       );
       setSelectedKnowledgeIds(
         Array.isArray(data.relatedKnowledge)
@@ -312,12 +335,16 @@ export function CreatePlannerTaskAiDialog({
           : [],
       );
       setSelectedIdeaIds(
-        Array.isArray(data.relatedIdeas) ? data.relatedIdeas.slice(0, 3).map((x) => x.id) : [],
+        Array.isArray(data.relatedIdeas)
+          ? data.relatedIdeas.slice(0, 3).map((x) => x.id)
+          : [],
       );
       setProjectId((prev) => {
         if (lockedProjectId) return lockedProjectId;
         if (prev) return prev;
-        const first = Array.isArray(data.relatedProjects) ? data.relatedProjects[0]?.id : undefined;
+        const first = Array.isArray(data.relatedProjects)
+          ? data.relatedProjects[0]?.id
+          : undefined;
         return first ?? prev;
       });
     },
@@ -343,7 +370,9 @@ export function CreatePlannerTaskAiDialog({
           ("code" in e ? (e as Error & { code?: string }).code : "") ===
             "unauthorized";
         toast.error(
-          unauthorized ? copy.toastAiPlannerUnauthorized : copy.toastAiPlannerError,
+          unauthorized
+            ? copy.toastAiPlannerUnauthorized
+            : copy.toastAiPlannerError,
         );
         setPhase(unauthorized ? "input" : "error");
       }
@@ -373,7 +402,9 @@ export function CreatePlannerTaskAiDialog({
           ("code" in e ? (e as Error & { code?: string }).code : "") ===
             "unauthorized";
         toast.error(
-          unauthorized ? copy.toastAiPlannerUnauthorized : copy.toastAiPlannerError,
+          unauthorized
+            ? copy.toastAiPlannerUnauthorized
+            : copy.toastAiPlannerError,
         );
       } finally {
         if (seq === manualAutofillSeqRef.current) {
@@ -391,7 +422,8 @@ export function CreatePlannerTaskAiDialog({
       setManualAutofillLoading(false);
       return;
     }
-    if (manualAutofillTimerRef.current) clearTimeout(manualAutofillTimerRef.current);
+    if (manualAutofillTimerRef.current)
+      clearTimeout(manualAutofillTimerRef.current);
     const timer = setTimeout(() => {
       manualAutofillTimerRef.current = null;
       void fetchManualMetadata(t);
@@ -470,27 +502,26 @@ export function CreatePlannerTaskAiDialog({
       return;
     }
     void generateMetadata(t, buildClarifications(answers));
-  }, [answers, buildClarifications, generateMetadata, questions.length, startClarifying, title]);
+  }, [
+    answers,
+    buildClarifications,
+    generateMetadata,
+    questions.length,
+    startClarifying,
+    title,
+  ]);
 
   const handleCreate = useCallback(async () => {
     const t = title.trim();
     if (!t) return;
     const reminderLines = reminders.map((r) => r.trim()).filter(Boolean);
     const descParts = [description.trim()];
-    if (notes.trim()) descParts.push(`Notes:
+    if (notes.trim())
+      descParts.push(`Notes:
 ${notes.trim()}`);
     if (reminderLines.length > 0) {
       descParts.push(`Reminders:
 ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
-    }
-    if (selectedNoteIds.length > 0) {
-      descParts.push(`Related notes: ${selectedNoteIds.join(", ")}`);
-    }
-    if (selectedIdeaIds.length > 0) {
-      descParts.push(`Related ideas: ${selectedIdeaIds.join(", ")}`);
-    }
-    if (selectedKnowledgeIds.length > 0) {
-      descParts.push(`Related knowledge: ${selectedKnowledgeIds.join(", ")}`);
     }
     const isManualCreate = phase === "manual";
     const baseTags = isManualCreate
@@ -525,7 +556,13 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
         source_url: firstResource?.url,
       });
       onAddToPlan(t, parsedBlocks, created.id);
-      toast.success(copy.toastCreatedAiPlanner(t, parsedBlocks, formatBlockDurationLocalized(copy, parsedBlocks, blockMinutes)));
+      toast.success(
+        copy.toastCreatedAiPlanner(
+          t,
+          parsedBlocks,
+          formatBlockDurationLocalized(copy, parsedBlocks, blockMinutes),
+        ),
+      );
       onOpenChange(false);
     } catch {
       setPhase(isManualCreate ? "manual" : "review");
@@ -568,8 +605,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
         showCloseButton={phase !== "generating"}
         className={cn(
           "min-w-0 transition-[opacity,transform] duration-200 ease-out",
-          phase === "input" &&
-            "lg:!max-w-4xl xl:!max-w-5xl",
+          phase === "input" && "lg:!max-w-4xl xl:!max-w-5xl",
         )}
       >
         {phase === "input" && (
@@ -585,12 +621,15 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && title.trim()) void startClarifying(title.trim());
+                    if (e.key === "Enter" && title.trim())
+                      void startClarifying(title.trim());
                   }}
                   autoFocus
                 />
               </div>
-              <p className="text-xs text-muted-foreground">{copy.createAiHint}</p>
+              <p className="text-xs text-muted-foreground">
+                {copy.createAiHint}
+              </p>
               <div className={plannerDialogFooterGrid}>
                 <Button
                   type="button"
@@ -646,7 +685,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
         {phase === "loadingQuestions" && (
           <div className="flex flex-col items-center justify-center gap-3 py-10">
             <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
-            <p className="text-sm text-muted-foreground">{copy.createAiLoadingQuestions}</p>
+            <p className="text-sm text-muted-foreground">
+              {copy.createAiLoadingQuestions}
+            </p>
           </div>
         )}
 
@@ -662,7 +703,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
             </DialogHeader>
             <div className="space-y-4">
               <div className="rounded-lg border border-border/80 bg-muted/30 px-3 py-2 text-sm">
-                <span className="mr-2" aria-hidden>{taskTitleEmoji(title.trim())}</span>
+                <span className="mr-2" aria-hidden>
+                  {taskTitleEmoji(title.trim())}
+                </span>
                 <span className="font-medium">{title.trim()}</span>
               </div>
 
@@ -672,11 +715,19 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                     {questions.map((_, i) => (
                       <div
                         key={i}
-                        className={cn("h-1.5 flex-1 rounded-full transition-colors", i <= qIndex ? "bg-pink-500" : "bg-muted")}
+                        className={cn(
+                          "h-1.5 flex-1 rounded-full transition-colors",
+                          i <= qIndex ? "bg-pink-500" : "bg-muted",
+                        )}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">{copy.createAiQuestionProgress(qIndex + 1, questions.length)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {copy.createAiQuestionProgress(
+                      qIndex + 1,
+                      questions.length,
+                    )}
+                  </p>
                 </div>
               )}
 
@@ -704,7 +755,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">{copy.createAiCustomAnswerLabel}</Label>
+                <Label className="text-xs text-muted-foreground">
+                  {copy.createAiCustomAnswerLabel}
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     value={customAnswer}
@@ -731,7 +784,11 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                 </div>
               </div>
 
-              <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline" onClick={skipAll}>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                onClick={skipAll}
+              >
                 {copy.createAiSkipAll}
               </button>
             </div>
@@ -741,7 +798,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
         {phase === "generating" && (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
             <Loader2 className="h-9 w-9 animate-spin text-pink-500" />
-            <p className="text-sm text-muted-foreground">{copy.createAiGenerating}</p>
+            <p className="text-sm text-muted-foreground">
+              {copy.createAiGenerating}
+            </p>
           </div>
         )}
 
@@ -782,14 +841,16 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
               )}
             </DialogHeader>
             <div className="max-h-[72vh] min-w-0 space-y-4 overflow-y-auto overflow-x-hidden pr-1 pb-1 transition-opacity duration-200 ease-out">
-
               {/* Task name */}
               <div className="space-y-1.5">
                 <Label className="inline-flex items-center gap-1.5 text-sm font-medium">
                   <Tag className="h-3.5 w-3.5 text-pink-500" />
                   {copy.taskNameLabel}
                 </Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </div>
 
               {phase === "manual" && (
@@ -815,7 +876,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">{copy.autofillMetadataWithAiHint}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {copy.autofillMetadataWithAiHint}
+                  </p>
                   {manualAutofillLoading && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-pink-500" />
@@ -879,7 +942,11 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                           rows={2}
                           className="min-h-[2.75rem] min-w-0 flex-1 resize-y text-sm break-words [overflow-wrap:anywhere] whitespace-pre-wrap"
                           onChange={(e) =>
-                            setReminders((arr) => arr.map((x, i) => (i === idx ? e.target.value : x)))
+                            setReminders((arr) =>
+                              arr.map((x, i) =>
+                                i === idx ? e.target.value : x,
+                              ),
+                            )
                           }
                         />
                         <Button
@@ -887,14 +954,20 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                           size="icon-sm"
                           variant="ghost"
                           className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => setReminders((arr) => arr.filter((_, i) => i !== idx))}
+                          onClick={() =>
+                            setReminders((arr) =>
+                              arr.filter((_, i) => i !== idx),
+                            )
+                          }
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     ))}
                     {reminders.length === 0 && (
-                      <p className="text-xs text-muted-foreground/60 italic">—</p>
+                      <p className="text-xs text-muted-foreground/60 italic">
+                        —
+                      </p>
                     )}
                   </div>
                 </div>
@@ -912,7 +985,11 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                         size="icon-sm"
                         variant="outline"
                         className="h-8 w-8 shrink-0"
-                        onClick={() => setSuggestedBlocks(String(Math.max(1, parsedBlocks - 1)))}
+                        onClick={() =>
+                          setSuggestedBlocks(
+                            String(Math.max(1, parsedBlocks - 1)),
+                          )
+                        }
                       >
                         −
                       </Button>
@@ -924,13 +1001,21 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                         size="icon-sm"
                         variant="outline"
                         className="h-8 w-8 shrink-0"
-                        onClick={() => setSuggestedBlocks(String(Math.min(72, parsedBlocks + 1)))}
+                        onClick={() =>
+                          setSuggestedBlocks(
+                            String(Math.min(72, parsedBlocks + 1)),
+                          )
+                        }
                       >
                         +
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {formatBlockDurationLocalized(copy, parsedBlocks, blockMinutes)}
+                      {formatBlockDurationLocalized(
+                        copy,
+                        parsedBlocks,
+                        blockMinutes,
+                      )}
                     </p>
                   </div>
                   <div className="space-y-1.5">
@@ -938,7 +1023,10 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       <Target className="h-3.5 w-3.5 text-pink-500" />
                       {copy.reviewSuggestedPriority}
                     </Label>
-                    <Select value={priority} onValueChange={(v) => setPriority(v as Task["priority"])}>
+                    <Select
+                      value={priority}
+                      onValueChange={(v) => setPriority(v as Task["priority"])}
+                    >
                       <SelectTrigger className="text-sm">
                         <SelectValue>
                           {(v) =>
@@ -955,10 +1043,18 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">{copy.reviewPriorityLow}</SelectItem>
-                        <SelectItem value="medium">{copy.reviewPriorityMedium}</SelectItem>
-                        <SelectItem value="high">{copy.reviewPriorityHigh}</SelectItem>
-                        <SelectItem value="urgent">{copy.reviewPriorityUrgent}</SelectItem>
+                        <SelectItem value="low">
+                          {copy.reviewPriorityLow}
+                        </SelectItem>
+                        <SelectItem value="medium">
+                          {copy.reviewPriorityMedium}
+                        </SelectItem>
+                        <SelectItem value="high">
+                          {copy.reviewPriorityHigh}
+                        </SelectItem>
+                        <SelectItem value="urgent">
+                          {copy.reviewPriorityUrgent}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -972,7 +1068,10 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                     <Target className="h-3.5 w-3.5 text-violet-500" />
                     {copy.reviewStatus}
                   </Label>
-                  <Select value={status} onValueChange={(v) => setStatus(v as Task["status"])}>
+                  <Select
+                    value={status}
+                    onValueChange={(v) => setStatus(v as Task["status"])}
+                  >
                     <SelectTrigger className="text-sm">
                       <SelectValue>
                         {(v) =>
@@ -989,15 +1088,25 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todo">{copy.reviewStatusTodo}</SelectItem>
-                      <SelectItem value="in-progress">{copy.reviewStatusInProgress}</SelectItem>
-                      <SelectItem value="done">{copy.reviewStatusDone}</SelectItem>
-                      <SelectItem value="cancelled">{copy.reviewStatusCancelled}</SelectItem>
+                      <SelectItem value="todo">
+                        {copy.reviewStatusTodo}
+                      </SelectItem>
+                      <SelectItem value="in-progress">
+                        {copy.reviewStatusInProgress}
+                      </SelectItem>
+                      <SelectItem value="done">
+                        {copy.reviewStatusDone}
+                      </SelectItem>
+                      <SelectItem value="cancelled">
+                        {copy.reviewStatusCancelled}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">{copy.reviewDueDate}</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {copy.reviewDueDate}
+                  </Label>
                   <DatePickerInput
                     value={dueDate}
                     onChange={(v) => setDueDate(v)}
@@ -1015,12 +1124,15 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                 </Label>
                 <Select
                   value={projectId || "none"}
-                  onValueChange={(v) => setProjectId(v && v !== "none" ? v : "")}
+                  onValueChange={(v) =>
+                    setProjectId(v && v !== "none" ? v : "")
+                  }
                 >
                   <SelectTrigger className="text-sm">
                     <SelectValue>
                       {(v) => {
-                        if (v == null || v === "" || v === "none") return copy.reviewNoProject;
+                        if (v == null || v === "" || v === "none")
+                          return copy.reviewNoProject;
                         const p = projects.find((x) => x.id === v);
                         return p?.name ?? String(v);
                       }}
@@ -1029,7 +1141,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   <SelectContent>
                     <SelectItem value="none">{copy.reviewNoProject}</SelectItem>
                     {projects.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1070,7 +1184,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
               </div>
 
               {/* Smart links */}
-              {(relatedNotes.length > 0 || relatedKnowledge.length > 0 || relatedIdeas.length > 0) && (
+              {(relatedNotes.length > 0 ||
+                relatedKnowledge.length > 0 ||
+                relatedIdeas.length > 0) && (
                 <div className="space-y-3 rounded-xl border border-violet-200/50 bg-violet-50/30 p-3 dark:border-violet-400/20 dark:bg-violet-500/8">
                   <p className="inline-flex items-center gap-1.5 text-sm font-medium">
                     <Lightbulb className="h-4 w-4 text-violet-500" />
@@ -1078,13 +1194,17 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   </p>
                   {relatedNotes.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-muted-foreground">{copy.reviewRelatedNotes}</p>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {copy.reviewRelatedNotes}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {relatedNotes.slice(0, 6).map((n) => (
                           <button
                             key={n.id}
                             type="button"
-                            onClick={() => setSelectedNoteIds((ids) => toggleId(ids, n.id))}
+                            onClick={() =>
+                              setSelectedNoteIds((ids) => toggleId(ids, n.id))
+                            }
                             className={cn(
                               "rounded-full border px-2.5 py-1 text-xs transition-colors",
                               selectedNoteIds.includes(n.id)
@@ -1100,13 +1220,19 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   )}
                   {relatedKnowledge.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-muted-foreground">{copy.reviewRelatedKnowledge}</p>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {copy.reviewRelatedKnowledge}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {relatedKnowledge.slice(0, 6).map((k) => (
                           <button
                             key={k.id}
                             type="button"
-                            onClick={() => setSelectedKnowledgeIds((ids) => toggleId(ids, k.id))}
+                            onClick={() =>
+                              setSelectedKnowledgeIds((ids) =>
+                                toggleId(ids, k.id),
+                              )
+                            }
                             className={cn(
                               "rounded-full border px-2.5 py-1 text-xs transition-colors",
                               selectedKnowledgeIds.includes(k.id)
@@ -1122,13 +1248,19 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   )}
                   {relatedIdeas.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-muted-foreground">{copy.reviewRelatedIdeas}</p>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {copy.reviewRelatedIdeas}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {relatedIdeas.slice(0, 6).map((idea) => (
                           <button
                             key={idea.id}
                             type="button"
-                            onClick={() => setSelectedIdeaIds((ids) => toggleId(ids, idea.id))}
+                            onClick={() =>
+                              setSelectedIdeaIds((ids) =>
+                                toggleId(ids, idea.id),
+                              )
+                            }
                             className={cn(
                               "rounded-full border px-2.5 py-1 text-xs transition-colors",
                               selectedIdeaIds.includes(idea.id)
@@ -1160,10 +1292,22 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                     {(
                       [
                         { key: "all" as const, label: copy.reviewResourceAll },
-                        { key: "Article" as const, label: copy.reviewResourceArticle },
-                        { key: "YouTube" as const, label: copy.reviewResourceVideo },
-                        { key: "Podcast" as const, label: copy.reviewResourcePodcast },
-                        { key: "Shopping" as const, label: copy.reviewResourceShopping },
+                        {
+                          key: "Article" as const,
+                          label: copy.reviewResourceArticle,
+                        },
+                        {
+                          key: "YouTube" as const,
+                          label: copy.reviewResourceVideo,
+                        },
+                        {
+                          key: "Podcast" as const,
+                          label: copy.reviewResourcePodcast,
+                        },
+                        {
+                          key: "Shopping" as const,
+                          label: copy.reviewResourceShopping,
+                        },
                       ] as { key: ResourceFilter; label: string }[]
                     ).map(({ key, label }) => {
                       const count =
@@ -1184,10 +1328,21 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                           )}
                         >
                           {key === "YouTube" && <Video className="h-3 w-3" />}
-                          {key === "Podcast" && <Headphones className="h-3 w-3" />}
-                          {key === "Shopping" && <ShoppingCart className="h-3 w-3" />}
+                          {key === "Podcast" && (
+                            <Headphones className="h-3 w-3" />
+                          )}
+                          {key === "Shopping" && (
+                            <ShoppingCart className="h-3 w-3" />
+                          )}
                           {label}
-                          <span className={cn("rounded-full px-1 text-[10px]", resourceFilter === key ? "bg-white/20" : "bg-muted")}>
+                          <span
+                            className={cn(
+                              "rounded-full px-1 text-[10px]",
+                              resourceFilter === key
+                                ? "bg-white/20"
+                                : "bg-muted",
+                            )}
+                          >
                             {count}
                           </span>
                         </button>
@@ -1198,7 +1353,10 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   {/* Resource cards */}
                   <div className="space-y-2">
                     {webResources
-                      .filter((r) => resourceFilter === "all" || r.type === resourceFilter)
+                      .filter(
+                        (r) =>
+                          resourceFilter === "all" || r.type === resourceFilter,
+                      )
                       .slice(0, 6)
                       .map((r, idx) => {
                         const isPinned = pinnedResourceUrls.includes(r.url);
@@ -1218,19 +1376,32 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                                   variant="outline"
                                   className={cn(
                                     "border-0 px-1.5 py-0.5 text-[10px] font-medium",
-                                    r.type === "YouTube" && "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
-                                    r.type === "Article" && "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-                                    r.type === "Podcast" && "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
-                                    r.type === "Shopping" && "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
-                                    r.type === "Other" && "bg-muted text-muted-foreground",
+                                    r.type === "YouTube" &&
+                                      "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
+                                    r.type === "Article" &&
+                                      "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+                                    r.type === "Podcast" &&
+                                      "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+                                    r.type === "Shopping" &&
+                                      "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
+                                    r.type === "Other" &&
+                                      "bg-muted text-muted-foreground",
                                   )}
                                 >
-                                  {r.type === "YouTube" && <Video className="mr-0.5 h-2.5 w-2.5" />}
-                                  {r.type === "Podcast" && <Headphones className="mr-0.5 h-2.5 w-2.5" />}
-                                  {r.type === "Shopping" && <ShoppingCart className="mr-0.5 h-2.5 w-2.5" />}
+                                  {r.type === "YouTube" && (
+                                    <Video className="mr-0.5 h-2.5 w-2.5" />
+                                  )}
+                                  {r.type === "Podcast" && (
+                                    <Headphones className="mr-0.5 h-2.5 w-2.5" />
+                                  )}
+                                  {r.type === "Shopping" && (
+                                    <ShoppingCart className="mr-0.5 h-2.5 w-2.5" />
+                                  )}
                                   {r.type}
                                 </Badge>
-                                <span className="text-[10px] text-muted-foreground">{r.source}</span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {r.source}
+                                </span>
                               </div>
                               <div className="flex shrink-0 items-center gap-1">
                                 <button
@@ -1262,9 +1433,18 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                                 </a>
                               </div>
                             </div>
-                            <a href={r.url} target="_blank" rel="noreferrer" className="block">
-                              <p className="text-sm font-medium leading-snug hover:underline">{r.title}</p>
-                              <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-2">{r.description}</p>
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block"
+                            >
+                              <p className="text-sm font-medium leading-snug hover:underline">
+                                {r.title}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                {r.description}
+                              </p>
                             </a>
                           </div>
                         );
@@ -1292,7 +1472,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                   onClick={() => void handleCreate()}
                   disabled={createTask.isPending || !title.trim()}
                 >
-                  {createTask.isPending ? copy.reviewCreating : copy.addTaskButton}
+                  {createTask.isPending
+                    ? copy.reviewCreating
+                    : copy.addTaskButton}
                 </Button>
               </div>
             </div>
@@ -1301,7 +1483,9 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
 
         {phase === "error" && (
           <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">{copy.toastAiPlannerError}</p>
+            <p className="text-sm text-muted-foreground">
+              {copy.toastAiPlannerError}
+            </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
@@ -1312,7 +1496,13 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
               >
                 {copy.cancel}
               </Button>
-              <Button type="button" variant="outline" size="sm" className={aiPlannerBtnSubmit} onClick={handleRetry}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={aiPlannerBtnSubmit}
+                onClick={handleRetry}
+              >
                 {copy.createAiRetry}
               </Button>
             </div>

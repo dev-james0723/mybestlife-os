@@ -90,18 +90,26 @@ export function computeSequentialSchedule(
 ): ScheduledPlannerTask[] {
   const startMin = parseTimeToMinutes(planStartTime);
   const allExact = tasks.length > 0 && tasks.every(taskHasExactSchedule);
+  const exactStartOnPlanTimeline = (task: DailyPlanTask): number => {
+    let minute = parseTimeToMinutes(task.start_time!);
+    while (minute < startMin) minute += 24 * 60;
+    return minute;
+  };
   const sorted = [...tasks].sort((a, b) => {
     if (allExact) {
-      return parseTimeToMinutes(a.start_time!) - parseTimeToMinutes(b.start_time!);
+      return (
+        exactStartOnPlanTimeline(a) - exactStartOnPlanTimeline(b) ||
+        (a.order ?? 0) - (b.order ?? 0)
+      );
     }
     return (a.order ?? 0) - (b.order ?? 0);
   });
 
   if (allExact) {
     return sorted.map((t, index) => {
-      const taskStart = parseTimeToMinutes(t.start_time!);
+      const taskStart = exactStartOnPlanTimeline(t);
       let taskEnd = parseTimeToMinutes(t.end_time!);
-      if (taskEnd <= taskStart) taskEnd += 24 * 60;
+      while (taskEnd <= taskStart) taskEnd += 24 * 60;
       return {
         task: t,
         index,

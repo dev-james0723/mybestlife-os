@@ -1,0 +1,136 @@
+{
+  "status": "passed",
+  "startedAt": "2026-09-04T05:30:04.621Z",
+  "finishedAt": "2026-09-04T05:30:48.638Z",
+  "sourceHash": "de3c8e0502c9c9aa1dcad519498d62e14a723209bfcd8cdbe9cfa378556d70f6",
+  "baseUrl": "http://127.0.0.1:3199",
+  "mobile": {
+    "touchAction": "pan-y",
+    "openMidGesture": {
+      "left": 312,
+      "right": 572,
+      "width": 260,
+      "transform": "matrix(1, 0, 0, 1, 182, 0)",
+      "transitionDuration": "0s",
+      "open": true,
+      "swiping": true,
+      "trackingSamples": [
+        {
+          "x": 316,
+          "drawer": {
+            "left": 348,
+            "right": 608,
+            "width": 260,
+            "transform": "matrix(1, 0, 0, 1, 218, 0)",
+            "transitionDuration": "0s",
+            "open": true,
+            "swiping": true
+          }
+        },
+        {
+          "x": 280,
+          "drawer": {
+            "left": 312,
+            "right": 572,
+            "width": 260,
+            "transform": "matrix(1, 0, 0, 1, 182, 0)",
+            "transitionDuration": "0s",
+            "open": true,
+            "swiping": true
+          }
+        }
+      ],
+      "backdrop": {
+        "opacity": 0.03,
+        "transitionDuration": "0s",
+        "swiping": true
+      }
+    },
+    "openState": {
+      "left": 130.0016326904297,
+      "right": 390.0016326904297,
+      "width": 260,
+      "transform": "matrix(1, 0, 0, 1, 0.00162874, 0)",
+      "transitionDuration": "0.28s, 0.16s",
+      "open": true,
+      "swiping": false
+    },
+    "openBackdropState": {
+      "opacity": 0.1,
+      "transitionDuration": "0.18s",
+      "swiping": false
+    },
+    "closeMidGesture": {
+      "left": 278,
+      "right": 538,
+      "width": 260,
+      "transform": "matrix(1, 0, 0, 1, 148, 0)",
+      "transitionDuration": "0s",
+      "open": true,
+      "swiping": true,
+      "trackingSamples": [
+        {
+          "x": 334,
+          "drawer": {
+            "left": 238,
+            "right": 498,
+            "width": 260,
+            "transform": "matrix(1, 0, 0, 1, 108, 0)",
+            "transitionDuration": "0s",
+            "open": true,
+            "swiping": true
+          }
+        },
+        {
+          "x": 374,
+          "drawer": {
+            "left": 278,
+            "right": 538,
+            "width": 260,
+            "transform": "matrix(1, 0, 0, 1, 148, 0)",
+            "transitionDuration": "0s",
+            "open": true,
+            "swiping": true
+          }
+        }
+      ]
+    },
+    "backgroundScroll": {
+      "whileOpen": 0,
+      "afterClose": 195
+    },
+    "escapeClose": true,
+    "backdropClose": true,
+    "tapOpenAndClose": true,
+    "restoredBodyOverflow": "",
+    "pageErrors": []
+  },
+  "gestureIsolation": {
+    "verticalEdgeSwipe": {
+      "opened": false,
+      "swiped": false,
+      "scrollTopBefore": 0,
+      "scrollTopAfter": 165,
+      "pageErrors": []
+    },
+    "nonEdgeHorizontalSwipe": {
+      "opened": false,
+      "swiped": false,
+      "pageErrors": []
+    }
+  },
+  "reducedMotion": {
+    "transitionDuration": "0s",
+    "backdropTransitionDuration": "0s",
+    "pageErrors": []
+  },
+  "breakpointReset": {
+    "desktopWidth": 1025,
+    "mobileWidth": 390,
+    "stayedClosed": true,
+    "pageErrors": []
+  },
+  "desktopBoundary": {
+    "swipeAreaCount": 0
+  }
+}

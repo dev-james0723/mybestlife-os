@@ -16,7 +16,7 @@ describe("Doc Oracle local fixture", () => {
     expect(isDocOracleFixtureId("not-a-fixture")).toBe(false);
   });
 
-  it("builds completed Supabase-shaped Doc Oracle rows", () => {
+  it("builds completed schema-shaped synthetic Doc Oracle rows", () => {
     const data = getDocOracleFixtureData("user-1");
 
     expect(data.item.id).toBe(DOC_ORACLE_FIXTURE_DOCUMENT_ID);
@@ -24,7 +24,8 @@ describe("Doc Oracle local fixture", () => {
     expect(data.item.contentType).toBe("file");
     expect(data.item.filePath).toBe(`${DOC_ORACLE_FIXTURE_ASSET_PREFIX}source.pdf`);
     expect(data.analysis.status).toBe("completed");
-    expect(data.analysis.parser).toBe("mineru");
+    expect(data.analysis.parser).toBeNull();
+    expect(data.analysis.parser_version).toBeNull();
     expect(data.pages).toHaveLength(8);
     expect(data.sections.length).toBeGreaterThanOrEqual(6);
     expect(data.glossary.length).toBeGreaterThanOrEqual(5);

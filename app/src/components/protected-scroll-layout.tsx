@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { Menu } from "lucide-react";
 import { AppTopbar, APP_TOPBAR_LAYOUT_HEIGHT_CLASS_PT } from "@/components/app-topbar";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSmartScrollNav } from "@/hooks/use-smart-scroll-nav";
-import { useSidebar } from "@/components/ui/sidebar";
+import { SidebarSwipeArea, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { PROTECTED_DESKTOP_GUTTER_X } from "@/lib/layout-shell";
 
@@ -25,15 +24,6 @@ export function ProtectedScrollLayout({
 
   const showFab = isMobile && navHidden && !openMobile;
   const shellHidden = Boolean(isMobile && navHidden);
-
-  useEffect(() => {
-    if (!openMobile) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [openMobile]);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -56,11 +46,12 @@ export function ProtectedScrollLayout({
             role="region"
             aria-label="Main content"
             className={cn(
-              "min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-muted/40 px-4 py-6 [-webkit-overflow-scrolling:touch] sm:px-6 sm:py-8",
+              "min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-muted/40 pt-6 pr-5 pb-6 pl-4 [-webkit-overflow-scrolling:touch] sm:px-6 sm:py-8",
               APP_TOPBAR_LAYOUT_HEIGHT_CLASS_PT,
               showFab && "pb-24"
             )}
           >
+            <SidebarSwipeArea />
             <div className="mx-auto w-full max-w-7xl">
               <PageTransition>{children}</PageTransition>
             </div>
@@ -102,6 +93,9 @@ export function ProtectedScrollLayout({
               : "pointer-events-none translate-y-2 scale-90 opacity-0"
           )}
           aria-label="Open menu"
+          aria-controls="mobile-sidebar-drawer"
+          aria-expanded={openMobile}
+          aria-haspopup="dialog"
           tabIndex={showFab ? 0 : -1}
         >
           <Menu className="size-6" />

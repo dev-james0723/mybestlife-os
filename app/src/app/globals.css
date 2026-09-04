@@ -2905,13 +2905,85 @@ html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"]:focus-visibl
   outline-offset: 2px;
 }
 
-/* Mobile Sheet — the same primitive renders on mobile via <Sheet>. Give
-   it the glass skin too, but keep its slide direction (right) intact. */
+/* Mobile drawer — the sidebar follows the finger from the right edge.
+   Base UI supplies the gesture state and movement variables; these rules
+   turn them into the right-to-left open / left-to-right close motion. */
 html[data-ui-theme="default"] [data-mobile="true"][data-slot="sidebar"] {
   background: var(--sidebar-glass-bg) !important;
   border: 1px solid var(--sidebar-glass-border);
   backdrop-filter: blur(24px) saturate(140%);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+.mobile-sidebar-drawer {
+  transform: translateX(var(--drawer-swipe-movement-x));
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 160ms ease-out;
+  will-change: transform;
+}
+
+.mobile-sidebar-drawer[data-starting-style]:not([data-swiping]),
+.mobile-sidebar-drawer[data-ending-style],
+.mobile-sidebar-drawer[data-swipe-dismiss] {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.mobile-sidebar-drawer[data-swiping] {
+  transform: translateX(var(--drawer-swipe-movement-x));
+  opacity: 1;
+  user-select: none;
+  transition-duration: 0ms;
+}
+
+body:has([data-slot="sidebar-swipe-area"][data-swiping])
+  .mobile-sidebar-drawer:not([data-swiping]) {
+  transform: translateX(100%);
+  opacity: 0;
+  transition-duration: 0ms;
+}
+
+body:has([data-slot="sidebar-swipe-area"][data-swiping])
+  .mobile-sidebar-drawer-backdrop:not([data-swiping]) {
+  opacity: 0;
+  transition-duration: 0ms;
+}
+
+.mobile-sidebar-drawer[data-ending-style] {
+  transition-duration:
+    calc(var(--drawer-swipe-strength, 1) * 280ms),
+    160ms;
+}
+
+.mobile-sidebar-drawer-backdrop {
+  --mobile-sidebar-backdrop-opacity: 0.1;
+  opacity: calc(
+    var(--mobile-sidebar-backdrop-opacity) *
+    (1 - var(--drawer-swipe-progress))
+  );
+  transition: opacity 180ms ease-out;
+}
+
+.dark .mobile-sidebar-drawer-backdrop {
+  --mobile-sidebar-backdrop-opacity: 0.55;
+}
+
+.mobile-sidebar-drawer-backdrop[data-starting-style],
+.mobile-sidebar-drawer-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.mobile-sidebar-drawer-backdrop[data-swiping] {
+  opacity: calc(
+    var(--mobile-sidebar-backdrop-opacity) *
+    (1 - var(--drawer-swipe-progress))
+  );
+  transition-duration: 0ms;
+}
+
+.mobile-sidebar-drawer-backdrop[data-ending-style] {
+  transition-duration: calc(var(--drawer-swipe-strength, 1) * 180ms);
 }
 
 /* Backdrop-filter fallback — fall back to opaque sidebar bg so content
@@ -2929,6 +3001,11 @@ html[data-ui-theme="default"] [data-mobile="true"][data-slot="sidebar"] {
    under default theme. Other themes use the shadcn baseline which
    already respects reduced-motion via Tailwind. */
 @media (prefers-reduced-motion: reduce) {
+  .mobile-sidebar-drawer,
+  .mobile-sidebar-drawer-backdrop {
+    transition-duration: 0ms !important;
+  }
+
   html[data-ui-theme="default"] [data-slot="sidebar-menu-button"],
   html[data-ui-theme="default"] [data-slot="sidebar-menu-sub-button"],
   html[data-ui-theme="default"] [data-glass-icon-well],

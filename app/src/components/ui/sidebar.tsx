@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Drawer } from "@base-ui/react/drawer"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -10,13 +11,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -68,6 +62,13 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!isMobile && openMobile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- a breakpoint change must dismiss the mobile modal and release its scroll lock.
+      setOpenMobile(false)
+    }
+  }, [isMobile, openMobile])
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -128,25 +129,105 @@ function SidebarProvider({
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      <div
-        data-slot="sidebar-wrapper"
-        data-atmosphere
-        style={
-          {
-            "--sidebar-width": SIDEBAR_WIDTH,
-            "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-            ...style,
-          } as React.CSSProperties
-        }
-        className={cn(
-          "group/sidebar-wrapper flex h-dvh min-h-0 w-full overflow-hidden bg-background has-data-[variant=inset]:bg-sidebar",
-          className
-        )}
-        {...props}
+      <Drawer.Root
+        open={isMobile && openMobile}
+        onOpenChange={setOpenMobile}
+        swipeDirection="right"
       >
-        {children}
-      </div>
+        <div
+          data-slot="sidebar-wrapper"
+          data-atmosphere
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH,
+              "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+              ...style,
+            } as React.CSSProperties
+          }
+          className={cn(
+            "group/sidebar-wrapper flex h-dvh min-h-0 w-full overflow-hidden bg-background has-data-[variant=inset]:bg-sidebar",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      </Drawer.Root>
     </SidebarContext.Provider>
+  )
+}
+
+function SidebarSwipeArea() {
+  const { isMobile } = useSidebar()
+  const touchStartRef = React.useRef<{ x: number; y: number } | null>(null)
+  const touchAxisRef = React.useRef<"pending" | "horizontal" | "vertical">(
+    "pending"
+  )
+  const [blockDrawerGesture, setBlockDrawerGesture] = React.useState(false)
+
+  if (!isMobile) return null
+
+  const finishTouch = (event: React.TouchEvent<HTMLDivElement>) => {
+    const shouldBlock = touchAxisRef.current !== "horizontal"
+    if (shouldBlock) {
+      event.stopPropagation()
+      setBlockDrawerGesture(true)
+      window.requestAnimationFrame(() => setBlockDrawerGesture(false))
+    }
+    touchStartRef.current = null
+    touchAxisRef.current = "pending"
+  }
+
+  return (
+    <div
+      className="pointer-events-none sticky top-0 z-40 ml-auto h-0 w-0"
+      onTouchStartCapture={(event) => {
+        if (event.touches.length !== 1) {
+          event.stopPropagation()
+          touchStartRef.current = null
+          touchAxisRef.current = "vertical"
+          setBlockDrawerGesture(true)
+          return
+        }
+        const touch = event.touches[0]
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+        touchAxisRef.current = "pending"
+      }}
+      onTouchMoveCapture={(event) => {
+        const start = touchStartRef.current
+        const touch = event.touches[0]
+        if (!start || !touch) return
+
+        const deltaX = touch.clientX - start.x
+        const deltaY = touch.clientY - start.y
+        const absX = Math.abs(deltaX)
+        const absY = Math.abs(deltaY)
+        if (
+          touchAxisRef.current === "pending" &&
+          Math.hypot(deltaX, deltaY) >= 8
+        ) {
+          if (absY > absX * 1.2) {
+            touchAxisRef.current = "vertical"
+            setBlockDrawerGesture(true)
+          } else if (absX > absY * 1.2) {
+            touchAxisRef.current = "horizontal"
+          }
+        }
+
+        if (touchAxisRef.current !== "horizontal") {
+          event.stopPropagation()
+        }
+      }}
+      onTouchEndCapture={finishTouch}
+      onTouchCancelCapture={finishTouch}
+    >
+      <Drawer.SwipeArea
+        disabled={blockDrawerGesture}
+        data-slot="sidebar-swipe-area"
+        swipeDirection="left"
+        className="pointer-events-auto absolute -top-5 -right-5 h-[calc(100dvh+2.25rem)] w-5 sm:-top-9 sm:-right-6"
+      />
+    </div>
   )
 }
 
@@ -163,7 +244,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { isMobile, state } = useSidebar()
 
   if (collapsible === "none") {
     return (
@@ -182,27 +263,42 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
-          dir={dir}
-          data-sidebar="sidebar"
-          data-slot="sidebar"
-          data-mobile="true"
-          className="w-(--sidebar-width) border-sidebar-border/30 bg-sidebar/75 p-0 text-sidebar-foreground backdrop-blur-lg backdrop-saturate-150 dark:bg-sidebar/50 [&>button]:hidden"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
-          side="right"
+      <Drawer.Portal>
+        <Drawer.Backdrop
+          data-slot="sidebar-drawer-backdrop"
+          className="mobile-sidebar-drawer-backdrop fixed inset-0 z-50 bg-black supports-backdrop-filter:backdrop-blur-xs"
+        />
+        <Drawer.Viewport
+          data-slot="sidebar-drawer-viewport"
+          className="fixed inset-0 z-50 flex justify-end overflow-hidden"
         >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-          </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
-        </SheetContent>
-      </Sheet>
+          <Drawer.Popup
+            id="mobile-sidebar-drawer"
+            dir={dir}
+            data-sidebar="sidebar"
+            data-slot="sidebar"
+            data-mobile="true"
+            className={cn(
+              "mobile-sidebar-drawer flex h-full w-(--sidebar-width) flex-col border-l border-sidebar-border/30 bg-sidebar/75 p-0 text-sidebar-foreground shadow-lg outline-none backdrop-blur-lg backdrop-saturate-150 dark:bg-sidebar/50",
+              className
+            )}
+            style={
+              {
+                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              } as React.CSSProperties
+            }
+            {...props}
+          >
+            <Drawer.Content className="flex h-full w-full flex-col">
+              <Drawer.Title className="sr-only">Sidebar</Drawer.Title>
+              <Drawer.Description className="sr-only">
+                Displays the mobile sidebar.
+              </Drawer.Description>
+              {children}
+            </Drawer.Content>
+          </Drawer.Popup>
+        </Drawer.Viewport>
+      </Drawer.Portal>
     )
   }
 
@@ -720,6 +816,7 @@ export {
   SidebarProvider,
   SidebarRail,
   SidebarSeparator,
+  SidebarSwipeArea,
   SidebarTrigger,
   useSidebar,
 }

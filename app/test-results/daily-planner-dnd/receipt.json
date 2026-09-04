@@ -1,0 +1,322 @@
+{
+  "state": "passed",
+  "execution": "local dev-bypass browser validation with an isolated localStorage fixture",
+  "startedAt": "2026-09-04T05:06:31.581Z",
+  "finishedAt": "2026-09-04T05:07:11.266Z",
+  "baseUrl": "http://127.0.0.1:3100",
+  "browserExecutable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "viewportChecks": [
+    "1280x900 mouse + keyboard",
+    "390x844 emulated touch"
+  ],
+  "fixture": {
+    "planDate": "2026-09-04",
+    "storageKey": "mylifeos:daily-plan:v1:2026-09-04",
+    "taskIds": [
+      "planner-a",
+      "planner-b",
+      "planner-c",
+      "planner-d",
+      "planner-e"
+    ]
+  },
+  "checks": [
+    "desktop mouse drag moves Task A below Task B",
+    "the reordered plan is written to localStorage and survives reload",
+    "a vertical touch gesture on the card body scrolls without reordering",
+    "closed mobile task cards are opaque so hidden swipe actions cannot bleed through",
+    "the visible wrapper keeps a 14 px radius while the hidden panel is concentrically inset by 1 px",
+    "the opaque mobile foreground overscans the right clip edge by 2 px",
+    "fully closed mobile cards return to transform:none to avoid a composited color seam",
+    "a bounded long press on the dedicated mobile handle moves Task B to Task E without scrolling",
+    "the dedicated handle supports Space/ArrowDown/Space keyboard reordering"
+  ],
+  "selectors": [
+    "data-planner-task-id",
+    "data-drag-handle",
+    "data-dnd-state"
+  ],
+  "results": [
+    {
+      "name": "desktop-mouse-and-persistence",
+      "passed": true,
+      "assertions": {
+        "mouseDrag": "Task A moved below Task B",
+        "activationMs": 280,
+        "visibleDropMs": 281,
+        "persistedLocalOrder": [
+          "planner-b",
+          "planner-a",
+          "planner-c",
+          "planner-d",
+          "planner-e"
+        ],
+        "rowIdentityStableAcrossRefetch": true,
+        "survivedReload": true
+      },
+      "diagnostics": {
+        "pageErrors": [],
+        "consoleErrors": [],
+        "requestFailures": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/habits.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/garden.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-timeline.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/ideas.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/journal.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/ai-knowledge.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/quote-library.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-compass.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/bucket-list.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-network.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-pipeline.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/mind-council.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/relationship.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/documents.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/category-goals-execution.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/japanese-study.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/goals.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/category-knowledge.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/projects.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/role-model.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/health.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/software-vault.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/knowledge-base.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-profile.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-coach.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/category-learning.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-analytics.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/category-resources.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/category-people.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/category-career.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-vault.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/career-journal.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/assets.png",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:3100/images/liquid-icons/pack-c/runtime/command-glass/day/settings-reserved.png",
+            "reason": "net::ERR_ABORTED"
+          }
+        ],
+        "startupRetries": []
+      }
+    },
+    {
+      "name": "mobile-body-scroll",
+      "passed": true,
+      "assertions": {
+        "closedCardBackground": "rgb(255, 255, 255)",
+        "closedCardTransform": "none",
+        "closedCornerRadii": {
+          "wrapper": "14px",
+          "card": "0px",
+          "actionPanel": "13px"
+        },
+        "closedLayerWidths": {
+          "wrapper": 324,
+          "card": 326
+        },
+        "closedActionInsets": {
+          "top": 1,
+          "right": 1,
+          "bottom": 1
+        },
+        "bodyTouchActionChain": [
+          "auto",
+          "auto",
+          "auto",
+          "pan-y",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto"
+        ],
+        "bodyScrollDeltaPx": 135,
+        "orderUnchanged": true
+      },
+      "diagnostics": {
+        "pageErrors": [],
+        "consoleErrors": [],
+        "requestFailures": [],
+        "startupRetries": []
+      }
+    },
+    {
+      "name": "mobile-long-press-handle",
+      "passed": true,
+      "assertions": {
+        "handleTouchAction": "none",
+        "activationMs": 318,
+        "visibleDropMs": 184,
+        "touchDrag": "Task B moved to Task E position",
+        "pageScrollDeltaPx": 0
+      },
+      "diagnostics": {
+        "pageErrors": [],
+        "consoleErrors": [],
+        "requestFailures": [],
+        "startupRetries": []
+      }
+    },
+    {
+      "name": "keyboard-handle",
+      "passed": true,
+      "assertions": {
+        "handleKeyboardFocusable": true,
+        "focusRetainedAfterDrop": true,
+        "keyboardReorder": "Space, ArrowDown, Space moved Task B below Task C"
+      },
+      "diagnostics": {
+        "pageErrors": [],
+        "consoleErrors": [],
+        "requestFailures": [],
+        "startupRetries": []
+      }
+    }
+  ]
+}

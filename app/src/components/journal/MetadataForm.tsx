@@ -13,7 +13,7 @@ interface MetadataFormProps {
  */
 export function MetadataForm({ copy }: MetadataFormProps) {
   return (
-    <div className="rounded-md border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+    <div className="rounded-xl border border-dashed border-border/65 bg-card/40 p-4 text-sm text-muted-foreground">
       {copy.metadataComingSoon}
     </div>
   );

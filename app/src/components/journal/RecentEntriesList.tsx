@@ -72,7 +72,7 @@ export function RecentEntriesList({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={copy.recentEntriesSearchPlaceholder}
-          className="pl-9"
+          className="rounded-xl border-border/75 bg-card/60 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] dark:border-border/75 dark:bg-card/60"
           aria-label={copy.recentEntriesSearchPlaceholder}
         />
       </div>
@@ -112,7 +112,7 @@ function SkeletonList() {
       {[0, 1, 2].map((i) => (
         <li
           key={i}
-          className="h-16 animate-pulse rounded-md border border-border bg-muted/40"
+          className="h-16 animate-pulse rounded-xl border border-border/70 bg-card/45"
         />
       ))}
     </ul>
@@ -137,8 +137,8 @@ function EntryCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "block w-full rounded-md border border-border bg-background p-3 text-left transition-colors",
-        "hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "block w-full rounded-xl border border-border/70 bg-card/55 p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] transition-[background,border-color,transform] duration-150",
+        "hover:-translate-y-px hover:border-border hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none",
       )}
     >
       <div className="flex flex-wrap items-center gap-2 text-xs">

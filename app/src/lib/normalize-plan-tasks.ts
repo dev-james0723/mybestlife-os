@@ -67,6 +67,12 @@ function coerceWallClock(raw: unknown): string | undefined {
   return /^\d{1,2}:\d{2}$/.test(t) ? t : undefined;
 }
 
+function coerceScheduleSource(
+  raw: unknown,
+): DailyPlanTask["scheduleSource"] | undefined {
+  return raw === "manual" || raw === "adaptive" ? raw : undefined;
+}
+
 function coerceDailyPlanTask(item: unknown, index: number): DailyPlanTask {
   if (!item || typeof item !== "object") {
     return { taskName: "Untitled", blocks: 1, order: index };
@@ -76,11 +82,18 @@ function coerceDailyPlanTask(item: unknown, index: number): DailyPlanTask {
   const gapBlocks = coerceGapBlocks(o.gapBlocks);
   const startTime = coerceWallClock(o.start_time);
   const endTime = coerceWallClock(o.end_time);
+  const scheduleSource = coerceScheduleSource(o.scheduleSource);
+  const earliestStartTime = coerceWallClock(o.earliestStartTime);
+  const latestEndTime = coerceWallClock(o.latestEndTime);
   return {
     plannerTaskId:
       typeof o.plannerTaskId === "string" && o.plannerTaskId.trim().length > 0
         ? o.plannerTaskId.trim()
         : undefined,
+    ...(scheduleSource ? { scheduleSource } : {}),
+    ...(typeof o.locked === "boolean" ? { locked: o.locked } : {}),
+    ...(earliestStartTime ? { earliestStartTime } : {}),
+    ...(latestEndTime ? { latestEndTime } : {}),
     ...(gapBlocks !== undefined ? { gapBlocks } : {}),
     taskName: name || "Untitled",
     taskId: typeof o.taskId === "string" ? o.taskId : undefined,
@@ -122,7 +135,7 @@ export function ensurePlannerTaskIds(tasks: DailyPlanTask[]): DailyPlanTask[] {
 
 /** Coerces an arbitrary planning-mode value into the strictly-typed enum, defaulting to time-block. */
 export function coercePlanningMode(input: unknown): PlanningMode {
-  return input === "free" ? "free" : "time-block";
+  return input === "free" || input === "adaptive" ? input : "time-block";
 }
 
 function newFreeTaskId(index: number): string {

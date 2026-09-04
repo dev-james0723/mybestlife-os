@@ -56,6 +56,11 @@ import {
   type TasksUiCopy,
 } from "@/lib/i18n/tasks-ui";
 import { isTaskAiGenerated } from "@/lib/tasks/ai-origin";
+import {
+  addTaskReferenceTag,
+  parseTaskLinkMetadata,
+  stripTaskLinkMetadataSections,
+} from "@/lib/tasks/task-link-metadata";
 
 export interface TaskDetailModalProps {
   task: Task | null;
@@ -100,7 +105,7 @@ export function TaskDetailModal({
 
   const syncForm = useCallback((t: Task) => {
     setTitle(t.title);
-    setDescription(t.description ?? "");
+    setDescription(stripTaskLinkMetadataSections(t.description) ?? "");
     setStatus(t.status);
     setPriority(t.priority);
     setDueDate(t.due_date ?? "");
@@ -118,15 +123,33 @@ export function TaskDetailModal({
 
   const handleSave = async () => {
     if (!task || !title.trim()) return;
-    await onUpdate(task.id, {
+    const updates: Record<string, unknown> = {
       title: title.trim(),
-      description: description || undefined,
       status,
       priority,
       due_date: dueDate || undefined,
       project_id: projectId || undefined,
       estimated_blocks: estimatedBlocks ? Number(estimatedBlocks) : undefined,
-    });
+    };
+    const visibleDescription =
+      stripTaskLinkMetadataSections(task.description) ?? "";
+    const nextDescription = description.trim();
+    if (nextDescription !== visibleDescription) {
+      updates.description = nextDescription || null;
+      const metadata = parseTaskLinkMetadata(task.tags, task.description);
+      let nextTags = [...(task.tags ?? [])];
+      for (const id of metadata.noteIds) {
+        nextTags = addTaskReferenceTag(nextTags, "note", id);
+      }
+      for (const id of metadata.ideaIds) {
+        nextTags = addTaskReferenceTag(nextTags, "idea", id);
+      }
+      for (const id of metadata.knowledgeIds) {
+        nextTags = addTaskReferenceTag(nextTags, "knowledge", id);
+      }
+      updates.tags = nextTags;
+    }
+    await onUpdate(task.id, updates);
     setIsEditing(false);
   };
 
@@ -140,6 +163,12 @@ export function TaskDetailModal({
   if (!task) return null;
 
   const overdue = isOverdue(task.due_date);
+  const visibleDescription =
+    stripTaskLinkMetadataSections(task.description) ?? "";
+  const { userVisibleTags } = parseTaskLinkMetadata(
+    task.tags,
+    task.description,
+  );
 
   return (
     <>
@@ -351,7 +380,7 @@ export function TaskDetailModal({
                   )}
                 </div>
 
-                {task.description && (
+                {visibleDescription && (
                   <>
                     <Separator />
                     <div>
@@ -359,7 +388,7 @@ export function TaskDetailModal({
                         {copy.detailDescription}
                       </p>
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                        {task.description}
+                        {visibleDescription}
                       </p>
                     </div>
                   </>
@@ -404,9 +433,7 @@ export function TaskDetailModal({
                       <p className="font-medium text-muted-foreground">
                         {copy.detailCompleted}
                       </p>
-                      <p className="mt-0.5">
-                        {formatDate(task.completed_at)}
-                      </p>
+                      <p className="mt-0.5">{formatDate(task.completed_at)}</p>
                     </div>
                   )}
                   {task.reminder_date && (
@@ -415,9 +442,7 @@ export function TaskDetailModal({
                         <Bell className="h-3.5 w-3.5" />
                         {copy.detailReminder}
                       </p>
-                      <p className="mt-0.5">
-                        {formatDate(task.reminder_date)}
-                      </p>
+                      <p className="mt-0.5">{formatDate(task.reminder_date)}</p>
                     </div>
                   )}
                   {task.source && (
@@ -444,7 +469,7 @@ export function TaskDetailModal({
                   )}
                 </div>
 
-                {task.tags && task.tags.length > 0 && (
+                {userVisibleTags.length > 0 && (
                   <>
                     <Separator />
                     <div>
@@ -452,10 +477,10 @@ export function TaskDetailModal({
                         {copy.detailTags}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {task.tags.map((tag) => (
+                        {userVisibleTags.map((tag) => (
                           <span
                             key={tag}
-                            className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+                            className="max-w-full break-words rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
                           >
                             {tag}
                           </span>
@@ -473,10 +498,7 @@ export function TaskDetailModal({
                     {copy.focusRitual}
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
                   {copy.close}
                 </Button>
               </DialogFooter>
@@ -485,10 +507,7 @@ export function TaskDetailModal({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-      >
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{copy.deleteTaskTitle}</AlertDialogTitle>

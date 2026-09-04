@@ -1,0 +1,9 @@
+{
+  "state": "mocked-browser-validation",
+  "passed": false,
+  "route": "/en/relationship?tab=relationship",
+  "completedViewports": [
+    "390x844"
+  ],
+  "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Add Manually', exact: true }) to be visible\u001b[22m\n\n    at verifyViewport (/Users/ouxianxing/My_life_os/app/scripts/verify-relationship-modal.mjs:459:23)\n    at async file:///Users/ouxianxing/My_life_os/app/scripts/verify-relationship-modal.mjs:637:18"
+}

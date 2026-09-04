@@ -4,6 +4,7 @@ import type { Task } from "@/types/database";
 import {
   EMPTY_TASK_FILTER,
   NO_PROJECT_FILTER,
+  collectTaskTags,
   countActiveFilters,
   filterTasks,
   matchesLinked,
@@ -58,6 +59,15 @@ describe("matchesSearch", () => {
     expect(matchesSearch(t, "nope")).toBe(false);
     expect(matchesSearch(t, "")).toBe(true);
   });
+
+  it("does not expose internal relationship references as searchable tags", () => {
+    const t = makeTask({
+      tags: ["creative", "note:ad8b8a3a-a52b-4687-b1f1-180968380c6b"],
+    });
+
+    expect(matchesSearch(t, "creative")).toBe(true);
+    expect(matchesSearch(t, "ad8b8a3a")).toBe(false);
+  });
 });
 
 describe("matchesProject", () => {
@@ -80,6 +90,14 @@ describe("matchesTags", () => {
     expect(matchesTags(t, ["admin", "practice"])).toBe(true);
     expect(matchesTags(t, ["admin"])).toBe(false);
   });
+
+  it("does not match internal relationship metadata", () => {
+    const reference = "idea:f2dd1562-45ec-4dc0-b322-ead142962bbc";
+    const t = makeTask({ tags: ["Music", reference] });
+
+    expect(matchesTags(t, [reference])).toBe(false);
+    expect(collectTaskTags([t])).toEqual(["Music"]);
+  });
 });
 
 describe("matchesLinked", () => {
@@ -92,7 +110,9 @@ describe("matchesLinked", () => {
 
   it("resolves cross-module flags from context", () => {
     const t = makeTask({ id: "t9" });
-    const ctx = { getLinkFlags: (id: string) => (id === "t9" ? { goal: true } : undefined) };
+    const ctx = {
+      getLinkFlags: (id: string) => (id === "t9" ? { goal: true } : undefined),
+    };
     expect(matchesLinked(t, ["linked-goal"], ctx)).toBe(true);
     expect(matchesLinked(t, ["linked-habit"], ctx)).toBe(false);
   });
@@ -102,7 +122,12 @@ describe("filterTasks", () => {
   const tasks = [
     makeTask({ id: "a", status: "todo", priority: "urgent", project_id: "p1" }),
     makeTask({ id: "b", status: "done", priority: "low", project_id: null }),
-    makeTask({ id: "c", status: "in-progress", priority: "urgent", project_id: "p1" }),
+    makeTask({
+      id: "c",
+      status: "in-progress",
+      priority: "urgent",
+      project_id: "p1",
+    }),
   ];
 
   it("combines status + priority + project filters", () => {

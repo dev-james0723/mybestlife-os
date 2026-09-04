@@ -1,0 +1,88 @@
+{
+  "state": "mocked-browser-validation",
+  "passed": true,
+  "route": "/en/relationship?tab=relationship",
+  "viewportChecks": [
+    "390x844"
+  ],
+  "assertions": {
+    "favoriteControl": true,
+    "addToRoleModelControl": true,
+    "socialRowCanBeAdded": true,
+    "linkedProjectGoalNoteIdeaOptions": true,
+    "cardContactActions": true,
+    "cardFavoriteIndependent": true,
+    "cardKeyboardOpen": true,
+    "horizontalOverflow": false,
+    "footerReachable": true,
+    "detailCloseDeleteOverlap": false
+  },
+  "results": [
+    {
+      "viewport": "390x844",
+      "controls": {
+        "favorite": true,
+        "addToRoleModel": true,
+        "socialRowAdded": true,
+        "cardPhoneLink": true,
+        "cardEmailLink": true,
+        "cardSocialLink": true,
+        "cardFavoriteIndependent": true
+      },
+      "cardOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "linkedCheckboxes": [
+        "Relationship Modal Project",
+        "Deepen Important Relationships",
+        "Conversation Follow-up Notes",
+        "Thoughtful Birthday Ritual"
+      ],
+      "footerScroll": {
+        "scrollTop": 2639,
+        "maxScrollTop": 2639
+      },
+      "formOverflow": {
+        "globalOverflow": {
+          "document": 0,
+          "body": 0
+        },
+        "dialogOverflow": {
+          "content": 0,
+          "viewport": 0
+        }
+      },
+      "detailOverflow": {
+        "globalOverflow": {
+          "document": 0,
+          "body": 0
+        },
+        "dialogOverflow": {
+          "content": 0,
+          "viewport": 0
+        }
+      },
+      "closeDeleteOverlap": false,
+      "mockedTables": [
+        "goals",
+        "grateful_things",
+        "habit_completions",
+        "habits",
+        "ideas",
+        "notes",
+        "projects",
+        "quotes",
+        "relationship_ai_reports",
+        "relationship_images",
+        "relationship_interactions",
+        "relationship_promises",
+        "relationships",
+        "role_models",
+        "tasks"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ]
+}

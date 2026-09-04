@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { stripLeadingLocaleFromPathname, withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
-import { ChevronDown, ChevronRight, LogOut, Settings, ChevronsUpDown, Sprout } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Settings, ChevronsUpDown, Sprout, X } from "lucide-react";
 import { LifeOsLogo } from "@/components/branding/life-os-logo";
 import {
   Sidebar,
@@ -140,7 +140,7 @@ export function AppSidebar() {
   );
   const localeSlug = useLocaleSlug();
   const pathWithoutLocale = stripLeadingLocaleFromPathname(pathname);
-  const { setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { user, signOut, isLoading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const language = useAppStore((s) => s.language);
@@ -245,6 +245,18 @@ export function AppSidebar() {
               <span className="text-lg font-bold tracking-tight text-sidebar-foreground">
                 {getAppDisplayName(language)}
               </span>
+              {isMobile ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto shrink-0"
+                  aria-label="Close menu"
+                  onClick={closeMobileSidebar}
+                >
+                  <X className="size-5" aria-hidden />
+                </Button>
+              ) : null}
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

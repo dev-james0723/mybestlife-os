@@ -105,7 +105,7 @@ describe("selectOSBuddyCompanionKind", () => {
           ],
         },
       }),
-      now: new Date("2026-06-02T09:00:00+08:00"),
+      now: new Date(2026, 5, 2, 9, 0),
       random: 0.99,
     });
 

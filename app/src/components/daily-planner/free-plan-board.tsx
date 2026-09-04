@@ -7,12 +7,13 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   closestCorners,
   defaultDropAnimationSideEffects,
@@ -25,6 +26,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -120,7 +122,7 @@ function priorityLabel(copy: DailyPlannerUiCopy, p: FreePlanTask["priority"]): s
  * Cross-section drops re-tag the active task with the destination priority. The parent
  * `commitTasks` re-numbers each bucket so we don't need to be exact about `order` here.
  */
-function applyDragMove(
+export function applyDragMove(
   tasks: FreePlanTask[],
   activeId: string,
   overId: string,
@@ -142,6 +144,23 @@ function applyDragMove(
     beforeId = over.id;
   }
 
+  if (active.priority === targetSection && beforeId !== null) {
+    const section = tasks
+      .filter((task) => task.priority === targetSection)
+      .sort((a, b) => a.order - b.order);
+    const oldIndex = section.findIndex((task) => task.id === activeId);
+    const newIndex = section.findIndex((task) => task.id === beforeId);
+    if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return null;
+
+    const movedSection = arrayMove(section, oldIndex, newIndex).map(
+      (task, order) => ({ ...task, order }),
+    );
+    return [
+      ...tasks.filter((task) => task.priority !== targetSection),
+      ...movedSection,
+    ];
+  }
+
   // Build target-section list excluding the active task, sorted by current order.
   const others = tasks.filter((t) => t.id !== activeId);
   const destList = others
@@ -160,9 +179,7 @@ function applyDragMove(
     order: insertIdx,
   };
   destList.splice(insertIdx, 0, repositioned);
-  destList.forEach((t, i) => {
-    t.order = i;
-  });
+  const reorderedDestination = destList.map((task, order) => ({ ...task, order }));
 
   // No-op guard: same section + already at this index.
   if (
@@ -176,7 +193,7 @@ function applyDragMove(
   }
 
   const otherSections = others.filter((t) => t.priority !== targetSection);
-  return [...otherSections, ...destList];
+  return [...otherSections, ...reorderedDestination];
 }
 
 /* ─────────────────────────── DnD overlay drop animation ─────────────────────────── */
@@ -388,7 +405,7 @@ export function FreePlanBoard({
 
   const sensors = useSensors(
     // Small distance threshold so a click on the grip doesn't accidentally start a drag.
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     // Long-press on touch so users can still scroll the page near a task without dragging.
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
     useSensor(KeyboardSensor, {
@@ -607,27 +624,32 @@ export function FreePlanBoard({
             </motion.div>
           ))}
         </div>
-        <DragOverlay
-          dropAnimation={dropAnimation}
-          zIndex={60}
-          style={{ pointerEvents: "none" }}
-        >
-          {activeTask ? (
-            <FreeTaskCardShell
-              copy={copy}
-              task={activeTask}
-              isFirst
-              isLast
-              onSetPriority={() => undefined}
-              onToggleDone={() => undefined}
-              onDelete={() => undefined}
-              onMoveWithinBucket={() => undefined}
-              onOpenTask={undefined}
-              onStartFocus={undefined}
-              isOverlay
-            />
-          ) : null}
-        </DragOverlay>
+        {typeof document === "undefined"
+          ? null
+          : createPortal(
+              <DragOverlay
+                dropAnimation={prefersReduced ? null : dropAnimation}
+                zIndex={60}
+                style={{ pointerEvents: "none" }}
+              >
+                {activeTask ? (
+                  <FreeTaskCardShell
+                    copy={copy}
+                    task={activeTask}
+                    isFirst
+                    isLast
+                    onSetPriority={() => undefined}
+                    onToggleDone={() => undefined}
+                    onDelete={() => undefined}
+                    onMoveWithinBucket={() => undefined}
+                    onOpenTask={undefined}
+                    onStartFocus={undefined}
+                    isOverlay
+                  />
+                ) : null}
+              </DragOverlay>,
+              document.body,
+            )}
       </DndContext>
 
       <FreePlanTaskDetailSheet
@@ -832,6 +854,7 @@ interface FreeTaskCardCommonProps {
 function SortableFreeTaskCard(props: FreeTaskCardCommonProps) {
   const {
     setNodeRef,
+    setActivatorNodeRef,
     attributes,
     listeners,
     transform,
@@ -850,6 +873,7 @@ function SortableFreeTaskCard(props: FreeTaskCardCommonProps) {
       ref={setNodeRef}
       style={style}
       isDragging={isDragging}
+      dragHandleRef={setActivatorNodeRef}
       dragHandleProps={{ ...attributes, ...listeners }}
     />
   );
@@ -868,6 +892,7 @@ interface FreeTaskCardShellProps extends FreeTaskCardCommonProps {
   style?: CSSProperties;
   isDragging?: boolean;
   isOverlay?: boolean;
+  dragHandleRef?: (node: HTMLElement | null) => void;
   dragHandleProps?: DragHandleProps;
 }
 
@@ -880,6 +905,7 @@ function FreeTaskCardShell({
   isLast,
   isDragging,
   isOverlay,
+  dragHandleRef,
   dragHandleProps,
   onSetPriority,
   onToggleDone,
@@ -908,11 +934,12 @@ function FreeTaskCardShell({
       {/* Drag handle — the only six-dot icon in the row. dnd-kit listeners attach here only,
        *  so action buttons inside the card never accidentally start a drag. */}
       <button
+        ref={dragHandleRef}
         type="button"
         aria-label={copy.ariaHoldToReorder}
         {...dragHandleProps}
         className={cn(
-          "mt-0.5 flex h-7 w-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground/60 transition-colors duration-150 hover:text-muted-foreground",
+          "-my-1.5 -ml-2 flex h-10 w-10 shrink-0 cursor-grab items-center justify-center rounded-lg text-muted-foreground/60 transition-colors duration-150 hover:text-muted-foreground motion-reduce:transition-none",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
           "active:cursor-grabbing touch-none",
           isOverlay && "cursor-grabbing",

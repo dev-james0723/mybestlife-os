@@ -43,8 +43,15 @@ import {
 import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
 import { TaskConnections } from "@/components/tasks/task-connections";
 import { TaskInsightPanel } from "@/components/tasks/task-insight-panel";
-import { TaskOverviewStrip, type OverviewMetricKey } from "@/components/tasks/task-overview-strip";
-import { TaskControlBar, type TaskViewMode } from "@/components/tasks/task-control-bar";
+import {
+  TaskOverviewStrip,
+  type OverviewMetricKey,
+} from "@/components/tasks/task-overview-strip";
+import {
+  TaskControlBar,
+  TaskViewSwitcher,
+  type TaskViewMode,
+} from "@/components/tasks/task-control-bar";
 import { TaskCardView } from "@/components/tasks/task-card-view";
 import { TaskGridView } from "@/components/tasks/task-grid-view";
 import { TaskTableView } from "@/components/tasks/task-table-view";
@@ -70,8 +77,12 @@ import {
   UNCATEGORIZED_GROUP,
   type TaskGroupBy,
 } from "@/lib/tasks/task-grouping";
-import { deadlineColumnToDueDate, type DeadlineColumn } from "@/lib/tasks/task-dates";
+import {
+  deadlineColumnToDueDate,
+  type DeadlineColumn,
+} from "@/lib/tasks/task-dates";
 import { computeTaskOverview } from "@/lib/tasks/task-analytics";
+import { previewIdeaTitle } from "@/lib/ideas/idea-helpers";
 
 const VIEW_STORAGE_KEY = "tasks:viewMode";
 const BOARD_GROUP_STORAGE_KEY = "tasks:boardGroupBy";
@@ -126,7 +137,9 @@ export default function TasksPage() {
   const [filter, setFilter] = useState<TaskFilterState>(EMPTY_TASK_FILTER);
   const [sortKey, setSortKey] = useState<TaskSortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [viewMode, setViewMode] = useState<TaskViewMode>(readStoredTaskViewMode);
+  const [viewMode, setViewMode] = useState<TaskViewMode>(
+    readStoredTaskViewMode,
+  );
   const [boardGroupBy, setBoardGroupBy] = useState<TaskGroupBy>(
     readStoredBoardGroupBy,
   );
@@ -135,9 +148,16 @@ export default function TasksPage() {
   const [createMode, setCreateMode] = useState<TaskCreateMode>("manual");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showRitual, setShowRitual] = useState(false);
+
+  // Resolve the open task from the query cache so edits and relationship
+  // mutations appear in the modal immediately instead of leaving a stale copy.
+  const selectedTask = useMemo(
+    () => tasks?.find((task) => task.id === selectedTaskId) ?? null,
+    [selectedTaskId, tasks],
+  );
 
   const handleViewModeChange = useCallback((mode: TaskViewMode) => {
     setViewMode(mode);
@@ -178,6 +198,64 @@ export default function TasksPage() {
     () => collectTaskCategories(tasks ?? []),
     [tasks],
   );
+
+  const goalOptions = useMemo(
+    () => (goals ?? []).map((goal) => ({ id: goal.id, title: goal.name })),
+    [goals],
+  );
+  const ideaOptions = useMemo(
+    () =>
+      taskLinks.ideas.map((idea) => ({
+        id: idea.id,
+        title: previewIdeaTitle(idea, 120),
+      })),
+    [taskLinks.ideas],
+  );
+  const noteOptions = useMemo(
+    () =>
+      taskLinks.notes.map((note) => ({
+        id: note.id,
+        title: note.title.trim() || centerUi.unavailableLinkedItem,
+      })),
+    [centerUi.unavailableLinkedItem, taskLinks.notes],
+  );
+  const paperOptions = useMemo(
+    () =>
+      taskLinks.knowledgeItems
+        .filter((item) => item.content_type === "paper")
+        .map((item) => ({
+          id: item.id,
+          title: item.title.trim() || centerUi.unavailableLinkedItem,
+        })),
+    [centerUi.unavailableLinkedItem, taskLinks.knowledgeItems],
+  );
+  const knowledgeOptions = useMemo(
+    () =>
+      taskLinks.knowledgeItems
+        .filter((item) => item.content_type !== "paper")
+        .map((item) => ({
+          id: item.id,
+          title: item.title.trim() || centerUi.unavailableLinkedItem,
+        })),
+    [centerUi.unavailableLinkedItem, taskLinks.knowledgeItems],
+  );
+
+  const selectedConnectionIds = useMemo(() => {
+    if (!selectedTask) {
+      return { ideas: [], papers: [], knowledge: [], notes: [] };
+    }
+
+    const knowledgeIds = taskLinks.knowledgeForTask(selectedTask.id);
+    const paperIds = new Set(paperOptions.map((item) => item.id));
+    return {
+      ideas: taskLinks.ideasForTask(selectedTask.id),
+      papers: knowledgeIds.filter((id) => paperIds.has(id)),
+      // Keep missing rows visible as unavailable legacy links rather than
+      // silently dropping them from the modal.
+      knowledge: knowledgeIds.filter((id) => !paperIds.has(id)),
+      notes: taskLinks.notesForTask(selectedTask.id),
+    };
+  }, [paperOptions, selectedTask, taskLinks]);
 
   // When a single project is filtered, new tasks inherit it (plan §9).
   const activeProjectId = useMemo(() => {
@@ -224,7 +302,10 @@ export default function TasksPage() {
 
   const clearFilters = useCallback(() => setFilter(EMPTY_TASK_FILTER), []);
 
-  const applyFilter = useCallback((next: TaskFilterState) => setFilter(next), []);
+  const applyFilter = useCallback(
+    (next: TaskFilterState) => setFilter(next),
+    [],
+  );
 
   const handleOverviewSelect = useCallback(
     (key: OverviewMetricKey) => {
@@ -242,7 +323,9 @@ export default function TasksPage() {
           patchFilter({ status: filter.status === "done" ? "all" : "done" });
           break;
         case "due-today":
-          patchFilter({ deadline: filter.deadline === "today" ? "all" : "today" });
+          patchFilter({
+            deadline: filter.deadline === "today" ? "all" : "today",
+          });
           break;
         case "overdue":
           patchFilter({
@@ -250,11 +333,14 @@ export default function TasksPage() {
           });
           break;
         case "high-priority":
-          patchFilter({ priority: filter.priority === "high" ? "all" : "high" });
+          patchFilter({
+            priority: filter.priority === "high" ? "all" : "high",
+          });
           break;
         case "no-project":
           patchFilter({
-            project: filter.project === NO_PROJECT_FILTER ? "all" : NO_PROJECT_FILTER,
+            project:
+              filter.project === NO_PROJECT_FILTER ? "all" : NO_PROJECT_FILTER,
           });
           break;
       }
@@ -299,7 +385,9 @@ export default function TasksPage() {
           project_id: input.project_id ?? activeProjectId,
         });
         setShowCreate(false);
-        const subs = (opts?.subtasks ?? []).map((s) => s.trim()).filter(Boolean);
+        const subs = (opts?.subtasks ?? [])
+          .map((s) => s.trim())
+          .filter(Boolean);
         if (created?.id && subs.length > 0) {
           try {
             await taskSubtasksRepository.createMany(created.id, subs);
@@ -353,7 +441,7 @@ export default function TasksPage() {
 
   const handleDelete = async (id: string) => {
     await deleteTask.mutateAsync(id);
-    setSelectedTask(null);
+    setSelectedTaskId(null);
   };
 
   const handleCompleteTask = async (task: Task) => {
@@ -433,7 +521,7 @@ export default function TasksPage() {
   );
 
   const openDetail = (task: Task) => {
-    setSelectedTask(task);
+    setSelectedTaskId(task.id);
     setShowDetail(true);
   };
 
@@ -444,7 +532,7 @@ export default function TasksPage() {
 
   const handleDetailOpenChange = useCallback((open: boolean) => {
     setShowDetail(open);
-    if (!open) setSelectedTask(null);
+    if (!open) setSelectedTaskId(null);
   }, []);
 
   const handleBeginTask = () => {
@@ -496,6 +584,66 @@ export default function TasksPage() {
     [taskLinks.unlinkGoal, centerUi],
   );
 
+  const handleLinkIdea = useCallback(
+    async (taskId: string, ideaId: string, title: string) => {
+      try {
+        await taskLinks.linkIdea.mutateAsync({ taskId, ideaId });
+        toast.success(centerUi.linkedItemToast(title));
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [centerUi, taskLinks.linkIdea],
+  );
+
+  const handleUnlinkIdea = useCallback(
+    async (taskId: string, ideaId: string, title: string) => {
+      try {
+        await taskLinks.unlinkIdea.mutateAsync({ taskId, ideaId });
+        toast.success(centerUi.unlinkedItemToast(title));
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [centerUi, taskLinks.unlinkIdea],
+  );
+
+  const handleLinkKnowledge = useCallback(
+    async (taskId: string, knowledgeId: string, title: string) => {
+      try {
+        await taskLinks.linkKnowledge.mutateAsync({ taskId, knowledgeId });
+        toast.success(centerUi.linkedItemToast(title));
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [centerUi, taskLinks.linkKnowledge],
+  );
+
+  const handleUnlinkKnowledge = useCallback(
+    async (taskId: string, knowledgeId: string, title: string) => {
+      try {
+        await taskLinks.unlinkKnowledge.mutateAsync({ taskId, knowledgeId });
+        toast.success(centerUi.unlinkedItemToast(title));
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [centerUi, taskLinks.unlinkKnowledge],
+  );
+
+  const handleUnlinkNote = useCallback(
+    async (taskId: string, noteId: string, title: string) => {
+      try {
+        await taskLinks.unlinkNote.mutateAsync({ taskId, noteId });
+        toast.success(centerUi.unlinkedItemToast(title));
+      } catch {
+        toast.error(centerUi.connectionsFailedToast);
+      }
+    },
+    [centerUi, taskLinks.unlinkNote],
+  );
+
   if (isLoading) {
     return (
       <PageShell
@@ -503,6 +651,13 @@ export default function TasksPage() {
         description={ui.pageDescription}
         actions={
           <>
+            <TaskViewSwitcher
+              copy={ui}
+              centerCopy={centerUi}
+              value={viewMode}
+              modes={VALID_VIEW_MODES}
+              onChange={handleViewModeChange}
+            />
             <OSControl aria-label={centerUi.openInsights} disabled>
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{centerUi.openInsights}</span>
@@ -546,6 +701,13 @@ export default function TasksPage() {
         description={ui.pageDescription}
         actions={
           <>
+            <TaskViewSwitcher
+              copy={ui}
+              centerCopy={centerUi}
+              value={viewMode}
+              modes={VALID_VIEW_MODES}
+              onChange={handleViewModeChange}
+            />
             <OSControl
               aria-label={centerUi.openInsights}
               onClick={() => setShowInsights(true)}
@@ -584,15 +746,16 @@ export default function TasksPage() {
             sortDirection={sortDirection}
             onSortChange={handleSortChange}
             onToggleSortDirection={toggleSortDirection}
-            viewMode={viewMode}
-            viewModes={VALID_VIEW_MODES}
-            onViewModeChange={handleViewModeChange}
             activeFilterCount={activeFilterCount}
             onOpenAdvanced={() => setShowAdvanced(true)}
             onClearAll={clearFilters}
           />
 
-          <TaskSavedFilters copy={centerUi} filter={filter} onApply={applyFilter} />
+          <TaskSavedFilters
+            copy={centerUi}
+            filter={filter}
+            onApply={applyFilter}
+          />
 
           {filteredTasks.length === 0 ? (
             <EmptyState
@@ -699,14 +862,93 @@ export default function TasksPage() {
           selectedTask ? (
             <TaskConnections
               task={selectedTask}
-              goals={(goals ?? []).map((g) => ({ id: g.id, name: g.name }))}
+              goals={goalOptions}
+              papers={paperOptions}
+              ideas={ideaOptions}
+              knowledge={knowledgeOptions}
+              notes={noteOptions}
               linkedGoalIds={taskLinks.goalsForTask(selectedTask.id)}
+              linkedPaperIds={selectedConnectionIds.papers}
+              linkedIdeaIds={selectedConnectionIds.ideas}
+              linkedKnowledgeIds={selectedConnectionIds.knowledge}
+              linkedNoteIds={selectedConnectionIds.notes}
               onAddToPlan={() => handleAddToPlan(selectedTask)}
               addingToPlan={taskLinks.addToPlan.isPending}
               onLinkGoal={(goalId) => handleLinkGoal(selectedTask.id, goalId)}
               onUnlinkGoal={(goalId) =>
                 handleUnlinkGoal(selectedTask.id, goalId)
               }
+              onLinkPaper={(paperId) =>
+                handleLinkKnowledge(
+                  selectedTask.id,
+                  paperId,
+                  paperOptions.find((item) => item.id === paperId)?.title ??
+                    centerUi.unavailableLinkedItem,
+                )
+              }
+              onUnlinkPaper={(paperId) =>
+                handleUnlinkKnowledge(
+                  selectedTask.id,
+                  paperId,
+                  paperOptions.find((item) => item.id === paperId)?.title ??
+                    centerUi.unavailableLinkedItem,
+                )
+              }
+              onLinkIdea={(ideaId) =>
+                handleLinkIdea(
+                  selectedTask.id,
+                  ideaId,
+                  ideaOptions.find((item) => item.id === ideaId)?.title ??
+                    centerUi.unavailableLinkedItem,
+                )
+              }
+              onUnlinkIdea={(ideaId) =>
+                handleUnlinkIdea(
+                  selectedTask.id,
+                  ideaId,
+                  ideaOptions.find((item) => item.id === ideaId)?.title ??
+                    centerUi.unavailableLinkedItem,
+                )
+              }
+              onLinkKnowledge={(knowledgeId) =>
+                handleLinkKnowledge(
+                  selectedTask.id,
+                  knowledgeId,
+                  knowledgeOptions.find((item) => item.id === knowledgeId)
+                    ?.title ?? centerUi.unavailableLinkedItem,
+                )
+              }
+              onUnlinkKnowledge={(knowledgeId) =>
+                handleUnlinkKnowledge(
+                  selectedTask.id,
+                  knowledgeId,
+                  knowledgeOptions.find((item) => item.id === knowledgeId)
+                    ?.title ?? centerUi.unavailableLinkedItem,
+                )
+              }
+              onUnlinkNote={(noteId) =>
+                handleUnlinkNote(
+                  selectedTask.id,
+                  noteId,
+                  noteOptions.find((item) => item.id === noteId)?.title ??
+                    centerUi.unavailableLinkedItem,
+                )
+              }
+              goalPending={
+                taskLinks.linkGoal.isPending || taskLinks.unlinkGoal.isPending
+              }
+              paperPending={
+                taskLinks.linkKnowledge.isPending ||
+                taskLinks.unlinkKnowledge.isPending
+              }
+              ideaPending={
+                taskLinks.linkIdea.isPending || taskLinks.unlinkIdea.isPending
+              }
+              knowledgePending={
+                taskLinks.linkKnowledge.isPending ||
+                taskLinks.unlinkKnowledge.isPending
+              }
+              notePending={taskLinks.unlinkNote.isPending}
               copy={centerUi}
             />
           ) : undefined

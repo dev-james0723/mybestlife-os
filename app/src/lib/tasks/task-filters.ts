@@ -6,6 +6,7 @@
 import type { Task } from "@/types/database";
 import { isTaskAiGenerated } from "./ai-origin";
 import { resolveTaskCategory } from "./task-categories";
+import { parseTaskLinkMetadata } from "./task-link-metadata";
 import {
   matchesDatePreset,
   matchesDeadlineFilter,
@@ -80,13 +81,17 @@ export const EMPTY_TASK_FILTER: TaskFilterState = {
 export function matchesSearch(task: Task, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
+  const { userVisibleTags } = parseTaskLinkMetadata(
+    task.tags,
+    task.description,
+  );
   const haystack = [
     task.title,
     task.description ?? "",
     task.project?.name ?? "",
     task.source ?? "",
     resolveTaskCategory(task) ?? "",
-    ...(task.tags ?? []),
+    ...userVisibleTags,
   ]
     .join(" ")
     .toLowerCase();
@@ -106,7 +111,11 @@ export function matchesCategory(task: Task, category: string): boolean {
 
 export function matchesTags(task: Task, tags: string[]): boolean {
   if (tags.length === 0) return true;
-  const taskTags = new Set((task.tags ?? []).map((t) => t.toLowerCase()));
+  const taskTags = new Set(
+    parseTaskLinkMetadata(task.tags, task.description).userVisibleTags.map(
+      (t) => t.toLowerCase(),
+    ),
+  );
   return tags.some((t) => taskTags.has(t.toLowerCase()));
 }
 
@@ -157,14 +166,36 @@ export function filterTasks(
   return tasks.filter((task) => {
     if (!matchesSearch(task, state.search)) return false;
     if (state.status !== "all" && task.status !== state.status) return false;
-    if (state.priority !== "all" && task.priority !== state.priority) return false;
+    if (state.priority !== "all" && task.priority !== state.priority)
+      return false;
     if (!matchesProject(task, state.project)) return false;
     if (!matchesCategory(task, state.category)) return false;
-    if (!matchesDeadlineFilter(task.due_date, state.deadline, now, state.deadlineRange))
+    if (
+      !matchesDeadlineFilter(
+        task.due_date,
+        state.deadline,
+        now,
+        state.deadlineRange,
+      )
+    )
       return false;
-    if (!matchesDatePreset(task.created_at, state.created, now, state.createdRange))
+    if (
+      !matchesDatePreset(
+        task.created_at,
+        state.created,
+        now,
+        state.createdRange,
+      )
+    )
       return false;
-    if (!matchesDatePreset(task.updated_at, state.updated, now, state.updatedRange))
+    if (
+      !matchesDatePreset(
+        task.updated_at,
+        state.updated,
+        now,
+        state.updatedRange,
+      )
+    )
       return false;
     if (!matchesTags(task, state.tags)) return false;
     if (!matchesLinked(task, state.linked, ctx)) return false;
@@ -195,7 +226,11 @@ export function hasActiveFilters(state: TaskFilterState): boolean {
 export function collectTaskTags(tasks: Task[]): string[] {
   const set = new Set<string>();
   for (const task of tasks) {
-    for (const tag of task.tags ?? []) {
+    const { userVisibleTags } = parseTaskLinkMetadata(
+      task.tags,
+      task.description,
+    );
+    for (const tag of userVisibleTags) {
       const t = tag.trim();
       if (t) set.add(t);
     }

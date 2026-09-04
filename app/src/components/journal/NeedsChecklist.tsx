@@ -65,11 +65,11 @@ export function NeedsChecklist({
               aria-checked={active}
               onClick={() => toggle(need)}
               className={cn(
-                "rounded-md border px-3 py-2 text-sm transition-colors outline-none",
+                "min-h-11 rounded-xl border px-3 py-2 text-sm transition-colors outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring",
                 active
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  ? "border-primary/60 bg-primary/10 text-foreground"
+                  : "border-border/75 bg-card/50 text-muted-foreground hover:bg-card/75",
               )}
             >
               {copy.needName[need]}

@@ -15,17 +15,22 @@
  */
 import type { DailyPlan, DailyPlanTask, Idea, Task } from "@/types/database";
 import type { BrainRelationRow } from "@/types/brain";
+import type { ConstellationNodeType } from "@/types/constellation";
 import type { HabitLink } from "@/lib/habits/types";
 import type { TaskLinkFlags } from "./task-filters";
 
 import { dailyPlansRepository } from "@/lib/repositories/daily-plans";
 import { tasksRepository } from "@/lib/repositories/tasks";
 import { brainRelationsRepository } from "@/lib/brain/queries";
+import { parseTaskLinkMetadata } from "./task-link-metadata";
 
 export type { TaskLinkFlags };
 
 /** Relation type used for the goal <-> task edge in `brain_relations`. */
 export const GOAL_TASK_RELATION = "goal_task" as const;
+
+/** Relation type used for a manually-created task <-> knowledge edge. */
+export const TASK_KNOWLEDGE_RELATION = "explicit_link" as const;
 
 const DEFAULT_PLAN_START = "06:00";
 const DEFAULT_PLAN_END = "22:00";
@@ -127,18 +132,97 @@ export function findGoalTaskRelationId(
   return null;
 }
 
-function taskHasKnowledgeRelation(
+function isVisibleRelation(relation: BrainRelationRow): boolean {
+  return relation.status !== "hidden" && relation.status !== "dismissed";
+}
+
+/**
+ * Entity ids connected to a task through a visible `brain_relations` edge.
+ * Both edge directions are accepted because older graph writers did not use a
+ * single canonical direction.
+ */
+export function linkedEntityIdsForTask(
   relations: BrainRelationRow[],
   taskId: string,
-): boolean {
-  return relations.some((r) => {
-    const taskSide =
-      (r.source_type === "task" && r.source_id === taskId) ||
-      (r.target_type === "task" && r.target_id === taskId);
-    const knowledgeSide =
-      r.source_type === "knowledge" || r.target_type === "knowledge";
-    return taskSide && knowledgeSide;
-  });
+  entityType: ConstellationNodeType,
+): string[] {
+  const ids = new Set<string>();
+  for (const relation of relations) {
+    if (!isVisibleRelation(relation)) continue;
+    if (
+      relation.source_type === "task" &&
+      relation.source_id === taskId &&
+      relation.target_type === entityType
+    ) {
+      ids.add(relation.target_id);
+    } else if (
+      relation.target_type === "task" &&
+      relation.target_id === taskId &&
+      relation.source_type === entityType
+    ) {
+      ids.add(relation.source_id);
+    }
+  }
+  return [...ids];
+}
+
+/** Every visible relation row joining one task and one concrete entity. */
+export function findTaskEntityRelationIds(
+  relations: BrainRelationRow[],
+  taskId: string,
+  entityType: ConstellationNodeType,
+  entityId: string,
+): string[] {
+  return relations
+    .filter((relation) => {
+      if (!isVisibleRelation(relation)) return false;
+      const forward =
+        relation.source_type === "task" &&
+        relation.source_id === taskId &&
+        relation.target_type === entityType &&
+        relation.target_id === entityId;
+      const reverse =
+        relation.target_type === "task" &&
+        relation.target_id === taskId &&
+        relation.source_type === entityType &&
+        relation.source_id === entityId;
+      return forward || reverse;
+    })
+    .map((relation) => relation.id);
+}
+
+type TaskReferenceFields = Pick<Task, "id" | "tags" | "description">;
+
+/** Idea ids from the canonical idea arrays plus legacy task metadata. */
+export function ideaIdsForTask(
+  ideas: Idea[],
+  task: TaskReferenceFields,
+): string[] {
+  const ids = new Set(
+    parseTaskLinkMetadata(task.tags, task.description).ideaIds,
+  );
+  for (const idea of ideas) {
+    if ((idea.linked_task_ids ?? []).includes(task.id)) ids.add(idea.id);
+  }
+  return [...ids];
+}
+
+/** Knowledge ids from graph edges plus legacy task metadata. */
+export function knowledgeIdsForTask(
+  relations: BrainRelationRow[],
+  task: TaskReferenceFields,
+): string[] {
+  const ids = new Set(linkedEntityIdsForTask(relations, task.id, "knowledge"));
+  for (const id of parseTaskLinkMetadata(task.tags, task.description)
+    .knowledgeIds) {
+    ids.add(id);
+  }
+  return [...ids];
+}
+
+/** Note links currently exist only as legacy task metadata. */
+export function noteIdsForTask(task: TaskReferenceFields): string[] {
+  return parseTaskLinkMetadata(task.tags, task.description).noteIds;
 }
 
 export type TaskLinkIndexInput = {
@@ -156,8 +240,13 @@ export type TaskLinkIndexInput = {
 export function buildTaskLinkIndex(
   input: TaskLinkIndexInput,
 ): Map<string, TaskLinkFlags> {
-  const { tasks, dailyPlans = [], brainRelations = [], habitLinks = [], ideas = [] } =
-    input;
+  const {
+    tasks,
+    dailyPlans = [],
+    brainRelations = [],
+    habitLinks = [],
+    ideas = [],
+  } = input;
 
   const plannerIds = collectPlannerTaskIds(dailyPlans);
 
@@ -180,13 +269,16 @@ export function buildTaskLinkIndex(
 
   const index = new Map<string, TaskLinkFlags>();
   for (const task of tasks) {
+    const metadata = parseTaskLinkMetadata(task.tags, task.description);
     const flags: TaskLinkFlags = {
       planner: plannerIds.has(task.id),
       calendar: Boolean(task.calendar_event_id),
       goal: goalTaskIds.has(task.id),
       habit: habitTaskIds.has(task.id),
-      idea: ideaTaskIds.has(task.id),
-      knowledge: taskHasKnowledgeRelation(brainRelations, task.id),
+      idea: ideaTaskIds.has(task.id) || metadata.ideaIds.length > 0,
+      knowledge:
+        linkedEntityIdsForTask(brainRelations, task.id, "knowledge").length >
+          0 || metadata.knowledgeIds.length > 0,
     };
     index.set(task.id, flags);
   }
@@ -208,6 +300,22 @@ export async function linkTaskToGoal(
     target_id: taskId,
     target_type: "task",
     relation_type: GOAL_TASK_RELATION,
+    status: "confirmed",
+    is_manual: true,
+  });
+}
+
+/** Create (or confirm) a task <-> knowledge link in `brain_relations`. */
+export async function linkTaskToKnowledge(
+  taskId: string,
+  knowledgeId: string,
+): Promise<BrainRelationRow> {
+  return brainRelationsRepository.upsert({
+    source_id: taskId,
+    source_type: "task",
+    target_id: knowledgeId,
+    target_type: "knowledge",
+    relation_type: TASK_KNOWLEDGE_RELATION,
     status: "confirmed",
     is_manual: true,
   });

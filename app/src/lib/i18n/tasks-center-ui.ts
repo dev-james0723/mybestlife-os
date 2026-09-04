@@ -227,6 +227,21 @@ export type TasksCenterUiCopy = {
   goalLinkedToast: string;
   goalUnlinkedToast: string;
   noGoalsAvailable: string;
+  linkPapersLabel: string;
+  linkPaperPlaceholder: string;
+  noPapersAvailable: string;
+  linkIdeasLabel: string;
+  linkIdeaPlaceholder: string;
+  noIdeasAvailable: string;
+  linkKnowledgeLabel: string;
+  linkKnowledgePlaceholder: string;
+  noKnowledgeAvailable: string;
+  linkNotesLabel: string;
+  unavailableLinkedItem: string;
+  linkedItemCount: (n: number) => string;
+  removeLinkedItemAria: (name: string) => string;
+  linkedItemToast: (kind: string) => string;
+  unlinkedItemToast: (kind: string) => string;
   connectionsFailedToast: string;
 };
 
@@ -431,6 +446,21 @@ const en: TasksCenterUiCopy = {
   goalLinkedToast: "Goal linked",
   goalUnlinkedToast: "Goal unlinked",
   noGoalsAvailable: "No goals yet",
+  linkPapersLabel: "Linked papers",
+  linkPaperPlaceholder: "Link a paper…",
+  noPapersAvailable: "No papers available",
+  linkIdeasLabel: "Linked ideas",
+  linkIdeaPlaceholder: "Link an idea…",
+  noIdeasAvailable: "No ideas available",
+  linkKnowledgeLabel: "Linked knowledge",
+  linkKnowledgePlaceholder: "Link knowledge…",
+  noKnowledgeAvailable: "No knowledge available",
+  linkNotesLabel: "Linked notes",
+  unavailableLinkedItem: "Linked item unavailable",
+  linkedItemCount: (n) => `${n} linked`,
+  removeLinkedItemAria: (name) => `Unlink ${name}`,
+  linkedItemToast: (kind) => `${kind} linked`,
+  unlinkedItemToast: (kind) => `${kind} unlinked`,
   connectionsFailedToast: "Could not update connection",
 };
 
@@ -634,6 +664,21 @@ const zhTW: DeepPartial<TasksCenterUiCopy> = {
   goalLinkedToast: "已關聯目標",
   goalUnlinkedToast: "已取消關聯",
   noGoalsAvailable: "尚無目標",
+  linkPapersLabel: "關聯論文",
+  linkPaperPlaceholder: "關聯一篇論文…",
+  noPapersAvailable: "沒有可用論文",
+  linkIdeasLabel: "關聯靈感",
+  linkIdeaPlaceholder: "關聯一個靈感…",
+  noIdeasAvailable: "沒有可用靈感",
+  linkKnowledgeLabel: "關聯知識",
+  linkKnowledgePlaceholder: "關聯知識…",
+  noKnowledgeAvailable: "沒有可用知識",
+  linkNotesLabel: "關聯筆記",
+  unavailableLinkedItem: "關聯項目無法讀取",
+  linkedItemCount: (n) => `已關聯 ${n} 項`,
+  removeLinkedItemAria: (name) => `取消關聯 ${name}`,
+  linkedItemToast: (kind) => `已關聯${kind}`,
+  unlinkedItemToast: (kind) => `已取消關聯${kind}`,
   connectionsFailedToast: "無法更新關聯",
 };
 
@@ -837,6 +882,21 @@ const zhCN: DeepPartial<TasksCenterUiCopy> = {
   goalLinkedToast: "已关联目标",
   goalUnlinkedToast: "已取消关联",
   noGoalsAvailable: "暂无目标",
+  linkPapersLabel: "关联论文",
+  linkPaperPlaceholder: "关联一篇论文…",
+  noPapersAvailable: "没有可用论文",
+  linkIdeasLabel: "关联灵感",
+  linkIdeaPlaceholder: "关联一个灵感…",
+  noIdeasAvailable: "没有可用灵感",
+  linkKnowledgeLabel: "关联知识",
+  linkKnowledgePlaceholder: "关联知识…",
+  noKnowledgeAvailable: "没有可用知识",
+  linkNotesLabel: "关联笔记",
+  unavailableLinkedItem: "关联项目无法读取",
+  linkedItemCount: (n) => `已关联 ${n} 项`,
+  removeLinkedItemAria: (name) => `取消关联 ${name}`,
+  linkedItemToast: (kind) => `已关联${kind}`,
+  unlinkedItemToast: (kind) => `已取消关联${kind}`,
   connectionsFailedToast: "无法更新关联",
 };
 
@@ -850,7 +910,10 @@ export function getTasksCenterUiCopy(locale: AppLocale): TasksCenterUiCopy {
 }
 
 /** Localized label for a board deadline lane / `deadlineBucketToColumn` value. */
-export function deadlineColumnLabel(copy: TasksCenterUiCopy, column: string): string {
+export function deadlineColumnLabel(
+  copy: TasksCenterUiCopy,
+  column: string,
+): string {
   switch (column) {
     case "overdue":
       return copy.deadlineColOverdue;
@@ -868,7 +931,10 @@ export function deadlineColumnLabel(copy: TasksCenterUiCopy, column: string): st
 }
 
 /** Localized label for a category value (canonical -> i18n, custom -> title case). */
-export function taskCategoryLabel(copy: TasksCenterUiCopy, value: string): string {
+export function taskCategoryLabel(
+  copy: TasksCenterUiCopy,
+  value: string,
+): string {
   switch (value) {
     case "academic":
       return copy.categoryAcademic;

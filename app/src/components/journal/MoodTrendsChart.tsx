@@ -20,7 +20,7 @@ const MIN_ENTRIES_FOR_CHART = 3;
 const ChartInner = dynamic(() => import("./MoodTrendsChartInner"), {
   ssr: false,
   loading: () => (
-    <div className="h-56 w-full animate-pulse rounded-md bg-muted/50" />
+    <div className="h-56 w-full animate-pulse rounded-xl bg-muted/50" />
   ),
 });
 
@@ -43,7 +43,7 @@ export function MoodTrendsChart({ entries, copy }: MoodTrendsChartProps) {
         render={
           <button
             type="button"
-            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
+            className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border/75 bg-card/60 px-3 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         }
       >
@@ -58,7 +58,7 @@ export function MoodTrendsChart({ entries, copy }: MoodTrendsChartProps) {
         <div
           role="group"
           aria-label="Time range"
-          className="inline-flex rounded-md border border-border bg-background p-0.5"
+          className="inline-flex rounded-xl border border-border/75 bg-card/60 p-1"
         >
           <Button
             type="button"

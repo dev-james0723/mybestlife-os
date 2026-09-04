@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-09-03T15:52:59.387Z",
+  "execution": "mocked authenticated browser validation",
+  "checks": [
+    "centered modal geometry",
+    "desktop dark theme",
+    "390px mobile layout",
+    "rich Markdown semantics and safe external links",
+    "contextual starter prompt",
+    "error retry without duplicate user turn",
+    "new conversation reset",
+    "Shift+Enter newline",
+    "Escape dismissal"
+  ],
+  "results": [
+    {
+      "viewport": "desktop",
+      "box": {
+        "x": 210,
+        "y": 72,
+        "width": 860,
+        "height": 756
+      },
+      "centerDelta": 0,
+      "richText": true,
+      "screenshot": "test-results/mind-council-chat/desktop.png"
+    },
+    {
+      "viewport": "mobile",
+      "box": {
+        "x": 16,
+        "y": 67.5234375,
+        "width": 358,
+        "height": 708.953125
+      },
+      "centerDelta": 0,
+      "richText": true,
+      "screenshot": "test-results/mind-council-chat/mobile.png"
+    }
+  ]
+}

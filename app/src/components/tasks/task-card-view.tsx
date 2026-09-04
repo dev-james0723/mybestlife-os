@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatDateShort } from "@/lib/utils/date";
 import type { Task } from "@/types/database";
 import type { TaskLinkFlags } from "@/lib/tasks/task-filters";
+import { parseTaskLinkMetadata } from "@/lib/tasks/task-link-metadata";
 import { toTaskViewModel } from "@/lib/tasks/task-view-model";
 import {
   taskPriorityLabel,
@@ -36,21 +37,16 @@ export interface TaskViewCommonProps {
 
 function TagRow({ tags }: { tags: string[] }) {
   if (!tags || tags.length === 0) return null;
-  const shown = tags.slice(0, 4);
-  const extra = tags.length - shown.length;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1">
-      {shown.map((tag) => (
+      {tags.map((tag) => (
         <span
           key={tag}
-          className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
+          className="max-w-full break-words rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
         >
           #{tag}
         </span>
       ))}
-      {extra > 0 && (
-        <span className="text-[11px] text-muted-foreground/70">+{extra}</span>
-      )}
     </div>
   );
 }
@@ -68,7 +64,15 @@ export function TaskCardView({
     <div className="space-y-3">
       {tasks.map((task) => {
         const vm = toTaskViewModel(task, now);
-        const flags = buildTaskIndicatorFlags(task, vm, getLinkFlags?.(task.id));
+        const flags = buildTaskIndicatorFlags(
+          task,
+          vm,
+          getLinkFlags?.(task.id),
+        );
+        const { userVisibleTags } = parseTaskLinkMetadata(
+          task.tags,
+          task.description,
+        );
         return (
           <EntityCard
             key={task.id}
@@ -143,7 +147,7 @@ export function TaskCardView({
               )}
               <TaskLinkIndicators flags={{ ...flags, project: false }} />
             </div>
-            <TagRow tags={task.tags} />
+            <TagRow tags={userVisibleTags} />
           </EntityCard>
         );
       })}

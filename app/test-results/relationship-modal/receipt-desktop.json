@@ -1,0 +1,92 @@
+{
+  "state": "mocked-browser-validation",
+  "passed": true,
+  "route": "/en/relationship?tab=relationship",
+  "viewportChecks": [
+    "1280x900"
+  ],
+  "assertions": {
+    "favoriteControl": true,
+    "addToRoleModelControl": true,
+    "socialRowCanBeAdded": true,
+    "linkedProjectGoalNoteIdeaOptions": true,
+    "cardContactActions": true,
+    "cardFavoriteIndependent": true,
+    "cardKeyboardOpen": true,
+    "horizontalOverflow": false,
+    "footerReachable": true,
+    "detailCloseDeleteOverlap": false
+  },
+  "results": [
+    {
+      "viewport": "1280x900",
+      "controls": {
+        "favorite": true,
+        "addToRoleModel": true,
+        "socialRowAdded": true,
+        "cardPhoneLink": true,
+        "cardEmailLink": true,
+        "cardSocialLink": true,
+        "cardFavoriteIndependent": true
+      },
+      "cardOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "linkedCheckboxes": [
+        "Relationship Modal Project",
+        "Deepen Important Relationships",
+        "Conversation Follow-up Notes",
+        "Thoughtful Birthday Ritual"
+      ],
+      "footerScroll": {
+        "scrollTop": 1848,
+        "maxScrollTop": 1848
+      },
+      "formOverflow": {
+        "globalOverflow": {
+          "document": 0,
+          "body": 0
+        },
+        "dialogOverflow": {
+          "content": 0,
+          "viewport": 0
+        }
+      },
+      "detailOverflow": {
+        "globalOverflow": {
+          "document": 0,
+          "body": 0
+        },
+        "dialogOverflow": {
+          "content": 0,
+          "viewport": 0
+        }
+      },
+      "closeDeleteOverlap": false,
+      "mockedTables": [
+        "garden_daily_log",
+        "goals",
+        "grateful_things",
+        "habit_completions",
+        "habits",
+        "ideas",
+        "notes",
+        "projects",
+        "quotes",
+        "relationship_ai_reports",
+        "relationship_images",
+        "relationship_interactions",
+        "relationship_promises",
+        "relationships",
+        "role_models",
+        "tasks",
+        "user_garden"
+      ],
+      "consoleErrors": [
+        "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>\n      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>\n        <LoadingBoundary name=\"relationship/\" loading={null}>\n          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>\n            <RedirectBoundary>\n              <RedirectErrorBoundary router={{...}}>\n                <InnerLayoutRouter url=\"/en/relati...\" tree={[...]} params={{locale:\"en\"}} cacheNode={{rsc:{...}, ...}} ...>\n                  <SegmentViewNode type=\"page\" pagePath=\"[locale]/(...\">\n                    <SegmentTrieNode>\n                    <RelationshipPage>\n                      <Suspense fallback={{...}}>\n                        <RelationshipShell>\n                          <PageShell title=\"People\" description=\"The people...\">\n                            <div className=\"space-y-8 ...\">\n                              <div\n                                data-motion-reveal={true}\n-                               style={{visibility:\"inherit\",opacity:\"1\"}}\n                              >\n                              <div\n                                data-motion-reveal={true}\n-                               style={{visibility:\"inherit\",opacity:\"1\"}}\n                              >\n                  ...\n                ...\n      ...\n"
+      ],
+      "pageErrors": []
+    }
+  ]
+}

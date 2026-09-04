@@ -308,7 +308,7 @@ function detectHighStimulationTiming(
 }
 
 function detectTinyTaskLoad(tasks: ClassifiedPlanTask[], mode: PlanningMode): ScoredIssue[] {
-  if (mode !== "time-block" || tasks.length < 8) return [];
+  if (mode === "free" || tasks.length < 8) return [];
   const tiny = tasks.filter((task) => task.blocks <= 1);
   if (tiny.length < 6 || tiny.length / tasks.length < 0.4) return [];
   return [

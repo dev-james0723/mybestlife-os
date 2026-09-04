@@ -39,7 +39,7 @@ export function TopicExtrasForm({
   };
 
   return (
-    <div className="space-y-4 rounded-md border border-border/60 bg-muted/20 p-4">
+    <div className="space-y-4 rounded-xl border border-border/70 bg-card/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.52)]">
       {cfg.extras.map((field) => (
         <ExtraFieldRenderer
           key={field.key}

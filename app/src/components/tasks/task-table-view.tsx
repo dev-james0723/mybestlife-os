@@ -47,7 +47,11 @@ import {
   type TasksCenterUiCopy,
 } from "@/lib/i18n/tasks-center-ui";
 import { toTaskViewModel } from "@/lib/tasks/task-view-model";
-import { NO_PROJECT_FILTER, type TaskLinkFlags } from "@/lib/tasks/task-filters";
+import {
+  NO_PROJECT_FILTER,
+  type TaskLinkFlags,
+} from "@/lib/tasks/task-filters";
+import { parseTaskLinkMetadata } from "@/lib/tasks/task-link-metadata";
 import type { SortDirection, TaskSortKey } from "@/lib/tasks/task-sort";
 
 const COLUMNS_STORAGE_KEY = "tasks:tableColumns";
@@ -248,9 +252,8 @@ export function TaskTableView({
   getLinkFlags,
 }: TaskTableViewProps) {
   void getLinkFlags;
-  const [visible, setVisible] = useState<Record<ColumnKey, boolean>>(
-    readStoredVisibility,
-  );
+  const [visible, setVisible] =
+    useState<Record<ColumnKey, boolean>>(readStoredVisibility);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
@@ -487,6 +490,10 @@ export function TaskTableView({
               {tasks.map((task) => {
                 const vm = toTaskViewModel(task, now);
                 const isSelected = activeSelected.has(task.id);
+                const { userVisibleTags } = parseTaskLinkMetadata(
+                  task.tags,
+                  task.description,
+                );
                 return (
                   <tr
                     key={task.id}
@@ -544,7 +551,9 @@ export function TaskTableView({
                         {vm.hasProject ? (
                           <span className="inline-flex min-w-0 items-center gap-1">
                             <Folder className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{task.project?.name}</span>
+                            <span className="truncate">
+                              {task.project?.name}
+                            </span>
                           </span>
                         ) : (
                           <span className="text-xs italic text-muted-foreground/60">
@@ -565,23 +574,34 @@ export function TaskTableView({
                       </td>
                     )}
                     {visible.priority && (
-                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <td
+                        className="px-3 py-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <InlineSelect
                           value={task.priority}
                           options={priorityOptions}
-                          onChange={(v) => onUpdateTask(task.id, { priority: v })}
+                          onChange={(v) =>
+                            onUpdateTask(task.id, { priority: v })
+                          }
                           renderValue={(v) => (
                             <StatusBadge
                               variant="priority"
                               value={v}
-                              label={taskPriorityLabel(copy, v as Task["priority"])}
+                              label={taskPriorityLabel(
+                                copy,
+                                v as Task["priority"],
+                              )}
                             />
                           )}
                         />
                       </td>
                     )}
                     {visible.status && (
-                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <td
+                        className="px-3 py-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <InlineSelect
                           value={task.status}
                           options={statusOptions}
@@ -624,7 +644,7 @@ export function TaskTableView({
                     {visible.tags && (
                       <td className="max-w-[160px] px-3 py-2">
                         <div className="flex flex-wrap gap-1">
-                          {(task.tags ?? []).slice(0, 3).map((tag) => (
+                          {userVisibleTags.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
                               className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"

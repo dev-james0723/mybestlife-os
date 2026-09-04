@@ -98,13 +98,13 @@ export function EmotionPicker({
             }
             transition={{ type: "spring", stiffness: 360, damping: 28 }}
             className={cn(
-              "group relative flex flex-col items-start gap-1 rounded-lg border-2 p-4 text-left transition-colors",
+              "group relative flex min-h-24 flex-col items-start gap-1 rounded-xl border p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] transition-[background,border-color,transform] sm:p-4",
               "outline-none focus-visible:ring-2 focus-visible:ring-ring",
               selected
                 ? cn(meta.bgSelectedClass, meta.borderClass)
                 : cn(
                     meta.bgClass,
-                    "border-transparent hover:border-border",
+                    "border-border/65 hover:border-border",
                   ),
               disabled && "cursor-not-allowed opacity-50",
             )}

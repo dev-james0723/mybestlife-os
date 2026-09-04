@@ -54,6 +54,47 @@ const VIEW_ICONS: Record<TaskViewMode, LucideIcon> = {
   kanban: Columns3,
 };
 
+interface TaskViewSwitcherProps {
+  copy: TasksUiCopy;
+  centerCopy: TasksCenterUiCopy;
+  value: TaskViewMode;
+  modes: TaskViewMode[];
+  onChange: (mode: TaskViewMode) => void;
+}
+
+/** Compact view switcher for the Tasks page header. */
+export function TaskViewSwitcher({
+  copy,
+  centerCopy,
+  value,
+  modes,
+  onChange,
+}: TaskViewSwitcherProps) {
+  const labels: Record<TaskViewMode, string> = {
+    list: centerCopy.viewList,
+    grid: centerCopy.viewGrid,
+    table: centerCopy.viewTable,
+    kanban: centerCopy.viewBoard,
+  };
+
+  return (
+    <OSSegmentedControl
+      items={modes.map((mode) => ({
+        id: mode,
+        label: labels[mode],
+        icon: VIEW_ICONS[mode],
+        ariaLabel: labels[mode],
+      }))}
+      value={value}
+      onValueChange={onChange}
+      ariaLabel={`${copy.pageTitle} view`}
+      className="shrink-0"
+      labelMode="sr-only"
+      layoutId="tasks-view-mode-pill"
+    />
+  );
+}
+
 type Option = { value: string; label: string };
 
 function QuickSelect({
@@ -103,9 +144,6 @@ interface TaskControlBarProps {
   sortDirection: SortDirection;
   onSortChange: (key: TaskSortKey) => void;
   onToggleSortDirection: () => void;
-  viewMode: TaskViewMode;
-  viewModes: TaskViewMode[];
-  onViewModeChange: (mode: TaskViewMode) => void;
   activeFilterCount: number;
   onOpenAdvanced?: () => void;
   onClearAll?: () => void;
@@ -121,9 +159,6 @@ export function TaskControlBar({
   sortDirection,
   onSortChange,
   onToggleSortDirection,
-  viewMode,
-  viewModes,
-  onViewModeChange,
   activeFilterCount,
   onOpenAdvanced,
   onClearAll,
@@ -145,13 +180,6 @@ export function TaskControlBar({
     ...getTaskSortOptions(copy),
     { value: "updated_at", label: centerCopy.sortUpdatedAt },
   ];
-  const viewLabels: Record<TaskViewMode, string> = {
-    list: centerCopy.viewList,
-    grid: centerCopy.viewGrid,
-    table: centerCopy.viewTable,
-    kanban: centerCopy.viewBoard,
-  };
-
   const showClear = activeFilterCount > 0 || filter.search.trim().length > 0;
 
   return (
@@ -169,7 +197,9 @@ export function TaskControlBar({
       <QuickSelect
         value={filter.status}
         options={statusOptions}
-        onChange={(v) => onFilterChange({ status: v as TaskFilterState["status"] })}
+        onChange={(v) =>
+          onFilterChange({ status: v as TaskFilterState["status"] })
+        }
         width="w-[140px]"
       />
       <QuickSelect
@@ -225,25 +255,6 @@ export function TaskControlBar({
           <X className="h-4 w-4" />
           {centerCopy.clearAll}
         </OSControl>
-      )}
-
-      {viewModes.length > 1 && (
-        <div className="ml-1 flex shrink-0 border-l border-border/60 pl-3 lg:ml-auto">
-          <OSSegmentedControl
-            items={viewModes.map((mode) => ({
-              id: mode,
-              label: viewLabels[mode],
-              icon: VIEW_ICONS[mode],
-              ariaLabel: viewLabels[mode],
-            }))}
-            value={viewMode}
-            onValueChange={onViewModeChange}
-            ariaLabel={`${copy.pageTitle} view`}
-            className="shrink-0"
-            labelMode="sr-only"
-            layoutId="tasks-view-mode-pill"
-          />
-        </div>
       )}
     </div>
   );

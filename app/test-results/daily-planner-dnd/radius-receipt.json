@@ -1,0 +1,90 @@
+{
+  "state": "passed",
+  "execution": "local dev-bypass browser validation with an isolated localStorage fixture",
+  "startedAt": "2026-09-04T05:05:36.395Z",
+  "finishedAt": "2026-09-04T05:05:48.589Z",
+  "baseUrl": "http://127.0.0.1:3100",
+  "browserExecutable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "viewportChecks": [
+    "1280x900 mouse + keyboard",
+    "390x844 emulated touch"
+  ],
+  "fixture": {
+    "planDate": "2026-09-04",
+    "storageKey": "mylifeos:daily-plan:v1:2026-09-04",
+    "taskIds": [
+      "planner-a",
+      "planner-b",
+      "planner-c",
+      "planner-d",
+      "planner-e"
+    ]
+  },
+  "checks": [
+    "desktop mouse drag moves Task A below Task B",
+    "the reordered plan is written to localStorage and survives reload",
+    "a vertical touch gesture on the card body scrolls without reordering",
+    "closed mobile task cards are opaque so hidden swipe actions cannot bleed through",
+    "the visible wrapper keeps a 14 px radius while the hidden panel is concentrically inset by 1 px",
+    "the opaque mobile foreground overscans the right clip edge by 2 px",
+    "fully closed mobile cards return to transform:none to avoid a composited color seam",
+    "a bounded long press on the dedicated mobile handle moves Task B to Task E without scrolling",
+    "the dedicated handle supports Space/ArrowDown/Space keyboard reordering"
+  ],
+  "selectors": [
+    "data-planner-task-id",
+    "data-drag-handle",
+    "data-dnd-state"
+  ],
+  "results": [
+    {
+      "name": "mobile-body-scroll",
+      "passed": true,
+      "assertions": {
+        "closedCardBackground": "rgb(255, 255, 255)",
+        "closedCardTransform": "none",
+        "closedCornerRadii": {
+          "wrapper": "14px",
+          "card": "0px",
+          "actionPanel": "13px"
+        },
+        "closedLayerWidths": {
+          "wrapper": 324,
+          "card": 326
+        },
+        "closedActionInsets": {
+          "top": 1,
+          "right": 1,
+          "bottom": 1
+        },
+        "bodyTouchActionChain": [
+          "auto",
+          "auto",
+          "auto",
+          "pan-y",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto",
+          "auto"
+        ],
+        "bodyScrollDeltaPx": 200,
+        "orderUnchanged": true
+      },
+      "diagnostics": {
+        "pageErrors": [],
+        "consoleErrors": [],
+        "requestFailures": [],
+        "startupRetries": []
+      }
+    }
+  ]
+}

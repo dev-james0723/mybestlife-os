@@ -35,6 +35,8 @@ export type MindSkill = {
   lensSubtitle: string;
   /** Seeds internal system instructions (style, heuristics, boundaries) */
   systemPromptHint: string;
+  /** Optional lens-specific prompts surfaced by the chat empty state. */
+  starterPrompts?: string[];
   /** Upstream Agent Skill package (vendored under bundled-skills/) */
   skillSource?: MindSkillSource;
   /** Shown in the featured row on the dashboard */

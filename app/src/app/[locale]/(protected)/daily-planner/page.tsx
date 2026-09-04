@@ -24,11 +24,11 @@ import {
 } from "@/lib/i18n/daily-planner-ui";
 import { getDateFnsLocale } from "@/lib/i18n/date-locale";
 import { getPreTaskRitualUiCopy } from "@/lib/i18n/pre-task-ritual-ui";
+import { getAutoPlanUiCopy } from "@/lib/i18n/auto-plan-ui";
 
 import Link from "next/link";
 import { useDailyPlan, useUpsertDailyPlan } from "@/hooks/use-daily-plans";
 import { useLocalizedPath } from "@/hooks/use-locale-slug";
-import { getCalendarUiCopy } from "@/lib/i18n/calendar-ui";
 import {
   useScheduleTemplates,
   useCreateScheduleTemplate,
@@ -37,7 +37,10 @@ import {
 import { useTasks } from "@/hooks/use-tasks";
 import { useIdeas } from "@/hooks/use-ideas";
 import { useNotes } from "@/hooks/use-notes";
-import { useKnowledgeItemsPickList, type KnowledgePickRow } from "@/hooks/use-knowledge-items-pick";
+import {
+  useKnowledgeItemsPickList,
+  type KnowledgePickRow,
+} from "@/hooks/use-knowledge-items-pick";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfile, useUpdateProfile } from "@/hooks/use-settings";
 import {
@@ -86,6 +89,28 @@ import { resolveQuickTaskRaster } from "@/lib/daily-planner/quick-task-preset-me
 import type { QuickTaskPresetKey } from "@/lib/daily-planner/quick-task-preset-meta";
 import { normalizeQuickTasksJson } from "@/lib/daily-planner/normalize-quick-task";
 import { applyPlanQualitySuggestedChange } from "@/lib/daily-planner/focus/plan-quality";
+import { resequenceTimeBlockTasks } from "@/lib/daily-planner/reorder-time-block-tasks";
+import {
+  clearKeyedSaveTimer,
+  replaceKeyedSaveTimer,
+  type KeyedSaveTimerMap,
+} from "@/lib/daily-planner/keyed-save-timers";
+import {
+  calendarBusyMinutesToSchedulerWindows,
+  materializeAutoPlanCandidatePool,
+  reconstructAcceptedAutoPlanSchedule,
+  scheduledTasksToDailyPlanTasks,
+  selectAutoPlanCandidates,
+} from "@/lib/daily-planner/auto-plan-adapter";
+import {
+  buildAutoPlanSchedule,
+  type AutoPlanLockedTask,
+  type AutoPlanSchedule,
+} from "@/lib/daily-planner/auto-plan-scheduler";
+import {
+  parseTaskLinkMetadata,
+  stripTaskLinkMetadataSections,
+} from "@/lib/tasks/task-link-metadata";
 import {
   categoryToFocusSessionType,
   classifiableFromDailyPlanTask,
@@ -132,12 +157,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import { PreTaskRitualModal } from "@/components/tasks/pre-task-ritual-modal";
 import { ImportTasksDialog } from "@/components/daily-planner/import-tasks-dialog";
@@ -155,6 +174,10 @@ import {
 import { FreePlanBoard } from "@/components/daily-planner/free-plan-board";
 import { FreePlanSummary } from "@/components/daily-planner/free-plan-summary";
 import { PlanningModeToggle } from "@/components/daily-planner/planning-mode-toggle";
+import {
+  AutoPlanPanel,
+  type AutoPlanResult as AutoPlanPanelResult,
+} from "@/components/daily-planner/auto-plan-panel";
 import { TodayFocusStrip } from "@/components/daily-planner/focus/today-focus-strip";
 import { PlanQualityDrawer } from "@/components/daily-planner/focus/plan-quality-drawer";
 import {
@@ -212,9 +235,22 @@ const DEFAULT_PLAN_START_TIME = "06:00";
 const DEFAULT_PLAN_END_TIME = "23:00";
 
 const TASK_COLORS = [
-  "#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6",
-  "#10b981", "#f97316", "#3b82f6", "#ef4444", "#84cc16",
-  "#06b6d4", "#a855f7", "#e879f9", "#fb923c", "#34d399", "#60a5fa",
+  "#6366f1",
+  "#ec4899",
+  "#14b8a6",
+  "#f59e0b",
+  "#8b5cf6",
+  "#10b981",
+  "#f97316",
+  "#3b82f6",
+  "#ef4444",
+  "#84cc16",
+  "#06b6d4",
+  "#a855f7",
+  "#e879f9",
+  "#fb923c",
+  "#34d399",
+  "#60a5fa",
 ];
 
 type QuickTaskNameKey = keyof Pick<
@@ -238,16 +274,76 @@ const BUILTIN_QUICK_TASK_DEFS: {
   iconClass: string;
   presetKey: QuickTaskPresetKey;
 }[] = [
-  { nameKey: "quickBreakfast", icon: Coffee, blocks: 3, iconClass: "text-amber-700 dark:text-amber-300", presetKey: "breakfast" },
-  { nameKey: "quickLunch", icon: UtensilsCrossed, blocks: 6, iconClass: "text-emerald-700 dark:text-emerald-300", presetKey: "lunch" },
-  { nameKey: "quickDinner", icon: Soup, blocks: 8, iconClass: "text-orange-700 dark:text-orange-300", presetKey: "dinner" },
-  { nameKey: "quickGym", icon: Dumbbell, blocks: 9, iconClass: "text-rose-700 dark:text-rose-300", presetKey: "gym" },
-  { nameKey: "quickMeditate", icon: Wind, blocks: 1, iconClass: "text-sky-700 dark:text-sky-300", presetKey: "meditate" },
-  { nameKey: "quickImprovise", icon: Drama, blocks: 3, iconClass: "text-violet-700 dark:text-violet-300", presetKey: "improvise" },
-  { nameKey: "quickRead", icon: BookOpen, blocks: 2, iconClass: "text-indigo-700 dark:text-indigo-300", presetKey: "read" },
-  { nameKey: "quickJournal", icon: NotebookPen, blocks: 1, iconClass: "text-teal-700 dark:text-teal-300", presetKey: "journal" },
-  { nameKey: "quickBreak", icon: Timer, blocks: 1, iconClass: "text-amber-800/90 dark:text-amber-200/90", presetKey: "break" },
-  { nameKey: "quickRest", icon: Moon, blocks: 2, iconClass: "text-slate-600 dark:text-slate-300", presetKey: "rest" },
+  {
+    nameKey: "quickBreakfast",
+    icon: Coffee,
+    blocks: 3,
+    iconClass: "text-amber-700 dark:text-amber-300",
+    presetKey: "breakfast",
+  },
+  {
+    nameKey: "quickLunch",
+    icon: UtensilsCrossed,
+    blocks: 6,
+    iconClass: "text-emerald-700 dark:text-emerald-300",
+    presetKey: "lunch",
+  },
+  {
+    nameKey: "quickDinner",
+    icon: Soup,
+    blocks: 8,
+    iconClass: "text-orange-700 dark:text-orange-300",
+    presetKey: "dinner",
+  },
+  {
+    nameKey: "quickGym",
+    icon: Dumbbell,
+    blocks: 9,
+    iconClass: "text-rose-700 dark:text-rose-300",
+    presetKey: "gym",
+  },
+  {
+    nameKey: "quickMeditate",
+    icon: Wind,
+    blocks: 1,
+    iconClass: "text-sky-700 dark:text-sky-300",
+    presetKey: "meditate",
+  },
+  {
+    nameKey: "quickImprovise",
+    icon: Drama,
+    blocks: 3,
+    iconClass: "text-violet-700 dark:text-violet-300",
+    presetKey: "improvise",
+  },
+  {
+    nameKey: "quickRead",
+    icon: BookOpen,
+    blocks: 2,
+    iconClass: "text-indigo-700 dark:text-indigo-300",
+    presetKey: "read",
+  },
+  {
+    nameKey: "quickJournal",
+    icon: NotebookPen,
+    blocks: 1,
+    iconClass: "text-teal-700 dark:text-teal-300",
+    presetKey: "journal",
+  },
+  {
+    nameKey: "quickBreak",
+    icon: Timer,
+    blocks: 1,
+    iconClass: "text-amber-800/90 dark:text-amber-200/90",
+    presetKey: "break",
+  },
+  {
+    nameKey: "quickRest",
+    icon: Moon,
+    blocks: 2,
+    iconClass: "text-slate-600 dark:text-slate-300",
+    presetKey: "rest",
+  },
 ];
 
 function buildDefaultQuickTasks(copy: DailyPlannerUiCopy): QuickTaskDef[] {
@@ -261,15 +357,22 @@ function buildDefaultQuickTasks(copy: DailyPlannerUiCopy): QuickTaskDef[] {
   }));
 }
 
-function quickTaskIdentity(task: Pick<QuickTaskDef, "name" | "blocks" | "presetKey">): string {
+function quickTaskIdentity(
+  task: Pick<QuickTaskDef, "name" | "blocks" | "presetKey">,
+): string {
   return `${task.name}\u0001${task.blocks}\u0001${task.presetKey ?? ""}`;
 }
 
-function quickTaskJobKey(task: Pick<QuickTaskDef, "name" | "blocks" | "presetKey">, index: number): string {
+function quickTaskJobKey(
+  task: Pick<QuickTaskDef, "name" | "blocks" | "presetKey">,
+  index: number,
+): string {
   return `${index}\u0001${quickTaskIdentity(task)}`;
 }
 
-async function requestQuickTaskIcon(task: Pick<QuickTaskDef, "name" | "presetKey">): Promise<string> {
+async function requestQuickTaskIcon(
+  task: Pick<QuickTaskDef, "name" | "presetKey">,
+): Promise<string> {
   const res = await fetch("/api/quick-tasks/generate-icon", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -278,9 +381,15 @@ async function requestQuickTaskIcon(task: Pick<QuickTaskDef, "name" | "presetKey
       ...(task.presetKey ? { presetKey: task.presetKey } : {}),
     }),
   });
-  const data = (await res.json()) as { iconUrl?: string; error?: string; detail?: string };
+  const data = (await res.json()) as {
+    iconUrl?: string;
+    error?: string;
+    detail?: string;
+  };
   if (!res.ok || !data.iconUrl) {
-    throw new Error(data.detail || data.error || "quick_task_icon_generation_failed");
+    throw new Error(
+      data.detail || data.error || "quick_task_icon_generation_failed",
+    );
   }
   return data.iconUrl;
 }
@@ -301,7 +410,10 @@ function trimPreviewPlain(text: string, max: number): string {
 function smartLinkIdeaDisplayLabel(
   idea: Idea | undefined,
   loading: boolean,
-  copy: Pick<DailyPlannerUiCopy, "smartLinkMissingIdea" | "smartLinkLoading" | "untitledTask">,
+  copy: Pick<
+    DailyPlannerUiCopy,
+    "smartLinkMissingIdea" | "smartLinkLoading" | "untitledTask"
+  >,
 ): string {
   if (loading && !idea) return copy.smartLinkLoading;
   if (!idea) return copy.smartLinkMissingIdea;
@@ -314,7 +426,10 @@ function smartLinkIdeaDisplayLabel(
 function smartLinkNoteDisplayLabel(
   note: Note | undefined,
   loading: boolean,
-  copy: Pick<DailyPlannerUiCopy, "smartLinkMissingNote" | "smartLinkLoading" | "untitledTask">,
+  copy: Pick<
+    DailyPlannerUiCopy,
+    "smartLinkMissingNote" | "smartLinkLoading" | "untitledTask"
+  >,
 ): string {
   if (loading && !note) return copy.smartLinkLoading;
   if (!note) return copy.smartLinkMissingNote;
@@ -327,7 +442,10 @@ function smartLinkNoteDisplayLabel(
 function smartLinkKnowledgeDisplayLabel(
   row: KnowledgePickRow | undefined,
   loading: boolean,
-  copy: Pick<DailyPlannerUiCopy, "smartLinkMissingKnowledge" | "smartLinkLoading" | "untitledTask">,
+  copy: Pick<
+    DailyPlannerUiCopy,
+    "smartLinkMissingKnowledge" | "smartLinkLoading" | "untitledTask"
+  >,
 ): string {
   if (loading && !row) return copy.smartLinkLoading;
   if (!row) return copy.smartLinkMissingKnowledge;
@@ -343,7 +461,9 @@ type PlannerLocaleContextValue = {
   formatTime12: (totalMin: number) => string;
 };
 
-const PlannerLocaleContext = createContext<PlannerLocaleContextValue | null>(null);
+const PlannerLocaleContext = createContext<PlannerLocaleContextValue | null>(
+  null,
+);
 
 function buildFormatTime12(periodAm: string, periodPm: string) {
   return (totalMin: number) => {
@@ -362,7 +482,8 @@ function usePlannerLocale(): PlannerLocaleContextValue {
     const copy = getDailyPlannerUiCopy(language);
     return {
       copy,
-      fmtBlocks: (blocks) => formatBlockDurationLocalized(copy, blocks, DEFAULT_BLOCK_MINUTES),
+      fmtBlocks: (blocks) =>
+        formatBlockDurationLocalized(copy, blocks, DEFAULT_BLOCK_MINUTES),
       dateLocale: getDateFnsLocale(language),
       formatTime12: buildFormatTime12(copy.periodAm, copy.periodPm),
     };
@@ -381,7 +502,10 @@ function parseTimeToMinutes(time: string): number {
  * `endMin` may exceed `24 * 60` when the range crosses into the next day — the End Time is
  * always interpreted as the *next* such wall-clock that occurs after the Start Time.
  */
-function resolvePlanRange(startTime: string, endTime: string): {
+function resolvePlanRange(
+  startTime: string,
+  endTime: string,
+): {
   startMin: number;
   endMin: number;
   durationMin: number;
@@ -397,17 +521,25 @@ function resolvePlanRange(startTime: string, endTime: string): {
   return { startMin, endMin, durationMin: endMin - startMin, endDayOffset };
 }
 
-function isoFromPlanMinute(planDate: string, minuteFromPlanMidnight: number): string {
+function isoFromPlanMinute(
+  planDate: string,
+  minuteFromPlanMidnight: number,
+): string {
   const date = new Date(`${planDate}T00:00:00`);
   date.setMinutes(date.getMinutes() + minuteFromPlanMidnight);
   return date.toISOString();
 }
 
-function normalizeFocusType(type: FocusSessionType | undefined): FocusSessionType {
+function normalizeFocusType(
+  type: FocusSessionType | undefined,
+): FocusSessionType {
   return type ?? "deep_work";
 }
 
-function focusTypeForDailyTask(task: DailyPlanTask, linkedTasks: Task[]): FocusSessionType {
+function focusTypeForDailyTask(
+  task: DailyPlanTask,
+  linkedTasks: Task[],
+): FocusSessionType {
   return normalizeFocusType(
     categoryToFocusSessionType(
       classifyPlannerTask(classifiableFromDailyPlanTask(task, linkedTasks)),
@@ -415,7 +547,10 @@ function focusTypeForDailyTask(task: DailyPlanTask, linkedTasks: Task[]): FocusS
   );
 }
 
-function focusTypeForFreeTask(task: FreePlanTask, linkedTasks: Task[]): FocusSessionType {
+function focusTypeForFreeTask(
+  task: FreePlanTask,
+  linkedTasks: Task[],
+): FocusSessionType {
   return normalizeFocusType(
     categoryToFocusSessionType(
       classifyPlannerTask(classifiableFromFreePlanTask(task, linkedTasks)),
@@ -423,31 +558,28 @@ function focusTypeForFreeTask(task: FreePlanTask, linkedTasks: Task[]): FocusSes
   );
 }
 
-/** Stable client-only id used by dnd-kit to identify rows across re-renders. */
-function newUid(): string {
-  return `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function newPlannerTaskId(): string {
   return `pt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Ensure a plan task has a client-only `_uid`. The field is stripped before
- *  the plan is persisted (see `stripUid`). */
+/** Use the persisted planner id as the dnd-kit row id across saves/refetches. */
 function withUid(t: DailyPlanTask): LocalPlanTask {
-  const local = t as LocalPlanTask;
+  const plannerTaskId = t.plannerTaskId ?? newPlannerTaskId();
   return {
     ...t,
-    plannerTaskId: t.plannerTaskId ?? newPlannerTaskId(),
-    _uid: local._uid ?? newUid(),
+    plannerTaskId,
+    _uid: plannerTaskId,
   };
 }
 
 /** Drop the in-memory `_uid` field before persisting; ensure stable planner ids for Google sync. */
 function persistTask(t: LocalPlanTask, order: number): DailyPlanTask {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _uid, ...rest } = t;
-  return { ...rest, plannerTaskId: rest.plannerTaskId ?? newPlannerTaskId(), order };
+  return {
+    ...rest,
+    plannerTaskId: rest.plannerTaskId ?? _uid ?? newPlannerTaskId(),
+    order,
+  };
 }
 
 function persistTasks(tasks: LocalPlanTask[]): DailyPlanTask[] {
@@ -608,7 +740,9 @@ function TimeWheelPicker({
 
   return (
     <div className="space-y-1">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <Label className="text-xs font-medium text-muted-foreground">
+        {label}
+      </Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
@@ -645,7 +779,9 @@ function TimeWheelPicker({
               />
             </div>
             <div className="w-14">
-              <p className="text-[10px] text-center text-muted-foreground mb-1">&nbsp;</p>
+              <p className="text-[10px] text-center text-muted-foreground mb-1">
+                &nbsp;
+              </p>
               <WheelColumn
                 items={[...ampmItems]}
                 value={ampm}
@@ -686,10 +822,7 @@ function TimeWheelPicker({
               "planner-crosses-day-hint-wobble",
             )}
           >
-            <TriangleAlert
-              className="size-3 shrink-0 opacity-90"
-              aria-hidden
-            />
+            <TriangleAlert className="size-3 shrink-0 opacity-90" aria-hidden />
             <span>{hint}</span>
           </p>
         </div>
@@ -778,7 +911,11 @@ function QuickTaskButton({
 }) {
   const { fmtBlocks, copy } = usePlannerLocale();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [rasterState, setRasterState] = useState({ key: "", urlIdx: 0, failed: false });
+  const [rasterState, setRasterState] = useState({
+    key: "",
+    urlIdx: 0,
+    failed: false,
+  });
 
   const rasterUrls = useMemo(
     () => [task.iconSrc, task.iconRasterFallback].filter(Boolean) as string[],
@@ -789,9 +926,11 @@ function QuickTaskButton({
   const TaskIcon = task.icon;
   const rasterKey = rasterUrls.join("\u0001");
   const urlIdx = rasterState.key === rasterKey ? rasterState.urlIdx : 0;
-  const rasterFailed = rasterState.key === rasterKey ? rasterState.failed : false;
+  const rasterFailed =
+    rasterState.key === rasterKey ? rasterState.failed : false;
   const activeRasterSrc = rasterUrls[urlIdx];
-  const showRaster = rasterUrls.length > 0 && !rasterFailed && Boolean(activeRasterSrc);
+  const showRaster =
+    rasterUrls.length > 0 && !rasterFailed && Boolean(activeRasterSrc);
 
   return (
     <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
@@ -817,23 +956,35 @@ function QuickTaskButton({
                 loading="lazy"
                 onError={() => {
                   if (urlIdx < rasterUrls.length - 1) {
-                    setRasterState({ key: rasterKey, urlIdx: urlIdx + 1, failed: false });
+                    setRasterState({
+                      key: rasterKey,
+                      urlIdx: urlIdx + 1,
+                      failed: false,
+                    });
                   } else {
                     setRasterState({ key: rasterKey, urlIdx, failed: true });
                   }
                 }}
               />
             ) : (
-              <TaskIcon className={cn("size-4", task.iconClass)} strokeWidth={2} />
+              <TaskIcon
+                className={cn("size-4", task.iconClass)}
+                strokeWidth={2}
+              />
             )}
             {isIconGenerating ? (
               <span className="absolute inset-0 flex items-center justify-center bg-background/45 backdrop-blur-[2px]">
-                <Loader2 className="size-3.5 animate-spin text-foreground/80" aria-hidden />
+                <Loader2
+                  className="size-3.5 animate-spin text-foreground/80"
+                  aria-hidden
+                />
               </span>
             ) : null}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-foreground">{task.name}</p>
+            <p className="truncate text-xs font-semibold text-foreground">
+              {task.name}
+            </p>
             <p className="text-[10px] font-medium text-muted-foreground">
               {task.blocks}b · {duration}
             </p>
@@ -875,7 +1026,9 @@ function QuickTaskButton({
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />
               )}
-              {isIconGenerating ? copy.quickTaskIconGenerating : copy.quickTaskIconRegenerate}
+              {isIconGenerating
+                ? copy.quickTaskIconGenerating
+                : copy.quickTaskIconRegenerate}
             </button>
           </>
         )}
@@ -900,7 +1053,6 @@ function QuickTaskButton({
   );
 }
 
-
 /* ══════════════════════════════════════════════════════════
    MAIN PAGE
    ══════════════════════════════════════════════════════════ */
@@ -909,15 +1061,15 @@ export default function DailyPlannerPage() {
   const isMobile = useIsMobile();
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getDailyPlannerUiCopy(language), [language]);
-  const calendarCopy = useMemo(() => getCalendarUiCopy(language), [language]);
-  const calendarAiPlanHref = useLocalizedPath("/calendar?tab=ai-plan");
+  const autoPlanCopy = useMemo(() => getAutoPlanUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const queryClient = useQueryClient();
   const blockMinutes = profile?.block_minutes ?? DEFAULT_BLOCK_MINUTES;
   const fmtBlocks = useCallback(
-    (blocks: number) => formatBlockDurationLocalized(copy, blocks, blockMinutes),
+    (blocks: number) =>
+      formatBlockDurationLocalized(copy, blocks, blockMinutes),
     [copy, blockMinutes],
   );
   const formatTime12 = useMemo(
@@ -947,8 +1099,8 @@ export default function DailyPlannerPage() {
   const [endTime, setEndTime] = useState(DEFAULT_PLAN_END_TIME);
 
   // ── tasks state ──
-  // We keep `_uid` on each in-memory task so dnd-kit can identify rows
-  // stably across re-renders; `stripUid` removes it before persistence.
+  // `_uid` mirrors persisted `plannerTaskId`, keeping dnd-kit row identity
+  // stable even when a successful save invalidates and refetches the plan.
   const [tasks, setTasks] = useState<LocalPlanTask[]>([]);
   /**
    * Free Planning bucket. Lives alongside `tasks` (time-block) on the same daily_plans row so
@@ -956,6 +1108,18 @@ export default function DailyPlannerPage() {
    */
   const [freeTasks, setFreeTasks] = useState<FreePlanTask[]>([]);
   const [mode, setMode] = useState<PlanningMode>("time-block");
+  const pendingAdaptiveModeDateRef = useRef<string | null>(null);
+  const [autoPlanPreview, setAutoPlanPreview] = useState<AutoPlanSchedule | null>(null);
+  const [autoPlanBufferMinutes, setAutoPlanBufferMinutes] = useState(10);
+  const [autoPlanBusyWindowCount, setAutoPlanBusyWindowCount] = useState<
+    number | undefined
+  >(undefined);
+  const [autoPlanCalendarState, setAutoPlanCalendarState] = useState<
+    "connected" | "disconnected" | "unavailable"
+  >("disconnected");
+  const [autoPlanBuilding, setAutoPlanBuilding] = useState(false);
+  const [autoPlanAccepting, setAutoPlanAccepting] = useState(false);
+  const autoPlanPreviewDateRef = useRef(dateStr);
   const [scheduleImageUrl, setScheduleImageUrl] = useState<string | null>(null);
   const scheduleImageUrlRef = useRef<string | null>(null);
 
@@ -992,6 +1156,16 @@ export default function DailyPlannerPage() {
   const gcalPushPending = usePlannerGcalPushPending();
   const plannerGcalLastPushIso = usePlannerGcalLastPushAt(dateStr);
   const { items: calendarItemsForDate } = useItemsForDate(dateStr);
+  const autoPlanCandidateSelection = useMemo(
+    () =>
+      selectAutoPlanCandidates({
+        freeTasks,
+        timedTasks: tasks,
+        linkedTasks: allTasks,
+        blockMinutes,
+      }),
+    [allTasks, blockMinutes, freeTasks, tasks],
+  );
   const { data: focusPreferences } = useFocusPreferences();
   const { data: activeFocusSession } = useActiveFocusSession();
   const { data: focusSessions = [] } = usePlannerFocusSessions(dateStr);
@@ -1050,10 +1224,14 @@ export default function DailyPlannerPage() {
           credentials: "include",
         });
         if (!res.ok) return;
-        await queryClient.invalidateQueries({ queryKey: ["daily-plans", dateStr] });
+        await queryClient.invalidateQueries({
+          queryKey: ["daily-plans", dateStr],
+        });
         await queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
         await queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: ["google-calendar-task-sync", dateStr] });
+        await queryClient.invalidateQueries({
+          queryKey: ["google-calendar-task-sync", dateStr],
+        });
       } catch {
         /* ignore */
       }
@@ -1068,48 +1246,106 @@ export default function DailyPlannerPage() {
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(intervalId);
     };
-  }, [gcalStatus?.connected, gcalStatus?.syncEnabled, mode, dateStr, queryClient]);
+  }, [
+    gcalStatus?.connected,
+    gcalStatus?.syncEnabled,
+    mode,
+    dateStr,
+    queryClient,
+  ]);
+
+  const timeBlockSaveTimersRef = useRef<KeyedSaveTimerMap>(new Map());
+  const freePlanSaveTimersRef = useRef<KeyedSaveTimerMap>(new Map());
+  const taskSaveRevisionRef = useRef(0);
+  const pendingTaskSaveRevisionsRef = useRef(new Map<string, number>());
+  const displayedTaskDateRef = useRef(dateStr);
+  const [taskHydrationEpoch, setTaskHydrationEpoch] = useState(0);
 
   // ── sync server → local on plan load or date change ──
   useEffect(() => {
+    if (autoPlanPreviewDateRef.current !== dateStr) {
+      autoPlanPreviewDateRef.current = dateStr;
+      pendingAdaptiveModeDateRef.current = null;
+      setAutoPlanPreview(null);
+      setAutoPlanBusyWindowCount(undefined);
+    }
+    const keepOptimisticTasks =
+      pendingTaskSaveRevisionsRef.current.has(dateStr) &&
+      displayedTaskDateRef.current === dateStr;
     if (plan) {
-      setTasks((plan.tasks ?? []).map(withUid));
+      if (!keepOptimisticTasks) {
+        displayedTaskDateRef.current = dateStr;
+        setTasks((plan.tasks ?? []).map(withUid));
+      }
       setFreeTasks(plan.free_tasks ?? []);
-      setMode(plan.mode ?? "time-block");
+      if (pendingAdaptiveModeDateRef.current !== dateStr) {
+        setMode(plan.mode ?? "time-block");
+      }
       setStartTime(plan.start_time ?? DEFAULT_PLAN_START_TIME);
       setEndTime(plan.end_time ?? DEFAULT_PLAN_END_TIME);
       const img = plan.schedule_image_url ?? null;
       setScheduleImageUrl(img);
       scheduleImageUrlRef.current = img;
     } else {
-      setTasks([]);
+      if (!keepOptimisticTasks) {
+        displayedTaskDateRef.current = dateStr;
+        setTasks([]);
+      }
       setFreeTasks([]);
-      setMode("time-block");
+      if (pendingAdaptiveModeDateRef.current !== dateStr) {
+        setMode("time-block");
+      }
       setStartTime(DEFAULT_PLAN_START_TIME);
       setEndTime(DEFAULT_PLAN_END_TIME);
       setScheduleImageUrl(null);
       scheduleImageUrlRef.current = null;
     }
-  }, [plan, dateStr]);
+  }, [plan, dateStr, taskHydrationEpoch]);
+
+  const beginTaskSave = useCallback(() => {
+    const revision = ++taskSaveRevisionRef.current;
+    pendingTaskSaveRevisionsRef.current.set(dateStr, revision);
+    return revision;
+  }, [dateStr]);
+
+  const finishTaskSave = useCallback(
+    (revision: number) => {
+      if (pendingTaskSaveRevisionsRef.current.get(dateStr) !== revision) return;
+      pendingTaskSaveRevisionsRef.current.delete(dateStr);
+      // Re-run hydration against the authoritative cache after success, or
+      // roll back to it after an error.
+      setTaskHydrationEpoch((current) => current + 1);
+    },
+    [dateStr],
+  );
 
   // ── auto-save (debounced) ──
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
   const savePlan = useCallback(
     (t: LocalPlanTask[], st: string, et: string) => {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        upsertPlan.mutate({
-          plan_date: dateStr,
-          start_time: st,
-          end_time: et,
-          // strip client-only `_uid` before persistence
-          tasks: persistTasks(t),
-          schedule_image_url: scheduleImageUrlRef.current,
-        });
-      }, 600);
+      const revision = beginTaskSave();
+      const scheduleImageUrl = scheduleImageUrlRef.current;
+      replaceKeyedSaveTimer(
+        timeBlockSaveTimersRef.current,
+        dateStr,
+        () => {
+          void upsertPlan
+            .mutateAsync({
+              plan_date: dateStr,
+              start_time: st,
+              end_time: et,
+              // strip client-only `_uid` before persistence
+              tasks: persistTasks(t),
+              schedule_image_url: scheduleImageUrl,
+            })
+            .catch(() => {
+              // useUpsertDailyPlan owns the localized error toast.
+            })
+            .finally(() => finishTaskSave(revision));
+        },
+        600,
+      );
     },
-    [dateStr, upsertPlan],
+    [beginTaskSave, dateStr, finishTaskSave, upsertPlan],
   );
 
   /**
@@ -1118,16 +1354,21 @@ export default function DailyPlannerPage() {
    */
   const saveFreePlan = useCallback(
     (next: FreePlanTask[], st: string, et: string) => {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        upsertPlan.mutate({
-          plan_date: dateStr,
-          start_time: st,
-          end_time: et,
-          free_tasks: next,
-          schedule_image_url: scheduleImageUrlRef.current,
-        });
-      }, 600);
+      const scheduleImageUrl = scheduleImageUrlRef.current;
+      replaceKeyedSaveTimer(
+        freePlanSaveTimersRef.current,
+        dateStr,
+        () => {
+          upsertPlan.mutate({
+            plan_date: dateStr,
+            start_time: st,
+            end_time: et,
+            free_tasks: next,
+            schedule_image_url: scheduleImageUrl,
+          });
+        },
+        600,
+      );
     },
     [dateStr, upsertPlan],
   );
@@ -1135,16 +1376,21 @@ export default function DailyPlannerPage() {
   /** Skip debounce: persist Time Block rows immediately (faster Google Calendar push). */
   const flushTimeBlockPlan = useCallback(
     async (nextTasks: LocalPlanTask[], st: string, et: string) => {
-      clearTimeout(saveTimerRef.current);
-      await upsertPlan.mutateAsync({
-        plan_date: dateStr,
-        start_time: st,
-        end_time: et,
-        tasks: persistTasks(nextTasks),
-        schedule_image_url: scheduleImageUrlRef.current,
-      });
+      clearKeyedSaveTimer(timeBlockSaveTimersRef.current, dateStr);
+      const revision = beginTaskSave();
+      try {
+        await upsertPlan.mutateAsync({
+          plan_date: dateStr,
+          start_time: st,
+          end_time: et,
+          tasks: persistTasks(nextTasks),
+          schedule_image_url: scheduleImageUrlRef.current,
+        });
+      } finally {
+        finishTaskSave(revision);
+      }
     },
-    [dateStr, upsertPlan],
+    [beginTaskSave, dateStr, finishTaskSave, upsertPlan],
   );
 
   /** Immediate (non-debounced) write of just the active mode — toggles should feel instant. */
@@ -1163,10 +1409,18 @@ export default function DailyPlannerPage() {
 
   const updateTasks = useCallback(
     (next: LocalPlanTask[]) => {
-      setTasks(next);
-      savePlan(next, startTime, endTime);
+      const resequenced =
+        mode === "time-block"
+          ? resequenceTimeBlockTasks(next, {
+              planStartTime: startTime,
+              blockMinutes,
+            }).map(withUid)
+          : next.map(withUid);
+      displayedTaskDateRef.current = dateStr;
+      setTasks(resequenced);
+      savePlan(resequenced, startTime, endTime);
     },
-    [savePlan, startTime, endTime],
+    [blockMinutes, dateStr, endTime, mode, savePlan, startTime],
   );
 
   const updateFreeTasks = useCallback(
@@ -1181,36 +1435,82 @@ export default function DailyPlannerPage() {
     (next: PlanningMode) => {
       if (next === mode) return;
       setMode(next);
+      if (next !== "adaptive") {
+        setAutoPlanPreview(null);
+        setAutoPlanBusyWindowCount(undefined);
+      }
+      const hasAcceptedAdaptiveTasks = tasks.some(
+        (task) => task.scheduleSource === "adaptive",
+      );
+      if (next === "adaptive" && !hasAcceptedAdaptiveTasks) {
+        pendingAdaptiveModeDateRef.current = dateStr;
+        return;
+      }
+      pendingAdaptiveModeDateRef.current = null;
       persistMode(next, startTime, endTime);
     },
-    [mode, persistMode, startTime, endTime],
+    [dateStr, endTime, mode, persistMode, startTime, tasks],
   );
 
   const handleStartTimeChange = useCallback(
     (v: string) => {
       setStartTime(v);
+      if (
+        mode === "adaptive" &&
+        pendingAdaptiveModeDateRef.current === dateStr
+      ) {
+        setAutoPlanPreview(null);
+        setAutoPlanBusyWindowCount(undefined);
+        return;
+      }
       // Save through whichever bucket is active — the other bucket is left untouched.
       if (mode === "free") {
         saveFreePlan(freeTasks, v, endTime);
       } else {
-        clearTimeout(saveTimerRef.current);
-        void flushTimeBlockPlan(tasks, v, endTime);
+        const resequenced =
+          mode === "time-block"
+            ? resequenceTimeBlockTasks(tasks, {
+                planStartTime: v,
+                blockMinutes,
+              }).map(withUid)
+            : tasks;
+        displayedTaskDateRef.current = dateStr;
+        setTasks(resequenced);
+        clearKeyedSaveTimer(timeBlockSaveTimersRef.current, dateStr);
+        void flushTimeBlockPlan(resequenced, v, endTime);
       }
     },
-    [mode, saveFreePlan, flushTimeBlockPlan, tasks, freeTasks, endTime],
+    [
+      blockMinutes,
+      dateStr,
+      mode,
+      saveFreePlan,
+      flushTimeBlockPlan,
+      tasks,
+      freeTasks,
+      endTime,
+    ],
   );
 
   const handleEndTimeChange = useCallback(
     (v: string) => {
       setEndTime(v);
+      if (
+        mode === "adaptive" &&
+        pendingAdaptiveModeDateRef.current === dateStr
+      ) {
+        setAutoPlanPreview(null);
+        setAutoPlanBusyWindowCount(undefined);
+        return;
+      }
       if (mode === "free") {
         saveFreePlan(freeTasks, startTime, v);
       } else {
-        clearTimeout(saveTimerRef.current);
+        clearKeyedSaveTimer(timeBlockSaveTimersRef.current, dateStr);
         void flushTimeBlockPlan(tasks, startTime, v);
       }
     },
-    [mode, saveFreePlan, flushTimeBlockPlan, tasks, freeTasks, startTime],
+    [dateStr, mode, saveFreePlan, flushTimeBlockPlan, tasks, freeTasks, startTime],
   );
 
   // ── per-row presentation metadata for the sortable list ──
@@ -1223,6 +1523,7 @@ export default function DailyPlannerPage() {
     const offsets: number[] = new Array(tasks.length);
     let acc = 0;
     for (let i = 0; i < tasks.length; i++) {
+      acc += (tasks[i].gapBlocks ?? 0) * blockMinutes;
       offsets[i] = acc;
       acc += (tasks[i].blocks ?? 1) * blockMinutes;
     }
@@ -1245,6 +1546,290 @@ export default function DailyPlannerPage() {
     [startTime, endTime],
   );
 
+  const acceptedAutoPlanSchedule = useMemo(() => {
+    if (!tasks.some((task) => task.scheduleSource === "adaptive")) return null;
+    return reconstructAcceptedAutoPlanSchedule({
+      tasks,
+      candidates: autoPlanCandidateSelection.candidates,
+      startTime,
+      endTime,
+      blockMinutes,
+    });
+  }, [
+    autoPlanCandidateSelection.candidates,
+    blockMinutes,
+    endTime,
+    startTime,
+    tasks,
+  ]);
+  const currentAutoPlanSchedule = autoPlanPreview ?? acceptedAutoPlanSchedule;
+  const autoPlanState = useMemo(() => {
+    if (autoPlanPreview) return "preview" as const;
+    if (acceptedAutoPlanSchedule) return "accepted" as const;
+    if (autoPlanCandidateSelection.candidates.length === 0) return "empty" as const;
+    return "ready" as const;
+  }, [
+    acceptedAutoPlanSchedule,
+    autoPlanCandidateSelection.candidates.length,
+    autoPlanPreview,
+  ]);
+  const autoPlanPanelResult = useMemo<AutoPlanPanelResult | null>(() => {
+    if (!currentAutoPlanSchedule) return null;
+    return {
+      scheduledItems: currentAutoPlanSchedule.scheduledTasks.map((task) => ({
+        id: task.id,
+        title: task.title,
+        start: `${formatTime12(
+          parseTimeToMinutes(task.startTime),
+        )}${task.startDayOffset > 0 ? ` ${copy.nextDayBadge}` : ""}`,
+        end: `${formatTime12(
+          parseTimeToMinutes(task.endTime),
+        )}${task.endDayOffset > 0 ? ` ${copy.nextDayBadge}` : ""}`,
+        priority: task.priority ?? "should",
+        locked: task.locked,
+      })),
+      unscheduledItems: currentAutoPlanSchedule.unscheduledTasks.map((task) => ({
+        id: task.id,
+        title: task.title,
+        reason: autoPlanCopy.unscheduledInsufficientTime,
+      })),
+      availableMinutes: currentAutoPlanSchedule.availableMinutes,
+      plannedMinutes: currentAutoPlanSchedule.plannedMinutes,
+      remainingMinutes: currentAutoPlanSchedule.remainingMinutes,
+    };
+  }, [autoPlanCopy, copy.nextDayBadge, currentAutoPlanSchedule, formatTime12]);
+  const effectiveAutoPlanCalendarState =
+    autoPlanBusyWindowCount === undefined
+      ? gcalStatus?.connected && gcalStatus.syncEnabled
+        ? "connected"
+        : "disconnected"
+      : autoPlanCalendarState;
+  const autoPlanCalendarNotice = `${
+    autoPlanCandidateSelection.source === "free"
+      ? autoPlanCopy.candidateSourceFree
+      : autoPlanCopy.candidateSourceTimed
+  } ${
+    effectiveAutoPlanCalendarState === "connected"
+      ? autoPlanCopy.calendarConnectedNotice
+      : effectiveAutoPlanCalendarState === "unavailable"
+        ? autoPlanCopy.calendarUnavailableNotice
+        : autoPlanCopy.calendarDisconnectedNotice
+  }`;
+
+  const handleBuildAutoPlan = useCallback(
+    async (preserveLocks: boolean) => {
+      if (autoPlanCandidateSelection.candidates.length === 0) return;
+      setAutoPlanBuilding(true);
+
+      try {
+        const localBusyWindows = calendarItemsForDate.flatMap((item) => {
+          if (
+            !item.start_time ||
+            !item.end_time ||
+            item.source_type === "planner_time_block" ||
+            item.source_type === "planner_free_task" ||
+            item.source_type === "task"
+          ) {
+            return [];
+          }
+          const itemStartMin = parseTimeToMinutes(item.start_time);
+          let itemEndMin = parseTimeToMinutes(item.end_time);
+          const crossesMidnight = itemEndMin <= itemStartMin;
+          if (crossesMidnight) itemEndMin += 24 * 60;
+          if (
+            itemEndMin <= planRange.startMin ||
+            itemStartMin >= planRange.endMin
+          ) {
+            return [];
+          }
+          return [
+            {
+              start: `${dateStr}T${item.start_time}`,
+              end: `${crossesMidnight ? tomorrowStr : dateStr}T${item.end_time}`,
+            },
+          ];
+        });
+
+        let googleBusyWindows: ReturnType<
+          typeof calendarBusyMinutesToSchedulerWindows
+        > = [];
+        let calendarState: "connected" | "disconnected" | "unavailable" =
+          "disconnected";
+        if (
+          gcalStatus?.connected &&
+          gcalStatus.syncEnabled &&
+          !hasDevLoginBypassCookie()
+        ) {
+          try {
+            const response = await fetch(
+              `/api/google/calendar/busy?planDate=${encodeURIComponent(dateStr)}`,
+              { credentials: "include", cache: "no-store" },
+            );
+            const body = (await response.json().catch(() => ({}))) as {
+              connected?: boolean;
+              busy?: Array<{ startMin: number; endMin: number }>;
+            };
+            if (!response.ok) throw new Error("calendar_busy_unavailable");
+            calendarState = body.connected ? "connected" : "disconnected";
+            googleBusyWindows = calendarBusyMinutesToSchedulerWindows(
+              dateStr,
+              (body.busy ?? []).filter(
+                (window) =>
+                  window.endMin > planRange.startMin &&
+                  window.startMin < planRange.endMin,
+              ),
+            );
+          } catch {
+            calendarState = "unavailable";
+          }
+        }
+
+        const lockedTasks: AutoPlanLockedTask[] =
+          preserveLocks && currentAutoPlanSchedule
+            ? currentAutoPlanSchedule.scheduledTasks
+                .filter((task) => task.locked)
+                .map((task) => ({
+                  id: task.id,
+                  title: task.title,
+                  ...(task.taskId ? { taskId: task.taskId } : {}),
+                  start: `${format(
+                    addDays(parseISO(dateStr), task.startDayOffset),
+                    "yyyy-MM-dd",
+                  )}T${task.startTime}`,
+                  end: `${format(
+                    addDays(parseISO(dateStr), task.endDayOffset),
+                    "yyyy-MM-dd",
+                  )}T${task.endTime}`,
+                }))
+            : [];
+        const schedule = buildAutoPlanSchedule({
+          planningDate: dateStr,
+          startTime,
+          endTime,
+          blockMinutes,
+          bufferMinutes: autoPlanBufferMinutes,
+          candidates: autoPlanCandidateSelection.candidates,
+          busyWindows: [...localBusyWindows, ...googleBusyWindows],
+          lockedTasks,
+        });
+
+        setAutoPlanCalendarState(calendarState);
+        setAutoPlanBusyWindowCount(
+          localBusyWindows.length + googleBusyWindows.length,
+        );
+        setAutoPlanPreview(schedule);
+        toast.success(autoPlanCopy.toastBuilt);
+      } catch {
+        toast.error(autoPlanCopy.toastBuildFailed);
+      } finally {
+        setAutoPlanBuilding(false);
+      }
+    },
+    [
+      autoPlanBufferMinutes,
+      autoPlanCandidateSelection.candidates,
+      autoPlanCopy,
+      blockMinutes,
+      calendarItemsForDate,
+      currentAutoPlanSchedule,
+      dateStr,
+      endTime,
+      gcalStatus,
+      planRange.endMin,
+      planRange.startMin,
+      startTime,
+      tomorrowStr,
+    ],
+  );
+
+  const handleAcceptAutoPlan = useCallback(async () => {
+    if (!autoPlanPreview || autoPlanPreview.scheduledTasks.length === 0) return;
+    const nextTasks = scheduledTasksToDailyPlanTasks(
+      autoPlanPreview,
+      startTime,
+      blockMinutes,
+    ).map(withUid);
+    const shouldMaterializeCandidatePool =
+      autoPlanCandidateSelection.source === "timed";
+    const nextFreeTasks = materializeAutoPlanCandidatePool({
+      source: autoPlanCandidateSelection.source,
+      existingFreeTasks: freeTasks,
+      candidates: autoPlanCandidateSelection.candidates,
+    });
+    clearKeyedSaveTimer(timeBlockSaveTimersRef.current, dateStr);
+    const revision = beginTaskSave();
+    displayedTaskDateRef.current = dateStr;
+    setAutoPlanAccepting(true);
+    setTasks(nextTasks);
+    if (shouldMaterializeCandidatePool) setFreeTasks(nextFreeTasks);
+    setMode("adaptive");
+
+    try {
+      await upsertPlan.mutateAsync({
+        plan_date: dateStr,
+        start_time: startTime,
+        end_time: endTime,
+        tasks: persistTasks(nextTasks),
+        mode: "adaptive",
+        ...(shouldMaterializeCandidatePool
+          ? { free_tasks: nextFreeTasks }
+          : {}),
+        schedule_image_url: scheduleImageUrlRef.current,
+      });
+      pendingAdaptiveModeDateRef.current = null;
+      setAutoPlanPreview(null);
+      toast.success(autoPlanCopy.toastAccepted);
+    } catch {
+      // useUpsertDailyPlan owns the localized save error toast and cache rollback.
+    } finally {
+      setAutoPlanAccepting(false);
+      finishTaskSave(revision);
+    }
+  }, [
+    autoPlanCopy,
+    autoPlanCandidateSelection,
+    autoPlanPreview,
+    beginTaskSave,
+    blockMinutes,
+    dateStr,
+    endTime,
+    finishTaskSave,
+    freeTasks,
+    startTime,
+    upsertPlan,
+  ]);
+
+  const handleToggleAutoPlanLock = useCallback(
+    (itemId: string) => {
+      if (autoPlanPreview) {
+        setAutoPlanPreview({
+          ...autoPlanPreview,
+          scheduledTasks: autoPlanPreview.scheduledTasks.map((task) =>
+            task.id === itemId ? { ...task, locked: !task.locked } : task,
+          ),
+        });
+        return;
+      }
+
+      const nextTasks = tasks.map((task) =>
+        task.plannerTaskId === itemId ? { ...task, locked: !task.locked } : task,
+      );
+      displayedTaskDateRef.current = dateStr;
+      setTasks(nextTasks);
+      void flushTimeBlockPlan(nextTasks, startTime, endTime).catch(() => {
+        // The mutation hook owns the save error toast and cache rollback.
+      });
+    },
+    [
+      autoPlanPreview,
+      dateStr,
+      endTime,
+      flushTimeBlockPlan,
+      startTime,
+      tasks,
+    ],
+  );
+
   // ── summary ──
   const summary = useMemo(() => {
     const totalBlocks = tasks.reduce((s, t) => s + (t.blocks ?? 0), 0);
@@ -1265,7 +1850,9 @@ export default function DailyPlannerPage() {
             value={fmtBlocks(
               Math.max(0, Math.floor(summary.availableMin / blockMinutes)),
             )}
-            icon={<CalendarClock className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
+            icon={
+              <CalendarClock className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />
+            }
             iconClassName="bg-violet-500/20 text-violet-200 ring-1 ring-violet-300/25"
             backgroundImage="/images/daily-planner/available.png"
           />
@@ -1278,7 +1865,9 @@ export default function DailyPlannerPage() {
           <TimeSummaryCard
             title={copy.planned}
             value={fmtBlocks(summary.totalBlocks)}
-            icon={<ListChecks className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
+            icon={
+              <ListChecks className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />
+            }
             iconClassName="bg-sky-500/20 text-sky-200 ring-1 ring-sky-300/25"
             backgroundImage="/images/daily-planner/planned.png"
             glassIntensity="medium"
@@ -1300,7 +1889,9 @@ export default function DailyPlannerPage() {
                 )}
               </>
             }
-            icon={<Hourglass className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />}
+            icon={
+              <Hourglass className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" />
+            }
             iconClassName={cn(
               "ring-1",
               summary.remainingMin < 0
@@ -1308,9 +1899,7 @@ export default function DailyPlannerPage() {
                 : "bg-emerald-500/20 text-emerald-200 ring-emerald-300/25",
             )}
             valueClassName={cn(
-              summary.remainingMin < 0
-                ? "text-red-200"
-                : "text-emerald-200",
+              summary.remainingMin < 0 ? "text-red-200" : "text-emerald-200",
             )}
             backgroundImage="/images/daily-planner/remaining.png"
           />
@@ -1343,7 +1932,8 @@ export default function DailyPlannerPage() {
   }, [focusSessions]);
 
   const calendarExternalEvents = useMemo(
-    () => calendarItemsForDate.filter((item) => item.source_type === "external"),
+    () =>
+      calendarItemsForDate.filter((item) => item.source_type === "external"),
     [calendarItemsForDate],
   );
 
@@ -1353,12 +1943,21 @@ export default function DailyPlannerPage() {
   );
 
   const reviewPlannedMinutes = useMemo(() => {
-    if (mode === "time-block") return summary.plannedMin;
+    if (mode !== "free") return summary.plannedMin;
     return freeTasks.reduce(
-      (sum, task) => sum + (task.estimatedMinutes ?? focusPreferences?.default_focus_minutes ?? 50),
+      (sum, task) =>
+        sum +
+        (task.estimatedMinutes ??
+          focusPreferences?.default_focus_minutes ??
+          50),
       0,
     );
-  }, [focusPreferences?.default_focus_minutes, freeTasks, mode, summary.plannedMin]);
+  }, [
+    focusPreferences?.default_focus_minutes,
+    freeTasks,
+    mode,
+    summary.plannedMin,
+  ]);
 
   /**
    * Human-readable description of the loose planning window for Free Mode. Cross-day plans
@@ -1370,10 +1969,16 @@ export default function DailyPlannerPage() {
     if (planRange.endDayOffset === 0) {
       return copy.freePlanningWindowSameDay(startLabel, endLabel);
     }
-    const startDateLabel = format(selectedDate, "MMM d", { locale: dateLocale });
-    const endDateLabel = format(addDays(selectedDate, planRange.endDayOffset), "MMM d", {
+    const startDateLabel = format(selectedDate, "MMM d", {
       locale: dateLocale,
     });
+    const endDateLabel = format(
+      addDays(selectedDate, planRange.endDayOffset),
+      "MMM d",
+      {
+        locale: dateLocale,
+      },
+    );
     return copy.freePlanningWindowCrossDay(
       startDateLabel,
       startLabel,
@@ -1392,10 +1997,9 @@ export default function DailyPlannerPage() {
 
   // ── dialogs ──
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [templateMode, setTemplateMode] = useState<"save" | "load">("save");
+  const templateMode = "save" as const;
   const [createAiDialogOpen, setCreateAiDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
@@ -1414,7 +2018,9 @@ export default function DailyPlannerPage() {
   const [addQuickTaskOpen, setAddQuickTaskOpen] = useState(false);
   const [newQuickName, setNewQuickName] = useState("");
   const [newQuickBlocks, setNewQuickBlocks] = useState(3);
-  const [quickIconBusyKeys, setQuickIconBusyKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const [quickIconBusyKeys, setQuickIconBusyKeys] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const quickIconBackfillSignatureRef = useRef("");
 
   const setQuickIconBusy = useCallback((key: string, busy: boolean) => {
@@ -1448,10 +2054,13 @@ export default function DailyPlannerPage() {
     ): Promise<boolean> => {
       const current = getCurrentQuickTasks(fallback);
       const preferredMatches =
-        current[index] && quickTaskIdentity(current[index]) === expectedIdentity;
+        current[index] &&
+        quickTaskIdentity(current[index]) === expectedIdentity;
       const targetIndex = preferredMatches
         ? index
-        : current.findIndex((task) => quickTaskIdentity(task) === expectedIdentity);
+        : current.findIndex(
+            (task) => quickTaskIdentity(task) === expectedIdentity,
+          );
       if (targetIndex < 0) return false;
 
       const next = current.map((task, i) =>
@@ -1539,10 +2148,7 @@ export default function DailyPlannerPage() {
       presetKey: null,
       iconUrl: null,
     };
-    const next: QuickTaskDef[] = [
-      ...current,
-      created,
-    ];
+    const next: QuickTaskDef[] = [...current, created];
     const createdIndex = next.length - 1;
     const expectedIdentity = quickTaskIdentity(created);
     const jobKey = quickTaskJobKey(created, createdIndex);
@@ -1561,7 +2167,12 @@ export default function DailyPlannerPage() {
       setQuickIconBusy(jobKey, true);
       try {
         const iconUrl = await requestQuickTaskIcon(created);
-        await writeQuickTaskIconUrl(createdIndex, expectedIdentity, iconUrl, next);
+        await writeQuickTaskIconUrl(
+          createdIndex,
+          expectedIdentity,
+          iconUrl,
+          next,
+        );
       } catch {
         /* optional AI icon */
       } finally {
@@ -1589,7 +2200,12 @@ export default function DailyPlannerPage() {
       setQuickIconBusy(jobKey, true);
       try {
         const iconUrl = await requestQuickTaskIcon(task);
-        const updated = await writeQuickTaskIconUrl(index, expectedIdentity, iconUrl, current);
+        const updated = await writeQuickTaskIconUrl(
+          index,
+          expectedIdentity,
+          iconUrl,
+          current,
+        );
         if (updated) toast.success(copy.quickTaskIconRegenerated(task.name));
       } catch {
         toast.error(copy.quickTaskIconRegenerateFailed);
@@ -1609,8 +2225,9 @@ export default function DailyPlannerPage() {
     if (missing.length === 0) return;
 
     const signature = effective
-      .map((task, index) =>
-        `${index}\u0001${quickTaskIdentity(task)}\u0001${task.iconUrl?.trim() ? "1" : "0"}`,
+      .map(
+        (task, index) =>
+          `${index}\u0001${quickTaskIdentity(task)}\u0001${task.iconUrl?.trim() ? "1" : "0"}`,
       )
       .join("\u0002");
     if (quickIconBackfillSignatureRef.current === signature) return;
@@ -1625,7 +2242,9 @@ export default function DailyPlannerPage() {
           await queryClient.invalidateQueries({ queryKey: ["profile"] });
         }
 
-        const res = await fetch("/api/quick-tasks/backfill-icons", { method: "POST" });
+        const res = await fetch("/api/quick-tasks/backfill-icons", {
+          method: "POST",
+        });
         if (!res.ok || cancelled) return;
         await queryClient.invalidateQueries({ queryKey: ["profile"] });
       } catch {
@@ -1639,11 +2258,15 @@ export default function DailyPlannerPage() {
   }, [copy, profile, queryClient]);
 
   // ── add task helper ──
-  // In Free Mode the same entry points (Quick Add, AI Create, Import) drop tasks straight
-  // into the Free Plan's `should` bucket — no block count, no time slot, no friction.
+  // Free and Auto modes use the untimed candidate list for capture. Auto Plan only assigns
+  // exact slots after the user asks for a preview and explicitly accepts it.
   const addTask = useCallback(
     (name: string, blocks: number, taskId?: string) => {
-      if (mode === "free") {
+      if (mode !== "time-block") {
+        if (mode === "adaptive") {
+          setAutoPlanPreview(null);
+          setAutoPlanBusyWindowCount(undefined);
+        }
         const order = freeTasks.filter((t) => t.priority === "should").length;
         const nextFree: FreePlanTask[] = [
           ...freeTasks,
@@ -1661,14 +2284,32 @@ export default function DailyPlannerPage() {
         saveFreePlan(nextFree, startTime, endTime);
         return;
       }
-      const next: LocalPlanTask[] = [
+      const nextWithAddedTask = [
         ...tasks,
-        { taskName: name, blocks, taskId, order: tasks.length, _uid: newUid() },
+        withUid({ taskName: name, blocks, taskId, order: tasks.length }),
       ];
+      const next =
+        mode === "time-block"
+          ? resequenceTimeBlockTasks(nextWithAddedTask, {
+              planStartTime: startTime,
+              blockMinutes,
+            }).map(withUid)
+          : nextWithAddedTask;
+      displayedTaskDateRef.current = dateStr;
       setTasks(next);
       void flushTimeBlockPlan(next, startTime, endTime);
     },
-    [mode, tasks, freeTasks, saveFreePlan, startTime, endTime, blockMinutes, flushTimeBlockPlan],
+    [
+      mode,
+      tasks,
+      freeTasks,
+      dateStr,
+      saveFreePlan,
+      startTime,
+      endTime,
+      blockMinutes,
+      flushTimeBlockPlan,
+    ],
   );
 
   // ── quick add ──
@@ -1682,8 +2323,14 @@ export default function DailyPlannerPage() {
   // ── import tasks ──
   const handleImportTasks = useCallback(
     (taskIds: string[]) => {
-      if (mode === "free") {
-        const baseOrder = freeTasks.filter((t) => t.priority === "should").length;
+      if (mode !== "time-block") {
+        if (mode === "adaptive") {
+          setAutoPlanPreview(null);
+          setAutoPlanBusyWindowCount(undefined);
+        }
+        const baseOrder = freeTasks.filter(
+          (t) => t.priority === "should",
+        ).length;
         const importedFree: FreePlanTask[] = taskIds
           .map((id, i) => {
             const t = allTasks.find((at) => at.id === id);
@@ -1713,13 +2360,12 @@ export default function DailyPlannerPage() {
         .map((id) => {
           const t = allTasks.find((at) => at.id === id);
           if (!t) return null;
-          return {
+          return withUid({
             taskName: t.title,
             taskId: t.id,
             blocks: t.estimated_blocks ?? 3,
             order: tasks.length,
-            _uid: newUid(),
-          } as LocalPlanTask;
+          });
         })
         .filter(Boolean) as LocalPlanTask[];
       updateTasks([...tasks, ...imported]);
@@ -1740,15 +2386,6 @@ export default function DailyPlannerPage() {
     ],
   );
 
-  // ── AI suggestions ──
-  const handleGetAiSuggestions = useCallback(() => {
-    setAiLoading(true);
-    setTimeout(() => {
-      setAiLoading(false);
-      setAiDialogOpen(true);
-    }, 1000);
-  }, []);
-
   const handleAddAiTask = useCallback(
     (_taskId: string | undefined, title: string, blocks: number) => {
       addTask(title, blocks);
@@ -1758,13 +2395,22 @@ export default function DailyPlannerPage() {
   );
 
   // ── reorder ──
-  // The new SortableTaskList computes the reordered list itself (via dnd-kit's
-  // arrayMove) and hands the whole array back. We just persist it.
+  // Keep array order, persisted order, and exact wall-clock slots atomic. This
+  // prevents timeline/calendar consumers from sorting a dropped row back into
+  // its old position after the save refetches.
   const handleReorder = useCallback(
     (next: LocalPlanTask[]) => {
-      updateTasks(next);
+      const resequenced = resequenceTimeBlockTasks(next, {
+        planStartTime: startTime,
+        blockMinutes,
+      }).map(withUid);
+      displayedTaskDateRef.current = dateStr;
+      setTasks(resequenced);
+      void flushTimeBlockPlan(resequenced, startTime, endTime).catch(() => {
+        // The mutation hook reports the error; hydration unlock rolls the UI back.
+      });
     },
-    [updateTasks],
+    [blockMinutes, dateStr, endTime, flushTimeBlockPlan, startTime],
   );
 
   // ── change blocks ──
@@ -1789,9 +2435,7 @@ export default function DailyPlannerPage() {
   // ── ritual ──
   const handleRitual = useCallback(
     (index: number) => {
-      setRitualTaskName(
-        tasks[index]?.taskName ?? copy.defaultPlannerTaskName,
-      );
+      setRitualTaskName(tasks[index]?.taskName ?? copy.defaultPlannerTaskName);
       setRitualOpen(true);
     },
     [tasks, copy],
@@ -1838,7 +2482,15 @@ export default function DailyPlannerPage() {
 
     setDetailDialogOpen(false);
     toast.success(copy.toastMovedTomorrow);
-  }, [detailIndex, tasks, tomorrowPlan, tomorrowStr, upsertPlan, updateTasks, copy]);
+  }, [
+    detailIndex,
+    tasks,
+    tomorrowPlan,
+    tomorrowStr,
+    upsertPlan,
+    updateTasks,
+    copy,
+  ]);
 
   // ── templates ──
   const handleSaveTemplate = useCallback(
@@ -1851,11 +2503,7 @@ export default function DailyPlannerPage() {
 
   const handleLoadTemplate = useCallback(
     (template: ScheduleTemplate) => {
-      if (
-        tasks.length > 0 &&
-        !window.confirm(copy.confirmLoadTemplate)
-      )
-        return;
+      if (tasks.length > 0 && !window.confirm(copy.confirmLoadTemplate)) return;
       updateTasks(template.tasks.map(withUid));
       setTemplateDialogOpen(false);
       toast.success(copy.toastTemplateLoaded(template.name));
@@ -1871,8 +2519,7 @@ export default function DailyPlannerPage() {
   );
 
   const handleCalendarSyncNow = useCallback(async () => {
-    const hasWork =
-      mode === "free" ? freeTasks.length > 0 : tasks.length > 0;
+    const hasWork = mode === "free" ? freeTasks.length > 0 : tasks.length > 0;
     if (!hasWork) {
       toast.message(copy.toastGoogleNoTasks);
       return;
@@ -1891,10 +2538,10 @@ export default function DailyPlannerPage() {
     }
     setGoogleSyncBusy(true);
     try {
-      if (mode === "time-block") {
+      if (mode !== "free") {
         await flushTimeBlockPlan(tasks, startTime, endTime);
       } else {
-        clearTimeout(saveTimerRef.current);
+        clearKeyedSaveTimer(freePlanSaveTimersRef.current, dateStr);
         await upsertPlan.mutateAsync({
           plan_date: dateStr,
           start_time: startTime,
@@ -1925,9 +2572,15 @@ export default function DailyPlannerPage() {
       if (typeof j.syncedAt === "string") {
         setPlannerGcalLastPushAt(dateStr, j.syncedAt);
       }
-      await queryClient.invalidateQueries({ queryKey: ["google-calendar-planner-status"] });
-      await queryClient.invalidateQueries({ queryKey: ["google-calendar-task-sync", dateStr] });
-      await queryClient.invalidateQueries({ queryKey: ["daily-plans", dateStr] });
+      await queryClient.invalidateQueries({
+        queryKey: ["google-calendar-planner-status"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["google-calendar-task-sync", dateStr],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["daily-plans", dateStr],
+      });
       await queryClient.invalidateQueries({ queryKey: ["daily-plans"] });
       await queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
       toast.success(
@@ -1939,7 +2592,9 @@ export default function DailyPlannerPage() {
         }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : copy.toastGoogleCalendarSyncNowFailed);
+      toast.error(
+        e instanceof Error ? e.message : copy.toastGoogleCalendarSyncNowFailed,
+      );
     } finally {
       setGoogleSyncBusy(false);
     }
@@ -1977,7 +2632,11 @@ export default function DailyPlannerPage() {
       });
       setQualityDrawerOpen(true);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : copy.toastDailyPlanUpdateFailed,
+      );
     }
   }, [
     allTasks,
@@ -1997,15 +2656,18 @@ export default function DailyPlannerPage() {
 
   const handleApplyQualityChange = useCallback(
     (change: PlanQualitySuggestedChange) => {
-      if (!change.safeToAutoApply || mode !== "time-block") return;
-      const next = applyPlanQualitySuggestedChange(persistTasks(tasks), change).map(withUid);
+      if (!change.safeToAutoApply || mode === "free") return;
+      const next = applyPlanQualitySuggestedChange(
+        persistTasks(tasks),
+        change,
+      ).map(withUid);
       updateTasks(next);
     },
     [mode, tasks, updateTasks],
   );
 
   const handleApplyAllSafeQualityChanges = useCallback(() => {
-    if (!qualityReport || mode !== "time-block") return;
+    if (!qualityReport || mode === "free") return;
     const next = qualityReport.suggested_changes
       .filter((change) => change.safeToAutoApply)
       .reduce(
@@ -2022,10 +2684,22 @@ export default function DailyPlannerPage() {
       if (!task) return null;
       let offsetMin = 0;
       for (let i = 0; i < index; i += 1) {
+        offsetMin += (tasks[i].gapBlocks ?? 0) * blockMinutes;
         offsetMin += (tasks[i].blocks ?? 1) * blockMinutes;
       }
-      const startMin = parseTimeToMinutes(startTime) + offsetMin;
-      const endMin = startMin + (task.blocks ?? 1) * blockMinutes;
+      offsetMin += (task.gapBlocks ?? 0) * blockMinutes;
+      let startMin = parseTimeToMinutes(startTime) + offsetMin;
+      if (task.start_time) {
+        startMin = parseTimeToMinutes(task.start_time);
+        if (planRange.endDayOffset > 0 && startMin < planRange.startMin) {
+          startMin += 24 * 60;
+        }
+      }
+      let endMin = startMin + (task.blocks ?? 1) * blockMinutes;
+      if (task.end_time) {
+        endMin = parseTimeToMinutes(task.end_time);
+        while (endMin <= startMin) endMin += 24 * 60;
+      }
       return {
         taskTitle: task.taskName ?? copy.untitledTask,
         plannerTaskId: task.plannerTaskId ?? null,
@@ -2037,7 +2711,17 @@ export default function DailyPlannerPage() {
         sessionType: focusTypeForDailyTask(task, allTasks),
       };
     },
-    [allTasks, blockMinutes, copy.untitledTask, currentDailyPlanId, dateStr, startTime, tasks],
+    [
+      allTasks,
+      blockMinutes,
+      copy.untitledTask,
+      currentDailyPlanId,
+      dateStr,
+      planRange.endDayOffset,
+      planRange.startMin,
+      startTime,
+      tasks,
+    ],
   );
 
   const openStartFocusForTaskIndex = useCallback(
@@ -2055,7 +2739,8 @@ export default function DailyPlannerPage() {
       const index = tasks.findIndex(
         (task) =>
           task.plannerTaskId === planTask.plannerTaskId ||
-          (task.taskName === planTask.taskName && task.order === planTask.order),
+          (task.taskName === planTask.taskName &&
+            task.order === planTask.order),
       );
       if (index >= 0) openStartFocusForTaskIndex(index);
     },
@@ -2080,7 +2765,7 @@ export default function DailyPlannerPage() {
   );
 
   const handleStartFirstFocus = useCallback(() => {
-    if (mode === "time-block") {
+    if (mode !== "free") {
       if (tasks.length === 0) {
         toast.info(copy.noTasksYet);
         return;
@@ -2133,7 +2818,11 @@ export default function DailyPlannerPage() {
         setFocusDraft(null);
         toast.success(copy.focusSessionStartedToast);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : copy.toastDailyPlanUpdateFailed,
+        );
       }
     },
     [copy, focusDraft, startFocusSession],
@@ -2180,7 +2869,11 @@ export default function DailyPlannerPage() {
         setFinishFocusOpen(false);
         toast.success(copy.focusSessionFinishedToast);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : copy.toastDailyPlanUpdateFailed,
+        );
       }
     },
     [activeFocusSession, completeFocusSession, copy],
@@ -2197,7 +2890,11 @@ export default function DailyPlannerPage() {
       });
       setReviewDrawerOpen(true);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.toastDailyPlanUpdateFailed);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : copy.toastDailyPlanUpdateFailed,
+      );
     }
   }, [
     copy.toastDailyPlanUpdateFailed,
@@ -2210,7 +2907,9 @@ export default function DailyPlannerPage() {
   ]);
 
   const plannerGcalPushSpinning =
-    googleSyncBusy || gcalPushPending || (mode === "time-block" && upsertPlan.isPending);
+    googleSyncBusy ||
+    gcalPushPending ||
+    (mode !== "free" && upsertPlan.isPending);
   const lastGcalStamp =
     plannerGcalLastPushIso != null
       ? format(parseISO(plannerGcalLastPushIso), "yyyy-MM-dd HH:mm:ss")
@@ -2220,895 +2919,983 @@ export default function DailyPlannerPage() {
 
   return (
     <PlannerLocaleContext.Provider value={plannerLocale}>
-    <PageShell
-      title={copy.pageTitle}
-      description={copy.pageDescription}
-      actions={
-        <>
-          <OSControl
-            render={<Link href={calendarAiPlanHref} />}
-          >
-            <Sparkles className="h-4 w-4" />
-            {calendarCopy.backToAIPlan}
-          </OSControl>
-          <OSControl
-            onClick={handleGetAiSuggestions}
-            disabled={aiLoading}
-          >
-            <Sparkles className="h-4 w-4 mr-1.5" />
-            {aiLoading ? copy.aiThinking : copy.aiSuggestions}
-          </OSControl>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<OSControl />}
-            >
-              <FileText className="h-4 w-4 mr-1.5" />
-              {copy.templates}
-              <ChevronDown className="h-3 w-3 ml-1" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={() => {
-                  setTemplateMode("save");
-                  setTemplateDialogOpen(true);
-                }}
-              >
-                {copy.saveAsTemplate}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setTemplateMode("load");
-                  setTemplateDialogOpen(true);
-                }}
-              >
-                {copy.loadTemplate}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      }
-    >
-      <div
-        className="space-y-6 pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4rem))] md:pb-0"
-        data-stagger
-      >
-      {/* ─── Date & Time Card ─── */}
-      <OSFrostedPanel as="section" className="space-y-5 p-4 sm:p-5">
-          {/* Date navigation + actions */}
-          <div className="flex flex-col gap-3">
-            <div className="flex min-w-0 items-stretch gap-2">
-              <OSIconControl
-                className="shrink-0"
-                aria-label={copy.ariaPreviousDay}
-                onClick={() => setSelectedDate((d) => subDays(d, 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </OSIconControl>
-
-              <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-xl border border-slate-300/55 bg-white/56 px-3 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045]">
-                <span className="hidden text-sm font-semibold leading-snug sm:inline">
-                  {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: dateLocale })}
-                </span>
-                <span className="text-xs font-semibold leading-snug sm:hidden">
-                  {format(selectedDate, "EEE, MMM d, yyyy", { locale: dateLocale })}
-                </span>
-              </div>
-
-              <OSIconControl
-                className="shrink-0"
-                aria-label={copy.ariaNextDay}
-                onClick={() => setSelectedDate((d) => addDays(d, 1))}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </OSIconControl>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <MiniCalendarPopover
-                  selectedDate={selectedDate}
-                  onSelect={(d) => setSelectedDate(d)}
-                />
-                <OSControl
+      <PageShell title={copy.pageTitle} description={copy.pageDescription}>
+        <div
+          className="space-y-6 pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4rem))] md:pb-0"
+          data-stagger
+        >
+          {/* ─── Date & Time Card ─── */}
+          <OSFrostedPanel as="section" className="space-y-5 p-4 sm:p-5">
+            {/* Date navigation + actions */}
+            <div className="flex flex-col gap-3">
+              <div className="flex min-w-0 items-stretch gap-2">
+                <OSIconControl
                   className="shrink-0"
-                  onClick={() => setSelectedDate(new Date())}
+                  aria-label={copy.ariaPreviousDay}
+                  onClick={() => setSelectedDate((d) => subDays(d, 1))}
                 >
-                  {copy.today}
-                </OSControl>
-                <PlanningModeToggle
-                  value={mode}
-                  onChange={handleModeChange}
-                  ariaLabel={copy.modeToggleAriaLabel}
-                  timeBlockLabel={copy.modeTimeBlock}
-                  freeLabel={copy.modeFree}
-                />
-              </div>
-            <div className="flex flex-col items-stretch gap-1 sm:items-end">
-              <OSPrimaryAction
-                className="relative w-full shrink-0 gap-2 sm:w-auto"
-                onClick={() => void handleCalendarSyncNow()}
-                disabled={plannerGcalPushSpinning}
-              >
-                {plannerGcalPushSpinning ? (
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                ) : (
-                  <CalendarSync className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                )}
-                <span className="truncate">
-                  {plannerGcalPushSpinning
-                    ? copy.googleCalendarSyncingNowButton
-                    : copy.googleCalendarSyncNowButton}
-                </span>
-              </OSPrimaryAction>
-              {lastGcalStamp ? (
-                <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right tabular-nums">
-                  {copy.googleCalendarLastUpdatedLabel(lastGcalStamp)}
-                </p>
-              ) : null}
-              {mode === "time-block" && gcalStatus?.connected && gcalStatus.syncEnabled ? (
-                <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right">
-                  {copy.googleCalendarServerSyncHint}
-                </p>
-              ) : null}
-            </div>
-            </div>
-          </div>
+                  <ChevronLeft className="h-4 w-4" />
+                </OSIconControl>
 
-          <Separator className="bg-border/45" />
-
-          {/* Time pickers */}
-          <div className="grid min-w-0 grid-cols-1 gap-4 sm:max-w-2xl sm:grid-cols-2">
-            <TimeWheelPicker
-              label={copy.startTime}
-              value={startTime}
-              onChange={handleStartTimeChange}
-            />
-            <div className="min-w-0 space-y-1">
-              <TimeWheelPicker
-                label={copy.endTime}
-                value={endTime}
-                onChange={handleEndTimeChange}
-                hint={
-                  planRange.endDayOffset > 0
-                    ? copy.crossesIntoDayLabel(
-                        format(
-                          addDays(selectedDate, planRange.endDayOffset),
-                          "EEEE, MMMM d",
-                          { locale: dateLocale },
-                        ),
-                      )
-                    : undefined
-                }
-              />
-              {mode === "time-block" && gcalStatus?.connected && gcalStatus.syncEnabled ? (
-                <p className="text-[11px] leading-snug text-emerald-800/90 dark:text-emerald-200/90">
-                  {copy.googleCalendarConnectedAccountHint(gcalStatus.email ?? null)}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {mode === "time-block" && (upsertPlan.isPending || gcalPushPending) ? (
-            <div
-              className="flex items-center gap-2 text-[12px] text-muted-foreground"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-              <span>{copy.googleCalendarSaveAndSyncLoading}</span>
-            </div>
-          ) : null}
-
-          <Separator className="bg-border/45" />
-
-          {mode === "free" ? (
-            /* Free Mode: replace the time-budget tiles with a calm Planning Window caption */
-            <div className="space-y-1.5 rounded-2xl border border-slate-300/50 bg-white/52 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                {copy.freePlanningWindowLabel}
-              </p>
-              <p className="text-sm font-semibold tabular-nums leading-snug text-foreground">
-                {freePlanningWindowLabel}
-              </p>
-              <p className="text-[11px] leading-snug text-muted-foreground/85">
-                {copy.freePlanningWindowHelper}
-              </p>
-            </div>
-          ) : (
-          /* Time budget — three icon tiles */
-          <>
-            <TimeSummaryCarousel
-              items={timeSummaryItems}
-              label={`${copy.available} / ${copy.planned} / ${copy.remaining}`}
-            />
-            <div className="planner-time-summary-grid min-w-0 grid-cols-3 gap-3">
-              {timeSummaryItems.map((item) => (
-                <div key={item.id}>{item.content}</div>
-              ))}
-            </div>
-          </>
-          )}
-      </OSFrostedPanel>
-
-      <TodayFocusStrip
-        copy={copy}
-        planExists={mode === "time-block" ? tasks.length > 0 : freeTasks.length > 0}
-        qualityReport={qualityReport}
-        activeSession={activeFocusSession}
-        review={dailyReview}
-        focusTargetText={focusTargetText}
-        analyzing={analyzeQuality.isPending}
-        onAnalyze={() => void handleAnalyzePlanQuality()}
-        onImprove={() => setQualityDrawerOpen(true)}
-        onStartFirstFocus={handleStartFirstFocus}
-        onOpenDetails={() => setQualityDrawerOpen(true)}
-        onOpenReview={() => void handleGenerateDailyReview()}
-        onPause={handlePauseFocus}
-        onResume={handleResumeFocus}
-        onFinish={() => setFinishFocusOpen(true)}
-        onDistracted={handleDistracted}
-      />
-
-      {/* ─── Main grid (Time Block mode only) ─── */}
-      {mode === "time-block" && (
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(21rem,0.9fr)_minmax(0,1.1fr)]">
-        {/* ─── Task Builder ─── */}
-        <OSFrostedPanel as="section" className="space-y-4 p-4 sm:p-5">
-          <div className="space-y-3">
-            <h2 className="font-heading text-base font-semibold tracking-tight text-foreground">
-              {copy.taskBuilder}
-            </h2>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-              <OSPrimaryAction
-                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl sm:flex-1"
-                onClick={() => setCreateAiDialogOpen(true)}
-              >
-                <Wand2 className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{copy.createTaskWithAi}</span>
-              </OSPrimaryAction>
-              <OSControl
-                className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl sm:flex-1"
-                onClick={() => setImportDialogOpen(true)}
-              >
-                <FolderInput className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{copy.importFromTasks}</span>
-              </OSControl>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {/* Quick add grid */}
-            <div>
-              <div className="flex items-center justify-between mb-2 gap-2">
-                <Label className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  {copy.quickAdd}
-                </Label>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    className="h-11 min-h-11 gap-1 rounded-xl px-3 text-xs"
-                    onClick={() => setAddQuickTaskOpen(true)}
-                  >
-                    <Plus className="h-3 w-3" />
-                    {copy.quickTaskAddNew}
-                  </Button>
+                <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-xl border border-slate-300/55 bg-white/56 px-3 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045]">
+                  <span className="hidden text-sm font-semibold leading-snug sm:inline">
+                    {format(selectedDate, "EEEE, MMMM d, yyyy", {
+                      locale: dateLocale,
+                    })}
+                  </span>
+                  <span className="text-xs font-semibold leading-snug sm:hidden">
+                    {format(selectedDate, "EEE, MMM d, yyyy", {
+                      locale: dateLocale,
+                    })}
+                  </span>
                 </div>
+
+                <OSIconControl
+                  className="shrink-0"
+                  aria-label={copy.ariaNextDay}
+                  onClick={() => setSelectedDate((d) => addDays(d, 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </OSIconControl>
               </div>
-              <div className="grid grid-cols-2 gap-2 pb-1 sm:pb-0">
-                {quickTaskDefs.map((qt, idx) => (
-                  <QuickTaskButton
-                    key={`${qt.name}-${idx}-${qt.iconSrc ?? ""}-${qt.iconRasterFallback ?? ""}`}
-                    task={qt}
-                    onAdd={(blocks) => handleQuickAdd(qt.name, blocks)}
-                    onDelete={() => handleDeleteQuickTask(idx)}
-                    onRegenerateIcon={() => void handleRegenerateQuickTaskIcon(idx)}
-                    isIconGenerating={quickIconBusyKeys.has(quickTaskJobKey(qt, idx))}
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <MiniCalendarPopover
+                    selectedDate={selectedDate}
+                    onSelect={(d) => setSelectedDate(d)}
                   />
-                ))}
+                  <OSControl
+                    className="shrink-0"
+                    onClick={() => setSelectedDate(new Date())}
+                  >
+                    {copy.today}
+                  </OSControl>
+                  <PlanningModeToggle
+                    value={mode}
+                    onChange={handleModeChange}
+                    ariaLabel={copy.modeToggleAriaLabel}
+                    timeBlockLabel={copy.modeTimeBlock}
+                    freeLabel={copy.modeFree}
+                    adaptiveLabel={autoPlanCopy.modeLabel}
+                  />
+                </div>
+                <div className="flex flex-col items-stretch gap-1 sm:items-end">
+                  <OSPrimaryAction
+                    className="relative w-full shrink-0 gap-2 sm:w-auto"
+                    onClick={() => void handleCalendarSyncNow()}
+                    disabled={plannerGcalPushSpinning}
+                  >
+                    {plannerGcalPushSpinning ? (
+                      <Loader2
+                        className="h-3.5 w-3.5 shrink-0 animate-spin"
+                        aria-hidden
+                      />
+                    ) : (
+                      <CalendarSync
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden
+                      />
+                    )}
+                    <span className="truncate">
+                      {plannerGcalPushSpinning
+                        ? copy.googleCalendarSyncingNowButton
+                        : copy.googleCalendarSyncNowButton}
+                    </span>
+                  </OSPrimaryAction>
+                  {lastGcalStamp ? (
+                    <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right tabular-nums">
+                      {copy.googleCalendarLastUpdatedLabel(lastGcalStamp)}
+                    </p>
+                  ) : null}
+                  {mode !== "free" &&
+                  gcalStatus?.connected &&
+                  gcalStatus.syncEnabled ? (
+                    <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right">
+                      {copy.googleCalendarServerSyncHint}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
-
-            {/* Add Quick Task Dialog */}
-            <Dialog open={addQuickTaskOpen} onOpenChange={setAddQuickTaskOpen}>
-              <DialogContent size="sm">
-                <DialogHeader>
-                  <DialogTitle>{copy.quickTaskAddDialogTitle}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm">{copy.quickTaskNameLabel}</Label>
-                    <Input
-                      value={newQuickName}
-                      onChange={(e) => setNewQuickName(e.target.value)}
-                      placeholder={copy.quickTaskNamePlaceholder}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") void handleAddQuickTask();
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">{copy.quickTaskBlocksLabel}</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={30}
-                      value={newQuickBlocks}
-                      onChange={(e) => setNewQuickBlocks(Math.max(1, Number(e.target.value)))}
-                      className="w-24"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {fmtBlocks(newQuickBlocks)}
-                    </p>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-11 min-h-11 rounded-xl px-3"
-                      onClick={() => setAddQuickTaskOpen(false)}
-                    >
-                      {copy.cancel}
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-11 min-h-11 rounded-xl px-3"
-                      onClick={() => void handleAddQuickTask()}
-                      disabled={!newQuickName.trim()}
-                    >
-                      {copy.add}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
 
             <Separator className="bg-border/45" />
 
-            {/* Task list */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs text-muted-foreground">
-                  {copy.yourPlan(tasks.length)}
-                </Label>
-                <Badge variant="secondary" className="text-[10px]">
-                  {summary.totalBlocks} {copy.blocksLabel} ·{" "}
-                  {fmtBlocks(summary.totalBlocks)}
-                </Badge>
-              </div>
-
-              {tasks.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300/55 bg-white/36 px-4 py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
-                  {copy.noTasksYet}
-                </div>
-              ) : (
-                <SortableTaskList
-                  tasks={tasks}
-                  meta={taskMeta}
-                  isMobile={isMobile}
-                  copy={copy}
-                  taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
-                  onReorder={handleReorder}
-                  onChangeBlocks={handleChangeBlocks}
-                  onDelete={handleDelete}
-                  onRitual={handleRitual}
-                  onTaskClick={handleTaskClick}
-                  onStartFocus={openStartFocusForTaskIndex}
+            {/* Time pickers */}
+            <div className="grid min-w-0 grid-cols-1 gap-4 sm:max-w-2xl sm:grid-cols-2">
+              <TimeWheelPicker
+                label={copy.startTime}
+                value={startTime}
+                onChange={handleStartTimeChange}
+              />
+              <div className="min-w-0 space-y-1">
+                <TimeWheelPicker
+                  label={copy.endTime}
+                  value={endTime}
+                  onChange={handleEndTimeChange}
+                  hint={
+                    planRange.endDayOffset > 0
+                      ? copy.crossesIntoDayLabel(
+                          format(
+                            addDays(selectedDate, planRange.endDayOffset),
+                            "EEEE, MMMM d",
+                            { locale: dateLocale },
+                          ),
+                        )
+                      : undefined
+                  }
                 />
-              )}
-            </div>
-          </div>
-        </OSFrostedPanel>
-
-        {/* ─── Timeline + visual schedule ─── */}
-        <div className="space-y-6">
-          <VisualScheduleGenerator
-            copy={copy}
-            planDate={dateStr}
-            startTime={startTime}
-            endTime={endTime}
-            tasks={tasks}
-            blockMinutes={blockMinutes}
-            imageUrl={scheduleImageUrl}
-            onImageUrlChange={(url) => {
-              setScheduleImageUrl(url);
-              scheduleImageUrlRef.current = url;
-            }}
-            onPersistImageUrl={async (url) => {
-              scheduleImageUrlRef.current = url;
-              await upsertPlan.mutateAsync({
-                plan_date: dateStr,
-                start_time: startTime,
-                end_time: endTime,
-                tasks: persistTasks(tasks),
-                schedule_image_url: url,
-              });
-            }}
-          />
-          <TimelineView
-            startTime={startTime}
-            endTime={endTime}
-            endDayOffset={planRange.endDayOffset}
-            nextDayBadge={copy.nextDayBadge}
-            tasks={tasks}
-            selectedDate={selectedDate}
-            allTasks={allTasks}
-            blockMinutes={blockMinutes}
-            taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
-            plannerCopy={copy}
-            scheduleTitle={copy.timelineTitle(
-              format(selectedDate, "MMMM d, yyyy", {
-                locale: dateLocale,
-              }),
-            )}
-            formatTime12={formatTime12}
-            fmtBlocks={fmtBlocks}
-            untitledTask={copy.untitledTask}
-            taskCardBlockCount={copy.taskCardBlockCount}
-            focusSessionsByPlannerTaskId={focusSessionsByPlannerTaskId}
-            activeFocusSessionId={activeFocusSession?.id ?? null}
-            showActualOverlay={focusPreferences?.show_actual_timeline_overlay ?? true}
-            onStartFocus={openStartFocusForPlanTask}
-            onTaskClick={(planTask) => {
-              const idx = tasks.findIndex(
-                (t) =>
-                  t.taskName === planTask.taskName &&
-                  t.order === planTask.order,
-              );
-              if (idx >= 0) handleTaskClick(idx);
-            }}
-          />
-        </div>
-      </div>
-      )}
-
-      {/* ─── Free Planning board (Free mode only) ─── */}
-      {/* Single-column flow on every breakpoint: each priority section gets the full content
-       *  width so long task names breathe instead of compressing into 4 narrow ribbons.
-       *  The Free Plan Summary lives at the bottom as a recap, not a competing right rail. */}
-      {mode === "free" && (
-        <div className="space-y-6">
-          <FreePlanBoard
-            copy={copy}
-            tasks={freeTasks}
-            onChange={updateFreeTasks}
-            onStartFocus={openStartFocusForFreeTask}
-            secondaryActions={
-              <>
-                <OSPrimaryAction
-                  type="button"
-                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
-                  onClick={() => setCreateAiDialogOpen(true)}
-                >
-                  <Wand2 className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{copy.createTaskWithAi}</span>
-                </OSPrimaryAction>
-                <OSControl
-                  type="button"
-                  className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
-                  onClick={() => setImportDialogOpen(true)}
-                >
-                  <FolderInput className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{copy.importFromTasks}</span>
-                </OSControl>
-              </>
-            }
-          />
-          <FreePlanSummary
-            copy={copy}
-            tasks={freeTasks}
-            windowLabel={freePlanningWindowLabel}
-          />
-        </div>
-      )}
-
-      <div className="flex justify-center pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-11 min-h-11 rounded-xl px-3 gap-1.5"
-          aria-label={copy.ariaBackToTop}
-          onClick={() => {
-            const opts: ScrollToOptions = { top: 0, behavior: "smooth" };
-            // Long pages often scroll the document: the inset `main` grows with
-            // content so it has no internal overflow. Shorter viewports may scroll
-            // the layout `main` instead — cover both.
-            const layoutMain = document.querySelector(
-              "main.flex-1.overflow-auto",
-            );
-            if (layoutMain instanceof HTMLElement) {
-              layoutMain.scrollTo(opts);
-            }
-            window.scrollTo(opts);
-          }}
-        >
-          <ArrowUp className="h-4 w-4" />
-          {copy.backToTop}
-        </Button>
-      </div>
-
-      {/* ─── Dialogs ─── */}
-
-      <CreatePlannerTaskAiDialog
-        open={createAiDialogOpen}
-        onOpenChange={setCreateAiDialogOpen}
-        locale={language}
-        copy={copy}
-        blockMinutes={blockMinutes}
-        onAddToPlan={(name, blocks, taskId) => {
-          addTask(name, blocks, taskId);
-        }}
-      />
-
-      {/* Task Detail */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent size="lg" className="min-w-0">
-          <DialogHeader>
-            <DialogTitle>{copy.detailDialogTitle}</DialogTitle>
-          </DialogHeader>
-          {detailTask && (() => {
-            const isAi = detailTask.source === "ai:gemini";
-            const descRaw = detailTask.description ?? "";
-            const descSections = descRaw.split("\n\n").filter(Boolean);
-            const mainDesc: string[] = [];
-            const remindersList: string[] = [];
-            const notesList: string[] = [];
-            const knowledgeList: string[] = [];
-            const ideasList: string[] = [];
-            let userNotes = "";
-            for (const section of descSections) {
-              if (/^Reminders:\n/i.test(section)) {
-                const lines = section.split("\n").slice(1);
-                for (const l of lines) {
-                  const cleaned = l.replace(/^-\s*/, "").trim();
-                  if (cleaned) remindersList.push(cleaned);
-                }
-              } else if (/^Notes:\n/i.test(section)) {
-                userNotes = section.replace(/^Notes:\n/i, "").trim();
-              } else if (/^Related notes:/i.test(section)) {
-                notesList.push(...section.replace(/^Related notes:\s*/i, "").split(",").map(s => s.trim()).filter(Boolean));
-              } else if (/^Related knowledge:/i.test(section)) {
-                knowledgeList.push(...section.replace(/^Related knowledge:\s*/i, "").split(",").map(s => s.trim()).filter(Boolean));
-              } else if (/^Related ideas:/i.test(section)) {
-                ideasList.push(...section.replace(/^Related ideas:\s*/i, "").split(",").map(s => s.trim()).filter(Boolean));
-              } else {
-                mainDesc.push(section);
-              }
-            }
-            const displayTags = (detailTask.tags ?? []).filter(
-              (t) => !t.startsWith("note:") && !t.startsWith("knowledge:") && !t.startsWith("idea:")
-            );
-
-            return (
-              <div className="max-h-[72vh] min-w-0 space-y-4 overflow-y-auto overflow-x-hidden pr-1 pb-1">
-                {/* Title + AI badge */}
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <p className="text-base font-semibold leading-snug">{detailTask.title}</p>
-                    {isAi && (
-                      <Badge className="shrink-0 border-pink-400/60 bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300">
-                        <Sparkles className="mr-1 h-3 w-3" />
-                        {copy.detailAiGenerated}
-                      </Badge>
+                {mode !== "free" &&
+                gcalStatus?.connected &&
+                gcalStatus.syncEnabled ? (
+                  <p className="text-[11px] leading-snug text-emerald-800/90 dark:text-emerald-200/90">
+                    {copy.googleCalendarConnectedAccountHint(
+                      gcalStatus.email ?? null,
                     )}
-                  </div>
-                </div>
-
-                {/* Status badges */}
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="gap-1">
-                    <Target className="h-3 w-3" />
-                    {detailTask.priority}
-                  </Badge>
-                  <Badge variant="secondary" className="gap-1">
-                    {detailTask.status}
-                  </Badge>
-                  {detailTask.project?.name && (
-                    <Badge variant="secondary" className="gap-1">
-                      <Tag className="h-3 w-3" />
-                      {detailTask.project.name}
-                    </Badge>
-                  )}
-                  {detailTask.due_date && (
-                    <Badge variant="outline" className="gap-1">
-                      <CalendarClock className="h-3 w-3" />
-                      {copy.detailDuePrefix}{" "}
-                      {format(new Date(detailTask.due_date), "MMM d, yyyy", {
-                        locale: dateLocale,
-                      })}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Time estimate */}
-                {detailTask.estimated_blocks ? (
-                  <p className="text-sm text-muted-foreground">
-                    {copy.detailEstimatedPrefix} {detailTask.estimated_blocks}{" "}
-                    {copy.blocksLabel} · {fmtBlocks(detailTask.estimated_blocks)}
                   </p>
                 ) : null}
-
-                {/* Description */}
-                {mainDesc.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <FileText className="h-3.5 w-3.5" />
-                      {copy.detailDescription}
-                    </p>
-                    <div className="rounded-lg border bg-muted/30 p-3">
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed break-words">
-                        {mainDesc.join("\n\n")}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* User notes */}
-                {userNotes && (
-                  <div className="space-y-1.5">
-                    <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <NotebookPen className="h-3.5 w-3.5" />
-                      Notes
-                    </p>
-                    <div className="rounded-lg border bg-muted/30 p-3">
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed break-words">{userNotes}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Reminders */}
-                {remindersList.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <TriangleAlert className="h-3.5 w-3.5" />
-                      {copy.detailReminders}
-                    </p>
-                    <ul className="space-y-1.5">
-                      {remindersList.map((r, i) => (
-                        <li key={i} className="flex items-start gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
-                          <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-pink-500" />
-                          <span className="break-words">{r}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Related items */}
-                {(notesList.length > 0 || knowledgeList.length > 0 || ideasList.length > 0) && (
-                  <div className="space-y-3 rounded-xl border border-violet-200/50 bg-violet-50/30 p-3 dark:border-violet-400/20 dark:bg-violet-500/8">
-                    <p className="inline-flex items-center gap-1.5 text-sm font-medium">
-                      <Lightbulb className="h-4 w-4 text-violet-500" />
-                      {copy.reviewSmartLinks}
-                    </p>
-                    {notesList.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">{copy.detailRelatedNotes}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {notesList.map((id) => {
-                            const note = notesById.get(id);
-                            const label = smartLinkNoteDisplayLabel(note, notesPending, copy);
-                            return (
-                              <span key={id} className="inline-flex max-w-full min-w-0">
-                                <Badge
-                                  variant="outline"
-                                  className="max-w-[min(100%,280px)] border-violet-400/50 text-xs font-normal"
-                                >
-                                  <span className="truncate">{label}</span>
-                                </Badge>
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    {knowledgeList.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">{copy.detailRelatedKnowledge}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {knowledgeList.map((id) => {
-                            const row = knowledgeById.get(id);
-                            const label = smartLinkKnowledgeDisplayLabel(row, knowledgePickPending, copy);
-                            const href = row
-                              ? `${knowledgeLibraryHref}?item=${encodeURIComponent(id)}`
-                              : undefined;
-                            const badge = (
-                              <Badge
-                                variant="outline"
-                                className="max-w-[min(100%,280px)] border-amber-400/50 text-xs font-normal"
-                              >
-                                <span className="truncate">{label}</span>
-                              </Badge>
-                            );
-                            return href ? (
-                              <Link
-                                key={id}
-                                href={href}
-                                className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                {badge}
-                              </Link>
-                            ) : (
-                              <span key={id} className="inline-flex max-w-full min-w-0">
-                                {badge}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    {ideasList.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">{copy.detailRelatedIdeas}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {ideasList.map((id) => {
-                            const idea = ideasById.get(id);
-                            const label = smartLinkIdeaDisplayLabel(idea, ideasPending, copy);
-                            const href = idea
-                              ? `${ideasLibraryHref}?idea=${encodeURIComponent(id)}`
-                              : undefined;
-                            const badge = (
-                              <Badge
-                                variant="outline"
-                                className="max-w-[min(100%,280px)] border-cyan-400/50 text-xs font-normal"
-                              >
-                                <span className="truncate">{label}</span>
-                              </Badge>
-                            );
-                            return href ? (
-                              <Link
-                                key={id}
-                                href={href}
-                                className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                {badge}
-                              </Link>
-                            ) : (
-                              <span key={id} className="inline-flex max-w-full min-w-0">
-                                {badge}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Source link */}
-                {detailTask.source_url && (
-                  <div className="space-y-1.5">
-                    <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {copy.detailSource}
-                    </p>
-                    <a
-                      href={detailTask.source_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
-                    >
-                      <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 truncate text-blue-600 underline-offset-4 hover:underline dark:text-blue-400">
-                        {copy.detailSourceLink}
-                      </span>
-                    </a>
-                  </div>
-                )}
-
-                {/* Tags */}
-                {displayTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {displayTags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-[10px]">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                <Separator />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDetailDialogOpen(false)}
-                  >
-                    {copy.detailClose}
-                  </Button>
-                  <Button size="sm" onClick={handleMoveToTomorrow}>
-                    {copy.detailMoveTomorrow}
-                  </Button>
-                </div>
               </div>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+            </div>
 
-      {/* Import Tasks */}
-      <ImportTasksDialog
-        open={importDialogOpen}
-        onClose={() => setImportDialogOpen(false)}
-        onImport={handleImportTasks}
-        tasks={allTasks}
-        copy={copy}
-      />
+            {mode !== "free" &&
+            (upsertPlan.isPending || gcalPushPending) ? (
+              <div
+                className="flex items-center gap-2 text-[12px] text-muted-foreground"
+                role="status"
+                aria-live="polite"
+              >
+                <Loader2
+                  className="h-3.5 w-3.5 shrink-0 animate-spin"
+                  aria-hidden
+                />
+                <span>{copy.googleCalendarSaveAndSyncLoading}</span>
+              </div>
+            ) : null}
 
-      {/* AI Suggestions */}
-      <AISuggestionsDialog
-        open={aiDialogOpen}
-        onClose={() => setAiDialogOpen(false)}
-        recommendations={mockAi.recommendations}
-        planningTip={mockAi.planningTip}
-        onAddTask={handleAddAiTask}
-        copy={copy}
-        blockMinutes={blockMinutes}
-      />
+            <Separator className="bg-border/45" />
 
-      {/* Template Dialog */}
-      <TemplateDialog
-        open={templateDialogOpen}
-        onClose={() => setTemplateDialogOpen(false)}
-        mode={templateMode}
-        templates={templates}
-        currentPlan={{ tasks }}
-        onSaveTemplate={handleSaveTemplate}
-        onLoadTemplate={handleLoadTemplate}
-        onDeleteTemplate={handleDeleteTemplate}
-        copy={copy}
-      />
+            {mode === "free" ? (
+              /* Free Mode: replace the time-budget tiles with a calm Planning Window caption */
+              <div className="space-y-1.5 rounded-2xl border border-slate-300/50 bg-white/52 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  {copy.freePlanningWindowLabel}
+                </p>
+                <p className="text-sm font-semibold tabular-nums leading-snug text-foreground">
+                  {freePlanningWindowLabel}
+                </p>
+                <p className="text-[11px] leading-snug text-muted-foreground/85">
+                  {copy.freePlanningWindowHelper}
+                </p>
+              </div>
+            ) : (
+              /* Time budget — three icon tiles */
+              <>
+                <TimeSummaryCarousel
+                  items={timeSummaryItems}
+                  label={`${copy.available} / ${copy.planned} / ${copy.remaining}`}
+                />
+                <div className="planner-time-summary-grid min-w-0 grid-cols-3 gap-3">
+                  {timeSummaryItems.map((item) => (
+                    <div key={item.id}>{item.content}</div>
+                  ))}
+                </div>
+              </>
+            )}
+          </OSFrostedPanel>
 
-      {/* Pre-task Ritual */}
-      <PreTaskRitualModal
-        open={ritualOpen}
-        onOpenChange={setRitualOpen}
-        taskTitle={ritualTaskName}
-        copy={ritualCopy}
-        onBeginTask={() => toast.success(copy.toastFocusActivated)}
-      />
+          <TodayFocusStrip
+            copy={copy}
+            planExists={
+              mode === "free" ? freeTasks.length > 0 : tasks.length > 0
+            }
+            qualityReport={qualityReport}
+            activeSession={activeFocusSession}
+            review={dailyReview}
+            focusTargetText={focusTargetText}
+            analyzing={analyzeQuality.isPending}
+            onAnalyze={() => void handleAnalyzePlanQuality()}
+            onImprove={() => setQualityDrawerOpen(true)}
+            onStartFirstFocus={handleStartFirstFocus}
+            onOpenDetails={() => setQualityDrawerOpen(true)}
+            onOpenReview={() => void handleGenerateDailyReview()}
+            onPause={handlePauseFocus}
+            onResume={handleResumeFocus}
+            onFinish={() => setFinishFocusOpen(true)}
+            onDistracted={handleDistracted}
+          />
 
-      <PlanQualityDrawer
-        copy={copy}
-        open={qualityDrawerOpen}
-        onOpenChange={setQualityDrawerOpen}
-        report={qualityReport}
-        onApplyChange={handleApplyQualityChange}
-        onApplyAllSafe={handleApplyAllSafeQualityChanges}
-      />
+          {mode === "adaptive" && (
+            <div className="space-y-4">
+              <OSFrostedPanel
+                as="section"
+                className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4"
+              >
+                <h2 className="font-heading text-sm font-semibold tracking-tight text-foreground">
+                  {copy.taskBuilder}
+                </h2>
+                <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
+                  <OSPrimaryAction
+                    type="button"
+                    className="h-11 min-h-11 justify-center gap-2 rounded-xl"
+                    onClick={() => setCreateAiDialogOpen(true)}
+                  >
+                    <Wand2 className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{copy.createTaskWithAi}</span>
+                  </OSPrimaryAction>
+                  <OSControl
+                    type="button"
+                    className="h-11 min-h-11 justify-center gap-2 rounded-xl"
+                    onClick={() => setImportDialogOpen(true)}
+                  >
+                    <FolderInput className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{copy.importFromTasks}</span>
+                  </OSControl>
+                </div>
+              </OSFrostedPanel>
 
-      <StartFocusSessionSheet
-        copy={copy}
-        open={startFocusOpen}
-        draft={focusDraft}
-        pending={startFocusSession.isPending}
-        onOpenChange={setStartFocusOpen}
-        onStart={(input) => void handleStartFocusSession(input)}
-      />
+              <AutoPlanPanel
+                state={autoPlanState}
+                copy={autoPlanCopy}
+                candidateCount={autoPlanCandidateSelection.candidates.length}
+                calendarNotice={autoPlanCalendarNotice}
+                busyWindowCount={autoPlanBusyWindowCount}
+                result={autoPlanPanelResult}
+                bufferMinutes={autoPlanBufferMinutes}
+                bufferOptions={[0, 10, 20]}
+                isBuilding={autoPlanBuilding}
+                isAccepting={autoPlanAccepting}
+                onBuildMyDay={() => void handleBuildAutoPlan(false)}
+                onAcceptPlan={() => void handleAcceptAutoPlan()}
+                onReplanRemaining={() => void handleBuildAutoPlan(true)}
+                onToggleLock={handleToggleAutoPlanLock}
+                onBufferChange={setAutoPlanBufferMinutes}
+              />
+            </div>
+          )}
 
-      <FinishFocusSessionSheet
-        copy={copy}
-        open={finishFocusOpen}
-        session={activeFocusSession}
-        pending={completeFocusSession.isPending}
-        onOpenChange={setFinishFocusOpen}
-        onFinish={(input) => void handleCompleteFocus(input)}
-      />
+          {/* ─── Main grid (Time Block mode only) ─── */}
+          {mode === "time-block" && (
+            <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(21rem,0.9fr)_minmax(0,1.1fr)]">
+              {/* ─── Task Builder ─── */}
+              <OSFrostedPanel as="section" className="space-y-4 p-4 sm:p-5">
+                <div className="space-y-3">
+                  <h2 className="font-heading text-base font-semibold tracking-tight text-foreground">
+                    {copy.taskBuilder}
+                  </h2>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                    <OSPrimaryAction
+                      className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl sm:flex-1"
+                      onClick={() => setCreateAiDialogOpen(true)}
+                    >
+                      <Wand2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{copy.createTaskWithAi}</span>
+                    </OSPrimaryAction>
+                    <OSControl
+                      className="h-11 min-h-11 w-full shrink-0 gap-2 rounded-xl sm:flex-1"
+                      onClick={() => setImportDialogOpen(true)}
+                    >
+                      <FolderInput className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{copy.importFromTasks}</span>
+                    </OSControl>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {/* Quick add grid */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {copy.quickAdd}
+                      </Label>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="h-11 min-h-11 gap-1 rounded-xl px-3 text-xs"
+                          onClick={() => setAddQuickTaskOpen(true)}
+                        >
+                          <Plus className="h-3 w-3" />
+                          {copy.quickTaskAddNew}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pb-1 sm:pb-0">
+                      {quickTaskDefs.map((qt, idx) => (
+                        <QuickTaskButton
+                          key={`${qt.name}-${idx}-${qt.iconSrc ?? ""}-${qt.iconRasterFallback ?? ""}`}
+                          task={qt}
+                          onAdd={(blocks) => handleQuickAdd(qt.name, blocks)}
+                          onDelete={() => handleDeleteQuickTask(idx)}
+                          onRegenerateIcon={() =>
+                            void handleRegenerateQuickTaskIcon(idx)
+                          }
+                          isIconGenerating={quickIconBusyKeys.has(
+                            quickTaskJobKey(qt, idx),
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
 
-      <EndOfDayReviewDrawer
-        copy={copy}
-        open={reviewDrawerOpen}
-        review={dailyReview}
-        pending={generateDailyReview.isPending}
-        onOpenChange={setReviewDrawerOpen}
-        onRegenerate={() => void handleGenerateDailyReview()}
-        onSave={() => {
-          setReviewDrawerOpen(false);
-          toast.success(copy.focusReviewSavedToast);
-        }}
-      />
-      </div>
-    </PageShell>
+                  {/* Add Quick Task Dialog */}
+                  <Dialog
+                    open={addQuickTaskOpen}
+                    onOpenChange={setAddQuickTaskOpen}
+                  >
+                    <DialogContent size="sm">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {copy.quickTaskAddDialogTitle}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-2">
+                        <div className="space-y-2">
+                          <Label className="text-sm">
+                            {copy.quickTaskNameLabel}
+                          </Label>
+                          <Input
+                            value={newQuickName}
+                            onChange={(e) => setNewQuickName(e.target.value)}
+                            placeholder={copy.quickTaskNamePlaceholder}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") void handleAddQuickTask();
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">
+                            {copy.quickTaskBlocksLabel}
+                          </Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={30}
+                            value={newQuickBlocks}
+                            onChange={(e) =>
+                              setNewQuickBlocks(
+                                Math.max(1, Number(e.target.value)),
+                              )
+                            }
+                            className="w-24"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {fmtBlocks(newQuickBlocks)}
+                          </p>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-11 min-h-11 rounded-xl px-3"
+                            onClick={() => setAddQuickTaskOpen(false)}
+                          >
+                            {copy.cancel}
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-11 min-h-11 rounded-xl px-3"
+                            onClick={() => void handleAddQuickTask()}
+                            disabled={!newQuickName.trim()}
+                          >
+                            {copy.add}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Separator className="bg-border/45" />
+
+                  {/* Task list */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-xs text-muted-foreground">
+                        {copy.yourPlan(tasks.length)}
+                      </Label>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {summary.totalBlocks} {copy.blocksLabel} ·{" "}
+                        {fmtBlocks(summary.totalBlocks)}
+                      </Badge>
+                    </div>
+
+                    {tasks.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-300/55 bg-white/36 px-4 py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
+                        {copy.noTasksYet}
+                      </div>
+                    ) : (
+                      <SortableTaskList
+                        tasks={tasks}
+                        meta={taskMeta}
+                        isMobile={isMobile}
+                        copy={copy}
+                        taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
+                        onReorder={handleReorder}
+                        onChangeBlocks={handleChangeBlocks}
+                        onDelete={handleDelete}
+                        onRitual={handleRitual}
+                        onTaskClick={handleTaskClick}
+                        onStartFocus={openStartFocusForTaskIndex}
+                      />
+                    )}
+                  </div>
+                </div>
+              </OSFrostedPanel>
+
+              {/* ─── Timeline + visual schedule ─── */}
+              <div className="space-y-6">
+                <VisualScheduleGenerator
+                  copy={copy}
+                  planDate={dateStr}
+                  startTime={startTime}
+                  endTime={endTime}
+                  tasks={tasks}
+                  blockMinutes={blockMinutes}
+                  imageUrl={scheduleImageUrl}
+                  onImageUrlChange={(url) => {
+                    setScheduleImageUrl(url);
+                    scheduleImageUrlRef.current = url;
+                  }}
+                  onPersistImageUrl={async (url) => {
+                    scheduleImageUrlRef.current = url;
+                    await upsertPlan.mutateAsync({
+                      plan_date: dateStr,
+                      start_time: startTime,
+                      end_time: endTime,
+                      schedule_image_url: url,
+                    });
+                  }}
+                />
+                <TimelineView
+                  startTime={startTime}
+                  endTime={endTime}
+                  endDayOffset={planRange.endDayOffset}
+                  nextDayBadge={copy.nextDayBadge}
+                  tasks={tasks}
+                  selectedDate={selectedDate}
+                  allTasks={allTasks}
+                  blockMinutes={blockMinutes}
+                  taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
+                  plannerCopy={copy}
+                  scheduleTitle={copy.timelineTitle(
+                    format(selectedDate, "MMMM d, yyyy", {
+                      locale: dateLocale,
+                    }),
+                  )}
+                  formatTime12={formatTime12}
+                  fmtBlocks={fmtBlocks}
+                  untitledTask={copy.untitledTask}
+                  taskCardBlockCount={copy.taskCardBlockCount}
+                  focusSessionsByPlannerTaskId={focusSessionsByPlannerTaskId}
+                  activeFocusSessionId={activeFocusSession?.id ?? null}
+                  showActualOverlay={
+                    focusPreferences?.show_actual_timeline_overlay ?? true
+                  }
+                  onStartFocus={openStartFocusForPlanTask}
+                  onTaskClick={(planTask) => {
+                    const idx = tasks.findIndex(
+                      (t) =>
+                        t.taskName === planTask.taskName &&
+                        t.order === planTask.order,
+                    );
+                    if (idx >= 0) handleTaskClick(idx);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ─── Free Planning board (Free mode only) ─── */}
+          {/* Single-column flow on every breakpoint: each priority section gets the full content
+           *  width so long task names breathe instead of compressing into 4 narrow ribbons.
+           *  The Free Plan Summary lives at the bottom as a recap, not a competing right rail. */}
+          {mode === "free" && (
+            <div className="space-y-6">
+              <FreePlanBoard
+                copy={copy}
+                tasks={freeTasks}
+                onChange={updateFreeTasks}
+                onStartFocus={openStartFocusForFreeTask}
+                secondaryActions={
+                  <>
+                    <OSPrimaryAction
+                      type="button"
+                      className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
+                      onClick={() => setCreateAiDialogOpen(true)}
+                    >
+                      <Wand2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{copy.createTaskWithAi}</span>
+                    </OSPrimaryAction>
+                    <OSControl
+                      type="button"
+                      className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
+                      onClick={() => setImportDialogOpen(true)}
+                    >
+                      <FolderInput className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{copy.importFromTasks}</span>
+                    </OSControl>
+                  </>
+                }
+              />
+              <FreePlanSummary
+                copy={copy}
+                tasks={freeTasks}
+                windowLabel={freePlanningWindowLabel}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-center pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-11 min-h-11 rounded-xl px-3 gap-1.5"
+              aria-label={copy.ariaBackToTop}
+              onClick={() => {
+                const opts: ScrollToOptions = { top: 0, behavior: "smooth" };
+                // Long pages often scroll the document: the inset `main` grows with
+                // content so it has no internal overflow. Shorter viewports may scroll
+                // the layout `main` instead — cover both.
+                const layoutMain = document.querySelector(
+                  "main.flex-1.overflow-auto",
+                );
+                if (layoutMain instanceof HTMLElement) {
+                  layoutMain.scrollTo(opts);
+                }
+                window.scrollTo(opts);
+              }}
+            >
+              <ArrowUp className="h-4 w-4" />
+              {copy.backToTop}
+            </Button>
+          </div>
+
+          {/* ─── Dialogs ─── */}
+
+          <CreatePlannerTaskAiDialog
+            open={createAiDialogOpen}
+            onOpenChange={setCreateAiDialogOpen}
+            locale={language}
+            copy={copy}
+            blockMinutes={blockMinutes}
+            onAddToPlan={(name, blocks, taskId) => {
+              addTask(name, blocks, taskId);
+            }}
+          />
+
+          {/* Task Detail */}
+          <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+            <DialogContent size="lg" className="min-w-0">
+              <DialogHeader>
+                <DialogTitle>{copy.detailDialogTitle}</DialogTitle>
+              </DialogHeader>
+              {detailTask &&
+                (() => {
+                  const isAi = detailTask.source === "ai:gemini";
+                  const linkMetadata = parseTaskLinkMetadata(
+                    detailTask.tags,
+                    detailTask.description,
+                  );
+                  const descRaw =
+                    stripTaskLinkMetadataSections(detailTask.description) ?? "";
+                  const descSections = descRaw.split("\n\n").filter(Boolean);
+                  const mainDesc: string[] = [];
+                  const remindersList: string[] = [];
+                  const notesList = linkMetadata.noteIds;
+                  const knowledgeList = linkMetadata.knowledgeIds;
+                  const ideasList = linkMetadata.ideaIds;
+                  let userNotes = "";
+                  for (const section of descSections) {
+                    if (/^Reminders:\n/i.test(section)) {
+                      const lines = section.split("\n").slice(1);
+                      for (const l of lines) {
+                        const cleaned = l.replace(/^-\s*/, "").trim();
+                        if (cleaned) remindersList.push(cleaned);
+                      }
+                    } else if (/^Notes:\n/i.test(section)) {
+                      userNotes = section.replace(/^Notes:\n/i, "").trim();
+                    } else {
+                      mainDesc.push(section);
+                    }
+                  }
+                  const displayTags = linkMetadata.userVisibleTags;
+
+                  return (
+                    <div className="max-h-[72vh] min-w-0 space-y-4 overflow-y-auto overflow-x-hidden pr-1 pb-1">
+                      {/* Title + AI badge */}
+                      <div className="space-y-1">
+                        <div className="flex items-start gap-2">
+                          <p className="text-base font-semibold leading-snug">
+                            {detailTask.title}
+                          </p>
+                          {isAi && (
+                            <Badge className="shrink-0 border-pink-400/60 bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300">
+                              <Sparkles className="mr-1 h-3 w-3" />
+                              {copy.detailAiGenerated}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status badges */}
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="gap-1">
+                          <Target className="h-3 w-3" />
+                          {detailTask.priority}
+                        </Badge>
+                        <Badge variant="secondary" className="gap-1">
+                          {detailTask.status}
+                        </Badge>
+                        {detailTask.project?.name && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Tag className="h-3 w-3" />
+                            {detailTask.project.name}
+                          </Badge>
+                        )}
+                        {detailTask.due_date && (
+                          <Badge variant="outline" className="gap-1">
+                            <CalendarClock className="h-3 w-3" />
+                            {copy.detailDuePrefix}{" "}
+                            {format(
+                              new Date(detailTask.due_date),
+                              "MMM d, yyyy",
+                              {
+                                locale: dateLocale,
+                              },
+                            )}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Time estimate */}
+                      {detailTask.estimated_blocks ? (
+                        <p className="text-sm text-muted-foreground">
+                          {copy.detailEstimatedPrefix}{" "}
+                          {detailTask.estimated_blocks} {copy.blocksLabel} ·{" "}
+                          {fmtBlocks(detailTask.estimated_blocks)}
+                        </p>
+                      ) : null}
+
+                      {/* Description */}
+                      {mainDesc.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <FileText className="h-3.5 w-3.5" />
+                            {copy.detailDescription}
+                          </p>
+                          <div className="rounded-lg border bg-muted/30 p-3">
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed break-words">
+                              {mainDesc.join("\n\n")}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* User notes */}
+                      {userNotes && (
+                        <div className="space-y-1.5">
+                          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <NotebookPen className="h-3.5 w-3.5" />
+                            Notes
+                          </p>
+                          <div className="rounded-lg border bg-muted/30 p-3">
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed break-words">
+                              {userNotes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Reminders */}
+                      {remindersList.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <TriangleAlert className="h-3.5 w-3.5" />
+                            {copy.detailReminders}
+                          </p>
+                          <ul className="space-y-1.5">
+                            {remindersList.map((r, i) => (
+                              <li
+                                key={i}
+                                className="flex items-start gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
+                              >
+                                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-pink-500" />
+                                <span className="break-words">{r}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Related items */}
+                      {(notesList.length > 0 ||
+                        knowledgeList.length > 0 ||
+                        ideasList.length > 0) && (
+                        <div className="space-y-3 rounded-xl border border-violet-200/50 bg-violet-50/30 p-3 dark:border-violet-400/20 dark:bg-violet-500/8">
+                          <p className="inline-flex items-center gap-1.5 text-sm font-medium">
+                            <Lightbulb className="h-4 w-4 text-violet-500" />
+                            {copy.reviewSmartLinks}
+                          </p>
+                          {notesList.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {copy.detailRelatedNotes}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {notesList.map((id) => {
+                                  const note = notesById.get(id);
+                                  const label = smartLinkNoteDisplayLabel(
+                                    note,
+                                    notesPending,
+                                    copy,
+                                  );
+                                  return (
+                                    <span
+                                      key={id}
+                                      className="inline-flex max-w-full min-w-0"
+                                    >
+                                      <Badge
+                                        variant="outline"
+                                        className="max-w-[min(100%,280px)] border-violet-400/50 text-xs font-normal"
+                                      >
+                                        <span className="truncate">
+                                          {label}
+                                        </span>
+                                      </Badge>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {knowledgeList.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {copy.detailRelatedKnowledge}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {knowledgeList.map((id) => {
+                                  const row = knowledgeById.get(id);
+                                  const label = smartLinkKnowledgeDisplayLabel(
+                                    row,
+                                    knowledgePickPending,
+                                    copy,
+                                  );
+                                  const href = row
+                                    ? `${knowledgeLibraryHref}?item=${encodeURIComponent(id)}`
+                                    : undefined;
+                                  const badge = (
+                                    <Badge
+                                      variant="outline"
+                                      className="max-w-[min(100%,280px)] border-amber-400/50 text-xs font-normal"
+                                    >
+                                      <span className="truncate">{label}</span>
+                                    </Badge>
+                                  );
+                                  return href ? (
+                                    <Link
+                                      key={id}
+                                      href={href}
+                                      className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                      {badge}
+                                    </Link>
+                                  ) : (
+                                    <span
+                                      key={id}
+                                      className="inline-flex max-w-full min-w-0"
+                                    >
+                                      {badge}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {ideasList.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {copy.detailRelatedIdeas}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {ideasList.map((id) => {
+                                  const idea = ideasById.get(id);
+                                  const label = smartLinkIdeaDisplayLabel(
+                                    idea,
+                                    ideasPending,
+                                    copy,
+                                  );
+                                  const href = idea
+                                    ? `${ideasLibraryHref}?idea=${encodeURIComponent(id)}`
+                                    : undefined;
+                                  const badge = (
+                                    <Badge
+                                      variant="outline"
+                                      className="max-w-[min(100%,280px)] border-cyan-400/50 text-xs font-normal"
+                                    >
+                                      <span className="truncate">{label}</span>
+                                    </Badge>
+                                  );
+                                  return href ? (
+                                    <Link
+                                      key={id}
+                                      href={href}
+                                      className="inline-flex max-w-full min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                      {badge}
+                                    </Link>
+                                  ) : (
+                                    <span
+                                      key={id}
+                                      className="inline-flex max-w-full min-w-0"
+                                    >
+                                      {badge}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Source link */}
+                      {detailTask.source_url && (
+                        <div className="space-y-1.5">
+                          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            {copy.detailSource}
+                          </p>
+                          <a
+                            href={detailTask.source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+                          >
+                            <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 truncate text-blue-600 underline-offset-4 hover:underline dark:text-blue-400">
+                              {copy.detailSourceLink}
+                            </span>
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      {displayTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {displayTags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-[10px]"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <Separator />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDetailDialogOpen(false)}
+                        >
+                          {copy.detailClose}
+                        </Button>
+                        <Button size="sm" onClick={handleMoveToTomorrow}>
+                          {copy.detailMoveTomorrow}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
+            </DialogContent>
+          </Dialog>
+
+          {/* Import Tasks */}
+          <ImportTasksDialog
+            open={importDialogOpen}
+            onClose={() => setImportDialogOpen(false)}
+            onImport={handleImportTasks}
+            tasks={allTasks}
+            copy={copy}
+          />
+
+          {/* AI Suggestions */}
+          <AISuggestionsDialog
+            open={aiDialogOpen}
+            onClose={() => setAiDialogOpen(false)}
+            recommendations={mockAi.recommendations}
+            planningTip={mockAi.planningTip}
+            onAddTask={handleAddAiTask}
+            copy={copy}
+            blockMinutes={blockMinutes}
+          />
+
+          {/* Template Dialog */}
+          <TemplateDialog
+            open={templateDialogOpen}
+            onClose={() => setTemplateDialogOpen(false)}
+            mode={templateMode}
+            templates={templates}
+            currentPlan={{ tasks }}
+            onSaveTemplate={handleSaveTemplate}
+            onLoadTemplate={handleLoadTemplate}
+            onDeleteTemplate={handleDeleteTemplate}
+            copy={copy}
+          />
+
+          {/* Pre-task Ritual */}
+          <PreTaskRitualModal
+            open={ritualOpen}
+            onOpenChange={setRitualOpen}
+            taskTitle={ritualTaskName}
+            copy={ritualCopy}
+            onBeginTask={() => toast.success(copy.toastFocusActivated)}
+          />
+
+          <PlanQualityDrawer
+            copy={copy}
+            open={qualityDrawerOpen}
+            onOpenChange={setQualityDrawerOpen}
+            report={qualityReport}
+            onApplyChange={handleApplyQualityChange}
+            onApplyAllSafe={handleApplyAllSafeQualityChanges}
+          />
+
+          <StartFocusSessionSheet
+            copy={copy}
+            open={startFocusOpen}
+            draft={focusDraft}
+            pending={startFocusSession.isPending}
+            onOpenChange={setStartFocusOpen}
+            onStart={(input) => void handleStartFocusSession(input)}
+          />
+
+          <FinishFocusSessionSheet
+            copy={copy}
+            open={finishFocusOpen}
+            session={activeFocusSession}
+            pending={completeFocusSession.isPending}
+            onOpenChange={setFinishFocusOpen}
+            onFinish={(input) => void handleCompleteFocus(input)}
+          />
+
+          <EndOfDayReviewDrawer
+            copy={copy}
+            open={reviewDrawerOpen}
+            review={dailyReview}
+            pending={generateDailyReview.isPending}
+            onOpenChange={setReviewDrawerOpen}
+            onRegenerate={() => void handleGenerateDailyReview()}
+            onSave={() => {
+              setReviewDrawerOpen(false);
+              toast.success(copy.focusReviewSavedToast);
+            }}
+          />
+        </div>
+      </PageShell>
     </PlannerLocaleContext.Provider>
   );
 }

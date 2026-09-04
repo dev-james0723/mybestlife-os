@@ -27,6 +27,7 @@
     "test:brain": "node --experimental-strip-types --import ./scripts/test-node-alias-resolver.mjs scripts/test-brain-engine.ts",
     "audit:liquid-glass": "node scripts/audit-liquid-glass-runtime.mjs",
     "audit:app-runtime": "node scripts/audit-liquid-glass-runtime.mjs --routes=auto --viewports=390,1280 --element-click-limit=8 --timeout-ms=600000",
+    "verify:journal-theme": "node scripts/verify-journal-theme-matrix.mjs",
     "backfill:idea-card-visuals": "node --experimental-strip-types --env-file=.env.local scripts/backfill-idea-card-visuals.ts",
     "seed:prompt-library": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts",
     "seed:prompt-library:dry": "node --experimental-strip-types --env-file=.env.local scripts/seed-prompt-library.ts --dry-run",

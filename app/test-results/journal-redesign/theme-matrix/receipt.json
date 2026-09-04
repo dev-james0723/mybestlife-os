@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-09-04T05:15:08.138Z",
+  "results": [
+    {
+      "theme": "default",
+      "colorMode": "light",
+      "viewport": "desktop",
+      "screenshot": "default-light-desktop-save.png",
+      "width": 98.4375,
+      "height": 44,
+      "parentBackground": "rgba(0, 0, 0, 0)",
+      "parentPosition": "static",
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "uiTheme": "default",
+      "heading": "Journal",
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "theme": "default",
+      "colorMode": "dark",
+      "viewport": "desktop",
+      "screenshot": "default-dark-desktop-save.png",
+      "width": 98.4375,
+      "height": 44,
+      "parentBackground": "rgba(0, 0, 0, 0)",
+      "parentPosition": "static",
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "uiTheme": "default",
+      "heading": "Journal",
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ]
+}

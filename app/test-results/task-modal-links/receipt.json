@@ -1,0 +1,10 @@
+{
+  "state": "mocked-browser-validation",
+  "passed": false,
+  "route": "/en/tasks",
+  "completedViewports": [
+    "390x844",
+    "768x1024"
+  ],
+  "error": "AssertionError [ERR_ASSERTION]: desktop page errors: Invalid or unexpected token\n\n1 !== 0\n\n    at verifyViewport (file:///Users/ouxianxing/My_life_os/app/scripts/verify-task-modal-links.mjs:689:12)\n    at async file:///Users/ouxianxing/My_life_os/app/scripts/verify-task-modal-links.mjs:761:18"
+}

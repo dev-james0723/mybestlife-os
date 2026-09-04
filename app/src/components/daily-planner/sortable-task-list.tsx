@@ -4,12 +4,10 @@
  * SortableTaskList — drag-and-drop reorderable list for the Daily Planner.
  *
  * Gesture arbitration (mobile/iPad):
- *   touch-action: pan-y on each card hands vertical scrolling to the browser
- *   instantly, so JS never has to fight the scroller. JS owns horizontal swipe
- *   only. Drag is gated behind a deliberate long-press (500ms hold under 14px
- *   of motion). Direction is locked at the first ~4px of motion, so once a
- *   gesture is recognized as scroll / swipe / drag, the other two cannot fire.
- *   Only one row can be swiped open at a time (lifted to the parent).
+ *   the card body keeps `touch-action: pan-y` for native page scrolling and
+ *   horizontal swipe actions. Dragging lives exclusively on a dedicated handle
+ *   with `touch-action: none`, so a deliberate hold can never compete with the
+ *   page scroller or the card's swipe state machine.
  */
 
 import {
@@ -22,11 +20,12 @@ import {
   type PointerEvent as ReactPointerEvent,
   type TouchEvent as ReactTouchEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   closestCenter,
   defaultDropAnimationSideEffects,
@@ -39,7 +38,6 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -68,6 +66,8 @@ import { cn } from "@/lib/utils";
 import type { DailyPlanTask } from "@/types/database";
 import type { DailyPlannerUiCopy } from "@/lib/i18n/daily-planner-ui";
 import { PlannerGoogleSyncDot } from "@/components/daily-planner/PlannerGoogleSyncDot";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { moveTimeBlockTask } from "@/lib/daily-planner/reorder-time-block-tasks";
 
 /* ────────────────────────────── types ────────────────────────────── */
 
@@ -114,20 +114,17 @@ const SWIPE_FLICK_VELOCITY = 0.45;
 const DIRECTION_LOCK_PX = 4;
 /** Horizontal swipe commit (must be < TouchSensor tolerance to win the race). */
 const HORIZONTAL_COMMIT_PX = 4;
-/** dnd-kit TouchSensor activation. Hold this long with < tolerance motion.
- *  500ms = an explicit long-press, well above the swipe-commit window, so
- *  drag never fires accidentally during a horizontal swipe or vertical scroll. */
-const TOUCH_DRAG_DELAY_MS = 500;
-const TOUCH_DRAG_TOLERANCE_PX = 14;
-/** dnd-kit PointerSensor (desktop / trackpad / pen). */
-const POINTER_DRAG_DISTANCE_PX = 8;
+/** Dedicated handle activation: deliberate on touch, responsive with a mouse. */
+const TOUCH_DRAG_DELAY_MS = 250;
+const TOUCH_DRAG_TOLERANCE_PX = 8;
+const MOUSE_DRAG_DISTANCE_PX = 5;
 
 /* ───────────────────── motion / animation tuning ───────────────────── */
 
 const SOFT_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-const SWIPE_MS = 280;
-const LIFT_MS = 200;
-const DROP_MS = 320;
+const SWIPE_MS = 220;
+const LIFT_MS = 180;
+const DROP_MS = 210;
 
 const dropAnimation: DropAnimation = {
   duration: DROP_MS,
@@ -152,6 +149,10 @@ function stopDragActivation<E extends Element>(
   e.stopPropagation();
 }
 
+function startedFromDragHandle(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-drag-handle]") !== null;
+}
+
 /* ════════════════════════════ component ════════════════════════════ */
 
 export function SortableTaskList({
@@ -167,8 +168,12 @@ export function SortableTaskList({
   onTaskClick,
   onStartFocus,
 }: SortableTaskListProps) {
+  const reduceMotion = useReducedMotion();
   const ids = useMemo(
-    () => tasks.map((t, i) => t._uid ?? `dp-row-${i}`),
+    () =>
+      tasks.map(
+        (t, i) => t.plannerTaskId ?? t._uid ?? `dp-row-${i}`,
+      ),
     [tasks],
   );
 
@@ -180,18 +185,12 @@ export function SortableTaskList({
   const activeTask = activeIndex >= 0 ? tasks[activeIndex] : null;
   const activeMeta = activeIndex >= 0 ? meta[activeIndex] : null;
 
-  // Sensors. Swipe always wins the race vs. drag activation because:
-  //   1. The touch tolerance (14px) is well above the swipe commit threshold
-  //      (4px), so a horizontal swipe commits long before dnd-kit's drag
-  //      activator is even allowed to fire.
-  //   2. The 500ms long-press delay means a casual finger drift never starts a
-  //      drag — the user has to deliberately hold still on the card.
-  //   3. Vertical motion >4px past the direction-lock window flips the row
-  //      into "scrolling" mode, and the page scrolls natively (touch-action:
-  //      pan-y); the drag sensor's tolerance is exceeded so drag won't fire.
+  // Mouse and touch have separate sensors so a touch pointer cannot be claimed
+  // by the desktop sensor before TouchSensor's hold delay. Both activators are
+  // attached only to the dedicated handle below.
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: POINTER_DRAG_DISTANCE_PX },
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: MOUSE_DRAG_DISTANCE_PX },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
@@ -220,7 +219,7 @@ export function SortableTaskList({
       const oldIndex = ids.indexOf(String(active.id));
       const newIndex = ids.indexOf(String(over.id));
       if (oldIndex < 0 || newIndex < 0) return;
-      onReorder(arrayMove(tasks, oldIndex, newIndex));
+      onReorder(moveTimeBlockTask(tasks, oldIndex, newIndex));
     },
     [ids, tasks, onReorder],
   );
@@ -254,6 +253,7 @@ export function SortableTaskList({
               copy={copy}
               taskSyncStatusByPlannerId={taskSyncStatusByPlannerId}
               isActiveDrag={ids[i] === activeId}
+              reduceMotion={reduceMotion}
               openRowId={openRowId}
               setOpenRowId={setOpenRowId}
               onChangeBlocks={onChangeBlocks}
@@ -266,20 +266,26 @@ export function SortableTaskList({
         </ul>
       </SortableContext>
 
-      <DragOverlay
-        dropAnimation={dropAnimation}
-        zIndex={60}
-        style={{ pointerEvents: "none" }}
-      >
-        {activeTask && activeMeta ? (
-          <LiftedCardOverlay
-            task={activeTask}
-            meta={activeMeta}
-            copy={copy}
-            isMobile={isMobile}
-          />
-        ) : null}
-      </DragOverlay>
+      {typeof document === "undefined"
+        ? null
+        : createPortal(
+            <DragOverlay
+              dropAnimation={reduceMotion ? null : dropAnimation}
+              zIndex={60}
+              style={{ pointerEvents: "none" }}
+            >
+              {activeTask && activeMeta ? (
+                <LiftedCardOverlay
+                  task={activeTask}
+                  meta={activeMeta}
+                  copy={copy}
+                  isMobile={isMobile}
+                  reduceMotion={reduceMotion}
+                />
+              ) : null}
+            </DragOverlay>,
+            document.body,
+          )}
     </DndContext>
   );
 }
@@ -295,6 +301,7 @@ interface SortableRowProps {
   copy: DailyPlannerUiCopy;
   taskSyncStatusByPlannerId?: Record<string, string>;
   isActiveDrag: boolean;
+  reduceMotion: boolean;
   openRowId: string | null;
   setOpenRowId: (id: string | null) => void;
   onChangeBlocks: (index: number, delta: number) => void;
@@ -313,6 +320,7 @@ function SortableRow({
   copy,
   taskSyncStatusByPlannerId,
   isActiveDrag,
+  reduceMotion,
   openRowId,
   setOpenRowId,
   onChangeBlocks,
@@ -325,15 +333,23 @@ function SortableRow({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
     isSorting,
-  } = useSortable({ id });
+  } = useSortable({
+    id,
+    transition: reduceMotion
+      ? null
+      : { duration: LIFT_MS, easing: SOFT_EASE },
+  });
 
   const sortableStyle: CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition: transition ?? `transform ${LIFT_MS}ms ${SOFT_EASE}`,
+    transition: reduceMotion
+      ? undefined
+      : transition ?? `transform ${LIFT_MS}ms ${SOFT_EASE}`,
   };
 
   return (
@@ -341,6 +357,8 @@ function SortableRow({
       ref={setNodeRef}
       style={sortableStyle}
       className="list-none"
+      data-planner-task-id={task.plannerTaskId ?? id}
+      data-dnd-state={isDragging ? "dragging" : isSorting ? "sorting" : "idle"}
       aria-label={
         task.taskName ? `${task.taskName}, ${meta.timeRangeLabel}` : copy.untitledTask
       }
@@ -356,6 +374,8 @@ function SortableRow({
         presentation={isActiveDrag ? "placeholder" : "default"}
         dndListeners={listeners}
         dndAttributes={attributes}
+        activatorRef={setActivatorNodeRef}
+        reduceMotion={reduceMotion}
         isAnyDragging={isSorting}
         isThisDragging={isDragging}
         isOpen={openRowId === id}
@@ -387,6 +407,8 @@ interface TaskRowContentProps {
   presentation: RowPresentation;
   dndListeners?: ReturnType<typeof useSortable>["listeners"];
   dndAttributes?: ReturnType<typeof useSortable>["attributes"];
+  activatorRef?: (node: HTMLElement | null) => void;
+  reduceMotion: boolean;
   isAnyDragging?: boolean;
   isThisDragging?: boolean;
   isOpen: boolean;
@@ -409,6 +431,8 @@ function TaskRowContent({
   presentation,
   dndListeners,
   dndAttributes,
+  activatorRef,
+  reduceMotion,
   isAnyDragging,
   isThisDragging,
   isOpen,
@@ -503,6 +527,13 @@ function TaskRowContent({
   const handleCardTouchStart = useCallback(
     (e: ReactTouchEvent<HTMLDivElement>) => {
       if (!isMobile) return;
+      // TouchSensor owns handle gestures. Leaving the card gesture machine idle
+      // prevents a long-press drag from also becoming a swipe or page scroll.
+      if (startedFromDragHandle(e.target)) {
+        gRef.current.mode = "idle";
+        horizontalActiveRef.current = false;
+        return;
+      }
       // Multi-touch: bail out — never drag/swipe with 2+ fingers.
       if (e.touches.length > 1) {
         gRef.current.mode = "idle";
@@ -691,8 +722,9 @@ function TaskRowContent({
     <div
       ref={rowRef}
       className={cn(
-        "relative overflow-hidden rounded-lg",
+        "relative overflow-hidden rounded-xl",
         "transition-[box-shadow,background-color,border-color] duration-200",
+        isMobile && "bg-white dark:bg-slate-950",
         isPlaceholder && [
           "border border-dashed border-primary/40",
           "bg-primary/[0.04]",
@@ -702,7 +734,7 @@ function TaskRowContent({
       {/* ── Mobile swipe-revealed action panel ── */}
       {isMobile && !isPlaceholder && (
         <div
-          className="absolute right-0 inset-y-0 z-0 flex items-stretch"
+          className="absolute right-[1px] inset-y-[1px] z-0 flex items-stretch overflow-hidden rounded-r-[13px]"
           style={{ width: MOBILE_SWIPE_PANEL_PX }}
           onPointerDown={stopDragActivation}
           onTouchStart={(e) => e.stopPropagation()}
@@ -765,16 +797,14 @@ function TaskRowContent({
       {/* ── Card body ── */}
       <div
         ref={cardRef}
-        // dnd listeners spread on the whole body. Sensors are tuned so swipe
-        // commits before drag activator fires; internal buttons stop bubbling.
-        {...(dndListeners ?? {})}
-        {...(dndAttributes ?? {})}
         className={cn(
-          "relative z-10 flex items-center gap-2 rounded-xl border border-slate-300/55 bg-white/62 p-3 shadow-[0_8px_22px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.68)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.045] dark:shadow-[0_12px_28px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]",
-          !isMobile && "cursor-grab active:cursor-grabbing",
+          "relative z-10 flex items-center gap-2 rounded-xl border border-slate-300/55 p-3 shadow-[0_8px_22px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.68)] dark:border-white/10 dark:shadow-[0_12px_28px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]",
+          isMobile
+            ? "rounded-r-none bg-white dark:bg-slate-950"
+            : "bg-white/62 backdrop-blur-md dark:bg-white/[0.045]",
           !isMobile &&
             !isAnyDragging &&
-            "transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out hover:-translate-y-px hover:border-slate-400/65 hover:bg-white/78 hover:shadow-[0_14px_34px_rgba(15,23,42,0.1),inset_0_1px_0_rgba(255,255,255,0.74)] dark:hover:border-white/18 dark:hover:bg-white/[0.075] dark:hover:shadow-[0_16px_38px_rgba(2,8,23,0.36),inset_0_1px_0_rgba(255,255,255,0.08)]",
+            "transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out motion-reduce:transition-none hover:-translate-y-px motion-reduce:hover:translate-y-0 hover:border-slate-400/65 hover:bg-white/78 hover:shadow-[0_14px_34px_rgba(15,23,42,0.1),inset_0_1px_0_rgba(255,255,255,0.74)] dark:hover:border-white/18 dark:hover:bg-white/[0.075] dark:hover:shadow-[0_16px_38px_rgba(2,8,23,0.36),inset_0_1px_0_rgba(255,255,255,0.08)]",
           isPlaceholder && "opacity-0 pointer-events-none select-none",
           isAnyDragging && "select-none",
         )}
@@ -782,17 +812,22 @@ function TaskRowContent({
           borderLeftWidth: 4,
           borderLeftColor: color,
           transform:
-            isMobile && !isPlaceholder
+            isMobile && !isPlaceholder && revealPx > 0
               ? `translate3d(-${Math.max(0, revealPx)}px,0,0)`
               : undefined,
           // While finger is tracking → no transition (1:1). On release →
           // soft spring to snapped position.
           transition:
             isMobile && !isPlaceholder
-              ? animateTransform
+              ? reduceMotion
+                ? "none"
+                : animateTransform
                 ? `transform ${SWIPE_MS}ms ${SOFT_EASE}`
                 : "none"
               : undefined,
+          // Overscan past the shared rounded clip so the hidden red action
+          // cannot tint the card's anti-aliased right-hand corner pixels.
+          width: isMobile && !isPlaceholder ? "calc(100% + 2px)" : undefined,
           minHeight: 44,
           touchAction: touchActionStyle,
         }}
@@ -802,20 +837,33 @@ function TaskRowContent({
         onTouchCancel={isMobile && !isPlaceholder ? handleCardTouchEnd : undefined}
         onClick={handleCardClick}
       >
-        {/* Decorative grip — the entire card is the drag handle. */}
-        <div
-          className="flex shrink-0 select-none self-stretch items-center -ml-1.5 px-1 rounded-l-sm"
-          aria-hidden
+        {/* The handle is the only drag activator. It is keyboard reachable and
+            owns touch-action:none without blocking scroll on the card body. */}
+        <button
+          ref={activatorRef}
+          type="button"
+          data-drag-handle="true"
+          {...(dndAttributes ?? {})}
+          {...(dndListeners ?? {})}
+          aria-label={copy.ariaHoldToReorder}
+          className={cn(
+            "-ml-2 flex h-10 w-10 shrink-0 touch-none select-none items-center justify-center rounded-lg",
+            "cursor-grab text-muted-foreground/45 outline-none transition-[color,background-color,box-shadow] duration-150 motion-reduce:transition-none",
+            "hover:bg-muted/55 hover:text-primary/80 active:cursor-grabbing active:bg-primary/10",
+            "focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            isAnyDragging && "text-primary/75",
+          )}
+          onClick={stopDragActivation}
         >
           <GripVertical
             className={cn(
-              "h-4 w-4 shrink-0 transition-colors duration-150",
+              "h-5 w-5 shrink-0",
               isAnyDragging
                 ? "text-primary/70"
                 : "text-muted-foreground/40",
             )}
           />
-        </div>
+        </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1.5 min-w-0">
@@ -1018,35 +1066,43 @@ function LiftedCardOverlay({
   meta,
   copy,
   isMobile,
+  reduceMotion,
 }: {
   task: LocalPlanTask;
   meta: TaskMeta;
   copy: DailyPlannerUiCopy;
   isMobile: boolean;
+  reduceMotion: boolean;
 }) {
   const { color, blocks, durationLabel, timeRangeLabel } = meta;
 
   const [lifted, setLifted] = useState(false);
   useEffect(() => {
+    if (reduceMotion) return;
+    let secondFrame = 0;
     const r1 = requestAnimationFrame(() => {
-      const r2 = requestAnimationFrame(() => setLifted(true));
-      return () => cancelAnimationFrame(r2);
+      secondFrame = requestAnimationFrame(() => setLifted(true));
     });
-    return () => cancelAnimationFrame(r1);
-  }, []);
+    return () => {
+      cancelAnimationFrame(r1);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [reduceMotion]);
 
   return (
     <div
-      className="relative flex items-center gap-2 rounded-xl border border-slate-300/55 bg-white/72 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.68)] backdrop-blur-md dark:border-white/12 dark:bg-slate-950/78"
+      className="relative flex items-center gap-2 rounded-xl border border-slate-300/65 bg-white/95 p-3 shadow-[0_14px_32px_rgba(15,23,42,0.18)] dark:border-white/15 dark:bg-slate-950/95"
       style={{
         borderLeftWidth: 4,
         borderLeftColor: color,
         minHeight: 44,
-        transform: lifted ? "scale(1.03)" : "scale(1)",
+        transform: lifted && !reduceMotion ? "scale(1.018)" : "scale(1)",
         boxShadow: lifted
-          ? "0 24px 48px -16px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(99, 102, 241, 0.45), 0 0 22px -4px rgba(99, 102, 241, 0.55)"
+          ? "0 18px 38px -14px rgba(15, 23, 42, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.38)"
           : "0 1px 2px 0 rgba(0, 0, 0, 0.06)",
-        transition: `transform ${LIFT_MS}ms ${SOFT_EASE}, box-shadow ${LIFT_MS}ms ${SOFT_EASE}`,
+        transition: reduceMotion
+          ? "none"
+          : `transform ${LIFT_MS}ms ${SOFT_EASE}, box-shadow ${LIFT_MS}ms ${SOFT_EASE}`,
         cursor: isMobile ? "grabbing" : "grabbing",
         touchAction: "none",
         userSelect: "none",

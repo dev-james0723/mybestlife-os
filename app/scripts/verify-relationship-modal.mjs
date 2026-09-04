@@ -61,14 +61,17 @@ function relationshipSeed() {
     category: "mentor",
     relationship_strength: "strong",
     email: "ada@example.com",
-    phone: null,
+    phone: "+1 317 555 0148",
     social_links: [
+      { platform: "instagram", url: "https://www.instagram.com/ada" },
+      { platform: "facebook", url: "https://www.facebook.com/ada" },
+      { platform: "linkedin", url: "https://www.linkedin.com/in/ada" },
       { platform: "website", url: "https://www.example.com/ada" },
     ],
-    last_contact_date: null,
+    last_contact_date: "2026-03-14",
     last_interaction_notes: "Discussed analytical engines and careful follow-up.",
-    next_action: null,
-    next_action_date: null,
+    next_action: "Send the annotated program notes.",
+    next_action_date: "2026-09-18",
     commitments_made: null,
     preferences_and_details: null,
     general_notes: null,
@@ -548,11 +551,63 @@ async function verifyViewport(context, viewport) {
     await formDialog.getByRole("button", { name: "Close", exact: true }).click();
     await formDialog.waitFor({ state: "hidden" });
 
-    const relationshipCard = page
-      .getByText("Ada Lovelace", { exact: true })
-      .locator("xpath=ancestor::*[@role='button'][1]");
+    const relationshipCard = page.getByRole("button", {
+      name: "Ada Lovelace",
+      exact: true,
+    });
     await relationshipCard.waitFor({ state: "visible" });
-    await relationshipCard.click();
+    const cardSurface = relationshipCard.locator(
+      "xpath=ancestor::*[@data-slot='card'][1]",
+    );
+    const phoneLink = cardSurface.getByRole("link", {
+      name: "Phone: +1 317 555 0148",
+      exact: true,
+    });
+    const emailLink = cardSurface.getByRole("link", {
+      name: "Email: ada@example.com",
+      exact: true,
+    });
+    const websiteLink = cardSurface.getByRole("link", {
+      name: "Website: Ada Lovelace",
+      exact: true,
+    });
+    await Promise.all([
+      phoneLink.waitFor({ state: "visible" }),
+      emailLink.waitFor({ state: "visible" }),
+      websiteLink.waitFor({ state: "visible" }),
+    ]);
+    assert.equal(await phoneLink.getAttribute("href"), "tel:+1 317 555 0148");
+    assert.equal(await emailLink.getAttribute("href"), "mailto:ada@example.com");
+    assert.equal(await websiteLink.getAttribute("target"), "_blank");
+    const cardOverflow = await cardSurface.evaluate((element) => ({
+      horizontal: element.scrollWidth - element.clientWidth,
+      vertical: element.scrollHeight - element.clientHeight,
+    }));
+    assert(
+      cardOverflow.horizontal <= 1,
+      `${viewport.name} People card horizontal overflow: ${JSON.stringify(cardOverflow)}`,
+    );
+    await cardSurface.screenshot({
+      path: path.join(outputDir, `${viewport.name}-people-card.png`),
+    });
+
+    const cardFavorite = cardSurface.getByRole("button", {
+      name: "Add Ada Lovelace to favorites",
+      exact: true,
+    });
+    await cardFavorite.click();
+    await page.getByRole("button", {
+      name: "Remove Ada Lovelace from favorites",
+      exact: true,
+    }).waitFor({ state: "visible" });
+    assert.equal(
+      await page.getByRole("dialog").count(),
+      0,
+      "card favorite action unexpectedly opened the detail dialog",
+    );
+
+    await relationshipCard.focus();
+    await relationshipCard.press("Enter");
 
     const detailDialog = page.getByRole("dialog");
     await detailDialog
@@ -601,7 +656,12 @@ async function verifyViewport(context, viewport) {
         favorite: true,
         addToRoleModel: true,
         socialRowAdded: true,
+        cardPhoneLink: true,
+        cardEmailLink: true,
+        cardSocialLink: true,
+        cardFavoriteIndependent: true,
       },
+      cardOverflow,
       linkedCheckboxes: optionChecks.map(([title]) => title),
       footerScroll,
       formOverflow,
@@ -658,6 +718,9 @@ try {
       addToRoleModelControl: true,
       socialRowCanBeAdded: true,
       linkedProjectGoalNoteIdeaOptions: true,
+      cardContactActions: true,
+      cardFavoriteIndependent: true,
+      cardKeyboardOpen: true,
       horizontalOverflow: false,
       footerReachable: true,
       detailCloseDeleteOverlap: false,

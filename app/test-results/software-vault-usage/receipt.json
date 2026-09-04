@@ -1,0 +1,21 @@
+{
+  "state": "mocked-browser-validation",
+  "passed": true,
+  "viewportChecks": [
+    "390x844",
+    "1280x900"
+  ],
+  "assertions": {
+    "mobileActionsLeftAligned": true,
+    "headerToolbarDoesNotOverlapClose": true,
+    "toolIntelligenceHidden": true,
+    "recordUseCountUpdated": "4 -> 5",
+    "usageDashboardTotalUpdated": 7,
+    "chartsRendered": [
+      "frequency",
+      "distribution"
+    ],
+    "horizontalOverflow": false,
+    "browserErrors": []
+  }
+}

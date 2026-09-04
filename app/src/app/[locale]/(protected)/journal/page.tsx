@@ -2,17 +2,24 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  BookOpenText,
+  Heart,
+  LineChart,
+  List,
+  Sparkles,
+  Wand2,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageShell } from "@/components/shared/page-shell";
-import { OSControl } from "@/components/ui/os-primitives";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  OSControl,
+  OSFrostedPanel,
+  OSGlassPanel,
+  OSSolidPanel,
+} from "@/components/ui/os-primitives";
 
 import {
   JournalForm,
@@ -34,6 +41,52 @@ import { DEFAULT_AI_DEFAULTS } from "@/lib/journal/constants";
 import { aiOutputSchema, type AIOutput } from "@/lib/journal/schema";
 import { useAppStore } from "@/stores/app-store";
 import type { JournalEntry } from "@/types/database";
+
+function JournalPanelHeader({
+  id,
+  icon: Icon,
+  title,
+  description,
+  primary = false,
+}: {
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  primary?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div
+        className={
+          primary
+            ? "flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.48)]"
+            : "flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-card/60 text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]"
+        }
+        aria-hidden
+      >
+        <Icon className={primary ? "size-5" : "size-4"} />
+      </div>
+      <div className="min-w-0 space-y-1">
+        <h2
+          id={id}
+          className={
+            primary
+              ? "font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
+              : "font-heading text-base font-semibold tracking-tight text-foreground"
+          }
+        >
+          {title}
+        </h2>
+        {description ? (
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export default function JournalPage() {
   const language = useAppStore((s) => s.language);
@@ -202,89 +255,125 @@ export default function JournalPage() {
           }
           size="sm"
         >
+          <Heart aria-hidden />
           {copy.navGrateful}
         </OSControl>
       }
     >
-      <div className="space-y-6">
-        {/* 1. New Entry form — inline, always visible. */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.newEntryTitle}</CardTitle>
-            <CardDescription>{copy.newEntryDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <JournalForm
-              key={formKey}
-              ref={formRef}
-              copy={copy}
-              onSaved={handleSaved}
-              onSummaryReady={handleSummaryReady}
-              onDirtyChange={setHasUnsavedChanges}
-              onReset={startNewEntry}
+      <div className="space-y-5 sm:space-y-6">
+        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(21rem,0.7fr)] xl:items-start">
+          {/* The writing flow is the visual anchor of the page. */}
+          <OSGlassPanel
+            as="section"
+            aria-labelledby="journal-new-entry-title"
+            className="min-w-0 p-4 sm:p-6"
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-20 -top-24 size-60 rounded-full bg-primary/10 blur-3xl"
             />
-          </CardContent>
-        </Card>
+            <div className="relative">
+              <JournalPanelHeader
+                id="journal-new-entry-title"
+                icon={BookOpenText}
+                title={copy.newEntryTitle}
+                description={copy.newEntryDescription}
+                primary
+              />
+              <div className="mt-5 border-t border-border/65 pt-5">
+                <JournalForm
+                  key={formKey}
+                  ref={formRef}
+                  copy={copy}
+                  onSaved={handleSaved}
+                  onSummaryReady={handleSummaryReady}
+                  onDirtyChange={setHasUnsavedChanges}
+                  onReset={startNewEntry}
+                />
+              </div>
+            </div>
+          </OSGlassPanel>
 
-        {/* 2. Past AI Summary. */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.pastSummaryTitle}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PastAISummaryCard
-              aiOutput={aiOutput}
-              copy={copy}
-              generating={savedEntry !== null && aiOutput === null}
+          {/* Generated reflection and optional media belong to one companion rail. */}
+          <aside className="min-w-0 space-y-5">
+            <OSSolidPanel
+              as="section"
+              aria-labelledby="journal-summary-title"
+              className="space-y-4 p-4 sm:p-5"
+            >
+              <JournalPanelHeader
+                id="journal-summary-title"
+                icon={Sparkles}
+                title={copy.pastSummaryTitle}
+              />
+              <div className="border-t border-border/60 pt-4">
+                <PastAISummaryCard
+                  aiOutput={aiOutput}
+                  copy={copy}
+                  generating={savedEntry !== null && aiOutput === null}
+                />
+              </div>
+            </OSSolidPanel>
+
+            <OSFrostedPanel
+              as="section"
+              aria-labelledby="journal-addons-title"
+              className="space-y-4 p-4 sm:p-5"
+            >
+              <JournalPanelHeader
+                id="journal-addons-title"
+                icon={Wand2}
+                title={copy.addonsTitle}
+                description={copy.addonsDescription}
+              />
+              <AIAddonsPanel
+                copy={copy}
+                canGenerate={savedEntry !== null}
+                illustration={illustration}
+                audio={audio}
+                onGenerateIllustration={generateIllustration}
+                onGenerateAudio={generateAudio}
+                illustrationLoading={illustrationLoading}
+                audioLoading={audioLoading}
+              />
+            </OSFrostedPanel>
+          </aside>
+        </div>
+
+        {/* History and trends are secondary reference surfaces. */}
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)]">
+          <OSFrostedPanel
+            as="section"
+            aria-labelledby="journal-recent-title"
+            className="min-w-0 space-y-4 p-4 sm:p-5"
+          >
+            <JournalPanelHeader
+              id="journal-recent-title"
+              icon={List}
+              title={copy.recentEntriesTitle}
+              description={copy.recentEntriesDescription}
             />
-          </CardContent>
-        </Card>
-
-        {/* 3. AI Add-ons. */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.addonsTitle}</CardTitle>
-            <CardDescription>{copy.addonsDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AIAddonsPanel
-              copy={copy}
-              canGenerate={savedEntry !== null}
-              illustration={illustration}
-              audio={audio}
-              onGenerateIllustration={generateIllustration}
-              onGenerateAudio={generateAudio}
-              illustrationLoading={illustrationLoading}
-              audioLoading={audioLoading}
-            />
-          </CardContent>
-        </Card>
-
-        {/* 4. Recent Entries. */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.recentEntriesTitle}</CardTitle>
-            <CardDescription>{copy.recentEntriesDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
             <RecentEntriesList
               entries={recentEntries ?? []}
               copy={copy}
               isLoading={recentLoading}
             />
-          </CardContent>
-        </Card>
+          </OSFrostedPanel>
 
-        {/* 5. Weekly Mood Trends. */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.trendsTitle}</CardTitle>
-            <CardDescription>{copy.trendsDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <OSSolidPanel
+            as="section"
+            aria-labelledby="journal-trends-title"
+            className="min-w-0 space-y-4 p-4 sm:p-5"
+          >
+            <JournalPanelHeader
+              id="journal-trends-title"
+              icon={LineChart}
+              title={copy.trendsTitle}
+              description={copy.trendsDescription}
+            />
             <MoodTrendsChart entries={recentEntries ?? []} copy={copy} />
-          </CardContent>
-        </Card>
+          </OSSolidPanel>
+        </div>
       </div>
 
       <UnsavedChangesDialog

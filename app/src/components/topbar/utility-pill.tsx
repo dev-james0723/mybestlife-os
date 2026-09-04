@@ -60,7 +60,7 @@ export function UtilityPill({ className }: { className?: string }) {
   const language = useAppStore((s) => s.language);
   const ui = getCommonUiCopy(language);
   const { colorMode, toggleColorMode } = useTheme();
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, openMobile } = useSidebar();
   const isMobile = useIsMobile();
 
   // Mobile keeps only high-signal utilities. Sidebar toggle on mobile is
@@ -68,23 +68,38 @@ export function UtilityPill({ className }: { className?: string }) {
   // placeholder takes up room without earning it.
   if (isMobile) {
     return (
-      <button
-        type="button"
-        className={cn(
-          "topbar-clock-trigger topbar-mobile-icon-trigger",
-          className
-        )}
-        aria-label={
-          colorMode === "light" ? ui.switchToDarkMode : ui.switchToLightMode
-        }
-        onClick={toggleColorMode}
+      <div
+        className={cn("flex items-center gap-1", className)}
+        role="group"
+        aria-label="App utilities"
       >
-        {colorMode === "light" ? (
-          <Moon className="h-4 w-4" />
-        ) : (
-          <Sun className="h-4 w-4" />
-        )}
-      </button>
+        <button
+          type="button"
+          data-slot="mobile-menu-trigger"
+          className="topbar-clock-trigger topbar-mobile-icon-trigger"
+          aria-label={ui.openMenu}
+          aria-controls="mobile-sidebar-drawer"
+          aria-expanded={openMobile}
+          aria-haspopup="dialog"
+          onClick={() => toggleSidebar()}
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className="topbar-clock-trigger topbar-mobile-icon-trigger"
+          aria-label={
+            colorMode === "light" ? ui.switchToDarkMode : ui.switchToLightMode
+          }
+          onClick={toggleColorMode}
+        >
+          {colorMode === "light" ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
+          )}
+        </button>
+      </div>
     );
   }
 

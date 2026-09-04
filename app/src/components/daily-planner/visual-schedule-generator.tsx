@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles, Download, RefreshCw } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import {
   SCHEDULE_IMAGE_STYLES,
   getScheduleImageStyleLabel,
 } from "@/lib/daily-planner/schedule-image-styles";
+import { scheduleImageRequestKey } from "@/lib/daily-planner/schedule-image-request-key";
 import type { DailyPlanTask } from "@/types/database";
 
 const DEFAULT_BLOCK_MINUTES = 10;
@@ -52,9 +53,22 @@ export function VisualScheduleGenerator({
   const blockMinutes = blockMinutesProp ?? DEFAULT_BLOCK_MINUTES;
   const [styleId, setStyleId] = useState(SCHEDULE_IMAGE_STYLES[0]!.id);
   const [busy, setBusy] = useState(false);
+  const currentRequestKey = scheduleImageRequestKey({
+    planDate,
+    startTime,
+    endTime,
+    styleId,
+    blockMinutes,
+    tasks,
+  });
+  const latestRequestKeyRef = useRef(currentRequestKey);
+  useEffect(() => {
+    latestRequestKeyRef.current = currentRequestKey;
+  }, [currentRequestKey]);
 
   const runGenerate = useCallback(async () => {
     if (tasks.length === 0) return;
+    const generationRequestKey = currentRequestKey;
     setBusy(true);
     try {
       const res = await fetch("/api/daily-planner/schedule-image", {
@@ -94,6 +108,9 @@ export function VisualScheduleGenerator({
         toast.error(copy.toastScheduleImageFailed);
         return;
       }
+      // The user may have reordered tasks or navigated to another day while
+      // image generation was running. Never install that stale response.
+      if (latestRequestKeyRef.current !== generationRequestKey) return;
       onImageUrlChange(url);
       await onPersistImageUrl(url);
       toast.success(copy.toastScheduleImageReady);
@@ -105,7 +122,9 @@ export function VisualScheduleGenerator({
       setBusy(false);
     }
   }, [
+    blockMinutes,
     copy,
+    currentRequestKey,
     endTime,
     onImageUrlChange,
     onPersistImageUrl,

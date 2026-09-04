@@ -10,6 +10,7 @@ import {
   utcRangeToPlanMinutes,
   wallClockIsoRange,
 } from "@/lib/daily-planner/plan-schedule-math";
+import { zonedWallClockToUtc } from "@/lib/google-calendar/zoned-time";
 import { plannerEventReminders } from "@/lib/google/calendar-reminders";
 
 export type PlannerGoogleEventArgs = {
@@ -177,6 +178,21 @@ export function buildEventsForTimeBlockPlan(
     .filter((x): x is NonNullable<typeof x> => x != null);
 }
 
+function parseGoogleDateTimeValue(value: string, timeZone?: string | null): Date | null {
+  const naive = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(
+    value,
+  );
+  if (naive && timeZone) {
+    const [, date, hours, minutes, seconds = "0", milliseconds = "0"] = naive;
+    const instant = zonedWallClockToUtc(date, Number(hours), Number(minutes), timeZone);
+    instant.setUTCSeconds(Number(seconds), Number(milliseconds.padEnd(3, "0")));
+    return instant;
+  }
+
+  const instant = new Date(value);
+  return Number.isNaN(instant.getTime()) ? null : instant;
+}
+
 function parseGoogleDateTime(
   ev: calendar_v3.Schema$Event,
 ): { start: Date; end: Date } | null {
@@ -189,7 +205,10 @@ function parseGoogleDateTime(
     return { start, end };
   }
   if (s.dateTime && e.dateTime) {
-    return { start: new Date(s.dateTime), end: new Date(e.dateTime) };
+    const start = parseGoogleDateTimeValue(s.dateTime, s.timeZone);
+    const end = parseGoogleDateTimeValue(e.dateTime, e.timeZone ?? s.timeZone);
+    if (!start || !end) return null;
+    return { start, end };
   }
   return null;
 }

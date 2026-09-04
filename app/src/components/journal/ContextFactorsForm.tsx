@@ -32,7 +32,7 @@ export function ContextFactorsForm({
   };
 
   return (
-    <div className="space-y-5 rounded-md border border-border/60 bg-muted/20 p-4">
+    <div className="space-y-5 rounded-xl border border-border/70 bg-card/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.52)]">
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         <div className="space-y-2">
           <Label className="text-sm font-medium">

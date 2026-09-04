@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
@@ -61,6 +62,11 @@ import {
 import { TASK_CATEGORIES } from "@/lib/tasks/task-categories";
 import { isTaskAiGenerated } from "@/lib/tasks/ai-origin";
 import type { TaskLinkFlags } from "@/lib/tasks/task-filters";
+import {
+  addTaskReferenceTag,
+  parseTaskLinkMetadata,
+  stripTaskLinkMetadataSections,
+} from "@/lib/tasks/task-link-metadata";
 import { useAppStore } from "@/stores/app-store";
 import { TaskProjectLinker } from "./task-project-linker";
 import { TaskLinkedEntities } from "./task-linked-entities";
@@ -81,11 +87,17 @@ export interface TaskDetailPanelProps {
   copy: TasksUiCopy;
   centerCopy: TasksCenterUiCopy;
   linkFlags?: TaskLinkFlags;
-  /** Cross-module connection actions (Add to plan, goal links) rendered in-panel. */
+  /** Cross-module connection actions rendered in-panel. */
   linkSlot?: React.ReactNode;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
@@ -123,7 +135,9 @@ export function TaskDetailPanel({
   );
 
   const [titleDraft, setTitleDraft] = useState(task?.title ?? "");
-  const [descDraft, setDescDraft] = useState(task?.description ?? "");
+  const [descDraft, setDescDraft] = useState(
+    stripTaskLinkMetadataSections(task?.description) ?? "",
+  );
   const [blocksDraft, setBlocksDraft] = useState(
     task?.estimated_blocks?.toString() ?? "",
   );
@@ -133,6 +147,9 @@ export function TaskDetailPanel({
 
   const t = task;
   const overdue = isOverdue(t.due_date) && t.status !== "done";
+  const visibleDescription = stripTaskLinkMetadataSections(t.description) ?? "";
+  const taskLinkMetadata = parseTaskLinkMetadata(t.tags, t.description);
+  const { userVisibleTags } = taskLinkMetadata;
 
   const commitTitle = () => {
     const v = titleDraft.trim();
@@ -140,7 +157,19 @@ export function TaskDetailPanel({
   };
   const commitDescription = () => {
     const v = descDraft.trim();
-    if (v !== (t.description ?? "")) onUpdate(t.id, { description: v || null });
+    if (v !== visibleDescription) {
+      let nextTags = [...(t.tags ?? [])];
+      for (const id of taskLinkMetadata.noteIds) {
+        nextTags = addTaskReferenceTag(nextTags, "note", id);
+      }
+      for (const id of taskLinkMetadata.ideaIds) {
+        nextTags = addTaskReferenceTag(nextTags, "idea", id);
+      }
+      for (const id of taskLinkMetadata.knowledgeIds) {
+        nextTags = addTaskReferenceTag(nextTags, "knowledge", id);
+      }
+      onUpdate(t.id, { description: v || null, tags: nextTags });
+    }
   };
   const commitBlocks = () => {
     const raw = blocksDraft.trim();
@@ -160,10 +189,10 @@ export function TaskDetailPanel({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <OSDialogSurface
-          size="2xl"
-          className="max-h-[min(90vh,860px)] overflow-y-auto"
+          size="5xl"
+          className="flex max-h-[90dvh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0"
         >
-          <DialogHeader className="gap-2 pr-10">
+          <DialogHeader className="shrink-0 gap-2 border-b border-border/60 px-4 py-4 pr-12 sm:px-6 sm:pr-14">
             <div className="flex flex-wrap items-center gap-1.5">
               {isTaskAiGenerated(t) && (
                 <Badge
@@ -205,230 +234,240 @@ export function TaskDetailPanel({
             />
           </DialogHeader>
 
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={copy.labelStatus}>
-                <Select
-                  value={t.status}
-                  onValueChange={(v) => {
-                    if (v !== null) onUpdate(t.id, { status: v });
-                  }}
-                  itemToStringLabel={(v) =>
-                    statusOptions.find((o) => o.value === v)?.label ?? String(v)
-                  }
-                >
-                  <SelectTrigger className="h-11 min-h-11 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label={copy.labelPriority}>
-                <Select
-                  value={t.priority}
-                  onValueChange={(v) => {
-                    if (v !== null) onUpdate(t.id, { priority: v });
-                  }}
-                  itemToStringLabel={(v) =>
-                    priorityOptions.find((o) => o.value === v)?.label ?? String(v)
-                  }
-                >
-                  <SelectTrigger className="h-11 min-h-11 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorityOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={centerCopy.quickFilterProject}>
-                <TaskProjectLinker
-                  value={t.project_id}
-                  projects={projects}
-                  onChange={(id) => onUpdate(t.id, { project_id: id })}
-                  copy={copy}
-                  centerCopy={centerCopy}
-                />
-              </Field>
-              <Field label={centerCopy.quickFilterCategory}>
-                <Select
-                  value={t.category ?? NONE}
-                  onValueChange={(v) => {
-                    if (v !== null)
-                      onUpdate(t.id, { category: v === NONE ? null : v });
-                  }}
-                  itemToStringLabel={(v) =>
-                    categoryOptions.find((o) => o.value === v)?.label ?? String(v)
-                  }
-                >
-                  <SelectTrigger className="h-11 min-h-11 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={copy.labelDueDate}>
-                <DatePickerInput
-                  value={t.due_date ?? ""}
-                  onChange={(v) => onUpdate(t.id, { due_date: v || null })}
-                />
-              </Field>
-              <Field label={centerCopy.labelScheduledDate}>
-                <DatePickerInput
-                  value={t.scheduled_date ?? ""}
-                  onChange={(v) => onUpdate(t.id, { scheduled_date: v || null })}
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={copy.labelEstimatedBlocks}>
-                <Input
-                  type="number"
-                  min={0}
-                  value={blocksDraft}
-                  onChange={(e) => setBlocksDraft(e.target.value)}
-                  onBlur={commitBlocks}
-                  placeholder={copy.placeholderBlocks}
-                  className="h-11 min-h-11 rounded-xl"
-                />
-              </Field>
-              {t.reminder_date && (
-                <Field label={copy.detailReminder}>
-                  <p className="flex h-11 min-h-11 items-center gap-1 text-sm">
-                    <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-                    {formatDate(t.reminder_date)}
-                  </p>
-                </Field>
-              )}
-            </div>
-
-            <Field label={copy.labelDescription}>
-              <Textarea
-                value={descDraft}
-                onChange={(e) => setDescDraft(e.target.value)}
-                onBlur={commitDescription}
-                rows={3}
-                placeholder={copy.placeholderDescription}
-              />
-            </Field>
-
-            <Separator />
-
-            <TaskSubtasks taskId={t.id} copy={centerCopy} />
-
-            <Separator />
-
-            <TaskAiActions
-              task={t}
-              locale={language}
-              copy={centerCopy}
-              onUpdate={onUpdate}
-            />
-
-            <Separator />
-
-            <TaskLinkedEntities
-              task={t}
-              copy={centerCopy}
-              now={now}
-              linkFlags={linkFlags}
-            />
-
-            {linkSlot && (
-              <>
-                <Separator />
-                {linkSlot}
-              </>
-            )}
-
-            {t.tags && t.tags.length > 0 && (
-              <div>
-                <p className="mb-1.5 text-sm font-medium text-muted-foreground">
-                  {copy.detailTags}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {t.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="grid min-w-0 grid-cols-1 gap-6 px-4 py-5 sm:px-6 lg:grid-cols-2">
+              <div className="min-w-0 space-y-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label={copy.labelStatus}>
+                    <Select
+                      value={t.status}
+                      onValueChange={(v) => {
+                        if (v !== null) onUpdate(t.id, { status: v });
+                      }}
+                      itemToStringLabel={(v) =>
+                        statusOptions.find((o) => o.value === v)?.label ??
+                        String(v)
+                      }
                     >
-                      {tag}
-                    </span>
-                  ))}
+                      <SelectTrigger className="h-11 min-h-11 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label={copy.labelPriority}>
+                    <Select
+                      value={t.priority}
+                      onValueChange={(v) => {
+                        if (v !== null) onUpdate(t.id, { priority: v });
+                      }}
+                      itemToStringLabel={(v) =>
+                        priorityOptions.find((o) => o.value === v)?.label ??
+                        String(v)
+                      }
+                    >
+                      <SelectTrigger className="h-11 min-h-11 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {priorityOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label={centerCopy.quickFilterProject}>
+                    <TaskProjectLinker
+                      value={t.project_id}
+                      projects={projects}
+                      onChange={(id) => onUpdate(t.id, { project_id: id })}
+                      copy={copy}
+                      centerCopy={centerCopy}
+                    />
+                  </Field>
+                  <Field label={centerCopy.quickFilterCategory}>
+                    <Select
+                      value={t.category ?? NONE}
+                      onValueChange={(v) => {
+                        if (v !== null)
+                          onUpdate(t.id, { category: v === NONE ? null : v });
+                      }}
+                      itemToStringLabel={(v) =>
+                        categoryOptions.find((o) => o.value === v)?.label ??
+                        String(v)
+                      }
+                    >
+                      <SelectTrigger className="h-11 min-h-11 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categoryOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label={copy.labelDueDate}>
+                    <DatePickerInput
+                      value={t.due_date ?? ""}
+                      onChange={(v) => onUpdate(t.id, { due_date: v || null })}
+                    />
+                  </Field>
+                  <Field label={centerCopy.labelScheduledDate}>
+                    <DatePickerInput
+                      value={t.scheduled_date ?? ""}
+                      onChange={(v) =>
+                        onUpdate(t.id, { scheduled_date: v || null })
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label={copy.labelEstimatedBlocks}>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={blocksDraft}
+                      onChange={(e) => setBlocksDraft(e.target.value)}
+                      onBlur={commitBlocks}
+                      placeholder={copy.placeholderBlocks}
+                      className="h-11 min-h-11 rounded-xl"
+                    />
+                  </Field>
+                  {t.reminder_date && (
+                    <Field label={copy.detailReminder}>
+                      <p className="flex h-11 min-h-11 items-center gap-1 text-sm">
+                        <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+                        {formatDate(t.reminder_date)}
+                      </p>
+                    </Field>
+                  )}
+                </div>
+
+                <Field label={copy.labelDescription}>
+                  <Textarea
+                    value={descDraft}
+                    onChange={(e) => setDescDraft(e.target.value)}
+                    onBlur={commitDescription}
+                    rows={3}
+                    placeholder={copy.placeholderDescription}
+                  />
+                </Field>
+
+                <Separator />
+
+                <TaskSubtasks taskId={t.id} copy={centerCopy} />
+
+                <Separator />
+
+                <TaskAiActions
+                  task={t}
+                  locale={language}
+                  copy={centerCopy}
+                  onUpdate={onUpdate}
+                />
+              </div>
+
+              <div className="min-w-0 space-y-5">
+                <TaskLinkedEntities
+                  task={t}
+                  copy={centerCopy}
+                  now={now}
+                  linkFlags={linkFlags}
+                />
+
+                {linkSlot && (
+                  <>
+                    <Separator />
+                    {linkSlot}
+                  </>
+                )}
+
+                {userVisibleTags.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-sm font-medium text-muted-foreground">
+                      {copy.detailTags}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {userVisibleTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="max-w-full break-words rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {t.source && (
+                  <div>
+                    <p className="mb-1 flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                      <StickyNote className="h-3.5 w-3.5" />
+                      {copy.detailSource}
+                    </p>
+                    <p className="text-sm">
+                      {t.source_url ? (
+                        <a
+                          href={t.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline underline-offset-2"
+                        >
+                          {t.source}
+                        </a>
+                      ) : (
+                        t.source
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <Separator />
+
+                <div>
+                  <p className="mb-1.5 flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    {centerCopy.detailActivityTitle}
+                  </p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    <li>
+                      {centerCopy.createdLabel} · {formatDate(t.created_at)}
+                    </li>
+                    <li>
+                      {centerCopy.updatedLabel} · {formatDate(t.updated_at)}
+                    </li>
+                    {t.completed_at && (
+                      <li>
+                        {centerCopy.completedLabel} ·{" "}
+                        {formatDate(t.completed_at)}
+                      </li>
+                    )}
+                  </ul>
                 </div>
               </div>
-            )}
-
-            {t.source && (
-              <div>
-                <p className="mb-1 flex items-center gap-1 text-sm font-medium text-muted-foreground">
-                  <StickyNote className="h-3.5 w-3.5" />
-                  {copy.detailSource}
-                </p>
-                <p className="text-sm">
-                  {t.source_url ? (
-                    <a
-                      href={t.source_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary underline underline-offset-2"
-                    >
-                      {t.source}
-                    </a>
-                  ) : (
-                    t.source
-                  )}
-                </p>
-              </div>
-            )}
-
-            <Separator />
-
-            <div>
-              <p className="mb-1.5 flex items-center gap-1 text-sm font-medium text-muted-foreground">
-                <CalendarClock className="h-3.5 w-3.5" />
-                {centerCopy.detailActivityTitle}
-              </p>
-              <ul className="space-y-1 text-xs text-muted-foreground">
-                <li>
-                  {centerCopy.createdLabel} · {formatDate(t.created_at)}
-                </li>
-                <li>
-                  {centerCopy.updatedLabel} · {formatDate(t.updated_at)}
-                </li>
-                {t.completed_at && (
-                  <li>
-                    {centerCopy.completedLabel} · {formatDate(t.completed_at)}
-                  </li>
-                )}
-              </ul>
             </div>
-          </div>
+          </ScrollArea>
 
-          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+          <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-muted/10 px-4 py-3 sm:px-6 sm:justify-between">
             <OSControl
               variant="ghost"
               className="text-destructive hover:text-destructive"
