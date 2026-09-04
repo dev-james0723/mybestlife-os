@@ -68,6 +68,7 @@ export type JournalUiCopy = {
   // Past AI Summary
   pastSummaryTitle: string;
   pastSummaryEmpty: string;
+  pastSummaryFailed: string;
   pastSummaryJournalEntry: string;
   pastSummaryEmotionalRead: string;
   pastSummarySuggestions: string;
@@ -285,6 +286,7 @@ const en: JournalUiCopy = {
 
   pastSummaryTitle: "Past AI Summary",
   pastSummaryEmpty: "Generate summary by saving your entry",
+  pastSummaryFailed: "Entry saved, but the AI summary could not be generated.",
   pastSummaryJournalEntry: "Journal Entry",
   pastSummaryEmotionalRead: "Emotional Read",
   pastSummarySuggestions: "Suggestions",
@@ -535,6 +537,7 @@ const zhTW: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "等專案與任務整合上線後，連結功能將可使用。",
   pastSummaryTitle: "過往 AI 摘要",
   pastSummaryEmpty: "儲存日誌後將自動產生摘要",
+  pastSummaryFailed: "日誌已儲存，但未能產生 AI 摘要。",
   pastSummaryJournalEntry: "日誌敘述",
   pastSummaryEmotionalRead: "情緒解讀",
   pastSummarySuggestions: "建議",
@@ -679,6 +682,7 @@ const zhCN: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "等项目与任务整合上线后，连接功能将可用。",
   pastSummaryTitle: "历史 AI 摘要",
   pastSummaryEmpty: "保存日志后将自动生成摘要",
+  pastSummaryFailed: "日志已保存，但无法生成 AI 摘要。",
   pastSummaryJournalEntry: "日志叙述",
   pastSummaryEmotionalRead: "情绪解读",
   pastSummarySuggestions: "建议",
@@ -823,6 +827,7 @@ const ja: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "プロジェクトとタスクの統合が完成次第、リンク機能が使えます。",
   pastSummaryTitle: "過去の AI 要約",
   pastSummaryEmpty: "エントリーを保存すると要約が生成されます",
+  pastSummaryFailed: "ジャーナルは保存されましたが、AI 要約を生成できませんでした。",
   pastSummaryJournalEntry: "ジャーナル本文",
   pastSummaryEmotionalRead: "感情の読み解き",
   pastSummarySuggestions: "提案",
@@ -967,6 +972,7 @@ const ko: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "프로젝트 및 작업 통합이 완료되면 사용 가능합니다.",
   pastSummaryTitle: "지난 AI 요약",
   pastSummaryEmpty: "항목을 저장하면 요약이 생성됩니다",
+  pastSummaryFailed: "저널은 저장되었지만 AI 요약을 생성하지 못했습니다.",
   pastSummaryJournalEntry: "저널 내용",
   pastSummaryEmotionalRead: "감정 해석",
   pastSummarySuggestions: "제안",
@@ -1111,6 +1117,7 @@ const fr: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "La liaison sera disponible une fois l'intégration des projets et tâches en place.",
   pastSummaryTitle: "Résumé IA précédent",
   pastSummaryEmpty: "Enregistrez votre entrée pour générer un résumé",
+  pastSummaryFailed: "L’entrée a été enregistrée, mais le résumé IA n’a pas pu être généré.",
   pastSummaryJournalEntry: "Entrée de journal",
   pastSummaryEmotionalRead: "Lecture émotionnelle",
   pastSummarySuggestions: "Suggestions",
@@ -1255,6 +1262,7 @@ const it: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "Disponibile dopo l'integrazione di progetti e attività.",
   pastSummaryTitle: "Riassunto IA precedente",
   pastSummaryEmpty: "Salva la voce per generare un riassunto",
+  pastSummaryFailed: "La voce è stata salvata, ma non è stato possibile generare il riassunto IA.",
   pastSummaryJournalEntry: "Voce di diario",
   pastSummaryEmotionalRead: "Lettura emotiva",
   pastSummarySuggestions: "Suggerimenti",
@@ -1399,6 +1407,7 @@ const es: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "Disponible cuando se integren proyectos y tareas.",
   pastSummaryTitle: "Resumen IA anterior",
   pastSummaryEmpty: "Guarda la entrada para generar un resumen",
+  pastSummaryFailed: "La entrada se guardó, pero no se pudo generar el resumen de IA.",
   pastSummaryJournalEntry: "Entrada de diario",
   pastSummaryEmotionalRead: "Lectura emocional",
   pastSummarySuggestions: "Sugerencias",
@@ -1543,6 +1552,7 @@ const vi: DeepPartial<JournalUiCopy> = {
   metadataComingSoon: "Sẽ hoạt động sau khi tích hợp Dự án và Nhiệm vụ.",
   pastSummaryTitle: "Tóm tắt AI trước",
   pastSummaryEmpty: "Lưu mục để tạo tóm tắt",
+  pastSummaryFailed: "Đã lưu nhật ký nhưng không thể tạo bản tóm tắt AI.",
   pastSummaryJournalEntry: "Nội dung nhật ký",
   pastSummaryEmotionalRead: "Phân tích cảm xúc",
   pastSummarySuggestions: "Gợi ý",

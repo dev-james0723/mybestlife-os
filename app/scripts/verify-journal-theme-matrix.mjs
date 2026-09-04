@@ -75,6 +75,20 @@ async function chooseFirstTopic(page) {
   assert.fail("Topic options must open after pointer and keyboard activation");
 }
 
+async function prepareScreenshot(page, { scrollTop = false } = {}) {
+  await page.evaluate(async (shouldScrollTop) => {
+    await document.fonts.ready;
+    if (shouldScrollTop) window.scrollTo({ top: 0, behavior: "instant" });
+    for (const portal of document.querySelectorAll("nextjs-portal")) {
+      if (portal instanceof HTMLElement) portal.style.display = "none";
+    }
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
+  }, scrollTop);
+  await page.waitForTimeout(400);
+}
+
 const browser = await chromium.launch({
   executablePath: browserExecutable,
   headless: true,
@@ -212,6 +226,20 @@ try {
       consoleErrors.length = 0;
       pageErrors.length = 0;
 
+      const topScreenshotName = `${theme}-${colorMode}-${viewportName}-top.png`;
+      await prepareScreenshot(page, { scrollTop: true });
+      await page.screenshot({
+        path: path.join(outputDir, topScreenshotName),
+        animations: "disabled",
+      });
+
+      assert.equal(
+        await page.getByRole("button", { name: /Generate (Illustration|Audio)/i }).count(),
+        0,
+        "AI generation controls should stay compact and locked before save",
+      );
+      await page.getByText(/Save your entry first/i).waitFor();
+
       const topicTrigger = page.locator("[data-slot='select-trigger']").first();
       const topicBox = await topicTrigger.boundingBox();
       assert(topicBox, "Topic trigger must be visible");
@@ -232,8 +260,7 @@ try {
       const saveButton = page.getByRole("button", { name: /Save Entry/i });
       await saveButton.waitFor();
       await saveButton.scrollIntoViewIfNeeded();
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(500);
+      await prepareScreenshot(page);
       const saveMetrics = await saveButton.evaluate((button) => {
         const parent = button.parentElement;
         const buttonBox = button.getBoundingClientRect();
@@ -263,18 +290,16 @@ try {
       assert.deepEqual(consoleErrors, []);
       assert.deepEqual(pageErrors, []);
 
-      await page.evaluate(() => {
-        for (const portal of document.querySelectorAll("nextjs-portal")) {
-          if (portal instanceof HTMLElement) portal.style.display = "none";
-        }
-      });
-
       const screenshotName = `${theme}-${colorMode}-${viewportName}-save.png`;
-      await page.screenshot({ path: path.join(outputDir, screenshotName) });
+      await page.screenshot({
+        path: path.join(outputDir, screenshotName),
+        animations: "disabled",
+      });
       results.push({
         theme,
         colorMode,
         viewport: viewportName,
+        topScreenshot: topScreenshotName,
         screenshot: screenshotName,
         ...saveMetrics,
         consoleErrors,

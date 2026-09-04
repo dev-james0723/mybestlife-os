@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { AlertTriangle, ChevronDown, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -21,20 +21,29 @@ interface PastAISummaryCardProps {
   aiOutput: AIOutput | null;
   copy: JournalUiCopy;
   generating?: boolean;
+  failed?: boolean;
 }
 
 export function PastAISummaryCard({
   aiOutput,
   copy,
   generating,
+  failed,
 }: PastAISummaryCardProps) {
   // Open by default once a summary exists.
   const [open, setOpen] = useState(true);
   const reduceMotion = useReducedMotion();
 
-  if (!aiOutput && !generating) {
+  if (failed && !aiOutput) {
     return (
-      <p className="text-sm text-muted-foreground">{copy.pastSummaryEmpty}</p>
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex items-start gap-2 text-sm leading-6 text-amber-700 dark:text-amber-300"
+      >
+        <AlertTriangle className="mt-1 size-4 shrink-0" aria-hidden />
+        <span>{copy.pastSummaryFailed}</span>
+      </div>
     );
   }
 
@@ -51,7 +60,11 @@ export function PastAISummaryCard({
     );
   }
 
-  if (!aiOutput) return null;
+  if (!aiOutput) {
+    return (
+      <p className="text-sm text-muted-foreground">{copy.pastSummaryEmpty}</p>
+    );
+  }
 
   return (
     <motion.div
@@ -64,7 +77,7 @@ export function PastAISummaryCard({
         render={
           <button
             type="button"
-            className="flex w-full items-center justify-between text-sm font-medium text-muted-foreground hover:text-foreground"
+            className="flex min-h-11 w-full items-center justify-between rounded-lg px-1 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           />
         }
       >
@@ -140,7 +153,7 @@ function Section({
 
 function Markdown({ text }: { text: string }) {
   return (
-    <div className="prose prose-sm max-w-none dark:prose-invert">
+    <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-a:text-primary prose-hr:border-border dark:prose-invert">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   );

@@ -123,16 +123,22 @@ export function JournalSlider({
         onPointerMove={onPointerMove}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative h-7 flex-1 cursor-pointer touch-none rounded-full bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "relative h-11 flex-1 cursor-pointer touch-none rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
           disabled && "cursor-not-allowed opacity-50",
-          trackClassName,
         )}
       >
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-primary/30"
-          style={{ width: `${ratio * 100}%` }}
+          className={cn(
+            "absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-muted",
+            trackClassName,
+          )}
           aria-hidden
-        />
+        >
+          <div
+            className="h-full rounded-full bg-primary/30"
+            style={{ width: `${ratio * 100}%` }}
+          />
+        </div>
         <div
           className="absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background shadow-sm"
           style={{ left: `${ratio * 100}%` }}

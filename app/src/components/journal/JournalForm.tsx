@@ -6,13 +6,14 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   Collapsible,
   CollapsibleContent,
@@ -44,8 +45,8 @@ import {
 } from "@/lib/journal/constants";
 import { TOPIC_CONFIG } from "@/lib/journal/topic-config";
 import {
+  aiOutputSchema,
   journalEntryInputSchema,
-  type AIOutput,
 } from "@/lib/journal/schema";
 import {
   emptyFormState,
@@ -82,15 +83,19 @@ interface JournalFormProps {
    * save cycle. If the summary call fails, this is NOT called.
    */
   onSummaryReady?: (entry: JournalEntry) => void;
+  /** Called when the entry saved but its AI summary could not be generated. */
+  onSummaryFailed?: () => void;
   /** Called when the user clicks "Start new entry" after a save. */
   onReset?: () => void;
+  /** Prevents resetting while a generated media request is still in flight. */
+  resetDisabled?: boolean;
 }
 
 export interface JournalFormHandle {
   /**
-   * Imperatively trigger a save (with AI summary). Returns the saved entry
-   * (already updated with `aiOutput` on success) or `null` if validation
-   * failed / the user is already in the saved-locked state.
+   * Imperatively trigger a save (and its AI summary attempt). Returns the
+   * inserted entry or `null` if validation failed / a save is already running
+   * / the user is already in the saved-locked state.
    */
   saveNow: () => Promise<JournalEntry | null>;
   /** True when the form has been saved and is currently locked. */
@@ -99,7 +104,15 @@ export interface JournalFormHandle {
 
 export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
   function JournalForm(
-    { copy, onSaved, onDirtyChange, onSummaryReady, onReset },
+    {
+      copy,
+      onSaved,
+      onDirtyChange,
+      onSummaryReady,
+      onSummaryFailed,
+      onReset,
+      resetDisabled = false,
+    },
     ref,
   ) {
   const [form, setForm] = useState<JournalFormState>(emptyFormState);
@@ -107,6 +120,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
   const [saving, setSaving] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
+  const saveGateRef = useRef(false);
   const reduceMotion = useReducedMotion();
 
   const dirty = savedEntryId === null && isFormDirty(form);
@@ -158,7 +172,8 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
   const handleSave = useCallback(async (): Promise<JournalEntry | null> => {
     setErrors({});
 
-    if (savedEntryId !== null) return null;
+    if (savedEntryId !== null || saveGateRef.current) return null;
+    saveGateRef.current = true;
 
     // Normalize bullets / strings before validation.
     const trimmedBullets = form.bullets
@@ -198,6 +213,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
       setErrors(next);
       const firstMessage = parsed.error.issues[0]?.message ?? copy.toastSaveFailed;
       toast.error(firstMessage);
+      saveGateRef.current = false;
       return null;
     }
 
@@ -232,6 +248,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
         console.error("[journal] save failed:", err);
       }
       setSaving(false);
+      saveGateRef.current = false;
       return null;
     }
 
@@ -244,30 +261,35 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
         body: JSON.stringify({ ...parsed.data, entryId: inserted.id }),
       });
       const body = (await res.json().catch(() => ({}))) as {
-        aiOutput?: AIOutput;
+        aiOutput?: unknown;
         error?: string;
       };
-      if (!res.ok || !body.aiOutput) {
-        // Save succeeded; only summary failed. Surface a softer toast.
-        toast.error(copy.toastSaveFailed);
-        toast.success(copy.toastSaveSuccess);
+      const parsedAiOutput = aiOutputSchema.safeParse(body.aiOutput);
+      if (!res.ok || !parsedAiOutput.success) {
+        onSummaryFailed?.();
+        toast.warning(copy.pastSummaryFailed);
       } else {
-        const withAi: JournalEntry = { ...inserted, aiOutput: body.aiOutput };
+        const withAi: JournalEntry = {
+          ...inserted,
+          aiOutput: parsedAiOutput.data,
+        };
         toast.success(copy.toastSaveSuccess);
         onSummaryReady?.(withAi);
       }
     } catch (err) {
-      toast.success(copy.toastSaveSuccess);
+      onSummaryFailed?.();
+      toast.warning(copy.pastSummaryFailed);
       if (process.env.NODE_ENV !== "production") {
         console.error("[journal] summary fetch failed:", err);
       }
     } finally {
       setGeneratingSummary(false);
       setSaving(false);
+      saveGateRef.current = false;
     }
 
     return inserted;
-  }, [form, copy, onSaved, onSummaryReady, savedEntryId]);
+  }, [form, copy, onSaved, onSummaryReady, onSummaryFailed, savedEntryId]);
 
   useImperativeHandle(
     ref,
@@ -289,13 +311,18 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
   }, [form.quadrant]);
 
   const isLocked = savedEntryId !== null;
+  const fieldsDisabled = isLocked || saving;
 
   // ----- render ----------------------------------------------------------
 
   return (
-    <div
+    <form
       className="space-y-6 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:border-border/75 [&_[data-slot=input]]:bg-card/60 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:border-border/75 [&_[data-slot=textarea]]:bg-card/60 dark:[&_[data-slot=input]]:border-border/75 dark:[&_[data-slot=input]]:bg-card/60 dark:[&_[data-slot=textarea]]:border-border/75 dark:[&_[data-slot=textarea]]:bg-card/60"
       aria-busy={saving || undefined}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSave();
+      }}
     >
       {/* Date + Topic — always visible. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -304,7 +331,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
           <DatePickerInput
             value={form.entryDate}
             onChange={(v) => setForm((f) => ({ ...f, entryDate: v }))}
-            disabled={isLocked}
+            disabled={fieldsDisabled}
             className="border-border/75 bg-card/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] dark:border-border/75 dark:bg-card/60"
           />
         </div>
@@ -316,7 +343,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
           <Select
             value={form.topic || null}
             onValueChange={(v) => setTopic(v as Topic)}
-            disabled={isLocked}
+            disabled={fieldsDisabled}
           >
             <SelectTrigger
               aria-invalid={!!errors.topic}
@@ -359,7 +386,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
               value={form.quadrant}
               onChange={setQuadrant}
               copy={copy}
-              disabled={isLocked}
+              disabled={fieldsDisabled}
             />
           </motion.section>
         )}
@@ -388,7 +415,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   onValueChange={(v) =>
                     setForm((f) => ({ ...f, primaryEmotion: v as Emotion }))
                   }
-                  disabled={isLocked}
+                  disabled={fieldsDisabled}
                 >
                   <SelectTrigger
                     aria-invalid={!!errors.primaryEmotion}
@@ -420,7 +447,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   onValueChange={(v) =>
                     setForm((f) => ({ ...f, secondaryEmotion: v as Emotion }))
                   }
-                  disabled={isLocked}
+                  disabled={fieldsDisabled}
                 >
                   <SelectTrigger
                     aria-invalid={!!errors.secondaryEmotion}
@@ -450,7 +477,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   onValueChange={(v) =>
                     setForm((f) => ({ ...f, target: v as Target }))
                   }
-                  disabled={isLocked}
+                  disabled={fieldsDisabled}
                 >
                   <SelectTrigger className="w-full rounded-xl border-border/75 bg-card/60 dark:border-border/75 dark:bg-card/60">
                     <SelectValue placeholder={copy.targetPlaceholder} />
@@ -477,7 +504,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   min={1}
                   max={10}
                   valueSuffix="/10"
-                  disabled={isLocked}
+                  disabled={fieldsDisabled}
                 />
               </div>
             </div>
@@ -490,6 +517,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
               onChange={(v) => setForm((f) => ({ ...f, bullets: v }))}
               copy={copy}
               errorMessage={errors.bullets}
+              disabled={fieldsDisabled}
             />
 
             {/* Self story */}
@@ -506,7 +534,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   setForm((f) => ({ ...f, selfStory: e.target.value }))
                 }
                 rows={3}
-                disabled={isLocked}
+                disabled={fieldsDisabled}
                 aria-invalid={!!errors.selfStory}
               />
               {errors.selfStory && (
@@ -522,6 +550,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
               values={form.topicExtras}
               onChange={(v) => setForm((f) => ({ ...f, topicExtras: v }))}
               copy={copy}
+              disabled={fieldsDisabled}
             />
 
             {/* Needs */}
@@ -531,6 +560,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
               cardinality={topicCfg.needsCardinality}
               copy={copy}
               errorMessage={errors.needs}
+              disabled={fieldsDisabled}
             />
 
             {/* Next tiny step */}
@@ -539,6 +569,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
               onChange={(v) => setForm((f) => ({ ...f, nextTinyStep: v }))}
               copy={copy}
               errorMessage={errors.nextTinyStep}
+              disabled={fieldsDisabled}
             />
 
             {/* Appreciation */}
@@ -550,7 +581,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                   setForm((f) => ({ ...f, appreciation: e.target.value }))
                 }
                 placeholder={copy.appreciationPlaceholder}
-                disabled={isLocked}
+                disabled={fieldsDisabled}
               />
             </div>
 
@@ -560,6 +591,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
                 value={form.contextFactors}
                 onChange={(v) => setForm((f) => ({ ...f, contextFactors: v }))}
                 copy={copy}
+                disabled={fieldsDisabled}
               />
             </CollapsibleSection>
 
@@ -577,11 +609,12 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
           saving={saving}
           generatingSummary={generatingSummary}
           saved={isLocked}
+          resetDisabled={resetDisabled}
           onSave={handleSave}
           onReset={resetAll}
         />
       )}
-    </div>
+    </form>
   );
 });
 
@@ -622,6 +655,7 @@ function SaveBar({
   saving,
   generatingSummary,
   saved,
+  resetDisabled,
   onSave,
   onReset,
 }: {
@@ -629,7 +663,8 @@ function SaveBar({
   saving: boolean;
   generatingSummary: boolean;
   saved: boolean;
-  onSave: () => void;
+  resetDisabled: boolean;
+  onSave: () => Promise<JournalEntry | null>;
   onReset: () => void;
 }) {
   const statusMessage = generatingSummary
@@ -641,40 +676,50 @@ function SaveBar({
         : "";
 
   return (
-    <div className="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-end">
+    <div className="flex flex-col gap-2 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-end">
       {/* Polite live region announces save / summary progress to AT. */}
       <span className="sr-only" role="status" aria-live="polite">
         {statusMessage}
       </span>
 
-      {saved && (
-        <OSControl type="button" onClick={onReset} className="w-full sm:w-auto">
-          {copy.startNewEntryButton}
-        </OSControl>
+      {saved ? (
+        <>
+          <div className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card/45 px-3 text-sm font-medium text-muted-foreground sm:min-h-9">
+            {generatingSummary ? (
+              <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
+            ) : (
+              <CheckCircle2 className="size-4 text-primary" aria-hidden />
+            )}
+            {generatingSummary ? copy.savingSummaryButton : copy.savedButton}
+          </div>
+          <OSPrimaryAction
+            type="button"
+            onClick={onReset}
+            disabled={generatingSummary || resetDisabled}
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            {copy.startNewEntryButton}
+          </OSPrimaryAction>
+        </>
+      ) : (
+        <OSPrimaryAction
+          type="submit"
+          onClick={() => void onSave()}
+          disabled={saving}
+          size="lg"
+          className="w-full sm:w-auto"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="animate-spin" aria-hidden />
+              {copy.savingButton}
+            </>
+          ) : (
+            copy.saveButton
+          )}
+        </OSPrimaryAction>
       )}
-      <OSPrimaryAction
-        type="button"
-        onClick={onSave}
-        disabled={saving || saved}
-        size="lg"
-        className="w-full sm:w-auto"
-      >
-        {generatingSummary ? (
-          <>
-            <Loader2 className="animate-spin" aria-hidden />
-            {copy.savingSummaryButton}
-          </>
-        ) : saving ? (
-          <>
-            <Loader2 className="animate-spin" aria-hidden />
-            {copy.savingButton}
-          </>
-        ) : saved ? (
-          copy.savedButton
-        ) : (
-          copy.saveButton
-        )}
-      </OSPrimaryAction>
     </div>
   );
 }

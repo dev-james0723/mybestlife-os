@@ -13,11 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  OSControl,
-  OSPrimaryAction,
-  OSSolidPanel,
-} from "@/components/ui/os-primitives";
+import { OSControl } from "@/components/ui/os-primitives";
 import {
   Collapsible,
   CollapsibleContent,
@@ -48,8 +44,8 @@ interface AIAddonsPanelProps {
   copy: JournalUiCopy;
   /** Whether the user has saved at least one entry to generate against. */
   canGenerate: boolean;
-  /** When canGenerate is false, the action that should run before generation. */
-  onAutoSaveBeforeGenerate?: () => Promise<boolean>;
+  /** Keeps the compact lock state accurate while the summary is being made. */
+  waitingForSummary?: boolean;
   illustration: IllustrationMedia | null;
   audio: AudioMedia | null;
   onGenerateIllustration: () => Promise<void>;
@@ -61,7 +57,7 @@ interface AIAddonsPanelProps {
 export function AIAddonsPanel({
   copy,
   canGenerate,
-  onAutoSaveBeforeGenerate,
+  waitingForSummary,
   illustration,
   audio,
   onGenerateIllustration,
@@ -72,18 +68,10 @@ export function AIAddonsPanel({
   const [zoomedSrc, setZoomedSrc] = useState<string | null>(null);
 
   const handleIllustration = async () => {
-    if (!canGenerate && onAutoSaveBeforeGenerate) {
-      const ok = await onAutoSaveBeforeGenerate();
-      if (!ok) return;
-    }
     await onGenerateIllustration();
   };
 
   const handleAudio = async () => {
-    if (!canGenerate && onAutoSaveBeforeGenerate) {
-      const ok = await onAutoSaveBeforeGenerate();
-      if (!ok) return;
-    }
     await onGenerateAudio();
   };
 
@@ -110,11 +98,22 @@ export function AIAddonsPanel({
     }
   };
 
+  if (!canGenerate && !illustration && !audio) {
+    return (
+      <div className="flex items-start gap-3 rounded-xl border border-dashed border-border/65 bg-card/40 p-4 text-sm leading-6 text-muted-foreground">
+        <Sparkles className="mt-1 size-4 shrink-0 text-primary" aria-hidden />
+        <p>
+          {waitingForSummary ? copy.savingSummaryButton : copy.addonsSaveFirstHint}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1">
         {/* Illustration */}
-        <OSSolidPanel as="section" className="space-y-4 rounded-xl p-4">
+        <section className="space-y-4">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <ImageIcon className="size-4 text-primary" aria-hidden />
             {copy.illustrationTitle}
@@ -174,7 +173,7 @@ export function AIAddonsPanel({
                     {copy.addonsSaveFirstHint}
                   </p>
                 )}
-                <OSPrimaryAction
+                <OSControl
                   type="button"
                   osSize="compact"
                   onClick={handleIllustration}
@@ -191,14 +190,14 @@ export function AIAddonsPanel({
                       {copy.illustrationGenerate}
                     </>
                   )}
-                </OSPrimaryAction>
+                </OSControl>
               </div>
             )}
           </div>
-        </OSSolidPanel>
+        </section>
 
         {/* Audio */}
-        <OSSolidPanel as="section" className="space-y-4 rounded-xl p-4">
+        <section className="space-y-4 border-t border-border/60 pt-4 md:border-l md:border-t-0 md:pl-4 md:pt-0 xl:border-l-0 xl:border-t xl:pl-0 xl:pt-4">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Mic className="size-4 text-primary" aria-hidden />
             {copy.audioTitle}
@@ -253,7 +252,7 @@ export function AIAddonsPanel({
                     {copy.addonsSaveFirstHint}
                   </p>
                 )}
-                <OSPrimaryAction
+                <OSControl
                   type="button"
                   osSize="compact"
                   onClick={handleAudio}
@@ -270,11 +269,11 @@ export function AIAddonsPanel({
                       {copy.audioGenerate}
                     </>
                   )}
-                </OSPrimaryAction>
+                </OSControl>
               </div>
             )}
           </div>
-        </OSSolidPanel>
+        </section>
       </div>
 
       <ImageZoomViewer
@@ -300,7 +299,7 @@ function TranscriptCollapsible({
         render={
           <button
             type="button"
-            className="flex min-h-10 w-full items-center justify-between rounded-xl border border-border/75 bg-card/60 px-3 py-2 text-xs font-medium transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border/75 bg-card/60 px-3 py-2 text-xs font-medium transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         }
       >

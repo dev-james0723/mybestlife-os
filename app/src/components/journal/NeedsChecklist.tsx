@@ -12,6 +12,7 @@ interface NeedsChecklistProps {
   cardinality: "exactly-one" | "one-to-two";
   copy: JournalUiCopy;
   errorMessage?: string;
+  disabled?: boolean;
 }
 
 export function NeedsChecklist({
@@ -20,6 +21,7 @@ export function NeedsChecklist({
   cardinality,
   copy,
   errorMessage,
+  disabled,
 }: NeedsChecklistProps) {
   const labelText =
     cardinality === "exactly-one"
@@ -63,10 +65,11 @@ export function NeedsChecklist({
               type="button"
               role="checkbox"
               aria-checked={active}
+              disabled={disabled}
               onClick={() => toggle(need)}
               className={cn(
                 "min-h-11 rounded-xl border px-3 py-2 text-sm transition-colors outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring",
+                "focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60",
                 active
                   ? "border-primary/60 bg-primary/10 text-foreground"
                   : "border-border/75 bg-card/50 text-muted-foreground hover:bg-card/75",

@@ -17,12 +17,14 @@ interface ContextFactorsFormProps {
   value: ContextFactors;
   onChange: (next: ContextFactors) => void;
   copy: JournalUiCopy;
+  disabled?: boolean;
 }
 
 export function ContextFactorsForm({
   value,
   onChange,
   copy,
+  disabled,
 }: ContextFactorsFormProps) {
   const set = <K extends keyof ContextFactors>(
     key: K,
@@ -45,6 +47,7 @@ export function ContextFactorsForm({
             min={0}
             max={10}
             valueSuffix="/10"
+            disabled={disabled}
           />
         </div>
         <div className="space-y-2">
@@ -58,6 +61,7 @@ export function ContextFactorsForm({
             min={0}
             max={10}
             valueSuffix="/10"
+            disabled={disabled}
           />
         </div>
         <div className="space-y-2">
@@ -71,6 +75,7 @@ export function ContextFactorsForm({
             min={0}
             max={10}
             valueSuffix="/10"
+            disabled={disabled}
           />
         </div>
       </div>
@@ -80,18 +85,21 @@ export function ContextFactorsForm({
         options={PHYSICAL_STATE_OPTIONS}
         values={value.physicalState ?? []}
         onChange={(v) => set("physicalState", v)}
+        disabled={disabled}
       />
       <ChipMultiSelect
         label={copy.contextFactors.environment}
         options={ENVIRONMENT_OPTIONS}
         values={value.environment ?? []}
         onChange={(v) => set("environment", v)}
+        disabled={disabled}
       />
       <ChipMultiSelect
         label={copy.contextFactors.substances}
         options={SUBSTANCE_OPTIONS}
         values={value.substances ?? []}
         onChange={(v) => set("substances", v)}
+        disabled={disabled}
       />
 
       <div className="space-y-2">
@@ -100,6 +108,7 @@ export function ContextFactorsForm({
           value={value.note ?? ""}
           onChange={(e) => set("note", e.target.value)}
           rows={2}
+          disabled={disabled}
         />
       </div>
     </div>

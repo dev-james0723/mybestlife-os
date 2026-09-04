@@ -14,6 +14,7 @@ interface NextTinyStepFieldProps {
   onChange: (next: string) => void;
   copy: JournalUiCopy;
   errorMessage?: string;
+  disabled?: boolean;
 }
 
 export function NextTinyStepField({
@@ -21,6 +22,7 @@ export function NextTinyStepField({
   onChange,
   copy,
   errorMessage,
+  disabled,
 }: NextTinyStepFieldProps) {
   const len = value.length;
   const overLimit = len > MAX_LEN;
@@ -47,6 +49,7 @@ export function NextTinyStepField({
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
         aria-invalid={overLimit || !!errorMessage}
       />
       {overLimit && (

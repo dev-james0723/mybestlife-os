@@ -15,6 +15,7 @@ interface BulletsFieldProps {
   copy: JournalUiCopy;
   errorMessage?: string;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function BulletsField({
@@ -25,6 +26,7 @@ export function BulletsField({
   copy,
   errorMessage,
   placeholder,
+  disabled,
 }: BulletsFieldProps) {
   const setAt = (idx: number, next: string) => {
     const copyArr = values.slice();
@@ -54,6 +56,7 @@ export function BulletsField({
               value={v}
               onChange={(e) => setAt(idx, e.target.value)}
               placeholder={placeholder}
+              disabled={disabled}
               aria-invalid={!!errorMessage && idx === 0 ? true : undefined}
             />
             {values.length > 1 && (
@@ -62,6 +65,7 @@ export function BulletsField({
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => removeAt(idx)}
+                disabled={disabled}
                 aria-label={copy.removeBulletAria}
               >
                 <X />
@@ -70,7 +74,13 @@ export function BulletsField({
           </div>
         ))}
       </div>
-      <Button type="button" variant="outline" size="sm" onClick={add}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={add}
+        disabled={disabled}
+      >
         <Plus aria-hidden />
         {copy.addBulletButton}
       </Button>

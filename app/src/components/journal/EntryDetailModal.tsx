@@ -7,10 +7,10 @@ import remarkGfm from "remark-gfm";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { OSDialogSurface } from "@/components/ui/os-primitives";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -32,13 +32,13 @@ export function EntryDetailModal({
 }: EntryDetailModalProps) {
   return (
     <Dialog open={!!entry} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <OSDialogSurface className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{copy.detailTitle}</DialogTitle>
         </DialogHeader>
 
         {entry && <EntryDetailBody entry={entry} copy={copy} />}
-      </DialogContent>
+      </OSDialogSurface>
     </Dialog>
   );
 }
@@ -136,7 +136,7 @@ function EntryDetailBody({
         <>
           <Separator />
           <Section title={copy.detailSectionAISummary}>
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-a:text-primary prose-hr:border-border dark:prose-invert">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {aiOutput.journalEntry}
               </ReactMarkdown>

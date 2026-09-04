@@ -21,6 +21,7 @@ interface TopicExtrasFormProps {
   values: Record<string, ExtraValue>;
   onChange: (next: Record<string, ExtraValue>) => void;
   copy: JournalUiCopy;
+  disabled?: boolean;
 }
 
 export function TopicExtrasForm({
@@ -28,6 +29,7 @@ export function TopicExtrasForm({
   values,
   onChange,
   copy,
+  disabled,
 }: TopicExtrasFormProps) {
   const cfg = TOPIC_CONFIG[topic];
   if (cfg.extras.length === 0) return null;
@@ -47,6 +49,7 @@ export function TopicExtrasForm({
           value={values[field.key]}
           onChange={(v) => setValue(field.key, v)}
           label={topicLabels[field.key] ?? field.key}
+          disabled={disabled}
         />
       ))}
     </div>
@@ -58,11 +61,13 @@ function ExtraFieldRenderer({
   value,
   onChange,
   label,
+  disabled,
 }: {
   field: TopicExtraField;
   value: ExtraValue | undefined;
   onChange: (v: ExtraValue) => void;
   label: string;
+  disabled?: boolean;
 }) {
   if (field.type === "text") {
     return (
@@ -71,6 +76,7 @@ function ExtraFieldRenderer({
         <Input
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
         />
       </div>
     );
@@ -89,6 +95,7 @@ function ExtraFieldRenderer({
           min={field.min}
           max={field.max}
           valueSuffix={`/${field.max}`}
+          disabled={disabled}
         />
       </div>
     );
@@ -113,12 +120,17 @@ function ExtraFieldRenderer({
         )}
         {items.map((v, idx) => (
           <div key={idx} className="flex items-center gap-2">
-            <Input value={v} onChange={(e) => setItem(idx, e.target.value)} />
+            <Input
+              value={v}
+              onChange={(e) => setItem(idx, e.target.value)}
+              disabled={disabled}
+            />
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
               onClick={() => remove(idx)}
+              disabled={disabled}
               aria-label="Remove"
             >
               <X />
@@ -126,7 +138,13 @@ function ExtraFieldRenderer({
           </div>
         ))}
       </div>
-      <Button type="button" variant="outline" size="sm" onClick={add}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={add}
+        disabled={disabled}
+      >
         <Plus aria-hidden />
         Add
       </Button>

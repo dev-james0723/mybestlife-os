@@ -39,8 +39,11 @@ import { useRecentJournalEntries } from "@/hooks/use-journal";
 import { getJournalUiCopy } from "@/lib/i18n/journal-ui";
 import { DEFAULT_AI_DEFAULTS } from "@/lib/journal/constants";
 import { aiOutputSchema, type AIOutput } from "@/lib/journal/schema";
+import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import type { JournalEntry } from "@/types/database";
+
+type SummaryStatus = "idle" | "generating" | "ready" | "failed";
 
 function JournalPanelHeader({
   id,
@@ -97,15 +100,22 @@ export default function JournalPage() {
   const [formKey, setFormKey] = useState(0);
   const [savedEntry, setSavedEntry] = useState<JournalEntry | null>(null);
   const [aiOutput, setAiOutput] = useState<AIOutput | null>(null);
+  const [summaryStatus, setSummaryStatus] = useState<SummaryStatus>("idle");
 
   const [illustration, setIllustration] = useState<IllustrationMedia | null>(null);
   const [audio, setAudio] = useState<AudioMedia | null>(null);
   const [illustrationLoading, setIllustrationLoading] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
+  const illustrationRequestActive = useRef(false);
+  const audioRequestActive = useRef(false);
 
   const guard = useUnsavedChanges(hasUnsavedChanges);
 
-  const { data: recentEntries, isLoading: recentLoading } = useRecentJournalEntries();
+  const {
+    data: recentEntries,
+    isLoading: recentLoading,
+    refetch: refetchRecentEntries,
+  } = useRecentJournalEntries();
 
   // ----- save handlers passed to JournalForm -----
   const handleSaved = useCallback((entry: JournalEntry) => {
@@ -115,14 +125,28 @@ export default function JournalPage() {
     setIllustration(null);
     setAudio(null);
     setAiOutput(null);
-  }, []);
+    setSummaryStatus("generating");
+    void refetchRecentEntries();
+  }, [refetchRecentEntries]);
 
   const handleSummaryReady = useCallback((entry: JournalEntry) => {
     if (entry.aiOutput) {
       const parsed = aiOutputSchema.safeParse(entry.aiOutput);
-      if (parsed.success) setAiOutput(parsed.data);
+      if (parsed.success) {
+        setAiOutput(parsed.data);
+        setSummaryStatus("ready");
+      } else {
+        setSummaryStatus("failed");
+      }
+    } else {
+      setSummaryStatus("failed");
     }
     setSavedEntry(entry);
+    void refetchRecentEntries();
+  }, [refetchRecentEntries]);
+
+  const handleSummaryFailed = useCallback(() => {
+    setSummaryStatus("failed");
   }, []);
 
   // ----- start new entry -----
@@ -133,6 +157,7 @@ export default function JournalPage() {
     setIllustration(null);
     setAudio(null);
     setHasUnsavedChanges(false);
+    setSummaryStatus("idle");
   }, []);
 
   // ----- AI Add-ons handlers -----
@@ -151,10 +176,12 @@ export default function JournalPage() {
   }, [savedEntry]);
 
   const generateIllustration = useCallback(async () => {
-    const entry = await ensureSavedEntry();
-    if (!entry) return;
+    if (illustrationRequestActive.current) return;
+    illustrationRequestActive.current = true;
     setIllustrationLoading(true);
     try {
+      const entry = await ensureSavedEntry();
+      if (!entry) return;
       const res = await fetch("/api/journal/illustration", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -186,15 +213,18 @@ export default function JournalPage() {
     } catch {
       toast.error(copy.toastIllustrationFailed);
     } finally {
+      illustrationRequestActive.current = false;
       setIllustrationLoading(false);
     }
   }, [ensureSavedEntry, summaryStringForMedia, copy]);
 
   const generateAudio = useCallback(async () => {
-    const entry = await ensureSavedEntry();
-    if (!entry) return;
+    if (audioRequestActive.current) return;
+    audioRequestActive.current = true;
     setAudioLoading(true);
     try {
+      const entry = await ensureSavedEntry();
+      if (!entry) return;
       const res = await fetch("/api/journal/audio", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -230,6 +260,7 @@ export default function JournalPage() {
     } catch {
       toast.error(copy.toastAudioFailed);
     } finally {
+      audioRequestActive.current = false;
       setAudioLoading(false);
     }
   }, [ensureSavedEntry, summaryStringForMedia, copy]);
@@ -287,15 +318,26 @@ export default function JournalPage() {
                   copy={copy}
                   onSaved={handleSaved}
                   onSummaryReady={handleSummaryReady}
+                  onSummaryFailed={handleSummaryFailed}
                   onDirtyChange={setHasUnsavedChanges}
                   onReset={startNewEntry}
+                  resetDisabled={illustrationLoading || audioLoading}
                 />
               </div>
             </div>
           </OSGlassPanel>
 
           {/* Generated reflection and optional media belong to one companion rail. */}
-          <aside className="min-w-0 space-y-5">
+          <aside
+            className={cn(
+              "min-w-0 space-y-5",
+              !savedEntry &&
+                !aiOutput &&
+                !illustration &&
+                !audio &&
+                "xl:sticky xl:top-20 xl:self-start",
+            )}
+          >
             <OSSolidPanel
               as="section"
               aria-labelledby="journal-summary-title"
@@ -310,7 +352,8 @@ export default function JournalPage() {
                 <PastAISummaryCard
                   aiOutput={aiOutput}
                   copy={copy}
-                  generating={savedEntry !== null && aiOutput === null}
+                  generating={summaryStatus === "generating"}
+                  failed={summaryStatus === "failed"}
                 />
               </div>
             </OSSolidPanel>
@@ -328,7 +371,10 @@ export default function JournalPage() {
               />
               <AIAddonsPanel
                 copy={copy}
-                canGenerate={savedEntry !== null}
+                canGenerate={
+                  savedEntry !== null && summaryStatus !== "generating"
+                }
+                waitingForSummary={summaryStatus === "generating"}
                 illustration={illustration}
                 audio={audio}
                 onGenerateIllustration={generateIllustration}
