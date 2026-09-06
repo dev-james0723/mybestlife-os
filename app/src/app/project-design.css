@@ -83,6 +83,13 @@ body:has([data-app-design="projects"]) {
     font-weight: 600;
   }
 
+  /* Floating action buttons and quick-filter chips intentionally keep their
+     original circular language inside the otherwise squared control system. */
+  [data-control-shape="circle"],
+  [data-control-shape="pill"] {
+    border-radius: 9999px;
+  }
+
   /* Small toolbar/icon buttons retain their compact dimensions. */
   [data-control-size="default"],
   [data-control-size="lg"] {

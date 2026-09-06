@@ -440,6 +440,7 @@ export function KnowledgeTopControlBar() {
                     variant={isActive ? "secondary" : "outline"}
                     size="sm"
                     osSize="compact"
+                    data-control-shape="pill"
                     className={cn(
                       "shrink-0 gap-1 rounded-full border px-3 text-[11px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]",
                       isActive ? tone.active : QUICK_FILTER_IDLE_CLASS,
@@ -463,6 +464,7 @@ export function KnowledgeTopControlBar() {
           variant="outline"
           size="sm"
           osSize="compact"
+          data-control-shape="pill"
           className="relative z-10 shrink-0 gap-1 rounded-full border-border/60 bg-background/70 px-2.5 text-[11px] font-medium text-muted-foreground shadow-[-10px_0_20px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.42)] hover:border-foreground/20 hover:bg-muted/60 hover:text-foreground hover:shadow-[-12px_0_24px_rgba(15,23,42,0.13),inset_0_1px_0_rgba(255,255,255,0.48)] focus-visible:ring-lime-300/40 dark:bg-white/[0.04] dark:shadow-[-12px_0_24px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.08)] dark:hover:bg-white/[0.07] dark:hover:shadow-[-14px_0_28px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.10)]"
           onClick={() => setQuickFiltersOpen(true)}
           aria-label={ui.quickFilterManager.manageButton}

@@ -83,6 +83,7 @@ export function ProtectedScrollLayout({
           type="button"
           variant="outline"
           size="icon"
+          data-control-shape="circle"
           onClick={() => toggleSidebar()}
           className={cn(
             "fixed z-[45] size-14 shrink-0 rounded-full border-0 bg-background text-foreground shadow-lg ring-1 ring-black/5 dark:ring-white/10",
