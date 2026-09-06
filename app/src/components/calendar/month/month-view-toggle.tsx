@@ -29,7 +29,7 @@ export function MonthViewToggle({ value, onChange, labels, className }: Props) {
       {OPTIONS.map((option) => {
         const active = option === value;
         return (
-          <button
+          <button data-control-variant="outline" data-selected={active}
             key={option}
             type="button"
             role="radio"

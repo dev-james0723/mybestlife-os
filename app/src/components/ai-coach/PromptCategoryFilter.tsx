@@ -55,7 +55,7 @@ export function PromptCategoryFilter({
           const active = selected === id;
           return (
             <li key={id}>
-              <button
+              <button data-control-variant="outline" data-selected={active}
                 type="button"
                 onClick={() => onSelect(id)}
                 aria-pressed={active}

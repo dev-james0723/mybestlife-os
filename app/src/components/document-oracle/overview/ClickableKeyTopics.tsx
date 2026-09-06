@@ -94,7 +94,7 @@ export function ClickableKeyTopics(props: {
         {topics.map((t, index) => {
           const tone = topicTone(t, index);
           return (
-            <button
+            <button data-control-variant="outline"
               key={t}
               type="button"
               onClick={() => handleTopicClick(t)}

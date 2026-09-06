@@ -75,7 +75,7 @@ export function GlossaryAlphabetIndex(props: Props) {
   const { value, onChange, availableLatin, hasNonLatin, nonLatinLabel, allLabel } = props;
 
   const pill = (id: string, label: string, active: boolean, disabled: boolean, onClick: () => void) => (
-    <button
+    <button data-control-variant="outline" data-selected={active}
       key={id}
       type="button"
       disabled={disabled}

@@ -226,12 +226,11 @@ export function ExplorerConsole() {
             </span>
             <h2 className="text-balance text-xl font-semibold sm:text-2xl">{copy.emptyTitle}</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-white/60">{copy.emptyBody}</p>
-            <button
+            <button data-control-variant="default"
               type="button"
               onClick={() => void runSearch()}
               disabled={searching}
               className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-[#06121f] transition hover:brightness-110 disabled:opacity-60"
-              style={{ background: CYAN }}
             >
               {copy.beginDescent}
               <ChevronRight className="h-4 w-4" />

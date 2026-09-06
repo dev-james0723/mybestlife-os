@@ -132,7 +132,7 @@ export function KnowledgeFavoriteStar({
   }
 
   return (
-    <button
+    <button data-control-variant="outline" data-selected={isActive}
       type="button"
       className={cn(
         "pointer-events-auto relative inline-flex shrink-0 items-center justify-center overflow-visible rounded-full border border-white/25 bg-black/45 text-white shadow-[0_8px_20px_rgba(0,0,0,0.22)] backdrop-blur-md transition-[background-color,border-color,box-shadow,color,transform] hover:scale-105 hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70 disabled:cursor-wait disabled:opacity-80",

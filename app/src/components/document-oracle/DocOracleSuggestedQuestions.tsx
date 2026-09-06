@@ -107,7 +107,7 @@ function QuestionChip(props: {
       {pages.length > 0 && onOpenSourcePage ? (
         <div className="flex flex-wrap gap-1.5 pt-0.5">
           {pages.map((p) => (
-            <button
+            <button data-control-variant="outline"
               key={p}
               type="button"
               onClick={(e) => {

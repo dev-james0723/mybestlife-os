@@ -59,7 +59,7 @@ function GlassTintPanel({
       className={cn("overflow-hidden", className)}
       {...rest}
     >
-      <span aria-hidden className={cn(tintOverlay({ tint }))} />
+      <span aria-hidden data-slot="decorative-panel-tint" className={cn(tintOverlay({ tint }))} />
       <div className={cn("relative z-10", contentClassName)}>{children}</div>
     </GlassPanel>
   )

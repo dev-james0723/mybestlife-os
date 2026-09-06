@@ -107,7 +107,7 @@ export function SignalsSettingsSheet({
               {SIGNAL_TOPIC_IDS.map((topic) => {
                 const selected = prefs.followedTopics.includes(topic);
                 return (
-                  <button
+                  <button data-control-variant="outline" data-selected={selected}
                     key={topic}
                     type="button"
                     onClick={() => toggleTopic(topic)}

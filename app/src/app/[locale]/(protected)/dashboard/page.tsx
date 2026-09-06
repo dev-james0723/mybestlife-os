@@ -340,7 +340,7 @@ export default function DashboardPage() {
         <aside className="min-w-0 space-y-6 xl:sticky xl:top-6">
           <GlassTintPanel tint="pink" className="p-5 md:max-xl:p-6 xl:p-5">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-700 dark:bg-pink-400/20 dark:text-pink-200">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Heart className="h-5 w-5" />
               </div>
               <h2 className="min-w-0 flex-1 text-lg font-semibold tracking-tight">{copy.gratefulTitle}</h2>
@@ -361,9 +361,9 @@ export default function DashboardPage() {
                   <li key={entry?.id ?? `slot-${i}`}>
                     <Link
                       href={hrefGrateful}
-                      className="flex min-h-11 items-start gap-2.5 rounded-xl px-2 py-2 text-sm transition-colors hover:bg-pink-500/10 dark:hover:bg-pink-400/10 md:max-xl:px-3 xl:px-2"
+                      className="flex min-h-11 items-start gap-2.5 rounded-xl px-2 py-2 text-sm transition-colors hover:bg-primary/10 md:max-xl:px-3 xl:px-2"
                     >
-                      <Plus className="mt-0.5 h-4 w-4 shrink-0 text-pink-600 dark:text-pink-300" />
+                      <Plus className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                       <span className={cn(!entry && "text-muted-foreground")}>
                         {entry?.content ?? copy.gratefulSlotEmpty(i)}
                       </span>

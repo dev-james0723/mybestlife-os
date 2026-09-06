@@ -183,7 +183,7 @@ export function TaskControlBar({
   const showClear = activeFilterCount > 0 || filter.search.trim().length > 0;
 
   return (
-    <div className={filterHorizontalScrollClassName}>
+    <div className={cn(filterHorizontalScrollClassName, "rounded-[1.25rem] border border-border/60 bg-white/50 p-3 dark:border-white/10 dark:bg-white/[0.035]")}>
       <div className={cn(filterSearchControlClassName, "lg:max-w-sm")}>
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input

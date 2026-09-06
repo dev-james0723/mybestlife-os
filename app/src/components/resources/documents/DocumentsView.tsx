@@ -188,6 +188,7 @@ export function DocumentsView() {
   return (
     <>
       <PageShell
+        useRouteTitle={false}
         title="Documents"
         description="Passports, licenses, and paperwork with renewal dates"
         actions={

@@ -28,7 +28,7 @@ export function TriggerChips({
       {options.map((key) => {
         const active = values.includes(key);
         return (
-          <button
+          <button data-control-variant="outline" data-selected={active}
             key={key}
             type="button"
             onClick={() => toggle(key)}

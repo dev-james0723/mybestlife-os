@@ -57,7 +57,7 @@ export function OverviewVisualHighlights(props: {
             </button>
             <div className="flex items-center justify-between gap-2 border-t border-border px-2.5 py-1.5">
               {v.source_page_number != null && openSourceAtPage ? (
-                <button
+                <button data-control-variant="outline"
                   type="button"
                   className={cn(
                     "rounded-full border border-border bg-background/45 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground transition hover:border-primary/40 hover:text-primary",

@@ -13,6 +13,8 @@ interface PageShellProps {
   actions?: ReactNode;
   /** Rendered above the title row (e.g. centered profile photo). */
   preHeader?: ReactNode;
+  /** Sub-tabs supply their own localized title instead of the route label. */
+  useRouteTitle?: boolean;
   children: ReactNode;
 }
 
@@ -29,16 +31,16 @@ function useThemedTitle(fallbackTitle: string): string {
   });
 }
 
-export function PageShell({ title, description, actions, preHeader, children }: PageShellProps) {
+export function PageShell({ title, description, actions, preHeader, children, useRouteTitle = true }: PageShellProps) {
   const displayTitle = useThemedTitle(title);
 
   return (
-    <div className="space-y-8 sm:space-y-10">
+    <div data-slot="page-shell" className="min-w-0 space-y-8 sm:space-y-10">
       {preHeader ? <div data-motion-reveal>{preHeader}</div> : null}
       <div data-motion-reveal>
-        <OSPageHeader title={displayTitle} description={description} actions={actions} />
+        <OSPageHeader title={useRouteTitle ? displayTitle : title} description={description} actions={actions} />
       </div>
-      <div data-motion-reveal>{children}</div>
+      <div data-motion-reveal data-slot="page-content" className="min-w-0 space-y-6">{children}</div>
     </div>
   );
 }

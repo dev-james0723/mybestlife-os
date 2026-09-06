@@ -1,0 +1,288 @@
+/*
+ * Projects is the visual reference for the authenticated app. Keep these
+ * semantic rules outside Tailwind's layers so route-specific utility classes
+ * cannot silently introduce another button, field or floating-surface style.
+ * The body scope also includes Base UI portals; login and public shares retain
+ * their own presentation. No element geometry, chart series or media is reset.
+ */
+body:has([data-app-design="projects"]) {
+  --os-action: #bef264;
+  --os-action-hover: #d9f99d;
+  --os-action-foreground: #0f172a;
+  --os-control-radius: 0.75rem;
+  --os-field-radius: 0.95rem;
+  --os-panel-radius: 1rem;
+  --os-surface: rgb(255 255 255 / 78%);
+  --os-surface-hover: rgb(255 255 255 / 94%);
+  --os-field: rgb(255 255 255 / 76%);
+  --os-floating: rgb(255 255 255 / 94%);
+  --os-stroke: rgb(203 213 225 / 65%);
+  --os-ink: #0f172a;
+  --os-ink-muted: #526072;
+  --os-shadow: 0 12px 38px rgb(15 23 42 / 8%), inset 0 1px 0 rgb(255 255 255 / 72%);
+  --os-floating-shadow: 0 24px 90px rgb(15 23 42 / 18%), inset 0 1px 0 rgb(255 255 255 / 72%);
+  /* Text accents need darker ink than the lime used for filled actions. */
+  --primary: #46651e;
+  --primary-foreground: #ffffff;
+  --ring: #729c32;
+  --accent-pink: var(--primary);
+  --accent-pink-from: var(--os-action);
+  --accent-pink-to: var(--os-action);
+  --accent-pink-foreground: var(--os-action-foreground);
+  --surface-glass: var(--os-surface);
+  --surface-glass-strong: var(--os-floating);
+  --border-glass: var(--os-stroke);
+  --border-glass-strong: var(--os-stroke);
+  --shadow-glass: var(--os-shadow);
+  --glass-blur: 20px;
+  --glass-saturation: 135%;
+  --ai-planner-cancel-bg: var(--os-field);
+  --ai-planner-cancel-fg: var(--os-ink);
+  --ai-planner-cancel-border: var(--os-stroke);
+  --ai-planner-quick-bg: var(--os-field);
+  --ai-planner-quick-fg: var(--os-ink);
+  --ai-planner-quick-border: var(--os-stroke);
+  --ai-planner-submit-bg: var(--os-action);
+  --ai-planner-submit-fg: var(--os-action-foreground);
+  --ai-planner-submit-border: transparent;
+  --project-ai-fill-bg: var(--os-action);
+  --project-ai-fill-fg: var(--os-action-foreground);
+  --project-ai-fill-border: transparent;
+  --project-ai-fill-hover-bg: var(--os-action-hover);
+}
+
+.dark body:has([data-app-design="projects"]) {
+  --os-surface: rgb(255 255 255 / 5.5%);
+  --os-surface-hover: rgb(255 255 255 / 9%);
+  --os-field: rgb(255 255 255 / 6%);
+  --os-floating: rgb(24 24 27 / 94%);
+  --os-stroke: rgb(255 255 255 / 12%);
+  --os-ink: #f8fafc;
+  --os-ink-muted: #b5bfcc;
+  --os-shadow: 0 12px 38px rgb(2 8 23 / 24%), inset 0 1px 0 rgb(255 255 255 / 8%);
+  --os-floating-shadow: 0 24px 90px rgb(2 8 23 / 48%), inset 0 1px 0 rgb(255 255 255 / 8%);
+  --primary: #bef264;
+  --primary-foreground: #0f172a;
+  --ring: #bef264;
+}
+
+body:has([data-app-design="projects"]) {
+  html[data-ui-theme="default"] & [data-atmosphere]::before {
+    background:
+      radial-gradient(ellipse 60% 50% at 18% 28%, rgb(148 163 184 / 9%), transparent 60%),
+      radial-gradient(ellipse 55% 45% at 82% 18%, rgb(148 163 184 / 6%), transparent 55%);
+  }
+
+  [data-slot="decorative-panel-tint"] {
+    background: none;
+  }
+
+  [data-control-variant],
+  [data-project-control] {
+    border-radius: var(--os-control-radius);
+    font-weight: 600;
+  }
+
+  /* Small toolbar/icon buttons retain their compact dimensions. */
+  [data-control-size="default"],
+  [data-control-size="lg"] {
+    min-height: 2.75rem;
+    padding-inline: 0.875rem;
+  }
+
+  [data-control-variant="default"],
+  [data-control-variant="gradient-pink"],
+  [data-slot="os-primary-action"] {
+    background: var(--os-action);
+    border-color: transparent;
+    color: var(--os-action-foreground);
+    box-shadow: 0 10px 30px rgb(190 242 100 / 16%), inset 0 1px 0 rgb(255 255 255 / 42%);
+  }
+
+  [data-control-variant="default"]:hover,
+  [data-control-variant="gradient-pink"]:hover,
+  [data-slot="os-primary-action"]:hover {
+    background: var(--os-action-hover);
+  }
+
+  /* Legacy confirmation actions express destructive intent with a class. */
+  [data-control-variant][class~="bg-destructive"] {
+    background: #b91c1c;
+    color: #fff;
+    box-shadow: none;
+  }
+
+  [data-control-variant][class~="bg-destructive"]:hover {
+    background: #991b1b;
+  }
+
+  [data-control-variant="outline"],
+  [data-control-variant="secondary"],
+  [data-slot="os-control"],
+  [data-slot="os-icon-control"] {
+    background: var(--os-field);
+    border: 1px solid var(--os-stroke);
+    color: var(--os-ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+    backdrop-filter: blur(20px) saturate(135%);
+  }
+
+  [data-control-variant="outline"]:hover,
+  [data-control-variant="secondary"]:hover,
+  [data-slot="os-control"]:hover,
+  [data-slot="os-icon-control"]:hover {
+    background: var(--os-surface-hover);
+  }
+
+  [data-control-variant="ghost"] {
+    background: transparent;
+    color: var(--os-ink-muted);
+    box-shadow: none;
+  }
+
+  [data-control-variant="ghost"]:hover {
+    background: var(--os-field);
+    color: var(--os-ink);
+  }
+
+  [data-control-variant="link"] {
+    color: var(--primary);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  select:not([data-slot]),
+  textarea:not([data-slot]),
+  input:not([data-slot]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]),
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"] {
+    border-radius: var(--os-field-radius);
+    border-color: var(--os-stroke);
+    background: var(--os-field);
+    color: var(--os-ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+  }
+
+  select:not([data-slot]),
+  [data-slot="input"]:not([type="checkbox"]):not([type="radio"]),
+  [data-slot="select-trigger"] {
+    min-height: 2.75rem;
+  }
+
+  [data-slot="card"],
+  [data-slot="glass-panel"],
+  [data-slot="os-glass-panel"],
+  [data-slot="os-frosted-panel"],
+  [data-slot="os-solid-panel"],
+  [data-slot="project-surface"],
+  [data-slot="os-empty-state"] {
+    border: 1px solid var(--os-stroke);
+    border-radius: var(--os-panel-radius);
+    background: var(--os-surface);
+    color: var(--os-ink);
+    box-shadow: var(--os-shadow);
+    backdrop-filter: blur(20px) saturate(135%);
+  }
+
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="select-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  .knowledge-detail-glass-shell {
+    background: var(--os-floating);
+    border: 1px solid var(--os-stroke);
+    color: var(--os-ink);
+    box-shadow: var(--os-floating-shadow);
+    backdrop-filter: blur(24px) saturate(140%);
+  }
+
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"] {
+    border-radius: var(--os-control-radius);
+  }
+
+  [data-slot="popover-content"],
+  [data-slot="select-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"] {
+    border-radius: var(--os-control-radius);
+  }
+
+  [data-slot="tabs-list"] {
+    height: auto;
+    min-height: 3.25rem;
+    max-width: 100%;
+    padding: 0.25rem;
+    gap: 0.25rem;
+    border: 1px solid var(--os-stroke);
+    border-radius: 1.35rem;
+    background: var(--os-field);
+  }
+
+  [data-slot="os-status-rail"] [role="tab"],
+  [data-slot="os-segmented-control"] [role="tab"],
+  [data-slot="tabs-trigger"] {
+    min-height: 2.75rem;
+    padding-inline: 0.875rem;
+    border-radius: var(--os-control-radius);
+    color: var(--os-ink-muted);
+    font-weight: 600;
+  }
+
+  [data-slot="os-status-rail"] [role="tab"][aria-selected="true"],
+  [data-slot="os-segmented-control"] [role="tab"][aria-selected="true"],
+  [data-control-variant][aria-pressed="true"],
+  [data-control-variant][data-selected="true"],
+  [data-slot="tabs-trigger"][data-active],
+  [data-slot="tabs-trigger"][aria-selected="true"],
+  [data-slot="project-filter"][data-selected="true"],
+  [data-slot="project-filter"][aria-pressed="true"] {
+    color: var(--os-action-foreground);
+    background: var(--os-action);
+    border-color: transparent;
+  }
+
+  [data-slot="tabs-trigger"]::after { display: none; }
+
+  [data-slot="project-surface"][aria-pressed="true"] {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 1px var(--ring);
+  }
+
+  [data-slot="project-filter"] {
+    min-height: 2.75rem;
+    border: 1px solid var(--os-stroke);
+    border-radius: var(--os-control-radius);
+    background: var(--os-field);
+    color: var(--os-ink-muted);
+  }
+
+  [data-control-variant]:focus-visible,
+  [data-slot="project-filter"]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  [data-slot="input"][aria-invalid="true"],
+  [data-slot="textarea"][aria-invalid="true"],
+  [data-slot="select-trigger"][aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  body:has([data-app-design="projects"]) {
+    --os-surface: #fff;
+    --os-field: #fff;
+    --os-floating: #fff;
+  }
+  .dark body:has([data-app-design="projects"]) {
+    --os-surface: #202023;
+    --os-field: #27272a;
+    --os-floating: #18181b;
+  }
+}

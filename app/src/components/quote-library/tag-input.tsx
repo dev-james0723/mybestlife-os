@@ -82,7 +82,7 @@ export function TagInput({
           className="gap-1 px-2 py-0.5 font-normal"
         >
           <span>#{tag}</span>
-          <button
+          <button data-control-variant="ghost"
             type="button"
             onClick={(e) => {
               e.stopPropagation();

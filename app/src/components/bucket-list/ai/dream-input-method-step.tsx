@@ -88,7 +88,7 @@ export function DreamInputMethodStep({
         <p className="text-xs text-muted-foreground">{copy.aiExamplesLabel}</p>
         <div className="flex flex-wrap gap-2">
           {EXAMPLE_PROMPTS.map((ex) => (
-            <button
+            <button data-control-variant="outline"
               key={ex}
               type="button"
               disabled={disabled}

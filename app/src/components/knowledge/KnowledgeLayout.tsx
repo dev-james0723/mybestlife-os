@@ -220,7 +220,7 @@ function KnowledgeAskCommandSection({ userId }: { userId: string }) {
 
   return (
     <section className="max-w-full" aria-label={ui.title}>
-      <button
+      <button data-control-variant="outline"
         ref={commandLightRef}
         type="button"
         onClick={() => (isAIPanelOpen ? closeAIPanel() : openAIPanel())}

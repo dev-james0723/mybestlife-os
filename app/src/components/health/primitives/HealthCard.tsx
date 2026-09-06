@@ -36,6 +36,7 @@ export const HealthCard = forwardRef<HTMLDivElement, HealthCardProps>(
     if (as === "button") {
       return (
         <button
+          data-slot={tone === "default" ? "project-surface" : undefined}
           type="button"
           ref={ref as unknown as React.Ref<HTMLButtonElement>}
           onClick={onClick}
@@ -48,13 +49,13 @@ export const HealthCard = forwardRef<HTMLDivElement, HealthCardProps>(
     }
     if (as === "article") {
       return (
-        <article ref={ref as unknown as React.Ref<HTMLElement>} className={base} onClick={onClick} aria-label={rest["aria-label"]}>
+        <article data-slot={tone === "default" ? "project-surface" : undefined} ref={ref as unknown as React.Ref<HTMLElement>} className={base} onClick={onClick} aria-label={rest["aria-label"]}>
           {children}
         </article>
       );
     }
     return (
-      <div ref={ref} className={base} onClick={onClick} aria-label={rest["aria-label"]}>
+      <div data-slot={tone === "default" ? "project-surface" : undefined} ref={ref} className={base} onClick={onClick} aria-label={rest["aria-label"]}>
         {children}
       </div>
     );

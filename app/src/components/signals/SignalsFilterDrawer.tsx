@@ -60,7 +60,7 @@ function Toggle({
   onClick: () => void;
 }) {
   return (
-    <button
+    <button data-control-variant="outline" data-selected={active}
       type="button"
       onClick={onClick}
       aria-pressed={active}

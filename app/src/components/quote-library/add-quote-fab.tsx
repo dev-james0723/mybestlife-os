@@ -34,7 +34,7 @@ export function AddQuoteFab() {
   const openAddSheet = useQuoteLibraryStore((s) => s.openAddSheet);
 
   return (
-    <button
+    <button data-control-variant="default"
       type="button"
       onClick={openAddSheet}
       className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform duration-150 hover:scale-105 focus-visible:ring-4 focus-visible:ring-primary/30 focus-visible:outline-none sm:hidden"

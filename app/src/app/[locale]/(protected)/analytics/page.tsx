@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { AnalyticsControlCenter } from "@/components/analytics/AnalyticsControlCenter";
+import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { useLifeAnalytics } from "@/hooks/use-life-analytics";
 import { DEFAULT_ANALYTICS_RANGE_SELECTION } from "@/lib/analytics/date-range";
@@ -17,11 +18,13 @@ export default function AnalyticsPage() {
   if (isLoading || !analytics) return <LoadingPage />;
 
   return (
-    <AnalyticsControlCenter
-      analytics={analytics}
-      rangeSelection={rangeSelection}
-      onRangeSelectionChange={setRangeSelection}
-      failedBrainSlices={failedBrainSlices}
-    />
+    <PageShell title="Analytics">
+      <AnalyticsControlCenter
+        analytics={analytics}
+        rangeSelection={rangeSelection}
+        onRangeSelectionChange={setRangeSelection}
+        failedBrainSlices={failedBrainSlices}
+      />
+    </PageShell>
   );
 }

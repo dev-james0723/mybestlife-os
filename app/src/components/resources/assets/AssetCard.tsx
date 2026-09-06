@@ -224,7 +224,7 @@ function FavoriteStar({
   }
 
   return (
-    <button
+    <button data-control-variant="ghost"
       type="button"
       onClick={(e) => {
         e.stopPropagation();

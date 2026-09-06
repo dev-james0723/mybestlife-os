@@ -746,7 +746,7 @@ export function KnowledgeInquiryAgent() {
                       >
                         <span className="min-w-0 truncate">{mode}</span>
                       </button>
-                      <button
+                      <button data-control-variant="ghost" data-selected={activeModeInfo === mode}
                         type="button"
                         className={cn(
                           "absolute right-1 top-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-lime-900/10 bg-white/82 text-lime-800 shadow-sm transition-colors hover:border-lime-700/30 hover:bg-lime-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60 dark:border-lime-300/16 dark:bg-black/42 dark:text-lime-100 dark:hover:border-lime-200/30 dark:hover:bg-lime-300/12",

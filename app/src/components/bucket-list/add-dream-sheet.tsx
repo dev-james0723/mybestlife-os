@@ -244,7 +244,7 @@ export function AddDreamSheet() {
               : "Add enough context to plan it."}
           </SheetDescription>
           <div className={`relative mt-2 flex gap-1 rounded-full p-1 text-xs ${bucketGlassControl} ${bucketSheen}`}>
-            <button
+            <button data-control-variant="outline" data-selected={mode === "quick"}
               type="button"
               onClick={() => setMode("quick")}
               className={`relative isolate flex-1 overflow-hidden rounded-full px-3 py-1.5 font-medium transition-colors active:translate-y-px ${mode === "quick" ? "text-slate-950" : "text-white/58 hover:text-white"}`}
@@ -258,7 +258,7 @@ export function AddDreamSheet() {
               ) : null}
               Quick
             </button>
-            <button
+            <button data-control-variant="outline" data-selected={mode === "detailed"}
               type="button"
               onClick={() => setMode("detailed")}
               className={`relative isolate flex-1 overflow-hidden rounded-full px-3 py-1.5 font-medium transition-colors active:translate-y-px ${mode === "detailed" ? "text-slate-950" : "text-white/58 hover:text-white"}`}

@@ -579,7 +579,7 @@ function InputStep({
                   <Receipt className="size-5" /> PDF ready
                 </div>
               )}
-              <button
+              <button data-control-variant="ghost"
                 type="button"
                 onClick={clearAttachment}
                 className="absolute -right-2 -top-2 rounded-full bg-background p-1 shadow"

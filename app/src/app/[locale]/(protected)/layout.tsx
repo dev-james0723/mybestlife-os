@@ -12,7 +12,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider data-app-design="projects">
       <FocusRealityBoundary>
         <SyncThemeFromProfile />
         <OnboardingGate />

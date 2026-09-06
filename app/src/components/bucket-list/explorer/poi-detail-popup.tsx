@@ -66,7 +66,7 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
         onClick={closeDetail}
       />
       <div className="relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-white/15 bg-[rgba(16,24,38,0.94)] text-white shadow-2xl sm:rounded-2xl">
-        <button
+        <button data-control-variant="ghost"
           type="button"
           onClick={closeDetail}
           aria-label="Close"
@@ -118,7 +118,7 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
 
               <div className="flex flex-wrap gap-2 pt-1">
                 {place.googleMapsUri && (
-                  <a
+                  <a data-control-variant="outline"
                     href={place.googleMapsUri}
                     target="_blank"
                     rel="noreferrer"
@@ -128,7 +128,7 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
                   </a>
                 )}
                 {place.website && (
-                  <a
+                  <a data-control-variant="outline"
                     href={place.website}
                     target="_blank"
                     rel="noreferrer"
@@ -150,7 +150,7 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
                 </div>
               )}
 
-              <button
+              <button data-control-variant="default"
                 type="button"
                 onClick={onAdd}
                 disabled={!destinationId || savePlace.isPending}

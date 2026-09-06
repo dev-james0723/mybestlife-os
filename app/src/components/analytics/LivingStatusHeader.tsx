@@ -36,8 +36,8 @@ export function LivingStatusHeader({
         transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
       />
       <div className="relative flex flex-col gap-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="min-w-0 max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur-md dark:border-white/10">
               <span className="relative flex size-2">
                 <motion.span
@@ -50,15 +50,15 @@ export function LivingStatusHeader({
               <Sparkles className="size-3.5 text-primary" />
               Life Pulse Center · {analytics.range.label}
             </div>
-            <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
+            <h2 className="text-xl font-semibold leading-8">
               {analytics.statusSummary}
-            </h1>
+            </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
               {analytics.range.behavior}
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-3 lg:items-end">
+          <div className="flex min-w-0 flex-col items-start gap-3">
             <TimeLensControl value={rangeSelection} onChange={onRangeSelectionChange} />
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>

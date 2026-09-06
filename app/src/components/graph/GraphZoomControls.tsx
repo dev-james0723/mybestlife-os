@@ -64,7 +64,7 @@ export function GraphZoomControls({
       >
         <Minus className="h-3.5 w-3.5" />
       </Button>
-      <button
+      <button data-control-variant="ghost"
         type="button"
         onClick={onResetZoom ?? onFit}
         title={onResetZoom ? "Reset zoom to 100%" : "Fit to view"}

@@ -609,7 +609,7 @@ function ToolbarIcon({
   ...rest
 }: ComponentProps<"button"> & { active?: boolean }) {
   return (
-    <button
+    <button data-control-variant="outline" data-selected={active}
       type="button"
       className={cn(
         "flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground transition",

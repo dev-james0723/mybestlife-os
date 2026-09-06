@@ -39,7 +39,7 @@ export function FreeWindowChips({ windows, title, className, onSelect }: Props) 
           }
 
           return (
-            <button
+            <button data-control-variant="outline"
               key={`${w.start}-${w.end}`}
               type="button"
               onClick={() => onSelect(w)}

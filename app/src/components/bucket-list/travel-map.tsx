@@ -334,7 +334,7 @@ function StatusFilterRail({
           const label =
             status === "all" ? "All" : getBucketStatusLabel(status, copy);
           return (
-            <button
+            <button data-control-variant="outline" data-selected={active}
               key={status}
               type="button"
               role="tab"

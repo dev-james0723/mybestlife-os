@@ -661,7 +661,7 @@ function ChipButton({
     "border-border bg-background text-foreground hover:bg-muted";
 
   return (
-    <button
+    <button data-control-variant="outline" data-selected={active}
       type="button"
       onClick={onClick}
       aria-pressed={active}
@@ -829,7 +829,7 @@ function FavoriteRailItem({
         </div>
       </button>
       {/* Tap-target for un-favoriting from the rail without opening detail. */}
-      <button
+      <button data-control-variant="ghost"
         type="button"
         onClick={(e) => {
           e.stopPropagation();

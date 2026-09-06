@@ -123,7 +123,7 @@ export default function FinancePage() {
 
   return (
     <PageShell title={copy.pageTitle} description={copy.pageDescription}>
-      <div className="rounded-xl border border-foreground/10 bg-gradient-to-br from-violet-50/50 via-card/90 to-sky-50/45 p-4 ring-1 ring-foreground/10 shadow-sm dark:from-violet-950/25 dark:via-card/80 dark:to-sky-950/20 sm:p-5">
+      <div data-slot="project-surface" className="p-4 sm:p-5">
         <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between", spacing.cardGap)}>
           <div className={cn("flex flex-col gap-4 sm:flex-row sm:flex-wrap", spacing.cardGap)}>
             <FinancePeriodSelector value={preset} onChange={setPreset} copy={copy} />

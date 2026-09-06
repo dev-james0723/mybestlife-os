@@ -274,7 +274,7 @@ export function AssetIntelligenceModal({
                     </p>
                   )}
                 </div>
-                <button
+                <button data-control-variant="ghost"
                   type="button"
                   onClick={() => onToggleFavorite(asset)}
                   aria-pressed={asset.is_favorite}
@@ -530,7 +530,7 @@ function EvidencePanel({
                 />
                 <div className="absolute inset-0 flex items-center justify-center gap-1 rounded-lg bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                   {!img.is_primary && (
-                    <button
+                    <button data-control-variant="ghost"
                       type="button"
                       onClick={() => onSetPrimary(img.id)}
                       className="rounded-full bg-background/90 p-1"
@@ -539,7 +539,7 @@ function EvidencePanel({
                       <Star className="size-3.5" />
                     </button>
                   )}
-                  <button
+                  <button data-project-control
                     type="button"
                     onClick={() => onDeleteImage(img.id)}
                     className="rounded-full bg-background/90 p-1 text-destructive"

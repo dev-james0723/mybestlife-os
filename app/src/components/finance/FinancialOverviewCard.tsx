@@ -121,21 +121,18 @@ export function FinancialOverviewCard({
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <MetricBlock
-              variant="net"
               label={copy.overviewNetWorthLabel}
               value={formatFinanceCurrency(netWorth, dc, language)}
               icon={Wallet}
               emphasize
             />
             <MetricBlock
-              variant="income"
               label={copy.overviewIncomeLabel}
               value={formatFinanceCurrency(income, dc, language)}
               icon={TrendingUp}
               valueClassName="text-emerald-700 dark:text-emerald-400"
             />
             <MetricBlock
-              variant="expense"
               label={copy.overviewExpenseLabel}
               value={formatFinanceCurrency(expense, dc, language)}
               icon={TrendingDown}
@@ -149,36 +146,20 @@ export function FinancialOverviewCard({
 }
 
 function MetricBlock({
-  variant,
   label,
   value,
   icon: Icon,
   emphasize,
   valueClassName,
 }: {
-  variant: "net" | "income" | "expense";
   label: string;
   value: string;
   icon: typeof Wallet;
   emphasize?: boolean;
   valueClassName?: string;
 }) {
-  const shell =
-    variant === "net"
-      ? "border-violet-200/80 bg-gradient-to-br from-violet-50/95 via-white to-sky-50/90 dark:border-violet-800/50 dark:from-violet-950/50 dark:via-card dark:to-sky-950/40"
-      : variant === "income"
-        ? "border-emerald-200/70 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/50 dark:border-emerald-800/40 dark:from-emerald-950/35 dark:via-card dark:to-teal-950/25"
-        : "border-rose-200/70 bg-gradient-to-br from-rose-50/90 via-white to-amber-50/40 dark:border-rose-800/40 dark:from-rose-950/35 dark:via-card dark:to-amber-950/20";
-
-  const iconShell =
-    variant === "net"
-      ? "bg-violet-500/15 text-violet-700 dark:bg-violet-400/15 dark:text-violet-200"
-      : variant === "income"
-        ? "bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200"
-        : "bg-rose-500/15 text-rose-700 dark:bg-rose-400/15 dark:text-rose-200";
-
   return (
-    <div className={cn("rounded-xl border p-4 shadow-sm ring-1 ring-black/5 dark:ring-white/10", shell)}>
+    <div data-slot="project-surface" className="p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className={cn(typography.caption, "font-medium text-muted-foreground")}>{label}</p>
@@ -187,7 +168,6 @@ function MetricBlock({
               emphasize ? typography.display : typography.subheading,
               "mt-1.5 tabular-nums tracking-tight",
               valueClassName,
-              variant === "net" && "text-violet-950 dark:text-violet-50",
             )}
           >
             {value}
@@ -195,12 +175,11 @@ function MetricBlock({
         </div>
         <div
           className={cn(
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-black/5 dark:border-white/10",
-            iconShell,
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary",
           )}
           aria-hidden
         >
-          <Icon className="h-6 w-6" />
+          <Icon className="h-4 w-4" />
         </div>
       </div>
     </div>

@@ -156,7 +156,7 @@ export function MindMapDetailPanel(props: {
           <ul className="space-y-1">
             {sectionRows.map((s) => (
               <li key={s.id}>
-                <button type="button" onClick={() => onFocusSection(s)} className="text-left text-[12px] text-sky-300/90 hover:underline">
+                <button data-control-variant="link" type="button" onClick={() => onFocusSection(s)} className="text-left text-[12px] text-sky-300/90 hover:underline">
                   {s.title}
                 </button>
               </li>
@@ -186,7 +186,7 @@ export function MindMapDetailPanel(props: {
           <ul className="space-y-1">
             {visualRows.map((v) => (
               <li key={v.id}>
-                <button type="button" onClick={() => onOpenVisual(v)} className="text-left text-[12px] text-pink-300/90 hover:underline">
+                <button data-control-variant="link" type="button" onClick={() => onOpenVisual(v)} className="text-left text-[12px] text-pink-300/90 hover:underline">
                   {v.title || "Visual"}
                 </button>
               </li>

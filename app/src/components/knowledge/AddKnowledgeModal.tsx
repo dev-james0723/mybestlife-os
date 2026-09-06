@@ -792,7 +792,7 @@ export function AddKnowledgeModal() {
               aria-label={ui.uploadFileAria}
             >
               {(file || isSubmitting) && (
-                <button
+                <button data-control-variant="destructive"
                   type="button"
                   onClick={handleRemoveOrCancelFile}
                   className={cn(
@@ -979,7 +979,7 @@ export function AddKnowledgeModal() {
           {/* Voice Tab */}
           <TabsContent value="voice" className="space-y-4 mt-4">
             <div className="flex flex-col items-center gap-4 py-4">
-              <button
+              <button data-control-variant={isRecording ? "destructive" : "default"}
                 className={cn(
                   "h-20 w-20 rounded-full flex items-center justify-center transition-all",
                   isRecording

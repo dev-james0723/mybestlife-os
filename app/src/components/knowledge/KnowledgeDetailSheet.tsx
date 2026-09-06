@@ -556,7 +556,7 @@ export function KnowledgeDetailSheet() {
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 {item.sourceUrl && (
-                  <a
+                  <a data-control-variant="outline"
                     href={item.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"

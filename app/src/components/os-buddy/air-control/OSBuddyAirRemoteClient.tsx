@@ -158,7 +158,7 @@ export function OSBuddyAirRemoteClient({ locale = "en" }: { locale?: string }) {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="flex gap-3">
         {status === "streaming" || status === "connecting" ? (
-          <button
+          <button data-control-variant="outline"
             type="button"
             onClick={stop}
             className="rounded-full bg-muted px-5 py-2 text-sm font-medium"
@@ -166,7 +166,7 @@ export function OSBuddyAirRemoteClient({ locale = "en" }: { locale?: string }) {
             {zh ? "停止" : "Stop"}
           </button>
         ) : (
-          <button
+          <button data-control-variant="default"
             type="button"
             onClick={() => void start()}
             disabled={!sessionId}

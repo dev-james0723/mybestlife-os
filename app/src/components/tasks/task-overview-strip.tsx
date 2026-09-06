@@ -108,6 +108,8 @@ export function TaskOverviewStrip({
         const clickable = Boolean(onSelectMetric);
         return (
           <button
+            data-slot="project-surface"
+            aria-pressed={isActive}
             key={cell.key}
             type="button"
             disabled={!clickable}

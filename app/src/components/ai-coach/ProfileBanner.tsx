@@ -15,7 +15,7 @@ interface ProfileBannerProps {
  */
 export function ProfileBanner({ copy, editHref }: ProfileBannerProps) {
   return (
-    <Link
+    <Link data-slot="project-surface"
       href={editHref}
       className="flex items-center gap-3 rounded-xl border bg-gradient-to-br from-violet-500/10 to-amber-500/10 p-3 text-sm transition-all hover:-translate-y-0.5 hover:shadow-sm"
     >

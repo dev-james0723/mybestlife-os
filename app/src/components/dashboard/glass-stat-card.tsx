@@ -11,7 +11,7 @@ interface GlassStatCardProps {
   title: string;
   value: number | string;
   icon: LucideIcon;
-  /** Dashboard reference uses blue circular icon wells. */
+  /** Kept for caller compatibility; both tones share the Projects accent. */
   iconTone?: StatIconTone;
   description?: string;
   trend?: {
@@ -33,7 +33,6 @@ export function GlassStatCard({
   title,
   value,
   icon: Icon,
-  iconTone = "default",
   description,
   trend,
   onClick,
@@ -70,10 +69,7 @@ export function GlassStatCard({
         </div>
         <div
           className={cn(
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
-            iconTone === "dashboard"
-              ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
-              : "bg-primary/15 text-primary"
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
           )}
         >
           <Icon className="h-6 w-6" />

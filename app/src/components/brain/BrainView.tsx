@@ -984,14 +984,14 @@ export function BrainView({ userId }: BrainViewProps) {
               load — the graph is showing what it has. Check the console for
               details.
             </span>
-            <button
+            <button data-control-variant="outline"
               type="button"
               onClick={() => void handleRefreshData()}
               className="ml-auto rounded-full border border-amber-300/30 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider hover:bg-amber-500/20"
             >
               Retry
             </button>
-            <button
+            <button data-control-variant="ghost"
               type="button"
               onClick={() => setErrorBannerDismissed(true)}
               className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-amber-100/70 hover:bg-amber-500/10 hover:text-amber-100"
@@ -1023,7 +1023,7 @@ export function BrainView({ userId }: BrainViewProps) {
                 <p className="text-sm font-medium text-foreground">
                   No nodes match the current filters.
                 </p>
-                <button
+                <button data-control-variant="outline"
                   type="button"
                   onClick={() => useBrainStore.getState().clearFilters()}
                   className="min-h-11 rounded-full border border-border/60 bg-muted/40 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:bg-muted/60 sm:min-h-0 sm:px-3 sm:py-1"
@@ -1122,7 +1122,7 @@ export function BrainView({ userId }: BrainViewProps) {
                 <span className={cn("hidden text-xs sm:inline", graphT.tone.muted)}>
                   Immersive Brain
                 </span>
-                <button
+                <button data-control-variant="ghost"
                   type="button"
                   onClick={() => void handleToggleGraphFullscreen()}
                   className={cn(

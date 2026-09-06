@@ -77,6 +77,8 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
         const active = isSameFilter(filter, p.filter);
         return (
           <button
+            data-slot="project-filter"
+            aria-pressed={active}
             key={p.id}
             type="button"
             onClick={() => onApply(p.filter)}
@@ -97,6 +99,8 @@ export function TaskSavedFilters({ copy, filter, onApply }: TaskSavedFiltersProp
         const active = isSameFilter(filter, p.filter);
         return (
           <span
+            data-slot="project-filter"
+            data-selected={active}
             key={p.id}
             className={cn(
               "inline-flex min-h-11 items-center gap-1 rounded-xl border py-1 pl-3 pr-1 text-sm font-semibold transition-colors",

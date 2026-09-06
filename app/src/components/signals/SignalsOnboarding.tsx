@@ -275,7 +275,7 @@ function SelectChip({
   onClick: () => void;
 }) {
   return (
-    <button
+    <button data-control-variant="outline" data-selected={selected}
       type="button"
       onClick={onClick}
       disabled={disabled}

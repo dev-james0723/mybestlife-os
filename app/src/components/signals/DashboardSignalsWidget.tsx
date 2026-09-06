@@ -72,7 +72,7 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <button
+          <button data-control-variant="outline"
             type="button"
             onClick={() => refresh()}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 text-xs font-medium text-foreground/80 transition-colors hover:bg-muted/40"
@@ -80,7 +80,7 @@ export function DashboardSignalsWidget({ className }: { className?: string }) {
             <RotateCw className="h-3 w-3" />
             {copy.retry}
           </button>
-          <Link
+          <Link data-control-variant="ghost"
             href={signalsHref}
             prefetch={false}
             className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"

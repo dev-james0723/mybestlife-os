@@ -131,7 +131,7 @@ export function DocOraclePagesPanel(props: {
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap gap-2">
             {filterDefs.map((chip) => (
-              <button
+              <button data-control-variant="outline" data-selected={filter === chip.id}
                 key={chip.id}
                 type="button"
                 onClick={() => setFilter(chip.id)}

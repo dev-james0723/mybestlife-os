@@ -29,7 +29,7 @@ export function ImageZoomViewer({ src, alt, onClose }: ImageZoomViewerProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
       onClick={onClose}
     >
-      <button
+      <button data-control-variant="ghost"
         type="button"
         onClick={onClose}
         aria-label="Close"

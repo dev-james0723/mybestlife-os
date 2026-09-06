@@ -209,7 +209,7 @@ export function BundleWizard() {
           const active = step === n;
           const done = step > n;
           return (
-            <button
+            <button data-control-variant="outline" data-selected={active}
               key={n}
               type="button"
               onClick={() => setStep(n)}

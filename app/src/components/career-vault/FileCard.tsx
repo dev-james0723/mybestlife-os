@@ -63,7 +63,7 @@ export function FileCard({
         ) : null}
       </Link>
 
-      <button
+      <button data-control-variant="ghost" data-selected={starred}
         type="button"
         onClick={(e) => {
           e.preventDefault();

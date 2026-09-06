@@ -71,7 +71,7 @@ export function AgentUploadDropzone({
           <p className="text-sm font-medium">{ui.uploadDropzoneTitle}</p>
           <p className="text-xs text-muted-foreground">{ui.uploadDropzoneHint}</p>
         </div>
-        <button
+        <button data-control-variant="outline"
           type="button"
           className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted/50"
           disabled={isBusy}

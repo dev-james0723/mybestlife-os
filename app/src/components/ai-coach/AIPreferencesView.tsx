@@ -93,7 +93,7 @@ export function AIPreferencesView() {
         / <span className="text-foreground">{copy.settings.title}</span>
       </nav>
 
-      <div className="grid gap-5 rounded-2xl border bg-card p-6">
+      <div data-slot="project-surface" className="grid gap-5 p-6">
         <div className="grid gap-1.5">
           <Label>{copy.settings.defaultAI.label}</Label>
           <p className="text-xs text-muted-foreground">

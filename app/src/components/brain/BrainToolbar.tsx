@@ -351,7 +351,7 @@ export function BrainToolbar({
                 const active = densityMode === m;
                 const isOrphan = m === "orphans_only";
                 return (
-                  <button
+                  <button data-slot="project-filter"
                     key={m}
                     type="button"
                     onClick={() => {
@@ -371,7 +371,7 @@ export function BrainToolbar({
                 );
               })}
             </div>
-            <button
+            <button data-slot="project-filter"
               type="button"
               aria-pressed={orphanResolverOpen}
               onClick={() => setOrphanResolverOpen(!orphanResolverOpen)}
@@ -392,7 +392,7 @@ export function BrainToolbar({
               Display
             </p>
             <div className="grid grid-cols-2 gap-1.5">
-              <button
+              <button data-slot="project-filter"
                 type="button"
                 aria-pressed={labelsOn}
                 onClick={() => setLabelsOn(!labelsOn)}
@@ -410,7 +410,7 @@ export function BrainToolbar({
                 )}
                 Labels
               </button>
-              <button
+              <button data-slot="project-filter"
                 type="button"
                 aria-pressed={hideOrphans}
                 onClick={() => setFilters({ hideOrphanNodes: !hideOrphans })}
@@ -425,7 +425,7 @@ export function BrainToolbar({
                 Orphans
               </button>
               {isSphere && (
-                <button
+                <button data-slot="project-filter"
                   type="button"
                   aria-pressed={sphereShowConnections}
                   onClick={() => setSphereShowConnections(!sphereShowConnections)}
@@ -446,7 +446,7 @@ export function BrainToolbar({
               )}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
-              <button
+              <button data-slot="project-filter"
                 type="button"
                 aria-pressed={filtersOpen}
                 onClick={() => setFiltersOpen(!filtersOpen)}
@@ -460,7 +460,7 @@ export function BrainToolbar({
                 <Filter className="mr-1 inline h-3.5 w-3.5" />
                 Filters
               </button>
-              <button
+              <button data-slot="project-filter"
                 type="button"
                 aria-pressed={legendOpen}
                 onClick={() => setLegendOpen(!legendOpen)}

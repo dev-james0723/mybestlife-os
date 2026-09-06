@@ -527,7 +527,7 @@ export function AssetsView() {
                 ))}
               </SelectContent>
             </Select>
-            <button
+            <button data-control-variant="outline" data-selected={favoritesOnly}
               type="button"
               onClick={() => setFavoritesOnly((v) => !v)}
               aria-pressed={favoritesOnly}
@@ -726,7 +726,7 @@ export function AssetsView() {
                         </div>
                       )}
                     </div>
-                    <button
+                    <button data-control-variant="ghost"
                       type="button"
                       onClick={() =>
                         handleFavoriteToggle(

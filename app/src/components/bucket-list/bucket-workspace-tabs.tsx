@@ -75,7 +75,7 @@ export function BucketWorkspaceTabs() {
           const Icon = ICONS[tab];
           const selected = active === tab;
           return (
-            <button
+            <button data-control-variant="outline" data-selected={selected}
               key={tab}
               type="button"
               role="tab"

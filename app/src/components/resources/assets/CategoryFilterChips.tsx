@@ -10,10 +10,6 @@ import {
   ASSET_CATEGORY_KEYS,
   type AssetCategoryKey,
 } from "@/types/assets";
-import {
-  CATEGORY_HUE,
-  DEFAULT_CATEGORY_HUE,
-} from "./AssetCategoryPill";
 
 /**
  * Horizontal category filter row used on tablet/desktop (sm+). On mobile we
@@ -63,7 +59,6 @@ export function CategoryFilterChips({
     >
       <CategoryChip
         active={value === ALL_CATEGORIES_VALUE}
-        hue={DEFAULT_CATEGORY_HUE}
         label={allLabel}
         onClick={() => onChange(ALL_CATEGORIES_VALUE)}
       />
@@ -71,7 +66,6 @@ export function CategoryFilterChips({
         <CategoryChip
           key={key}
           active={value === key}
-          hue={CATEGORY_HUE[key]}
           label={categoryLabels[key]}
           onClick={() => onChange(key)}
         />
@@ -96,28 +90,17 @@ export function CategoryFilterChips({
 
 type CategoryChipProps = {
   active: boolean;
-  hue: number;
   label: string;
   onClick: () => void;
 };
 
-function CategoryChip({ active, hue, label, onClick }: CategoryChipProps) {
+function CategoryChip({ active, label, onClick }: CategoryChipProps) {
   const prefersReduced = useHydrationSafeReducedMotion();
-
-  // Two visual states:
-  //  - inactive: muted outline, inherits foreground color (so the row reads
-  //    as a unified surface before selection)
-  //  - active: filled with the category hue — same family as AssetCategoryPill
-  //    but bumped chroma so the selection is unambiguous
-  const activeStyle: React.CSSProperties = {
-    backgroundColor: `oklch(0.6 0.14 ${hue} / 0.18)`,
-    borderColor: `oklch(0.6 0.14 ${hue} / 0.5)`,
-    color: `oklch(0.42 0.18 ${hue})`,
-  };
 
   return (
     <motion.button
       type="button"
+      data-slot="project-filter"
       onClick={onClick}
       aria-pressed={active}
       whileTap={prefersReduced ? undefined : { scale: 0.96 }}
@@ -128,7 +111,6 @@ function CategoryChip({ active, hue, label, onClick }: CategoryChipProps) {
         !active &&
           "border-border/70 bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground",
       )}
-      style={active ? activeStyle : undefined}
     >
       {label}
     </motion.button>
@@ -149,6 +131,7 @@ function FavoritesChip({
   return (
     <motion.button
       type="button"
+      data-slot="project-filter"
       onClick={onClick}
       aria-pressed={active}
       whileTap={prefersReduced ? undefined : { scale: 0.96 }}

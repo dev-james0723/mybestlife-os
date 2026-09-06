@@ -155,7 +155,7 @@ export function DocumentTreeMap(props: {
           </p>
         </div>
         <div className="relative">
-          <button
+          <button data-control-variant="outline"
             type="button"
             onClick={() => setHelpOpen((v) => !v)}
             aria-expanded={helpOpen}
@@ -209,7 +209,7 @@ export function DocumentTreeMap(props: {
           </div>
           <div className="flex flex-wrap gap-2">
             {topSections.map((s) => (
-              <button
+              <button data-control-variant="outline"
                 key={s.id}
                 type="button"
                 onClick={() => onFocusSection(s)}

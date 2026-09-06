@@ -65,7 +65,7 @@ export function ClickableTableOfContents(props: {
                   </button>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {s.page_start != null && openSourceAtPage ? (
-                      <button
+                      <button data-control-variant="outline"
                         type="button"
                         className="rounded-full border border-border bg-background/55 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground transition hover:border-primary/35 hover:text-primary"
                         onClick={() => {

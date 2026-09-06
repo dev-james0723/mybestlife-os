@@ -33,7 +33,7 @@ export function AudioTranscript(props: {
                 {c.source_pages?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {c.source_pages.map((p) => (
-                      <button
+                      <button data-control-variant="outline"
                         key={p}
                         type="button"
                         disabled={!props.onOpenSourcePage}
@@ -56,7 +56,7 @@ export function AudioTranscript(props: {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Source pages</p>
           <div className="mt-2 flex flex-wrap gap-1">
             {props.sourcePages.map((p) => (
-              <button
+              <button data-control-variant="outline"
                 key={p}
                 type="button"
                 disabled={!props.onOpenSourcePage}

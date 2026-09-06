@@ -753,7 +753,7 @@ function TaskRowContent({
           >
             <Minus className="h-4 w-4" />
           </button>
-          <button
+          <button data-control-variant="outline"
             type="button"
             className="flex min-w-0 flex-1 items-center justify-center bg-sky-500/95 text-white active:bg-sky-600"
             style={{ maxWidth: MOBILE_SWIPE_ACTION_W }}
@@ -765,7 +765,7 @@ function TaskRowContent({
           >
             <Plus className="h-4 w-4" />
           </button>
-          <button
+          <button data-control-variant="outline"
             type="button"
             className="flex min-w-0 flex-1 items-center justify-center bg-violet-500/95 text-white active:bg-violet-600"
             style={{ maxWidth: MOBILE_SWIPE_ACTION_W }}

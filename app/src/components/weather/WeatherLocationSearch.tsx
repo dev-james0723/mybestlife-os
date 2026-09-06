@@ -167,7 +167,7 @@ export function WeatherLocationSearch({
           <Loader2 className="size-4 animate-spin opacity-70" aria-hidden />
         ) : null}
         {selectedLabel ? (
-          <button
+          <button data-control-variant="ghost"
             type="button"
             onClick={onClear}
             aria-label={copy.clearSelectedLocation}
@@ -176,7 +176,7 @@ export function WeatherLocationSearch({
             <X className="size-4" />
           </button>
         ) : (
-          <button
+          <button data-control-variant="ghost"
             type="button"
             onClick={onUseMyLocation}
             aria-label={copy.useMyLocation}

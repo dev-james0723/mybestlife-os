@@ -129,7 +129,7 @@ export function WeatherRadarPanel({
         {/* Floating playback controls. */}
         <div className="pointer-events-none absolute inset-x-4 bottom-4 flex flex-wrap items-center justify-between gap-2">
           <div className="weather-glass-pill pointer-events-auto min-h-11 gap-3 px-4 sm:!h-9 sm:min-h-9">
-            <button
+            <button data-control-variant="ghost"
               type="button"
               onClick={() => setPlaying((p) => !p)}
               aria-label={playing ? "Pause radar animation" : "Play radar animation"}
@@ -187,7 +187,7 @@ function RoundIconButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <button data-control-variant="outline"
       type="button"
       aria-label={label}
       onClick={onClick}

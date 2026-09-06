@@ -416,7 +416,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
               className="hidden"
               onChange={(e) => handlePhotoFiles(e.target.files)}
             />
-            <button
+            <button data-control-variant="outline"
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className={cn(

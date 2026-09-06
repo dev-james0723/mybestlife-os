@@ -372,7 +372,7 @@ export function ConstellationDetailPanel({
                       <span className="text-[11px] text-muted-foreground">{c.detailTags}</span>
                       <div className="flex flex-wrap gap-1">
                         {selectedNode.tags.slice(0, 8).map((t) => (
-                          <button
+                          <button data-control-variant="outline"
                             type="button"
                             key={t}
                             className="rounded-full border border-violet-300/30 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-100"
@@ -555,7 +555,7 @@ export function ConstellationDetailPanel({
               <span className="text-muted-foreground">{c.detailTags}</span>
               <div className="flex flex-wrap gap-1">
                 {selectedNode.tags.slice(0, 12).map((t) => (
-                  <button
+                  <button data-control-variant="outline"
                     type="button"
                     key={t}
                     className="rounded-full border border-violet-300/30 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-100 transition-colors hover:bg-violet-500/20"

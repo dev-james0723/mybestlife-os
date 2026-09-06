@@ -44,7 +44,7 @@ export function CategoryFilter({
         const active = value === key;
         const count = counts?.[key];
         return (
-          <button
+          <button data-control-variant="outline" data-selected={active}
             key={key}
             type="button"
             role="tab"

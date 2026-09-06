@@ -11,3 +11,4 @@ services/
 **/.env*.local
 .cursor/
 .agents/
+artifacts/

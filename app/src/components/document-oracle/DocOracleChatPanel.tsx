@@ -320,7 +320,7 @@ function AssistantMeta(props: {
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/90">Sources used</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {sourcePages.map((p) => (
-              <button
+              <button data-control-variant="outline"
                 key={p}
                 type="button"
                 onClick={() => openPage(p)}
@@ -1021,7 +1021,7 @@ export function DocOracleChatPanel({
       {starters.length > 0 && messages.length === 0 && !historyLoading ? (
         <div className="flex w-full max-w-none shrink-0 gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {starters.map((s) => (
-            <button
+            <button data-control-variant="outline"
               key={s}
               type="button"
               disabled={loading}

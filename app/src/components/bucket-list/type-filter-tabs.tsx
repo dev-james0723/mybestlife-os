@@ -61,7 +61,7 @@ export function BucketTypeFilterTabs() {
           {tabs.map((tab) => {
             const active = tab.id === activeType;
             return (
-              <button
+              <button data-control-variant="outline" data-selected={active}
                 key={tab.id}
                 role="tab"
                 aria-selected={active}
@@ -141,7 +141,7 @@ function ViewModeButton({
   reduceMotion: boolean;
 }) {
   return (
-    <button
+    <button data-control-variant="outline" data-selected={active}
       type="button"
       onClick={onClick}
       aria-pressed={active}

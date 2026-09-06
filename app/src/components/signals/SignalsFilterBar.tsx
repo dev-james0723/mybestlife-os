@@ -190,7 +190,7 @@ export function SignalsFilterBar({
       {chips.length > 0 && (
         <div className={filterChipScrollClassName}>
           {chips.map((chip) => (
-            <button
+            <button data-control-variant="outline"
               key={chip.key}
               type="button"
               onClick={() => onChange(removeFilterChip(filter, chip))}
@@ -201,7 +201,7 @@ export function SignalsFilterBar({
             </button>
           ))}
           {hasActive && (
-            <button
+            <button data-control-variant="link"
               type="button"
               onClick={onClear}
               className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"

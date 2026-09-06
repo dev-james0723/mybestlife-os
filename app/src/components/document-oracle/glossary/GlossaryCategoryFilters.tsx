@@ -15,7 +15,7 @@ export function GlossaryCategoryFilters(props: Props) {
 
   return (
     <div className={filterHorizontalScrollClassName} role="tablist" aria-label="Category filter">
-      <button
+      <button data-control-variant="outline" data-selected={value === "all"}
         type="button"
         onClick={() => onChange("all")}
         className={cn(
@@ -28,7 +28,7 @@ export function GlossaryCategoryFilters(props: Props) {
         {allLabel}
       </button>
       {categories.map((c) => (
-        <button
+        <button data-control-variant="outline" data-selected={value === c}
           key={c}
           type="button"
           onClick={() => onChange(c)}

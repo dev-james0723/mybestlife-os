@@ -193,7 +193,7 @@ function FilterChip({
       className="inline-flex max-w-[min(72vw,220px)] shrink-0 items-center gap-0.5 rounded-full border border-border/70 bg-background/90 pl-2.5 pr-1 text-[11px] text-foreground shadow-sm"
     >
       <span className="min-w-0 truncate font-medium">{label}</span>
-      <button
+      <button data-control-variant="ghost"
         type="button"
         onClick={onRemove}
         className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"

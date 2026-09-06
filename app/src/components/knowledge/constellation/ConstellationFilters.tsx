@@ -317,7 +317,7 @@ export function ConstellationFilters({
                   {tagOptions.map((opt) => {
                     const active = isSelected("tagIds", opt.id);
                     return (
-                      <button
+                      <button data-control-variant="outline" data-selected={active}
                         type="button"
                         key={opt.id}
                         aria-pressed={active}

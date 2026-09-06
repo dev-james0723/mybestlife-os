@@ -58,7 +58,7 @@ export function SphereFocusZoomControls({
       >
         <Minus className="h-3.5 w-3.5" />
       </Button>
-      <button
+      <button data-control-variant="ghost"
         type="button"
         onClick={onPercentClick}
         title={

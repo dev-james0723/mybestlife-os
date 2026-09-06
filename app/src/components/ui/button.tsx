@@ -62,6 +62,8 @@ function Button({
   return (
     <ButtonPrimitive
       data-slot="button"
+      data-control-variant={variant}
+      data-control-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
       nativeButton={resolvedNativeButton}
       render={render}

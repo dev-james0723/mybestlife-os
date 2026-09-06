@@ -51,7 +51,7 @@ export function TravelMapFallback({
   return (
     <div
       className={cn(
-        "relative h-[min(58dvh,560px)] min-h-[420px] w-full overflow-hidden rounded-[1.35rem] bg-slate-950 text-white",
+        "relative h-[min(58dvh,560px)] min-h-[420px] w-full overflow-hidden rounded-[1.35rem] bg-zinc-950 text-white",
         className,
       )}
       role="region"
@@ -64,7 +64,7 @@ export function TravelMapFallback({
     >
       <div
         aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(190,242,100,0.15),transparent_30%),radial-gradient(circle_at_78%_28%,rgba(56,189,248,0.12),transparent_28%),linear-gradient(135deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))]"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(190,242,100,0.15),transparent_30%),radial-gradient(circle_at_78%_28%,rgba(161,161,170,0.08),transparent_28%),linear-gradient(135deg,rgba(24,24,27,0.92),rgba(9,9,11,0.96))]"
       />
       <div
         aria-hidden
@@ -98,7 +98,7 @@ export function TravelMapFallback({
 
       {loading ? (
         <div className="absolute inset-0 grid place-items-center px-6 text-center">
-          <div className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white/68 backdrop-blur-xl">
+          <div className="rounded-2xl border border-white/10 bg-zinc-950/70 px-4 py-3 text-sm text-white/68 backdrop-blur-xl">
             Loading travel map
           </div>
         </div>
@@ -112,7 +112,7 @@ export function TravelMapFallback({
             type="button"
             disabled={!onMarkerClick}
             onClick={() => onMarkerClick?.(marker.id)}
-            className="absolute grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-slate-950/70 bg-slate-950/80 shadow-[0_10px_24px_rgba(0,0,0,0.32),inset_0_1px_0_rgba(255,255,255,0.14)] transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70 disabled:pointer-events-none"
+            className="absolute grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-zinc-950/70 bg-zinc-950/80 shadow-[0_10px_24px_rgba(0,0,0,0.32),inset_0_1px_0_rgba(255,255,255,0.14)] transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70 disabled:pointer-events-none"
             style={{
               left: `${point.x}%`,
               top: `${point.y}%`,
@@ -128,7 +128,7 @@ export function TravelMapFallback({
         );
       })}
 
-      <div className="absolute bottom-3 left-3 right-[4.75rem] rounded-2xl border border-white/12 bg-slate-950/76 p-3 shadow-[0_18px_45px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:right-3">
+      <div className="absolute bottom-3 left-3 right-[4.75rem] rounded-2xl border border-white/12 bg-zinc-950/76 p-3 shadow-[0_18px_45px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:right-3">
         <div className="flex items-start gap-3">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-lime-300/18 bg-lime-300/10 text-lime-200">
             {hasMarkers ? (
@@ -150,7 +150,7 @@ export function TravelMapFallback({
         {hasMarkers ? (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleMarkers.slice(0, 4).map((marker) => (
-              <button
+              <button data-control-variant="outline"
                 key={marker.id}
                 type="button"
                 disabled={!onMarkerClick}

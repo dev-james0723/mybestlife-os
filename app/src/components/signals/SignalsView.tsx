@@ -627,14 +627,14 @@ function SignalsPageHeader({
     <header className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-          <span className="mt-0.5 flex size-14 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/10 sm:size-12">
+          <span className="mt-0.5 flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Radar className="h-7 w-7 sm:h-6 sm:w-6" />
           </span>
           <div className="min-w-0">
-            <h1 className="text-4xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
+            <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               {copy.pageTitle}
             </h1>
-            <p className="mt-1 text-base text-muted-foreground sm:text-sm">
+            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
               {copy.pageSubtitle}
             </p>
           </div>

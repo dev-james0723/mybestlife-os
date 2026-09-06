@@ -812,7 +812,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         {ui.suggestedQueries.slice(0, 2).map((sq) => (
-          <button
+          <button data-control-variant="outline"
             key={sq}
             type="button"
             className="rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-cyan-200/30 hover:bg-cyan-300/10 hover:text-foreground"
@@ -835,7 +835,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
       )}
     >
       {workflowPrompts.map((workflow) => (
-        <button
+        <button data-control-variant="outline"
           key={workflow.label}
           type="button"
           className={cn(
@@ -903,7 +903,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
           ))}
         </div>
 
-        <button
+        <button data-control-variant="outline"
           type="button"
           className="mt-3 flex w-full items-center justify-between rounded-xl border border-cyan-700/20 bg-cyan-100/80 px-3 py-2 text-left text-xs font-semibold text-slate-800 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:bg-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/35 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-50 dark:hover:bg-cyan-300/16"
           onClick={startNewConversation}
@@ -1017,7 +1017,7 @@ export function KnowledgeAIPanel({ userId, layout = "drawer", hideHeader = false
             </div>
             <div className="flex flex-wrap gap-1.5">
               {smartCollections.slice(0, 8).map((collection) => (
-                <button
+                <button data-control-variant="outline"
                   key={collection.id}
                   type="button"
                   className="rounded-full border border-border/60 bg-background/45 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-cyan-300/40 hover:text-foreground"

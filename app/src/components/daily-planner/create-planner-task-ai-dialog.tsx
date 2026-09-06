@@ -735,7 +735,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
 
               <div className="flex flex-wrap gap-2">
                 {q.options.map((opt) => (
-                  <button
+                  <button data-control-variant="outline" data-selected={selectedOption === opt}
                     key={opt}
                     type="button"
                     onClick={() => {
@@ -926,7 +926,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       <TriangleAlert className="h-3.5 w-3.5 text-pink-500" />
                       {copy.reviewReminders}
                     </Label>
-                    <button
+                    <button data-control-variant="link"
                       type="button"
                       onClick={() => setReminders((r) => [...r, ""])}
                       className="text-xs text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
@@ -1150,7 +1150,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                 {relatedProjects.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {relatedProjects.slice(0, 5).map((rp) => (
-                      <button
+                      <button data-control-variant="outline" data-selected={projectId === rp.id}
                         key={rp.id}
                         type="button"
                         onClick={() => setProjectId(rp.id)}
@@ -1199,7 +1199,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {relatedNotes.slice(0, 6).map((n) => (
-                          <button
+                          <button data-control-variant="outline" data-selected={selectedNoteIds.includes(n.id)}
                             key={n.id}
                             type="button"
                             onClick={() =>
@@ -1225,7 +1225,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {relatedKnowledge.slice(0, 6).map((k) => (
-                          <button
+                          <button data-control-variant="outline" data-selected={selectedKnowledgeIds.includes(k.id)}
                             key={k.id}
                             type="button"
                             onClick={() =>
@@ -1253,7 +1253,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {relatedIdeas.slice(0, 6).map((idea) => (
-                          <button
+                          <button data-control-variant="outline" data-selected={selectedIdeaIds.includes(idea.id)}
                             key={idea.id}
                             type="button"
                             onClick={() =>
@@ -1316,7 +1316,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                           : webResources.filter((r) => r.type === key).length;
                       if (count === 0 && key !== "all") return null;
                       return (
-                        <button
+                        <button data-control-variant="outline" data-selected={resourceFilter === key}
                           key={key}
                           type="button"
                           onClick={() => setResourceFilter(key)}
@@ -1404,7 +1404,7 @@ ${reminderLines.map((r) => `- ${r}`).join("\n")}`);
                                 </span>
                               </div>
                               <div className="flex shrink-0 items-center gap-1">
-                                <button
+                                <button data-control-variant="ghost" data-selected={isPinned}
                                   type="button"
                                   onClick={() =>
                                     setPinnedResourceUrls((urls) =>

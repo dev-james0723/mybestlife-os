@@ -119,7 +119,7 @@ export function HabitAnalyticsPanel({
         </div>
         <div className="flex flex-wrap gap-1">
           {["all", "morning", "afternoon", "evening", "anytime"].map((key) => (
-            <button
+            <button data-control-variant="outline" data-selected={timeFilter === key}
               key={key}
               type="button"
               className={`min-h-11 rounded-full px-4 py-2 text-sm transition sm:min-h-0 sm:px-2.5 sm:py-1 sm:text-xs ${

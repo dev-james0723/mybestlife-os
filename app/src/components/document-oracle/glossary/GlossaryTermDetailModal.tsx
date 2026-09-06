@@ -167,7 +167,7 @@ export function GlossaryTermDetailModal(props: Props) {
                 {related.map((r) => {
                   const hit = resolveRelated(r.raw);
                   return (
-                    <button
+                    <button data-control-variant="outline"
                       key={r.raw}
                       type="button"
                       className="max-w-full truncate rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[12px] font-medium text-foreground transition hover:border-primary/35 hover:bg-primary/8"
