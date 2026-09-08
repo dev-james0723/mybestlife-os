@@ -8,6 +8,8 @@
 
 "use client";
 
+import { useBrainCopy } from "./useBrainCopy";
+
 import { useState, type ReactNode } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +57,7 @@ function FilterSection({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const b = useBrainCopy();
   return (
     <div className="border-b border-border/60 py-2 last:border-b-0">
       <button
@@ -63,7 +66,7 @@ function FilterSection({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span>{title}</span>
+        <span>{b(title)}</span>
         <ChevronDown
           className={cn(
             "h-3.5 w-3.5 transition-transform",
@@ -82,6 +85,7 @@ export function BrainFilters({
   variant = "panel",
   onClose,
 }: BrainFiltersProps) {
+  const b = useBrainCopy();
   const domainToggles = useBrainStore((s) => s.domainToggles);
   const toggleDomain = useBrainStore((s) => s.toggleDomain);
   const resetDomainToggles = useBrainStore((s) => s.resetDomainToggles);
@@ -110,11 +114,11 @@ export function BrainFilters({
         "flex flex-col gap-1 overflow-hidden text-sm",
         graphFiltersShellClass(graphMode, variant),
       )}
-      aria-label="Brain filters"
+      aria-label={b("Brain filters")}
     >
       <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-3 py-2">
         <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Filters
+          {b("Filters")}
         </h3>
         <div className="flex items-center gap-1">
           <Button
@@ -127,7 +131,7 @@ export function BrainFilters({
             }}
             className="h-7 px-2 text-[11px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
-            Reset
+            {b("Reset")}
           </Button>
           {onClose && (
             <Button
@@ -136,7 +140,7 @@ export function BrainFilters({
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               onClick={onClose}
-              aria-label="Close filters"
+              aria-label={b("Close filters")}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -158,7 +162,7 @@ export function BrainFilters({
                   <Checkbox
                     checked={visible}
                     onCheckedChange={() => toggleDomain(domain)}
-                    aria-label={`Toggle ${BRAIN_DOMAIN_LABEL[domain]}`}
+                    aria-label={`Toggle ${b(BRAIN_DOMAIN_LABEL[domain])}`}
                   />
                   <span className="text-xs text-foreground/90">
                     {BRAIN_DOMAIN_LABEL[domain]}
@@ -194,7 +198,7 @@ export function BrainFilters({
                         aria-hidden
                       />
                       <span className="text-xs text-foreground/90">
-                        {NODE_TYPE_LABEL[t]}
+                        {b(NODE_TYPE_LABEL[t])}
                       </span>
                     </div>
                     <span className="text-[10px] text-muted-foreground">{count}</span>
@@ -213,7 +217,7 @@ export function BrainFilters({
                 setFilters({ hideOrphanNodes: Boolean(v) })
               }
             />
-            <span className="text-xs text-foreground/90">Hide orphan nodes</span>
+            <span className="text-xs text-foreground/90">{b("Hide orphan nodes")}</span>
           </label>
           <label className="flex items-center gap-2 px-1.5 py-1">
             <Checkbox
@@ -222,7 +226,7 @@ export function BrainFilters({
                 setFilters({ showAISuggestedLinks: Boolean(v) })
               }
             />
-            <span className="text-xs text-foreground/90">Show AI suggestions</span>
+            <span className="text-xs text-foreground/90">{b("Show AI suggestions")}</span>
           </label>
           <label className="flex items-center gap-2 px-1.5 py-1">
             <Checkbox
@@ -231,12 +235,12 @@ export function BrainFilters({
                 setFilters({ showManualLinksOnly: Boolean(v) })
               }
             />
-            <span className="text-xs text-foreground/90">Manual links only</span>
+            <span className="text-xs text-foreground/90">{b("Manual links only")}</span>
           </label>
           <div className="space-y-2 px-1.5 pt-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-foreground/90">
-                Min AI confidence
+                {b("Min AI confidence")}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 {Math.round((filters.minSemanticConfidence ?? 0.78) * 100)}%
@@ -256,7 +260,7 @@ export function BrainFilters({
                 })
               }
               className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-cyan-500 dark:accent-cyan-300"
-              aria-label="Minimum AI confidence"
+              aria-label={b("Minimum AI confidence")}
             />
           </div>
         </FilterSection>

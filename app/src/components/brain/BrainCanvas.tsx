@@ -409,13 +409,14 @@ export const BrainCanvas = forwardRef<ConstellationCanvasHandle, BrainCanvasProp
     return (
       <ConstellationCanvas
         {...props}
+        performanceMode
         ref={ref}
         data={positionedData}
         localSubgraphMeta={localSubgraphMeta}
         // No warmup: first frame uses our pre-positioned brain coordinates.
         warmupTicks={brainLayoutEnabled ? 0 : 30}
         // Shorter cooldown: attractor handles long-term stability.
-        cooldownTicks={brainLayoutEnabled ? 100 : 140}
+        cooldownTicks={brainLayoutEnabled ? 60 : 80}
         // Faster alpha decay: settle quickly from brain positions.
         d3AlphaDecay={brainLayoutEnabled ? 0.038 : 0.022}
         // More friction: children don't overshoot their hubs.

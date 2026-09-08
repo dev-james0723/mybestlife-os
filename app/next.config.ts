@@ -85,6 +85,8 @@ const devLanIps = devNonLoopbackIPv4Hostnames();
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Isolate local verification output from an active development server.
+  distDir: process.env.NEXT_OUTPUT_DIR || ".next",
   /** Smaller uploads and less exposure of source in production. */
   productionBrowserSourceMaps: false,
   // Bare `127.0.0.1` / `::1` are required — `127.0.0.1:3000` alone never matched the hostname

@@ -62,7 +62,6 @@ import {
   SPHERE_FLY_IN_MS,
   SPHERE_FLY_OUT_MS,
   SPHERE_REDUCED_MOTION_FADE_MS,
-  SPHERE_REDUCED_MOTION_FACTOR,
   type SphereGestureEvent,
   type SphereNodeId,
 } from "@/types/brain-sphere";
@@ -72,6 +71,7 @@ import type {
   ConstellationNode,
 } from "@/types/constellation";
 import {
+  radiusAfterPinch,
   radiusToZoomPercent,
   zoomPercentToRadius,
 } from "@/lib/brain/sphereFocusZoom";
@@ -384,6 +384,8 @@ const BrainSphere3DInner = forwardRef<
   // ── Surface theme + reduced-motion preference ──────────────────
   const { mode: surfaceMode, isLight, t: graphT } = useGraphSurface();
   const graphShell = graphT.shell;
+  const sceneDirtyRef = useRef(true);
+  useEffect(() => { sceneDirtyRef.current = true; });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(
     () => {
       if (typeof window === "undefined") return false;
@@ -688,7 +690,7 @@ const BrainSphere3DInner = forwardRef<
       alpha: true,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia("(pointer: coarse)").matches ? 1 : 1.5));
     renderer.setClearColor(0x000000, 0);
     // Pin the canvas to fill the container. Without these, three.js's
     // canvas keeps its 300x150 intrinsic CSS size and renders the
@@ -772,6 +774,7 @@ const BrainSphere3DInner = forwardRef<
     if (!container) return;
     const flush = () => {
       resizeObsRafRef.current = null;
+      sceneDirtyRef.current = true;
       const pending = pendingResizeRef.current;
       pendingResizeRef.current = null;
       if (!pending || pending.width <= 0 || pending.height <= 0) return;
@@ -892,19 +895,17 @@ const BrainSphere3DInner = forwardRef<
 
         const d = pinchSpan(e);
         if (pinchDist0 < 8) return;
-        const ratio = d / pinchDist0;
+        const next = radiusAfterPinch(pinchRadius0, pinchDist0, d);
         e.preventDefault();
 
         if (pinchFocusActive) {
           if (focusStateRef.current.phase !== "focused") return;
-          const next = pinchRadius0 * ratio;
           targetFocusRadiusRef.current = Math.min(
             focusRMaxRef.current,
             Math.max(focusRMinRef.current, next),
           );
           return;
         }
-        const next = pinchRadius0 * ratio;
         targetOuterRadiusRef.current = Math.min(
           RADIUS_MAX,
           Math.max(RADIUS_MIN, next),
@@ -950,16 +951,24 @@ const BrainSphere3DInner = forwardRef<
     const group = groupRef.current;
     if (!group) return;
 
-    // Tear down previous content & disposables.
-    while (group.children.length > 0) group.remove(group.children[0]);
-    for (const m of materialsRef.current) m.dispose();
-    materialsRef.current = [];
-    for (const t of texturesRef.current) t.dispose();
-    texturesRef.current = [];
-    nodeVisualsRef.current.clear();
-    labelTexCacheRef.current.clear();
-    baseEdgesRef.current = null;
-    accentEdgesRef.current = null;
+    // Removing a Three.js object does not release its GPU buffers. Dispose
+    // owned edge geometry as well as materials/textures on rebuild AND exit.
+    // Sprite geometry is shared by Three.js, so it is not disposed per node.
+    const disposeContent = () => {
+      group.clear();
+      baseEdgesRef.current?.geometry.dispose();
+      accentEdgesRef.current?.geometry.dispose();
+      for (const m of materialsRef.current) m.dispose();
+      materialsRef.current = [];
+      for (const t of texturesRef.current) t.dispose();
+      texturesRef.current = [];
+      nodeVisualsRef.current.clear();
+      labelTexCacheRef.current.clear();
+      adjacencyRef.current.clear();
+      baseEdgesRef.current = null;
+      accentEdgesRef.current = null;
+    };
+    disposeContent();
 
     const useTypeColor = clusterBy === "node_type" || clusterBy === "none";
     const outerTransparent = graphShell.glowGradientEnd;
@@ -1100,6 +1109,7 @@ const BrainSphere3DInner = forwardRef<
       accentEdgesRef.current = accent;
       group.add(accent);
     }
+    return disposeContent;
   }, [
     data,
     positions,
@@ -1404,6 +1414,7 @@ const BrainSphere3DInner = forwardRef<
 
       const snap = visualSnap(s);
       if (snap === lastVisualStoreSnapRef.current) return;
+      sceneDirtyRef.current = true;
       lastVisualStoreSnapRef.current = snap;
       queueMicrotask(() => {
         rebuildAccentEdges(s.selectedNodeId ?? s.hoveredNodeId ?? null);
@@ -1564,7 +1575,9 @@ const BrainSphere3DInner = forwardRef<
   useEffect(() => {
     let raf = 0;
     let last = performance.now();
+    let previousSignature = "";
     const tick = (now: number) => {
+      if (document.hidden) { raf = 0; return; }
       const dtSec = Math.min(0.05, (now - last) / 1000);
       last = now;
 
@@ -1577,22 +1590,25 @@ const BrainSphere3DInner = forwardRef<
         return;
       }
 
-      if (process.env.NODE_ENV !== "production") {
-        devTickCountRef.current += 1;
+      const outer = cameraOrbitRef.current;
+      const inner = focusOrbitRef.current;
+      const look = lookAtCurrentRef.current;
+      const signature = [outer.radius, outer.theta, outer.phi, inner.radius, inner.theta, inner.phi, targetOuterRadiusRef.current, targetFocusRadiusRef.current, look.x, look.y, look.z].map(v => v.toFixed(3)).join(",");
+      const rotating = rotationStateRef.current.kind === "rotating" && speedRef.current !== "off" && !reducedMotionRef.current;
+      if (!rotating && cameraAnimRef.current.kind === "idle" && !sceneDirtyRef.current && signature === previousSignature) {
+        raf = requestAnimationFrame(tick);
+        return;
       }
+      previousSignature = signature;
+      sceneDirtyRef.current = false;
+      if (process.env.NODE_ENV !== "production") devTickCountRef.current += 1;
 
-      // 1) Sphere-group rotation. Slow, earth-like, never on the
-      //    camera. Speed comes from the user's preset and is halved
-      //    when prefers-reduced-motion is set. Rotation continues
-      //    DURING the fly-in (per spec) — the rotating sphere is the
-      //    spatial metaphor we want to preserve.
+      // Ambient movement is opt-in and disabled by reduced-motion preferences.
       const rs = rotationStateRef.current;
-      const isSpinning = rs.kind === "rotating";
+      const isSpinning = rs.kind === "rotating" && speedRef.current !== "off" && !reducedMotionRef.current;
       if (isSpinning) {
         const speed = speedRef.current;
-        const motionFactor = reducedMotionRef.current
-          ? SPHERE_REDUCED_MOTION_FACTOR
-          : 1;
+        const motionFactor = 1;
         const yaw = SPHERE_AMBIENT_YAW_BY_SPEED[speed] * motionFactor;
         const drift = SPHERE_AMBIENT_DRIFT_BY_SPEED[speed] * motionFactor;
         group.rotation.y += yaw * dtSec;
@@ -1779,7 +1795,11 @@ const BrainSphere3DInner = forwardRef<
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const onVisibility = () => {
+      if (!document.hidden && !raf) { last = performance.now(); sceneDirtyRef.current = true; raf = requestAnimationFrame(tick); }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { cancelAnimationFrame(raf); document.removeEventListener("visibilitychange", onVisibility); };
   }, [refreshTooltipPosition, setFocusStateExternal, notifySphereZoomPercent]);
 
   // ── Hit testing (screen-space nearest-node) ────────────────────
@@ -2136,9 +2156,9 @@ const BrainSphere3DInner = forwardRef<
       // a11y: the canvas itself is decorative — toolbar provides the
       // controls. Phase 4 adds keyboard navigation.
       role="img"
-      aria-label="Brain knowledge sphere — slowly rotating 3D graph"
+      aria-label="Brain knowledge sphere — interactive 3D graph"
     >
-      {process.env.NODE_ENV !== "production" ? (
+      {process.env.NODE_ENV !== "production" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("brainDebug") === "1" ? (
         <div
           ref={zoomDebugOverlayRef}
           className="pointer-events-none absolute bottom-2 left-2 z-[60] max-w-[min(100%,280px)] whitespace-pre-wrap rounded-md border border-white/15 bg-black/55 px-2 py-1.5 font-mono text-[9px] leading-snug text-emerald-200/95 shadow-lg backdrop-blur-sm"

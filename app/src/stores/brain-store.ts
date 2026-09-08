@@ -218,7 +218,7 @@ export const useBrainStore = create<BrainUiState>((set, get) => ({
   setShowLabels: (show) => set({ showLabels: show }),
 
   search: "",
-  setSearch: (q) => set({ search: q }),
+  setSearch: (q) => set({ search: q, filters: { ...get().filters, search: q } }),
 
   domainToggles: { ...DEFAULT_DOMAIN_TOGGLES },
   toggleDomain: (domain) =>
@@ -241,7 +241,12 @@ export const useBrainStore = create<BrainUiState>((set, get) => ({
   filters: { ...DEFAULT_FILTERS },
   setFilters: (patch) =>
     set({ filters: { ...get().filters, ...patch } }),
-  clearFilters: () => set({ filters: { ...DEFAULT_FILTERS } }),
+  clearFilters: () => set({
+    filters: { ...DEFAULT_FILTERS },
+    search: "",
+    densityMode: "all",
+    domainToggles: { ...DEFAULT_DOMAIN_TOGGLES },
+  }),
 
   legendOpen: false,
   setLegendOpen: (open) => set({ legendOpen: open }),
@@ -283,7 +288,7 @@ export const useBrainStore = create<BrainUiState>((set, get) => ({
   rotationState: { kind: "rotating" },
   setRotationState: (state) => set({ rotationState: state }),
 
-  sphereRotationSpeed: "slow",
+  sphereRotationSpeed: "off",
   setSphereRotationSpeed: (speed) =>
     set({
       sphereRotationSpeed: speed,

@@ -5,6 +5,7 @@ app/test-results/
 services/
 **/node_modules/
 **/.next/
+**/.next-brain-*/
 .git/
 **/.DS_Store
 **/.env.local

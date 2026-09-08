@@ -53,14 +53,16 @@ const InnerSphere = dynamic(() => import("./BrainSphere3DInner"), {
   BrainSphere3DProps & React.RefAttributes<BrainSphere3DHandle>
 >;
 
+let cachedWebGL: boolean | undefined;
 function detectWebGL(): boolean {
   if (typeof window === "undefined") return false;
+  if (cachedWebGL !== undefined) return cachedWebGL;
   try {
     const canvas = document.createElement("canvas");
-    return !!(
-      window.WebGLRenderingContext &&
-      (canvas.getContext("webgl2") || canvas.getContext("webgl"))
-    );
+    const context = canvas.getContext("webgl2") || canvas.getContext("webgl");
+    cachedWebGL = !!context;
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+    return cachedWebGL;
   } catch {
     return false;
   }

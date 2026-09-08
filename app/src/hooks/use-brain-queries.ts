@@ -452,7 +452,7 @@ export function useBrainQueries() {
   const allQueries = Object.values(queries);
   // "Initial loading" — every query is still in its first fetch. We use
   // this to show the spinner ONCE, on first paint, never afterwards.
-  const isInitialLoading = allQueries.every((q) => q.isLoading);
+  const isInitialLoading = allQueries.some((q) => q.isLoading);
   // Any individual query that failed (table missing, RLS blocked, etc.).
   // We never use this to hide the canvas — only to show a soft warning.
   const failedCount = allQueries.filter((q) => q.isError).length;

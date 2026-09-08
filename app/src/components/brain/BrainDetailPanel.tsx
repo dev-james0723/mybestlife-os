@@ -11,6 +11,8 @@
 
 "use client";
 
+import { useBrainCopy } from "./useBrainCopy";
+
 import { useMemo } from "react";
 import Link from "next/link";
 import { Compass, ExternalLink, X } from "lucide-react";
@@ -33,6 +35,7 @@ import type {
 } from "@/types/constellation";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { DEFAULT_LOCALE_SLUG, normalizeLocaleSlug } from "@/lib/i18n/locale-slug";
+import { FINANCE_ENABLED, HEALTH_ENABLED, NOTES_ENABLED } from "@/lib/features";
 
 interface BrainDetailPanelProps {
   selectedNode: ConstellationNode | null;
@@ -51,6 +54,13 @@ interface BrainDetailPanelProps {
  * because every Brain node lives on a different page in the app.
  */
 function nodeRoute(node: ConstellationNode): string | null {
+  // Rendering aliases are not necessarily the original entity's home.
+  const source = node.metadata?.brainSourceType;
+  const originalType = node.metadata?.brainType;
+  if (source === "career_decisions") return "/career/compass";
+  if (source === "career_network_nodes") return "/career/network";
+  if (source === "notes") return NOTES_ENABLED ? "/notes" : null;
+  if (originalType === "value" || originalType === "life_area") return null;
   switch (node.type) {
     case "goal":
       return "/goals";
@@ -73,9 +83,9 @@ function nodeRoute(node: ConstellationNode): string | null {
     case "career_event":
       return "/career/timeline";
     case "health_goal":
-      return "/health";
+      return HEALTH_ENABLED ? "/health" : null;
     case "finance_goal":
-      return "/finance";
+      return FINANCE_ENABLED ? "/finance" : null;
     case "bucket_item":
       return "/bucket-list";
     case "gratitude":
@@ -113,6 +123,7 @@ export function BrainDetailPanel({
   onClose,
   onFocusNode,
 }: BrainDetailPanelProps) {
+  const b = useBrainCopy();
   const { mode: graphMode } = useGraphSurface();
   const setMode = useBrainStore((s) => s.setMode);
   const setSelectedNodeId = useBrainStore((s) => s.setSelectedNodeId);
@@ -144,7 +155,7 @@ export function BrainDetailPanel({
       <aside className={containerClasses} aria-label="No selection">
         <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-3 py-2">
           <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Details
+            {b("Details")}
           </h3>
           {onClose && !hideHeaderClose && (
             <Button
@@ -153,7 +164,7 @@ export function BrainDetailPanel({
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={b("Close")}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -194,7 +205,7 @@ export function BrainDetailPanel({
               size="icon"
               className="ml-2 h-7 w-7 shrink-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={b("Close")}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -210,12 +221,12 @@ export function BrainDetailPanel({
       >
         <div className="space-y-1.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Type</span>
+            <span className="text-muted-foreground">{b("Type")}</span>
             <Badge
               variant="outline"
               className="border-border/60 bg-muted/50 text-[11px] text-foreground/90"
             >
-              {NODE_TYPE_LABEL[selectedNode.type as ConstellationNodeType]}
+              {b(NODE_TYPE_LABEL[selectedNode.type as ConstellationNodeType])}
             </Badge>
           </div>
 
@@ -227,19 +238,19 @@ export function BrainDetailPanel({
 
           {selectedNode.category && (
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Category</span>
+              <span className="text-muted-foreground">{b("Category")}</span>
               <span className="text-foreground/90">{selectedNode.category}</span>
             </div>
           )}
 
           {selectedNode.tags && selectedNode.tags.length > 0 && (
             <div className="space-y-1 pt-1">
-              <span className="text-muted-foreground">Tags</span>
+              <span className="text-muted-foreground">{b("Tags")}</span>
               <div className="flex flex-wrap gap-1">
                 {selectedNode.tags.slice(0, 12).map((t) => (
                   <span
                     key={t}
-                    className="rounded-full border border-violet-300/30 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-100"
+                    className="rounded-full border border-violet-300/30 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-900 dark:text-violet-100"
                   >
                     {t}
                   </span>
@@ -250,14 +261,14 @@ export function BrainDetailPanel({
 
           <div className="flex items-center justify-between pt-2 text-[11px] text-muted-foreground">
             <span>
-              Connections:{" "}
+              {b("Connections")}:{" "}
               <span className="font-mono text-foreground/90">
                 {selectedNode.connectionCount ?? 0}
               </span>
             </span>
             {selectedNode.createdAt && (
               <span>
-                Created:{" "}
+                {b("Created")}:{" "}
                 <span className="text-muted-foreground">
                   {new Date(selectedNode.createdAt).toLocaleDateString()}
                 </span>
@@ -270,10 +281,10 @@ export function BrainDetailPanel({
           {fullRoute && (
             <Link data-control-variant="outline"
               href={fullRoute}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-cyan-300/30 bg-cyan-400/10 px-3 text-xs font-medium text-cyan-100 transition-colors hover:bg-cyan-400/20"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-cyan-300/30 bg-cyan-400/10 px-3 text-xs font-medium text-cyan-900 dark:text-cyan-100 transition-colors hover:bg-cyan-400/20"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Open
+              {b("Open")}
             </Link>
           )}
           <Button
@@ -288,14 +299,14 @@ export function BrainDetailPanel({
             }}
           >
             <Compass className="h-3.5 w-3.5" />
-            Explore locally
+            {b("Explore locally")}
           </Button>
         </div>
 
         {grouped.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Connections ({grouped.length})
+              {b("Connections")} ({grouped.length})
             </h4>
             <ul className="space-y-1.5">
               {grouped.slice(0, 30).map(({ node, edge }) => {
@@ -340,7 +351,7 @@ export function BrainDetailPanel({
                       <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                         {strength > 0 && (
                           <span>
-                            Strength{" "}
+                            {b("Strength")}{" "}
                             <span className="font-mono text-muted-foreground">
                               {Math.round(strength * 100)}%
                             </span>
@@ -348,7 +359,7 @@ export function BrainDetailPanel({
                         )}
                         {confidence > 0 && (
                           <span>
-                            Confidence{" "}
+                            {b("Confidence")}{" "}
                             <span className="font-mono text-muted-foreground">
                               {Math.round(confidence * 100)}%
                             </span>

@@ -68,7 +68,7 @@ type ForceFn = {
 };
 
 export type ForceGraphInstance = {
-  centerAt: (x?: number, y?: number, ms?: number) => void;
+  centerAt: (x?: number, y?: number, ms?: number) => { x: number; y: number };
   zoom: (k?: number, ms?: number) => void;
   zoomToFit: (ms?: number, padding?: number) => void;
   graph2ScreenCoords?: (x: number, y: number) => { x: number; y: number };
@@ -225,6 +225,8 @@ interface ConstellationCanvasProps {
    * the percentage display stays in sync with the canvas.
    */
   onZoomChange?: (zoom: number) => void;
+  /** Brain uses event-driven drawing and preserves the camera through viewport changes. */
+  performanceMode?: boolean;
 }
 
 function nodeRadius(node: ConstellationNode): number {
@@ -475,11 +477,15 @@ export const ConstellationCanvas = forwardRef<
     d3AlphaDecay: d3AlphaDecayProp,
     d3VelocityDecay: d3VelocityDecayProp,
     onZoomChange,
+    performanceMode = false,
   },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<ForceGraphInstance | null>(null);
+  const simulationNodesRef = useRef<Map<string, SimNode>>(new Map());
+  const previousForceDataRef = useRef<unknown>(null);
+  const viewportRef = useRef({ w: 600, h: 400 });
   const didInitialFitRef = useRef(false);
   const manualNodePositionsRef = useRef<
     Map<string, { x: number; y: number; fx?: number | null; fy?: number | null }>
@@ -489,6 +495,8 @@ export const ConstellationCanvas = forwardRef<
   const frameNowRef = useRef(0);
   const interactionUntilRef = useRef(0);
   const interactionQualityRef = useRef(false);
+  const qualityRestoreTimerRef = useRef<number | null>(null);
+  const coarsePointerRef = useRef(false);
   const denseGraphRef = useRef(false);
   const veryDenseGraphRef = useRef(false);
   const zoomNotifyRafRef = useRef<number | null>(null);
@@ -509,6 +517,7 @@ export const ConstellationCanvas = forwardRef<
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [pointerInteractionEnabled, setPointerInteractionEnabled] = useState(true);
+  const [qualityRevision, setQualityRevision] = useState(0);
   const localDepthPinnedIdsRef = useRef<Set<string>>(new Set());
 
   const { mode: graphSurfaceMode, t: graphThemeRow } = useGraphSurface();
@@ -521,6 +530,7 @@ export const ConstellationCanvas = forwardRef<
       opts?: { padding?: number; maxZoom?: number; minZoom?: number; duration?: number },
     ) => {
       const fg = graphRef.current;
+      const size = viewportRef.current;
       if (!fg || size.w <= 0 || size.h <= 0) return;
 
       const responsivePadding =
@@ -538,28 +548,33 @@ export const ConstellationCanvas = forwardRef<
       const cy = (bounds.y1 + bounds.y2) / 2;
 
       try {
-        fg.centerAt(cx, cy, opts?.duration ?? 520);
-        fg.zoom(zoom, opts?.duration ?? 520);
+        const duration = prefersReducedMotion ? 0 : (opts?.duration ?? 360);
+        fg.centerAt(cx, cy, duration);
+        fg.zoom(zoom, duration);
       } catch {
         /* best-effort camera fitting */
       }
     },
-    [size.h, size.w],
+    [prefersReducedMotion],
   );
 
   // Resize observer.
   useEffect(() => {
     if (!containerRef.current) return;
     const el = containerRef.current;
+    let frame = 0;
     const ro = new ResizeObserver(() => {
-      const rect = el.getBoundingClientRect();
-      setSize({
-        w: Math.max(320, Math.floor(rect.width)),
-        h: Math.max(280, Math.floor(rect.height)),
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width < 1 || rect.height < 1) return;
+        const next = { w: Math.floor(rect.width), h: Math.floor(rect.height) };
+        viewportRef.current = next;
+        setSize(previous => previous.w === next.w && previous.h === next.h ? previous : next);
       });
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); cancelAnimationFrame(frame); };
   }, []);
 
   const isSpotlight = selectedNodeId !== null;
@@ -577,58 +592,39 @@ export const ConstellationCanvas = forwardRef<
     return () => media.removeEventListener?.("change", sync);
   }, []);
 
-  // Force-graph mutates the arrays it gets — pass fresh copies whenever
-  // the underlying data changes.
-  const graphData = useMemo(
-    () => ({
-      // Sort so background renders first and focused foreground renders
-      // last. This gives the selected mini-network a true foreground
-      // layer without needing a second canvas.
-      nodes: data.nodes
-        .map((n) => {
-          const stored = manualNodePositionsRef.current.get(n.id);
-          return stored ? { ...n, ...stored } : { ...n };
-        })
-        .sort((a, b) => {
-          const rank = (n: ConstellationNode) => {
-            if (useDepthVisual) {
-              const d = localSubgraphMeta!.nodeDepthMap.get(n.id) ?? 9;
-              return 10 - Math.min(9, d);
-            }
-            if (n.id === selectedNodeId) return 3;
-            if (spotlightDirect?.has(n.id)) return 2;
-            if (spotlightSecondary?.has(n.id)) return 1;
-            return 0;
-          };
-          return rank(a) - rank(b);
-        }),
-      links: data.edges
-        .map((e) => ({ ...e }))
-        .sort((a, b) => {
-          const rank = (e: ConstellationEdge) => {
-            if (useDepthVisual) {
-              const ed = localSubgraphMeta!.edgeDepthMap.get(e.id) ?? 3;
-              return 4 - ed;
-            }
-            return spotlightDirectEdges?.has(e.id) ||
-              e.source === selectedNodeId ||
-              e.target === selectedNodeId
-              ? 1
-              : 0;
-          };
-          return rank(a) - rank(b);
-        }),
+  useEffect(() => {
+    const media = window.matchMedia("(pointer: coarse)");
+    const sync = () => { coarsePointerRef.current = media.matches; };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  // Reuse settled positions across data refreshes; selection and search do not
+  // replace the simulation's arrays or restart its physics.
+  const graphData = useMemo(() => ({
+    nodes: data.nodes.map(n => {
+      const previous = simulationNodesRef.current.get(n.id);
+      const position = previous ? { x: previous.x, y: previous.y, vx: previous.vx, vy: previous.vy, fx: previous.fx, fy: previous.fy } : {};
+      return { ...n, ...position, ...manualNodePositionsRef.current.get(n.id) };
     }),
-    [
-      data,
-      selectedNodeId,
-      spotlightDirect,
-      spotlightSecondary,
-      spotlightDirectEdges,
-      useDepthVisual,
-      localSubgraphMeta,
-    ],
-  );
+    links: data.edges.map(e => ({ ...e })),
+  }), [data]);
+
+  useEffect(() => {
+    simulationNodesRef.current = new Map(graphData.nodes.map(n => [n.id, n]));
+    const ids = new Set(graphData.nodes.map(n => n.id));
+    for (const id of manualNodePositionsRef.current.keys()) {
+      if (!ids.has(id)) manualNodePositionsRef.current.delete(id);
+    }
+  }, [graphData]);
+
+  useEffect(() => {
+    if (!performanceMode) return;
+    const sync = () => document.hidden ? graphRef.current?.pauseAnimation?.() : graphRef.current?.resumeAnimation?.();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [performanceMode]);
 
   const denseGraph =
     graphData.nodes.length >= DENSE_GRAPH_NODE_COUNT ||
@@ -801,7 +797,8 @@ export const ConstellationCanvas = forwardRef<
           extraForcesSetup(fg);
         }
 
-        if (typeof fg.d3ReheatSimulation === "function") {
+        if (typeof fg.d3ReheatSimulation === "function" && previousForceDataRef.current !== graphData) {
+          previousForceDataRef.current = graphData;
           fg.d3ReheatSimulation();
         }
       } catch {
@@ -831,6 +828,14 @@ export const ConstellationCanvas = forwardRef<
         interactionUntilRef.current,
         now + durationMs,
       );
+
+      // A paused canvas needs one final full-quality paint after gestures end.
+      // Changing the paint callback invalidates drawing, not the simulation.
+      if (qualityRestoreTimerRef.current !== null) clearTimeout(qualityRestoreTimerRef.current);
+      qualityRestoreTimerRef.current = window.setTimeout(() => {
+        qualityRestoreTimerRef.current = null;
+        setQualityRevision(v => v + 1);
+      }, Math.max(0, interactionUntilRef.current - now) + 40);
 
       if (!denseGraphRef.current || opts?.deferPointerHitTest === false) {
         return;
@@ -895,6 +900,7 @@ export const ConstellationCanvas = forwardRef<
 
   useEffect(() => {
     return () => {
+      if (qualityRestoreTimerRef.current !== null) clearTimeout(qualityRestoreTimerRef.current);
       if (zoomNotifyRafRef.current !== null) {
         cancelAnimationFrame(zoomNotifyRafRef.current);
         zoomNotifyRafRef.current = null;
@@ -918,7 +924,7 @@ export const ConstellationCanvas = forwardRef<
         markGraphInteraction(420);
         if (fg && typeof fg.zoomToFit === "function") {
           try {
-            fg.zoomToFit(420, 80);
+            fg.zoomToFit(prefersReducedMotion ? 0 : 300, viewportRef.current.w < 640 ? 30 : 60);
           } catch {
             /* ignore */
           }
@@ -941,7 +947,7 @@ export const ConstellationCanvas = forwardRef<
         if (!fg) return;
         try {
           if (typeof fg.d3ReheatSimulation === "function") fg.d3ReheatSimulation();
-          if (typeof fg.zoomToFit === "function") fg.zoomToFit(520, 90);
+          if (typeof fg.zoomToFit === "function") fg.zoomToFit(prefersReducedMotion ? 0 : 360, viewportRef.current.w < 640 ? 30 : 60);
         } catch {
           /* ignore */
         }
@@ -963,7 +969,7 @@ export const ConstellationCanvas = forwardRef<
         markGraphInteraction(durationMs + 180);
         const next = Math.max(0.1, Math.min(8, (currentZoomRef.current || 1) * factor));
         try {
-          fg.zoom(next, durationMs);
+          fg.zoom(next, prefersReducedMotion ? 0 : durationMs);
         } catch {
           /* ignore */
         }
@@ -973,13 +979,13 @@ export const ConstellationCanvas = forwardRef<
         if (!fg || typeof fg.zoom !== "function") return;
         markGraphInteraction(durationMs + 180);
         try {
-          fg.zoom(1, durationMs);
+          fg.zoom(1, prefersReducedMotion ? 0 : durationMs);
         } catch {
           /* ignore */
         }
       },
     }),
-    [fitWorldBoxToViewport, graphData.nodes, markGraphInteraction],
+    [fitWorldBoxToViewport, graphData.nodes, markGraphInteraction, prefersReducedMotion],
   );
 
   // Fit spotlight selection (global graph): only the selected node and its
@@ -1019,8 +1025,6 @@ export const ConstellationCanvas = forwardRef<
     graphData.nodes,
     isExplodedFocusLayout,
     selectedNodeId,
-    size.h,
-    size.w,
     spotlightDirect,
     useDepthVisual,
   ]);
@@ -1054,7 +1058,7 @@ export const ConstellationCanvas = forwardRef<
       nodeDepthMap: localSubgraphMeta.nodeDepthMap,
       parentIdMap: localSubgraphMeta.parentIdMap,
       exploded: isExplodedFocusLayout,
-      viewportMin: Math.min(size.w, size.h),
+      viewportMin: Math.min(viewportRef.current.w, viewportRef.current.h),
       nodes: graphData.nodes as ConstellationNode[],
       viewDepth: orbitViewDepth,
     });
@@ -1125,8 +1129,6 @@ export const ConstellationCanvas = forwardRef<
     localSubgraphMeta,
     orbitViewDepth,
     selectedNodeId,
-    size.h,
-    size.w,
   ]);
 
   // Firework / exploded layout for global graph only (no depth meta).
@@ -1339,23 +1341,12 @@ export const ConstellationCanvas = forwardRef<
     useDepthVisual,
   ]);
 
-  // Auto-fit only once on first canvas population. Data refreshes must
-  // not reset the user's camera or manually arranged node positions.
-  useEffect(() => {
-    if (didInitialFitRef.current || graphData.nodes.length === 0) return;
-    const t = setTimeout(() => {
-      const fg = graphRef.current;
-      if (fg && typeof fg.zoomToFit === "function") {
-        try {
-          didInitialFitRef.current = true;
-          fg.zoomToFit(700, 100);
-        } catch {
-          /* ignore */
-        }
-      }
-    }, 320);
-    return () => clearTimeout(t);
-  }, [graphData]);
+  // Frame the settled layout, not its provisional coordinates before physics.
+  const handleEngineStop = useCallback(() => {
+    if (didInitialFitRef.current || !graphData.nodes.length) return;
+    didInitialFitRef.current = true;
+    if (!selectedNodeId) graphRef.current?.zoomToFit(prefersReducedMotion ? 0 : 240, viewportRef.current.w < 640 ? 30 : 60);
+  }, [graphData.nodes.length, selectedNodeId, prefersReducedMotion]);
 
   // ── Per-node alpha logic for Spotlight Mode ──────────────────────
   const computeNodeAlpha = useCallback(
@@ -1459,9 +1450,7 @@ export const ConstellationCanvas = forwardRef<
     return undefined;
   }, [denseGraph, veryDenseGraph]);
 
-  const shouldAutoPauseRedraw =
-    prefersReducedMotion ||
-    denseGraph;
+  const shouldAutoPauseRedraw = performanceMode || prefersReducedMotion || denseGraph;
 
   const animatedEdgeIds = useMemo(() => {
     return selectNeuralAnimatedEdgeIds({
@@ -1484,6 +1473,8 @@ export const ConstellationCanvas = forwardRef<
   // ── Renderers ────────────────────────────────────────────────────
   const nodeCanvasObject = useCallback(
     (rawNode: SimNode | unknown, ctx: CanvasRenderingContext2D) => {
+      // This revision deliberately invalidates the library's paused paint callback.
+      void qualityRevision;
       const node = rawNode as SimNode;
       if (typeof node.x !== "number" || typeof node.y !== "number") return;
       const palette = resolveNodeVisuals(node.type, graphSurfaceMode);
@@ -1650,6 +1641,7 @@ export const ConstellationCanvas = forwardRef<
     [
       computeNodeAlpha,
       graphShell.glowGradientEnd,
+      qualityRevision,
       graphShell.matchedRingFallback,
       graphSurfaceMode,
       hoveredId,
@@ -1667,7 +1659,8 @@ export const ConstellationCanvas = forwardRef<
     (rawNode: unknown, color: string, ctx: CanvasRenderingContext2D) => {
       const node = rawNode as SimNode;
       if (typeof node.x !== "number" || typeof node.y !== "number") return;
-      const r = nodeRadius(node) + 4;
+      const coarse = coarsePointerRef.current;
+      const r = Math.max(nodeRadius(node) + 4, (coarse ? 22 : 9) / Math.max(.1, currentZoomRef.current));
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
@@ -1982,13 +1975,13 @@ export const ConstellationCanvas = forwardRef<
       const now = performance.now();
       frameNowRef.current = now;
       const quality: ConstellationRenderQuality =
-        denseGraphRef.current && now < interactionUntilRef.current
+        (performanceMode || denseGraphRef.current) && now < interactionUntilRef.current
           ? "interaction"
           : "full";
       interactionQualityRef.current = quality === "interaction";
       onRenderFramePre?.(ctx, scale, quality);
     },
-    [onRenderFramePre],
+    [onRenderFramePre, performanceMode],
   );
 
   // ── Label pass with screen-space collision detection ─────────────
@@ -2235,7 +2228,26 @@ export const ConstellationCanvas = forwardRef<
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-hidden"
+      className="relative h-full w-full overflow-hidden outline-none"
+      style={{ touchAction: "none" }}
+      onPointerDown={() => { didInitialFitRef.current = true; }}
+      tabIndex={0}
+      role="region"
+      aria-label="Interactive knowledge graph"
+      onKeyDown={e => {
+        const fg = graphRef.current;
+        if (!fg || e.target !== e.currentTarget) return;
+        const duration = prefersReducedMotion ? 0 : 120;
+        if (e.key === "+" || e.key === "=" || e.key === "-") {
+          e.preventDefault(); fg.zoom(Math.max(.05, Math.min(8, currentZoomRef.current * (e.key === "-" ? .8 : 1.25))), duration);
+        } else if (e.key === "0") { e.preventDefault(); fg.zoomToFit(duration, 32); }
+        else if (e.key.startsWith("Arrow")) {
+          e.preventDefault();
+          const c = fg.centerAt();
+          const step = (e.shiftKey ? 120 : 50) / Math.max(.05, currentZoomRef.current);
+          fg.centerAt(c.x + (e.key === "ArrowRight" ? step : e.key === "ArrowLeft" ? -step : 0), c.y + (e.key === "ArrowDown" ? step : e.key === "ArrowUp" ? -step : 0), duration);
+        }
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onBackgroundClick();
       }}
@@ -2269,7 +2281,9 @@ export const ConstellationCanvas = forwardRef<
         linkDirectionalParticles={0}
         linkCurvature={0}
         autoPauseRedraw={shouldAutoPauseRedraw}
-        cooldownTicks={cooldownTicksProp ?? 140}
+        cooldownTicks={prefersReducedMotion ? 1 : (cooldownTicksProp ?? 140)}
+        minZoom={0.05}
+        maxZoom={8}
         warmupTicks={warmupTicksProp ?? 30}
         d3VelocityDecay={d3VelocityDecayProp ?? 0.32}
         d3AlphaDecay={d3AlphaDecayProp ?? 0.022}
@@ -2279,14 +2293,16 @@ export const ConstellationCanvas = forwardRef<
         enablePanInteraction
         onRenderFramePre={handleRenderFramePre}
         onRenderFramePost={onRenderFramePost}
+        onEngineStop={handleEngineStop}
         onNodeHover={(rawNode: SimNode | null) => {
           const node = rawNode ?? null;
           const nextId = node ? node.id : null;
           setHoveredId((prev) => (prev === nextId ? prev : nextId));
           onNodeHover(node);
         }}
-        onNodeClick={(rawNode: SimNode) => {
-          onNodeClick(rawNode);
+        onNodeClick={(rawNode: SimNode, event: MouseEvent) => {
+          if (event?.detail === 2) onNodeDoubleClick(rawNode);
+          else onNodeClick(rawNode);
         }}
         onNodeDragEnd={(rawNode: SimNode) => {
           markGraphInteraction(180, { deferPointerHitTest: false });
@@ -2307,7 +2323,6 @@ export const ConstellationCanvas = forwardRef<
           rawNode.fy = null;
         }}
         onBackgroundClick={() => onBackgroundClick()}
-        onNodeDblClick={(rawNode: SimNode) => onNodeDoubleClick(rawNode)}
         onZoom={(transform: { k: number; x: number; y: number }) => {
           if (!Number.isFinite(transform?.k)) return;
           markGraphInteraction();

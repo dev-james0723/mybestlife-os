@@ -41,7 +41,7 @@ export function SphereFocusZoomControls({
       role="group"
       aria-label="Sphere zoom"
       className={cn(
-        "pointer-events-auto absolute left-3 bottom-3 z-30 flex items-center gap-0.5 px-1 py-1",
+        "pointer-events-auto absolute left-3 bottom-3 z-30 flex items-center gap-0.5 px-1 py-1 [&>button]:!h-11 [&>button]:!min-w-11",
         graphT.glass.pill,
         className,
       )}
@@ -72,7 +72,6 @@ export function SphereFocusZoomControls({
           graphT.tone.body,
           onPercentClick && graphT.tone.rowHover,
         )}
-        aria-live="polite"
       >
         {display}%
       </button>

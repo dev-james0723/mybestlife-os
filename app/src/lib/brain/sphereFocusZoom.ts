@@ -28,3 +28,15 @@ export function zoomPercentToRadius(
   const u = Math.max(0, Math.min(100, percent)) / 100;
   return hi - u * (hi - lo);
 }
+
+/** Fingers spreading move the camera closer; both sphere orbits share this rule. */
+export function radiusAfterPinch(
+  initialRadius: number,
+  initialSpan: number,
+  currentSpan: number,
+): number {
+  if (!Number.isFinite(initialSpan) || !Number.isFinite(currentSpan) || initialSpan <= 0 || currentSpan <= 0) {
+    return initialRadius;
+  }
+  return initialRadius * (initialSpan / currentSpan);
+}
