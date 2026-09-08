@@ -64,6 +64,16 @@ export function handleOSBuddyReaction(params: {
   } = params;
 
   switch (event.type) {
+    case "garden:enter":
+      setMood("playful");
+      return;
+    case "garden:exit":
+      setMood("idle");
+      return;
+    case "garden:achievement":
+      // The in-world companion supplies the message; keep its shared mood in sync.
+      temporarilySetMood(event.achievement === "deliver" ? "celebrating" : "success", 2_000);
+      return;
     case "project:generate:start":
       setMood("thinking");
       showBubble(

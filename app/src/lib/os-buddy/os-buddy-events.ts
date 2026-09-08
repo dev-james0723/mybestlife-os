@@ -11,6 +11,12 @@ import type {
 } from "@/stores/os-buddy-store";
 
 export const OS_BUDDY_EVENT_NAME = "mblos:os-buddy-event";
+let gardenActive = false;
+
+/** Transient page state, including when the lazy-loaded Dock subscribes after entry. */
+export function isOSBuddyInGarden() {
+  return gardenActive;
+}
 
 export type OSBuddyEvent =
   | { type: "project:generate:start"; label?: string }
@@ -61,6 +67,9 @@ export type OSBuddyEvent =
     }
   | { type: "game:start"; game: OSBuddyMiniGame }
   | { type: "game:complete"; game: OSBuddyMiniGame; score?: number }
+  | { type: "garden:enter" }
+  | { type: "garden:exit" }
+  | { type: "garden:achievement"; achievement: "harvest" | "discover" | "trail-won" | "deliver" }
   | { type: "birthday:today"; age?: number }
   | { type: "birthday:upcoming"; daysUntil: number; age?: number }
   | { type: "birthday:set" }
@@ -68,6 +77,8 @@ export type OSBuddyEvent =
 
 export function emitOSBuddyEvent(event: OSBuddyEvent) {
   if (typeof window === "undefined") return;
+  if (event.type === "garden:enter") gardenActive = true;
+  if (event.type === "garden:exit") gardenActive = false;
   window.dispatchEvent(new CustomEvent<OSBuddyEvent>(OS_BUDDY_EVENT_NAME, { detail: event }));
 }
 

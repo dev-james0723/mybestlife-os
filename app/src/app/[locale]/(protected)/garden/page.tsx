@@ -1,7 +1,7 @@
 "use client";
 
 import { PageShell } from "@/components/shared/page-shell";
-import { GardenGame } from "@/components/garden/GardenGame";
+import { GardenAdventure } from "@/components/garden/GardenAdventure";
 import { DailyChest } from "@/components/garden/DailyChest";
 import { PlantCollection } from "@/components/garden/PlantCollection";
 import { InventoryBar } from "@/components/garden/InventoryBar";
@@ -24,7 +24,7 @@ export default function GardenPage() {
     >
       <OSMotionPanel className="space-y-6">
         <GardenBioLabQuerySync />
-        <GardenGame />
+        <GardenAdventure />
         <details className="rounded-2xl border border-border/60 bg-background/50 p-5">
           <summary className="min-h-11 cursor-pointer content-center text-sm font-medium">{gameUi.collection}</summary>
           <div className="space-y-5 pt-5"><DailyChest /><InventoryBar /><PlantCollection /></div>

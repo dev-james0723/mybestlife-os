@@ -35,6 +35,8 @@ export function OSBuddyBubble({
       data-horizontal={horizontal}
       data-vertical={vertical}
       data-state={bubble.isDismissing ? "dismissing" : "visible"}
+      // Action targets settle after the entrance; perpetual wobble makes tapping difficult.
+      style={bubble.cta && !bubble.isDismissing ? { animationName: "os-buddy-bubble-pop" } : undefined}
       role="status"
       aria-live="polite"
     >

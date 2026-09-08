@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import { createServer } from "node:http";
+import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 import nextBuild from "next/dist/build/index.js";
 import { Bundler } from "next/dist/lib/bundler.js";
@@ -17,14 +19,31 @@ if (!requestedMode) {
 if (!requestedMode) execFileSync(process.execPath, ["node_modules/typescript/bin/tsc", "--project", "tsconfig.garden-verify.json", "--noEmit", "--pretty", "false"], { stdio: "inherit" });
 process.env.NEXT_OUTPUT_DIR = ".next-garden-verify";
 process.env.NEXT_PUBLIC_DEV_LOGIN_BYPASS = "true";
-process.env.NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co";
+process.env.NEXT_PUBLIC_HIDE_DEV_LOGIN_BYPASS = "false";
+process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:4310";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "local-garden-fixture-only";
-console.log("TEST-ONLY optimized Garden build with placeholder service config. Do not deploy.");
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY = "local-garden-fixture-only";
+console.log("TEST-ONLY optimized Garden build with loopback fixture services. Do not deploy.");
 if (requestedMode === "serve") {
-  execFileSync(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3100"], { stdio: "inherit" });
-  process.exit(0);
+  // Authenticate the two isolated test identities without weakening production
+  // middleware. Real auth/session verification is outside this fixture's scope.
+  const identities = new Set(["00000000-0000-4000-8000-000000000071", "00000000-0000-4000-8000-000000000072"]);
+  const auth = createServer((request, response) => {
+    response.setHeader("Content-Type", "application/json");
+    try {
+      const token = (request.headers.authorization ?? "").replace(/^Bearer /, "");
+      const claim = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString());
+      if (request.url !== "/auth/v1/user" || !identities.has(claim.sub) || !token.endsWith(".fixture")) throw new Error("Not a fixture identity");
+      response.end(JSON.stringify({ id: claim.sub, email: "garden-preview@example.test", aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {} }));
+    } catch { response.statusCode = 401; response.end(JSON.stringify({ message: "Isolated preview account required" })); }
+  });
+  auth.listen(4310, "127.0.0.1"); await once(auth, "listening");
+  const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3100"], { stdio: "inherit" });
+  const stop = () => { server.kill("SIGTERM"); auth.close(); };
+  process.once("SIGINT", stop); process.once("SIGTERM", stop);
+  const [code] = await once(server, "exit"); auth.close(); process.exit(code ?? 0);
 }
-const routePaths = { app: ["/[locale]/(protected)/garden/page.tsx"], pages: [] };
+const routePaths = { app: ["/[locale]/(protected)/garden/page.tsx", "/[locale]/(protected)/dashboard/page.tsx"], pages: [] };
 // The installed Next 16 build entrypoint accepts route-relative paths; the CLI
 // categorizer does not correctly match this repo's src/app path for this version.
 if (requestedMode === "compile" || requestedMode === "generate") {

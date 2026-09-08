@@ -1,0 +1,1005 @@
+.garden {
+  --garden-ink: var(--os-ink, #20382e);
+  --garden-muted: var(--os-ink-muted, #566959);
+  --garden-glass: var(--os-floating, #f6f8eeeb);
+  --garden-line: var(--os-stroke, #d9e1d0);
+  color: var(--garden-ink);
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.garden *,
+.garden *::before,
+.garden *::after {
+  box-sizing: border-box;
+}
+.garden button,
+.garden a,
+.garden select {
+  -webkit-tap-highlight-color: transparent;
+}
+.garden button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 15px;
+  color: inherit;
+  background: var(--garden-glass);
+  border: 1px solid var(--garden-line);
+  border-radius: var(--os-control-radius, 14px);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+  transition:
+    background 0.16s,
+    box-shadow 0.16s;
+}
+.garden button:hover:not(:disabled) {
+  background: var(--os-surface-hover, #ffffff);
+  box-shadow: 0 3px 15px #18322012;
+}
+.garden button:disabled {
+  opacity: 0.52;
+  cursor: default;
+}
+.garden button:focus-visible,
+.garden a:focus-visible,
+.garden select:focus-visible,
+.garden input:focus-visible {
+  outline: 3px solid var(--os-action, #c2ed79);
+  outline-offset: 3px;
+}
+.garden h2,
+.garden h3,
+.garden p {
+  margin: 0;
+}
+.garden h2 {
+  font-weight: 550;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+.garden h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  font-size: 19px;
+}
+.garden p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--garden-muted);
+}
+.garden small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--garden-muted);
+  line-height: 1.5;
+}
+.garden .primary {
+  background: var(--os-action, #c1ed80);
+  color: var(--os-action-foreground, #21331b);
+  border-color: transparent;
+  min-height: 48px;
+  padding-inline: 22px;
+  box-shadow: 0 6px 20px #435d1420;
+}
+.garden .primary:hover:not(:disabled) {
+  background: var(--os-action-hover, #d4f5a0);
+}
+.secondary {
+  background: transparent !important;
+}
+.kicker {
+  display: block;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.viewport {
+  isolation: isolate;
+  position: relative;
+  height: clamp(420px, 42vw, 620px);
+  width: 100%;
+  background: #c7d7bd;
+  border: 1px solid var(--garden-line);
+  border-radius: var(--os-panel-radius, 26px);
+  overflow: hidden;
+  outline: none;
+}
+.viewport > :first-child {
+  position: absolute;
+  inset: 0;
+}
+.viewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  width: 100%;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+.cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 17px;
+  padding: 42px;
+  background: linear-gradient(0deg, #eef3e8f2, #eef3e8b5 25%, transparent 64%);
+  cursor: pointer;
+}
+.cover h2 {
+  font-size: clamp(30px, 4vw, 50px);
+  max-width: 600px;
+}
+.cover p {
+  max-width: 430px;
+  font-size: 14px;
+}
+.cover small {
+  letter-spacing: 0.09em;
+  font-size: 10px;
+}
+.loading,
+.loadingOverlay {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  font-size: 13px;
+}
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: var(--garden-glass);
+}
+.hudTop {
+  position: absolute;
+  z-index: 3;
+  top: max(20px, env(safe-area-inset-top));
+  left: max(24px, env(safe-area-inset-left));
+  right: max(24px, env(safe-area-inset-right));
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  pointer-events: none;
+}
+.objective,
+.canMeter,
+.tools,
+.buddyMessage,
+.cameraTools,
+.trailStatus {
+  background: var(--garden-glass);
+  border: 1px solid var(--garden-line);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 30px #17342012;
+  border-radius: 18px;
+}
+.objective {
+  max-width: 340px;
+  padding: 17px 20px 13px;
+  pointer-events: auto;
+}
+.objective h2 {
+  font-size: 20px;
+  margin: 7px 0 10px;
+}
+.objective p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.objective p svg:nth-of-type(2) {
+  margin-left: 11px;
+}
+.objective p span {
+  font-size: 11px;
+  font-weight: 400;
+}
+.saveState {
+  display: block;
+  font-size: 9px;
+  margin-top: 8px;
+  color: var(--garden-muted);
+}
+.garden .retry {
+  padding: 0;
+  border: 0;
+  min-height: 28px;
+  font-size: 10px;
+  background: transparent;
+  text-decoration: underline;
+}
+.hudRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: auto;
+}
+.canMeter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 13px;
+  height: 42px;
+}
+.canMeter svg {
+  color: #438185;
+  margin-right: 5px;
+}
+.canMeter span {
+  width: 14px;
+  height: 19px;
+  border-radius: 4px;
+  background: #a8bcb829;
+  border: 1px solid #77999a3b;
+}
+.canMeter span[data-filled="true"] {
+  background: #83b9b8;
+  border-color: #679a9b;
+}
+.tools {
+  display: flex;
+  padding: 4px;
+  gap: 2px;
+}
+.tools button,
+.cameraTools button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 44px;
+}
+.hudBottom {
+  position: absolute;
+  z-index: 3;
+  left: max(24px, env(safe-area-inset-left));
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(26px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: 180px minmax(0, 400px) 230px;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  pointer-events: none;
+}
+.hudBottom button {
+  pointer-events: auto;
+}
+.movement {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  align-items: flex-start;
+}
+.garden .joystick {
+  position: relative;
+  width: 106px;
+  height: 106px;
+  border-radius: 50%;
+  padding: 0;
+  border: 1px solid #ffffff8c;
+  background: #f1f7e840;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  touch-action: none;
+  box-shadow: inset 0 0 0 9px #ffffff1f;
+}
+.joystick span {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f3f7ecea;
+  border: 1px solid #ffffffbf;
+  box-shadow: 0 4px 10px #30462820;
+}
+.joystick svg {
+  z-index: 1;
+  pointer-events: none;
+  color: #597344;
+}
+.garden .keyboardHint {
+  font-size: 9px;
+  line-height: 1.3;
+  color: #213824;
+  background: #edf4e2bf;
+  padding: 5px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.buddyMessage {
+  min-height: 64px;
+  padding: 13px 17px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 8px;
+}
+.buddyMessage img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.buddyMessage strong {
+  font-size: 10px;
+}
+.buddyMessage p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.actions {
+  display: flex;
+  gap: 11px;
+  align-items: flex-end;
+}
+.garden .dash {
+  min-width: 62px;
+  min-height: 62px;
+  border-radius: 50%;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+}
+.dash small {
+  font-size: 9px;
+}
+.garden .action {
+  position: relative;
+  width: 152px;
+  min-height: 66px;
+  border-radius: 22px;
+  background: var(--os-action, #c2ea89);
+  color: var(--os-action-foreground, #263f1f);
+  border: 1px solid #efffce99;
+  box-shadow: 0 7px 24px #15360c26;
+  overflow: hidden;
+}
+.action svg {
+  flex-shrink: 0;
+}
+.action span {
+  position: relative;
+  z-index: 1;
+}
+.action i {
+  position: absolute;
+  height: 5px;
+  left: 0;
+  bottom: 0;
+  background: #58823d;
+}
+.cameraTools {
+  position: absolute;
+  z-index: 3;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(125px, calc(env(safe-area-inset-bottom) + 100px));
+  padding: 2px;
+  display: flex;
+}
+.trailStatus {
+  position: absolute;
+  top: max(22px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 17px;
+}
+.trailStatus b {
+  font-variant-numeric: tabular-nums;
+}
+.scrim {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  background: #1f382a45;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.menu {
+  width: min(550px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  background: var(--garden-glass);
+  border: 1px solid var(--garden-line);
+  border-radius: 26px;
+  padding: 25px 30px;
+  box-shadow: 0 25px 90px #112e2b35;
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+.menu h2 {
+  font-size: 31px;
+}
+.menu h3 {
+  margin-top: 8px;
+  font-size: 17px;
+}
+.menuHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: -6px;
+}
+.menuHeading button {
+  border: 0;
+  background: transparent;
+  width: 44px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.garden .leave {
+  background: transparent;
+  border-color: transparent;
+  font-weight: 400;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.mapChoices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.mapChoices button {
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 11px;
+  padding-inline: 10px;
+}
+.mapChoices svg {
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  min-height: 48px;
+  font-size: 12px;
+  border-top: 1px solid var(--garden-line);
+  padding-block: 12px;
+}
+.settingRow small {
+  display: block;
+  margin-top: 7px;
+  max-width: 270px;
+}
+.garden select {
+  max-width: 55%;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--garden-line);
+  background: var(--os-surface, #fbfdf8);
+  padding: 8px;
+  font-size: 11px;
+  color: inherit;
+}
+.garden input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #769c45;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.decors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.decors button {
+  min-height: 72px;
+  padding: 10px 5px;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+}
+.decors small {
+  font-size: 9px;
+}
+.decors button[aria-pressed="true"] {
+  outline: 1px solid #83a35c;
+  background: #a9ca6521;
+}
+.quiet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.quiet > span {
+  margin-right: auto;
+}
+.quiet label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quiet select {
+  max-width: none;
+}
+.audioSettings {
+  border-top: 1px solid var(--garden-line);
+  border-bottom: 1px solid var(--garden-line);
+  padding: 10px 0 16px;
+  margin: 14px 0 20px;
+}
+.audioSlider {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.audioSlider > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.audioSlider output {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.65;
+}
+.audioSlider input {
+  width: 100%;
+  height: 30px;
+  accent-color: #769c45;
+  cursor: pointer;
+}
+.fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 150px 30px 180px;
+  background: radial-gradient(ellipse at center, #e1ebcd, #bfceb5);
+}
+.fallback p {
+  max-width: 440px;
+}
+.fallback h3 {
+  font-size: 25px;
+}
+.accountSummary {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 42px;
+  padding: 30px;
+  background: var(--os-surface, #f6f8f0a6);
+  border: 1px solid var(--garden-line);
+  border-radius: 22px;
+}
+.accountSummary h3 {
+  margin: 10px 0 14px;
+}
+.accountSummary p {
+  max-width: 590px;
+}
+.connections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 21px;
+}
+.connections a {
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--garden-line);
+  border-radius: 12px;
+  font-size: 11px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  text-decoration: none;
+}
+.connections a[data-active="true"] {
+  background: #b8d88323;
+  border-color: #8fa96b66;
+}
+.care {
+  border-left: 1px solid var(--garden-line);
+  padding-left: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.care h3 {
+  margin: 0;
+}
+.care > small {
+  margin-top: 8px;
+  font-size: 10px;
+}
+.seedArea {
+  padding: 22px;
+  border: 1px solid var(--garden-line);
+  border-radius: 20px;
+}
+.seedArea > button {
+  margin-bottom: 20px;
+}
+.fullscreenNotice {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 24%;
+  transform: translateX(-50%);
+  max-width: 330px;
+  background: var(--garden-glass);
+  border-radius: 14px;
+  padding: 12px 15px;
+  font-size: 11px;
+}
+:global(.dark) .garden {
+  --garden-ink: var(--os-ink, #e4eddd);
+  --garden-muted: var(--os-ink-muted, #bdcbbb);
+  --garden-glass: var(--os-floating, #202d2cf0);
+  --garden-line: var(--os-stroke, #65766b4d);
+}
+:global(.dark) .viewport {
+  background: #162626;
+}
+:global(.dark) .cover {
+  background: linear-gradient(0deg, #192927f5, #192927c4 25%, transparent 64%);
+}
+:global(.dark) .fallback {
+  background: radial-gradient(ellipse, #344835, #182d2c);
+}
+@media (max-width: 900px) {
+  .hudBottom {
+    grid-template-columns: 120px minmax(0, 320px) 205px;
+    gap: 12px;
+  }
+  .garden .action {
+    width: 132px;
+  }
+  .objective {
+    max-width: 280px;
+  }
+  .trailStatus {
+    top: 175px;
+  }
+  .keyboardHint {
+    display: none;
+  }
+}
+@media (max-width: 620px) {
+  .garden {
+    gap: 18px;
+  }
+  .viewport {
+    height: 460px;
+    border-radius: 20px;
+  }
+  .immersive {
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .cover {
+    padding: 26px 24px;
+    gap: 13px;
+  }
+  .cover h2 {
+    font-size: 34px;
+    max-width: 270px;
+  }
+  .cover p {
+    font-size: 12px;
+    max-width: 260px;
+  }
+  .hudTop {
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    top: max(12px, env(safe-area-inset-top));
+    gap: 8px;
+  }
+  .objective {
+    padding: 12px 14px;
+    max-width: min(235px, calc(100% - 66px));
+  }
+  .objective h2 {
+    font-size: 19px;
+  }
+  .objective .kicker {
+    font-size: 8px;
+  }
+  .hudRight {
+    gap: 7px;
+  }
+  .tools {
+    flex-direction: column;
+  }
+  .canMeter {
+    position: absolute;
+    top: 169px;
+    left: 0;
+    height: 34px;
+    padding: 7px 10px;
+  }
+  .canMeter span {
+    height: 16px;
+    width: 12px;
+  }
+  .trailStatus {
+    top: 221px;
+    left: 12px;
+    transform: none;
+    font-size: 10px;
+    padding: 10px;
+  }
+  .hudBottom {
+    left: max(16px, env(safe-area-inset-left));
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    grid-template-columns: 96px 1fr;
+    gap: 12px;
+  }
+  .garden .joystick {
+    height: 96px;
+    width: 96px;
+  }
+  .buddyMessage {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-bottom: 0;
+    max-width: calc(100% - 4px);
+    padding: 11px 14px;
+    min-height: 60px;
+  }
+  .buddyMessage p {
+    font-size: 11px;
+  }
+  .buddyMessage img {
+    width: 36px;
+    height: 36px;
+  }
+  .movement {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .actions {
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+  .garden .dash {
+    min-width: 54px;
+    min-height: 54px;
+    font-size: 10px;
+  }
+  .garden .action {
+    width: 120px;
+    min-height: 65px;
+    font-size: 11px;
+    padding-inline: 10px;
+  }
+  .cameraTools {
+    bottom: max(216px, calc(env(safe-area-inset-bottom) + 192px));
+    right: max(16px, env(safe-area-inset-right));
+  }
+  .cameraTools button {
+    width: 40px;
+  }
+  .menu {
+    padding: 17px 21px;
+    border-radius: 22px;
+    gap: 14px;
+  }
+  .menu h2 {
+    font-size: 27px;
+  }
+  .menu p {
+    font-size: 12px;
+  }
+  .decors {
+    grid-template-columns: 1fr 1fr;
+  }
+  .settingRow {
+    gap: 14px;
+  }
+  .accountSummary {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    padding: 24px;
+  }
+  .care {
+    border-left: 0;
+    border-top: 1px solid var(--garden-line);
+    padding: 23px 0 0;
+  }
+  .fallback {
+    padding: 190px 72px 235px 20px;
+    justify-content: center;
+  }
+  .fallback h3 {
+    font-size: 18px;
+  }
+  .fallback p {
+    display: none;
+  }
+}
+@media (max-width: 370px) {
+  .hudBottom {
+    left: 12px;
+    right: 12px;
+    grid-template-columns: 84px 1fr;
+    gap: 8px;
+  }
+  .garden .joystick {
+    width: 84px;
+    height: 84px;
+  }
+  .garden .action {
+    width: 108px;
+  }
+  .garden .dash {
+    min-width: 50px;
+  }
+  .objective h2 {
+    font-size: 17px;
+  }
+  .objective p {
+    font-size: 12px;
+    gap: 4px;
+  }
+  .objective p span {
+    font-size: 10px;
+  }
+  .mapChoices {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .hudTop {
+    top: max(9px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .objective {
+    padding: 10px 14px;
+    max-width: 265px;
+  }
+  .objective .kicker,
+  .keyboardHint {
+    display: none;
+  }
+  .objective h2 {
+    font-size: 16px;
+    margin: 0 0 5px;
+  }
+  .objective p {
+    font-size: 12px;
+  }
+  .saveState {
+    margin-top: 4px;
+    font-size: 8px;
+  }
+  .hudRight {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .tools {
+    flex-direction: row;
+  }
+  .canMeter {
+    position: static;
+  }
+  .hudBottom {
+    left: max(14px, env(safe-area-inset-left));
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    grid-template-columns: 92px minmax(0, 300px) 205px;
+  }
+  .garden .joystick {
+    width: 88px;
+    height: 88px;
+  }
+  .buddyMessage {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 9px 12px;
+    margin-bottom: 0;
+    min-height: 50px;
+  }
+  .buddyMessage img {
+    width: 34px;
+    height: 34px;
+  }
+  .buddyMessage p {
+    font-size: 10px;
+  }
+  .movement {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .actions {
+    grid-column: 3;
+    grid-row: 1;
+    padding-bottom: 0;
+  }
+  .garden .action {
+    width: 130px;
+    min-height: 61px;
+  }
+  .cameraTools {
+    bottom: max(94px, calc(env(safe-area-inset-bottom) + 84px));
+    right: max(14px, env(safe-area-inset-right));
+  }
+  .trailStatus {
+    top: 113px;
+    left: 14px;
+    transform: none;
+    font-size: 10px;
+    padding: 8px 11px;
+  }
+  .menu {
+    padding: 17px 25px;
+    gap: 12px;
+  }
+  .menu h2 {
+    font-size: 25px;
+  }
+  .fallback {
+    padding: 100px 220px 100px 115px;
+    gap: 9px;
+  }
+  .fallback p {
+    display: none;
+  }
+  .fallback h3 {
+    font-size: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .garden *,
+  .garden *::before,
+  .garden *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

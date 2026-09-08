@@ -31,7 +31,7 @@ export type OSBuddyCompanionSource = "ai" | "local" | "fallback";
 export type OSBuddyCompanionCta = {
   label: string;
   game: OSBuddyMiniGame;
-};
+} | { label: string; href: "/garden" };
 
 export type OSBuddyCompanionResponse = {
   message: string;
@@ -403,7 +403,7 @@ export function normalizeOSBuddyCompanionResponse(
       : fallback.source;
 
   const responseCta = response?.cta;
-  const normalizedGame = normalizeOSBuddyMiniGame(responseCta?.game);
+  const normalizedGame = normalizeOSBuddyMiniGame(responseCta && "game" in responseCta ? responseCta.game : undefined);
 
   const cta = responseCta && normalizedGame
     ? {

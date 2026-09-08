@@ -50,16 +50,17 @@ export const gardenRepository = {
     return { dates: (history.data ?? []).map(row => row.log_date as string), total: total.count ?? 0 };
   },
 
-  async getLifeActivity(day = gardenDay()): Promise<{ task: boolean; journal: boolean; unavailable: boolean }> {
+  async getLifeActivity(day = gardenDay()): Promise<{ task: boolean; habit: boolean; journal: boolean; unavailable: boolean }> {
     const supabase = createClient();
     const userId = await requireUserId();
     const nextDay = dayBefore(day, -1);
     // Existence only: no task descriptions or private journal content enters the game.
-    const [tasks, journal] = await Promise.all([
+    const [tasks, journal, habits] = await Promise.all([
       supabase.from("tasks").select("id").eq("user_id", userId).eq("status", "done").gte("completed_at", `${day}T00:00:00Z`).lt("completed_at", `${nextDay}T00:00:00Z`).limit(1),
       supabase.from("journal_entries").select("id").eq("user_id", userId).eq("entry_date", day).limit(1),
+      supabase.from("habit_completions").select("id").eq("user_id", userId).eq("completion_date", day).eq("status", "done").limit(1),
     ]);
-    return { task: !tasks.error && !!tasks.data?.length, journal: !journal.error && !!journal.data?.length, unavailable: !!tasks.error || !!journal.error };
+    return { task: !tasks.error && !!tasks.data?.length, habit: !habits.error && !!habits.data?.length, journal: !journal.error && !!journal.data?.length, unavailable: !!tasks.error || !!journal.error || !!habits.error };
   },
 
   async getActiveGarden(): Promise<UserGarden | null> {

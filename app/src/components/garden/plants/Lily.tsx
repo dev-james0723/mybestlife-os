@@ -77,6 +77,7 @@ export function Lily({ stage }: { stage: number }) {
             <motion.path
               d="M100 65 Q85 40 75 55 Q85 60 100 65"
               fill="#F8BBD0"
+              initial={{ d: "M100 65 Q85 40 75 55 Q85 60 100 65" }}
               animate={{ d: ["M100 65 Q85 40 75 55 Q85 60 100 65", "M100 65 Q83 38 73 53 Q83 58 100 65", "M100 65 Q85 40 75 55 Q85 60 100 65"] }}
               transition={{ repeat: Infinity, duration: 5 }}
             />

@@ -11,7 +11,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
+import { useGardenBuddyInvitations } from "@/hooks/use-garden-buddy-invitations";
 import { Cloud, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/app-store";
@@ -596,6 +598,7 @@ function OSBuddyQuickSnapClouds({
 export function OSBuddyDock() {
   const locale = useAppStore((s) => s.language);
   const pathname = usePathname();
+  const router = useRouter();
   const onSignalsRoute = useMemo(
     () => /\/signals(?:\/|$)/.test(pathname ?? ""),
     [pathname],
@@ -662,6 +665,7 @@ export function OSBuddyDock() {
   const upsertIdea = useIdeasStore((s) => s.upsertIdea);
 
   const [mounted, setMounted] = useState(false);
+  const inGarden = useGardenBuddyInvitations({ enabled: mounted && enabled, pathname, locale });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [sidebarSafeLeft, setSidebarSafeLeft] = useState(24);
   const [activePosition, setActivePosition] = useState<OSBuddyPosition>({
@@ -750,6 +754,7 @@ export function OSBuddyDock() {
     );
   }, [buddyBox, mounted, restingPosition, sidebarSafeLeft, viewport]);
   const isFreeRoamBlocked =
+    !!bubble?.cta ||
     isMenuOpen ||
     isPetPickerOpen ||
     isMiniGameOpen ||
@@ -766,7 +771,7 @@ export function OSBuddyDock() {
     FREE_ROAM_BLOCKING_MOODS.has(mood);
   const { runtimePosition: freeRoamRuntimePosition, interruptFreeRoam } =
     useOSBuddyFreeRoam({
-      enabled: mounted && enabled && freeRoamSettings.enabled,
+      enabled: mounted && enabled && !inGarden && freeRoamSettings.enabled,
       intensity: freeRoamSettings.intensity,
       returnHomeAfterRoam: freeRoamSettings.returnHomeAfterRoam,
       roamNearHomeOnly: freeRoamSettings.roamNearHomeOnly,
@@ -932,13 +937,13 @@ export function OSBuddyDock() {
     temporarilySetMood,
   ]);
 
-  useUserIdleForOSBuddy(mounted && enabled && !onSignalsRoute && !isRestingInSidebar);
+  useUserIdleForOSBuddy(mounted && enabled && !inGarden && !onSignalsRoute && !isRestingInSidebar);
   useOSBuddyContextHints({
-    enabled: mounted && enabled && !onSignalsRoute && !isRestingInSidebar,
+    enabled: mounted && enabled && !inGarden && !onSignalsRoute && !isRestingInSidebar,
     buddyName: name,
     locale,
   });
-  useOSBuddyTimeMood({ enabled: mounted && enabled && !onSignalsRoute && !isRestingInSidebar, locale });
+  useOSBuddyTimeMood({ enabled: mounted && enabled && !inGarden && !onSignalsRoute && !isRestingInSidebar, locale });
 
   useEffect(() => {
     if (!onSignalsRoute) return;
@@ -3197,7 +3202,7 @@ export function OSBuddyDock() {
     }
   };
 
-  if (!mounted || !enabled) return null;
+  if (!mounted || !enabled || inGarden) return null;
 
   if (isRestingInSidebar) {
     return null;
@@ -3391,7 +3396,8 @@ export function OSBuddyDock() {
             vertical={bubbleVertical}
             onDismiss={clearBubble}
             onCtaClick={(cta) => {
-              openOverlayMiniGame(cta.game);
+              if ("href" in cta) { clearBubble(); router.push(withAppLocalePrefix(locale, cta.href)); }
+              else openOverlayMiniGame(cta.game);
             }}
           />
         ) : null}

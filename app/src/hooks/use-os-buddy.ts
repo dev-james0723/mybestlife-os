@@ -255,7 +255,7 @@ export function useOSBuddy() {
       }
 
       persistFallbackProfile({
-        os_buddy_pet_id: normalizePetId(patch.os_buddy_pet_id),
+        os_buddy_pet_id: patch.os_buddy_pet_id === undefined ? undefined : normalizePetId(patch.os_buddy_pet_id),
         os_buddy_name: typeof patch.os_buddy_name === "string" ? patch.os_buddy_name : undefined,
         os_buddy_enabled:
           typeof patch.os_buddy_enabled === "boolean" ? patch.os_buddy_enabled : undefined,
@@ -286,6 +286,7 @@ export function useOSBuddy() {
       try {
         const saved = await settingsRepository.updateProfile(patch);
         queryClient.setQueryData(["profile"], saved);
+        void queryClient.invalidateQueries({ queryKey: ["garden"] });
 
         persistFallbackProfile({
           os_buddy_pet_id: normalizePetId(saved.os_buddy_pet_id),

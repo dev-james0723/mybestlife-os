@@ -68,26 +68,31 @@ export function Grass({ stage }: { stage: number }) {
           {/* Flowering tips with gentle sway */}
           <motion.circle
             cx="78" cy="103" r="4" fill="#C8E6C9"
+            initial={{ cy: 103 }}
             animate={{ cy: [103, 100, 103] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
           />
           <motion.circle
             cx="122" cy="103" r="4" fill="#C8E6C9"
+            initial={{ cy: 103 }}
             animate={{ cy: [103, 100, 103] }}
             transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
           />
           <motion.circle
             cx="100" cy="98" r="5" fill="#A5D6A7"
+            initial={{ cy: 98 }}
             animate={{ cy: [98, 95, 98] }}
             transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
           />
           <motion.circle
             cx="70" cy="93" r="3" fill="#E8F5E9"
+            initial={{ cy: 93 }}
             animate={{ cy: [93, 90, 93] }}
             transition={{ repeat: Infinity, duration: 3.2, ease: "easeInOut" }}
           />
           <motion.circle
             cx="130" cy="93" r="3" fill="#E8F5E9"
+            initial={{ cy: 93 }}
             animate={{ cy: [93, 90, 93] }}
             transition={{ repeat: Infinity, duration: 3.4, ease: "easeInOut" }}
           />

@@ -7,6 +7,10 @@
     "src/components/garden/**/*.tsx",
     "src/components/garden/**/*.ts",
     "src/hooks/use-garden.ts",
+    "src/hooks/use-garden-adventure.ts",
+    "src/hooks/use-garden-buddy-invitations.ts",
+    "src/hooks/use-os-buddy.ts",
+    "src/components/os-buddy/OSBuddyDock.tsx",
     "src/lib/garden/**/*.ts",
     "src/lib/i18n/garden-game-ui.ts",
     "src/lib/repositories/garden.ts"
