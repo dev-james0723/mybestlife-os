@@ -7,8 +7,9 @@ import type {
   PlantType,
   GardenItemType,
 } from "@/types/database";
+import { gardenDay, dayBefore } from "@/lib/garden/game";
 
-const POINTS_PER_STAGE: Record<PlantType, number> = {
+export const POINTS_PER_STAGE: Record<PlantType, number> = {
   grass: 3,
   sunflower: 5,
   lily: 6,
@@ -29,7 +30,38 @@ async function requireUserId(): Promise<string> {
   return user.id;
 }
 
+async function recordDailyCare(userId: string, day: string): Promise<void> {
+  const { error } = await createClient().from("garden_daily_log").upsert(
+    { user_id: userId, log_date: day, watered: true }, { onConflict: "user_id,log_date" },
+  );
+  if (error) throw error;
+}
+
 export const gardenRepository = {
+  async getCareHistory(day = gardenDay()): Promise<{ dates: string[]; total: number }> {
+    const supabase = createClient();
+    const userId = await requireUserId();
+    const [history, total] = await Promise.all([
+      supabase.from("garden_daily_log").select("log_date").eq("user_id", userId).eq("watered", true).gte("log_date", dayBefore(day, 6)).lte("log_date", day),
+      supabase.from("garden_daily_log").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("watered", true).lte("log_date", day),
+    ]);
+    if (history.error) throw history.error;
+    if (total.error) throw total.error;
+    return { dates: (history.data ?? []).map(row => row.log_date as string), total: total.count ?? 0 };
+  },
+
+  async getLifeActivity(day = gardenDay()): Promise<{ task: boolean; journal: boolean; unavailable: boolean }> {
+    const supabase = createClient();
+    const userId = await requireUserId();
+    const nextDay = dayBefore(day, -1);
+    // Existence only: no task descriptions or private journal content enters the game.
+    const [tasks, journal] = await Promise.all([
+      supabase.from("tasks").select("id").eq("user_id", userId).eq("status", "done").gte("completed_at", `${day}T00:00:00Z`).lt("completed_at", `${nextDay}T00:00:00Z`).limit(1),
+      supabase.from("journal_entries").select("id").eq("user_id", userId).eq("entry_date", day).limit(1),
+    ]);
+    return { task: !tasks.error && !!tasks.data?.length, journal: !journal.error && !!journal.data?.length, unavailable: !!tasks.error || !!journal.error };
+  },
+
   async getActiveGarden(): Promise<UserGarden | null> {
     const supabase = createClient();
     const { data, error } = await supabase
@@ -79,6 +111,7 @@ export const gardenRepository = {
 
   async waterPlant(): Promise<UserGarden> {
     const supabase = createClient();
+    const userId = await requireUserId();
     const { data: garden, error: fetchErr } = await supabase
       .from("user_garden")
       .select("*")
@@ -87,8 +120,12 @@ export const gardenRepository = {
 
     const today = new Date().toISOString().slice(0, 10);
     if (garden.last_watered_at === today) {
+      // A previous growth write may have succeeded before its log write failed.
+      // Repair that partial save on retry without granting growth again.
+      await recordDailyCare(userId, today);
       return garden;
     }
+    if (garden.growth_stage >= 5) return garden;
 
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const isConsecutive = garden.last_watered_at === yesterday;
@@ -108,7 +145,8 @@ export const gardenRepository = {
       remainingPoints = totalPoints - threshold;
     }
 
-    const { data, error } = await supabase
+    // Compare-and-set prevents two devices from overwriting each other's growth.
+    let update = supabase
       .from("user_garden")
       .update({
         growth_points: remainingPoints,
@@ -118,17 +156,18 @@ export const gardenRepository = {
         is_wilted: false,
       })
       .eq("id", garden.id)
-      .select()
-      .single();
+      .eq("growth_stage", garden.growth_stage)
+      .eq("growth_points", garden.growth_points);
+    update = garden.last_watered_at === null ? update.is("last_watered_at", null) : update.eq("last_watered_at", garden.last_watered_at);
+    const { data, error } = await update.select().maybeSingle();
     if (error) throw error;
+    if (!data) {
+      const current = await gardenRepository.getActiveGarden();
+      if (current?.last_watered_at === today) { await recordDailyCare(userId, today); return current; }
+      throw new Error("Garden changed on another device. Please try again.");
+    }
 
-    const userId = await requireUserId();
-    await supabase
-      .from("garden_daily_log")
-      .upsert(
-        { user_id: userId, log_date: today, watered: true },
-        { onConflict: "user_id,log_date" }
-      );
+    await recordDailyCare(userId, today);
 
     return data;
   },
@@ -298,7 +337,6 @@ export const gardenRepository = {
 
     if (!garden || garden.is_wilted) return garden;
 
-    const today = new Date().toISOString().slice(0, 10);
     if (garden.last_watered_at && garden.last_watered_at < new Date(Date.now() - 86400000).toISOString().slice(0, 10)) {
       const { data, error } = await supabase
         .from("user_garden")
@@ -325,5 +363,11 @@ export function getPlantUnlockRequirement(plantType: PlantType): number {
 }
 
 export function getPlantBloomDays(plantType: PlantType): number {
-  return POINTS_PER_STAGE[plantType] * 5;
+  let stage = 1, points = 0, days = 0;
+  while (stage < 5) {
+    days++;
+    points += Math.ceil(STREAK_BONUS_MULTIPLIER(days));
+    if (points >= POINTS_PER_STAGE[plantType]) { stage++; points -= POINTS_PER_STAGE[plantType]; }
+  }
+  return days;
 }

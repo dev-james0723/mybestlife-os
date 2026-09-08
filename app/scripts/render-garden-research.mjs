@@ -1,0 +1,13 @@
+import { readFile, writeFile } from "node:fs/promises";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+const source = await readFile("../docs/garden-research/report-source.md", "utf8");
+const content = renderToStaticMarkup(React.createElement(Markdown, { remarkPlugins: [remarkGfm] }, source));
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A garden worth returning to · My Best Life OS</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5ef;color:#20302a;font:16px/1.85 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1040px;margin:48px auto;padding:58px 64px;background:#fffffff2;border:1px solid #dce3d8;border-radius:24px;box-shadow:0 12px 48px #20302a08}.brand{display:flex;align-items:center;gap:9px;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#697d61}.brand i{display:block;width:12px;height:12px;background:#b6cc92;border-radius:50%}h1{font-size:clamp(34px,5vw,56px);line-height:1.12;letter-spacing:-.06em;font-weight:550;margin:30px 0 20px;max-width:720px}h1+p{font-size:13px;color:#748071;margin-bottom:40px}h2{font-size:24px;line-height:1.35;letter-spacing:-.03em;margin:42px 0 16px;font-weight:600}p{margin:14px 0;color:#495a50}a{color:#4f752f;text-underline-offset:3px}strong{font-weight:650;color:#20372a}table{border-collapse:collapse;width:100%;font-size:12px;line-height:1.6;margin:24px 0}th{background:#ecf1e6;text-align:left;color:#405c33;font-size:10px;text-transform:uppercase;letter-spacing:.08em}td,th{padding:15px 12px;border:1px solid #dce3d8;vertical-align:top}td:first-child{min-width:105px}footer{border-top:1px solid #dce3d8;margin-top:44px;padding-top:18px;font-size:11px;color:#798674}.table-wrap{overflow:auto}@media(max-width:700px){main{margin:0;padding:32px 22px;border-radius:0}table{display:block;overflow:auto}td{min-width:180px}h2{font-size:21px}}@media print{body{background:white}main{margin:0;padding:0;border:0;box-shadow:none;max-width:none}h2{break-after:avoid}tr{break-inside:avoid}a{color:#405c33}p{orphans:3;widows:3}@page{size:A4;margin:18mm}}
+</style></head><body><main><div class="brand"><i></i>My Best Life OS / Product research</div>${content}<footer>Prepared for the My Garden 3D redesign · Evidence reviewed before implementation · Retention outcomes remain to be measured</footer></main></body></html>`;
+await writeFile("../docs/garden-research/garden-retention-research.html", html);
+console.log("Created docs/garden-research/garden-retention-research.html");

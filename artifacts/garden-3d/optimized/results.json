@@ -1,0 +1,192 @@
+{
+  "execution": "browser fixtures; no live writes",
+  "results": [
+    {
+      "name": "desktop",
+      "diagnostics": {
+        "calls": 79,
+        "triangles": 55796,
+        "geometries": 50,
+        "textures": 1,
+        "dpr": 1,
+        "fps": 30,
+        "player": {
+          "x": -1.9200000000000008,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "pixels": {
+        "sampledVisible": 135413,
+        "colorBins": 260
+      },
+      "audioNotes": 11,
+      "errors": [],
+      "rendererErrors": [],
+      "writes": [
+        {
+          "table": "user_garden",
+          "method": "PATCH"
+        },
+        {
+          "table": "garden_daily_log",
+          "method": "POST"
+        }
+      ],
+      "reloadCare": true
+    },
+    {
+      "name": "phone",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 53660,
+        "geometries": 45,
+        "textures": 0,
+        "dpr": 1,
+        "fps": 455,
+        "player": {
+          "x": -1.7250000997023156,
+          "z": 1.7763568394002505e-15
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "small-phone",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 53660,
+        "geometries": 45,
+        "textures": 0,
+        "dpr": 1,
+        "fps": 20,
+        "player": {
+          "x": 0,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "tablet-dark",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 53660,
+        "geometries": 45,
+        "textures": 0,
+        "dpr": 1,
+        "fps": 20,
+        "player": {
+          "x": 0,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "landscape",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 53660,
+        "geometries": 45,
+        "textures": 0,
+        "dpr": 1,
+        "fps": 20,
+        "player": {
+          "x": 0,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "zh-dark",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 53660,
+        "geometries": 45,
+        "textures": 0,
+        "dpr": 1,
+        "fps": 30,
+        "player": {
+          "x": 0,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "no-webgl",
+      "overflow": false,
+      "diagnostics": null,
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "empty",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 51684,
+        "geometries": 45,
+        "textures": 1,
+        "dpr": 1,
+        "fps": 60,
+        "player": {
+          "x": 0,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "unavailable",
+      "overflow": false,
+      "diagnostics": {
+        "calls": 82,
+        "triangles": 53660,
+        "geometries": 45,
+        "textures": 1,
+        "dpr": 1,
+        "fps": 149,
+        "player": {
+          "x": 0,
+          "z": 2.1
+        },
+        "phase": "playing"
+      },
+      "errors": [],
+      "rendererErrors": [],
+      "writes": []
+    },
+    {
+      "name": "timeout-continue-retry",
+      "errors": [],
+      "rendererErrors": []
+    }
+  ]
+}

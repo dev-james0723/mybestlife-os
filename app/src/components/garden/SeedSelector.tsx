@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { osSheenClassName, osSolidPanelClassName } from "@/components/ui/os-glass";
 import { usePlantSeed, useGardenCollection } from "@/hooks/use-garden";
-import { getPlantUnlockRequirement } from "@/lib/repositories/garden";
+import { getPlantUnlockRequirement, getPlantBloomDays } from "@/lib/repositories/garden";
 import { useAppStore } from "@/stores/app-store";
 import { getGardenUiCopy } from "@/lib/i18n/garden-ui";
 import type { PlantType } from "@/types/database";
@@ -121,7 +121,7 @@ export function SeedSelector() {
 
               <Badge variant="outline" className="mt-auto gap-1 border-border/60 bg-background/70 text-xs">
                 <Clock className="h-3 w-3" />
-                {ui.bloomDays(plant.bloomDays)}
+                {ui.bloomDays(getPlantBloomDays(plant.type))}
               </Badge>
             </motion.button>
           );

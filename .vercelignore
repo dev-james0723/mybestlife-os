@@ -13,3 +13,4 @@ services/
 .cursor/
 .agents/
 artifacts/
+**/.next-garden-*/

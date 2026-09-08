@@ -125,11 +125,11 @@ export function DailyChest() {
             >
               <div className="relative">
                 <Gift className="h-12 w-12 text-amber-600 dark:text-amber-400" />
-                {!isOpening && !reduceMotion && (
+                {!isOpening && (
                   <motion.div
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className="absolute -right-1 -top-1"
+                    animate={reduceMotion ? undefined : { scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ repeat: reduceMotion ? 0 : Infinity, duration: 2 }}
+                    className="absolute -right-1 -top-1 motion-reduce:hidden"
                   >
                     <Sparkles className="h-4 w-4 text-amber-400" />
                   </motion.div>

@@ -1,60 +1,35 @@
 "use client";
 
-import { useEffect } from "react";
 import { PageShell } from "@/components/shared/page-shell";
-import { LoadingPage } from "@/components/shared/loading-state";
-import { GardenView } from "@/components/garden/GardenView";
+import { GardenGame } from "@/components/garden/GardenGame";
 import { DailyChest } from "@/components/garden/DailyChest";
-import { SeedSelector } from "@/components/garden/SeedSelector";
 import { PlantCollection } from "@/components/garden/PlantCollection";
 import { InventoryBar } from "@/components/garden/InventoryBar";
 import { BioLabToolsSection } from "@/components/bio-lab/bio-lab-tools-section";
 import { GardenBioLabQuerySync } from "@/components/bio-lab/garden-bio-lab-query-sync";
-import { useActiveGarden, useCheckWilt } from "@/hooks/use-garden";
 import { useAppStore } from "@/stores/app-store";
 import { getGardenUiCopy } from "@/lib/i18n/garden-ui";
-import { getGardenHubPageDescription } from "@/lib/i18n/bio-lab-tools-ui";
-import { useTheme } from "@/lib/theme-context";
+import { getGardenGameCopy } from "@/lib/i18n/garden-game-ui";
 import { OSMotionPanel } from "@/components/ui/os-primitives";
 
 export default function GardenPage() {
   const language = useAppStore((s) => s.language);
-  const { uiTheme } = useTheme();
   const ui = getGardenUiCopy(language);
-  const pageDescription = getGardenHubPageDescription(language, uiTheme);
-  const { data: garden, isLoading, isFetched } = useActiveGarden();
-  const checkWilt = useCheckWilt();
-
-  useEffect(() => {
-    if (isFetched && garden && !garden.is_wilted) {
-      checkWilt.mutate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFetched]);
-
-  if (isLoading) return <LoadingPage />;
-
-  const hasActivePlant = !!garden;
+  const gameUi = getGardenGameCopy(language);
 
   return (
     <PageShell
       title={ui.pageTitle}
-      description={pageDescription}
+      description={gameUi.subtitle}
     >
       <OSMotionPanel className="space-y-6">
         <GardenBioLabQuerySync />
+        <GardenGame />
+        <details className="rounded-2xl border border-border/60 bg-background/50 p-5">
+          <summary className="min-h-11 cursor-pointer content-center text-sm font-medium">{gameUi.collection}</summary>
+          <div className="space-y-5 pt-5"><DailyChest /><InventoryBar /><PlantCollection /></div>
+        </details>
         <BioLabToolsSection />
-
-        <DailyChest />
-        <InventoryBar />
-
-        {hasActivePlant ? (
-          <GardenView garden={garden} />
-        ) : (
-          <SeedSelector />
-        )}
-
-        <PlantCollection />
       </OSMotionPanel>
     </PageShell>
   );
