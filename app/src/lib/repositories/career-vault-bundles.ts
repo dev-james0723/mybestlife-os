@@ -6,6 +6,7 @@ import type {
 } from "@/types/career-vault";
 
 export type CreateBundleInput = {
+  id?: string;
   name: string;
   description?: string | null;
   bundleType?: CareerVaultBundleType | null;
@@ -54,7 +55,8 @@ export const careerVaultBundlesRepository = {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("career_vault_bundles")
-      .insert({
+      .upsert({
+        ...(input.id ? { id: input.id } : {}),
         name: input.name,
         description: input.description ?? null,
         bundle_type: input.bundleType ?? null,
@@ -63,7 +65,7 @@ export const careerVaultBundlesRepository = {
         cover_title: input.coverTitle ?? null,
         cover_subtitle: input.coverSubtitle ?? null,
         cover_recipient: input.coverRecipient ?? null,
-      })
+      }, { onConflict: "id" })
       .select()
       .single();
     if (error) throw error;
@@ -107,10 +109,11 @@ export const careerVaultBundlesRepository = {
 
   async markExported(id: string): Promise<void> {
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from("career_vault_bundles")
       .update({ last_exported_at: new Date().toISOString() })
       .eq("id", id);
+    if (error) throw error;
   },
 
   /** Load all vault files referenced in `file_order`, keeping the order. */

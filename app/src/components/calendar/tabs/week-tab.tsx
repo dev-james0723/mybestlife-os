@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +23,6 @@ export function WeekTab() {
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
   const isMobile = useIsMobile();
-  const prefersReduced = useReducedMotion();
   const { data: items, isLoading } = useCalendarItems();
 
   const [anchor, setAnchor] = useState(() => new Date());
@@ -44,7 +42,7 @@ export function WeekTab() {
     return (
       <div className="space-y-3">
         <GlassPanel className="calendar-specular-highlight p-3 text-xs text-muted-foreground">
-          Week view collapses to Agenda on mobile for legibility. Flip to landscape or use a larger viewport for the 7-column grid.
+          {language.startsWith("zh") ? "手機以清單顯示行程。" : "Your schedule is shown as a list on this screen."}
         </GlassPanel>
         <AgendaTab />
       </div>
@@ -52,11 +50,8 @@ export function WeekTab() {
   }
 
   return (
-    <motion.div
+    <div
       data-calendar-surface
-      initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
       className="space-y-3"
     >
       <div className="flex items-center gap-2">
@@ -145,6 +140,6 @@ export function WeekTab() {
           })}
         </div>
       </GlassPanel>
-    </motion.div>
+    </div>
   );
 }

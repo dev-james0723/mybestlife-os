@@ -126,6 +126,7 @@ export function AiKnowledgeFilterBar({
 
       <Select
         value={activeTopCategory ?? ALL_VALUE}
+        itemToStringLabel={(value) => value === ALL_VALUE ? ui.filters.allCategories : ui.topCategoryLabels[value as PromptTopCategory] ?? String(value)}
         onValueChange={(v) =>
           onTopCategoryChange(v === ALL_VALUE ? null : (v as PromptTopCategory))
         }
@@ -149,6 +150,7 @@ export function AiKnowledgeFilterBar({
       {subCategories.length > 0 && (
         <Select
           value={activeSubCategorySlug ?? ALL_VALUE}
+          itemToStringLabel={(value) => value === ALL_VALUE ? ui.filters.allSubcategories : pickLocalizedText(subCategories.find((category) => category.slug === value)?.name_i18n ?? { en: String(value) }, language)}
           onValueChange={(v) =>
             onSubCategoryChange(v === ALL_VALUE ? null : v)
           }
@@ -175,6 +177,7 @@ export function AiKnowledgeFilterBar({
       {availableTags.length > 0 && (
         <Select
           value={activeTag ?? ALL_VALUE}
+          itemToStringLabel={(value) => value === ALL_VALUE ? ui.filters.tagFilterPlaceholder : `#${value}`}
           onValueChange={(v) => onTagChange(v === ALL_VALUE ? null : v)}
         >
           <SelectTrigger

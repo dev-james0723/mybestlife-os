@@ -10,8 +10,8 @@ import { useAppStore } from "@/stores/app-store";
 import { getCareerMirrorUiCopy } from "@/lib/i18n/career-mirror-ui";
 import {
   computeMissingFields,
-  computeSetupCompletionScore,
 } from "@/lib/career-mirror/careerSetupMapping";
+import { getSetupProgress } from "@/lib/career-mirror/setup-progress";
 import type { SetupAnswers } from "@/lib/career-mirror/careerSetupTypes";
 import { cn } from "@/lib/utils";
 import type { CareerProfile } from "@/types/database";
@@ -45,7 +45,8 @@ export function CompletionWidget({
   const copy = getCareerMirrorUiCopy(language).completion;
 
   const answers = (profile?.setup_answers ?? {}) as SetupAnswers;
-  const score = computeSetupCompletionScore(answers);
+  const progress = getSetupProgress(answers);
+  const score = progress.percent;
   const missing = computeMissingFields(
     (profile as Record<string, unknown> | null) ?? null,
   ).slice(0, 4);
@@ -65,20 +66,20 @@ export function CompletionWidget({
           <Target className="size-5" />
         </span>
         <h2 className="font-heading text-base font-semibold">
-          {copy.widgetTitle}
+          {language.startsWith("zh") ? "問卷與資料" : "Questionnaire & profile"}
         </h2>
       </header>
 
       <div className="mt-4">
         <Progress value={score} className="gap-1.5">
-          <ProgressLabel>{copy.scoreLabel(score)}</ProgressLabel>
+          <ProgressLabel>{language.startsWith("zh") ? "基本問卷" : "Core questionnaire"} · {progress.answered}/{progress.total}</ProgressLabel>
           <ProgressValue />
         </Progress>
       </div>
 
       <div className="mt-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {copy.missingTitle}
+          {language.startsWith("zh") ? "其他可補充的資料" : "Other profile fields you can add"}
         </p>
         {missing.length > 0 ? (
           <ul className="mt-2 flex flex-wrap gap-1.5">

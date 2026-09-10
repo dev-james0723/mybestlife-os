@@ -69,6 +69,7 @@ import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { IconPackSwitcher } from "@/components/settings/icon-pack-switcher";
 import { VoiceSpeechSection } from "@/components/settings/voice-speech-section";
 import { OSBuddySettingsSection } from "@/components/settings/os-buddy-settings-section";
+import { GardenAppearanceSettings } from "@/components/garden/GardenPresentationControls";
 import type {
   UserProfile,
   BlockMinutesOption,
@@ -495,14 +496,16 @@ export default function SettingsPage() {
       }
     >
       <div className="mx-auto grid w-full max-w-6xl gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)] xl:items-start">
-        <div className="min-w-0 space-y-6">
+        <div className="order-2 min-w-0 space-y-6">
           <ThemeSwitcher />
           <IconPackSwitcher />
           <VoiceSpeechSection />
           <OSBuddySettingsSection />
+          <GardenAppearanceSettings />
         </div>
 
-        <div className="min-w-0 space-y-6">
+        <div className="order-1 min-w-0 space-y-6">
+          <Card><CardHeader><CardTitle>{language.startsWith("zh") ? "帳戶、資料與使用說明" : "Account, data and help"}</CardTitle></CardHeader><CardContent className="flex flex-wrap gap-2"><Button variant="outline" render={<Link href={privacyHref} />}>{language.startsWith("zh") ? "資料與私隱" : "Data and privacy"}</Button><Button variant="outline" render={<Link href={privacyHref.replace(/privacy$/, "help")} />}>{language.startsWith("zh") ? "重新查看使用說明" : "Getting started"}</Button><Button variant="outline" render={<Link href={privacyHref.replace(/privacy$/, "settings/ai-preferences")} />}>{language.startsWith("zh") ? "AI 偏好" : "AI preferences"}</Button></CardContent></Card>
           <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

@@ -44,7 +44,7 @@ export function AiHabitBuilderDialog({
   copy,
 }: AiHabitBuilderDialogProps) {
   const language = useAppStore((s) => s.language);
-  const create = useCreateHabit();
+  const create = useCreateHabit({ generateVisual: true });
   const steps = copy.aiWizardSteps;
   const initialAnswers = useMemo(() => makeInitialAnswers(steps), [steps]);
   const [stepIndex, setStepIndex] = useState(0);

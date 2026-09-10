@@ -66,6 +66,7 @@ interface OSBuddyRuntimeState {
     type: OSBuddyBubbleType;
     kind?: OSBuddyCompanionKind;
     cta?: OSBuddyCompanionCta | null;
+    gardenInvitation?: { id: string; account: string };
     createdAt: number;
     isDismissing: boolean;
   } | null;
@@ -139,6 +140,7 @@ interface OSBuddyRuntimeState {
       unsolicited?: boolean;
       kind?: OSBuddyCompanionKind;
       cta?: OSBuddyCompanionCta | null;
+      gardenInvitation?: { id: string; account: string };
     },
   ) => void;
 
@@ -326,6 +328,7 @@ export const useOSBuddyStore = create<OSBuddyRuntimeState>((set, get) => ({
         type,
         kind: options?.kind,
         cta: options?.cta ?? null,
+        gardenInvitation: options?.gardenInvitation,
         createdAt: now,
         isDismissing: false,
       },

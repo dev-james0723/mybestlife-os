@@ -137,6 +137,7 @@ export function TagManager() {
           <p className="mt-1 text-sm text-muted-foreground">
             {copy.tags.emptyDescription}
           </p>
+          <Button className="mt-4 min-h-11" render={<Link href={vaultHref} />}>{language.startsWith("zh") ? "管理或上傳職涯材料" : "Manage or upload career materials"}</Button>
         </div>
       ) : (
         <>

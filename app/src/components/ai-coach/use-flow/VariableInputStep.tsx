@@ -51,7 +51,7 @@ export function VariableInputStep({
             ({ v, isReq }) => (
               <div key={v} className="grid gap-1.5">
                 <Label htmlFor={`var-${v}`} className="flex items-center gap-2">
-                  <span className="font-mono text-xs">[{v}]</span>
+                  <span>{humanize(v.replace(/[\[\]]/g, ""))}</span>
                   <Badge
                     variant={isReq ? "default" : "outline"}
                     className="font-normal"

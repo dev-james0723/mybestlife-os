@@ -39,7 +39,8 @@ type Props = {
 export function RoleModelPatternBanner({ roster, aboutMe, onAddRoleModel }: Props) {
   const reduce = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
-  const { report, generate, isPeeking } = useRoleModelPatterns(roster, aboutMe);
+  const [includeAboutMe, setIncludeAboutMe] = useState(false);
+  const { report, generate, isPeeking } = useRoleModelPatterns(roster, includeAboutMe ? aboutMe : null);
 
   // Needs at least a couple of role models to find a pattern.
   if (roster.length < 2) return null;
@@ -86,6 +87,7 @@ export function RoleModelPatternBanner({ roster, aboutMe, onAddRoleModel }: Prop
             className="overflow-hidden"
           >
             <div className="space-y-4 border-t border-border/50 p-4">
+              <details className="rounded-xl border p-3 text-sm"><summary className="min-h-11 cursor-pointer">Information used for this analysis</summary><p className="mb-3 text-xs text-muted-foreground">Your role model collection will be sent for AI analysis. About Me notes are optional.</p><label className="flex min-h-11 gap-3"><input type="checkbox" checked={includeAboutMe} disabled={generating} onChange={(event) => setIncludeAboutMe(event.target.checked)} />Include my mission, core values and personality notes</label><p className="whitespace-pre-wrap text-xs text-muted-foreground">{[aboutMe?.mission, aboutMe?.coreValues, aboutMe?.personality].filter(Boolean).join("\n\n").replace(/<[^>]*>/g, "") || "No personal notes saved."}</p></details>
               {!report && !isPeeking && !generating ? (
                 <div className="text-center">
                   <p className="mb-3 text-sm text-muted-foreground">

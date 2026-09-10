@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { JapaneseStudySession, Task } from "@/types/database";
+import type { JapaneseStudySession, JournalEntry, Task } from "@/types/database";
 import { getAnalyticsDateRange } from "./date-range";
-import { computeMomentumWave } from "./compute-life-pulse";
+import { computeLifePulse, computeMomentumWave } from "./compute-life-pulse";
 
 const NOW = new Date(2026, 5, 7, 12, 0, 0);
 
@@ -92,5 +92,28 @@ describe("computeMomentumWave", () => {
     expect(wave.granularity).toBe("month");
     expect(wave.points.length).toBeLessThanOrEqual(30);
     expect(wave.points.reduce((sum, point) => sum + point.completedTasks, 0)).toBe(2);
+  });
+});
+
+
+describe("emotional load evidence threshold", () => {
+  const range = getAnalyticsDateRange({ source: "preset", key: "7D" }, NOW);
+  const calculate = (journalEntries: JournalEntry[]) => computeLifePulse({ range, tasks: [], projects: [], goals: [], journalEntries, studySessions: [], dailyPlans: [], brainGraph: null }).pulseScores.find((score) => score.key === "emotional_load");
+  const entry = (quadrant: JournalEntry["quadrant"]): JournalEntry => ({
+    id: "entry", userId: "user", entryDate: "2026-06-07", topic: "general", quadrant,
+    primaryEmotion: "calm", secondaryEmotion: null, intensity: 5, target: null, bullets: { items: [] },
+    selfStory: null, needs: { items: [] }, nextTinyStep: "", appreciation: null, topicExtras: null,
+    contextFactors: null, projectIds: [], taskIds: [], aiOutput: null, aiMedia: null, source: "manual",
+    createdAt: "2026-06-07T00:00:00Z", updatedAt: "2026-06-07T00:00:00Z",
+  });
+  it("omits an exact score with zero or one emotion entry", () => {
+    expect(calculate([])?.score).toBeNull();
+    expect(calculate([entry("GREEN")])?.score).toBeNull();
+  });
+  it("does not treat unclassified quick notes as recorded emotions", () => {
+    expect(calculate([entry(null), entry(null), entry(null), entry("GREEN")])?.score).toBeNull();
+  });
+  it("only calculates after three recorded emotions", () => {
+    expect(calculate([entry("GREEN"), entry("RED"), entry("BLUE")])?.score).toEqual(expect.any(Number));
   });
 });

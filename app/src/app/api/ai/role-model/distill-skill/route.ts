@@ -19,6 +19,7 @@ import {
   getGeminiServerApiKey,
 } from "@/lib/ai/gemini-text";
 import { errorResponse, requireAuthedContext } from "../../habits/_shared";
+import { packageNeuralSkill } from "@/lib/relationships/neural-skill-generation";
 import {
   NeuralSkillContentZ,
   NeuralSkillGeminiSchema,
@@ -69,7 +70,12 @@ function profileFallbackResponse(
   reason: FallbackReason,
 ) {
   return NextResponse.json({
-    result: buildProfileNeuralSkillFallback(context),
+    result: packageNeuralSkill(buildProfileNeuralSkillFallback(context), {
+      protocol: "nuwa-v1",
+      generatedAt: new Date().toISOString(),
+      mode: "profile_fallback",
+      researchNotes: "",
+    }),
     warning: {
       code: "profile_fallback",
       reason,
@@ -102,6 +108,9 @@ export async function POST(request: Request) {
   }
 
   const apiKey = getGeminiServerApiKey();
+  const requireResearch = bodyJson.requireResearch === true;
+  const unavailable = () => NextResponse.json({ error: "research_unavailable" }, { status: 503 });
+  if (!apiKey && requireResearch) return unavailable();
   if (!apiKey) return profileFallbackResponse(context, "missing_api_key");
 
   try {
@@ -130,6 +139,8 @@ export async function POST(request: Request) {
       // chance to use the configured fallback model.
       console.warn("[role-model/distill-skill] grounded research unavailable", { reason });
     }
+
+    if (!researchNotes && requireResearch) return unavailable();
 
     // Nuwa phases 2-3: turn evidence into an executable thinking lens.
     const { data, modelUsed } = await fetchGeminiStructured<unknown>({
@@ -165,7 +176,7 @@ export async function POST(request: Request) {
     // Belt-and-suspenders: enforce the impersonation guardrail server-side.
     const content = parsed.data;
     if (!/never claim to be/i.test(content.systemPromptHint)) {
-      const guardrail = `Never claim to be ${context.roleModel.name}; you are an interpretive lens only.`;
+      const guardrail = `Never claim to be ${context.roleModel.name} in real life. Use first-person reasoning in this disclosed AI simulation.`;
       const prefix = content.systemPromptHint
         .slice(0, Math.max(0, 1200 - guardrail.length - 1))
         .trimEnd();
@@ -173,7 +184,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      result: content,
+      result: packageNeuralSkill(content, {
+        protocol: "nuwa-v1",
+        generatedAt: new Date().toISOString(),
+        mode: researchNotes ? "grounded" : "profile_synthesis",
+        researchNotes,
+      }),
       meta: {
         modelUsed,
         researchModelUsed,
@@ -184,6 +200,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const reason = recoverableAiFailure(error);
     if (!reason) return errorResponse(error);
+    if (requireResearch) return unavailable();
     console.warn("[role-model/distill-skill] using profile fallback", { reason });
     return profileFallbackResponse(context, reason);
   }

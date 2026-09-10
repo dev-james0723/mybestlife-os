@@ -22,7 +22,10 @@ import { cn } from "@/lib/utils";
 import { useBucketItems } from "@/hooks/use-bucket-list";
 import { useBucketListStore } from "@/stores/bucket-list-store";
 import { useBucketListFirstVisit } from "@/hooks/use-bucket-list-first-visit";
-import type { BucketItem } from "@/types/bucket-list";
+import { BUCKET_STATUSES, type BucketItem, type BucketStatus } from "@/types/bucket-list";
+import { filterBucketItems } from "@/lib/bucket-list/filter-items";
+import { getBucketStatusLabel } from "@/lib/bucket-list/presentation";
+import { Input } from "@/components/ui/input";
 
 import { BucketStatsStrip } from "./stats-strip";
 import { BucketTypeFilterTabs } from "./type-filter-tabs";
@@ -65,6 +68,7 @@ export function BucketListShell() {
     isLoading,
     refetch,
   } = useBucketItems();
+  const clearFilters = useBucketListStore((s) => s.clearFilters);
   const filters = useBucketListStore((s) => s.filters);
   const viewMode = useBucketListStore((s) => s.viewMode);
   const setSelectedBucketId = useBucketListStore((s) => s.setSelectedBucketId);
@@ -72,40 +76,12 @@ export function BucketListShell() {
   const openAiWizard = useBucketListStore((s) => s.openAiWizard);
   const openActivateModal = useBucketListStore((s) => s.openActivateModal);
 
-  const filtered = useMemo(() => {
-    if (!items) return [];
-    return items.filter((item) => {
-      if (!filters.includeClosed) {
-        if (item.status === "completed" || item.status === "archived") {
-          return false;
-        }
-      }
-      if (filters.types.length > 0 && !filters.types.includes(item.type)) {
-        return false;
-      }
-      if (
-        filters.statuses.length > 0 &&
-        !filters.statuses.includes(item.status)
-      ) {
-        return false;
-      }
-      if (filters.featuredOnly && !item.is_featured) return false;
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const haystack = [
-          item.title,
-          item.description,
-          item.why_this_matters,
-          ...item.category_tags,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [items, filters]);
+  const setSearch = useBucketListStore((s) => s.setSearch);
+  const setStatuses = useBucketListStore((s) => s.setStatuses);
+  const setIncludeClosed = useBucketListStore((s) => s.setIncludeClosed);
+  const filtered = useMemo(() => filterBucketItems(items ?? [], filters), [items, filters]);
+  const statusFilter = filters.statuses[0] ?? (filters.includeClosed ? "all" : "open");
+
 
   const realized = useMemo(() => {
     if (!items) return [] as BucketItem[];
@@ -202,6 +178,28 @@ export function BucketListShell() {
             onOpenItem={setSelectedBucketId}
           />
 
+          <div className="flex min-w-0 flex-wrap items-end gap-3">
+            <label className="min-w-0 flex-1 space-y-1 text-xs font-medium">
+              <span>{language.startsWith("zh") ? "搜尋夢想" : "Search dreams"}</span>
+              <Input type="search" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
+            </label>
+            <label className="min-w-0 space-y-1 text-xs font-medium">
+              <span className="block">{language.startsWith("zh") ? "狀態" : "Status"}</span>
+              <select className="h-9 max-w-full rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-ring" value={statusFilter} onChange={(event) => {
+                const value = event.target.value;
+                setStatuses(value === "open" || value === "all" ? [] : [value as BucketStatus]);
+                setIncludeClosed(value !== "open");
+              }}>
+                <option value="open">{language.startsWith("zh") ? "未完成的夢想" : "Open dreams"}</option>
+                <option value="all">{language.startsWith("zh") ? "所有狀態" : "All statuses"}</option>
+                {BUCKET_STATUSES.map((status) => <option key={status} value={status}>{getBucketStatusLabel(status, copy)}</option>)}
+              </select>
+            </label>
+            <p role="status" className="basis-full text-xs text-muted-foreground">
+              {language.startsWith("zh") ? `顯示 ${filtered.length} / ${items?.length ?? 0} 個夢想` : `Showing ${filtered.length} of ${items?.length ?? 0} dreams`}
+            </p>
+          </div>
+
           <BucketTypeFilterTabs />
 
           <DreamPatternBanner items={items} copy={copy} />
@@ -221,6 +219,7 @@ export function BucketListShell() {
                     icon={Compass}
                     title={copy.emptyFilteredTitle}
                     description={copy.emptyFilteredDescription}
+                    action={{ label: language.startsWith("zh") ? "清除篩選" : "Clear filters", onClick: clearFilters, showPlus: false }}
                   />
                 )}
               </motion.div>

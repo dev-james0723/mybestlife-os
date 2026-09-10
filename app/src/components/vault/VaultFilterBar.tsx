@@ -65,9 +65,10 @@ export function VaultFilterBar({ entries }: Props) {
       value: filters.costTier,
       options: [
         { value: "free", label: "Free" },
-        { value: "low", label: "< $10/mo" },
-        { value: "mid", label: "$10–30/mo" },
-        { value: "high", label: "$30+/mo" },
+        { value: "unknown", label: language.startsWith("zh") ? "未記錄／非美元／非定期" : "Unrecorded / other currency / non-recurring" },
+        { value: "low", label: "< USD 10/mo" },
+        { value: "mid", label: "USD 10–30/mo" },
+        { value: "high", label: "USD 30+/mo" },
       ],
     },
     ...(categories.length > 0

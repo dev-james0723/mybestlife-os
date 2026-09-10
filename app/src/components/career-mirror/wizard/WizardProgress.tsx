@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import type { CareerMirrorUiCopy } from "@/lib/i18n/career-mirror-ui";
 
@@ -9,6 +10,7 @@ export type WizardProgressProps = {
   /** 1-based index of the current step. */
   current: number;
   total: number;
+  progress: { answered: number; total: number; percent: number };
   ui: CareerMirrorUiCopy;
   className?: string;
 };
@@ -21,12 +23,14 @@ export type WizardProgressProps = {
 export function WizardProgress({
   current,
   total,
+  progress,
   ui,
   className,
 }: WizardProgressProps) {
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
   const safeTotal = Math.max(total, 1);
   const clamped = Math.min(Math.max(current, 1), safeTotal);
-  const percent = Math.round((clamped / safeTotal) * 100);
+  const percent = progress.percent;
 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
@@ -39,13 +43,13 @@ export function WizardProgress({
         aria-label={ui.hero.progressLabel(percent)}
       >
         <div
-          className="h-full rounded-full bg-[linear-gradient(135deg,var(--accent-pink-from),var(--accent-pink-to))] transition-[width] duration-300"
+          className="h-full rounded-full bg-[linear-gradient(135deg,var(--accent-pink-from),var(--accent-pink-to))] transition-[width] duration-200 motion-reduce:transition-none"
           style={{ width: `${percent}%` }}
         />
       </div>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span className="tabular-nums">
-          {clamped} / {safeTotal}
+          {chinese ? `第 ${clamped}/${safeTotal} 節 · 已答 ${progress.answered}/${progress.total} 條核心問題` : `Section ${clamped}/${safeTotal} · ${progress.answered}/${progress.total} core questions answered`}
         </span>
         <span className="tabular-nums">{ui.hero.progressLabel(percent)}</span>
       </div>

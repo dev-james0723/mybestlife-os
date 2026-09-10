@@ -10,10 +10,8 @@ import {
   Upload,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
@@ -47,6 +45,8 @@ import {
 } from "@/lib/career-mirror/banner/career-banner-style-config";
 import { BannerStylePicker } from "@/components/career-mirror/profile/BannerStylePicker";
 import { MasterDocumentSelector } from "@/components/career-profile/MasterDocumentSelector";
+import { getSetupProgress } from "@/lib/career-mirror/setup-progress";
+import { DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { WizardProgress } from "./WizardProgress";
 import { WizardFooter } from "./WizardFooter";
 import { SectionStep, type SectionInsightState } from "./SectionStep";
@@ -108,6 +108,11 @@ export function CareerMirrorWizard({
 
   const {
     draftAnswers,
+    isLoading,
+    loadError,
+    retryLoad,
+    isSaving,
+    saveError,
     saveDraft,
     flushDraft,
     synthesize,
@@ -131,22 +136,26 @@ export function CareerMirrorWizard({
   const [bannerStyle, setBannerStyle] = React.useState<CareerBannerStyle>(
     CAREER_BANNER_STYLES[0],
   );
+  const [closing, setClosing] = React.useState(false);
+  const [allowInsights, setAllowInsights] = React.useState(false);
   const [finish, setFinish] = React.useState<FinishState>({ status: "idle" });
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
   // Seed the local draft from the persisted answers once the dialog opens.
   React.useEffect(() => {
-    if (open && !seeded) {
+    if (open && !seeded && !isLoading && !loadError) {
       setAnswers(draftAnswers ?? {});
+      setStepIndex(getSetupProgress(draftAnswers ?? {}).resumeSection);
       setSeeded(true);
     }
     if (!open && seeded) {
       // Reset transient UI state when closed so a re-open starts clean.
       setSeeded(false);
+      setAllowInsights(false);
       setStepIndex(0);
       setFinish({ status: "idle" });
     }
-  }, [open, seeded, draftAnswers]);
+  }, [open, seeded, draftAnswers, isLoading, loadError]);
 
   // Build the screen list: one section per screen.
   const sections = CAREER_SETUP_SECTIONS;
@@ -193,7 +202,7 @@ export function CareerMirrorWizard({
 
   // Fetch a non-blocking insight when landing on an insight-bearing section.
   React.useEffect(() => {
-    if (!open || !currentSection) return;
+    if (!open || !currentSection || !allowInsights) return;
     if (!INSIGHT_SECTIONS.has(currentSection)) return;
     if (insights[currentSection]) return;
 
@@ -217,7 +226,7 @@ export function CareerMirrorWizard({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, currentSection, stepIndex]);
+  }, [open, currentSection, stepIndex, allowInsights]);
 
   const retryInsight = React.useCallback(
     (section: SectionId) => {
@@ -264,27 +273,35 @@ export function CareerMirrorWizard({
     goNext();
   }, [currentSection, questionsForSection, saveDraft, goNext]);
 
-  const saveAndExit = React.useCallback(() => {
-    void flushDraft(answers);
-    onOpenChange(false);
-  }, [answers, flushDraft, onOpenChange]);
+  const saveAndExit = React.useCallback(async () => {
+    if (closing || !seeded || finish.status === "working") return;
+    setClosing(true);
+    try {
+      await flushDraft(answers);
+      onOpenChange(false);
+    } catch {
+      // Keep the visible answers and dialog open so the user can retry.
+    } finally {
+      setClosing(false);
+    }
+  }, [answers, closing, seeded, finish.status, flushDraft, onOpenChange]);
 
-  const handleClose = React.useCallback(
-    (next: boolean) => {
-      if (!next) {
-        // Keep the draft when dismissed mid-way.
-        void flushDraft(answers);
-      }
-      onOpenChange(next);
-    },
-    [answers, flushDraft, onOpenChange],
-  );
+  const handleClose = React.useCallback((next: boolean) => {
+    if (next) onOpenChange(true);
+    else if (!seeded || finish.status === "done") onOpenChange(false);
+    else void saveAndExit();
+  }, [seeded, finish.status, saveAndExit, onOpenChange]);
 
   const wantsBanner = answers["generate-visual"]?.value === "yes";
 
   const handleFinish = React.useCallback(async () => {
     setFinish({ status: "working" });
-    await flushDraft(answers, "in_progress");
+    try {
+      await flushDraft(answers, "in_progress");
+    } catch {
+      setFinish({ status: "idle" });
+      return;
+    }
     const synthRes = await synthesize(answers);
     let bannerRes: BannerResult | null = null;
     if (wantsBanner) {
@@ -294,7 +311,7 @@ export function CareerMirrorWizard({
       );
     }
     setFinish({ status: "done", synthesize: synthRes, banner: bannerRes });
-    onCompleted?.();
+    if (synthRes.ok) onCompleted?.();
   }, [
     answers,
     flushDraft,
@@ -331,8 +348,8 @@ export function CareerMirrorWizard({
         onAnswerChange={setAnswer}
         ui={ui}
         questionCopy={questionCopy}
-        insight={insights[currentSection]}
-        onRetryInsight={() => retryInsight(currentSection)}
+        insight={allowInsights ? insights[currentSection] : undefined}
+        onRetryInsight={() => { if (allowInsights) retryInsight(currentSection); }}
         onSkipInsight={() =>
           setInsights((p) => ({ ...p, [currentSection]: { status: "skipped" } }))
         }
@@ -370,7 +387,7 @@ export function CareerMirrorWizard({
     );
 
   const showFooter = finish.status !== "done";
-  const finishing = finish.status === "working";
+  const finishing = finish.status === "working" || closing || !seeded;
   const footer = showFooter ? (
     <WizardFooter
       ui={ui}
@@ -392,16 +409,22 @@ export function CareerMirrorWizard({
         <WizardProgress
           current={stepIndex + 1}
           total={totalSteps}
+          progress={getSetupProgress(answers)}
           ui={ui}
-          className={!isDesktop ? "pr-12" : undefined}
+          className="pr-12"
         />
       ) : null}
       <div
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pb-4"
       >
-        {body}
+        {!seeded && loadError ? <div role="alert" className="space-y-3"><p>{language.startsWith("zh") ? "未能載入已保存的答案。請重試以繼續。" : "Could not load your saved answers. Retry to continue."}</p><Button variant="outline" onClick={retryLoad}>{language.startsWith("zh") ? "重試" : "Retry"}</Button></div> : !seeded ? <p role="status">{language.startsWith("zh") ? "載入已保存的答案…" : "Loading saved answers…"}</p> : body}
       </div>
+      {finish.status === "idle" && seeded ? <label className="flex items-start gap-2 text-xs text-muted-foreground">
+        <input type="checkbox" checked={allowInsights} onChange={(event) => setAllowInsights(event.target.checked)} className="mt-0.5" />
+        {language.startsWith("zh") ? "選用 AI 提示：將目前問卷答案傳送至 AI 服務作分析。關閉仍可保存。" : "Optional AI insights: send these questionnaire answers to the AI service for suggestions. You can save with this off."}
+      </label> : null}
+      {saveError ? <p role="alert" className="text-sm text-destructive">{language.startsWith("zh") ? "未能保存。答案仍在此處，請重試儲存後離開。" : "Could not save. Your answers are still here; retry Save & exit."}</p> : isSaving ? <p role="status" className="text-xs text-muted-foreground">{language.startsWith("zh") ? "儲存中…" : "Saving…"}</p> : null}
       {footer}
     </div>
   );
@@ -425,24 +448,11 @@ export function CareerMirrorWizard({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogPortal>
-        <DialogOverlay />
-        <DialogPrimitive.Popup
-          data-slot="dialog-content"
-          className={cn(
-            "glass-modal-surface fixed top-1/2 left-1/2 z-50 flex h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl p-5 text-sm text-popover-foreground outline-none isolate scheme-light dark:scheme-dark sm:max-w-3xl",
-            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          )}
-        >
-          <DialogPrimitive.Title className="sr-only">
-            {ui.hero.title}
-          </DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">
-            {ui.hero.subtitle}
-          </DialogPrimitive.Description>
-          {inner}
-        </DialogPrimitive.Popup>
-      </DialogPortal>
+      <DialogContent size="3xl" className="flex h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] flex-col overflow-hidden p-5">
+        <DialogTitle className="sr-only">{ui.hero.title}</DialogTitle>
+        <DialogDescription className="sr-only">{ui.hero.subtitle}</DialogDescription>
+        {inner}
+      </DialogContent>
     </Dialog>
   );
 }

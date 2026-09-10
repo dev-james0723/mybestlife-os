@@ -88,14 +88,14 @@ export function useHabit(id: string) {
   });
 }
 
-export function useCreateHabit() {
+export function useCreateHabit(options?: { generateVisual?: boolean }) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateHabitInput) => habitsRepository.create(input),
     onSuccess: (row) => {
       queryClient.invalidateQueries({ queryKey: habitsKeys.all });
       queryClient.invalidateQueries({ queryKey: habitsKeys.allVisuals });
-      requestHabitVisual(row);
+      if (options?.generateVisual === true) requestHabitVisual(row);
       const ui = getMiscUiCopy(useAppStore.getState().language).toasts.habits;
       toast.success(ui.created);
     },

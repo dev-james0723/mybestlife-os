@@ -50,7 +50,7 @@ function EntryDetailBody({
   entry: JournalEntry;
   copy: JournalUiCopy;
 }) {
-  const meta = QUADRANT_META[entry.quadrant];
+  const meta = entry.quadrant ? QUADRANT_META[entry.quadrant] : null;
   const bullets = entry.bullets?.items ?? [];
   const needs = entry.needs?.items ?? [];
   const aiOutput = (() => {
@@ -78,7 +78,7 @@ function EntryDetailBody({
         </div>
       </Section>
 
-      <Section title={copy.detailSectionEmotions}>
+      {meta && entry.quadrant && <Section title={copy.detailSectionEmotions}>
         <div className="flex flex-wrap items-center gap-2">
           <Badge
             className={cn("border", meta.bgSelectedClass, meta.borderClass, meta.textClass)}
@@ -98,6 +98,7 @@ function EntryDetailBody({
         </div>
       </Section>
 
+      }
       {bullets.length > 0 && (
         <Section title={copy.detailSectionWhatHappened}>
           <ul className="ml-5 list-disc space-y-1 text-sm">

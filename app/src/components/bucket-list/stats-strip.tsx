@@ -46,7 +46,7 @@ export function BucketStatsStrip({ items, onOpenItem }: StatsStripProps) {
       className={`${bucketGlassPanel} ${bucketSheen} min-w-0 max-w-full p-4 sm:p-5`}
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
-        {copy.masterProgress}
+        {copy.masterProgress} · {language.startsWith("zh") ? "全部記錄，不受篩選影響" : "All records, before filters"}
       </p>
 
       <motion.div

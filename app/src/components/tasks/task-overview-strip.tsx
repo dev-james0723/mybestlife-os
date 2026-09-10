@@ -101,7 +101,7 @@ export function TaskOverviewStrip({
   ];
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible lg:grid-cols-8">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
       {cells.map((cell) => {
         const Icon = cell.icon;
         const isActive = activeMetric === cell.key;
@@ -115,7 +115,7 @@ export function TaskOverviewStrip({
             disabled={!clickable}
             onClick={() => onSelectMetric?.(cell.key)}
             className={cn(
-              "flex min-w-[104px] shrink-0 flex-col gap-1 rounded-xl border bg-card px-3 py-2.5 text-left transition-all sm:min-w-0",
+              "flex min-w-0 flex-col gap-1 rounded-xl border bg-card px-3 py-2.5 text-left transition-all sm:min-w-0",
               clickable && "hover:border-primary/40 hover:shadow-sm",
               clickable && "cursor-pointer",
               isActive && "border-primary ring-1 ring-primary/30",

@@ -28,6 +28,8 @@ import {
   type RichTextEditorHandle,
 } from "@/components/shared/rich-text-editor";
 import { CloudUpload, ImagePlus, Loader2, PenLine, RefreshCw, Trash2 } from "lucide-react";
+import { useAppStore } from "@/stores/app-store";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -85,6 +87,9 @@ type Props = {
 };
 
 export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSaving }: Props) {
+  const language = useAppStore((s) => s.language);
+  const journey = getUxJourneyCopy(language);
+  const [allowClassification, setAllowClassification] = useState(false);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** When true, skip auto category updates while typing (user chose the dropdown). */
@@ -120,6 +125,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
     cancelPendingClassify();
     setEntryDate(format(new Date(), "yyyy-MM-dd"));
     setCategory("");
+    setAllowClassification(false);
     setPhotoDataUrl(null);
     setIsFavorite(false);
     editorRef.current?.reset();
@@ -136,7 +142,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
   }, [open, syncEditorFromRef]);
 
   const runClassifyFromEditor = useCallback(async () => {
-    if (categoryManualOverrideRef.current) return;
+    if (!allowClassification || categoryManualOverrideRef.current) return;
     const plain = editorRef.current?.getText().trim() ?? "";
     if (plain.length < CLASSIFY_MIN_CHARS) return;
     classifyAbortRef.current?.abort();
@@ -158,15 +164,16 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
     }
-  }, []);
+  }, [allowClassification]);
 
   const scheduleClassify = useCallback(() => {
+    if (!allowClassification) return;
     if (classifyDebounceRef.current) clearTimeout(classifyDebounceRef.current);
     classifyDebounceRef.current = setTimeout(() => {
       classifyDebounceRef.current = null;
       void runClassifyFromEditor();
     }, CLASSIFY_DEBOUNCE_MS);
-  }, [runClassifyFromEditor]);
+  }, [runClassifyFromEditor, allowClassification]);
 
   const handleEditorChange = useCallback(() => {
     syncEditorFromRef();
@@ -321,8 +328,8 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
           "flex max-h-[min(90vh,760px)] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-xl"
         )}
       >
-        <DialogHeader className="relative shrink-0 border-b border-white/10 bg-slate-950/35 px-6 pb-4 pt-6 text-center">
-          <DialogTitle className="font-sans text-lg font-semibold tracking-tight text-white">
+        <DialogHeader className="relative shrink-0 border-b border-white/10 bg-transparent px-6 pb-4 pt-6 text-center">
+          <DialogTitle className="font-sans text-lg font-semibold tracking-tight text-foreground">
             {copy.createDialogTitle}
           </DialogTitle>
           <OSIconControl
@@ -337,7 +344,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
           </OSIconControl>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-950/30 px-6 py-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-transparent px-6 py-5">
           <RichTextEditor
             ref={editorRef}
             onChange={handleEditorChange}
@@ -345,6 +352,10 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
             minHeightClass="min-h-[200px]"
           />
 
+          <details className="space-y-4 rounded-xl border border-border/50 p-3">
+            <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">{journey.optionalDetails}</summary>
+            <p className="text-xs text-muted-foreground">{language.startsWith("zh") ? "以下 AI 工具會將這段文字傳送至 AI 服務。只儲存文字不需要使用 AI。" : "These AI tools send this entry to the AI service. You can save the text without AI."}</p>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={allowClassification} onChange={(event) => { setAllowClassification(event.target.checked); if (!event.target.checked) cancelPendingClassify(); }} />{language.startsWith("zh") ? "使用 AI 建議分類（選填）" : "Suggest a category with AI (optional)"}</label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <OSPrimaryAction
               type="button"
@@ -387,7 +398,7 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-medium text-muted-foreground">{copy.labelCategoryShort}</Label>
-              <Select value={category || undefined} onValueChange={handleCategorySelect}>
+              <Select itemToStringLabel={(value) => copy.categoryLabels[value as GratitudeCategoryValue] ?? String(value)} value={category || undefined} onValueChange={handleCategorySelect}>
                 <SelectTrigger
                   className={cn(
                     "h-10 w-full rounded-lg text-sm",
@@ -473,9 +484,10 @@ export function CreateGratitudeDialog({ open, onOpenChange, copy, onSave, isSavi
             <Checkbox checked={isFavorite} onCheckedChange={(v) => setIsFavorite(v === true)} />
             {copy.createMarkFavorite}
           </label>
+          </details>
         </div>
 
-        <div className="flex shrink-0 justify-end gap-2 border-t border-white/10 bg-slate-950/42 px-6 py-4">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-white/10 bg-transparent px-6 py-4">
           <OSControl
             type="button"
             className="rounded-lg"

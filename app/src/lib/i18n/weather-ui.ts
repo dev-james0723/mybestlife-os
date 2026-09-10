@@ -16,6 +16,11 @@ export type WeatherUiCopy = {
   retry: string;
   locationPermissionPrompt: string;
   useMyLocation: string;
+  locationDetecting: string;
+  locationUpdated: string;
+  locationPermissionDenied: string;
+  locationUnavailable: string;
+  locationSecureContextRequired: string;
   unavailable: string;
 
   // Hero
@@ -106,6 +111,14 @@ const en: WeatherUiCopy = {
   retry: "Retry",
   locationPermissionPrompt: "Allow location access for accurate weather",
   useMyLocation: "Use my location",
+  locationDetecting: "Finding your current location…",
+  locationUpdated: "Current location found",
+  locationPermissionDenied:
+    "Location access is blocked. Allow it in your browser settings, then try again.",
+  locationUnavailable:
+    "Your location could not be detected. Check location services and try again.",
+  locationSecureContextRequired:
+    "Location access requires a secure HTTPS connection.",
   unavailable: "—",
 
   feelsLike: (t) => `Feels like ${t}°`,
@@ -195,6 +208,12 @@ const zhTW: DeepPartial<WeatherUiCopy> = {
   retry: "重新整理",
   locationPermissionPrompt: "允許定位以取得精準天氣",
   useMyLocation: "使用我的位置",
+  locationDetecting: "正在取得你的即時位置…",
+  locationUpdated: "已定位到你的目前位置",
+  locationPermissionDenied:
+    "定位權限已被封鎖。請在瀏覽器設定中允許位置權限後再試。",
+  locationUnavailable: "無法取得你的位置。請檢查裝置定位服務後再試。",
+  locationSecureContextRequired: "定位功能需要安全的 HTTPS 連線。",
   unavailable: "—",
   feelsLike: (t) => `體感 ${t}°`,
   highLow: (h, l) => `高: ${h}° 低: ${l}°`,
@@ -269,6 +288,12 @@ const zhCN: DeepPartial<WeatherUiCopy> = {
   retry: "刷新",
   locationPermissionPrompt: "允许定位以获取精准天气",
   useMyLocation: "使用我的位置",
+  locationDetecting: "正在获取你的实时位置…",
+  locationUpdated: "已定位到你的当前位置",
+  locationPermissionDenied:
+    "定位权限已被阻止。请在浏览器设置中允许位置权限后重试。",
+  locationUnavailable: "无法获取你的位置。请检查设备定位服务后重试。",
+  locationSecureContextRequired: "定位功能需要安全的 HTTPS 连接。",
   unavailable: "—",
   feelsLike: (t) => `体感 ${t}°`,
   highLow: (h, l) => `高: ${h}° 低: ${l}°`,

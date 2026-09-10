@@ -85,7 +85,8 @@ export type PulseTrendDirection = "up" | "down" | "steady";
 export type LifePulseScore = {
   key: PulseScoreKey;
   label: string;
-  score: number;
+  /** Null means there is not enough observed data to calculate this signal. */
+  score: number | null;
   trend: PulseTrendDirection;
   trendValue: number;
   trendLabel: string;
@@ -184,7 +185,7 @@ export type ProjectMomentumMap = {
   interpretation: string;
 };
 
-export type EmotionQuadrant = JournalEntry["quadrant"];
+export type EmotionQuadrant = NonNullable<JournalEntry["quadrant"]>;
 
 export type EmotionExecutionBucket = {
   key: string;

@@ -1,0 +1,105 @@
+{
+  "checked_at": "2026-09-09T01:20:23.909378+00:00",
+  "scope": "research and design documents; read-only candidate audit",
+  "state": "pass",
+  "pages": {
+    "index.html": {
+      "h2": 15,
+      "unique_ids": 23
+    },
+    "current-review.html": {
+      "h2": 10,
+      "unique_ids": 10
+    },
+    "repo-audit.html": {
+      "h2": 7,
+      "unique_ids": 7
+    },
+    "sources.html": {
+      "h2": 6,
+      "unique_ids": 6
+    }
+  },
+  "local_links_checked": 73,
+  "errors": [],
+  "head": "d467ab83f2a949f7738b01d6c99aa2bfc09092bb",
+  "native_database_evidence": {
+    "run": "previous isolated run, not rerun for this review",
+    "checks": 34,
+    "all_passed": true,
+    "migration_hashes_match": {
+      "20260908061801_garden_adventure_world.sql": true,
+      "20260908162634_garden_living_pond.sql": true,
+      "20260908172055_garden_pond_buddy.sql": true
+    }
+  },
+  "linked_ui_evidence": {
+    "state": "failed",
+    "completed_checks": 2,
+    "failed_check": "completing linked Habit",
+    "subsequent_checks": "not executed",
+    "root_cause": "unconfirmed",
+    "failure_body": "../../../artifacts/garden-v3/linked-evidence/failure-body.txt"
+  },
+  "runtime_files_changed_by_this_review": false,
+  "production_checked": false,
+  "participants_recruited": false,
+  "browser_checks": {
+    "state": "pass",
+    "desktop": {
+      "width": 1280,
+      "height": 900,
+      "document_width": 1280,
+      "sections": 14,
+      "screenshot": "decision-desktop.png"
+    },
+    "mobile": {
+      "width": 320,
+      "height": 740,
+      "document_width": 320,
+      "minimum_demo_button_height_css_px": 44,
+      "screenshot": "decision-mobile.png"
+    },
+    "illustration": [
+      "shade configuration discovers fish and snail",
+      "next observation discovers dragonfly",
+      "changing layout retains all three discoveries"
+    ],
+    "viewport_override_reset": true,
+    "scope": "standalone 2D research illustration, no account or game performance validation"
+  },
+  "source_hashes": {
+    "app/src/types/database.ts": "ae0d1895096145363440536477022f1238f4928d0f0e7dd61c2c590aa020324d",
+    "app/src/lib/repositories/tasks.ts": "31c7e83c8bde5c3501b6df24fa4c2c191146330dcf216d956bb4a0eb2f3a4079",
+    "app/src/lib/repositories/projects.ts": "41d4c4f530dfd97172ead476d2bd54315fd9543314aea2f78a55874df139e613",
+    "app/src/lib/repositories/goals.ts": "f53906e8a06e798fb97d9df3bcde42cdc51e1bcc19d1c03bdbf3a8b57a75ba19",
+    "app/src/lib/repositories/habits.ts": "abbbddcaac42100662bc369b3f1f7c30b5962cad8e90701e16a51a44480ef20c",
+    "app/src/lib/repositories/grateful-things.ts": "f25521e123b887c6b279a45b68b5b5d8899395bd0609446617785afbe4f118e7",
+    "app/src/lib/repositories/journal.ts": "8488ad70905fad13cc8423e48526129615d9d472ba2ddc9ec51cb310f8656ed5",
+    "app/src/lib/repositories/garden.ts": "93e6bbfffea4aa6cad3c70f4e91c104263a5bc1147c2042c786fe4d762157000",
+    "app/src/lib/repositories/garden-pond.ts": "b7956a219662445d37e68c21bbe77962e7ee171553a918c8b1d089b3ea5606de",
+    "app/src/components/garden/GardenAdventure.tsx": "af3deab9fb80aea6ead4b966711ee78fee3bea852b5570fda832dbe7318a9eb8",
+    "app/src/components/garden/AdventureScene.tsx": "7db871fe3e63cc0d7d586db791f8b166f909aa871cfd22fe782e67ffd4d394e3",
+    "app/src/components/garden/PondPanel.tsx": "6dd6e30a6632dbd89ad16a4a8d3457a13357807a8b9b64194db97e68dbc9cb90",
+    "app/src/components/garden/PondEvidenceLinks.tsx": "2f2369b36a383660b1df06c4ea623caf651890c63a19cdc79faac28f1017579d",
+    "app/src/components/garden/pond-world.ts": "dc8af4c37d27d2eae9d330373bcadf4fa514a9bdeecbd2e3ce204f6dd7703f31",
+    "app/src/lib/garden/pond.ts": "3a1e530d2c9997abd266b66a5c8c53de74b6301bd4e774922fd20d1bca505c6c",
+    "app/src/lib/garden/pond-persistence.ts": "7065f79645cbbb1a4a9672445ef0b022a2573bec2fe00d7d09c3a39f4a2bb07c",
+    "app/src/lib/garden/audio.ts": "882d9b3a31c0bf5919eda67ddca60b3612acf0dda505de009a20b34abadb737d",
+    "app/src/hooks/use-garden-buddy-invitations.ts": "8dde7a4a977eb0fcedd0a5f17f1bb772fabfc7cc08d56952e9b303aa8bc82a23",
+    "app/supabase/migrations/20260908162634_garden_living_pond.sql": "8f50fe1cc3a2a2a15614a7ef674c31b95f858cbaebb052a3fb8c12f8f1b4d212",
+    "app/supabase/migrations/20260908172055_garden_pond_buddy.sql": "5ee6de917e69004d468a1085c1f7fbbfdab0d58ef7189a8ec68f391a8b12cb0e",
+    "app/scripts/verify-garden-pond-evidence-ui.mjs": "5c26a03e79fe757f272c5981120ddf6f128e5fa1417265131ba99b3c1531d9e0",
+    "app/scripts/garden-pond-fixture.mjs": "24cf8b5c6ccdc47d888ac3f33bb270464644fa77f038107c1e3360b3fb13583c"
+  },
+  "document_hashes": {
+    "proposal.zh-TW.md": "39ba1bae7aa262e8d1250a0928cde9dd4cc5f526e35a190208194ca05b81f7df",
+    "current-review.zh-TW.md": "c3a39386b6df4f386e13ff04b70ad3b9398b633955e9fe62196866d745cba96c",
+    "sources.md": "300d05a1ff93c1787719177eae1632a87d6a980d009d19f1bb4097a8fbee253f",
+    "research-delivery.md": "19fffc973dc00059a59fc68824534e28b3d1dc3e16eeb915d8e64e943e6d08ef",
+    "index.html": "f07be88e91ac0e00fa02c149868472cfed29147612e45a55b18bfa5d524f938d",
+    "current-review.html": "188119ddc3d9d3963a762044fcbc1cdf1cacbd7d523d0f716e6c566eadcccb9c",
+    "repo-audit.html": "123dff94d1a317ff3e3acbe278e05e50b14f99acb562eb16d9e15476d084fe66",
+    "sources.html": "8cf2343a37aa51f37d10ce4ccf925bd9b9670473c9872e031cbd19e1bc30fa2b"
+  }
+}

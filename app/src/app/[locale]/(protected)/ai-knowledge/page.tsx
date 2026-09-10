@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ListChecks, Plus, Search, Sparkles } from "lucide-react";
+import { ListChecks, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { PageShell } from "@/components/shared/page-shell";
@@ -37,6 +37,12 @@ import {
   type PromptSurfaceTab,
 } from "@/stores/prompt-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
+import { dispatchToAI } from "@/lib/ai/dispatcher";
+import { copyToClipboard } from "@/lib/ai/clipboard";
+import {
+  getAITool,
+  type AIKnowledgeChatTool,
+} from "@/lib/ai/tool-registry";
 import {
   pickLocalizedText,
   type CustomPrompt,
@@ -331,12 +337,9 @@ export default function AiKnowledgePage() {
 
   const handleCopyBody = useCallback(
     async (prompt: AnyPrompt) => {
-      try {
-        await navigator.clipboard.writeText(prompt.body);
-        toast.success(ui.toast.copyBodySuccess);
-      } catch {
-        toast.error(ui.toast.copyBodyFailed);
-      }
+      const copied = await copyToClipboard(prompt.body);
+      if (copied) toast.success(ui.toast.copyBodySuccess);
+      else toast.error(ui.toast.copyBodyFailed);
     },
     [ui.toast],
   );
@@ -346,6 +349,36 @@ export default function AiKnowledgePage() {
       openRun(prompt);
     },
     [openRun],
+  );
+
+  const handleOpenInAi = useCallback(
+    async (prompt: AnyPrompt, tool: AIKnowledgeChatTool) => {
+      const provider = getAITool(tool).name;
+      try {
+        const result = await dispatchToAI({ prompt: prompt.body, tool });
+        if (!result.opened) {
+          toast.error(
+            result.copied
+              ? ui.toast.aiChatOpenFailed
+              : ui.toast.copyBodyFailed,
+          );
+          return;
+        }
+        if (result.urlPrefilled) {
+          toast.success(ui.toast.openedInAi(provider));
+          if (!result.copied) toast.warning(ui.toast.copyBodyFailed);
+          return;
+        }
+        if (result.copied) {
+          toast.success(ui.toast.openedInAiPaste(provider));
+        } else {
+          toast.error(ui.toast.copyBodyFailed);
+        }
+      } catch {
+        toast.error(ui.toast.aiChatOpenFailed);
+      }
+    },
+    [ui.toast],
   );
 
   const handleOpen = useCallback(
@@ -486,15 +519,6 @@ export default function AiKnowledgePage() {
         description={ui.pageDescription}
         actions={
           <>
-            <OSControl
-              size="sm"
-              className="gap-2"
-              onClick={openPalette}
-              aria-label={ui.header.commandPaletteHint}
-            >
-              <Search className="h-4 w-4" />
-              {ui.header.commandPaletteShortcut}
-            </OSControl>
             {isPromptTab && !selectionMode && (
               <OSControl
                 size="sm"
@@ -623,7 +647,7 @@ export default function AiKnowledgePage() {
               : false
         }
         onToggleFavorite={handleToggleFavorite}
-        onRun={handleRun}
+        onOpenInAi={handleOpenInAi}
         onCopyBody={handleCopyBody}
         onFork={handleFork}
         onEdit={handleEdit}

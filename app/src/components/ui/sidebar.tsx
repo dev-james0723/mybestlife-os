@@ -21,8 +21,10 @@ import { PanelLeftIcon } from "lucide-react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
+// One shared geometry for every visual theme. These values are the original
+// Default-theme dimensions; theme selection must never resize app chrome.
+const SIDEBAR_WIDTH = "15rem"
+const SIDEBAR_WIDTH_MOBILE = "min(16.25rem, calc(100vw - 1.25rem))"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 

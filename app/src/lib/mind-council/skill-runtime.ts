@@ -7,6 +7,7 @@ import {
   readBundledSkillMarkdown,
 } from "./load-bundled-skill";
 import type { SkillProvider } from "./types";
+import { advisorDisplayName, buildAdvisorConversationContract } from "./conversation-contract";
 
 export type InvokeMindSkillParams = {
   skillProvider: SkillProvider;
@@ -14,6 +15,8 @@ export type InvokeMindSkillParams = {
   agentId: string;
   lensTitle: string;
   systemPromptHint: string;
+  /** Account-owned package fetched by the server, never a client override. */
+  skillMarkdown?: string;
   locale: AppLocale;
   /** Full multi-turn history in Gemini `contents` shape (includes latest user message). */
   contents: { role: "user" | "model"; parts: { text: string }[] }[];
@@ -30,7 +33,7 @@ export type InvokeMindSkillResult = {
  * Shown with every API response so clients can render persistent disclaimers.
  */
 export function mindCouncilPublicDisclaimer(lensTitle: string): string {
-  return `${lensTitle} is an AI-generated interpretive lens for brainstorming. It does not speak for or impersonate any real person, and it is not professional advice.`;
+  return `AI simulation of ${advisorDisplayName(lensTitle)}, based on public material — not the real person.`;
 }
 
 export function buildMindLensSystemInstruction(
@@ -39,14 +42,9 @@ export function buildMindLensSystemInstruction(
   locale: AppLocale,
 ): string {
   const lang = localeToGeminiLanguage(locale);
-  return `You are an AI "thinking lens" labeled: ${lensTitle}.
+  return `${buildAdvisorConversationContract(lensTitle)}
 
-ETHICS (non-negotiable):
-- Never claim to be a real person, never roleplay as their private voice, and never invent specific quotes, meetings, or biographical facts about real individuals.
-- Frame guidance as patterns and heuristics inspired by public ideas associated with the lens name — not channeling a soul or consciousness.
-- Avoid medical, legal, or personalized financial instructions; stay educational and suggest professionals when risk is high.
-
-Lens style seed (creative interpretation only):
+Thinking framework and expression DNA:
 ${systemPromptHint}
 
 Output language: ${lang}.
@@ -58,7 +56,7 @@ function resolveSystemInstruction(params: InvokeMindSkillParams): {
   skillPackageLoaded: boolean;
 } {
   const lang = localeToGeminiLanguage(params.locale);
-  const bundled = readBundledSkillMarkdown(params.skillId);
+  const bundled = params.skillMarkdown || readBundledSkillMarkdown(params.skillId);
 
   if (bundled) {
     return {
@@ -162,7 +160,7 @@ The user asked a question to multiple independent "X-inspired lenses" (not real 
 Tasks:
 1) Briefly surface agreements and productive tensions (no fake consensus).
 2) Offer 3-5 integrated next steps the human can try this week.
-3) Reinforce the ethical frame: these are interpretive lenses, not the voices of real individuals.
+3) The interface already discloses the AI simulation. Do not repeat that disclaimer; focus on the user's decision. Answer identity questions truthfully if asked.
 
 Language: ${lang}.
 Format: markdown with short headings.`;

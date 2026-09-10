@@ -104,7 +104,7 @@ export function AIPreferencesView() {
             onValueChange={(v) => setDefaultAI(v as AITool)}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{copy.tools[defaultAI] ?? AI_TOOLS.find((tool) => tool.id === defaultAI)?.name}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {AI_TOOLS.map((t) => (
@@ -159,7 +159,7 @@ export function AIPreferencesView() {
             }
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{promptLang ? LOCALE_SELECT_LABELS[promptLang] : copy.settings.promptLanguage.followProfile}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__app">
@@ -219,7 +219,7 @@ export function AIPreferencesView() {
                 {copy.settings.allowAIAnalysis.hint}
               </span>
               <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                {copy.settings.allowAIAnalysis.privacy}
+                {language.startsWith("zh") ? "此設定控制 Career Vault 的分類建議，並非全站 AI 開關。文件及版本仍可能保存在你的材料庫；外部服務的資料政策各有不同。" : "This controls Career Vault tag suggestions, not every AI feature. Files and versions may still be stored in your vault; external services have their own data policies."}
               </span>
             </span>
           </label>

@@ -12,6 +12,7 @@
 import { z } from "zod";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { RoleModelInsightContextPayload } from "@/types/role-model-intelligence";
+import { loadNuwaGuide } from "@/lib/mind-council/nuwa/load-guide";
 
 // ===========================================================================
 // Context → prompt text
@@ -374,6 +375,7 @@ export function buildDistillResearchPrompt(
 
   return [
     `You are the evidence-gathering stage of Nuwa, a system that turns a person's public thinking into a safe, reusable decision lens.`,
+    loadNuwaGuide("research"),
     `Research HOW ${ctx.roleModel.name} appears to think, decide, communicate, and revise beliefs — not merely WHAT they have said or achieved.`,
     SAFETY_RULES,
     LANGUAGE_RULE(locale),
@@ -391,6 +393,8 @@ export function buildDistillResearchPrompt(
     "3. Communication DNA: sentence shape, analogies, certainty, humor, and recurring vocabulary.",
     "4. Anti-patterns, blind spots, public criticism, and tensions between values and behavior.",
     "5. Honest boundaries: evidence gaps, changes over time, and questions this lens cannot answer.",
+    "6. Timeline: major intellectual changes, influences, and recent public developments, dated to the research cutoff.",
+    "Include source titles and URLs for supported claims, classify first-party vs secondary sources vs inference, and record uncovered dimensions. Do not invent source URLs.",
     "",
     "SUPPLIED ROLE MODEL PROFILE (use it to resolve identity and fill evidence gaps):",
     identityProfile,
@@ -406,6 +410,7 @@ export function buildDistillPrompt(
 ): string {
   return [
     `You are the synthesis stage of Nuwa. Distill this role model into a reusable "Neural Skill" — an interpretive thinking lens for the user's Mind Council.`,
+    loadNuwaGuide("synthesis"),
     `Capture HOW ${ctx.roleModel.name} appears to think, not a biography, quote collage, fan tribute, or impersonation.`,
     SAFETY_RULES,
     LANGUAGE_RULE(locale),
@@ -416,10 +421,10 @@ export function buildDistillPrompt(
     "Produce JSON with:",
     `- lensTitle: e.g. "${ctx.roleModel.name}–inspired Lens".`,
     `- lensSubtitle: one short framing line.`,
-    `- systemPromptHint: an executable 4-8 sentence protocol. It must tell the AI which mental models and decision checks to apply, when to research current facts, how to label inference, and MUST include "Never claim to be ${ctx.roleModel.name}".`,
+    `- systemPromptHint: an executable 4-8 sentence protocol. Tell the AI which mental models and decision checks to apply, when to research current facts, and how to label inference. Speak in FIRST PERSON ("I", not "${ctx.roleModel.name} would" or "this lens"). The UI already gives the AI disclosure, so do not repeat it in replies. Include "Never claim to be ${ctx.roleModel.name} in real life"; simulated first-person reasoning is permitted. Respect requests to exit the role and answer identity questions honestly.`,
     `- thinkingStyle: name 3-7 distinctive mental models, with evidence/limits compressed into a short paragraph. Do not relabel generic virtues as unique models.`,
     `- decisionPrinciples: 4-8 concise if/then heuristics supported by evidence.`,
-    `- communicationStyle: the person's expression DNA plus an instruction not to mimic private voice or fabricate quotes.`,
+    `- communicationStyle: distinctive sentence rhythm, vocabulary, analogies, humor, and uncertainty in first-person conversation. Do not invent private memories or quotes; avoid a catchphrase caricature.`,
     `- likelyQuestions: questions this lens would characteristically ask before advising.`,
     `- bestFor: decisions where this lens has genuine evidence and leverage.`,
     `- avoidFor: situations outside its competence or evidence base.`,

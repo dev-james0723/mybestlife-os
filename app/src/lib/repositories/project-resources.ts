@@ -10,6 +10,7 @@ async function getCurrentUserId() {
 }
 
 export type CreateProjectResourceInput = {
+  id?: string;
   project_id: string;
   category: ProjectResourceCategory;
   title: string;
@@ -44,7 +45,7 @@ export const projectResourcesRepository = {
       is_favorite: row.is_favorite ?? true,
       sort_order: row.sort_order ?? i,
     }));
-    const { error } = await supabase.from("project_resources").insert(rows);
+    const { error } = await supabase.from("project_resources").upsert(rows, { onConflict: "id" });
     if (error) throw error;
   },
 

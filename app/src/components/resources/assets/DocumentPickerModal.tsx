@@ -42,7 +42,8 @@ export function DocumentPickerModal({
 }: DocumentPickerModalProps) {
   const language = useAppStore((s) => s.language);
   const copy = getResourcesUiCopy(language);
-  const { data: documents } = useDocuments();
+  const { data: documents, isLoading, isError, refetch } = useDocuments();
+  const chinese = language.startsWith("zh");
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -96,6 +97,7 @@ export function DocumentPickerModal({
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               autoFocus
+              aria-label={copy.documentPicker.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={copy.documentPicker.searchPlaceholder}
@@ -105,7 +107,7 @@ export function DocumentPickerModal({
         )}
 
         <div className="-mx-6 mt-3 flex-1 overflow-y-auto px-6">
-          {!hasAnyDocuments || !hasResults ? (
+          {isLoading ? <p role="status" className="py-8 text-sm">{chinese ? "正在載入文件…" : "Loading documents…"}</p> : isError ? <div role="alert" className="space-y-3 py-8"><p>{chinese ? "未能載入文件。現有連結仍然保留。" : "Could not load documents. Your existing link is preserved."}</p><Button onClick={() => void refetch()}>{chinese ? "重試" : "Retry"}</Button></div> : !hasAnyDocuments || !hasResults ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-muted">
                 <FileText className="size-5 text-muted-foreground" />
@@ -149,7 +151,7 @@ export function DocumentPickerModal({
                         <FileText className="size-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
+                        <p className="break-words text-sm font-medium text-foreground">
                           {d.name}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">

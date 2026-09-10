@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -34,6 +35,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
+
+  useEffect(() => {
+    let owner: string | null | undefined;
+    const { data: { subscription } } = createClient().auth.onAuthStateChange((_event, session) => {
+      const nextOwner = session?.user.id ?? null;
+      if (owner !== undefined && owner !== nextOwner) {
+        // Query keys and some in-memory stores are feature scoped. Start a
+        // fresh document on account changes, including changes in another tab.
+        queryClient.clear();
+        window.location.reload();
+      }
+      owner = nextOwner;
+    });
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -68,6 +68,9 @@ type DraftState = {
   endISO: string;
 };
 
+import { useAppStore } from "@/stores/app-store";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
+
 const TODAY_ISO = format(new Date(), "yyyy-MM-dd");
 
 function validationMessage(error: AnalyticsRangeValidationError): string {
@@ -100,6 +103,8 @@ function dateLine(preset: AnalyticsRangePreset): string {
 }
 
 export function TimeLensControl({ value, onChange, compact }: TimeLensControlProps) {
+  const copy = getUxJourneyCopy(useAppStore((state) => state.language));
+  const [expandedRanges, setExpandedRanges] = useState(false);
   const presets = useAnalyticsRangePresets();
   const createPreset = useCreateAnalyticsRangePreset();
   const updatePreset = useUpdateAnalyticsRangePreset();
@@ -122,7 +127,7 @@ export function TimeLensControl({ value, onChange, compact }: TimeLensControlPro
   const trimmedName = draft.name.trim();
   const isSaving = createPreset.isPending || updatePreset.isPending;
 
-  const items = ANALYTICS_RANGE_OPTIONS.map((option) => ({
+  const items = ANALYTICS_RANGE_OPTIONS.filter((option) => expandedRanges || ["7D", "30D"].includes(option.key) || option.key === activePresetValue).map((option) => ({
     id: option.key,
     label: option.label,
     title: option.behavior,
@@ -219,6 +224,7 @@ export function TimeLensControl({ value, onChange, compact }: TimeLensControlPro
           layoutId="analytics-time-lens-active"
         />
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <OSControl aria-expanded={expandedRanges} onClick={() => setExpandedRanges((expanded) => !expanded)}>{expandedRanges ? copy.fewerRanges : copy.moreRanges}</OSControl>
           <OSControl
             type="button"
             osSize="compact"
@@ -261,7 +267,7 @@ export function TimeLensControl({ value, onChange, compact }: TimeLensControlPro
 
               {presets.isError ? (
                 <p className="rounded-lg border border-amber-500/25 bg-amber-500/8 p-3 text-xs text-amber-900 dark:text-amber-200">
-                  Saved ranges are unavailable. The migration may not be applied yet.
+                  Saved ranges could not be loaded. You can still choose a date range above.
                 </p>
               ) : null}
 

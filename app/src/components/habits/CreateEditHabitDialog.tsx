@@ -214,6 +214,7 @@ export function CreateEditHabitDialog({
           <div className="grid gap-1.5">
             <Label>{copy.formType}</Label>
             <select
+              aria-label={copy.formType}
               className="h-9 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
               value={type}
               onChange={(e) => setType(e.target.value as HabitType)}

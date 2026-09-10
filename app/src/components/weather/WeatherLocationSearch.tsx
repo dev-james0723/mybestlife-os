@@ -6,6 +6,7 @@ import { Loader2, MapPin, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { searchLocations } from "@/lib/weather/openweather-forecast";
+import type { WeatherCoords } from "@/lib/weather/openweather";
 import type { WeatherLocation } from "@/lib/weather/types";
 import type { WeatherUiCopy } from "@/lib/i18n/weather-ui";
 
@@ -15,7 +16,8 @@ interface WeatherLocationSearchProps {
   selectedLabel?: string;
   onSelect: (location: WeatherLocation) => void;
   onClear: () => void;
-  onUseMyLocation: () => void;
+  onUseMyLocation: () => Promise<WeatherCoords | null>;
+  locating: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export function WeatherLocationSearch({
   onSelect,
   onClear,
   onUseMyLocation,
+  locating,
 }: WeatherLocationSearchProps) {
   const inputId = useId();
   const [query, setQuery] = useState("");
@@ -131,7 +134,7 @@ export function WeatherLocationSearch({
     }
   };
 
-  const showMenu = open && (query.trim().length >= 2 || error);
+  const showMenu = !locating && open && (query.trim().length >= 2 || error);
 
   return (
     <div ref={wrapperRef} className="relative z-[60] w-full max-w-md">
@@ -140,6 +143,7 @@ export function WeatherLocationSearch({
         <input
           id={inputId}
           type="text"
+          disabled={locating}
           value={query}
           onChange={(e) => {
             const nextQuery = e.target.value;
@@ -161,7 +165,7 @@ export function WeatherLocationSearch({
           aria-haspopup="listbox"
           aria-controls={`${inputId}-listbox`}
           aria-autocomplete="list"
-          className="min-h-11 flex-1 bg-transparent text-sm text-[var(--weather-text-primary)] placeholder:text-[var(--weather-text-muted)] focus:outline-none sm:min-h-10"
+          className="min-h-11 flex-1 bg-transparent text-sm text-[var(--weather-text-primary)] placeholder:text-[var(--weather-text-muted)] focus:outline-none disabled:cursor-wait sm:min-h-10"
         />
         {loading ? (
           <Loader2 className="size-4 animate-spin opacity-70" aria-hidden />
@@ -170,21 +174,31 @@ export function WeatherLocationSearch({
           <button data-control-variant="ghost"
             type="button"
             onClick={onClear}
+            disabled={locating}
             aria-label={copy.clearSelectedLocation}
-            className="grid size-11 place-items-center rounded-full text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)] sm:size-8"
+            className="grid size-11 place-items-center rounded-full text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)] disabled:cursor-wait disabled:opacity-70 sm:size-8"
           >
             <X className="size-4" />
           </button>
-        ) : (
-          <button data-control-variant="ghost"
-            type="button"
-            onClick={onUseMyLocation}
-            aria-label={copy.useMyLocation}
-            className="grid size-11 place-items-center rounded-full text-[var(--weather-text-muted)] hover:text-[var(--weather-text-primary)] sm:size-8"
-          >
-            <MapPin className="size-4" />
-          </button>
-        )}
+        ) : null}
+        <button data-control-variant="ghost"
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            void onUseMyLocation();
+          }}
+          disabled={locating}
+          aria-busy={locating}
+          aria-label={locating ? copy.locationDetecting : copy.useMyLocation}
+          title={copy.useMyLocation}
+          className="grid size-11 place-items-center rounded-full text-[var(--weather-text-muted)] transition-colors hover:text-[var(--weather-text-primary)] disabled:cursor-wait disabled:opacity-70 sm:size-8"
+        >
+          {locating ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <MapPin className="size-4" aria-hidden />
+          )}
+        </button>
       </div>
 
       {showMenu && menuRect && typeof document !== "undefined"

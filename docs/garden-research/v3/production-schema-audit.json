@@ -1,0 +1,145 @@
+{
+  "observedAt": "2026-09-08T15:44:35.359Z",
+  "scope": "read-only schema metadata; no account content or user rows read",
+  "tables": [
+    {
+      "table_name": "about_me",
+      "columns": "{id,user_id,instruction_manual,core_values,mission,personality_insights,sections,profile_image_url,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "career_decisions",
+      "columns": "{id,user_id,title,decision_type,framework,context,options,assumptions,decision,expected_outcome,actual_outcome,lessons_learned,decision_quality_score,review_date,decided_at,review_reminder_date,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "career_events",
+      "columns": "{id,user_id,event_type,title,description,start_date,end_date,is_ongoing,organization,location,related_file_ids,color,icon,auto_generated,source_kind,source_id,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "career_opportunities",
+      "columns": "{id,user_id,company_name,role_title,location,stage,job_description,job_url,salary_range,contact_name,contact_email,notes,attached_file_ids,excitement_score,match_score,applied_date,next_action_date,stage_history,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "daily_plans",
+      "columns": "{id,user_id,plan_date,start_time,end_time,tasks,schedule_image_url,template_id,created_at,updated_at,mode,free_tasks}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "garden_adventure_events",
+      "columns": "{user_id,day,action,created_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "garden_adventure_settings",
+      "columns": "{user_id,decoration,reminders_enabled,quiet_start,quiet_end,last_invited_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "garden_daily_log",
+      "columns": "{id,user_id,log_date,chest_claimed,watered,bonus_items}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "garden_inventory",
+      "columns": "{id,user_id,item_type,quantity}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "goals",
+      "columns": "{id,user_id,name,description,status,target_date,category,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "grateful_things",
+      "columns": "{id,user_id,content,entry_date,category,photo_url,is_favorite,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "habit_completions",
+      "columns": "{id,user_id,habit_id,completion_date,status,value,note,completed_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "habit_links",
+      "columns": "{id,user_id,habit_id,target_kind,target_id,created_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "habits",
+      "columns": "{id,user_id,name,description,type,target_value,frequency,time_of_day,color,icon,sort_order,is_active,archived_at,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "japanese_study_sessions",
+      "columns": "{id,user_id,session_date,duration_minutes,study_type,content,notes,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "journal_entries",
+      "columns": "{id,user_id,entry_date,content,emotion_quadrant,needs,linked_project_ids,linked_task_ids,ai_summary,ai_illustration_url,ai_audio_url,created_at,updated_at,topic,primary_emotion,secondary_emotion,intensity,target,bullets,self_story,next_tiny_step,appreciation,topic_extras,context_factors,ai_reflection,ai_audio_script,ai_audio_quotes,ai_illustration_style,ai_illustration_symbolic_ratio}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "key_results",
+      "columns": "{id,user_id,goal_id,name,target_value,current_value,unit,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "knowledge_items",
+      "columns": "{id,user_id,title,content_type,source_url,source_domain,file_path,thumbnail_url,thumbnail_style,ai_summary,ai_tags,manual_tags,ai_key_insights,raw_content,status,date_added,date_modified,ai_tldr,ai_key_quotes,ai_questions_answered,ai_action_items,depth_indicator,error_details,processing_step,ai_content_overview,youtube_transcript,ai_video_chat_starters,source_type,provider,label,category,source_metadata,embed_html,extraction_status,transcript_status,ask_enabled,display_mode_default,title_source,generated_title,render_mode,preview_status,checked_at,screenshot_url,is_favorite}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "notification_preferences",
+      "columns": "{id,user_id,task_reminders,daily_summary,study_streak_reminders,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "plant_collection",
+      "columns": "{id,user_id,plant_type,variant,streak_days,bloom_date,harvested_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "columns": "{id,email,full_name,avatar_url,language,timezone,theme,onboarding_completed,created_at,updated_at,ui_theme,color_mode,focus_areas,motto,dashboard_cover_url,dashboard_widgets,widget_density,focus_mode,font_size_pref,greeting_tone,accent_color_hex,sidebar_width,sidebar_mobile_auto_collapse,ui_copy_mode,block_minutes,quick_tasks,display_currency,weather_lat,weather_lon,weather_city,plan,document_limit,page_limit,storage_limit_bytes,monthly_extraction_limit,quick_save_enabled,quick_save_default_destination,quick_save_require_review,os_buddy_pet_id,os_buddy_name,os_buddy_enabled,os_buddy_position,os_buddy_onboarding_completed,os_buddy_interaction_stats,os_buddy_unlocked_pets}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "projects",
+      "columns": "{id,user_id,name,description,status,priority,start_date,end_date,color,tags,created_at,updated_at,thumbnail_url,thumbnail_style}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "task_subtasks",
+      "columns": "{id,user_id,task_id,title,is_done,sort_order,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "tasks",
+      "columns": "{id,user_id,project_id,title,description,status,priority,due_date,completed_at,estimated_blocks,tags,source,source_url,reminder_date,created_at,updated_at,category,ai_generated,ai_metadata,sort_order,scheduled_date,calendar_event_id,calendar_provider}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "timer_sessions",
+      "columns": "{id,user_id,habit_id,routine_id,routine_step_id,started_at,target_duration_seconds,paused_at,total_paused_seconds,status,completed_at,created_at,updated_at}",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "user_garden",
+      "columns": "{id,user_id,plant_type,growth_stage,growth_points,streak_days,last_watered_at,planted_at,variant,is_wilted}",
+      "rls_enabled": true
+    }
+  ],
+  "missingRequestedTables": [
+    "planner_focus_sessions",
+    "calendar_events",
+    "google_calendar_events"
+  ],
+  "actualCalendarTables": [
+    "google_calendar_connections",
+    "calendar_task_sync"
+  ]
+}

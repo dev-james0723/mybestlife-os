@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useDeferredClientMount } from "@/hooks/use-deferred-client-mount";
 
 const LazyIdeaCaptureSheet = dynamic(
@@ -26,8 +27,13 @@ const LazyOSBuddyDock = dynamic(
 
 export function ProtectedLazyFeatures() {
   const ready = useDeferredClientMount({ timeoutMs: 2_500, fallbackDelayMs: 1_500 });
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // Keep floating capture/pet controls off the globe's gestures and mobile
+  // flight controls; they remount normally when leaving the Travel tab.
+  const immersiveTravel = pathname?.endsWith("/bucket-list") && searchParams.get("tab") === "travel";
 
-  if (!ready) return null;
+  if (!ready || immersiveTravel) return null;
 
   return (
     <>

@@ -336,8 +336,8 @@ const item = {
     vi: "Hồ sơ",
   },
   "career-vault": {
-    en: "Career Vault",
-    "zh-TW": "職涯檔案庫",
+    en: "Career Materials",
+    "zh-TW": "職涯材料",
     "zh-CN": "职涯档案库",
     ja: "キャリアヴォルト",
     ko: "커리어 볼트",
@@ -589,8 +589,8 @@ const item = {
     vi: "Tài liệu",
   },
   "software-vault": {
-    en: "Software Vault",
-    "zh-TW": "軟體庫",
+    en: "Tools & Subscriptions",
+    "zh-TW": "工具與訂閱",
     "zh-CN": "软件库",
     ja: "ソフトウェア保管庫",
     ko: "소프트웨어 금고",

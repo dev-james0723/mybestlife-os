@@ -48,6 +48,39 @@ type CoverOptions = {
 };
 
 async function renderCoverPdfBytes(opts: CoverOptions): Promise<Uint8Array> {
+  // Built-in PDF fonts cannot encode CJK. A browser-rendered cover preserves
+  // the user's writing using installed fonts without sending it to a service.
+  if (/[^\x20-\x7e\n\r]/.test([opts.title, opts.subtitle, opts.recipient, opts.dateLabel].join(" "))) {
+    if (typeof document === "undefined") throw new Error("A browser is required to render this cover.");
+    await document.fonts?.ready;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1224; canvas.height = 1584;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not render the cover. Retry or turn off the cover page.");
+    context.scale(2, 2);
+    context.fillStyle = "#ffffff"; context.fillRect(0, 0, 612, 792);
+    context.fillStyle = "#222633"; context.fillRect(72, 72, 468, 2);
+    let y = 132;
+    const write = (value: string, size: number, weight = "400") => {
+      context.font = `${weight} ${size}px system-ui, sans-serif`;
+      let line = "";
+      for (const character of Array.from(value)) {
+        if (character === "\n" || context.measureText(line + character).width > 468) {
+          context.fillText(line, 72, y); y += size * 1.5; line = character === "\n" ? "" : character;
+        } else line += character;
+      }
+      if (line) { context.fillText(line, 72, y); y += size * 1.5; }
+      y += 16;
+    };
+    write(opts.title.slice(0, 140), 26, "700");
+    if (opts.subtitle) write(opts.subtitle.slice(0, 200), 14);
+    if (opts.recipient) write(`Prepared for: ${opts.recipient.slice(0, 120)}`, 12);
+    context.font = "10px system-ui, sans-serif"; context.fillText(opts.dateLabel, 72, 720);
+    const doc = await PDFDocument.create();
+    const cover = await doc.embedPng(canvas.toDataURL("image/png"));
+    doc.addPage([612, 792]).drawImage(cover, { x: 0, y: 0, width: 612, height: 792 });
+    return doc.save();
+  }
   const doc = await PDFDocument.create();
   const page = doc.addPage([612, 792]); // US Letter
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -195,6 +228,15 @@ export async function exportBundle(
 ): Promise<ExportResult> {
   const total = opts.files.length;
   const skippedFiles: string[] = [];
+  if (!total) throw new Error("Choose at least one file before exporting.");
+  if (estimateBundleBytes(opts.files) > BUNDLE_MAX_BYTES) throw new Error("The bundle exceeds the 100 MB limit.");
+  let downloadedBytes = 0;
+  const download = async (file: CareerVaultFile) => {
+    const bytes = await fetchFileBytes(file);
+    downloadedBytes += bytes.byteLength;
+    if (downloadedBytes > BUNDLE_MAX_BYTES) throw new Error("The downloaded bundle exceeds the 100 MB limit.");
+    return bytes;
+  };
 
   if (opts.format === "zip") {
     const zip = new JSZip();
@@ -212,12 +254,8 @@ export async function exportBundle(
 
     for (let i = 0; i < opts.files.length; i++) {
       const f = opts.files[i];
-      try {
-        const bytes = await fetchFileBytes(f);
+        const bytes = await download(f);
         zip.file(ordered[i], bytes);
-      } catch {
-        skippedFiles.push(f.filename);
-      }
       opts.onProgress?.((i + 1) / Math.max(total, 1));
     }
 
@@ -249,15 +287,12 @@ export async function exportBundle(
       opts.onProgress?.((i + 1) / Math.max(total, 1));
       continue;
     }
-    try {
-      const bytes = await fetchFileBytes(f);
+      const bytes = await download(f);
       await bytesToPdfPage(doc, bytes, f.mime_type);
-    } catch {
-      skippedFiles.push(f.filename);
-    }
     opts.onProgress?.((i + 1) / Math.max(total, 1));
   }
 
+  if (skippedFiles.length === total) throw new Error("No selected files can be merged. Choose ZIP to include all formats.");
   const pdfBytes = await doc.save();
   // pdf-lib returns a Uint8Array. Wrap it in a standalone ArrayBuffer so the
   // Blob constructor is happy even when the underlying buffer is a

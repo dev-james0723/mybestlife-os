@@ -14,6 +14,8 @@ DocOracle/
 docoracle-capture-run.log
 docoracle-capture-urls.json
 playwright-user-data-docoracle/
+/playwright-user-data/
+/tmp/
 
 # Codex local validation state (no secrets, but machine-local)
 .codex/run-state/

@@ -79,6 +79,7 @@ export function SharesDashboard() {
           <p className="mt-1 text-xs text-muted-foreground">
             {copy.shares.empty.description}
           </p>
+          <Button className="mt-4 min-h-11" render={<Link href={vaultHref} />}>{language.startsWith("zh") ? "選擇一份材料分享" : "Choose a file to share"}</Button>
         </div>
       ) : null}
 

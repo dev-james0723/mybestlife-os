@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { AdvisorPortrait } from "@/components/mind-council/AdvisorPortrait";
 import { MindCouncilRichText } from "@/components/mind-council/MindCouncilRichText";
+import { advisorDisplayName } from "@/lib/mind-council/conversation-contract";
 
 type SkillChatRoomProps = {
   open: boolean;
@@ -99,9 +100,10 @@ export function SkillChatRoom({
 
   useEffect(() => {
     if (!open) return;
-    bottomRef.current?.scrollIntoView({
-      behavior: messages.length > 1 ? "smooth" : "auto",
-      block: "end",
+    const viewport = bottomRef.current?.closest<HTMLElement>('[data-slot="scroll-area-viewport"]');
+    viewport?.scrollTo({
+      top: viewport.scrollHeight,
+      behavior: messages.length > 1 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "auto",
     });
   }, [messages.length, loading, error, open]);
 
@@ -133,7 +135,7 @@ export function SkillChatRoom({
             skillId: skill.skillId,
             locale,
             messages: history.map(({ role, content }) => ({ role, content })),
-            ...(skill.skillId.startsWith("custom-")
+            ...(skill.skillId.startsWith("custom-") && !skill.skillId.startsWith("custom-rm-")
               ? { customLensTitle: skill.lensTitle, customSystemHint: skill.systemPromptHint }
               : {}),
           }),
@@ -211,7 +213,10 @@ export function SkillChatRoom({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <OSDialogSurface
         size="4xl"
-        className="flex h-[min(84dvh,800px)] max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-[1.4rem] p-0 sm:w-[min(860px,calc(100vw-2rem))]"
+        // Position the known-height chat without a percentage Y transform:
+        // GSAP popup motion must not consume the mobile centering offset.
+        style={{ top: "max(0.75rem, calc((100dvh - min(84dvh, 800px)) / 2))" }}
+        className="flex h-[min(84dvh,800px)] max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] translate-y-0 flex-col gap-0 overflow-hidden rounded-[1.4rem] p-0 sm:w-[min(860px,calc(100vw-2rem))]"
       >
         <div
           aria-hidden
@@ -232,14 +237,10 @@ export function SkillChatRoom({
             <div className="min-w-0">
               <div className="mb-1 flex min-w-0 items-center gap-2">
                 <DialogTitle className="truncate text-left text-base font-semibold sm:text-lg">
-                  {skill.lensTitle}
+                  {advisorDisplayName(skill.lensTitle)}
                 </DialogTitle>
-                <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-lime-400/30 bg-lime-300/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-lime-700 dark:text-lime-200 sm:inline-flex">
-                  <span className="size-1.5 rounded-full bg-lime-400" aria-hidden />
-                  {ui.lensBadge}
-                </span>
               </div>
-              <DialogDescription className="truncate text-left text-xs">
+              <DialogDescription className="text-left text-xs leading-relaxed">
                 {ui.disclaimerShort}
               </DialogDescription>
             </div>
@@ -393,8 +394,8 @@ export function SkillChatRoom({
                   ref={composerRef}
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
-                  placeholder={ui.heroPlaceholder}
-                  aria-label={ui.heroPlaceholder}
+                  placeholder={ui.chatMessagePlaceholder.replace("{name}", advisorDisplayName(skill.lensTitle))}
+                  aria-label={ui.chatMessagePlaceholder.replace("{name}", advisorDisplayName(skill.lensTitle))}
                   rows={1}
                   className="max-h-32 min-h-12 resize-none border-0 bg-transparent px-4 py-3 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
                   disabled={loading}
@@ -410,7 +411,7 @@ export function SkillChatRoom({
                     {ui.chatInputHint}
                   </span>
                   <span className="truncate px-1 text-[10px] text-muted-foreground/75 sm:hidden">
-                    {ui.disclaimerShort}
+                    {ui.chatInputHint}
                   </span>
                   <OSPrimaryAction
                     type="submit"

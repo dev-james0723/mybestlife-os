@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { ArrowLeft, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Copy, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { AIProviderIcon } from "@/components/ai-knowledge/AIProviderIcon";
 import { useAppStore } from "@/stores/app-store";
 import { usePromptStore } from "@/stores/prompt-store";
 import { getAiKnowledgeUiCopy } from "@/lib/i18n/ai-knowledge-ui";
+import { copyToClipboard } from "@/lib/ai/clipboard";
+import { dispatchToAI } from "@/lib/ai/dispatcher";
+import {
+  AI_KNOWLEDGE_CHAT_TOOLS,
+  getAITool,
+  type AIKnowledgeChatTool,
+} from "@/lib/ai/tool-registry";
 import type { CustomPrompt, LibraryPrompt } from "@/types/prompt";
-import { useAiKnowledgeRun } from "@/components/ai-knowledge/ai-knowledge-run-context";
 
 /**
  * AI Knowledge — prompt detail (Phase 1 skeleton).
@@ -23,10 +31,10 @@ import { useAiKnowledgeRun } from "@/components/ai-knowledge/ai-knowledge-run-co
  * This keeps the URL space flat while still letting the detail view fetch the
  * right record from the already-loaded prompt store. Run-with-Gemini (Phase 3)
  * and the create wizard (Phase 4) live on the main index and create routes;
- * this page remains a shareable read-only shell with Run.
+ * this page remains a shareable read-only shell with copy and external AI
+ * hand-off actions.
  */
 export default function AiKnowledgeDetailPage() {
-  const { openRun } = useAiKnowledgeRun();
   const language = useAppStore((s) => s.language);
   const ui = getAiKnowledgeUiCopy(language);
   const pathname = usePathname();
@@ -60,6 +68,49 @@ export default function AiKnowledgeDetailPage() {
     return userPrompts.find((p) => p.id === id) ?? null;
   }, [id, library, userPrompts]);
 
+  const handleCopyBody = useCallback(async () => {
+    if (!prompt) return;
+
+    const copied = await copyToClipboard(prompt.body);
+    if (copied) {
+      toast.success(ui.toast.copyBodySuccess);
+    } else {
+      toast.error(ui.toast.copyBodyFailed);
+    }
+  }, [prompt, ui.toast]);
+
+  const handleOpenInAi = useCallback(
+    async (tool: AIKnowledgeChatTool) => {
+      if (!prompt) return;
+
+      const provider = getAITool(tool).name;
+      try {
+        const result = await dispatchToAI({ prompt: prompt.body, tool });
+        if (!result.opened) {
+          toast.error(
+            result.copied
+              ? ui.toast.aiChatOpenFailed
+              : ui.toast.copyBodyFailed,
+          );
+          return;
+        }
+        if (result.urlPrefilled) {
+          toast.success(ui.toast.openedInAi(provider));
+          if (!result.copied) toast.warning(ui.toast.copyBodyFailed);
+          return;
+        }
+        if (result.copied) {
+          toast.success(ui.toast.openedInAiPaste(provider));
+        } else {
+          toast.error(ui.toast.copyBodyFailed);
+        }
+      } catch {
+        toast.error(ui.toast.aiChatOpenFailed);
+      }
+    },
+    [prompt, ui.toast],
+  );
+
   return (
     <PageShell
       title={prompt?.title_i18n.en ?? ui.detail.back}
@@ -77,12 +128,13 @@ export default function AiKnowledgeDetailPage() {
           </Button>
           {prompt && (
             <Button
+              variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => openRun(prompt)}
+              onClick={handleCopyBody}
             >
-              <Play className="h-4 w-4" />
-              {ui.detail.runWithAi}
+              <Copy className="h-4 w-4" />
+              {ui.detail.copyBody}
             </Button>
           )}
         </div>
@@ -177,6 +229,43 @@ export default function AiKnowledgeDetailPage() {
               )}
             </section>
           )}
+
+          <section
+            aria-labelledby="prompt-ai-chat-actions"
+            className="rounded-2xl border border-primary/20 bg-primary/[0.045] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-4"
+          >
+            <div className="mb-3 space-y-1">
+              <h2 id="prompt-ai-chat-actions" className="text-sm font-semibold">
+                {ui.detail.openInAi}
+              </h2>
+              <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                {ui.detail.openInAiHint}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {AI_KNOWLEDGE_CHAT_TOOLS.map((tool) => (
+                <Button
+                  key={tool.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenInAi(tool.id)}
+                  aria-label={ui.detail.openInProvider(tool.name)}
+                  className="h-10 min-w-0 justify-between gap-1.5 bg-background/55 px-2.5 hover:border-primary/35 hover:bg-background"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-md border border-border/70 bg-background/80 shadow-sm">
+                      <AIProviderIcon provider={tool.id} />
+                    </span>
+                    <span className="truncate text-xs font-medium">
+                      {tool.name}
+                    </span>
+                  </span>
+                  <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground" />
+                </Button>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </PageShell>

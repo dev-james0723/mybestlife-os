@@ -117,6 +117,14 @@ export type NeuralSkillContent = {
   avoidFor: string[];
   blindSpots: string[];
   starterPrompts: string[];
+  /** Executable person-specific Nuwa package, persisted in the existing JSONB. */
+  skillMarkdown?: string;
+  distillation?: {
+    protocol: "nuwa-v1";
+    generatedAt: string;
+    mode: "grounded" | "profile_synthesis" | "profile_fallback";
+    researchNotes: string;
+  };
 };
 
 /** A persisted Role Model → Mind Council lens, as stored in `role_model_neural_skills`. */

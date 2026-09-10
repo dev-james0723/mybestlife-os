@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type SetStateAction } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { getCareerVaultCopy } from "@/lib/i18n/career-vault-ui";
 import { useCareerVaultFiles } from "@/hooks/use-career-vault";
-import { useCreateBundle } from "@/hooks/use-career-vault-bundles";
+import { useCreateBundle, useUpdateBundle } from "@/hooks/use-career-vault-bundles";
 import { getBundleTemplate } from "@/lib/career-vault/bundle-templates";
 import {
   BUNDLE_MAX_BYTES,
@@ -39,6 +39,10 @@ import type {
 import { BundleTemplateSelector } from "./BundleTemplateSelector";
 import { BundleFileSelector } from "./BundleFileSelector";
 import { CoverPageEditor } from "./CoverPageEditor";
+import { useAccountDraft } from "@/hooks/use-account-draft";
+import { bundleDraftSchema } from "@/lib/form-draft-schemas";
+import { LocalDraftStatus } from "@/components/shared/local-draft-status";
+import { z } from "zod";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -47,28 +51,27 @@ export function BundleWizard() {
   const copy = getCareerVaultCopy(language);
   const localeSlug = useLocaleSlug();
   const router = useRouter();
+  const params = useSearchParams();
 
   const filesQuery = useCareerVaultFiles();
   const createMutation = useCreateBundle();
+  const updateMutation = useUpdateBundle();
+  const savedId = useRef<string | null>(null);
+  const busy = useRef(false);
 
-  const [step, setStep] = useState<WizardStep>(1);
-  const [template, setTemplate] = useState<BundleTemplateKey>("grad_school");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [includeCover, setIncludeCover] = useState(true);
-  const [title, setTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [recipient, setRecipient] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [format, setFormat] = useState<BundleExportFormat>("zip");
-  const [filename, setFilename] = useState("");
+  const fileId = params.get("fileId");
+  const initialDraft: z.infer<typeof bundleDraftSchema> = { operationId: null, savedId: null, step: 1, template: null, selectedIds: fileId && /^[0-9a-f-]{36}$/i.test(fileId) ? [fileId] : [], includeCover: true, title: "", subtitle: "", recipient: "", name: "", description: "", format: "zip", filename: "" };
+  const { draft, setDraft, clearDraft, ready, storageError } = useAccountDraft("career:bundle", initialDraft, bundleDraftSchema);
+  const { step, template, selectedIds, includeCover, title, subtitle, recipient, name, description, format, filename } = draft;
+  const operationId = useRef<string | null>(null);
+  const setField = useCallback(<K extends keyof typeof draft>(key: K, value: SetStateAction<typeof draft[K]>) => setDraft((previous) => ({ ...previous, [key]: typeof value === "function" ? (value as (current: typeof draft[K]) => typeof draft[K])(previous[key]) : value })), [setDraft]);
   const [exporting, setExporting] = useState(false);
 
   const allFiles = useMemo(
     () => filesQuery.data ?? [],
     [filesQuery.data],
   );
-  const tplDef = getBundleTemplate(template);
+  const tplDef = getBundleTemplate(template ?? "custom");
 
   // Default cover title / bundle name when template changes.
   const applyTemplateDefaults = (key: BundleTemplateKey) => {
@@ -83,8 +86,8 @@ export function BundleWizard() {
             : key === "funding"
               ? defs.fundingCover
               : defs.customCover;
-    setTitle((t) => t || defaultCover);
-    setName((n) => n || copy.bundles.templates[key]);
+    setField("title", (t) => t || defaultCover);
+    setField("name", (n) => n || copy.bundles.templates[key]);
   };
 
   const selectedFiles: CareerVaultFile[] = useMemo(() => {
@@ -105,42 +108,62 @@ export function BundleWizard() {
     [selectedFiles],
   );
   const tooLarge = totalBytes > BUNDLE_MAX_BYTES;
+  const missingFiles = selectedIds.length - selectedFiles.length;
 
   const bundlesHref = withLocalePrefix(localeSlug, "/career/vault/bundles");
 
-  if (filesQuery.isLoading) return <LoadingPage />;
+  if (!ready || filesQuery.isLoading) return <LoadingPage />;
+  if (filesQuery.isError) return <div role="alert" className="space-y-3"><p>{language.startsWith("zh") ? "未能載入材料，請重試。" : "Could not load your materials. Please retry."}</p><Button onClick={() => void filesQuery.refetch()}>{language.startsWith("zh") ? "重試" : "Retry"}</Button></div>;
 
   const defaultFilename = () =>
-    (name || copy.bundles.templates[template] || "bundle")
+    (name || copy.bundles.templates[template ?? "custom"] || "bundle")
       .toLowerCase()
       .replace(/\s+/g, "_")
       .slice(0, 60);
 
   const persistBundle = async () => {
-    return createMutation.mutateAsync({
-      name: name || copy.bundles.templates[template],
+    if (!template || !selectedFiles.length || missingFiles > 0) throw new Error("Review the selected files before saving.");
+    savedId.current ??= draft.savedId;
+    if (savedId.current) return updateMutation.mutateAsync({ id: savedId.current, updates: {
+      name: name || copy.bundles.templates[template], description: description || null,
+      bundle_type: template, file_order: selectedFiles.map((file) => file.id), include_cover_page: includeCover,
+      cover_title: title || null, cover_subtitle: subtitle || null, cover_recipient: recipient || null,
+    } });
+    operationId.current ??= draft.operationId ?? crypto.randomUUID();
+    setField("operationId", operationId.current);
+    const created = await createMutation.mutateAsync({
+      id: operationId.current,
+      name: name || copy.bundles.templates[template ?? "custom"],
       description: description || null,
       bundleType: template,
-      fileOrder: selectedIds,
+      fileOrder: selectedFiles.map((file) => file.id),
       includeCoverPage: includeCover,
       coverTitle: title || null,
       coverSubtitle: subtitle || null,
       coverRecipient: recipient || null,
     });
+    savedId.current = created.id;
+    setField("savedId", created.id);
+    return created;
   };
 
   const handleFinishSave = async () => {
+    if (busy.current) return;
+    busy.current = true;
     try {
       const created = await persistBundle();
+      clearDraft();
       router.push(
         withLocalePrefix(localeSlug, `/career/vault/bundles/${created.id}`),
       );
     } catch {
       /* handled via toast */
-    }
+    } finally { busy.current = false; }
   };
 
   const handleFinishExport = async () => {
+    if (busy.current) return;
+    busy.current = true;
     try {
       setExporting(true);
       const created = await persistBundle();
@@ -167,6 +190,7 @@ export function BundleWizard() {
       } else {
         toast.success(copy.bundles.toasts.exported(result.filename));
       }
+      clearDraft();
       router.push(
         withLocalePrefix(localeSlug, `/career/vault/bundles/${created.id}`),
       );
@@ -174,11 +198,14 @@ export function BundleWizard() {
       toast.error(copy.bundles.toasts.exportFailed);
     } finally {
       setExporting(false);
+      busy.current = false;
     }
   };
 
   return (
     <div className="space-y-6">
+      <LocalDraftStatus unavailable={storageError} />
+      {missingFiles > 0 && <div role="alert" className="space-y-2 rounded-xl border p-3"><p>{language.startsWith("zh") ? `${missingFiles} 份已選文件目前無法存取。請重試，或重新選擇材料。` : `${missingFiles} selected files are unavailable. Retry or review your material selection.`}</p><Button variant="outline" onClick={() => void filesQuery.refetch()}>{language.startsWith("zh") ? "重試" : "Retry"}</Button><Button variant="outline" onClick={() => { setField("selectedIds", selectedFiles.map((file) => file.id)); setField("step", 2); }}>{language.startsWith("zh") ? "只保留可用材料並檢查" : "Keep available files and review"}</Button></div>}
       {/* Header */}
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -212,7 +239,8 @@ export function BundleWizard() {
             <button data-control-variant="outline" data-selected={active}
               key={n}
               type="button"
-              onClick={() => setStep(n)}
+              onClick={() => setField("step", n)}
+              disabled={exporting || createMutation.isPending || updateMutation.isPending || (n > 1 && !template) || (n > 2 && !selectedFiles.length)}
               className={cn(
                 "flex items-center gap-1 rounded-full border px-3 py-1 text-xs",
                 active
@@ -248,7 +276,7 @@ export function BundleWizard() {
             copy={copy}
             value={template}
             onChange={(k) => {
-              setTemplate(k);
+              setField("template", k);
               applyTemplateDefaults(k);
             }}
           />
@@ -269,7 +297,7 @@ export function BundleWizard() {
             copy={copy}
             allFiles={allFiles}
             selectedIds={selectedIds}
-            onChange={setSelectedIds}
+            onChange={(value) => setField("selectedIds", value)}
             suggestedCategories={tplDef.suggestedCategories}
           />
 
@@ -277,8 +305,9 @@ export function BundleWizard() {
             <div className="space-y-1">
               <Label>{copy.bundles.wizard.nameLabel}</Label>
               <Input
+                aria-label={copy.bundles.wizard.nameLabel}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setField("name", e.target.value)}
                 placeholder={copy.bundles.wizard.namePlaceholder}
               />
             </div>
@@ -286,7 +315,7 @@ export function BundleWizard() {
               <Label>{copy.bundles.wizard.descriptionLabel}</Label>
               <Input
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => setField("description", e.target.value)}
                 placeholder={copy.bundles.wizard.descriptionPlaceholder}
               />
             </div>
@@ -307,13 +336,13 @@ export function BundleWizard() {
           <CoverPageEditor
             copy={copy}
             include={includeCover}
-            onIncludeChange={setIncludeCover}
+            onIncludeChange={(value) => setField("includeCover", value)}
             title={title}
-            onTitleChange={setTitle}
+            onTitleChange={(value) => setField("title", value)}
             subtitle={subtitle}
-            onSubtitleChange={setSubtitle}
+            onSubtitleChange={(value) => setField("subtitle", value)}
             recipient={recipient}
-            onRecipientChange={setRecipient}
+            onRecipientChange={(value) => setField("recipient", value)}
           />
         </section>
       ) : null}
@@ -329,11 +358,13 @@ export function BundleWizard() {
             </p>
           </header>
 
+          <ol className="list-inside list-decimal space-y-1 text-sm">{selectedFiles.map((file) => <li key={file.id} className="break-words">{file.filename}</li>)}</ol>
           <div className="space-y-2">
             <Label>{copy.bundles.wizard.formatLabel}</Label>
             <Select
               value={format}
-              onValueChange={(v) => v && setFormat(v as BundleExportFormat)}
+              itemToStringLabel={(value) => value === "zip" ? copy.bundles.wizard.formatZip : copy.bundles.wizard.formatMergedPdf}
+              onValueChange={(v) => v && setField("format", v as BundleExportFormat)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -368,14 +399,14 @@ export function BundleWizard() {
             <Label>{copy.bundles.wizard.filenameLabel}</Label>
             <Input
               value={filename}
-              onChange={(e) => setFilename(e.target.value)}
+              onChange={(e) => setField("filename", e.target.value)}
               placeholder={defaultFilename()}
             />
           </div>
 
           <Textarea
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => setField("description", e.target.value)}
             placeholder={copy.bundles.wizard.descriptionPlaceholder}
             rows={2}
           />
@@ -386,15 +417,15 @@ export function BundleWizard() {
       <div className="flex flex-wrap items-center justify-between gap-2 pt-4">
         <Button
           variant="ghost"
-          onClick={() => setStep((s) => (s > 1 ? ((s - 1) as WizardStep) : s))}
-          disabled={step === 1}
+          onClick={() => setField("step", (s) => (s > 1 ? ((s - 1) as WizardStep) : s))}
+          disabled={step === 1 || exporting || createMutation.isPending || updateMutation.isPending}
         >
           {copy.bundles.wizard.back}
         </Button>
         {step < 4 ? (
           <Button
-            onClick={() => setStep((s) => ((s + 1) as WizardStep))}
-            disabled={step === 2 && selectedIds.length === 0}
+            onClick={() => setField("step", (s) => ((s + 1) as WizardStep))}
+            disabled={!template || (step === 2 && selectedFiles.length === 0)}
           >
             {copy.bundles.wizard.next}
           </Button>
@@ -403,7 +434,7 @@ export function BundleWizard() {
             <Button
               variant="outline"
               onClick={handleFinishSave}
-              disabled={createMutation.isPending || exporting || selectedIds.length === 0}
+              disabled={createMutation.isPending || updateMutation.isPending || exporting || !template || selectedFiles.length === 0}
             >
               {createMutation.isPending
                 ? copy.bundles.wizard.saving
@@ -411,7 +442,7 @@ export function BundleWizard() {
             </Button>
             <Button
               onClick={handleFinishExport}
-              disabled={createMutation.isPending || exporting || selectedIds.length === 0}
+              disabled={createMutation.isPending || updateMutation.isPending || exporting || !template || selectedFiles.length === 0}
             >
               {exporting
                 ? copy.bundles.wizard.saving

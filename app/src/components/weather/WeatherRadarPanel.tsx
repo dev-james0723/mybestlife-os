@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LocateFixed, Minus, Pause, Play, Plus } from "lucide-react";
+import { Loader2, LocateFixed, Minus, Pause, Play, Plus } from "lucide-react";
 import dynamic from "next/dynamic";
 
 import type { WeatherUiCopy } from "@/lib/i18n/weather-ui";
+import type { WeatherCoords } from "@/lib/weather/openweather";
 import {
   fetchRadarFrames,
   RADAR_LEGEND_STOPS,
@@ -24,21 +25,25 @@ interface WeatherRadarPanelProps {
   copy: WeatherUiCopy;
   latitude: number;
   longitude: number;
+  onUseMyLocation: () => Promise<WeatherCoords | null>;
+  locating: boolean;
 }
 
 const FRAME_MS = 600;
 
 /**
- * Live precipitation radar. Real RainViewer frames over a dark Carto
+ * Live precipitation radar. Real RainViewer frames over the provider's dark
  * basemap centred on the user. Plays through the last ~2h of observed
- * radar plus the ~30min nowcast; the timeline scrubs frames and the
- * timestamp shows the frame time with a "nowcast" badge for future
- * frames.
+ * radar; the timeline scrubs frames and the timestamp shows each frame's
+ * observation time. The optional nowcast marker remains compatible with
+ * older API responses.
  */
 export function WeatherRadarPanel({
   copy,
   latitude,
   longitude,
+  onUseMyLocation,
+  locating,
 }: WeatherRadarPanelProps) {
   const [frames, setFrames] = useState<RadarFrames | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
@@ -84,6 +89,12 @@ export function WeatherRadarPanel({
     ? ((frameIndex + 1) / frames.frames.length) * 100
     : 0;
 
+  const handleLocate = async () => {
+    const coords = await onUseMyLocation();
+    if (!coords) return;
+    mapRef.current?.recenter(coords.lat, coords.lon);
+  };
+
   return (
     <section
       className="weather-glass-dark relative flex min-h-[360px] flex-col overflow-hidden p-6"
@@ -108,11 +119,17 @@ export function WeatherRadarPanel({
             <Minus className="size-4" />
           </RoundIconButton>
           <RoundIconButton
-            label="Recenter on me"
+            label={locating ? copy.locationDetecting : copy.useMyLocation}
             accent
-            onClick={() => mapRef.current?.recenter()}
+            onClick={() => void handleLocate()}
+            disabled={locating}
+            busy={locating}
           >
-            <LocateFixed className="size-4" />
+            {locating ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <LocateFixed className="size-4" aria-hidden />
+            )}
           </RoundIconButton>
         </div>
       </header>
@@ -180,19 +197,25 @@ function RoundIconButton({
   accent,
   label,
   onClick,
+  disabled,
+  busy,
 }: {
   children: React.ReactNode;
   accent?: boolean;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
+  busy?: boolean;
 }) {
   return (
     <button data-control-variant="outline"
       type="button"
       aria-label={label}
+      aria-busy={busy}
       onClick={onClick}
+      disabled={disabled}
       className={
-        "flex size-11 items-center justify-center rounded-full border border-[var(--weather-glass-border)] bg-[var(--weather-glass-elevated)] transition-colors hover:bg-white/10 sm:size-8 " +
+        "flex size-11 items-center justify-center rounded-full border border-[var(--weather-glass-border)] bg-[var(--weather-glass-elevated)] transition-colors hover:bg-white/10 disabled:cursor-wait disabled:opacity-70 sm:size-8 " +
         (accent
           ? "text-[var(--weather-accent-lime)]"
           : "text-[var(--weather-text-primary)]")

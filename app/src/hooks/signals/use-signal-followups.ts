@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@/hooks/use-auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -36,35 +37,38 @@ export type UseSignalFollowUpsReturn = {
  * TODO(Supabase): back this with `signal_followups`; signatures stay identical.
  */
 export function useSignalFollowUps(): UseSignalFollowUpsReturn {
+  const { user, isLoading } = useAuth();
+  const userId = user?.id ?? null;
   const [followUps, setFollowUps] = useState<SignalFollowUp[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setFollowUps(loadFollowUps());
+    if (isLoading) return;
+    setFollowUps(loadFollowUps(userId));
     setReady(true);
-  }, []);
+  }, [userId, isLoading]);
 
   const track = useCallback((signal: SignalItem) => {
-    setFollowUps(trackFollowUp(signal));
-  }, []);
+    setFollowUps(trackFollowUp(signal, userId));
+  }, [userId]);
 
   const setStatus = useCallback((signalId: string, status: SignalFollowUpStatus) => {
-    setFollowUps(setFollowUpStatus(signalId, status));
-  }, []);
+    setFollowUps(setFollowUpStatus(signalId, status, userId));
+  }, [userId]);
 
   const remove = useCallback((signalId: string) => {
-    setFollowUps(removeFollowUp(signalId));
-  }, []);
+    setFollowUps(removeFollowUp(signalId, userId));
+  }, [userId]);
 
   const clearAll = useCallback(() => {
-    clearFollowUps();
+    clearFollowUps(userId);
     setFollowUps([]);
-  }, []);
+  }, [userId]);
 
   const reconcile = useCallback((pool: SignalItem[]) => {
     if (pool.length === 0) return;
-    setFollowUps((prev) => (prev.length === 0 ? prev : reconcileFollowUps(pool, prev)));
-  }, []);
+    setFollowUps((prev) => (prev.length === 0 ? prev : reconcileFollowUps(pool, prev, userId)));
+  }, [userId]);
 
   const watching = useMemo(
     () => followUps.filter((f) => f.status === "watching"),

@@ -12,6 +12,8 @@ import {
   normalizeCareerBannerStyle,
 } from "@/lib/career-mirror/banner/career-banner-style-config";
 import { EASE_OUT_EXPO, REDUCED_MOTION_FADE } from "@/lib/animation/easings";
+import { getSetupProgress } from "@/lib/career-mirror/setup-progress";
+import type { SetupAnswers } from "@/lib/career-mirror/careerSetupTypes";
 import { cn } from "@/lib/utils";
 import type { CareerBannerStatus, CareerProfile } from "@/types/database";
 
@@ -139,8 +141,8 @@ export function CareerMirrorHero({
     .map((s) => s?.trim())
     .filter(Boolean) as string[];
   const summary = profile?.ai_summary?.trim() || copy.hero.subtitle;
-  const completion =
-    profile?.completion_score ?? (profile ? 0 : 0);
+  const progress = getSetupProgress((profile?.setup_answers ?? {}) as SetupAnswers);
+  const completion = progress.percent;
   const primaryAction = profile?.ai_next_actions?.[0] ?? null;
 
   const generating = banner.generating || banner.status === "generating";
@@ -179,7 +181,7 @@ export function CareerMirrorHero({
         {/* Overlay content */}
         <div className="absolute inset-0 flex flex-col justify-between p-4 sm:p-6 md:p-8">
           <div className="flex items-start justify-between gap-3">
-            <CompletionRing percent={completion} />
+            <div className="space-y-1"><CompletionRing percent={completion} /><p className="text-xs text-white">{language.startsWith("zh") ? "核心問題" : "Core questions"} {progress.answered}/{progress.total}</p></div>
             {!hasImage ? (
               <Button
                 size="sm"

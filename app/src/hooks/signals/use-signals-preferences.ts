@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useAuth } from "@/hooks/use-auth";
 import { DEFAULT_SIGNALS_PREFERENCES } from "@/lib/signals/constants";
 import {
   clearPreferences,
@@ -14,7 +15,8 @@ export type UseSignalsPreferencesReturn = {
   prefs: SignalsPreferences;
   /** True once localStorage has been read (avoids SSR/first-paint flicker). */
   ready: boolean;
-  update: (patch: Partial<SignalsPreferences>) => void;
+  update: (patch: Partial<SignalsPreferences>) => boolean;
+  storageError: boolean;
   reset: () => void;
 };
 
@@ -26,25 +28,35 @@ export type UseSignalsPreferencesReturn = {
  */
 export function useSignalsPreferences(): UseSignalsPreferencesReturn {
   const [prefs, setPrefs] = useState<SignalsPreferences>(DEFAULT_SIGNALS_PREFERENCES);
-  const [ready, setReady] = useState(false);
+  const { user, isLoading } = useAuth();
+  const userId = user?.id ?? null;
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(undefined);
+  const [storageError, setStorageError] = useState(false);
+  const latest = useRef({ userId, prefs: DEFAULT_SIGNALS_PREFERENCES });
 
   useEffect(() => {
-    setPrefs(loadPreferences());
-    setReady(true);
-  }, []);
+    if (isLoading) return;
+    const restored = loadPreferences(userId);
+    latest.current = { userId, prefs: restored };
+    setPrefs(restored);
+    setStorageError(false);
+    setLoadedFor(userId);
+  }, [userId, isLoading]);
 
   const update = useCallback((patch: Partial<SignalsPreferences>) => {
-    setPrefs((prev) => {
-      const next = { ...prev, ...patch };
-      savePreferences(next);
-      return next;
-    });
-  }, []);
+    const next = { ...(latest.current.userId === userId ? latest.current.prefs : DEFAULT_SIGNALS_PREFERENCES), ...patch };
+    latest.current = { userId, prefs: next };
+    const saved = savePreferences(next, userId);
+    setPrefs(next);
+    setStorageError(!saved);
+    return saved;
+  }, [userId]);
 
   const reset = useCallback(() => {
-    clearPreferences();
+    clearPreferences(userId);
+    latest.current = { userId, prefs: DEFAULT_SIGNALS_PREFERENCES };
     setPrefs({ ...DEFAULT_SIGNALS_PREFERENCES });
-  }, []);
+  }, [userId]);
 
-  return { prefs, ready, update, reset };
+  return { prefs: loadedFor === userId ? prefs : DEFAULT_SIGNALS_PREFERENCES, ready: !isLoading && loadedFor === userId, update, reset, storageError };
 }

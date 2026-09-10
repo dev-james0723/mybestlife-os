@@ -30,7 +30,7 @@ export function useRoleModelContextBuilder() {
   const { data: roleModels } = useRoleModels();
 
   return useCallback(
-    (roleModel: RoleModel): RoleModelInsightContextPayload =>
+    (roleModel: RoleModel, includeAboutMe = false): RoleModelInsightContextPayload =>
       buildRoleModelInsightContext({
         roleModel,
         locale,
@@ -39,7 +39,7 @@ export function useRoleModelContextBuilder() {
         tasks: tasks ?? [],
         notes: notes ?? [],
         ideas: ideas ?? [],
-        aboutMe: aboutMe ?? null,
+        aboutMe: includeAboutMe ? aboutMe ?? null : null,
         allRoleModels: roleModels ?? [],
       }),
     [locale, projects, goals, tasks, notes, ideas, aboutMe, roleModels],

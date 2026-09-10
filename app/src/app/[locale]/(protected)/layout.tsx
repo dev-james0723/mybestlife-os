@@ -5,6 +5,7 @@ import { SyncThemeFromProfile } from "@/components/sync-theme-from-profile";
 import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
 import { ProtectedLazyFeatures } from "@/components/protected-lazy-features";
 import { FocusRealityBoundary } from "@/components/daily-planner/focus/focus-reality-boundary";
+import { PublicInformationBoundary } from "@/components/public-information-boundary";
 
 export default function ProtectedLayout({
   children,
@@ -12,7 +13,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider data-app-design="projects">
+    <PublicInformationBoundary content={children}><SidebarProvider data-app-design="projects">
       <FocusRealityBoundary>
         <SyncThemeFromProfile />
         <OnboardingGate />
@@ -22,6 +23,6 @@ export default function ProtectedLayout({
         </SidebarInset>
         <ProtectedLazyFeatures />
       </FocusRealityBoundary>
-    </SidebarProvider>
+    </SidebarProvider></PublicInformationBoundary>
   );
 }

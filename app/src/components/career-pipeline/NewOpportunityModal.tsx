@@ -117,6 +117,7 @@ export function NewOpportunityModal({
           <div className="space-y-1">
             <Label>{n.stageLabel}</Label>
             <Select
+              itemToStringLabel={(value) => copy.pipeline.stages[value as OpportunityStage] ?? String(value)}
               value={stage}
               onValueChange={(v) => v && setStage(v as OpportunityStage)}
             >

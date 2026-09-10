@@ -494,7 +494,7 @@ const en: CareerPhase5Copy = {
     },
     empty: "Your network is empty. Add the first person or organization.",
     youNode: "You",
-    addNode: "Add node",
+    addNode: "Add a person or organization",
     addEdge: "Add connection",
     warmth: {
       hot: "Hot",
@@ -799,7 +799,7 @@ const overrides: Partial<Record<AppLocale, DeepPartial<CareerPhase5Copy>>> = {
       },
     },
     timeline: { pageTitle: "職涯時間軸", newEvent: "新增事件" },
-    network: { pageTitle: "職涯人脈圖", addNode: "新增節點" },
+    network: { pageTitle: "職涯人脈圖", addNode: "新增人物或組織" },
     analytics: { pageTitle: "職涯分析" },
     journal: { pageTitle: "決策日誌", newDecision: "新增決策" },
     profile: { pageTitle: "我的職涯檔案", save: "儲存", saving: "儲存中…" },

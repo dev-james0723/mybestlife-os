@@ -19,9 +19,9 @@ import {
   Phone,
   Plus,
   Star,
-  X,
 } from "lucide-react";
 
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAppStore } from "@/stores/app-store";
 import { getTravelExplorerUiCopy } from "@/lib/i18n/travel-explorer-ui";
 import { useTravelExplorerStore } from "@/stores/travel-explorer-store";
@@ -33,7 +33,7 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
   const copy = useMemo(() => getTravelExplorerUiCopy(language), [language]);
   const detailPlaceId = useTravelExplorerStore((s) => s.detailPlaceId);
   const closeDetail = useTravelExplorerStore((s) => s.closeDetail);
-  const { data, isLoading } = usePlaceDetails(detailPlaceId);
+  const { data, isLoading, isError, refetch } = usePlaceDetails(detailPlaceId);
   const savePlace = useSavePlace();
 
   if (!detailPlaceId) return null;
@@ -49,32 +49,15 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
       lat: place.lat,
       lng: place.lng,
       category: place.category,
-    });
-    closeDetail();
+    }, { onSuccess: closeDetail });
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      role="dialog"
-      aria-modal="true"
-    >
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={closeDetail}
-      />
-      <div className="relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-white/15 bg-[rgba(16,24,38,0.94)] text-white shadow-2xl sm:rounded-2xl">
-        <button data-control-variant="ghost"
-          type="button"
-          onClick={closeDetail}
-          aria-label="Close"
-          className="absolute right-3 top-3 z-20 grid h-8 w-8 place-items-center rounded-full bg-black/40 hover:bg-black/60"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
+    <Dialog open={Boolean(detailPlaceId)} onOpenChange={(open) => { if (!open) closeDetail(); }}>
+      <DialogContent size="lg" className="max-h-[85svh] overflow-y-auto bg-[#101826] text-white">
+        <DialogTitle className="sr-only">{place?.name ?? copy.nearbyPlaces}</DialogTitle>
+        <DialogDescription className="sr-only">{copy.addToTrip}</DialogDescription>
+        {isError && <div role="alert" className="p-6 text-center"><p>{copy.nearbyUnavailable}</p><button type="button" onClick={() => void refetch()} className="mt-3 min-h-11 px-4 underline">{copy.retryLoad}</button></div>}
         {isLoading && (
           <div className="p-12 text-center text-sm text-white/60">…</div>
         )}
@@ -157,14 +140,14 @@ export function PoiDetailPopup({ destinationId }: { destinationId: string | null
                 className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#7FE3F0] px-4 py-2.5 text-sm font-semibold text-[#06121f] transition hover:brightness-110 disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
-                {copy.addToTrip}
+                {savePlace.isPending ? copy.savingPlace : copy.addToTrip}
               </button>
               <p className="text-center text-[10px] text-white/40">{copy.attribution}</p>
             </div>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

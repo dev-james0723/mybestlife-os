@@ -1,8 +1,11 @@
 import type { AppLocale } from "./app-locale";
 import { DEFAULT_LOCALE } from "./app-locale";
 import type { MindSkillCategory } from "@/lib/mind-council/types";
+import { MIND_COUNCIL_CONVERSATION_COPY } from "./mind-council-conversation-copy";
 
-export type MindCouncilUiCopy = {
+export type MindCouncilUiCopy = typeof MIND_COUNCIL_CONVERSATION_COPY.en & LegacyMindCouncilUiCopy;
+
+type LegacyMindCouncilUiCopy = {
   pageTitle: string;
   pageDescription: string;
   heroTitle: string;
@@ -80,12 +83,12 @@ const categoryEn: Record<MindSkillCategory, string> = {
 
 function base(
   categoryTab: Record<MindSkillCategory, string>,
-  rest: Omit<MindCouncilUiCopy, "categoryTab">,
-): MindCouncilUiCopy {
+  rest: Omit<LegacyMindCouncilUiCopy, "categoryTab">,
+): LegacyMindCouncilUiCopy {
   return { ...rest, categoryTab };
 }
 
-const COPY: Record<AppLocale, MindCouncilUiCopy> = {
+const COPY: Record<AppLocale, LegacyMindCouncilUiCopy> = {
   en: base(categoryEn, {
     pageTitle: "Mind Council",
     pageDescription:
@@ -780,5 +783,5 @@ const COPY: Record<AppLocale, MindCouncilUiCopy> = {
 };
 
 export function getMindCouncilUiCopy(locale: AppLocale): MindCouncilUiCopy {
-  return COPY[locale] ?? COPY[DEFAULT_LOCALE];
+  return { ...(COPY[locale] ?? COPY[DEFAULT_LOCALE]), ...MIND_COUNCIL_CONVERSATION_COPY[locale] };
 }

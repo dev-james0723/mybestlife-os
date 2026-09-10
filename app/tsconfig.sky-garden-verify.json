@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": [
+    "next-env.d.ts",
+    "src/app/api/garden/pets/route.ts",
+    "src/app/[locale]/(protected)/garden/page.tsx",
+    "src/components/garden/**/*.tsx",
+    "src/components/garden/GardenPresentationControls.tsx",
+    "src/components/garden/**/*.ts",
+    "src/hooks/use-garden.ts",
+    "src/hooks/use-garden-adventure.ts",
+    "src/hooks/use-garden-buddy-invitations.ts",
+    "src/hooks/use-os-buddy.ts",
+    "src/components/os-buddy/OSBuddyDock.tsx",
+    "src/lib/garden/**/*.ts",
+    "src/lib/i18n/garden-game-ui.ts",
+    "src/lib/repositories/garden.ts"
+  ],
+  "exclude": ["node_modules", ".next", ".next-garden-verify", ".next-brain-verify", ".next-brain-profile"]
+}

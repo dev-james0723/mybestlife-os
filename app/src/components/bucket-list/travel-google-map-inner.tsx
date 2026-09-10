@@ -12,6 +12,7 @@ import "leaflet/dist/leaflet.css";
 import { cn } from "@/lib/utils";
 import {
   googleMapTilesLayerUrl,
+  TRAVEL_BASEMAP_URL,
   type GoogleMapTilesSession,
 } from "@/lib/bucket-list/google-map-tiles";
 import type { BucketStatus } from "@/types/bucket-list";
@@ -23,6 +24,8 @@ import {
   tickRouteDashAnimation,
   type FlightRouteRuntime,
 } from "./travel-flight-route-layer";
+import { useAppStore } from "@/stores/app-store";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
 import { TravelMapFallback } from "./travel-map-fallback";
 
 export type TravelMapMarker = {
@@ -42,7 +45,8 @@ export type TravelMapRoute = {
 };
 
 type TravelGoogleMapInnerProps = {
-  apiKey: string;
+  onRetry?: () => void;
+  apiKey?: string;
   markers: TravelMapMarker[];
   routes: TravelMapRoute[];
   onMarkerClick: (id: string) => void;
@@ -51,10 +55,11 @@ type TravelGoogleMapInnerProps = {
 
 const DEFAULT_CENTER: [number, number] = [20, 10];
 const DEFAULT_ZOOM = 2;
+const TILE_LOAD_TIMEOUT_MS = 10_000;
 
 /**
- * Google Map Tiles (2D) + Leaflet — uses Map Tiles API (same as the 3D globe),
- * not Maps JavaScript API (avoids ApiNotActivatedMapError when only Tiles is on).
+ * Leaflet starts with the app's existing keyless basemap. Google detail is an
+ * optional upgrade; a failed session or tile must never remove the working map.
  */
 export function TravelGoogleMapInner({
   apiKey,
@@ -62,7 +67,9 @@ export function TravelGoogleMapInner({
   routes,
   onMarkerClick,
   className,
+  onRetry,
 }: TravelGoogleMapInnerProps) {
+  const copy = getUxJourneyCopy(useAppStore((state) => state.language));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const tileLayerRef = useRef<LeafletTileLayer | null>(null);
@@ -72,39 +79,32 @@ export function TravelGoogleMapInner({
   const mapReadyRef = useRef(false);
   const refreshPlaneHeadingsRef = useRef<(() => void) | null>(null);
   const onMarkerClickRef = useRef(onMarkerClick);
+  const dataRef = useRef({ markers, routes });
 
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [mapSource, setMapSource] = useState("loading");
 
   useEffect(() => {
     onMarkerClickRef.current = onMarkerClick;
-  }, [onMarkerClick]);
+    dataRef.current = { markers, routes };
+  }, [onMarkerClick, markers, routes]);
 
   useEffect(() => {
     let cancelled = false;
     const flightRoutes = flightRoutesRef.current;
+    const controller = new AbortController();
+    let resizeObserver: ResizeObserver | undefined;
+    let sessionTimer: ReturnType<typeof setTimeout> | undefined;
+    let tileTimer: ReturnType<typeof setTimeout> | undefined;
+    let googleTimer: ReturnType<typeof setTimeout> | undefined;
+    let googleTiles: LeafletTileLayer | null = null;
+    let standardTiles: LeafletTileLayer | null = null;
+    let standardLoaded = false;
+    let googleLoaded = false;
+    let googlePending = Boolean(apiKey);
 
     void (async () => {
       setLoadError(null);
-
-      const sessionRes = await fetch("/api/travel/map-tiles-session", {
-        method: "POST",
-      });
-      const sessionJson = (await sessionRes.json().catch(() => ({}))) as
-        | GoogleMapTilesSession
-        | { error?: string };
-
-      if (!sessionRes.ok || !("session" in sessionJson) || !sessionJson.session) {
-        if (!cancelled) {
-          setLoadError(
-            "session" in sessionJson
-              ? "Could not start Google map tiles."
-              : ((sessionJson as { error?: string }).error ??
-                  "Enable Map Tiles API in Google Cloud for this key."),
-          );
-        }
-        return;
-      }
-
       const mod = await import("leaflet");
       const L = (mod.default ?? mod) as typeof import("leaflet");
       if (cancelled || !containerRef.current || mapRef.current) return;
@@ -118,29 +118,22 @@ export function TravelGoogleMapInner({
         zoomControl: true,
         attributionControl: true,
         scrollWheelZoom: true,
+        // Leaflet 1.9 leaves its CSS zoom timer alive after map.remove().
+        // Keep zoom/pinch immediate so tab changes cannot touch disposed panes.
+        zoomAnimation: false,
       });
       mapRef.current = map;
 
-      const tiles = L.tileLayer(
-        googleMapTilesLayerUrl(sessionJson.session, apiKey),
-        {
-          maxZoom: 22,
-          attribution:
-            '&copy; <a href="https://www.google.com/maps">Google</a>',
-        },
-      );
-      tiles.addTo(map);
-      tileLayerRef.current = tiles;
-
+      const currentData = dataRef.current;
       syncDestinationMarkers(
         L,
         map,
-        markers,
+        currentData.markers,
         markersRef,
         onMarkerClickRef,
       );
-      syncFlightRoutes(L, map, routes, flightRoutes);
-      fitMapToData(L, map, markers, routes);
+      syncFlightRoutes(L, map, currentData.routes, flightRoutes);
+      fitMapToData(L, map, currentData.markers, currentData.routes);
       mapReadyRef.current = true;
 
       const refreshHeadings = () => {
@@ -150,11 +143,115 @@ export function TravelGoogleMapInner({
       refreshPlaneHeadingsRef.current = refreshHeadings;
       map.on("zoom move", refreshHeadings);
 
-      setTimeout(() => map.invalidateSize(), 100);
-    })();
+      resizeObserver = new ResizeObserver(() => map.invalidateSize());
+      resizeObserver.observe(containerRef.current);
+
+      const markUnavailable = () => {
+        if (!cancelled && !standardLoaded && !googlePending && !googleLoaded) {
+          setMapSource("offline");
+          setLoadError("tiles_unavailable");
+        }
+      };
+      const watchTiles = () => {
+        clearTimeout(tileTimer);
+        tileTimer = setTimeout(markUnavailable, TILE_LOAD_TIMEOUT_MS);
+      };
+      const showStandardMap = () => {
+        if (cancelled) return;
+        googlePending = false;
+        googleLoaded = false;
+        clearTimeout(googleTimer);
+        googleTiles?.remove();
+        googleTiles?.off();
+        googleTiles = null;
+        if (standardTiles && !map.hasLayer(standardTiles)) standardTiles.addTo(map);
+        tileLayerRef.current = standardTiles;
+        setMapSource(standardLoaded ? "standard" : "loading");
+        watchTiles();
+      };
+
+      standardTiles = L.tileLayer(TRAVEL_BASEMAP_URL, {
+        maxZoom: 18,
+        attribution: 'Basemap <a href="https://www.rainviewer.com/">RainViewer</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      });
+      standardTiles.on("tileload", () => {
+        if (cancelled) return;
+        standardLoaded = true;
+        if (!googleLoaded) {
+          setLoadError(null);
+          setMapSource("standard");
+        }
+      });
+      // `loading` also covers a new viewport after pan/zoom, not just mount.
+      standardTiles.on("loading", () => {
+        standardLoaded = false;
+        watchTiles();
+      });
+      standardTiles.on("load", markUnavailable);
+      standardTiles.addTo(map);
+      tileLayerRef.current = standardTiles;
+      watchTiles();
+
+      if (!apiKey) return;
+      sessionTimer = setTimeout(() => controller.abort(), 8_000);
+      try {
+        const response = await fetch("/api/travel/map-tiles-session", {
+          method: "POST",
+          signal: controller.signal,
+        });
+        const session = (await response.json()) as GoogleMapTilesSession;
+        if (!response.ok || typeof session?.session !== "string" || !session.session.trim()) {
+          throw new Error("Map session unavailable");
+        }
+        if (cancelled) return;
+        googleTiles = L.tileLayer(googleMapTilesLayerUrl(session.session, apiKey), {
+          maxZoom: 22,
+          opacity: 0,
+          attribution: '&copy; <a href="https://www.google.com/maps">Google</a>',
+        });
+        let loadedTile = false;
+        googleTiles.on("loading", () => {
+          clearTimeout(googleTimer);
+          googleTimer = setTimeout(showStandardMap, TILE_LOAD_TIMEOUT_MS);
+        });
+        googleTiles.on("tileload", () => { loadedTile = true; });
+        googleTiles.on("tileerror", showStandardMap);
+        googleTiles.on("remove", () => clearTimeout(googleTimer));
+        googleTiles.on("load", () => {
+          clearTimeout(googleTimer);
+          if (cancelled || !googleTiles || !loadedTile) return;
+          googlePending = false;
+          googleLoaded = true;
+          googleTiles.setOpacity(1);
+          standardTiles?.remove();
+          tileLayerRef.current = googleTiles;
+          setLoadError(null);
+          setMapSource("google");
+        });
+        googleTiles.addTo(map);
+      } catch {
+        showStandardMap();
+      } finally {
+        clearTimeout(sessionTimer);
+      }
+    })().catch(() => {
+      if (!cancelled) {
+        setMapSource("offline");
+        setLoadError("map_unavailable");
+      }
+    });
 
     return () => {
       cancelled = true;
+      controller.abort();
+      clearTimeout(sessionTimer);
+      clearTimeout(tileTimer);
+      clearTimeout(googleTimer);
+      resizeObserver?.disconnect();
+      googleTiles?.remove();
+      googleTiles?.off();
+      standardTiles?.remove();
+      standardTiles?.off();
       mapReadyRef.current = false;
       if (mapRef.current && refreshPlaneHeadingsRef.current) {
         mapRef.current.off("zoom move", refreshPlaneHeadingsRef.current);
@@ -167,7 +264,6 @@ export function TravelGoogleMapInner({
       mapRef.current = null;
       leafletRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once per mount
   }, [apiKey]);
 
   useEffect(() => {
@@ -206,29 +302,29 @@ export function TravelGoogleMapInner({
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  if (loadError) {
-    return (
-      <TravelMapFallback
+  return (
+    <div
+      className={cn("relative isolate h-[min(58dvh,560px)] min-h-[420px] w-full overflow-hidden", className)}
+      data-map-source={mapSource}
+    >
+      <div
+        ref={containerRef}
+        className="travel-google-map h-full w-full"
+        role="region"
+        aria-label="Travel dreams map"
+        aria-hidden={Boolean(loadError)}
+        style={loadError ? { visibility: "hidden" } : undefined}
+      />
+      {loadError ? <TravelMapFallback
         markers={markers}
         routes={routes}
         onMarkerClick={onMarkerClick}
         title="Map layer paused"
-        message={
-          loadError ||
-          "The live map layer is unavailable. Your mapped dreams are still shown here."
-        }
-        className={className}
-      />
-    );
-  }
-
-  return (
-    <div
-      ref={containerRef}
-      className={cn("travel-google-map h-[min(58dvh,560px)] min-h-[420px] w-full", className)}
-      role="application"
-      aria-label="Travel dreams map"
-    />
+        message={copy.mapUnavailable}
+        onRetry={onRetry}
+        className="absolute inset-0 h-full min-h-0"
+      /> : null}
+    </div>
   );
 }
 

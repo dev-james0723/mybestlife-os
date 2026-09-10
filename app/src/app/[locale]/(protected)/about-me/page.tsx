@@ -2,24 +2,27 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type RefObject,
 } from "react";
-import { useGSAP } from "@gsap/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { FirstStepCard } from "@/components/onboarding/first-step-card";
+import { readQuestionnaire } from "@/lib/about-me-questionnaire";
+import { Textarea } from "@/components/ui/textarea";
+import { useAboutMeDraft } from "@/hooks/use-about-me-draft";
+import { aboutMeRepository } from "@/lib/repositories/about-me";
+import type { AboutMe } from "@/types/database";
+import { Input } from "@/components/ui/input";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   Brain,
   Briefcase,
   Camera,
-  CheckCircle2,
-  FileText,
   Heart,
   ImageIcon,
-  Shield,
   Sparkles,
   Upload,
   UserRound,
@@ -32,19 +35,15 @@ import {
   OSControl,
   OSFrostedPanel,
   OSPrimaryAction,
-  OSSolidPanel,
 } from "@/components/ui/os-primitives";
 import {
   RichTextEditor,
   type RichTextEditorHandle,
 } from "@/components/shared/rich-text-editor";
-import { useAboutMe, useUpsertAboutMe, useUploadAboutMeProfileImage } from "@/hooks/use-about-me";
+import { useAboutMe, useUploadAboutMeProfileImage } from "@/hooks/use-about-me";
 import { useAppStore } from "@/stores/app-store";
 import { getMiscUiCopy } from "@/lib/i18n/misc-ui";
-import { isPremiumMotionEnabled } from "@/lib/motion/config";
-import { registerGSAP, gsap } from "@/lib/motion/register-gsap";
 import { cn } from "@/lib/utils";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 type SectionKey =
   | "instruction_manual"
@@ -52,7 +51,6 @@ type SectionKey =
   | "mission"
   | "personality_insights";
 
-type SourceMode = "undecided" | "allowed" | "manual";
 
 type SoulDomain =
   | "purpose"
@@ -142,7 +140,7 @@ const QUESTION_TITLES_ZH: Record<string, string> = {
   "life-non-negotiables": "你理想生活入面，邊啲嘢係不可妥協？",
   "work-life-friction": "工作最容易喺邊度扭曲你嘅生活？",
   "emotional-response": "情緒升起嗰陣，你通常會點反應？",
-  "body-signals": "你嘅身體最近用咩方式提醒你？",
+  "body-signals": "最近有冇身體感受想記低？（選填）",
   "five-year-self": "五年後嘅你，會叫而家嘅你做啲咩？",
 };
 
@@ -388,7 +386,7 @@ const SOUL_QUESTIONS: SoulQuestion[] = [
   },
   {
     id: "body-signals",
-    title: "How has your body been trying to get your attention?",
+    title: "Any physical experiences you would like to note lately? (optional)",
     domain: "health",
     options: [
       { id: "fatigue", label: "Fatigue", tags: ["body", "rest"] },
@@ -444,9 +442,6 @@ const DOMAIN_LABELS_ZH: Record<SoulDomain, string> = {
   future: "未來自己",
 };
 
-function getTagLabel(tag: string, chinese: boolean) {
-  return chinese ? (TAG_LABELS_ZH[tag] ?? TAG_LABELS[tag] ?? tag) : (TAG_LABELS[tag] ?? tag);
-}
 
 function getDomainLabel(domain: SoulDomain, chinese: boolean) {
   return chinese ? DOMAIN_LABELS_ZH[domain] : DOMAIN_META[domain].label;
@@ -456,7 +451,12 @@ function getQuestionTitle(question: SoulQuestion, chinese: boolean) {
   return chinese ? (QUESTION_TITLES_ZH[question.id] ?? question.title) : question.title;
 }
 
+function optionsForQuestion(question: SoulQuestion): SoulOption[] {
+  return [...question.options, { id: "not-applicable", label: "Not applicable / no particular concern right now", tags: [] }];
+}
+
 function getOptionLabel(option: SoulOption, chinese: boolean) {
+  if (option.id === "not-applicable") return chinese ? "目前不適用／沒有特別困擾" : "Not applicable / no particular concern right now";
   return chinese ? (OPTION_LABELS_ZH[option.label] ?? option.label) : option.label;
 }
 
@@ -542,511 +542,116 @@ function getAskMyselfCopy(language: string) {
 }
 
 export default function AboutMePage() {
-  const language = useAppStore((s) => s.language);
-  const ui = getMiscUiCopy(language).aboutMe;
-  const askUi = getAskMyselfCopy(language);
-  const chinese = language.startsWith("zh");
-  const { data, isLoading } = useAboutMe();
-  const upsert = useUpsertAboutMe();
-  const uploadProfileImage = useUploadAboutMeProfileImage();
-  const pageRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const sourceInputRef = useRef<HTMLInputElement>(null);
-  const reduceMotion = useReducedMotion(false);
-  const motionEnabled = isPremiumMotionEnabled();
-
-  const instructionRef = useRef<RichTextEditorHandle>(null);
-  const coreValuesRef = useRef<RichTextEditorHandle>(null);
-  const missionRef = useRef<RichTextEditorHandle>(null);
-  const personalityRef = useRef<RichTextEditorHandle>(null);
-  const [sourceMode, setSourceMode] = useState<SourceMode>("undecided");
-  const [sourceNames, setSourceNames] = useState<string[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [iconPrompt, setIconPrompt] = useState<string | null>(null);
-
-  registerGSAP();
-
-  const { contextSafe } = useGSAP(
-    () => {
-      const root = pageRef.current;
-      if (!root || !motionEnabled) return;
-
-      const targets = gsap.utils.toArray<HTMLElement>("[data-ask-reveal]", root);
-      if (targets.length === 0) return;
-
-      if (reduceMotion) {
-        gsap.set(targets, { autoAlpha: 1, clearProps: "transform" });
-        return;
-      }
-
-      gsap.fromTo(
-        targets,
-        { autoAlpha: 0, y: 22, scale: 0.985 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.58,
-          ease: "power3.out",
-          stagger: 0.045,
-          clearProps: "opacity,visibility,transform",
-        },
-      );
-    },
-    { scope: pageRef, dependencies: [motionEnabled, reduceMotion] },
-  );
-
-  const sections: { key: SectionKey; title: string; description: string; multiline: boolean }[] = [
-    {
-      key: "instruction_manual",
-      title: ui.instructionManualTitle,
-      description: ui.instructionManualDescription,
-      multiline: true,
-    },
-    {
-      key: "core_values",
-      title: ui.coreValuesTitle,
-      description: ui.coreValuesDescription,
-      multiline: true,
-    },
-    {
-      key: "mission",
-      title: ui.missionTitle,
-      description: ui.missionDescription,
-      multiline: true,
-    },
-    {
-      key: "personality_insights",
-      title: ui.personalityInsightsTitle,
-      description: ui.personalityInsightsDescription,
-      multiline: true,
-    },
-  ];
-
-  useEffect(() => {
-    if (!data) return;
-    const id = requestAnimationFrame(() => {
-      instructionRef.current?.setHtml(data.instruction_manual ?? "");
-      coreValuesRef.current?.setHtml(data.core_values ?? "");
-      missionRef.current?.setHtml(data.mission ?? "");
-      personalityRef.current?.setHtml(data.personality_insights ?? "");
-    });
-    return () => cancelAnimationFrame(id);
-  }, [data]);
-
-  const htmlOrNull = (ref: RefObject<RichTextEditorHandle | null>) => {
-    const html = ref.current?.getHtml() ?? "";
-    const text = ref.current?.getText().trim() ?? "";
-    if (!text && !/<img\b/i.test(html)) return null;
-    return html.trim() || text;
-  };
-
-  const onProfileImagePick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const onProfileImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    uploadProfileImage.mutate(file);
-  };
-
-  const onSourceFilesChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const names = Array.from(e.target.files ?? []).map((file) => file.name);
-    setSourceNames(names);
-    if (names.length > 0) setSourceMode("allowed");
-  };
-
-  const selectedDetails = useMemo(() => {
-    return SOUL_QUESTIONS.flatMap((question) => {
-      const selected = new Set(answers[question.id] ?? []);
-      return question.options
-        .filter((option) => selected.has(option.id))
-        .map((option) => ({ question, option }));
-    });
-  }, [answers]);
-
-  const selectedCount = selectedDetails.length;
-  const completion = Math.round(
-    (Object.values(answers).filter((value) => value.length > 0).length /
-      SOUL_QUESTIONS.length) *
-      100,
-  );
-
-  const topTags = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const { option } of selectedDetails) {
-      for (const tag of option.tags) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1);
-      }
-    }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .slice(0, 6)
-      .map(([tag, count]) => ({ tag, label: getTagLabel(tag, chinese), count }));
-  }, [chinese, selectedDetails]);
-
-  const domainSummaries = useMemo(() => {
-    const grouped = new Map<SoulDomain, string[]>();
-    for (const { question, option } of selectedDetails) {
-      const current = grouped.get(question.domain) ?? [];
-      current.push(getOptionLabel(option, chinese));
-      grouped.set(question.domain, current);
-    }
-    return Array.from(grouped.entries()).map(([domain, labels]) => ({
-      domain,
-      labels: labels.slice(0, 4),
-    }));
-  }, [chinese, selectedDetails]);
-
-  const mirrorDraftHtml = useMemo(() => {
-    if (selectedDetails.length === 0) return "";
-    const signals = topTags.map((tag) => tag.label).join(", ");
-    const domains = domainSummaries
-      .map(({ domain, labels }) => {
-        const label = getDomainLabel(domain, chinese);
-        return `<li><strong>${label}:</strong> ${labels.join(", ")}</li>`;
-      })
-      .join("");
-    return [
-      `<h2>${askUi.draftHeading}</h2>`,
-      `<p><strong>${askUi.draftTopSignals}:</strong> ${signals || askUi.draftFallback}</p>`,
-      "<ul>",
-      domains,
-      "</ul>",
-      `<p>${askUi.draftNote}</p>`,
-    ].join("");
-  }, [askUi, chinese, domainSummaries, selectedDetails.length, topTags]);
-
-  const pulseOption = contextSafe((target: HTMLElement) => {
-    if (reduceMotion || !motionEnabled) return;
-    gsap.fromTo(
-      target,
-      { scale: 0.985 },
-      {
-        scale: 1,
-        duration: 0.24,
-        ease: "back.out(1.7)",
-        clearProps: "transform",
-        overwrite: "auto",
-      },
-    );
-  });
-
-  const toggleAnswer = (
-    questionId: string,
-    optionId: string,
-    target?: HTMLElement,
-  ) => {
-    if (target) pulseOption(target);
-    setAnswers((prev) => {
-      const current = prev[questionId] ?? [];
-      if (current.includes(optionId)) {
-        return {
-          ...prev,
-          [questionId]: current.filter((id) => id !== optionId),
-        };
-      }
-      if (current.length >= 3) return prev;
-      return { ...prev, [questionId]: [...current, optionId] };
-    });
-  };
-
-  const applyMirrorDraft = () => {
-    if (!mirrorDraftHtml) return;
-    personalityRef.current?.setHtml(mirrorDraftHtml);
-  };
-
-  const generateIconPrompt = () => {
-    const signals = topTags.map((tag) => getTagLabel(tag.tag, false)).join(", ") || "self reflection, clarity";
-    setIconPrompt(
-      `Create an abstract personal profile icon inspired by: ${signals}. Use symbolic shapes, no face, no text, calm premium Life OS style, transparent-friendly composition.`,
-    );
-  };
-
-  const saveSection = async (key: SectionKey) => {
-    const payload: Record<string, string | null> = {};
-    if (key === "instruction_manual") {
-      payload.instruction_manual = htmlOrNull(instructionRef);
-    }
-    if (key === "core_values") {
-      payload.core_values = htmlOrNull(coreValuesRef);
-    }
-    if (key === "mission") {
-      payload.mission = htmlOrNull(missionRef);
-    }
-    if (key === "personality_insights") {
-      payload.personality_insights = htmlOrNull(personalityRef);
-    }
-    await upsert.mutateAsync(payload);
-  };
-
+  const { data, isLoading, isError, refetch } = useAboutMe();
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
   if (isLoading) return <LoadingPage />;
-
-  return (
-    <PageShell
-      title={ui.pageTitle}
-      description={ui.pageDescription}
-    >
-      <div
-        ref={pageRef}
-        className="grid max-w-7xl gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]"
-      >
-        <div className="space-y-5">
-          <OSFrostedPanel data-ask-reveal className="overflow-hidden p-0">
-            <div className="grid gap-0 2xl:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-5 p-5 sm:p-6">
-                <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/45 bg-white/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]">
-                  <Brain className="size-3.5" aria-hidden />
-                  {askUi.pageKicker}
-                </div>
-                <div className="space-y-2">
-                  <h2 className="max-w-2xl text-balance font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                    {askUi.heroTitle}
-                  </h2>
-                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    {askUi.heroDescription}
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <StatusTile label={askUi.completion} value={`${completion}%`} />
-                  <StatusTile label={askUi.selected} value={`${selectedCount}/30`} />
-                  <StatusTile
-                    label={askUi.modeLabel}
-                    value={
-                      sourceMode === "allowed"
-                        ? askUi.modeAiFiles
-                        : sourceMode === "manual"
-                          ? askUi.modeManual
-                          : askUi.modeChoose
-                    }
-                  />
-                </div>
-              </div>
-              <div className="border-t border-white/45 bg-white/42 p-5 dark:border-white/10 dark:bg-white/[0.03] 2xl:border-l 2xl:border-t-0">
-                <ProfileImageTool
-                  ui={ui}
-                  askUi={askUi}
-                  imageUrl={data?.profile_image_url ?? null}
-                  pending={uploadProfileImage.isPending}
-                  fileInputRef={fileInputRef}
-                  onProfileImagePick={onProfileImagePick}
-                  onProfileImageChange={onProfileImageChange}
-                  onGenerateIconPrompt={generateIconPrompt}
-                  iconPrompt={iconPrompt}
-                />
-              </div>
-            </div>
-          </OSFrostedPanel>
-
-          <OSFrostedPanel data-ask-reveal as="section" className="space-y-4 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 space-y-1">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Shield className="size-4 text-lime-700 dark:text-lime-200" aria-hidden />
-                  {askUi.privacyTitle}
-                </h2>
-                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                  {askUi.privacyDescription}
-                </p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <OSControl
-                  type="button"
-                  onClick={() => setSourceMode("allowed")}
-                  className={sourceMode === "allowed" ? "border-lime-300/70 bg-lime-300/20 text-foreground" : undefined}
-                >
-                  <FileText />
-                  {askUi.allowSources}
-                </OSControl>
-                <OSControl
-                  type="button"
-                  onClick={() => setSourceMode("manual")}
-                  className={sourceMode === "manual" ? "border-lime-300/70 bg-lime-300/20 text-foreground" : undefined}
-                >
-                  <CheckCircle2 />
-                  {askUi.manualOnly}
-                </OSControl>
-              </div>
-            </div>
-            {sourceMode === "allowed" ? (
-              <div className="rounded-lg border border-dashed border-white/60 bg-white/44 p-3 dark:border-white/12 dark:bg-white/[0.03]">
-                <input
-                  ref={sourceInputRef}
-                  type="file"
-                  multiple
-                  accept=".md,.txt,.json,.html,.zip"
-                  className="sr-only"
-                  onChange={onSourceFilesChange}
-                />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-xs leading-5 text-muted-foreground">{askUi.sourceHint}</p>
-                    <p className="mt-1 truncate text-sm font-medium text-foreground">
-                      {sourceNames.length > 0
-                        ? `${askUi.sourcesReady}: ${sourceNames.join(", ")}`
-                        : askUi.noSources}
-                    </p>
-                  </div>
-                  <OSPrimaryAction type="button" onClick={() => sourceInputRef.current?.click()}>
-                    <Upload />
-                    {askUi.sourceButton}
-                  </OSPrimaryAction>
-                </div>
-              </div>
-            ) : null}
-          </OSFrostedPanel>
-
-          <OSFrostedPanel data-ask-reveal as="section" className="space-y-4 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <h2 className="text-sm font-semibold text-foreground">{askUi.soulTitle}</h2>
-                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {askUi.soulDescription}
-                </p>
-              </div>
-              {topTags.length > 0 ? (
-                <div className="flex max-w-md flex-wrap gap-1.5">
-                  {topTags.slice(0, 4).map((tag) => (
-                    <span
-                      key={tag.tag}
-                      className="rounded-md border border-white/45 bg-white/58 px-2 py-1 text-xs font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]"
-                    >
-                      {tag.label} · {tag.count}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <div className="space-y-3">
-              {SOUL_QUESTIONS.map((question, index) => (
-                <SoulQuestionRow
-                  key={question.id}
-                  index={index}
-                  question={question}
-                  selected={answers[question.id] ?? []}
-                  chinese={chinese}
-                  onToggle={(optionId, target) => toggleAnswer(question.id, optionId, target)}
-                />
-              ))}
-            </div>
-          </OSFrostedPanel>
-        </div>
-
-        <aside className="space-y-5 xl:sticky xl:top-4 xl:self-start">
-          <OSSolidPanel data-ask-reveal className="space-y-4 p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <h2 className="text-sm font-semibold text-foreground">{askUi.mirrorTitle}</h2>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  {askUi.topSignals}
-                </p>
-              </div>
-              <Sparkles className="size-4 text-[var(--accent-pink)]" aria-hidden />
-            </div>
-            {topTags.length > 0 ? (
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {topTags.map((tag) => (
-                    <span
-                      key={tag.tag}
-                      className="rounded-lg bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground"
-                    >
-                      {tag.label}
-                    </span>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  {domainSummaries.map(({ domain, labels }) => {
-                    const meta = DOMAIN_META[domain];
-                    const Icon = meta.icon;
-                    return (
-                      <div key={domain} className="flex gap-2 rounded-lg bg-muted/60 p-2.5">
-                        <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-foreground">
-                            {getDomainLabel(domain, chinese)}
-                          </p>
-                          <p className="text-xs leading-5 text-muted-foreground">
-                            {labels.join(", ")}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <OSPrimaryAction
-                  type="button"
-                  className="w-full"
-                  onClick={applyMirrorDraft}
-                  disabled={!mirrorDraftHtml}
-                >
-                  {askUi.applyDraft}
-                </OSPrimaryAction>
-              </div>
-            ) : (
-              <p className="rounded-lg bg-muted/60 p-3 text-sm leading-6 text-muted-foreground">
-                {askUi.mirrorEmpty}
-              </p>
-            )}
-          </OSSolidPanel>
-
-          <OSSolidPanel data-ask-reveal className="space-y-4 p-4 sm:p-5">
-            <div className="space-y-1">
-              <h2 className="text-sm font-semibold text-foreground">{askUi.manualSections}</h2>
-              <p className="text-xs leading-5 text-muted-foreground">{askUi.manualDescription}</p>
-            </div>
-            <div className="space-y-4">
-              {sections.map((s) => (
-                <section key={s.key} className="space-y-3 border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-foreground">{s.title}</h3>
-                    <p className="text-xs leading-5 text-muted-foreground">{s.description}</p>
-                  </div>
-                  {s.multiline ? (
-                    <RichTextEditor
-                      ref={
-                        s.key === "instruction_manual"
-                          ? instructionRef
-                          : s.key === "core_values"
-                            ? coreValuesRef
-                            : s.key === "mission"
-                              ? missionRef
-                              : personalityRef
-                      }
-                      initialHtml=""
-                      placeholder={ui.writeSectionPlaceholder(s.title)}
-                      minHeightClass="min-h-[140px]"
-                    />
-                  ) : null}
-                  <OSPrimaryAction
-                    type="button"
-                    className="w-full"
-                    onClick={() => saveSection(s.key)}
-                    disabled={upsert.isPending}
-                  >
-                    {upsert.isPending ? ui.saving : ui.saveSection(s.title)}
-                  </OSPrimaryAction>
-                </section>
-              ))}
-            </div>
-          </OSSolidPanel>
-        </aside>
-      </div>
-    </PageShell>
-  );
+  if (isError) return <PageShell title={chinese ? "關於我" : "About Me"}><div role="alert" className="space-y-4"><p>{chinese ? "未能載入已儲存的個人資料。請重試，避免覆蓋已有答案。" : "Your saved profile could not be loaded. Retry before editing your answers."}</p><OSControl onClick={() => void refetch()}>{chinese ? "重試" : "Retry"}</OSControl></div></PageShell>;
+  return <AboutMeEditor initial={data ?? null} />;
 }
 
-function StatusTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-white/45 bg-white/55 p-3 dark:border-white/10 dark:bg-white/[0.04]">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-normal text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 whitespace-nowrap text-lg font-semibold tabular-nums text-foreground">{value}</p>
+function AboutMeEditor({ initial }: { initial: AboutMe | null }) {
+  const language = useAppStore((s) => s.language);
+  const chinese = language.startsWith("zh");
+  const ui = getMiscUiCopy(language).aboutMe;
+  const askUi = getAskMyselfCopy(language);
+  const { draft, change, flush, status, savedAt, conflicting, resolveConflict } = useAboutMeDraft(initial);
+  const uploadProfileImage = useUploadAboutMeProfileImage();
+  const { data } = useAboutMe();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [iconPrompt, setIconPrompt] = useState<string | null>(null);
+  const [appendDraft, setAppendDraft] = useState<string | null>(null);
+  const text = (en: string, zh: string) => chinese ? zh : en;
+  const answered = SOUL_QUESTIONS.filter((q) => (draft.answers[q.id]?.length ?? 0) > 0 || draft.ownWords[q.id]?.trim()).length;
+  const selectedDetails = SOUL_QUESTIONS.flatMap((question) => optionsForQuestion(question).filter((option) => (draft.answers[question.id] ?? []).includes(option.id)).map((option) => ({ question, option })));
+  const summary = [...selectedDetails.map(({ question, option }) => `${getQuestionTitle(question, chinese)}: ${getOptionLabel(option, chinese)}`), ...SOUL_QUESTIONS.filter((q) => draft.ownWords[q.id]?.trim()).map((q) => `${getQuestionTitle(q, chinese)}: ${draft.ownWords[q.id].trim()}`)];
+  const question = SOUL_QUESTIONS[draft.deepStep];
+  const sectionInfo: { key: SectionKey; title: string }[] = [
+    { key: "instruction_manual", title: ui.instructionManualTitle }, { key: "core_values", title: ui.coreValuesTitle },
+    { key: "mission", title: ui.missionTitle }, { key: "personality_insights", title: ui.personalityInsightsTitle },
+  ];
+  const stepTitles = [text("What would you like to make easier?", "最近，你最想讓哪件事變得容易一點？"), text("How much time could you set aside?", "你通常可以留多少時間給這件事？"), text("What kind of help would you like first?", "你想先得到哪種幫助？")];
+  const options = [
+    [["Start important work", "開始重要工作"], ["Organize my day", "安排生活"], ["Keep a habit", "保持一個習慣"], ["Organize information", "整理資訊"]],
+    [["10 minutes", "10 分鐘"], ["20 minutes", "20 分鐘"], ["30 minutes", "30 分鐘"], ["It varies", "每天不同"]],
+    [["Break it into one small step", "拆成一小步"], ["Make room for it today", "安排進今日"], ["Just write it down", "先記下來"]],
+  ];
+  const quickKeys = ["focus", "minutes", "help"] as const;
+  const updateQuick = (value: string) => change((d) => ({ ...d, quick: { ...d.quick, [quickKeys[d.step]]: value } }));
+  const goStep = (step: number) => { change((d) => ({ ...d, step })); void flush(); };
+  const statusCopy = {
+    saved: savedAt ? text("Saved to your account", "已儲存到帳戶") : text("All questions are optional", "所有問題均為選填"),
+    dirty: text("Unsaved changes", "有尚未儲存的更改"), saving: text("Saving…", "儲存中…"),
+    error: text("Could not save. Your answers are still on this page. Retry before leaving.", "暫時未能儲存，答案仍留在這個頁面。請在離開前重試。"),
+    conflict: text("Your profile changed elsewhere. Compare the saved answers below before choosing which version to keep.", "其他地方更新了個人資料。請比較下方已儲存答案，再選擇保留哪個版本。"),
+  };
+  return <PageShell title={ui.pageTitle} description={text("Make your plans fit your life. Start small; everything here is optional.", "讓計劃更貼近你的生活。從一小步開始，所有內容均可選填。")}
+    actions={<OSControl onClick={() => setShowHelp((v) => !v)} aria-expanded={showHelp}>{text("How this works", "使用說明")}</OSControl>}>
+    <div className="mx-auto max-w-4xl space-y-5">
+      {showHelp && <OSFrostedPanel className="space-y-2 p-4"><h2 className="font-semibold">{text("Your profile, at your pace", "按自己的步伐建立個人檔案")}</h2><p className="text-sm leading-6">{text("Answer up to three short questions, then choose a small action in your planner. Skip any question and return here to continue. This is a planning preference, not a personality test.", "先回答最多三條簡短問題，再到計劃頁安排一件小事。任何問題都可以跳過，之後回來續填。這是安排生活的偏好，並非人格測驗。")}</p><OSControl onClick={() => setShowHelp(false)}>{text("Got it", "知道了")}</OSControl></OSFrostedPanel>}
+      <OSFrostedPanel as="section" className="space-y-4 p-4 sm:p-6" aria-label={text("Quick start", "快速開始")}>
+        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium text-muted-foreground">{draft.step < 3 ? text(`Question ${draft.step + 1} of 3 · Optional`, `第 ${draft.step + 1}／3 題・選填`) : text("Your starting point", "你的起步方向")}</p><span role="status" className="text-xs text-muted-foreground">{statusCopy[status]}{status === "saved" && savedAt ? ` · ${new Date(savedAt).toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" })}` : ""}</span></div>
+        {(status === "error" || status === "conflict") && <OSControl onClick={() => void flush()}>{text("Retry save", "重試儲存")}</OSControl>}
+        {status === "conflict" && conflicting && <div className="space-y-3 rounded-xl border border-amber-500/50 p-3"><h3 className="font-medium">{text("Saved answers from your other session", "另一處已儲存的答案")}</h3><p className="whitespace-pre-wrap text-sm">{Object.values(readQuestionnaire(conflicting.sections).quick).filter(Boolean).join(" · ") || text("No quick answers", "未填快速答案")}</p><details><summary>{text("All saved choices", "所有已儲存選擇")}</summary><ul className="list-disc pl-5 text-sm">{SOUL_QUESTIONS.flatMap((q) => optionsForQuestion(q).filter((o) => (readQuestionnaire(conflicting.sections).answers[q.id] ?? []).includes(o.id)).map((o) => <li key={q.id + o.id}>{getQuestionTitle(q, chinese)}: {getOptionLabel(o, chinese)}</li>))}{SOUL_QUESTIONS.filter((q) => readQuestionnaire(conflicting.sections).ownWords[q.id]?.trim()).map((q) => <li key={q.id + "-own"}>{getQuestionTitle(q, chinese)}: {readQuestionnaire(conflicting.sections).ownWords[q.id]}</li>)}</ul></details><div className="flex flex-wrap gap-2"><OSControl onClick={() => resolveConflict(false)}>{text("Use saved answers", "使用已儲存答案")}</OSControl><OSControl onClick={() => resolveConflict(true)}>{text("Save my current answers instead", "改為儲存我目前的答案")}</OSControl></div></div>}
+        {draft.step < 3 ? <>
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{stepTitles[draft.step]}</h2>
+          <div className="flex flex-wrap gap-2">{options[draft.step].map(([en, zh]) => <OSControl key={en} aria-pressed={draft.quick[quickKeys[draft.step]] === text(en, zh)} onClick={() => updateQuick(text(en, zh))}>{text(en, zh)}</OSControl>)}</div>
+          {draft.step === 0 && <label className="block space-y-2 text-sm"><span>{text("Or use your own words", "或用自己的說法")}</span><Input maxLength={500} value={draft.quick.focus} onChange={(event) => updateQuick(event.target.value)} onBlur={() => void flush()} placeholder={text("For example, read for 20 minutes after work", "例如：放工後抽 20 分鐘讀書")} /></label>}
+          {draft.step === 1 && <p className="text-sm text-muted-foreground">{text("This helps you choose a manageable task. It does not change your calendar.", "這幫助你選擇適合大小的任務，不會自動改動日曆。")}</p>}
+          <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
+            {draft.step > 0 && <OSControl onClick={() => goStep(draft.step - 1)}>{text("Back", "上一題")}</OSControl>}
+            <OSPrimaryAction onClick={() => goStep(draft.step + 1)}>{draft.step === 2 ? text("See my starting point", "查看起步方向") : text("Next", "下一題")}</OSPrimaryAction>
+            <OSControl onClick={() => goStep(draft.step + 1)}>{text("Skip this question", "略過這題")}</OSControl>
+          </div>
+        </> : <>
+          <h2 className="text-xl font-semibold">{draft.quick.focus || text("Start with one thing that matters today", "從今日一件重要的小事開始")}</h2>
+          <p className="text-sm text-muted-foreground">{[draft.quick.minutes, draft.quick.help].filter(Boolean).join(" · ") || text("Choose one realistic next step in your planner.", "在計劃頁安排一個做得到的下一步。")}</p>
+          <p className="text-xs text-muted-foreground">{text("Organized from your choices. No AI analysis or task has been created.", "根據你的選擇整理，尚未進行 AI 分析或建立任務。")}</p>
+          <div className="flex flex-wrap gap-2"><OSControl onClick={() => goStep(0)}>{text("Edit answers", "修改答案")}</OSControl></div>
+        </>}
+      </OSFrostedPanel>
+      {draft.step === 3 && <FirstStepCard initialTitle={draft.quick.focus} initialMinutes={Number.parseInt(draft.quick.minutes, 10)} />}
+      <details className="rounded-2xl border border-border p-4"><summary className="min-h-11 cursor-pointer font-medium">{text(`Explore further · ${answered}/10 questions answered · Optional`, `深入了解・已回答 ${answered}／10 題・選填`)}</summary>
+        <p className="mb-4 text-sm text-muted-foreground">{text("Choose up to 3 options; one is enough. Money, relationships and wellbeing questions are optional and are not diagnostic.", "每題最多選 3 項，選 1 項亦足夠。金錢、關係及身心問題均可略過，並非診斷。")}</p>
+        <SoulQuestionRow index={draft.deepStep} question={question} selected={draft.answers[question.id] ?? []} chinese={chinese} onToggle={(id) => change((d) => { const selected = d.answers[question.id] ?? []; return { ...d, skipped: d.skipped.filter((key) => key !== question.id), answers: { ...d.answers, [question.id]: selected.includes(id) ? selected.filter((key) => key !== id) : selected.length < 3 ? [...selected, id] : selected } }; })} />
+        <div className="mt-4 block space-y-2 text-sm"><label htmlFor={`about-own-${question.id}`}>{text("Or answer in your own words (optional)", "或用自己的說法回答（選填）")}</label><Textarea id={`about-own-${question.id}`} maxLength={1500} value={draft.ownWords[question.id] ?? ""} onChange={(event) => change((d) => ({ ...d, skipped: d.skipped.filter((id) => id !== question.id), ownWords: { ...d.ownWords, [question.id]: event.target.value } }))} onBlur={() => void flush()} /></div>
+        <div className="mt-4 flex flex-wrap gap-2"><OSControl disabled={draft.deepStep === 0} onClick={() => change((d) => ({ ...d, deepStep: d.deepStep - 1 }))}>{text("Previous", "上一題")}</OSControl><OSControl onClick={() => change((d) => ({ ...d, answers: { ...d.answers, [question.id]: [] }, ownWords: { ...d.ownWords, [question.id]: "" }, skipped: [...new Set([...d.skipped, question.id])], deepStep: Math.min(9, d.deepStep + 1) }))}>{text("Not applicable / Skip", "不適用／略過")}</OSControl><OSPrimaryAction onClick={() => { change((d) => ({ ...d, deepStep: Math.min(9, d.deepStep + 1) })); void flush(); }}>{draft.deepStep === 9 ? text("Save answers", "儲存答案") : text("Next question", "下一題")}</OSPrimaryAction></div>
+        {summary.length > 0 && <div className="mt-5 space-y-3"><h3 className="font-medium">{text("You mentioned", "你提到")}</h3><ul className="list-disc space-y-2 pl-5 text-sm">{summary.map((line) => <li key={line}>{line}</li>)}</ul><OSControl onClick={() => setAppendDraft(summary.map((line) => `<p>${line.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</p>`).join(""))}>{text("Preview adding to my notes", "預覽加入個人筆記")}</OSControl></div>}
+      </details>
+      <details className="rounded-2xl border border-border p-4" open={appendDraft !== null}><summary className="min-h-11 cursor-pointer font-medium">{text("My personal notes · Optional", "我寫給自己的說明・選填")}</summary><p className="mb-4 text-sm text-muted-foreground">{text("Save each section separately. Saving one section keeps your other drafts intact.", "每一節分開儲存，儲存其中一節會保留其他草稿。")}</p><div className="space-y-6">{sectionInfo.map(({ key, title }) => <AboutMeNote key={key} sectionKey={key} title={title} initialValue={initial?.[key] ?? null} chinese={chinese} appendDraft={key === "personality_insights" ? appendDraft : null} onAppendDone={() => setAppendDraft(null)} />)}</div></details>
+      <details className="rounded-2xl border border-border p-4"><summary className="min-h-11 cursor-pointer font-medium">{text("How your information is used", "資料如何儲存及使用")}</summary><div className="space-y-3 text-sm leading-6"><p>{text("Your answers are saved to your signed-in account after the save indicator confirms success. The starting point above is assembled from your choices without sending an AI request.", "儲存狀態確認成功後，答案會保存到已登入帳戶。上方起步方向由你的選擇整理，並不會傳送 AI 請求。")}</p><p>{text("Personal notes may be included when you use personalized AI tools such as Role Models. Saving here is separate from choosing an AI tool; review its information preview before sending. Do not add information you do not want used in those tools.", "使用 Role Models 等個人化 AI 工具時，個人筆記可能被加入內容。儲存在此與使用 AI 工具是不同操作，傳送前請檢查資料預覽。請勿加入不希望用於這些工具的資料。")}</p></div></details>
+      <details className="rounded-2xl border border-border p-4"><summary className="min-h-11 cursor-pointer font-medium">{text("Profile image · Optional", "個人外觀・選填")}</summary><p className="mb-4 text-sm text-muted-foreground">{text("Uploaded images use a public image link. Anyone with that link can view the image.", "上傳圖片會使用公開圖片連結，任何持有連結的人都可查看圖片。")}</p><ProfileImageTool ui={ui} askUi={askUi} imageUrl={data?.profile_image_url ?? initial?.profile_image_url ?? null} pending={uploadProfileImage.isPending} fileInputRef={fileInputRef} onProfileImagePick={() => fileInputRef.current?.click()} onProfileImageChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) uploadProfileImage.mutate(file); }} onGenerateIconPrompt={() => setIconPrompt("Create an abstract personal icon with calm geometric shapes, no face and no text.")} iconPrompt={iconPrompt} /></details>
     </div>
-  );
+  </PageShell>;
+}
+
+function AboutMeNote({ sectionKey, title, initialValue, chinese, appendDraft, onAppendDone }: { sectionKey: SectionKey; title: string; initialValue: string | null; chinese: boolean; appendDraft: string | null; onAppendDone: () => void }) {
+  const editor = useRef<RichTextEditorHandle>(null);
+  const [saved, setSaved] = useState(initialValue);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [remoteValue, setRemoteValue] = useState<string | null | undefined>(undefined);
+  const [undo, setUndo] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  useEffect(() => { if (!dirty) return; const warn = (event: BeforeUnloadEvent) => event.preventDefault(); window.addEventListener("beforeunload", warn); return () => window.removeEventListener("beforeunload", warn); }, [dirty]);
+  const save = async () => {
+    if (saving) return;
+    setSaving(true); setMessage("");
+    const value = editor.current?.getHtml() || null;
+    try {
+      const row = await aboutMeRepository.saveSection(sectionKey, value, saved);
+      setSaved(value); setDirty(editor.current?.getHtml() !== (value ?? ""));
+      queryClient.setQueryData(["about-me"], row);
+      setMessage(chinese ? "已儲存到帳戶" : "Saved to your account");
+    } catch (error) { if (error instanceof Error && error.message === "ABOUT_ME_CONFLICT") { try { const row = await aboutMeRepository.get(); setRemoteValue(row?.[sectionKey] ?? null); } catch { /* Retain local writing. */ } } setMessage(error instanceof Error && error.message === "ABOUT_ME_CONFLICT" ? (chinese ? "另一處已更新這一節。草稿仍在此，請先比較再儲存。" : "This section changed elsewhere. Your draft is still here; compare before saving.") : (chinese ? "未能儲存，請保留此頁並重試。" : "Could not save. Keep this page open and retry.")); }
+    finally { setSaving(false); }
+  };
+  return <section className="space-y-3"><h3 className="font-medium">{title}</h3><RichTextEditor ref={editor} initialHtml={initialValue ?? ""} minHeightClass="min-h-[120px]" onChange={() => setDirty(true)} />
+    {appendDraft && <div className="space-y-3 rounded-xl border border-border p-3"><p className="text-sm">{chinese ? "以下內容會加入筆記末尾，不會取代你寫過的內容。" : "These answers will be appended to your notes. Your existing writing will be kept."}</p><div className="text-sm leading-6" dangerouslySetInnerHTML={{ __html: appendDraft }} /><OSControl onClick={() => { const old = editor.current?.getHtml() ?? ""; setUndo(old); editor.current?.setHtml(old + appendDraft); setDirty(true); onAppendDone(); }}>{chinese ? "加入草稿" : "Append to draft"}</OSControl><OSControl onClick={onAppendDone}>{chinese ? "取消" : "Cancel"}</OSControl></div>}
+    {remoteValue !== undefined && <div className="space-y-2 rounded-xl border border-amber-500/50 p-3"><h4 className="text-sm font-medium">{chinese ? "另一處已儲存的內容" : "Saved version from your other session"}</h4><p className="whitespace-pre-wrap text-sm">{remoteValue?.replace(/<[^>]*>/g, "") || (chinese ? "空白" : "Empty")}</p><OSControl onClick={() => { editor.current?.setHtml(remoteValue ?? ""); setSaved(remoteValue); setDirty(false); setRemoteValue(undefined); setMessage(""); }}>{chinese ? "使用已儲存內容" : "Use saved writing"}</OSControl><OSControl onClick={() => { setSaved(remoteValue); setRemoteValue(undefined); setMessage(chinese ? "保留你的草稿。按儲存這一節來取代已比較的版本。" : "Your draft is kept. Save this section to replace the version you reviewed."); }}>{chinese ? "保留我的草稿" : "Keep my draft"}</OSControl></div>}
+    <div className="flex flex-wrap items-center gap-2"><OSPrimaryAction disabled={!dirty || saving || remoteValue !== undefined} onClick={() => void save()}>{saving ? (chinese ? "儲存中…" : "Saving…") : (chinese ? "儲存這一節" : "Save section")}</OSPrimaryAction>{undo !== null && <OSControl onClick={() => { editor.current?.setHtml(undo); setDirty(true); setUndo(null); }}>{chinese ? "撤回加入內容" : "Undo append"}</OSControl>}<span role="status" className="text-xs text-muted-foreground">{message || (dirty ? (chinese ? "尚未儲存" : "Unsaved changes") : "")}</span></div>
+  </section>;
 }
 
 function ProfileImageTool({
@@ -1168,7 +773,7 @@ function SoulQuestionRow({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {question.options.map((option) => {
+        {optionsForQuestion(question).map((option) => {
           const active = selected.includes(option.id);
           const disabled = !active && selected.length >= 3;
           return (
@@ -1179,7 +784,7 @@ function SoulQuestionRow({
               disabled={disabled}
               onClick={(event) => onToggle(option.id, event.currentTarget)}
               className={cn(
-                "min-h-10 rounded-lg border px-3 py-2 text-left text-xs font-medium leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60",
+                "min-h-11 rounded-lg border px-3 py-2 text-left text-xs font-medium leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/60",
                 active
                   ? "border-lime-300/80 bg-lime-300 text-slate-950 shadow-sm"
                   : "border-white/50 bg-white/58 text-muted-foreground hover:text-foreground dark:border-white/10 dark:bg-white/[0.04]",

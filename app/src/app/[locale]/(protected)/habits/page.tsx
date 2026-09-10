@@ -11,6 +11,7 @@ import { Archive, Sparkles } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPage } from "@/components/shared/loading-state";
+import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import {
   TodayView,
@@ -109,28 +110,31 @@ export default function HabitsPage() {
   const [aiRoutineOpen, setAiRoutineOpen] = useState(false);
   const analyticsRef = useRef<HTMLDivElement | null>(null);
 
+  const [allowReview, setAllowReview] = useState(false);
+  const hasLogs = (rangeCompletions?.length ?? 0) > 0;
+
   const weeklyInsight = useAIInsight<{ text: string }>(
     "weekly_review",
     { weekStart, weekEnd, timeZone },
-    { enabled: !habitsLoading && !routinesLoading },
+    { enabled: allowReview && hasLogs && !habitsLoading && !routinesLoading },
   );
 
   const struggleInsight = useAIInsight<StruggleDetectionResponse>(
     "struggle_detection",
     { windowDays: 14, timeZone },
-    { enabled: !habitsLoading && !routinesLoading },
+    { enabled: allowReview && hasLogs && !habitsLoading && !routinesLoading },
   );
 
   const secretaryBrief = useAIInsight<SecretaryBriefResponse>(
     "secretary_brief",
     { today, timeZone },
-    { enabled: !habitsLoading && !routinesLoading },
+    { enabled: allowReview && hasLogs && !habitsLoading && !routinesLoading },
   );
 
   const crossPageSuggestions = useAIInsight<CrossPageSuggestionsResponse>(
     "cross_page_suggestions",
     { today, timeZone },
-    { enabled: !habitsLoading && !routinesLoading },
+    { enabled: allowReview && hasLogs && !habitsLoading && !routinesLoading },
   );
 
   const habitList = useMemo(() => habits ?? [], [habits]);
@@ -323,20 +327,9 @@ export default function HabitsPage() {
   const analyticsNarrative = weeklyText || struggleText;
 
   return (
-    <PageShell title={copy.pageTitle} description={copy.pageDescription}>
+    <PageShell title={copy.pageTitle} description={copy.pageDescription} actions={<OSPrimaryAction onClick={() => setHabitForm({ open: true, habit: null })}>{copy.secretaryManualCta}</OSPrimaryAction>}>
       <div className="space-y-6 pb-20">
-        <HabitsSecretaryHero
-          copy={copy}
-          habits={habitList}
-          routines={routineList}
-          completedToday={completedToday}
-          totalToday={todayTotal}
-          brief={secretaryBrief.data?.content ?? null}
-          loading={secretaryBrief.isLoading}
-          onPlan={() => setAiHabitOpen(true)}
-          onManual={() => setHabitForm({ open: true, habit: null })}
-          onReview={() => analyticsRef.current?.scrollIntoView({ behavior: "smooth" })}
-        />
+
 
         <div className="grid gap-6 xl:grid-cols-12" data-stagger>
           <GlassPanel className="space-y-4 p-4 sm:p-5 xl:col-span-8" variant="strong">
@@ -367,7 +360,7 @@ export default function HabitsPage() {
           </GlassPanel>
 
           <div className="space-y-6 xl:col-span-4">
-            <CrossPageHabitSuggestions
+            {allowReview && hasLogs ? <CrossPageHabitSuggestions
               copy={copy}
               data={crossPageSuggestions.data?.content ?? null}
               loading={crossPageSuggestions.isLoading}
@@ -376,7 +369,7 @@ export default function HabitsPage() {
               onRefresh={() => void crossPageSuggestions.refresh()}
               onCreate={handleCreateSuggestion}
               creating={createHabit.isPending}
-            />
+            /> : null}
             <RoutineStudio
               routines={routineList}
               copy={copy}
@@ -386,7 +379,22 @@ export default function HabitsPage() {
             />
           </div>
 
-          <div ref={analyticsRef} className="xl:col-span-12">
+          {hasLogs ? <div className="xl:col-span-12 space-y-4">
+            <label className="flex items-start gap-2 text-sm text-muted-foreground"><input type="checkbox" checked={allowReview} onChange={(event) => setAllowReview(event.target.checked)} />{language.startsWith("zh") ? "選用 AI 回顧：分析已記錄的習慣及相關計劃資料。" : "Optional AI review: analyze your recorded habits and related planning data."}</label>
+            {allowReview ? <>        <HabitsSecretaryHero
+          copy={copy}
+          habits={habitList}
+          routines={routineList}
+          completedToday={completedToday}
+          totalToday={todayTotal}
+          brief={secretaryBrief.data?.content ?? null}
+          loading={secretaryBrief.isLoading}
+          onPlan={() => setAiHabitOpen(true)}
+          onManual={() => setHabitForm({ open: true, habit: null })}
+          onReview={() => analyticsRef.current?.scrollIntoView({ behavior: "smooth" })}
+        /></> : null}
+          </div> : null}
+          {hasLogs ? <div ref={analyticsRef} className="xl:col-span-12">
             <HabitAnalyticsPanel
               habits={habitList}
               completions={rangeCompletions ?? []}
@@ -403,7 +411,7 @@ export default function HabitsPage() {
                 struggleInsight.isLoading
               }
             />
-          </div>
+          </div> : null}
 
           <GlassPanel className="space-y-4 p-4 sm:p-5 xl:col-span-12" variant="strong">
             <details>

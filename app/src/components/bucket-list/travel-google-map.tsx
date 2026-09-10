@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { resolveGoogleMapTilesKey } from "@/lib/bucket-list/google-map-tiles";
 import dynamic from "next/dynamic";
 
 import type {
@@ -25,13 +27,6 @@ const TravelGoogleMapInner = dynamic(
   },
 );
 
-function resolveGoogleMapsApiKey(): string | undefined {
-  return (
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_TILES_KEY
-  );
-}
-
 type TravelGoogleMapProps = {
   markers: TravelMapMarker[];
   routes: TravelMapRoute[];
@@ -44,25 +39,15 @@ export function TravelGoogleMap({
   markers,
   routes,
   onMarkerClick,
-  missingKeyMessage,
   className,
 }: TravelGoogleMapProps) {
-  const apiKey = resolveGoogleMapsApiKey();
-
-  if (!apiKey) {
-    return (
-      <TravelMapFallback
-        markers={markers}
-        routes={routes}
-        onMarkerClick={onMarkerClick}
-        message={missingKeyMessage}
-        className={className}
-      />
-    );
-  }
+  const [attempt, setAttempt] = useState(0);
+  const apiKey = resolveGoogleMapTilesKey();
 
   return (
     <TravelGoogleMapInner
+      key={attempt}
+      onRetry={() => setAttempt((current) => current + 1)}
       apiKey={apiKey}
       markers={markers}
       routes={routes}

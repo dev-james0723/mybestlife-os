@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -19,6 +19,7 @@ import {
 import { fetchUvAndAirQuality } from "@/lib/weather/open-meteo";
 import { resolveCoordsForWeather } from "@/lib/weather/resolve-weather-coords";
 import { fetchWeatherBackground } from "@/lib/weather/fetch-weather-background";
+import { resolveActualWeatherLocation } from "@/lib/weather/location-display";
 import {
   getWeatherScene,
   timeOfDayFromDate,
@@ -31,6 +32,10 @@ import type {
   WeatherLocation,
   WeatherPageData,
 } from "@/lib/weather/types";
+
+type WeatherLocationSelection =
+  | { kind: "manual"; location: WeatherLocation }
+  | { kind: "device"; coords: WeatherCoords };
 
 /**
  * One-stop hook that fetches everything the Weather page needs:
@@ -48,7 +53,9 @@ export function useWeatherPage() {
   const [data, setData] = useState<WeatherPageData>(initialData);
   const [scene, setScene] = useState<WeatherScene | null>(null);
   const [insight, setInsight] = useState<WeatherInsight | null>(null);
-  const [overrideLocation, setOverrideLocation] = useState<WeatherLocation | null>(null);
+  const [locationSelection, setLocationSelection] =
+    useState<WeatherLocationSelection | null>(null);
+  const refreshRequestIdRef = useRef(0);
 
   const { user, isLoading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -58,11 +65,21 @@ export function useWeatherPage() {
   });
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestIdRef.current;
+    const isLatestRequest = () => requestId === refreshRequestIdRef.current;
     setData((prev) => ({ ...prev, status: "loading" }));
 
-    const coords = overrideLocation
-      ? { lat: overrideLocation.latitude, lon: overrideLocation.longitude }
-      : await resolveCoordsForWeather(profile ?? null, !!user);
+    const coords =
+      locationSelection?.kind === "manual"
+        ? {
+            lat: locationSelection.location.latitude,
+            lon: locationSelection.location.longitude,
+            city: locationSelection.location.city,
+          }
+        : locationSelection?.kind === "device"
+          ? locationSelection.coords
+          : await resolveCoordsForWeather(profile ?? null, !!user);
+    if (!isLatestRequest()) return;
     if (!coords) {
       setData({
         ...initialData,
@@ -78,6 +95,7 @@ export function useWeatherPage() {
       reverseGeocodeCoordinates(coords.lat, coords.lon),
       fetchUvAndAirQuality(coords.lat, coords.lon, { useProxy: !!user }),
     ]);
+    if (!isLatestRequest()) return;
 
     if (currentResult.status !== "ok") {
       setData({
@@ -89,12 +107,22 @@ export function useWeatherPage() {
     }
 
     const location =
-      overrideLocation ??
-      pickBestLocation(
-        geoResult,
-        coords,
-        currentResult.cityName ?? "Current location",
-      );
+      locationSelection?.kind === "manual"
+        ? locationSelection.location
+        : resolveActualWeatherLocation({
+            geocodeResult: geoResult,
+            coords,
+            providerCity: currentResult.cityName,
+            providerCountry: currentResult.country,
+          });
+    if (!location) {
+      setData({
+        ...initialData,
+        status: "error",
+        errorMessage: "A place name could not be resolved for this location",
+      });
+      return;
+    }
 
     // Patch in the rain chance + high/low from the forecast if available
     // (the current endpoint alone doesn't expose probability of precipitation).
@@ -146,7 +174,7 @@ export function useWeatherPage() {
       conditionCode: current.conditionCode,
       timeOfDay: sceneNow.timeOfDay,
     });
-    if (background) {
+    if (background && isLatestRequest()) {
       setData((prev) => ({
         ...prev,
         backgroundImageUrl: background.url,
@@ -154,7 +182,7 @@ export function useWeatherPage() {
         backgroundSource: background.source,
       }));
     }
-  }, [overrideLocation, profile, user]);
+  }, [locationSelection, profile, user]);
 
   // Initial load + re-runs when auth / profile coords / manual override change.
   useEffect(() => {
@@ -171,8 +199,6 @@ export function useWeatherPage() {
     profile?.weather_lat,
     profile?.weather_lon,
     profile?.weather_city,
-    overrideLocation?.latitude,
-    overrideLocation?.longitude,
     refresh,
   ]);
 
@@ -181,11 +207,19 @@ export function useWeatherPage() {
     scene,
     insight,
     refresh,
-    /** Override the resolved location (used by manual location search). */
+    /** Select a named location from the manual search results. */
     setSelectedLocation: (location: WeatherLocation | null) => {
-      setOverrideLocation(
-        location ? { ...location, precision: "manual" } : null,
+      refreshRequestIdRef.current += 1;
+      setLocationSelection(
+        location
+          ? { kind: "manual", location: { ...location, precision: "manual" } }
+          : null,
       );
+    },
+    /** Use fresh device coordinates; their real place name is resolved by refresh. */
+    setDeviceCoordinates: (coords: WeatherCoords) => {
+      refreshRequestIdRef.current += 1;
+      setLocationSelection({ kind: "device", coords });
     },
   };
 }
@@ -208,26 +242,4 @@ function errorMessageFor(r: Exclude<RichCurrentResult, { status: "ok" }>): strin
     case "api":
       return r.message ?? "Weather service error";
   }
-}
-
-function pickBestLocation(
-  geoResult: Awaited<ReturnType<typeof reverseGeocodeCoordinates>>,
-  coords: WeatherCoords,
-  fallbackCity: string,
-): WeatherLocation {
-  if (geoResult.status === "ok" && geoResult.locations.length > 0) {
-    // OpenWeather may return both the precise neighbourhood and the city.
-    // Prefer the most specific (lowest population implied → first in list).
-    const best = geoResult.locations[0]!;
-    return { ...best, precision: "gps" };
-  }
-  return {
-    name: fallbackCity || "Current location",
-    city: fallbackCity || "Current location",
-    country: "",
-    latitude: coords.lat,
-    longitude: coords.lon,
-    precision: "gps",
-    displayLabel: fallbackCity || "Current location",
-  };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -128,6 +128,8 @@ function QuickAddTask({
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Task["priority"]>("medium");
   const [dueDate, setDueDate] = useState("");
+  const operationId = useRef<string | null>(null);
+  const saving = useRef(false);
 
   const reset = () => {
     setTitle("");
@@ -136,14 +138,21 @@ function QuickAddTask({
   };
 
   const handleAdd = async () => {
-    if (!title.trim()) return;
+    if (!title.trim() || saving.current) return;
+    saving.current = true;
+    operationId.current ??= crypto.randomUUID();
+    try {
     await createTask.mutateAsync({
+      id: operationId.current,
       title,
       project_id: projectId,
       priority,
       due_date: dueDate || undefined,
     });
+    operationId.current = null;
     reset();
+    } catch { /* Mutation reports the error; preserve the title and retry id. */ }
+    finally { saving.current = false; }
   };
 
   if (!expanded) {
@@ -622,7 +631,7 @@ export function ProjectDetailModal({
                   />
                   <Badge variant="outline" className="tabular-nums">
                     <Target className="mr-1 h-3 w-3" />
-                    {completionPct}%
+                    {completedCount}/{projectTasks.length} {language.startsWith("zh") ? "任務已完成" : "tasks complete"}
                   </Badge>
                 </div>
                 <Progress value={completionPct} />

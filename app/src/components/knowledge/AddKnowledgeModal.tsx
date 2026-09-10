@@ -202,7 +202,7 @@ export function AddKnowledgeModal() {
   const ui = knowledgeUi.addModal;
   const closeAddModal = useKnowledgeStore((s) => s.closeAddModal);
   const [activeTab, setActiveTab] = useState(() => getInitialPendingKnowledgeAdd()?.tab ?? "url");
-  const [thumbnailStyle, setThumbnailStyle] = useState<ThumbnailStyle>("minimal");
+  const [thumbnailStyle, setThumbnailStyle] = useState<ThumbnailStyle>("na");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // URL tab
@@ -236,7 +236,10 @@ export function AddKnowledgeModal() {
       text: pending?.tab === "text" ? pending.text.trim() : "",
     };
   });
-  const [allowAutoTitleGeneration, setAllowAutoTitleGeneration] = useState(true);
+  const [allowAutoTitleGeneration, setAllowAutoTitleGeneration] = useState(false);
+  const [allowAI, setAllowAI] = useState(false);
+  const chinese = language.startsWith("zh");
+  const saveAndAnalyze = chinese ? "儲存並分析" : "Save and analyze";
   const [showGeneratingTitleHint, setShowGeneratingTitleHint] = useState(false);
   const [textDisplayMode, setTextDisplayMode] = useState<"preview" | "source" | null>(null);
   const titleRequestIdRef = useRef(0);
@@ -311,7 +314,7 @@ export function AddKnowledgeModal() {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== "text" || !allowAutoTitleGeneration) return;
+    if (activeTab !== "text" || !allowAI || !allowAutoTitleGeneration) return;
 
     const draftSource = (textDraft.text || stripHtml(textDraft.html))
       .replace(/\s+/g, " ")
@@ -340,12 +343,12 @@ export function AddKnowledgeModal() {
     }, 1000);
 
     return () => clearTimeout(debounceTimer);
-  }, [activeTab, allowAutoTitleGeneration, textDraft, textTitle]);
+  }, [activeTab, allowAI, allowAutoTitleGeneration, textDraft, textTitle]);
 
   const upsertItem = useKnowledgeStore((s) => s.upsertItem);
 
   const handleSubmitUrl = async () => {
-    if (!url.trim()) return;
+    if (!url.trim() || !allowAI || isSubmitting) return;
     const authError = await getKnowledgeSaveAuthErrorMessage();
     if (authError) {
       toast.error(authError);
@@ -419,7 +422,7 @@ export function AddKnowledgeModal() {
   }, [closeAddModal, file, fileQueue]);
 
   const handleSubmitFile = async () => {
-    if (!file) return;
+    if (!file || !allowAI || isSubmitting) return;
     const authError = await getKnowledgeSaveAuthErrorMessage();
     if (authError) {
       toast.error(authError);
@@ -500,6 +503,7 @@ export function AddKnowledgeModal() {
       const aiInput = visibleText || stripHtml(html);
 
       const created = await addKnowledgeFromText(textTitle, storageText, {
+        analyze: allowAI,
         thumbnailStyle,
         sourceType: cls.sourceType,
         displayModeDefault: textDisplayMode ?? cls.defaultDisplayMode,
@@ -528,6 +532,7 @@ export function AddKnowledgeModal() {
     }
   }, [
     closeAddModal,
+    allowAI,
     syncTextDraft,
     textDisplayMode,
     textTitle,
@@ -539,6 +544,7 @@ export function AddKnowledgeModal() {
   ]);
 
   const startRecording = useCallback(async () => {
+    if (!allowAI) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -592,7 +598,7 @@ export function AddKnowledgeModal() {
     } catch {
       toast.error(ui.microphoneAccessDenied);
     }
-  }, [audioPreviewUrl, ui.autoTranscriptionFailed, ui.microphoneAccessDenied]);
+  }, [allowAI, audioPreviewUrl, ui.autoTranscriptionFailed, ui.microphoneAccessDenied]);
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();
@@ -600,6 +606,7 @@ export function AddKnowledgeModal() {
   }, []);
 
   const handleSubmitVoice = async () => {
+    if (!allowAI || isSubmitting) return;
     const authError = await getKnowledgeSaveAuthErrorMessage();
     if (authError) {
       toast.error(authError);
@@ -649,23 +656,27 @@ export function AddKnowledgeModal() {
           <DialogTitle>{ui.title}</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
+        <div className="space-y-2 rounded-xl border border-border p-3 text-sm">
+          <label className="flex min-h-11 items-start gap-3"><input type="checkbox" className="mt-1 size-5 shrink-0" checked={allowAI} disabled={isSubmitting || isRecording || isTranscribing} onChange={(event) => { setAllowAI(event.target.checked); if (!event.target.checked) setAllowAutoTitleGeneration(false); }} /><span>{chinese ? "允許傳送這次選擇的內容進行 AI 分析" : "Allow AI analysis of the content I select for this import"}</span></label>
+          <p className="text-xs leading-5 text-muted-foreground">{chinese ? "文字筆記可直接儲存而不使用 AI。網址內容、檔案及錄音的匯入會交由擷取／AI 供應商處理；錄音停止後會傳送作轉錄。儲存並分析會先建立資料，再於背景處理，並非僅預覽。" : "Text notes can be saved without AI. URL content, files and audio imports use extraction and AI providers; stopping a recording sends it for transcription. Save and analyze creates a saved item and then processes it in the background."}</p>
+        </div>
+        <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); setAllowAI(false); setAllowAutoTitleGeneration(false); }} className="min-w-0">
           <TabsList className="w-full min-w-0">
             <TabsTrigger value="url" className="flex-1 gap-1.5">
               <Link2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{ui.tabUrl}</span>
+              <span className="text-xs sm:text-sm">{ui.tabUrl}</span>
             </TabsTrigger>
             <TabsTrigger value="file" className="flex-1 gap-1.5">
               <FileUp className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{ui.tabFile}</span>
+              <span className="text-xs sm:text-sm">{ui.tabFile}</span>
             </TabsTrigger>
             <TabsTrigger value="text" className="flex-1 gap-1.5">
               <Type className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{ui.tabText}</span>
+              <span className="text-xs sm:text-sm">{ui.tabText}</span>
             </TabsTrigger>
             <TabsTrigger value="voice" className="flex-1 gap-1.5">
               <Mic className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{ui.tabVoice}</span>
+              <span className="text-xs sm:text-sm">{ui.tabVoice}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -753,8 +764,8 @@ export function AddKnowledgeModal() {
               <Button variant="outline" onClick={closeAddModal}>
                 {ui.cancel}
               </Button>
-              <Button onClick={handleSubmitUrl} disabled={!url.trim() || isSubmitting}>
-                {isSubmitting ? ui.processing : ui.process}
+              <Button onClick={handleSubmitUrl} disabled={!allowAI || !url.trim() || isSubmitting}>
+                {isSubmitting ? ui.processing : saveAndAnalyze}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -860,8 +871,8 @@ export function AddKnowledgeModal() {
                   {ui.skipFile}
                 </Button>
               ) : null}
-              <Button onClick={handleSubmitFile} disabled={!file || isSubmitting}>
-                {isSubmitting ? ui.uploading : ui.upload}
+              <Button onClick={handleSubmitFile} disabled={!allowAI || !file || isSubmitting}>
+                {isSubmitting ? ui.uploading : saveAndAnalyze}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -971,7 +982,7 @@ export function AddKnowledgeModal() {
                 onClick={handleSubmitText}
                 disabled={!isTextDraftSubmittable() || isSubmitting}
               >
-                {isSubmitting ? ui.adding : ui.addNote}
+                {isSubmitting ? ui.adding : allowAI ? saveAndAnalyze : (chinese ? "儲存原文（不使用 AI）" : "Save original without AI")}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -988,7 +999,7 @@ export function AddKnowledgeModal() {
                 )}
                 onClick={isRecording ? stopRecording : startRecording}
                 aria-label={isRecording ? ui.stopRecording : ui.startRecording}
-                disabled={isSubmitting}
+                disabled={isSubmitting || (!isRecording && !allowAI)}
               >
                 {isRecording ? <Square className="h-7 w-7" /> : <Mic className="h-8 w-8" />}
               </button>
@@ -1041,7 +1052,7 @@ export function AddKnowledgeModal() {
               <Button
                 onClick={handleSubmitVoice}
                 disabled={
-                  isRecording || isTranscribing || (!audioBlob && !transcript.trim()) || isSubmitting
+                  !allowAI || isRecording || isTranscribing || (!audioBlob && !transcript.trim()) || isSubmitting
                 }
               >
                 {isSubmitting ? ui.adding : ui.addVoiceMemo}

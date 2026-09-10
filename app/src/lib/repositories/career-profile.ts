@@ -10,33 +10,36 @@ export type CareerProfileUpsertInput = Partial<
  * Completeness score (0..100) used by the Command Center dashboard. Each
  * field counts for equal weight; missing values do not crash the dashboard.
  */
-export function computeProfileCompleteness(
+export function getProfileCompleteness(
   p: CareerProfile | null | undefined,
-): number {
-  if (!p) return 0;
+): { filled: number; total: number; percent: number } {
   const checks: boolean[] = [
-    !!p.current_role,
-    !!p.current_company,
-    !!p.industry,
-    !!p.location,
-    (p.years_experience ?? null) !== null,
-    (p.top_skills?.length ?? 0) > 0,
-    (p.target_roles?.length ?? 0) > 0,
-    (p.target_industries?.length ?? 0) > 0,
-    (p.target_locations?.length ?? 0) > 0,
-    !!p.career_goals,
-    !!p.twelve_month_goals,
-    !!p.dream_scenario,
-    !!p.pain_points,
-    (p.career_highlights?.length ?? 0) > 0,
-    !!p.primary_headshot_id,
-    !!p.primary_bio_id,
-    !!p.master_resume_id,
-    (p.salary_expectation_min ?? null) !== null ||
-      (p.salary_expectation_max ?? null) !== null,
+    !!p?.current_role,
+    !!p?.current_company,
+    !!p?.industry,
+    !!p?.location,
+    (p?.years_experience ?? null) !== null,
+    (p?.top_skills?.length ?? 0) > 0,
+    (p?.target_roles?.length ?? 0) > 0,
+    (p?.target_industries?.length ?? 0) > 0,
+    (p?.target_locations?.length ?? 0) > 0,
+    !!p?.career_goals,
+    !!p?.twelve_month_goals,
+    !!p?.dream_scenario,
+    !!p?.pain_points,
+    (p?.career_highlights?.length ?? 0) > 0,
+    !!p?.primary_headshot_id,
+    !!p?.primary_bio_id,
+    !!p?.master_resume_id,
+    (p?.salary_expectation_min ?? null) !== null ||
+      (p?.salary_expectation_max ?? null) !== null,
   ];
   const hit = checks.filter(Boolean).length;
-  return Math.round((hit / checks.length) * 100);
+  return { filled: hit, total: checks.length, percent: Math.round((hit / checks.length) * 100) };
+}
+
+export function computeProfileCompleteness(p: CareerProfile | null | undefined): number {
+  return getProfileCompleteness(p).percent;
 }
 
 export const careerProfileRepository = {

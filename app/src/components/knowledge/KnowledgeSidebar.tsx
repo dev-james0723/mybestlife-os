@@ -92,7 +92,7 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
             <span className="tabular-nums text-[10px] text-muted-foreground">{items.length}</span>
           </button>
 
-          <div className="grid grid-cols-2 gap-1">
+          <details open={activeTypeFilters.length > 0 ? true : undefined}><summary className="min-h-11 cursor-pointer py-3 text-sm">{language.startsWith("zh") ? "依內容類型篩選" : "Filter by content type"}</summary><div className="grid grid-cols-2 gap-1">
             {CONTENT_TYPES.map((type) => {
               const colors = typeColors[type];
               const isActive = activeTypeFilters.includes(type);
@@ -120,7 +120,7 @@ function SidebarDirectoryContent({ showTitle = true }: { showTitle?: boolean }) 
                 </button>
               );
             })}
-          </div>
+          </div></details>
         </div>
 
         <Separator />

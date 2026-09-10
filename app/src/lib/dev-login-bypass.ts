@@ -4,10 +4,11 @@ export const DEV_LOGIN_BYPASS_COOKIE = "mylifeos_dev_bypass";
 /**
  * When true, /login shows “Dev / Test mode” and middleware accepts the bypass cookie.
  * - Local `next dev`: on
- * - Explicit opt-in: NEXT_PUBLIC_DEV_LOGIN_BYPASS=true
+ * - Production builds: always off, including explicit opt-in flags
  * - Explicit opt-out: NEXT_PUBLIC_HIDE_DEV_LOGIN_BYPASS=true
  */
 export function isDevLoginBypassFeatureEnabled(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   if (process.env.NEXT_PUBLIC_HIDE_DEV_LOGIN_BYPASS === "true") return false;
   if (process.env.NODE_ENV === "development") return true;
   if (process.env.NEXT_PUBLIC_DEV_LOGIN_BYPASS === "true") return true;
@@ -15,6 +16,7 @@ export function isDevLoginBypassFeatureEnabled(): boolean {
 }
 
 export function setDevLoginBypassCookie(): void {
+  if (!isDevLoginBypassFeatureEnabled()) return;
   if (typeof document === "undefined") return;
   const maxAge = 60 * 60 * 24 * 7;
   document.cookie = `${DEV_LOGIN_BYPASS_COOKIE}=1; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
@@ -26,6 +28,7 @@ export function clearDevLoginBypassCookie(): void {
 }
 
 export function hasDevLoginBypassCookie(): boolean {
+  if (!isDevLoginBypassFeatureEnabled()) return false;
   if (typeof document === "undefined") return false;
   return document.cookie.split(";").some((part) => {
     const [name, value] = part.trim().split("=");

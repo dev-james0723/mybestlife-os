@@ -1,0 +1,98 @@
+{
+  "captured_at": "2026-09-09T00:01:27.997109+00:00",
+  "scope": "research and design; current working tree metadata only",
+  "head": "d467ab83f2a949f7738b01d6c99aa2bfc09092bb",
+  "live_schema_rechecked": false,
+  "player_research_conducted": false,
+  "runtime_changed_by_this_review": false,
+  "files": [
+    {
+      "path": "app/src/types/database.ts",
+      "sha256": "ae0d1895096145363440536477022f1238f4928d0f0e7dd61c2c590aa020324d"
+    },
+    {
+      "path": "app/src/lib/repositories/tasks.ts",
+      "sha256": "31c7e83c8bde5c3501b6df24fa4c2c191146330dcf216d956bb4a0eb2f3a4079"
+    },
+    {
+      "path": "app/src/lib/repositories/projects.ts",
+      "sha256": "41d4c4f530dfd97172ead476d2bd54315fd9543314aea2f78a55874df139e613"
+    },
+    {
+      "path": "app/src/lib/repositories/goals.ts",
+      "sha256": "f53906e8a06e798fb97d9df3bcde42cdc51e1bcc19d1c03bdbf3a8b57a75ba19"
+    },
+    {
+      "path": "app/src/lib/repositories/habits.ts",
+      "sha256": "abbbddcaac42100662bc369b3f1f7c30b5962cad8e90701e16a51a44480ef20c"
+    },
+    {
+      "path": "app/src/lib/repositories/grateful-things.ts",
+      "sha256": "f25521e123b887c6b279a45b68b5b5d8899395bd0609446617785afbe4f118e7"
+    },
+    {
+      "path": "app/src/lib/repositories/journal.ts",
+      "sha256": "8488ad70905fad13cc8423e48526129615d9d472ba2ddc9ec51cb310f8656ed5"
+    },
+    {
+      "path": "app/src/lib/repositories/garden.ts",
+      "sha256": "93e6bbfffea4aa6cad3c70f4e91c104263a5bc1147c2042c786fe4d762157000"
+    },
+    {
+      "path": "app/src/lib/repositories/garden-pond.ts",
+      "sha256": "b7956a219662445d37e68c21bbe77962e7ee171553a918c8b1d089b3ea5606de"
+    },
+    {
+      "path": "app/src/components/garden/GardenAdventure.tsx",
+      "sha256": "af3deab9fb80aea6ead4b966711ee78fee3bea852b5570fda832dbe7318a9eb8"
+    },
+    {
+      "path": "app/src/components/garden/AdventureScene.tsx",
+      "sha256": "7db871fe3e63cc0d7d586db791f8b166f909aa871cfd22fe782e67ffd4d394e3"
+    },
+    {
+      "path": "app/src/components/garden/PondPanel.tsx",
+      "sha256": "6dd6e30a6632dbd89ad16a4a8d3457a13357807a8b9b64194db97e68dbc9cb90"
+    },
+    {
+      "path": "app/src/components/garden/PondEvidenceLinks.tsx",
+      "sha256": "8793d058c961e30e7247ba29f52cae0c879e616147096617c879913a052e28a9"
+    },
+    {
+      "path": "app/src/components/garden/pond-world.ts",
+      "sha256": "dc8af4c37d27d2eae9d330373bcadf4fa514a9bdeecbd2e3ce204f6dd7703f31"
+    },
+    {
+      "path": "app/src/lib/garden/pond.ts",
+      "sha256": "3a1e530d2c9997abd266b66a5c8c53de74b6301bd4e774922fd20d1bca505c6c"
+    },
+    {
+      "path": "app/src/lib/garden/pond-persistence.ts",
+      "sha256": "7065f79645cbbb1a4a9672445ef0b022a2573bec2fe00d7d09c3a39f4a2bb07c"
+    },
+    {
+      "path": "app/src/lib/garden/audio.ts",
+      "sha256": "882d9b3a31c0bf5919eda67ddca60b3612acf0dda505de009a20b34abadb737d"
+    },
+    {
+      "path": "app/src/hooks/use-garden-buddy-invitations.ts",
+      "sha256": "8dde7a4a977eb0fcedd0a5f17f1bb772fabfc7cc08d56952e9b303aa8bc82a23"
+    },
+    {
+      "path": "app/supabase/migrations/20260908162634_garden_living_pond.sql",
+      "sha256": "8f50fe1cc3a2a2a15614a7ef674c31b95f858cbaebb052a3fb8c12f8f1b4d212"
+    },
+    {
+      "path": "app/supabase/migrations/20260908172055_garden_pond_buddy.sql",
+      "sha256": "5ee6de917e69004d468a1085c1f7fbbfdab0d58ef7189a8ec68f391a8b12cb0e"
+    }
+  ],
+  "existing_native_db_evidence": {
+    "path": "artifacts/garden-v3/concurrency/validation.json",
+    "scope": "real native PostgreSQL, independent TCP sessions, fixture accounts only",
+    "passed": 34,
+    "total": 34,
+    "migration_hash_mismatches": [],
+    "claim_limit": "isolated database checks only; no latest linked-evidence UI or production validation"
+  }
+}

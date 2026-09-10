@@ -16,6 +16,9 @@ import { GlassPanel } from "@/components/ui/glass-panel";
 import type { LifePulseScore, PulseScoreKey } from "@/lib/analytics/types";
 import { cn } from "@/lib/utils";
 
+import { useAppStore } from "@/stores/app-store";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
+
 const SCORE_ICONS: Record<PulseScoreKey, LucideIcon> = {
   completion_momentum: Activity,
   focus_consistency: Target,
@@ -37,6 +40,7 @@ function TrendIcon({ score }: { score: LifePulseScore }) {
 }
 
 export function LifePulseCards({ scores }: { scores: LifePulseScore[] }) {
+  const copy = getUxJourneyCopy(useAppStore((state) => state.language));
   const reduceMotion = useReducedMotion();
 
   return (
@@ -58,9 +62,9 @@ export function LifePulseCards({ scores }: { scores: LifePulseScore[] }) {
                   </p>
                   <div className="mt-2 flex items-baseline gap-2">
                     <span className="text-3xl font-semibold tabular-nums">
-                      {score.score}
+                      {score.score ?? "—"}
                     </span>
-                    <span className="text-xs text-muted-foreground">/100</span>
+                    {score.score != null ? <span className="text-xs text-muted-foreground">/100</span> : <span className="text-xs text-muted-foreground">{copy.notEnoughData}</span>}
                   </div>
                 </div>
                 <div
@@ -73,7 +77,7 @@ export function LifePulseCards({ scores }: { scores: LifePulseScore[] }) {
                 </div>
               </div>
 
-              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted/70">
+              {score.score != null ? <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted/70">
                 <motion.div
                   className={cn(
                     "h-full rounded-full",
@@ -83,19 +87,19 @@ export function LifePulseCards({ scores }: { scores: LifePulseScore[] }) {
                     score.tone === "load" && "bg-rose-500",
                   )}
                   initial={reduceMotion ? false : { width: 0 }}
-                  animate={{ width: `${score.score}%` }}
+                  animate={{ width: `${score.score ?? "—"}%` }}
                   transition={{ duration: 0.5, delay: index * 0.04 }}
                 />
-              </div>
+              </div> : null}
 
-              <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
+              {score.score != null ? <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
                 <TrendIcon score={score} />
                 <span>{score.trendLabel}</span>
-              </div>
+              </div> : null}
               <p className="mt-2 text-sm leading-5 text-foreground/82">
                 {score.interpretation}
               </p>
-              <p className="mt-2 truncate text-xs text-muted-foreground">
+              <p className="mt-2 text-xs text-muted-foreground">
                 {score.signal}
               </p>
             </GlassPanel>

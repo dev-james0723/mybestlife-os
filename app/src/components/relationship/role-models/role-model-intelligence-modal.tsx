@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -59,7 +59,7 @@ type Props = {
   onDelete: () => void;
   onToggleFavorite?: () => void;
   onTalk: (rm: RoleModel, opts?: TalkOptions) => void;
-  buildContext: (rm: RoleModel) => RoleModelInsightContextPayload;
+  buildContext: (rm: RoleModel, includeAboutMe?: boolean) => RoleModelInsightContextPayload;
 };
 
 /** Heuristic "Life OS match" derived from the AI overlap buckets (stable, no extra call). */
@@ -83,6 +83,7 @@ export function RoleModelIntelligenceModal({
   onTalk,
   buildContext,
 }: Props) {
+  const [includedProfileFields, setIncludedProfileFields] = useState<string[]>([]);
   const reduce = useReducedMotion();
   const rmId = roleModel?.id ?? null;
   const { insight, meta, isPeeking, generate } = useRoleModelInsight(rmId);
@@ -107,9 +108,17 @@ export function RoleModelIntelligenceModal({
   const hasInsight = Boolean(insight);
   const generating = generate.isPending;
 
+  const contextForRequest = () => {
+    const context = buildContext(roleModel, true);
+    return { ...context, aboutMe: context.aboutMe && includedProfileFields.length ? {
+      mission: includedProfileFields.includes("mission") ? context.aboutMe.mission : null,
+      coreValues: includedProfileFields.includes("coreValues") ? context.aboutMe.coreValues : null,
+      personality: includedProfileFields.includes("personality") ? context.aboutMe.personality : null,
+    } : null };
+  };
   const runGenerate = (forceRefresh: boolean) => {
     generate.mutate(
-      { context: buildContext(roleModel), forceRefresh },
+      { context: contextForRequest(), forceRefresh },
       { onError: () => toast.error("Could not generate insight. Please try again.") },
     );
   };
@@ -202,6 +211,7 @@ export function RoleModelIntelligenceModal({
               </div>
             </div>
 
+            <details className="mx-4 mb-4 rounded-xl border p-4"><summary className="min-h-11 cursor-pointer text-sm font-medium">About Me context for this insight · Optional</summary><p className="text-xs text-muted-foreground">Only checked profile fields are included in Generate insight and skill requests. Your linked project, goal and note context is also used.</p>{(["mission", "coreValues", "personality"] as const).map((field) => <label key={field} className="flex min-h-11 items-start gap-2 py-2 text-sm"><input type="checkbox" className="mt-1" checked={includedProfileFields.includes(field)} onChange={(event) => setIncludedProfileFields((fields) => event.target.checked ? [...fields, field] : fields.filter((value) => value !== field))} /><span>{field === "coreValues" ? "Core values" : field === "mission" ? "Mission" : "Personal notes"}<span className="block text-xs text-muted-foreground">{buildContext(roleModel, true).aboutMe?.[field] || "No saved content"}</span></span></label>)}</details>
             {/* ---- Snapshot strip ---- */}
             <div className="relative grid grid-cols-2 gap-px border-y border-border/50 bg-border/40 sm:grid-cols-4">
               <Snapshot label="Life OS Match" value={matchScore != null ? `${matchScore}%` : "—"} hint={matchScore == null ? "Generate insight" : "From overlap"} />
@@ -416,7 +426,7 @@ export function RoleModelIntelligenceModal({
                     {
                       roleModelId: roleModel.id,
                       roleModelName: roleModel.name,
-                      context: buildContext(roleModel),
+                      context: contextForRequest(),
                     },
                     {
                       onSuccess: (saved) => {

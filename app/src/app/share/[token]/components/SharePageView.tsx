@@ -98,6 +98,7 @@ export function SharePageView({ token }: SharePageViewProps) {
           <ShieldAlert className="h-6 w-6 text-muted-foreground" />
         </div>
         <p className="mt-4 text-sm">{msg}</p>
+        {(msgKey === "unknown" || msgKey === "server_misconfigured") && <Button variant="outline" className="mt-4" onClick={() => void loadShare()}>{language.startsWith("zh") ? "重試" : "Retry"}</Button>}
         <div className="mt-6">
           <Button render={<Link href="/" />}>
             {publicCopy.ctaButton}

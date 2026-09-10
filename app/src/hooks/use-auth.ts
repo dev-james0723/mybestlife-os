@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { safeReturnPath } from "@/lib/auth-return-path";
 import { createClient } from "@/lib/supabase/client";
 import {
   clearDevLoginBypassCookie,
@@ -24,10 +25,15 @@ export function useAuth() {
   const supabase = createClient();
 
   useEffect(() => {
+    let active = true;
+    let authRevision = 0;
     const getUser = async () => {
+      const revision = authRevision;
+      try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (!active || revision !== authRevision) return;
       if (user) {
         clearDevLoginBypassCookie();
         setDevBypassSession(false);
@@ -36,6 +42,12 @@ export function useAuth() {
       }
       setUser(user);
       setIsLoading(false);
+      } catch {
+        if (!active || revision !== authRevision) return;
+        setUser(null);
+        setDevBypassSession(hasDevLoginBypassCookie());
+        setIsLoading(false);
+      }
     };
 
     getUser();
@@ -43,6 +55,7 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      authRevision += 1;
       if (session?.user) {
         clearDevLoginBypassCookie();
         setDevBypassSession(false);
@@ -53,14 +66,17 @@ export function useAuth() {
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { active = false; subscription.unsubscribe(); };
   }, [supabase.auth]);
+
+  const returnPath = () => safeReturnPath(new URLSearchParams(window.location.search).get("next"), withAppLocalePrefix(useAppStore.getState().language, "/dashboard"));
+  const callbackUrl = () => `${window.location.origin}/callback?next=${encodeURIComponent(returnPath())}`;
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/callback`,
+        redirectTo: callbackUrl(),
       },
     });
     if (error) throw ensureError(error);
@@ -70,7 +86,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
       options: {
-        redirectTo: `${window.location.origin}/callback`,
+        redirectTo: callbackUrl(),
       },
     });
     if (error) throw ensureError(error);
@@ -80,7 +96,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "azure",
       options: {
-        redirectTo: `${window.location.origin}/callback`,
+        redirectTo: callbackUrl(),
       },
     });
     if (error) throw ensureError(error);
@@ -90,7 +106,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
       options: {
-        redirectTo: `${window.location.origin}/callback`,
+        redirectTo: callbackUrl(),
       },
     });
     if (error) throw ensureError(error);
@@ -98,8 +114,7 @@ export function useAuth() {
 
   const signInDevBypass = () => {
     setDevLoginBypassCookie();
-    const lang = useAppStore.getState().language;
-    window.location.href = withAppLocalePrefix(lang, "/dashboard");
+    window.location.href = returnPath();
   };
 
   /**
@@ -107,7 +122,7 @@ export function useAuth() {
    * until the user opens the link in their inbox (sent via Supabase; configure Resend as SMTP).
    */
   const signUpWithEmail = async (email: string, password: string) => {
-    const redirect = `${window.location.origin}/callback`;
+    const redirect = callbackUrl();
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -123,8 +138,7 @@ export function useAuth() {
       password,
     });
     if (error) throw ensureError(error);
-    const lang = useAppStore.getState().language;
-    window.location.href = withAppLocalePrefix(lang, "/dashboard");
+    window.location.href = returnPath();
   };
 
   const signOut = async () => {

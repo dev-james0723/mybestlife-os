@@ -34,6 +34,10 @@ type JournalRow = {
   source: string;
   created_at: string;
   updated_at: string;
+  content?: string | null;
+  emotion_quadrant?: {quadrant?: JournalEntry["quadrant"]} | string | null;
+  linked_project_ids?: string[];
+  linked_task_ids?: string[];
 };
 
 function rowToEntry(row: JournalRow): JournalEntry {
@@ -42,20 +46,20 @@ function rowToEntry(row: JournalRow): JournalEntry {
     userId: row.user_id,
     entryDate: row.entry_date,
     topic: row.topic,
-    quadrant: row.quadrant,
-    primaryEmotion: row.primary_emotion,
+    quadrant: row.quadrant ?? (typeof row.emotion_quadrant === "object" ? row.emotion_quadrant?.quadrant ?? null : null),
+    primaryEmotion: row.primary_emotion ?? "",
     secondaryEmotion: row.secondary_emotion,
     intensity: row.intensity,
     target: row.target,
-    bullets: row.bullets ?? { items: [] },
+    bullets: Array.isArray(row.bullets) ? {items: row.bullets} : row.bullets ?? { items: row.content ? [row.content] : [] },
     selfStory: row.self_story,
-    needs: row.needs ?? { items: [] },
+    needs: Array.isArray(row.needs) ? {items: row.needs} : row.needs ?? { items: [] },
     nextTinyStep: row.next_tiny_step,
     appreciation: row.appreciation,
     topicExtras: row.topic_extras,
     contextFactors: row.context_factors,
-    projectIds: row.project_ids ?? [],
-    taskIds: row.task_ids ?? [],
+    projectIds: row.project_ids ?? row.linked_project_ids ?? [],
+    taskIds: row.task_ids ?? row.linked_task_ids ?? [],
     aiOutput: row.ai_output,
     aiMedia: row.ai_media,
     source: row.source,

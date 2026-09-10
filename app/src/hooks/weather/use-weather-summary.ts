@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { settingsRepository } from "@/lib/repositories/settings";
 
-import type { WeatherCoords } from "@/lib/weather/openweather";
 import {
   fetchCurrentWeatherRich,
   fetchForecast,
@@ -15,13 +14,14 @@ import {
 } from "@/lib/weather/openweather-forecast";
 import { fetchUvAndAirQuality } from "@/lib/weather/open-meteo";
 import { resolveCoordsForWeather } from "@/lib/weather/resolve-weather-coords";
+import { resolveActualWeatherLocation } from "@/lib/weather/location-display";
 import type { CurrentWeather } from "@/lib/weather/types";
 import {
   buildWeatherSummary,
   type WeatherSummary,
 } from "@/lib/weather/widget-summary";
 
-const SUMMARY_CACHE_KEY = "mylifeos.weather.summary.v2";
+const SUMMARY_CACHE_KEY = "mylifeos.weather.summary.v3";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export type WeatherSummaryState =
@@ -141,8 +141,20 @@ export function useWeatherSummary(): UseWeatherSummaryReturn {
           : currentResult.current.uvLabel,
     };
 
-    const location = pickLocationLabel(geoResult, currentResult.cityName, coords);
-    const summary = buildWeatherSummary(current, hourly, location);
+    const location = resolveActualWeatherLocation({
+      geocodeResult: geoResult,
+      coords,
+      providerCity: currentResult.cityName,
+      providerCountry: currentResult.country,
+    });
+    if (!location) {
+      setState((prev) =>
+        prev.status === "ok" ? prev : { status: "error", reason: "no_location" },
+      );
+      return;
+    }
+
+    const summary = buildWeatherSummary(current, hourly, location.displayLabel);
     setState({ status: "ok", summary });
     writeCache(summary, coords.lat, coords.lon);
   }, [profile, user]);
@@ -165,15 +177,4 @@ export function useWeatherSummary(): UseWeatherSummaryReturn {
   ]);
 
   return { state, refresh };
-}
-
-function pickLocationLabel(
-  geoResult: Awaited<ReturnType<typeof reverseGeocodeCoordinates>>,
-  fallbackCity: string | undefined,
-  coords: WeatherCoords,
-): string {
-  if (geoResult.status === "ok" && geoResult.locations.length > 0) {
-    return geoResult.locations[0]!.city;
-  }
-  return fallbackCity ?? coords.city ?? "Current location";
 }

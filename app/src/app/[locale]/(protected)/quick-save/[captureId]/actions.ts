@@ -30,15 +30,25 @@ function successPath(
   return `${withLocalePrefix(slug, "/quick-save/success")}?${params.toString()}`;
 }
 
-export async function saveQuickSaveKnowledgeAction(locale: string, captureId: string) {
+export async function saveQuickSaveKnowledgeAction(locale: string, captureId: string, formData: FormData) {
   const userId = await requireUserId();
-  const result = await saveQuickSaveCaptureToKnowledge({ captureId, userId });
+  let result;
+  try {
+    result = await saveQuickSaveCaptureToKnowledge({ captureId, userId, language: locale, allowAi: formData.get("allow_ai") === "on" });
+  } catch {
+    redirect(withLocalePrefix(normalizeLocaleSlug(locale) ?? DEFAULT_LOCALE_SLUG, `/quick-save/${captureId}`));
+  }
   redirect(successPath(locale, "knowledge", result.itemId));
 }
 
 export async function saveQuickSaveIdeaAction(locale: string, captureId: string) {
   const userId = await requireUserId();
-  const result = await saveQuickSaveCaptureToIdea({ captureId, userId });
+  let result;
+  try {
+    result = await saveQuickSaveCaptureToIdea({ captureId, userId });
+  } catch {
+    redirect(withLocalePrefix(normalizeLocaleSlug(locale) ?? DEFAULT_LOCALE_SLUG, `/quick-save/${captureId}`));
+  }
   redirect(successPath(locale, "idea", result.ideaId));
 }
 

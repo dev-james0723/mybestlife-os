@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useAppStore } from "@/stores/app-store";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar, type ViewMode } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
@@ -55,7 +57,13 @@ function isValidExternalDocumentUrl(value: string): boolean {
 }
 
 export function DocumentsView() {
-  const { data: documents, isLoading } = useDocuments();
+  const { data: documents, isLoading, isError, refetch } = useDocuments();
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const requestedId = searchParams.get("documentId");
+  const openedRequest = useRef<string | null>(null);
   const updateDocument = useUpdateDocument();
   const deleteDocument = useDeleteDocument();
 
@@ -104,7 +112,7 @@ export function DocumentsView() {
     return list;
   }, [documents, search, sortBy]);
 
-  const openDetail = (d: Document) => {
+  const openDetail = useCallback((d: Document) => {
     setSelected(d);
     setForm({
       name: d.name,
@@ -114,16 +122,33 @@ export function DocumentsView() {
       notes: d.notes ?? "",
     });
     setIsEditing(false);
+  }, []);
+
+  useEffect(() => {
+    if (!requestedId) { openedRequest.current = null; return; }
+    if (openedRequest.current === requestedId || !documents) return;
+    const document = documents.find((item) => item.id === requestedId);
+    if (document) { openedRequest.current = requestedId; openDetail(document); }
+  }, [requestedId, documents, openDetail]);
+
+  const closeDetail = () => {
+    setSelected(null);
+    if (requestedId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("documentId");
+      router.replace(`${pathname}?${params}`, { scroll: false });
+    }
   };
 
   const handleUpdate = async () => {
-    if (!selected || !form.name.trim()) return;
+    if (!selected || !form.name.trim() || updateDocument.isPending) return;
     const nextFileUrl = form.file_url.trim();
     if (!selected.storage_path && !isValidExternalDocumentUrl(nextFileUrl)) {
       toast.error("Enter a complete http:// or https:// address.");
       return;
     }
-    await updateDocument.mutateAsync({
+    try {
+    const saved = await updateDocument.mutateAsync({
       id: selected.id,
       data: {
         name: form.name.trim(),
@@ -138,7 +163,9 @@ export function DocumentsView() {
         notes: form.notes.trim() || null,
       },
     });
+    setSelected(saved);
     setIsEditing(false);
+    } catch { /* The mutation reports the error; keep the edit draft open. */ }
   };
 
   const handleDelete = async () => {
@@ -184,9 +211,11 @@ export function DocumentsView() {
   }, []);
 
   if (isLoading) return <LoadingPage />;
+  if (isError) return <div role="alert" className="space-y-3 p-6"><p>{chinese ? "未能載入文件。請重試。" : "Could not load your documents. Please retry."}</p><Button onClick={() => void refetch()}>{chinese ? "重試" : "Retry"}</Button></div>;
 
   return (
     <>
+      {requestedId && documents && !documents.some((document) => document.id === requestedId) && <p role="status" className="p-4 text-sm">{chinese ? "找不到這份文件，或你目前沒有存取權限。" : "This document is unavailable or you do not have access."}</p>}
       <PageShell
         useRouteTitle={false}
         title="Documents"
@@ -275,7 +304,7 @@ export function DocumentsView() {
       />
 
       {/* ── Document Detail Modal ── */}
-      <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+      <Dialog open={!!selected} onOpenChange={(open) => { if (!open) closeDetail(); }}>
         <DialogContent size="2xl" className="max-h-[85vh] overflow-y-auto">
           {selected && (isEditing ? (
             <>

@@ -9,9 +9,10 @@ import {
 } from "@/lib/ai/gemini-text";
 import {
   buildWizardSynthesisUserMessage,
+  type PromptWizardSynthesisInput,
   wizardSynthesisSystemInstruction,
 } from "@/lib/ai/prompt-wizard-synthesize";
-import { PROMPT_TOP_CATEGORIES, type PromptCreatorWizardState } from "@/types/prompt";
+import { PROMPT_TOP_CATEGORIES } from "@/types/prompt";
 
 export const runtime = "nodejs";
 
@@ -36,27 +37,14 @@ const synthesizeResult = z.object({
   top_category: topCategoryZ,
 });
 
-const wizardStateSchema = z.object({
-  stepId: z.string(),
-  goal: z.string(),
-  expertRole: z.string(),
-  context: z.string(),
-  outputFormat: z.string(),
-  toneStyle: z.array(z.string()),
-  variables: z
-    .array(variableRow)
-    .transform((rows) => rows.filter((r) => r.name.trim().length > 0)),
-  guardrails: z.string(),
-  examples: z.array(
-    z.object({
-      input: z.string(),
-      expectedOutput: z.string(),
-    }),
-  ),
-  draftId: z.string().nullable().optional(),
-  synthesizedBody: z.string().nullable().optional(),
-  updatedAt: z.string().optional(),
-});
+const wizardInputSchema = z
+  .object({
+    goalOrRoughPrompt: z.string().max(100_000),
+    context: z.string().max(20_000),
+    outputFormat: z.string().max(5_000),
+    toneStyle: z.array(z.string().max(80)).max(8),
+  })
+  .strict();
 
 function extractJsonObject(content: string): unknown {
   const trimmed = content.trim();
@@ -92,7 +80,7 @@ export async function POST(request: Request) {
   const locale = parseAppLocale(obj.locale);
   const languageRule = getLlmResponseLanguageDirective(locale);
 
-  const parsedState = wizardStateSchema.safeParse(obj.wizard);
+  const parsedState = wizardInputSchema.safeParse(obj.wizard);
   if (!parsedState.success) {
     return NextResponse.json(
       { error: "invalid_wizard", details: parsedState.error.flatten() },
@@ -100,8 +88,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const wizard = parsedState.data as unknown as PromptCreatorWizardState;
-  if (wizard.goal.trim().length < 3) {
+  const wizard = parsedState.data satisfies PromptWizardSynthesisInput;
+  if (wizard.goalOrRoughPrompt.trim().length < 3) {
     return NextResponse.json({ error: "goal_too_short" }, { status: 400 });
   }
 

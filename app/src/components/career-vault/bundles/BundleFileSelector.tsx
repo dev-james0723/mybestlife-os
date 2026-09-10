@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   DndContext,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -13,6 +14,7 @@ import {
   arrayMove,
   useSortable,
   verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, X } from "lucide-react";
@@ -74,6 +76,7 @@ export function BundleFileSelector({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const toggle = (id: string) => {
@@ -134,6 +137,7 @@ export function BundleFileSelector({
         <div className="min-w-[200px] flex-1">
           <Label>{copy.searchPlaceholder}</Label>
           <Input
+            aria-label={copy.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="mt-1"
@@ -171,7 +175,7 @@ export function BundleFileSelector({
                     <FileTypeIcon mime={f.mime_type} className="h-4 w-4 shrink-0" />
                     <Label
                       htmlFor={`bundle-file-${f.id}`}
-                      className="flex-1 cursor-pointer truncate font-normal"
+                      className="min-w-0 flex-1 cursor-pointer break-words font-normal"
                       title={f.filename}
                     >
                       {f.filename}
@@ -242,6 +246,7 @@ function SortableRow({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -263,6 +268,7 @@ function SortableRow({
       )}
     >
       <button
+        ref={setActivatorNodeRef}
         type="button"
         className="cursor-grab text-muted-foreground hover:text-foreground"
         {...attributes}
@@ -275,7 +281,7 @@ function SortableRow({
         {index}
       </span>
       <FileTypeIcon mime={file.mime_type} className="h-4 w-4 shrink-0" />
-      <span className="flex-1 truncate" title={file.filename}>
+      <span className="min-w-0 flex-1 break-words" title={file.filename}>
         {file.filename}
       </span>
       <span className="text-[10px] text-muted-foreground">

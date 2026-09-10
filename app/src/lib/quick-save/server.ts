@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { insertOrRecoverOwned } from "@/lib/repositories/insert-or-recover";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   addKnowledgeFromText,
@@ -58,6 +60,7 @@ export async function insertQuickSaveCapture(
 }
 
 export async function createIdeaFromQuickSave(input: {
+  operationId?: string;
   userId: string;
   title: string | null;
   text: string | null;
@@ -66,9 +69,7 @@ export async function createIdeaFromQuickSave(input: {
 }) {
   const supabase = await createServerSupabaseClient();
   const content = buildQuickSaveIdeaContent(input);
-  const { data, error } = await supabase
-    .from("ideas")
-    .insert({
+  const { data } = await insertOrRecoverOwned(supabase, "ideas", {
       user_id: input.userId,
       content,
       source_type: "share",
@@ -89,11 +90,7 @@ export async function createIdeaFromQuickSave(input: {
       linked_knowledge_item_ids: [],
       linked_node_ids: [],
       related_resource_refs: [],
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
+    }, input.userId, input.operationId);
   return data as { id: string };
 }
 
@@ -119,6 +116,7 @@ export async function saveQuickSaveCaptureToKnowledge(input: {
   captureId: string;
   userId: string;
   language?: AppLocale | string | null;
+  allowAi?: boolean;
 }): Promise<{ itemId: string }> {
   const supabase = await createServerSupabaseClient();
   const capture = await getQuickSaveCaptureForUser(supabase, input.userId, input.captureId);
@@ -128,16 +126,23 @@ export async function saveQuickSaveCaptureToKnowledge(input: {
   }
 
   try {
+    if ((capture.normalized_url || capture.file_refs.length > 0) && input.allowAi !== true) {
+      throw new Error("QUICK_SAVE_AI_CONSENT_REQUIRED");
+    }
     let itemId: string | null = null;
     if (capture.normalized_url) {
       const item = await addKnowledgeFromUrl(capture.normalized_url, {
+        operationId: capture.id,
         thumbnailStyle: "na",
         language: input.language ?? undefined,
       });
       itemId = item.id;
     } else if (capture.file_refs.length > 0) {
-      for (const file of capture.file_refs) {
+      for (const [index, file] of capture.file_refs.entries()) {
+        const hash = createHash("sha256").update(`${capture.id}:${file.storage_path}`).digest("hex");
+        const operationId = index === 0 ? capture.id : `${hash.slice(0, 8)}-${hash.slice(8, 12)}-5${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
         const item = await finalizeKnowledgeFileUpload({
+          operationId,
           storagePath: file.storage_path,
           originalFileName: file.name,
           mimeType: file.mime_type,
@@ -154,6 +159,8 @@ export async function saveQuickSaveCaptureToKnowledge(input: {
         {
           thumbnailStyle: "na",
           sourceType: "plain_text",
+          analyze: false,
+          operationId: capture.id,
           language: input.language ?? undefined,
         },
       );
@@ -193,6 +200,7 @@ export async function saveQuickSaveCaptureToIdea(input: {
 
   try {
     const idea = await createIdeaFromQuickSave({
+      operationId: capture.id,
       userId: input.userId,
       title: capture.title,
       text: capture.text,

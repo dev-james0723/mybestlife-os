@@ -10,6 +10,8 @@ import type {
 import "leaflet/dist/leaflet.css";
 
 import {
+  RAINVIEWER_ATTRIBUTION,
+  RAINVIEWER_BASEMAP_URL,
   radarTileUrl,
   type RadarFrame,
   type RadarFrames,
@@ -27,7 +29,7 @@ const RADAR_DEFAULT_ZOOM = 8;
 export interface RadarMapHandle {
   zoomIn: () => void;
   zoomOut: () => void;
-  recenter: () => void;
+  recenter: (latitude?: number, longitude?: number) => void;
   /** Swap the visible radar frame (used by the playback timeline). */
   showFrame: (index: number) => void;
 }
@@ -41,7 +43,7 @@ interface WeatherRadarInnerProps {
 }
 
 /**
- * Real radar surface: a dark Carto basemap centred on the user's
+ * Real radar surface: a dark RainViewer basemap centred on the user's
  * coordinates, a pulsing marker for "you are here", and a RainViewer
  * radar tile layer that swaps frames as the timeline plays.
  *
@@ -85,16 +87,12 @@ const WeatherRadarInner = forwardRef<RadarMapHandle, WeatherRadarInnerProps>(
         });
         mapRef.current = map;
 
-        // Dark basemap — Carto "Dark Matter" (free, attribution required).
-        L.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-          {
-            subdomains: "abcd",
-            maxZoom: 19,
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a> · Radar <a href="https://www.rainviewer.com/">RainViewer</a>',
-          },
-        ).addTo(map);
+        // Dark RainViewer basemap. The old CARTO endpoint now returns
+        // "API KEY REQUIRED" placeholder tiles without a CARTO account.
+        L.tileLayer(RAINVIEWER_BASEMAP_URL, {
+          maxZoom: 20,
+          attribution: RAINVIEWER_ATTRIBUTION,
+        }).addTo(map);
 
         // "You are here" — pulsing lime marker.
         const marker = L.circleMarker([latitude, longitude], {
@@ -174,10 +172,14 @@ const WeatherRadarInner = forwardRef<RadarMapHandle, WeatherRadarInnerProps>(
     useImperativeHandle(ref, () => ({
       zoomIn: () => mapRef.current?.zoomIn(),
       zoomOut: () => mapRef.current?.zoomOut(),
-      recenter: () =>
-        mapRef.current?.setView([latitude, longitude], RADAR_DEFAULT_ZOOM, {
-          animate: true,
-        }),
+      recenter: (nextLatitude = latitude, nextLongitude = longitude) => {
+        markerRef.current?.setLatLng([nextLatitude, nextLongitude]);
+        mapRef.current?.setView(
+          [nextLatitude, nextLongitude],
+          RADAR_DEFAULT_ZOOM,
+          { animate: true },
+        );
+      },
       showFrame: () => {
         /* Frame swap is driven by the `frameIndex` prop effect above. */
       },

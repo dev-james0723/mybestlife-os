@@ -74,6 +74,7 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
     capture.normalized_url || capture.text || capture.title || capture.file_refs.length > 0,
   );
   const canSaveIdea = canSaveKnowledge;
+  const needsAiConsent = Boolean(capture.normalized_url || capture.file_refs.length);
 
   return (
     <PageShell
@@ -114,7 +115,9 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
           <div className="space-y-4">
             {capture.error_message ? (
               <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
-                {capture.error_message}
+                {capture.error_message === "QUICK_SAVE_AI_CONSENT_REQUIRED"
+                  ? "Choose AI processing for Knowledge, or save the original to Idea Capture."
+                  : "Your shared content is still here. Saving did not finish; please retry."}
               </div>
             ) : null}
 
@@ -162,7 +165,7 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
                           </div>
                         )}
                         <div className="space-y-1 p-3">
-                          <p className="truncate text-sm font-medium">{file.name}</p>
+                          <p className="break-words text-sm font-medium">{file.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {file.mime_type ?? "file"} · {formatFileSize(file.size)}
                           </p>
@@ -178,6 +181,12 @@ export default async function QuickSaveReviewPage({ params }: PageProps) {
 
             <div className="grid gap-2 sm:grid-cols-2">
               <form action={saveQuickSaveKnowledgeAction.bind(null, slug, capture.id)}>
+                {needsAiConsent ? (
+                  <label className="mb-3 flex items-start gap-2 text-sm leading-6">
+                    <input type="checkbox" name="allow_ai" required disabled={!canAct} className="mt-1.5" />
+                    Process this link or file with AI to extract and summarize its contents. The content is sent to the configured processing providers.
+                  </label>
+                ) : <p className="mb-3 text-sm text-muted-foreground">Saves the original text without AI processing.</p>}
                 <Button
                   type="submit"
                   className={cn(osPrimaryControlClassName, "h-12 w-full justify-center gap-2 rounded-xl")}

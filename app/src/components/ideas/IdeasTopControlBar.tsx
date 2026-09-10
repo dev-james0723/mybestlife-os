@@ -119,7 +119,7 @@ export function IdeasTopControlBar() {
         </div>
 
         <div className={cn(filterHorizontalScrollClassName, "lg:shrink-0 lg:flex-nowrap")}>
-          <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as IdeasSortKey)}>
+          <Select itemToStringLabel={(value) => ui.sortLabels[value as IdeasSortKey] ?? String(value)} value={sortBy} onValueChange={(v) => v && setSortBy(v as IdeasSortKey)}>
             <SelectTrigger className="h-9 w-[160px] shrink-0 border-border/60 bg-background/80 text-xs">
               <SelectValue placeholder={ui.sortLabel} />
             </SelectTrigger>

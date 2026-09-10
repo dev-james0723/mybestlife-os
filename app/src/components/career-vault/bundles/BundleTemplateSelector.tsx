@@ -8,7 +8,7 @@ import { BUNDLE_TEMPLATES } from "@/lib/career-vault/bundle-templates";
 
 interface BundleTemplateSelectorProps {
   copy: CareerVaultCopy;
-  value: BundleTemplateKey;
+  value: BundleTemplateKey | null;
   onChange: (value: BundleTemplateKey) => void;
 }
 
@@ -25,6 +25,7 @@ export function BundleTemplateSelector({
           <button
             key={tpl.type}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(tpl.type)}
             className={cn(
               "relative rounded-xl border bg-card p-4 text-left transition-colors hover:border-primary/40",

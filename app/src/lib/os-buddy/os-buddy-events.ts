@@ -67,6 +67,7 @@ export type OSBuddyEvent =
     }
   | { type: "game:start"; game: OSBuddyMiniGame }
   | { type: "game:complete"; game: OSBuddyMiniGame; score?: number }
+  | { type: "garden:invitation-feedback"; account: string; id: string; action: "accepted" | "dismissed" }
   | { type: "garden:enter" }
   | { type: "garden:exit" }
   | { type: "garden:achievement"; achievement: "harvest" | "discover" | "trail-won" | "deliver" }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Ban, Compass, MoveRight, Target, UserCheck } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { OSPrimaryAction } from "@/components/ui/os-primitives";
+import { OSPrimaryAction, OSControl } from "@/components/ui/os-primitives";
 import {
   CareerHelpPanel,
   CareerMetricCard,
@@ -25,16 +25,18 @@ export function CareerCompassView() {
     return <LoadingPage />;
   }
 
+  if (profileQ.isError) return <div role="alert"><p>Could not load your Career Profile.</p><OSControl onClick={() => void profileQ.refetch()}>Retry</OSControl></div>;
+
   const profile = profileQ.data;
   const profileHref = withLocalePrefix(localeSlug, "/career/profile");
   const profileIsThin =
     !profile ||
     (!profile.current_role &&
       !profile.industry &&
-      profile.top_skills.length === 0 &&
+      (profile.top_skills?.length ?? 0) === 0 &&
       !profile.career_goals);
   const topHypothesis =
-    profile?.target_roles[0] ??
+    profile?.target_roles?.[0] ??
     profile?.transition_goal ??
     profile?.career_goals ??
     "No career hypothesis yet";
@@ -43,14 +45,14 @@ export function CareerCompassView() {
     profile?.pain_points ??
     "No blockers captured yet";
   const nextAction =
-    profile?.ai_next_actions[0]?.title ??
+    profile?.ai_next_actions?.[0]?.title ??
     (profileIsThin ? "Complete your Career Profile" : "Choose one next move for this week");
   const direction =
     profile?.current_status_summary ??
     profile?.career_identity ??
     profile?.current_role ??
     "Direction will sharpen as your profile fills in.";
-  const completion = profile?.completion_score ?? 0;
+
 
   return (
     <PageShell
@@ -80,28 +82,25 @@ export function CareerCompassView() {
           />
           <CareerMetricCard
             icon={Ban}
-            label="Current blockers"
+            label="Challenges recorded in your profile"
             value={<span className="text-base leading-6">{blockers}</span>}
-            description="Constraints to resolve before the next serious move."
+            description="These may include AI suggestions. Edit anything that does not fit your situation."
           />
           <CareerMetricCard
             icon={MoveRight}
             label="Next action"
             value={<span className="text-base leading-6">{nextAction}</span>}
-            description="A profile-derived recommendation or the next honest setup step."
+            description="An optional suggestion from your saved profile; choose what fits this week."
           />
         </CareerMetricGrid>
 
         <CareerSectionPanel
           title="Current direction signal"
-          description="This is drawn from your Career Profile. No synthetic data is added here."
+          description="Based on your saved Career Profile, which may include AI-generated summaries. This is a working hypothesis you can revise."
         >
           <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
             <p className="text-sm leading-6 text-muted-foreground">{direction}</p>
-            <div className="rounded-xl border border-white/50 bg-white/68 px-4 py-3 text-sm dark:border-white/10 dark:bg-white/[0.04]">
-              <span className="font-semibold tabular-nums">{completion}%</span>{" "}
-              profile clarity
-            </div>
+            <OSControl render={<Link href={profileHref} />}>Review or correct the source profile</OSControl>
           </div>
         </CareerSectionPanel>
 

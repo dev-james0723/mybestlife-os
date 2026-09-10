@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar, type ViewMode } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
@@ -138,7 +140,8 @@ const EMPTY_FORM: FormState = {
 };
 
 export function AssetsView() {
-  const { data: assets, isLoading } = useAssets();
+  const locale = useLocaleSlug();
+  const { data: assets, isLoading, isError: assetsError, refetch: retryAssets } = useAssets();
   const { data: documents } = useDocuments();
   const { data: primaryImages } = usePrimaryAssetImages();
   const createAsset = useCreateAsset();
@@ -571,6 +574,11 @@ export function AssetsView() {
 
         {isLoading ? (
           <AssetsLoadingSkeleton />
+        ) : assetsError ? (
+          <div role="alert" className="space-y-3 rounded-xl border p-4">
+            <p>{language.startsWith("zh") ? "未能載入物品。請重試。" : "Could not load your assets. Please retry."}</p>
+            <Button variant="outline" onClick={() => void retryAssets()}>{language.startsWith("zh") ? "重試" : "Retry"}</Button>
+          </div>
         ) : filteredIsEmpty ? (
           <AssetsEmptyState
             title={hasAssets ? copy.assets.emptyTitle : aiCopy.empty.title}
@@ -808,9 +816,9 @@ export function AssetsView() {
                         <h4 className="text-sm font-medium">
                           {copy.assetForm.linkedDocumentLabel}
                         </h4>
-                        <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                        <Link href={`/${locale}/resources?tab=documents&documentId=${selectedLinkedDocument.id}`} className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm hover:underline focus-visible:ring-2 focus-visible:ring-ring">
                           <FileText className="size-4 text-muted-foreground" />
-                          <span className="font-medium">
+                          <span className="break-words font-medium">
                             {selectedLinkedDocument.name}
                           </span>
                           {selectedLinkedDocument.document_type && (
@@ -818,7 +826,7 @@ export function AssetsView() {
                               · {selectedLinkedDocument.document_type}
                             </span>
                           )}
-                        </div>
+                        </Link>
                       </div>
                     </>
                   )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@/hooks/use-auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -33,13 +34,16 @@ export type UseSignalMemoryReturn = {
  * hook surface stays identical.
  */
 export function useSignalMemory(): UseSignalMemoryReturn {
+  const { user, isLoading } = useAuth();
+  const userId = user?.id ?? null;
   const [actions, setActions] = useState<SignalAction[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setActions(loadActions());
+    if (isLoading) return;
+    setActions(loadActions(userId));
     setReady(true);
-  }, []);
+  }, [userId, isLoading]);
 
   const record = useCallback(
     (signal: Pick<SignalItem, "id" | "topic" | "source">, kind: SignalActionKind) => {
@@ -48,16 +52,16 @@ export function useSignalMemory(): UseSignalMemoryReturn {
         kind,
         topic: signal.topic,
         domain: signal.source?.domain,
-      });
+      }, userId);
       setActions(next);
     },
-    [],
+    [userId],
   );
 
   const clearHistory = useCallback(() => {
-    clearActions();
+    clearActions(userId);
     setActions([]);
-  }, []);
+  }, [userId]);
 
   const behavior = useMemo(() => deriveBehavior(actions), [actions]);
 

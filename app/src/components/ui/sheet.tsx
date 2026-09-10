@@ -3,6 +3,8 @@
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 
+import { useGsapPopup } from "@/hooks/use-gsap-popup"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
@@ -41,15 +43,19 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  ref: forwardedRef,
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "bottom-card" | "left"
   showCloseButton?: boolean
 }) {
+  const motionRef = useGsapPopup("sheet", forwardedRef)
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Popup
+        ref={motionRef}
+        data-os-motion="sheet"
         data-slot="sheet-content"
         data-side={side}
         className={cn(

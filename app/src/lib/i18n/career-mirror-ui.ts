@@ -100,7 +100,7 @@ const en: CareerMirrorUiCopy = {
   hero: {
     title: "AI Career Mirror",
     subtitle:
-      "A few honest choices, then a clear picture of who you are at work and where you're actually stuck.",
+      "A few honest choices, then an editable summary of your work preferences and current questions.",
     startCta: "Start the mirror",
     resumeCta: "Continue where you left off",
     progressLabel: (percent) => `${percent}% complete`,
@@ -110,7 +110,7 @@ const en: CareerMirrorUiCopy = {
     back: "Back",
     skip: "Skip",
     saveAndExit: "Save & exit",
-    finish: "See my mirror",
+    finish: "Generate AI summary",
     finishing: "Building your mirror…",
   },
   controls: {

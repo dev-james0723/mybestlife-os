@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,7 +23,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
@@ -32,6 +38,7 @@
   ],
   "exclude": [
     "node_modules",
+    ".next-*",
     "scripts/test-bio-lab-pure.ts",
     "scripts/test-knowledge-classify.ts",
     "scripts/test-quote-library-pure.ts",

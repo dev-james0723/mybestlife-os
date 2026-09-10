@@ -1,5 +1,8 @@
 "use client"
 
+import { useCallback, useState } from "react"
+import { useGSAP } from "@gsap/react"
+import gsap from "gsap"
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -69,9 +72,35 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   )
 }
 
-function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
+function TabsContent({ className, ref: forwardedRef, ...props }: TabsPrimitive.Panel.Props) {
+  const [element, setElement] = useState<HTMLElement | null>(null)
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    setElement(node)
+    if (typeof forwardedRef === "function") return forwardedRef(node)
+    if (forwardedRef) forwardedRef.current = node
+  }, [forwardedRef])
+  useGSAP((_context, contextSafe) => {
+    if (!element || !contextSafe) return
+    let wasVisible = false
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const animate = contextSafe(() => {
+      const visible = !element.hidden && !element.hasAttribute("data-hidden")
+      if (visible === wasVisible) return
+      wasVisible = visible
+      gsap.killTweensOf(element)
+      if (visible && !media.matches) gsap.fromTo(element, { opacity: 0.6 }, { opacity: 1, duration: 0.16, ease: "power2.out", overwrite: true, clearProps: "opacity" })
+      else gsap.set(element, { clearProps: "opacity" })
+    })
+    const reduceMotion = contextSafe(() => { gsap.killTweensOf(element); gsap.set(element, { clearProps: "opacity" }) })
+    animate()
+    const observer = new MutationObserver(animate)
+    observer.observe(element, { attributes: true, attributeFilter: ["hidden", "data-hidden"] })
+    media.addEventListener("change", reduceMotion)
+    return () => { observer.disconnect(); media.removeEventListener("change", reduceMotion) }
+  }, { scope: element ?? undefined, dependencies: [element], revertOnUpdate: true })
   return (
     <TabsPrimitive.Panel
+      ref={ref}
       data-slot="tabs-content"
       className={cn("flex-1 text-sm outline-none", className)}
       {...props}

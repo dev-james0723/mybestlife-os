@@ -2586,23 +2586,6 @@ html[data-ui-theme="default"][data-color-mode="light"] {
   --sidebar-text-muted: color-mix(in oklch, black 65%, transparent);
 }
 
-/* Narrower sidebar width (240px vs baseline 16rem / 256px). The shadcn
-   primitive inline-sets --sidebar-width on [data-slot="sidebar-wrapper"];
-   we override with !important so other themes stay at their defaults.
-   Chose 15rem so that:
-     - "My Best Life OS" brand header fits on one line
-     - Long category labels ("Build & Execute", "Command Center") fit
-       without wrapping to two lines
-     - Sub-item labels ("Google Calendar", "Weekly Review") render fully */
-html[data-ui-theme="default"] [data-slot="sidebar-wrapper"] {
-  --sidebar-width: 15rem !important;
-}
-
-html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] {
-  --sidebar-width: min(16.25rem, calc(100vw - 1.25rem)) !important;
-  width: min(16.25rem, calc(100vw - 1.25rem)) !important;
-}
-
 html[data-ui-theme="default"] [data-sidebar="sidebar"][data-mobile="true"] .today-companion-panel {
   padding-inline: 0.45rem !important;
 }
@@ -5203,4 +5186,28 @@ html.mylifeos-low-stimulation-mode [data-slot="sidebar"] {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* A non-visual CSS clock lets Base UI retain portals until GSAP has finished.
+   Separate names restart on reversal. GSAP owns opacity and transform only. */
+@keyframes os-presence-enter { from { --os-presence-progress: 0; } to { --os-presence-progress: 1; } }
+@keyframes os-presence-exit { from { --os-presence-progress: 1; } to { --os-presence-progress: 0; } }
+[data-os-motion] { --os-enter-ms: 280ms; --os-exit-ms: 220ms; transition: none !important; }
+[data-os-motion="sheet"] { --os-enter-ms: 320ms; --os-exit-ms: 260ms; }
+[data-os-motion="popover"] { --os-enter-ms: 200ms; --os-exit-ms: 160ms; }
+[data-os-motion="menu"] { --os-enter-ms: 180ms; --os-exit-ms: 140ms; }
+[data-os-motion="tooltip"] { --os-enter-ms: 160ms; --os-exit-ms: 130ms; }
+[data-os-motion][data-open] { animation: os-presence-enter var(--os-enter-ms) linear !important; }
+[data-os-motion][data-closed] { animation: os-presence-exit var(--os-exit-ms) linear !important; pointer-events: none; }
+[data-os-motion="sheet"][data-starting-style], [data-os-motion="sheet"][data-ending-style] { translate: none; }
+[data-os-motion="sheet"][data-side="bottom-card"] { translate: none; }
+@media (min-width: 640px) { [data-os-motion="sheet"][data-side="bottom-card"] { translate: -50% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-os-motion][data-open], [data-os-motion][data-closed] { animation-duration: 1ms !important; }
+}
+
+/* Keep the companion clear of modal actions and screen-reader focus. */
+body:has(:is([data-slot="dialog-content"], [data-slot="alert-dialog-content"], [data-slot="sheet-content"])[data-open]) :is(.os-buddy-dock, [data-floating-capture-trigger]) {
+  visibility: hidden;
+  pointer-events: none;
 }

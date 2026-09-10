@@ -1,3 +1,4 @@
+import { formatRecordedCost } from "./recorded-cost";
 import type { SoftwareVaultEntry } from "@/types/database";
 
 export const VAULT_COMPARE_DIMENSION_KEYS = [
@@ -23,14 +24,6 @@ function dash(s: string | null | undefined): string {
   return t.length ? t : "—";
 }
 
-function formatCost(entry: SoftwareVaultEntry): string {
-  if (entry.cost_type === "Free") return "Free";
-  if (entry.cost_amount == null) return dash(entry.cost_type);
-  const n = Number(entry.cost_amount);
-  if (!Number.isFinite(n)) return dash(entry.cost_type);
-  const p = (entry.cost_period ?? "").trim();
-  return p ? `$${n.toFixed(0)}/${p}` : `$${n.toFixed(0)}`;
-}
 
 function easeFromPriority(priority: SoftwareVaultEntry["priority"]): string {
   switch (priority) {
@@ -66,7 +59,7 @@ export function buildVaultCompareMatrix(entries: SoftwareVaultEntry[]): VaultCom
       summary: dash(entry.summary),
       bestFor: dash(entry.default_tool_for ?? entry.use_cases?.split(/[.;]/)[0]),
       downsides: dash(entry.biggest_downside),
-      cost: formatCost(entry),
+      cost: formatRecordedCost(entry),
       easeOfUse: easeFromPriority(entry.priority),
       integration: dash(entry.platforms),
       privacyEnterprise: inferPrivacy(entry),

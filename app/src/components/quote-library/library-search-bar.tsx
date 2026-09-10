@@ -88,7 +88,7 @@ export function LibrarySearchBar() {
       >
         <SelectTrigger className="h-11 min-h-11 w-[180px] shrink-0 rounded-xl">
           <ArrowUpDown className="mr-2 size-4" aria-hidden />
-          <SelectValue placeholder={copy.sortPlaceholder} />
+          <SelectValue placeholder={copy.sortPlaceholder}>{sortOptions.find((option) => option.value === sort)?.label}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {sortOptions.map((o) => (

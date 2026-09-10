@@ -72,6 +72,8 @@ import { TaskProjectLinker } from "./task-project-linker";
 import { TaskLinkedEntities } from "./task-linked-entities";
 import { TaskSubtasks } from "./task-subtasks";
 import { TaskAiActions } from "./task-ai-actions";
+import { TaskLineageActions } from "./task-lineage-actions";
+import { LIVING_POND_ENABLED } from "@/lib/garden/pond-config";
 
 const NONE = "none";
 
@@ -374,6 +376,8 @@ export function TaskDetailPanel({
                 <Separator />
 
                 <TaskSubtasks taskId={t.id} copy={centerCopy} />
+
+                {LIVING_POND_ENABLED && <TaskLineageActions key={`${t.user_id}:${t.id}`} task={t} zh={language.startsWith("zh")} />}
 
                 <Separator />
 

@@ -26,10 +26,10 @@ export const osMapSurfaceClassName =
   "relative overflow-hidden rounded-[1.4rem] border border-slate-300/55 bg-white/76 shadow-[0_18px_60px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/12 dark:bg-white/[0.055] dark:shadow-[0_18px_60px_rgba(2,8,23,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
 
 export const osSheetSurfaceClassName =
-  "border-slate-200/80 bg-white/96 text-slate-950 shadow-[0_24px_90px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/96 dark:text-white dark:shadow-[0_24px_90px_rgba(2,8,23,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]";
+  "border-slate-200/80 bg-white/76 text-slate-950 shadow-[0_24px_90px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/72 dark:text-white dark:shadow-[0_24px_90px_rgba(2,8,23,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]";
 
 export const osDialogSurfaceClassName =
-  "border border-slate-200/80 bg-white/94 text-slate-950 shadow-[0_24px_90px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/12 dark:bg-zinc-900/94 dark:text-white dark:shadow-[0_24px_90px_rgba(2,8,23,0.48),inset_0_1px_0_rgba(255,255,255,0.08)]";
+  "border border-slate-200/80 bg-white/76 text-slate-950 shadow-[0_24px_90px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/12 dark:bg-zinc-900/72 dark:text-white dark:shadow-[0_24px_90px_rgba(2,8,23,0.48),inset_0_1px_0_rgba(255,255,255,0.08)]";
 
 export const osSheenClassName =
   "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/24 before:to-transparent";

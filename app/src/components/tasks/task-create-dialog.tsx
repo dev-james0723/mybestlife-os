@@ -9,13 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   OSDialogSurface,
-  OSSegmentedControl,
+  OSControl,
 } from "@/components/ui/os-primitives";
 import type { CreateTaskInput } from "@/lib/repositories/tasks";
 import type { TasksUiCopy } from "@/lib/i18n/tasks-ui";
 import type { TasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
 import { buildLocalTaskDraft, type TaskDraft } from "@/lib/tasks/task-create";
-import { TaskCreateQuickForm } from "./task-create-quick-form";
 import { TaskCreateManualForm } from "./task-create-manual-form";
 import { TaskCreateAiForm } from "./task-create-ai-form";
 
@@ -44,7 +43,7 @@ export function TaskCreateDialog({
   isPending,
   copy,
   centerCopy,
-  initialMode = "manual",
+  initialMode = "quick",
   onAiGenerate,
 }: TaskCreateDialogProps) {
   const [mode, setMode] = useState<TaskCreateMode>(initialMode);
@@ -77,29 +76,7 @@ export function TaskCreateDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <OSSegmentedControl<TaskCreateMode>
-            items={[
-              { id: "quick", label: centerCopy.createTabQuick },
-              { id: "manual", label: centerCopy.createTabManual },
-              { id: "ai", label: centerCopy.createTabAi },
-            ]}
-            value={mode}
-            onValueChange={setMode}
-            ariaLabel={copy.createTask}
-            layoutId="tasks-create-mode-pill"
-          />
-
-          {mode === "quick" ? (
-            <TaskCreateQuickForm
-              defaultProjectId={defaultProjectId}
-              onSubmit={onCreate}
-              isPending={isPending}
-              copy={copy}
-              centerCopy={centerCopy}
-            />
-          ) : null}
-
-          {mode === "manual" ? (
+          <div hidden={mode === "ai"}>
             <TaskCreateManualForm
               projects={projects}
               defaultProjectId={defaultProjectId}
@@ -107,8 +84,9 @@ export function TaskCreateDialog({
               isPending={isPending}
               copy={copy}
               centerCopy={centerCopy}
+              compact={initialMode !== "manual"}
             />
-          ) : null}
+          </div>
 
           {mode === "ai" ? (
             <TaskCreateAiForm
@@ -121,6 +99,9 @@ export function TaskCreateDialog({
               centerCopy={centerCopy}
             />
           ) : null}
+          <OSControl variant="ghost" disabled={isPending} onClick={() => setMode(mode === "ai" ? "quick" : "ai")}>
+            {mode === "ai" ? centerCopy.createTabManual : copy.createWithAi}
+          </OSControl>
         </div>
       </OSDialogSurface>
     </Dialog>

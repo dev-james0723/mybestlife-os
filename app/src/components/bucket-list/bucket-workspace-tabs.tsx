@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LayoutGrid, Plane, Map as MapIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -9,15 +10,17 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { getTravelExplorerUiCopy } from "@/lib/i18n/travel-explorer-ui";
 
-import { BucketListShell } from "./list-shell";
 import { ExplorerConsole } from "./explorer/explorer-console";
-import { BucketTravelMap } from "./travel-map";
 import {
   bucketGlassControl,
   bucketSegmentedShell,
   bucketSheen,
 } from "./bucket-glass";
 import { bucketTabPanel, bucketWorkspaceTransition } from "./bucket-motion";
+
+// Do not make a Travel visit download the overview editor and 2D map first.
+const BucketListShell = dynamic(() => import("./list-shell").then((m) => m.BucketListShell));
+const BucketTravelMap = dynamic(() => import("./travel-map").then((m) => m.BucketTravelMap));
 
 /**
  * In-page workspace tab switcher for Bucket List: Overview (the existing

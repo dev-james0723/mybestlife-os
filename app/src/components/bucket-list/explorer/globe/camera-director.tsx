@@ -1,195 +1,152 @@
 "use client";
 
-/**
- * Camera director — coordinates the cinematic camera with the user:
- *
- *   - "spin": idle 自轉 — orbits the camera around the ECEF polar axis.
- *   - "flying": on destination select, an eased ~6s flythrough down to an
- *     oblique aerial vantage (~55° tilt) over the city, then hands to manual.
- *   - "manual": GlobeControls drives; the director keeps hands off.
- *
- * Safety: a pointerdown ALWAYS switches to manual + enables GlobeControls
- * (never a lockout). Leaving the canvas resumes the idle spin only while no
- * destination is set. Also derives live HUD telemetry from the camera.
- *
- * Tunable: range / tilt / FLY_DURATION / SPIN_SPEED.
- */
+/* eslint-disable react-hooks/immutability -- R3F camera and controls are mutable engine objects, updated only in effects and frame callbacks. */
 
-import { useContext, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Vector3 } from "three";
-import { TilesRendererContext } from "3d-tiles-renderer/r3f";
-import type { GlobeControls as GlobeControlsImpl } from "3d-tiles-renderer/three";
-
+import { WGS84_ELLIPSOID, type GlobeControls } from "3d-tiles-renderer/three";
 import { useTravelExplorerStore } from "@/stores/travel-explorer-store";
+import { createFlightPath, sampleFlightPath, type FlightPath } from "@/lib/travel-explorer/engine/flight-path";
 import type { EnginePhase } from "@/lib/travel-explorer/engine/engine-adapter";
 
-const DEG2RAD = Math.PI / 180;
 const POLAR = new Vector3(0, 0, 1);
-const ORIGIN = new Vector3(0, 0, 0);
-const SPIN_SPEED = 0.02; // rad/s
-const FLY_DURATION = 6; // s
-const FLY_RANGE = 12000; // m from target — frames the city
-const FLY_TILT = 55 * DEG2RAD;
+const ORIGIN = new Vector3();
 
-type Target = { lat: number; lng: number } | null;
-type Mode = "spin" | "flying" | "manual";
-
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-export function CameraDirector({
-  target,
-  controlsRef,
-}: {
-  target: Target;
-  controlsRef: React.RefObject<GlobeControlsImpl | null>;
+export function CameraDirector({ target, controlsRef, detailed, reducedMotion }: {
+  target: { lat: number; lng: number } | null;
+  controlsRef: React.RefObject<GlobeControls | null>;
+  detailed: boolean;
+  reducedMotion: boolean;
 }) {
-  const camera = useThree((s) => s.camera);
-  const gl = useThree((s) => s.gl);
-  const invalidate = useThree((s) => s.invalidate);
-  const tiles = useContext(TilesRendererContext);
+  const { camera, gl, invalidate } = useThree();
+  const replay = useTravelExplorerStore((s) => s.replayNonce);
+  const skip = useTravelExplorerStore((s) => s.skipNonce);
+  const paused = useTravelExplorerStore((s) => s.cruisePaused);
+  const flight = useRef<{ path: FlightPath; time: number } | null>(null);
+  const manual = useRef(false);
+  const lastPosition = useRef(new Vector3());
+  const telemetryTime = useRef(0);
+  const phase = useRef<EnginePhase>("space");
+  const progress = useRef(0);
+  const firstMount = useRef(true);
+  const previousFlight = useRef({ lat: target?.lat, lng: target?.lng, replay });
+  const previousSkip = useRef(skip);
+  const cartographic = useRef({ lat: 0, lon: 0, height: 0 });
+  const targetLat = target?.lat;
+  const targetLng = target?.lng;
 
-  const setTelemetry = useTravelExplorerStore((s) => s.setTelemetry);
-  const setPhase = useTravelExplorerStore((s) => s.setPhase);
-
-  const mode = useRef<Mode>("spin");
-  const hasTarget = useRef(false);
-  const lookAt = useRef(new Vector3());
-  const anim = useRef<
-    | null
-    | { fromPos: Vector3; toPos: Vector3; fromLook: Vector3; toLook: Vector3; t: number }
-  >(null);
-  const prevPos = useRef(new Vector3());
-  const telemetryClock = useRef(0);
-  const lastPhase = useRef<EnginePhase>("space");
-
-  const applyPhase = (p: EnginePhase) => {
-    if (lastPhase.current !== p) {
-      lastPhase.current = p;
-      setPhase(p);
+  useEffect(() => {
+    const controls = controlsRef.current;
+    manual.current = false;
+    // Manual globe controls tighten the clipping planes at the surface.
+    // Restore the full flight volume before taking the camera into orbit.
+    camera.near = 100;
+    camera.far = 2e8;
+    camera.updateProjectionMatrix();
+    const destination = targetLat != null && targetLng != null ? { lat: targetLat, lng: targetLng } : null;
+    const path = createFlightPath(camera.position, camera.quaternion, destination, detailed);
+    if (destination && !firstMount.current && previousFlight.current.lat === targetLat && previousFlight.current.lng === targetLng && previousFlight.current.replay !== replay) {
+      path.arcHeight = Math.max(path.arcHeight, 9e6);
     }
-  };
-
-  // Pointer handoff — grabbing always gives the user control.
-  useEffect(() => {
-    const el = gl.domElement;
-    const grab = () => {
-      mode.current = "manual";
-      anim.current = null;
-      if (controlsRef.current) controlsRef.current.enabled = true;
-    };
-    const release = () => {
-      if (mode.current === "manual" && !hasTarget.current) mode.current = "spin";
-    };
-    el.addEventListener("pointerdown", grab);
-    el.addEventListener("pointerleave", release);
-    return () => {
-      el.removeEventListener("pointerdown", grab);
-      el.removeEventListener("pointerleave", release);
-    };
-  }, [gl, controlsRef]);
+    previousFlight.current = { lat: targetLat, lng: targetLng, replay };
+    const instant = reducedMotion || (firstMount.current && !destination);
+    firstMount.current = false;
+    progress.current = destination && instant ? 1 : 0;
+    phase.current = destination ? (instant ? "settled" : "entering_atmosphere") : "space";
+    flight.current = instant ? null : { path, time: 0 };
+    if (instant) sampleFlightPath(path, 1, camera.position, camera.quaternion);
+    if (controls) {
+      controls.resetState();
+      controls.getCameraUpDirection(controls.up);
+      controls.enabled = instant;
+    }
+    lastPosition.current.copy(camera.position);
+    telemetryTime.current = 0;
+    useTravelExplorerStore.setState({ phase: phase.current, viewState: instant ? "idle" : "flying" });
+    invalidate();
+    return () => { if (controls) controls.enabled = true; };
+  }, [targetLat, targetLng, detailed, replay, reducedMotion, camera, controlsRef, invalidate]);
 
   useEffect(() => {
-    prevPos.current.copy(camera.position);
-    lookAt.current.copy(ORIGIN);
-  }, [camera]);
+    if (previousSkip.current !== skip && flight.current) flight.current.time = 7;
+    previousSkip.current = skip;
+    invalidate();
+  }, [skip, invalidate]);
 
-  // Flythrough whenever the destination changes.
+  useEffect(() => { invalidate(); }, [paused, invalidate]);
+
   useEffect(() => {
-    const ell = tiles?.ellipsoid;
-    hasTarget.current = Boolean(target);
-    if (!target || !ell) return;
-    try {
-      const targetPos = ell.getCartographicToPosition(
-        target.lat * DEG2RAD,
-        target.lng * DEG2RAD,
-        0,
-        new Vector3(),
-      );
-      const east = new Vector3();
-      const north = new Vector3();
-      const up = new Vector3();
-      ell.getEastNorthUpAxes(target.lat * DEG2RAD, target.lng * DEG2RAD, east, north, up);
-      const camPos = targetPos
-        .clone()
-        .addScaledVector(up, Math.sin(FLY_TILT) * FLY_RANGE)
-        .addScaledVector(north, -Math.cos(FLY_TILT) * FLY_RANGE);
-
-      mode.current = "flying";
-      if (controlsRef.current) controlsRef.current.enabled = false;
-      anim.current = {
-        fromPos: camera.position.clone(),
-        toPos: camPos,
-        fromLook: lookAt.current.clone(),
-        toLook: targetPos.clone().addScaledVector(up, 150),
-        t: 0,
-      };
-      applyPhase("entering_atmosphere");
+    const canvas = gl.domElement;
+    // Capture runs before the controls' pointer handlers: the same gesture
+    // both cancels autopilot and starts dragging, even midway through a flight.
+    const takeControl = () => {
+      flight.current = null;
+      manual.current = true;
+      phase.current = "manual";
+      if (controlsRef.current) {
+        controlsRef.current.getCameraUpDirection(controlsRef.current.up);
+        controlsRef.current.enabled = true;
+      }
+      useTravelExplorerStore.setState({ phase: "manual", viewState: "manual" });
       invalidate();
-    } catch {
-      /* ellipsoid frame not ready — leave the camera as-is */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target?.lat, target?.lng, tiles]);
+    };
+    canvas.addEventListener("pointerdown", takeControl, true);
+    canvas.addEventListener("wheel", takeControl, { capture: true, passive: true });
+    return () => {
+      canvas.removeEventListener("pointerdown", takeControl, true);
+      canvas.removeEventListener("wheel", takeControl, true);
+    };
+  }, [gl, controlsRef, invalidate]);
 
   useFrame((_, delta) => {
-    const d = Math.min(delta, 0.1);
-    const ell = tiles?.ellipsoid;
-
-    if (mode.current === "flying" && anim.current) {
-      const a = anim.current;
-      a.t = Math.min(1, a.t + d / FLY_DURATION);
-      const k = easeInOutCubic(a.t);
-      camera.position.lerpVectors(a.fromPos, a.toPos, k);
-      lookAt.current.lerpVectors(a.fromLook, a.toLook, k);
-      camera.up.copy(POLAR);
-      camera.lookAt(lookAt.current);
-      applyPhase(a.t < 0.55 ? "entering_atmosphere" : "approaching");
-      if (a.t >= 1) {
-        anim.current = null;
-        mode.current = "manual";
-        if (controlsRef.current) controlsRef.current.enabled = true;
-        applyPhase("cruising");
+    const dt = Math.min(delta, 0.05); // Returning from a hidden tab never jumps.
+    const controls = controlsRef.current;
+    const animation = flight.current;
+    if (animation) {
+      if (controls) controls.enabled = false;
+      if (!paused || animation.time >= 7) animation.time = Math.min(7, animation.time + dt);
+      progress.current = animation.time / 7;
+      sampleFlightPath(animation.path, progress.current, camera.position, camera.quaternion);
+      // GlobeControls transports its previous local-up frame on update.
+      // Sync it after an external flight so handoff cannot rotate the view
+      // toward empty space or throw the destination off screen.
+      if (controls) controls.getCameraUpDirection(controls.up);
+      phase.current = progress.current < 0.65 ? "entering_atmosphere" : "approaching";
+      if (animation.time >= 7) {
+        flight.current = null;
+        phase.current = targetLat == null ? "space" : "settled";
+        if (controls) { controls.resetState(); controls.enabled = true; }
+        useTravelExplorerStore.setState({ viewState: "idle" });
       }
-      invalidate();
-    } else if (mode.current === "spin") {
-      if (controlsRef.current) controlsRef.current.enabled = false;
-      camera.position.applyAxisAngle(POLAR, SPIN_SPEED * d);
+      if (!paused) invalidate();
+    } else if (!manual.current && targetLat == null && !reducedMotion && !paused) {
+      if (controls) controls.enabled = false;
+      camera.position.applyAxisAngle(POLAR, dt * 0.025);
       camera.up.copy(POLAR);
       camera.lookAt(ORIGIN);
-      lookAt.current.copy(ORIGIN);
-      applyPhase("space");
       invalidate();
-    }
+    } else if (controls) controls.enabled = true;
 
-    // Live telemetry, throttled to ~6/s.
-    telemetryClock.current += d;
-    if (ell && telemetryClock.current >= 0.16) {
-      const dt = telemetryClock.current;
-      telemetryClock.current = 0;
-      const speedKmh = (camera.position.distanceTo(prevPos.current) / dt) * 3.6;
-      prevPos.current.copy(camera.position);
-      try {
-        const c = ell.getPositionToCartographic(camera.position, {
-          lat: 0,
-          lon: 0,
-          height: 0,
-        }) as { lat: number; lon: number; height: number };
-        setTelemetry({
-          phase: lastPhase.current,
-          altitudeMeters: Math.max(0, ell.getPositionElevation(camera.position)),
-          speedKmh,
-          lookAt: { lat: c.lat / DEG2RAD, lng: c.lon / DEG2RAD },
-          headingDeg: 0,
-          progress01: anim.current ? anim.current.t : 1,
-        });
-      } catch {
-        /* skip a bad frame */
-      }
+    camera.updateMatrixWorld();
+    telemetryTime.current += dt;
+    const store = useTravelExplorerStore.getState();
+    // Only the small HUD subscribes to telemetry; the globe and search do not.
+    if (telemetryTime.current >= 0.2 || store.phase !== phase.current || (progress.current === 1 && store.telemetry.progress01 !== 1)) {
+      const seconds = Math.max(dt, telemetryTime.current);
+      WGS84_ELLIPSOID.getPositionToCartographic(camera.position, cartographic.current);
+      store.setTelemetry({
+        phase: phase.current,
+        altitudeMeters: Math.max(0, cartographic.current.height),
+        speedKmh: flight.current ? camera.position.distanceTo(lastPosition.current) / seconds * 3.6 : 0,
+        lookAt: { lat: targetLat ?? cartographic.current.lat * 180 / Math.PI, lng: targetLng ?? cartographic.current.lon * 180 / Math.PI },
+        headingDeg: 0,
+        progress01: progress.current,
+      });
+      if (store.phase !== phase.current) store.setPhase(phase.current);
+      lastPosition.current.copy(camera.position);
+      telemetryTime.current = 0;
     }
-  });
-
+  }, -2); // Camera first, controls -1, tile selection 0, then render.
   return null;
 }

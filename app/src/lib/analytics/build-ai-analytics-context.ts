@@ -12,12 +12,12 @@ function score(scores: LifePulseScore[], key: LifePulseScore["key"]): number {
 
 function lowestScore(scores: LifePulseScore[]): LifePulseScore | null {
   if (scores.length === 0) return null;
-  return [...scores].sort((a, b) => a.score - b.score)[0] ?? null;
+  return scores.filter((item) => item.score != null).sort((a, b) => (a.score ?? Infinity) - (b.score ?? Infinity))[0] ?? null;
 }
 
 function highestScore(scores: LifePulseScore[]): LifePulseScore | null {
   if (scores.length === 0) return null;
-  return [...scores].sort((a, b) => b.score - a.score)[0] ?? null;
+  return scores.filter((item) => item.score != null).sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity))[0] ?? null;
 }
 
 export function buildAIAnalyticsContext(params: {
@@ -64,12 +64,12 @@ export function buildLocalAIAnalyticsInsight(
 ): AIAnalyticsInsight {
   const completion = score(context.pulseScores, "completion_momentum");
   const focus = score(context.pulseScores, "focus_consistency");
-  const load = score(context.pulseScores, "emotional_load");
+  const load = context.pulseScores.find((item) => item.key === "emotional_load")?.score ?? null;
   const coherence = score(context.pulseScores, "system_coherence");
   const strongest = highestScore(context.pulseScores);
   const weakest = lowestScore(context.pulseScores);
-  const topDomain = [...context.domainRadar.points].sort((a, b) => b.score - a.score)[0];
-  const quietDomain = [...context.domainRadar.points].sort((a, b) => a.score - b.score)[0];
+  const topDomain = [...context.domainRadar.points].sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity))[0];
+  const quietDomain = [...context.domainRadar.points].sort((a, b) => (a.score ?? Infinity) - (b.score ?? Infinity))[0];
 
   const progress: string[] = [];
   if (completion >= 60) {
@@ -121,13 +121,15 @@ export function buildLocalAIAnalyticsInsight(
   }
 
   let hiddenPattern: string;
-  if (completion >= 60 && load >= 70) {
+  if (load == null) {
+    hiddenPattern = "There are not enough emotion entries to infer an emotional pattern. Missing records do not mean low emotional load.";
+  } else if (completion >= 60 && load != null && load >= 70) {
     hiddenPattern =
       "You can keep executing under emotional load, but that can hide the cost until the system starts to fray.";
   } else if (completion >= 60 && focus < 55) {
     hiddenPattern =
       "Small wins may be substituting for aligned progress. The output is real, but some of it may be fake progress.";
-  } else if (completion < 45 && load < 40) {
+  } else if (completion < 45 && load != null && load < 40) {
     hiddenPattern =
       "Low output and low emotional intensity could be recovery. It only becomes avoidance if important projects remain active and untouched.";
   } else if (coherence < 50) {
@@ -161,7 +163,7 @@ export function buildLocalAIAnalyticsInsight(
         : "Stop adding new tracking surfaces before the current ones are connected.";
 
   const protect =
-    strongest?.key === "emotional_load" && load >= 70
+    strongest?.key === "emotional_load" && load != null && load >= 70
       ? "Protect recovery time. High load may be productive processing, but it still needs containment."
       : topDomain
         ? `Protect the ${topDomain.domain.toLowerCase()} signal while checking that ${quietDomain?.domain.toLowerCase()} is intentionally quiet.`

@@ -230,7 +230,9 @@ export async function POST(request: Request) {
     }
 
     const destination = profile.defaultDestination;
-    const shouldReview = profile.requireReview || destination === "review";
+    // Links and files use the Knowledge AI pipeline, so require current consent.
+    const shouldReview = profile.requireReview || destination === "review" ||
+      (destination === "knowledge" && Boolean(normalizedUrl || files.length));
 
     if (shouldReview) {
       const captureId = crypto.randomUUID();
@@ -274,6 +276,7 @@ export async function POST(request: Request) {
         const item = await addKnowledgeFromText(title ?? "Quick Save", text ?? title ?? "", {
           thumbnailStyle: "na",
           sourceType: "plain_text",
+          analyze: false,
           language: profile.language,
         });
         itemId = item.id;

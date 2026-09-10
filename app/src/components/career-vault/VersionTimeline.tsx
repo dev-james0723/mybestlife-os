@@ -64,6 +64,7 @@ export function VersionTimeline({ fileId }: VersionTimelineProps) {
   );
 
   if (fileQuery.isLoading || versionsQuery.isLoading) return <LoadingPage />;
+  if (fileQuery.isError || versionsQuery.isError) return <div role="alert" className="space-y-3"><p>{copy.errors.fetchFailed}</p><Button onClick={() => { void fileQuery.refetch(); void versionsQuery.refetch(); }}>{language.startsWith("zh") ? "重試" : "Retry"}</Button></div>;
   const file = fileQuery.data;
   if (!file) {
     return (

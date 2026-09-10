@@ -5,7 +5,7 @@ import { PageShell } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCards } from "@/components/shared/loading-state";
 import { PreTaskRitualModal } from "@/components/tasks/pre-task-ritual-modal";
-import { CheckSquare, Zap, FileEdit, Sparkles, BarChart3 } from "lucide-react";
+import { CheckSquare, BarChart3 } from "lucide-react";
 import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   useTasks,
@@ -32,10 +32,6 @@ import { useAppStore } from "@/stores/app-store";
 import { getPreTaskRitualUiCopy } from "@/lib/i18n/pre-task-ritual-ui";
 import { getTasksUiCopy } from "@/lib/i18n/tasks-ui";
 import { getTasksCenterUiCopy } from "@/lib/i18n/tasks-center-ui";
-import {
-  UniversalCreateMenu,
-  type CreateMenuOption,
-} from "@/components/shared/universal-create-menu";
 import {
   TaskCreateDialog,
   type TaskCreateMode,
@@ -145,7 +141,7 @@ export default function TasksPage() {
   );
 
   const [showCreate, setShowCreate] = useState(false);
-  const [createMode, setCreateMode] = useState<TaskCreateMode>("manual");
+  const [createMode, setCreateMode] = useState<TaskCreateMode>("quick");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -352,30 +348,6 @@ export default function TasksPage() {
     setCreateMode(mode);
     setShowCreate(true);
   }, []);
-
-  const createOptions: CreateMenuOption[] = useMemo(
-    () => [
-      {
-        id: "quick",
-        label: centerUi.createQuickly,
-        icon: Zap,
-        onSelect: () => openCreate("quick"),
-      },
-      {
-        id: "manual",
-        label: ui.createManually,
-        icon: FileEdit,
-        onSelect: () => openCreate("manual"),
-      },
-      {
-        id: "ai",
-        label: ui.createWithAi,
-        icon: Sparkles,
-        onSelect: () => openCreate("ai"),
-      },
-    ],
-    [centerUi, ui, openCreate],
-  );
 
   const handleCreate = useCallback(
     async (input: CreateTaskInput, opts?: { subtasks?: string[] }) => {
@@ -715,16 +687,10 @@ export default function TasksPage() {
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{centerUi.openInsights}</span>
             </OSControl>
-            <UniversalCreateMenu
-              label={ui.newTask}
-              options={createOptions}
-              trigger={
-                <OSPrimaryAction>
-                  <CheckSquare className="h-4 w-4" />
-                  {ui.newTask}
-                </OSPrimaryAction>
-              }
-            />
+            <OSPrimaryAction onClick={() => openCreate("quick")}>
+              <CheckSquare className="h-4 w-4" />
+              {ui.newTask}
+            </OSPrimaryAction>
           </>
         }
       >
@@ -768,7 +734,7 @@ export default function TasksPage() {
                 tasks?.length === 0
                   ? {
                       label: ui.emptyCreate,
-                      onClick: () => openCreate("manual"),
+                      onClick: () => openCreate("quick"),
                     }
                   : undefined
               }

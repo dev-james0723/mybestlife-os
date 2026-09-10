@@ -22,6 +22,8 @@ export type TodayContextState = {
   isLoadingCalendar: boolean;
   isLoadingSummary: boolean;
   isLoadingConflicts: boolean;
+  isIncomplete: boolean;
+  retryAnalysis: () => void;
 };
 
 /**
@@ -31,7 +33,9 @@ export type TodayContextState = {
  */
 export function useTodayContext(): TodayContextState {
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
-  const { data: items, isLoading: isLoadingCalendar } = useCalendarItems();
+  const { data: items, isLoading: isLoadingCalendar, isFetching, isError } = useCalendarItems();
+  const isIncomplete = isFetching || isError;
+  const [retryCount, setRetryCount] = useState(0);
 
   const context = useMemo<DayContext | null>(() => {
     if (!items) return null;
@@ -44,7 +48,7 @@ export function useTodayContext(): TodayContextState {
   const [isLoadingConflicts, setIsLoadingConflicts] = useState(true);
 
   useEffect(() => {
-    if (!items) return;
+    if (!items || isIncomplete) return;
     let cancelled = false;
     // Loading flags flip before async calls fire; this is the idiomatic
     // pattern for "kick off two fetches when items are ready".
@@ -57,25 +61,27 @@ export function useTodayContext(): TodayContextState {
         setSummary(r);
         setIsLoadingSummary(false);
       }
-    });
+    }).catch(() => { if (!cancelled) { setSummary(null); setIsLoadingSummary(false); } });
     void detectConflicts(todayItems).then((r) => {
       if (!cancelled) {
         setConflicts(r);
         setIsLoadingConflicts(false);
       }
-    });
+    }).catch(() => { if (!cancelled) { setConflicts([]); setIsLoadingConflicts(false); } });
     return () => {
       cancelled = true;
     };
-  }, [items, today]);
+  }, [items, today, isIncomplete, retryCount]);
 
   return {
     today,
     context,
-    summary,
-    conflicts,
+    summary: isIncomplete ? null : summary,
+    conflicts: isIncomplete ? [] : conflicts,
     isLoadingCalendar,
-    isLoadingSummary,
-    isLoadingConflicts,
+    isLoadingSummary: isIncomplete ? isFetching : isLoadingSummary,
+    isLoadingConflicts: isIncomplete ? isFetching : isLoadingConflicts,
+    isIncomplete,
+    retryAnalysis: () => setRetryCount((value) => value + 1),
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useTheme } from "@/lib/theme-context";
 
 import { WeatherAtmosphericInsights } from "@/components/weather/WeatherAtmosphericInsights";
@@ -19,7 +20,11 @@ import { OSPrimaryAction } from "@/components/ui/os-primitives";
 import { useWeatherPage } from "@/hooks/weather/use-weather-page";
 import { getWeatherUiCopy } from "@/lib/i18n/weather-ui";
 import { useAppStore } from "@/stores/app-store";
-import { requestDeviceGeolocation } from "@/lib/weather/openweather";
+import {
+  requestDeviceGeolocationResult,
+  type DeviceGeolocationErrorReason,
+  type WeatherCoords,
+} from "@/lib/weather/openweather";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,8 +39,30 @@ export default function WeatherPage() {
   const copy = useMemo(() => getWeatherUiCopy(language), [language]);
   const { colorMode } = useTheme();
 
-  const { data, scene, insight, refresh, setSelectedLocation } = useWeatherPage();
+  const {
+    data,
+    scene,
+    insight,
+    refresh,
+    setSelectedLocation,
+    setDeviceCoordinates,
+  } = useWeatherPage();
   const [refreshing, setRefreshing] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const locatingRef = useRef(false);
+  const locationAttemptIdRef = useRef(0);
+  const locationToastIdRef = useRef<string | number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      locationAttemptIdRef.current += 1;
+      locatingRef.current = false;
+      if (locationToastIdRef.current !== null) {
+        toast.dismiss(locationToastIdRef.current);
+        locationToastIdRef.current = null;
+      }
+    };
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -46,18 +73,33 @@ export default function WeatherPage() {
     }
   };
 
-  const handleUseMyLocation = async () => {
-    const coords = await requestDeviceGeolocation();
-    if (!coords) return;
-    setSelectedLocation({
-      name: "Current location",
-      city: "Current location",
-      country: "",
-      latitude: coords.lat,
-      longitude: coords.lon,
-      precision: "gps",
-      displayLabel: "Current location",
-    });
+  const handleUseMyLocation = async (): Promise<WeatherCoords | null> => {
+    if (locatingRef.current) return null;
+    locatingRef.current = true;
+    setLocating(true);
+    const attemptId = ++locationAttemptIdRef.current;
+    const toastId = toast.loading(copy.locationDetecting);
+    locationToastIdRef.current = toastId;
+
+    try {
+      const result = await requestDeviceGeolocationResult();
+      if (attemptId !== locationAttemptIdRef.current) return null;
+      if (result.status === "error") {
+        toast.error(locationErrorMessage(result.reason, copy), { id: toastId });
+        return null;
+      }
+
+      const { coords } = result;
+      setDeviceCoordinates(coords);
+      toast.success(copy.locationUpdated, { id: toastId });
+      return coords;
+    } finally {
+      if (attemptId === locationAttemptIdRef.current) {
+        locatingRef.current = false;
+        locationToastIdRef.current = null;
+        setLocating(false);
+      }
+    }
   };
 
   return (
@@ -96,6 +138,7 @@ export default function WeatherPage() {
           onSelect={setSelectedLocation}
           onClear={() => setSelectedLocation(null)}
           onUseMyLocation={handleUseMyLocation}
+          locating={locating}
           onRefresh={handleRefresh}
           refreshing={refreshing}
         />
@@ -122,6 +165,8 @@ export default function WeatherPage() {
               copy={copy}
               latitude={data.location.latitude}
               longitude={data.location.longitude}
+              onUseMyLocation={handleUseMyLocation}
+              locating={locating}
             />
 
             <WeatherMetricsGrid copy={copy} current={data.current} />
@@ -186,6 +231,23 @@ export default function WeatherPage() {
       </div>
     </div>
   );
+}
+
+function locationErrorMessage(
+  reason: DeviceGeolocationErrorReason,
+  copy: ReturnType<typeof getWeatherUiCopy>,
+): string {
+  switch (reason) {
+    case "permission_denied":
+      return copy.locationPermissionDenied;
+    case "insecure_context":
+      return copy.locationSecureContextRequired;
+    case "unsupported":
+    case "position_unavailable":
+    case "timeout":
+    case "unknown":
+      return copy.locationUnavailable;
+  }
 }
 
 function HeroSkeleton() {

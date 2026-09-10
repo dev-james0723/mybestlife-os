@@ -159,6 +159,10 @@ export function VaultDetailView({ fileId }: VaultDetailViewProps) {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border p-4">
+        <p className="text-sm text-muted-foreground">{language.startsWith("zh") ? `目前版本 v${file.current_version || 1} · 把這份材料用於下一次申請。` : `Current version v${file.current_version || 1} · Use this material in your next application.`}</p>
+        <Button variant="outline" render={<Link href={withLocalePrefix(localeSlug, `/career/vault/bundles/new?fileId=${encodeURIComponent(file.id)}`)} />}>{language.startsWith("zh") ? "加入新材料包" : "Use in a new bundle"}</Button>
+      </div>
       {/* Preview + metadata */}
       <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="overflow-hidden rounded-xl border">

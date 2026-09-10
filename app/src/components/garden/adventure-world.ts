@@ -5,11 +5,16 @@ import {
   BED_SPOTS,
   COLLIDERS,
   HOME,
+  HOME_CRATE,
+  SHELTER,
+  RAIN_BARREL,
   LANDMARKS,
   TRAIL_START,
   WELL,
   type AdventureState,
 } from "@/lib/garden/adventure";
+import { GARDEN_SWING } from "@/lib/garden/swing";
+import type { GardenPathStone } from "@/lib/garden/terrain";
 import { seededRandom } from "@/lib/garden/game";
 import type { PlantType } from "@/types/database";
 
@@ -434,6 +439,9 @@ export function createAdventureWorld(
       ],
       0.045,
     );
+    // Closed hanger overlaps the wooden tip and the cap; no suspended gap.
+    tube(l, m.brass, [[0.57, 1.72, 0], [0.57, 1.62, 0], [0.53, 1.55, 0], [0.53, 1.51, 0]], 0.018);
+    mesh(l, ring, m.brass, [0.56, 1.67, 0], [0.045, 0.065, 0.045]);
     mesh(l, cylinder, m.brass, [0.53, 1.51, 0], [0.19, 0.055, 0.19]);
     mesh(l, cylinder, m.glow, [0.53, 1.31, 0], [0.135, 0.37, 0.135]);
     mesh(l, cylinder, m.brass, [0.53, 1.11, 0], [0.19, 0.045, 0.19]);
@@ -474,58 +482,143 @@ export function createAdventureWorld(
     return g;
   }
 
-  // A continuous field underfoot; faceted rim and distant wooded islands establish scale.
+  // One continuous floating landmass. The playable ellipse remains inside its soft lip.
+  const islandGeometry = new THREE.BufferGeometry();
+  const islandPositions: number[] = [],
+    islandColors: number[] = [],
+    islandIndices: number[] = [];
+  const layers = [
+    [16, -0.12],
+    [15.3, -1.2],
+    [12.7, -4.2],
+    [8.5, -8],
+    [4.1, -11.2],
+    [0.7, -12.6],
+  ];
+  const layerColors = [
+    "#a4b99b",
+    "#908c6d",
+    "#817e68",
+    "#716e5f",
+    "#65695f",
+    "#58665e",
+  ];
+  for (let l = 0; l < layers.length; l++) {
+    for (let i = 0; i < 96; i++) {
+      const a = (i / 96) * Math.PI * 2;
+      const r =
+        layers[l][0] +
+        (Math.sin(a * 5) * 0.14 + Math.cos(a * 9) * 0.1) * (l < 2 ? 1 : 2);
+      islandPositions.push(
+        Math.cos(a) * r,
+        layers[l][1] + (l < 2 ? 0 : Math.sin(a * 4 + l) * 0.35),
+        Math.sin(a) * r * 0.84,
+      );
+      const c = new THREE.Color(layerColors[l]).multiplyScalar(
+        0.92 + Math.sin(a * 7) * 0.08,
+      );
+      islandColors.push(c.r, c.g, c.b);
+      if (l < layers.length - 1) {
+        const n = (i + 1) % 96,
+          b = l * 96,
+          nb = (l + 1) * 96;
+        islandIndices.push(b + i, b + n, nb + i, b + n, nb + n, nb + i);
+      }
+    }
+  }
+  // Close both ends with outward winding: the underside is a solid volume.
+  for (const bottom of [false, true]) {
+    const centre = islandPositions.length / 3;
+    islandPositions.push(0, bottom ? -13.1 : -0.12, 0);
+    const c = new THREE.Color(bottom ? layerColors.at(-1)! : layerColors[0]);
+    islandColors.push(c.r, c.g, c.b);
+    const base = bottom ? (layers.length - 1) * 96 : 0;
+    for (let i = 0; i < 96; i++) {
+      const next = (i + 1) % 96;
+      islandIndices.push(centre, base + (bottom ? i : next), base + (bottom ? next : i));
+    }
+  }
+  islandGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(islandPositions, 3),
+  );
+  islandGeometry.setAttribute(
+    "color",
+    new THREE.Float32BufferAttribute(islandColors, 3),
+  );
+  islandGeometry.setAttribute(
+    "uv",
+    new THREE.Float32BufferAttribute(
+      islandPositions.flatMap((_, i) =>
+        i % 3 === 0
+          ? [islandPositions[i] / 32, islandPositions[i + 2] / 27]
+          : [],
+      ),
+      2,
+    ),
+  );
+  islandGeometry.setIndex(islandIndices);
+  islandGeometry.computeVertexNormals();
   mesh(
     scenery,
-    geo(new THREE.CylinderGeometry(15.9, 16.3, 1.5, 96)),
-    m.stoneDark,
-    [0, -0.9, 0],
-    [1, 1, 0.84],
+    geo(islandGeometry),
+    mat("#ffffff", { vertexColors: true, flatShading: true }),
+    [0, 0, 0],
+    [1, 1, 1],
   );
   mesh(
     scenery,
-    geo(new THREE.CircleGeometry(15.85, 96)),
+    geo(new THREE.CircleGeometry(15.95, 96)),
     m.ground,
     [0, -0.02, 0],
     [1, 0.84, 1],
     [-Math.PI / 2, 0, 0],
   );
   const rng = seededRandom(6412);
-  for (let i = 0; i < 68; i++) {
-    const a = (i / 68) * Math.PI * 2;
-    mesh(
-      scenery,
-      rock,
-      i % 2 ? m.stone : m.stoneDark,
-      [Math.cos(a) * 15.7, -0.4, Math.sin(a) * 13.1],
-      [0.6 + rng() * 0.5, 0.5 + rng() * 0.3, 0.7],
-    );
+  // Weathered rock shoulders and roots embedded in the earth, inspired by
+  // an old garden held together by its living roots rather than a hollow bowl.
+  for (let i = 0; i < 18; i++) {
+    const a = i / 18 * Math.PI * 2 + Math.sin(i * 2.3) * 0.08;
+    const y = -2.2 - (i % 4) * 0.78;
+    const r = y > -4.2 ? 15.3 + (y + 1.2) / 3 * 2.6 : 12.7 + (y + 4.2) / 3.8 * 4.2;
+    mesh(scenery, rock, i % 3 ? m.stoneDark : m.stone,
+      [Math.cos(a) * (r - 0.15), y, Math.sin(a) * (r - 0.15) * 0.84],
+      [1.25 + i % 3 * 0.25, 1.3 + i % 2 * 0.35, 0.65], [0.15, Math.PI / 2 - a, 0.12]);
   }
-  for (let i = 0; i < 17; i++) {
-    const a = (i / 17) * Math.PI * 2;
-    tree(
-      scenery,
-      Math.cos(a) * 15.6,
-      Math.sin(a) * 13.3,
-      Math.sin(a) > 0.38 ? 0.22 + rng() * 0.14 : 0.7 + rng() * 0.55,
-      i + 10,
-      i % 5 === 0,
-    );
+  for (let i = 0; i < 14; i++) {
+    const a = i / 14 * Math.PI * 2 + 0.1;
+    const at = (r: number, y: number, turn = 0): V3 => [Math.cos(a + turn) * r, y, Math.sin(a + turn) * r * 0.84];
+    tube(scenery, m.bark, [at(15.45, -0.3), at(15.65, -1), at(13.4, -3.8, 0.06),
+      at(9.4, -7.8, 0.12), at(4.8, -11.4, 0.2), at(2.7, -14 - i % 3 * 0.45, 0.3)], 0.14 + i % 3 * 0.05);
+    tube(scenery, m.wood, [at(13.4, -3.8, 0.06), at(11.8, -5.8, -0.06),
+      at(8.7, -9.1, -0.08), at(7.3, -11, -0.12)], 0.075);
   }
   COLLIDERS.slice(1).forEach((p, i) =>
     tree(scenery, p.x, p.z, p.z > 8 ? 0.28 : 0.8 + i * 0.04, i + 2, i < 2),
   );
-  for (let i = 0; i < 14; i++) {
-    const a = i * 2.4,
-      x = Math.cos(a) * (26 + rng() * 4),
-      z = Math.sin(a) * (24 + rng() * 3);
-    mesh(
+  // Sparse vines trail below the lip; nothing blocks the open sky around the island.
+  for (const a of [-2.6, -1.9, 0.25, 1.6, 2.4]) {
+    const x = Math.cos(a) * 15.65,
+      z = Math.sin(a) * 13.15;
+    tube(
       scenery,
-      rock,
-      i % 2 ? m.leafDark : m.stoneDark,
-      [x, -2, z],
-      [4 + rng() * 5, 2 + rng() * 4, 4 + rng() * 5],
+      m.leafDark,
+      [
+        [x, -0.1, z],
+        [x * 0.99, -0.8, z * 0.99],
+        [x * 0.96, -1.8, z * 0.96],
+        [x * 0.94, -2.2, z * 0.94],
+      ],
+      0.035,
     );
+    for (let j = 0; j < 4; j++)
+      leaf(
+        scenery,
+        j % 2 ? m.leaf : m.leafLight,
+        [x * (1 - j * 0.015), -0.3 - j * 0.42, z * (1 - j * 0.015)],
+        0.36,
+        [0, a + j, -0.5],
+      );
   }
   // Paths curve between landmarks and leave the playable ground visually open.
   const paths: V3[][] = [
@@ -549,19 +642,18 @@ export function createAdventureWorld(
       [5, 0.03, -8.5],
     ],
   ];
+  const pathStones: GardenPathStone[] = [];
   for (const points of paths) {
-    const curve = new THREE.CatmullRomCurve3(
-      points.map((p) => new THREE.Vector3(...p)),
-    );
-    for (const p of curve.getSpacedPoints(28)) {
-      mesh(
-        scenery,
-        cylinder,
-        rng() > 0.5 ? m.stoneLight : m.stone,
-        [p.x + (rng() - 0.5) * 0.18, 0.045, p.z],
-        [0.35 + rng() * 0.18, 0.06, 0.22 + rng() * 0.1],
-        [0, rng() * 3, 0],
-      );
+    const curve = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p)));
+    for (const p of curve.getSpacedPoints(Math.ceil(curve.getLength() / 0.85))) {
+      const radius = 0.32 + rng() * 0.07;
+      // Reject intersections at junctions too. Coplanar overlapping caps were
+      // the source of the moving black patches; depth bias cannot repair them.
+      if (pathStones.some((s) => Math.hypot(s.x - p.x, s.z - p.z) < s.radius + radius + 0.045)) continue;
+      const stoneMaterial = rng() > 0.5 ? m.stoneLight : m.stone, yaw = rng() * 3;
+      pathStones.push({ x: p.x, z: p.z, radius, yaw });
+      mesh(scenery, cylinder, stoneMaterial,
+        [p.x, 0.045, p.z], [radius, 0.06, radius * 0.72], [0, yaw, 0]);
     }
   }
   const pond = group(scenery, [ADVENTURE_POND.x, 0, ADVENTURE_POND.z]);
@@ -593,10 +685,11 @@ export function createAdventureWorld(
           [-1.1, j, 0],
         );
   }
+  const pondLegacy = group(root, [ADVENTURE_POND.x, 0, ADVENTURE_POND.z]);
   for (let i = 0; i < 4; i++) {
     const a = i * 2.4;
     mesh(
-      pond,
+      pondLegacy,
       geo(new THREE.CircleGeometry(0.38, 20, 0.15, Math.PI * 1.85)),
       m.leaf,
       [Math.cos(a) * 1.3, 0.085, Math.sin(a) * 1.2],
@@ -604,7 +697,7 @@ export function createAdventureWorld(
       [-Math.PI / 2, 0, a],
     );
     if (i === 1)
-      flower(pond, [Math.cos(a) * 1.3, 0.085, Math.sin(a) * 1.2], 0.25, "lily");
+      flower(pondLegacy, [Math.cos(a) * 1.3, 0.085, Math.sin(a) * 1.2], 0.25, "lily");
   }
   const ripples = [0, 1, 2].map((i) =>
     mesh(
@@ -631,6 +724,8 @@ export function createAdventureWorld(
     0.1,
   );
   const pumpHandle = group(pump, [0.13, 1.32, 0]);
+  mesh(pump, cylinder, m.teal, [0, 1.28, 0], [0.17, 0.1, 0.17]);
+  mesh(pump, cylinder, m.brass, [0.08, 1.32, 0], [0.045, 0.25, 0.045], [0, 0, Math.PI / 2]);
   tube(
     pumpHandle,
     m.brass,
@@ -649,6 +744,53 @@ export function createAdventureWorld(
     [0.28, 0.32, 0.28],
     [0, 0, Math.PI],
   );
+
+  // Optional weather care: a fabric shade and a barrel, without progression penalties.
+  const shelter = group(root, [SHELTER.x, 0, SHELTER.z]);
+  // A fixed top frame carries the fabric and pull cord even when folded.
+  for (const z of [-0.65, 0, 0.65])
+    mesh(shelter, box, m.wood, [0, 1.97, z], [1.9, 0.075, 0.075]);
+  for (const x of [-0.9, 0.9])
+    mesh(shelter, box, m.wood, [x, 1.97, 0], [0.075, 0.075, 1.4]);
+  for (const x of [-0.9, 0.9])
+    for (const z of [-0.65, 0.65])
+      mesh(shelter, cylinder, m.wood, [x, 0.98, z], [0.055, 1.96, 0.055]);
+  tube(
+    shelter,
+    m.brass,
+    [
+      [0, 2, 0],
+      [0, 0.95, 0],
+    ],
+    0.018,
+  );
+  ball(shelter, m.wood, [0, 0.93, 0], [0.055, 0.08, 0.055]);
+  const canopy = group(shelter, [0, 2, 0]);
+  mesh(canopy, box, m.fabric, [0, 0, 0], [2, 0.055, 1.5], [0, 0, 0.05]);
+  const rainBarrel = group(scenery, [RAIN_BARREL.x, 0, RAIN_BARREL.z]);
+  mesh(rainBarrel, cylinder, m.wood, [0, 0.38, 0], [0.58, 0.7, 0.58]);
+  for (const y of [0.17, 0.58])
+    mesh(rainBarrel, cylinder, m.brass, [0, y, 0], [0.6, 0.045, 0.6]);
+  const collectedRain = mesh(
+    root,
+    cylinder,
+    m.water,
+    [RAIN_BARREL.x, 0.73, RAIN_BARREL.z],
+    [0.53, 0.018, 0.53],
+  );
+  const nightLights: THREE.PointLight[] = [];
+  for (const [x, z] of [
+    [SHELTER.x, SHELTER.z],
+    [HOME.x, HOME.z],
+    [WELL.x, WELL.z],
+    [4.8, -9.3],
+  ]) {
+    lantern(scenery, [x + 0.65, 0, z]);
+    const light = new THREE.PointLight("#ffd192", 0, 6, 2);
+    light.position.set(x + 1.18, 1.31, z);
+    root.add(light);
+    nightLights.push(light);
+  }
 
   // Home greenhouse with shaped roof, timber frame and separate account plant display.
   const greenhouse = group(scenery, [0, 0, 11.1]);
@@ -689,7 +831,7 @@ export function createAdventureWorld(
   const accountPlant = group(root, [2.25, 0, 8.45]);
   pot(accountPlant, [0, 0, 0], options.plant, options.stage);
   merge(accountPlant);
-  const crate = group(scenery, [HOME.x, 0.04, HOME.z - 0.6]);
+  const crate = group(scenery, [HOME_CRATE.x, 0.04, HOME_CRATE.z]);
   for (let i = 0; i < 5; i++)
     mesh(crate, box, m.wood, [0, 0.16 + i * 0.11, -0.28], [0.9, 0.08, 0.07]);
   for (const x of [-0.43, 0.43])
@@ -813,9 +955,14 @@ export function createAdventureWorld(
 
   // Gardener: tailored apron, articulated arms/legs, rolled sleeves, broad brim and satchel.
   const hero = group(root, [state.player.x, 0, state.player.z]);
-  const torso = group(hero, [0, 0.85, 0]);
+  const upperBody = group(hero, [0, 0.57, 0]);
+  const torso = group(upperBody, [0, 0.28, 0]);
   mesh(torso, tapered, m.cream, [0, 0, 0], [0.31, 0.62, 0.24]);
   mesh(torso, tapered, m.fabric, [0, -0.1, 0.035], [0.32, 0.49, 0.25]);
+  // The tapered chest narrows at shoulder height. These shirt shoulders bridge
+  // that narrowing to the spherical arm sockets, including side/front views.
+  for (const side of [-1, 1])
+    ball(torso, m.cream, [side * 0.22, 0.21, 0], [0.085, 0.11, 0.13]);
   mesh(torso, box, m.fabric, [0, 0.2, 0.21], [0.38, 0.3, 0.025]);
   mesh(torso, box, m.wood, [0, -0.06, 0.282], [0.24, 0.18, 0.025]);
   for (const x of [-0.14, 0.14]) {
@@ -825,7 +972,7 @@ export function createAdventureWorld(
   ball(torso, m.wood, [0, 0.02, -0.28], [0.22, 0.25, 0.12]);
   mesh(torso, box, m.brass, [0, 0.02, -0.41], [0.08, 0.07, 0.015]);
   merge(torso);
-  const head = group(hero, [0, 1.35, 0]);
+  const head = group(upperBody, [0, 0.78, 0]);
   ball(head, m.cream, [0, 0, 0], [0.33, 0.3, 0.3]);
   for (const x of [-0.115, 0.115]) {
     ball(head, m.black, [x, 0.025, 0.278], [0.036, 0.046, 0.02]);
@@ -849,29 +996,35 @@ export function createAdventureWorld(
   leaf(head, m.leafLight, [0.25, 0.32, 0], 0.38, [-0.5, 1.2, -0.6]);
   flower(head, [0.31, 0.32, 0.08], 0.16, "sunflower");
   merge(head);
-  const legs = [-0.15, 0.15].map((x) => {
-    const leg = group(hero, [x, 0.51, 0]);
-    mesh(leg, cylinder, m.fabric, [0, -0.13, 0], [0.105, 0.3, 0.105]);
-    ball(leg, m.boot, [0, -0.34, 0.045], [0.13, 0.145, 0.19]);
-    mesh(leg, cylinder, m.brass, [0, -0.235, 0], [0.116, 0.04, 0.112]);
-    merge(leg);
-    return leg;
+  const legRigs = [-0.15, 0.15].map((x) => {
+    const joint = group(hero, [x, 0.56, 0]);
+    mesh(joint, cylinder, m.fabric, [0, -0.115, 0], [0.105, 0.23, 0.105]);
+    const lower = group(joint, [0, -0.23, 0]);
+    mesh(lower, cylinder, m.fabric, [0, -0.12, 0], [0.09, 0.24, 0.09]);
+    const end = group(lower, [0, -0.24, 0]);
+    ball(end, m.boot, [0, 0, 0.045], [0.125, 0.105, 0.175]);
+    mesh(lower, cylinder, m.brass, [0, -0.13, 0], [0.106, 0.04, 0.102]);
+    return { joint, lower, end, upperLength: 0.23, lowerLength: 0.24 };
   });
-  const arms = [-1, 1].map((side) => {
-    const arm = group(hero, [side * 0.32, 1.06, 0]);
-    ball(arm, m.cream, [side * 0.025, -0.13, 0], [0.1, 0.22, 0.1]);
-    mesh(
-      arm,
-      cylinder,
-      m.fabric,
-      [side * 0.045, -0.24, 0],
-      [0.103, 0.1, 0.103],
-    );
-    ball(arm, m.cream, [side * 0.045, -0.34, 0.015], [0.085, 0.11, 0.09]);
-    merge(arm);
-    return arm;
+  const armRigs = [-1, 1].map((side) => {
+    const joint = group(upperBody, [side * 0.32, 0.49, 0]);
+    // A centred, spherical shoulder overlaps both the tapered shirt and upper
+    // arm at every IK rotation; a pivot alone leaves a visible floating sleeve.
+    const shoulder = ball(joint, m.cream, [0, 0, 0], [0.12, 0.12, 0.12]);
+    shoulder.name = `gardener-shoulder-${side}`;
+    ball(joint, m.cream, [0, -0.105, 0], [0.092, 0.14, 0.092]);
+    mesh(joint, cylinder, m.fabric, [0, -0.165, 0], [0.101, 0.085, 0.101]);
+    const lower = group(joint, [0, -0.23, 0]);
+    ball(lower, m.cream, [0, 0, 0], [0.068, 0.068, 0.068]);
+    ball(lower, m.cream, [0, -0.105, 0], [0.065, 0.14, 0.065]);
+    const end = group(lower, [0, -0.24, 0]);
+    ball(end, m.cream, [0, 0, 0], [0.078, 0.083, 0.08]);
+    return { joint, lower, end, upperLength: 0.23, lowerLength: 0.24 };
   });
-  const can = group(arms[1], [0.03, -0.44, 0.16]);
+  const arms = armRigs.map((r) => r.joint),
+    legs = legRigs.map((r) => r.joint);
+  const can = group(root, [0, 0, 0]);
+  can.visible = false;
   mesh(can, cylinder, m.teal, [0, 0, 0], [0.18, 0.3, 0.16]);
   mesh(can, ring, m.brass, [0, 0.2, 0], [0.19, 0.19, 0.17]);
   tube(
@@ -893,6 +1046,7 @@ export function createAdventureWorld(
     [0, 0, -0.9],
   );
   merge(can);
+  const spout = group(can, [0.43, 0.15, 0]);
   const stream = group(root, [0, 0, 0]);
   for (let i = 0; i < 9; i++)
     ball(
@@ -905,105 +1059,50 @@ export function createAdventureWorld(
   stream.visible = false;
 
   // Same species and facial identity as the account's existing OS Buddy assets.
-  const buddy = group(root, [state.buddy.x, 0, state.buddy.z], 0.8);
+  const buddy = group(root, [state.buddy.x, -0.028, state.buddy.z], 0.8);
   buddy.visible = options.buddyEnabled;
   const isDoge = options.pet === "doge";
+  const fur = isDoge ? m.dog : m.cream;
   const buddyBody = group(buddy, [0, 0.5, 0]);
-  ball(
-    buddyBody,
-    isDoge ? m.dog : m.cream,
-    [0, -0.05, 0],
-    [isDoge ? 0.32 : 0.34, 0.4, 0.28],
-  );
-  ball(buddyBody, isDoge ? m.dog : m.cream, [0, 0.43, 0.02], [0.4, 0.35, 0.32]);
-  if (isDoge) ball(buddyBody, m.cream, [0, 0.31, 0.27], [0.25, 0.2, 0.14]);
+  ball(buddyBody, fur, [0, 0, -0.02], [0.31, 0.25, 0.43]);
+  ball(buddyBody, fur, [0, 0.3, 0.34], [0.34, 0.31, 0.29]);
+  ball(buddyBody, m.cream, [0, 0.2, 0.57], [0.22, 0.16, 0.1]);
   for (const side of [-1, 1]) {
-    mesh(
-      buddyBody,
-      cone,
-      isDoge ? m.dog : m.blue,
-      [side * 0.27, 0.77, 0],
-      [0.18, 0.4, 0.14],
-      [0, 0, -side * 0.15],
-    );
-    if (isDoge)
-      mesh(
-        buddyBody,
-        cone,
-        m.cream,
-        [side * 0.27, 0.78, 0.08],
-        [0.095, 0.25, 0.025],
-        [0, 0, -side * 0.15],
-      );
-    if (!isDoge)
-      ball(buddyBody, m.blue, [side * 0.18, 0.68, 0], [0.22, 0.1, 0.25]);
-    ball(
-      buddyBody,
-      m.black,
-      [side * 0.135, 0.47, 0.305],
-      [0.047, 0.056, 0.022],
-    );
-    ball(
-      buddyBody,
-      m.cream,
-      [side * 0.135 + 0.012, 0.49, 0.324],
-      [0.014, 0.015, 0.009],
-    );
-    if (!isDoge)
-      ball(
-        buddyBody,
-        m.pink,
-        [side * 0.265, 0.345, 0.26],
-        [0.075, 0.041, 0.015],
-      );
-    ball(
-      buddyBody,
-      isDoge ? m.dog : m.cream,
-      [side * 0.33, -0.08, 0.025],
-      [0.095, 0.2, 0.1],
-    );
+    mesh(buddyBody, cone, isDoge ? m.dog : m.blue, [side * 0.23, 0.61, 0.29],
+      [0.14, 0.32, 0.12], [0, 0, -side * 0.15]);
+    ball(buddyBody, m.black, [side * 0.12, 0.34, 0.603], [0.038, 0.045, 0.02]);
+    ball(buddyBody, m.cream, [side * 0.12 + 0.01, 0.36, 0.621], [0.012, 0.014, 0.008]);
+    if (!isDoge) ball(buddyBody, m.pink, [side * 0.23, 0.24, 0.53], [0.06, 0.035, 0.016]);
   }
-  ball(
-    buddyBody,
-    m.black,
-    [0, 0.34, isDoge ? 0.405 : 0.325],
-    [0.045, 0.028, 0.025],
-  );
-  tube(
-    buddyBody,
-    m.black,
-    [
-      [-0.06, 0.27, 0.33],
-      [0, 0.245, 0.35],
-      [0.06, 0.27, 0.33],
-    ],
-    0.012,
-  );
-  mesh(buddyBody, box, m.fabric, [0, 0.095, 0.25], [0.32, 0.14, 0.025]);
-  ball(buddyBody, m.brass, [0, 0.055, 0.285], [0.04, 0.05, 0.016]);
-  const tail = tube(
-    buddyBody,
-    isDoge ? m.dog : m.blue,
-    [
-      [0, -0.2, -0.2],
-      [0.37, -0.1, -0.4],
-      [0.44, 0.1, -0.3],
-      [0.3, 0.18, -0.24],
-    ],
-    0.1,
-  );
+  ball(buddyBody, m.black, [0, 0.245, 0.674], [0.04, 0.025, 0.022]);
+  tube(buddyBody, m.black, [[-0.06, 0.16, 0.65], [0, 0.14, 0.67], [0.06, 0.16, 0.65]], 0.011);
+  mesh(buddyBody, cylinder, m.fabric, [0, 0.11, 0.32], [0.27, 0.08, 0.26]);
+  ball(buddyBody, m.brass, [0, 0.055, 0.585], [0.035, 0.045, 0.015]);
+  tube(buddyBody, isDoge ? m.dog : m.blue,
+    [[0, 0.01, -0.39], [0.1, 0.22, -0.58], [0.23, 0.35, -0.49], [0.18, 0.3, -0.35]], 0.075);
   merge(buddyBody);
-  const buddyFeet = [-0.16, 0.16].map((x) =>
-    ball(buddy, isDoge ? m.dog : m.cream, [x, 0.1, 0.035], [0.09, 0.12, 0.14]),
-  );
-  void tail;
+  const buddyLegs = [-1, 1].flatMap((side) => [-1, 1].map((end) => {
+    const joint = group(buddy, [side * 0.235, 0.43, end * 0.28]);
+    joint.name = `pet-${end > 0 ? "front" : "hind"}-${side < 0 ? "left" : "right"}`;
+    ball(joint, fur, [0, -0.06, 0], [0.095, 0.13, 0.1]);
+    const lower = group(joint, [0, -0.2, 0]);
+    ball(lower, fur, [0, -0.065, 0], [0.068, 0.13, 0.07]);
+    const paw = group(lower, [0, -0.2, 0]);
+    ball(paw, isDoge ? m.cream : fur, [0, 0, 0.035], [0.085, 0.08, 0.12]);
+    return { joint, lower, paw, side, end };
+  }));
+  const buddyFeet = buddyLegs.map((rig) => rig.joint);
 
   const butterfly = group(root, [TRAIL_START.x, 1.25, TRAIL_START.z]);
-  ball(butterfly, m.bark, [0, 0, 0], [0.04, 0.12, 0.05]);
+  ball(butterfly, m.bark, [0, 0, 0], [0.045, 0.05, 0.2]);
   const wings = [-1, 1].map((side) => {
-    const wing = group(butterfly, [side * 0.035, 0, 0]);
-    leaf(wing, m.violet, [0, 0, 0], 0.75, [0, side * 0.95, 0]);
-    leaf(wing, m.pink, [0, -0.06, 0], 0.5, [0, side * 2.1, 0]);
+    const wing = group(butterfly, [side * 0.025, 0, 0]);
+    wing.name = side < 0 ? "left-flight-wing" : "right-flight-wing";
+    // Broad lobes extend sideways from the shoulder. The previous leaves lay
+    // along the body, so rotating them barely changed the flying silhouette.
+    ball(wing, m.violet, [side * 0.28, 0, -0.09], [0.29, 0.018, 0.28]);
+    ball(wing, m.pink, [side * 0.21, 0, 0.19], [0.22, 0.016, 0.2]);
+    tube(wing, m.bark, [[0, 0.01, 0], [side * 0.22, 0.02, -0.1], [side * 0.49, 0.01, -0.15]], 0.009);
     merge(wing);
     return wing;
   });
@@ -1096,6 +1195,8 @@ export function createAdventureWorld(
     )
       continue;
     if (Math.abs(x) < 2 && z > -7 && z < 9) continue;
+    if (pathStones.some(stone => Math.hypot(x - stone.x, z - stone.z) < stone.radius + 0.18)) continue;
+    if (Math.abs(x - GARDEN_SWING.x) < 1.25 && Math.abs(z - GARDEN_SWING.z) < 1.8) continue;
     transform.position.set(x, 0, z);
     transform.rotation.set((rng() - 0.5) * 0.3, rng() * Math.PI * 2, 0.25);
     transform.scale.set(1, 0.65 + rng() * 1.2, 1);
@@ -1125,6 +1226,29 @@ export function createAdventureWorld(
       (["sunflower", "lily", "orchid", "grass"] as PlantType[])[i % 4],
     );
   }
+  const swingFrame = group(scenery, [GARDEN_SWING.x, 0, GARDEN_SWING.z]);
+  for (const x of [-0.95, 0.95]) {
+    for (const z of [-0.8, 0.8]) {
+      tube(swingFrame, m.wood, [[x, 0, z], [x, 2.8, 0]], 0.075);
+      mesh(swingFrame, cylinder, m.stoneDark, [x, 0.035, z], [0.16, 0.07, 0.16]);
+    }
+    tube(swingFrame, m.wood, [[x, 0.8, -0.57], [x, 0.8, 0.57]], 0.045);
+  }
+  tube(swingFrame, m.bark, [[-1.1, 2.8, 0], [1.1, 2.8, 0]], 0.09);
+  const swingPivot = group(root, [GARDEN_SWING.x, GARDEN_SWING.pivotY, GARDEN_SWING.z]);
+  swingPivot.name = "swing-pendulum";
+  for (const x of [-GARDEN_SWING.seatHalfWidth, GARDEN_SWING.seatHalfWidth]) {
+    mesh(swingFrame, ring, m.brass, [x, 2.8, 0], [0.09, 0.12, 0.09], [0, Math.PI / 2, 0]);
+    tube(swingPivot, m.cream, [[x, 0, 0], [x, -GARDEN_SWING.length, 0]], 0.02);
+    tube(swingPivot, m.cream, [[x, -GARDEN_SWING.length + 0.25, 0], [x, -GARDEN_SWING.length, 0.22]], 0.018);
+    tube(swingPivot, m.cream, [[x, -GARDEN_SWING.length + 0.25, 0], [x, -GARDEN_SWING.length, -0.22]], 0.018);
+  }
+  const swingSeat = group(swingPivot, [0, -GARDEN_SWING.length, 0]);
+  mesh(swingSeat, box, m.wood, [0, -0.045, 0], [1.03, 0.09, 0.53]);
+  merge(swingPivot);
+  // Keep a non-rendered seat socket after material batching for rider contact.
+  swingPivot.add(swingSeat);
+  swingSeat.clear();
   const decoration = group(root, [5, 0, 7]);
   if (options.decoration === "lantern") lantern(decoration, [0, 0, 0]);
   if (options.decoration === "bench") {
@@ -1133,10 +1257,14 @@ export function createAdventureWorld(
         mesh(decoration, box, m.bark, [x, 0.25, z], [0.08, 0.5, 0.08]);
     for (const z of [-0.22, 0, 0.22])
       mesh(decoration, box, m.wood, [0, 0.55, z], [1.5, 0.09, 0.17]);
+    for (const x of [-0.6, 0.6])
+      mesh(decoration, box, m.bark, [x, 0.74, -0.3], [0.08, 0.65, 0.08]);
     for (const y of [0.75, 1])
       mesh(decoration, box, m.wood, [0, y, -0.3], [1.5, 0.13, 0.06]);
   }
   if (options.decoration === "flower-cart") {
+    mesh(decoration, cylinder, m.brass, [0, 0.3, 0], [0.055, 1.45, 0.055], [0, 0, Math.PI / 2]);
+    for (const x of [-0.5, 0.5]) mesh(decoration, box, m.bark, [x, 0.24, 0.28], [0.08, 0.48, 0.08]);
     mesh(decoration, box, m.wood, [0, 0.55, 0], [1.3, 0.45, 0.7]);
     for (const x of [-0.7, 0.7])
       mesh(
@@ -1158,8 +1286,8 @@ export function createAdventureWorld(
   if (options.journal)
     for (let i = 0; i < 3; i++)
       flower(
-        scenery,
-        [ADVENTURE_POND.x - 0.9 + i * 0.7, 0.08, ADVENTURE_POND.z + 0.7],
+        pondLegacy,
+        [-0.9 + i * 0.7, 0.08, 0.7],
         0.22,
         "lily",
       );
@@ -1176,7 +1304,14 @@ export function createAdventureWorld(
   root.name = "My Garden adventure";
   return {
     root,
+    canopy,
+    collectedRain,
+    nightLights,
     hero,
+    upperBody,
+    armRigs,
+    legRigs,
+    spout,
     torso,
     head,
     arms,
@@ -1186,12 +1321,20 @@ export function createAdventureWorld(
     buddy,
     buddyBody,
     buddyFeet,
+    buddyLegs,
+    pathStones,
+    grass,
+    islandGeometry,
+    swingPivot,
+    swingSeat,
     beds,
     forage,
     butterfly,
     wings,
     pumpHandle,
     water,
+    glowMaterial: m.glow,
+    pondLegacy,
     ripples,
     targetRing,
     interactRing,

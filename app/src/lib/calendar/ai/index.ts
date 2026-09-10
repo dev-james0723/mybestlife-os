@@ -1,20 +1,4 @@
-/**
- * Calendar AI service layer (mock-first).
- *
- * Every function returns a typed payload and can be swapped for a real
- * provider (Claude / Gemini / self-hosted) without changing call sites.
- *
- * Real-data swap points are commented with `TODO: replace with …` so the
- * Phase 5 `CALENDAR_TODO.md` can reference them directly.
- */
-
 import { format } from "date-fns";
-import {
-  mockConflicts,
-  mockDailySummary,
-  mockFreeWindows,
-  mockPlanSuggestions,
-} from "../mock/ai";
 import { classifyDayLoad, computeFreeWindows } from "../projection";
 import type {
   CalendarItem,
@@ -24,55 +8,30 @@ import type {
   PlanSuggestion,
 } from "../types";
 
-/** Fake latency for a realistic skeleton feel during development. */
-const MOCK_LATENCY_MS = 600;
-
-function delay<T>(value: T, ms = MOCK_LATENCY_MS): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-/**
- * Summarize the shape of a day — energy arc, top priorities, caveats.
- *
- * TODO: replace with Claude call.
- *   Request shape: { date, items: CalendarItem[], day_load, free_windows }
- *   Response: { text: string; highlights: string[]; energy_label: ... }
- */
+/** Summarize recorded items locally; no external AI request. */
 export async function summarizeDay(
   date: string,
   items: CalendarItem[]
 ): Promise<DailySummary> {
-  // Lightweight local synthesis even in mock mode so the summary
-  // reflects actual item counts and flavors.
-  const base = mockDailySummary(date);
+  items = items.filter((item) => item.date === date);
   const load = classifyDayLoad(items);
   const overdueCount = items.filter(
     (i) => i.source_type === "task" && "overdue" in i && i.overdue
   ).length;
   const text =
     items.length === 0
-      ? "Nothing scheduled today — a rare gift of open time. Use it on whatever's been quietly waiting."
-      : base.text;
+      ? "No items recorded for this date. Add one thing you would like to do."
+      : `${items.length} recorded item${items.length === 1 ? "" : "s"} for this date. ${items.slice(0, 3).map((item) => item.title).join(" · ")}. This overview uses your saved calendar items.`;
   const highlights: string[] = [];
   highlights.push(`${items.length} item${items.length === 1 ? "" : "s"} on the board`);
   highlights.push(`Day load: ${load}`);
   if (overdueCount > 0) {
     highlights.push(`${overdueCount} overdue — tackle early`);
   }
-  return delay({ ...base, text, highlights });
+  return { date, text, highlights, energy_label: load === "Focus-heavy" ? "High focus" : "Mixed" };
 }
 
-/**
- * Detect conflicts beyond raw time overlap:
- *   - time_overlap
- *   - mental_overload (too many priority-urgent items)
- *   - focus_saturation (≥3 focus-heavy blocks in one day)
- *   - context_switching (>5 distinct projects in one day)
- *   - deadline_cluster (≥2 deadlines in 72h)
- *
- * TODO: replace with Claude call — this has real structure even in mock
- * mode so the panel shows plausible copy.
- */
+/** Report time overlaps and heavy task counts within each date. */
 export async function detectConflicts(items: CalendarItem[]): Promise<ConflictWarning[]> {
   const out: ConflictWarning[] = [];
   const boxed = items.filter((i) => i.start_time && i.end_time);
@@ -88,7 +47,7 @@ export async function detectConflicts(items: CalendarItem[]): Promise<ConflictWa
           id: `cw-overlap-${a.id}-${b.id}`,
           kind: "time_overlap",
           severity: "critical",
-          message: `"${a.title}" and "${b.title}" overlap between ${bS}–${Math.min(Number(aE), Number(bE))}.`,
+          message: `"${a.title}" and "${b.title}" overlap between ${aS > bS ? aS : bS}–${aE < bE ? aE : bE}.`,
           item_ids: [a.id, b.id],
           suggestion: "Shift one item or shrink its duration.",
         });
@@ -96,25 +55,28 @@ export async function detectConflicts(items: CalendarItem[]): Promise<ConflictWa
     }
   }
 
-  const focusCount = items.filter(
+  const focusItems = items.filter(
     (i) =>
       i.source_type === "task" &&
       "estimated_blocks" in i &&
       (i.estimated_blocks ?? 0) >= 6
-  ).length;
+  );
+  for (const date of new Set(focusItems.map((item) => item.date))) {
+  const dayFocus = focusItems.filter((item) => item.date === date);
+  const focusCount = dayFocus.length;
   if (focusCount >= 3) {
     out.push({
-      id: "cw-focus-saturation",
+      id: `cw-focus-saturation-${date}`,
       kind: "focus_saturation",
       severity: "warn",
-      message: `${focusCount} focus-heavy tasks on one day — you'll likely fatigue before finishing them all.`,
-      item_ids: [],
+      message: `${focusCount} large estimated tasks recorded for ${date}. Consider leaving room between them.`,
+      item_ids: dayFocus.map((item) => item.id),
       suggestion: "Distribute one or two across adjacent days.",
     });
   }
 
-  // Blend in curated mock conflicts for the demo so the UI has variety.
-  return delay([...out, ...mockConflicts()]);
+  }
+  return out;
 }
 
 /**
@@ -129,32 +91,34 @@ export async function findFreeWindows(
   workHours: { start: string; end: string } = { start: "09:00", end: "19:00" }
 ): Promise<FreeWindow[]> {
   const computed = computeFreeWindows(date, items, workHours.start, workHours.end);
-  // If the day is entirely all-day items (no boxed schedule), synthesize a
-  // couple of plausible windows so the TodayBlock has something to show.
-  if (computed.length === 0 && items.length > 0) {
-    return delay(mockFreeWindows(date));
-  }
-  return delay(computed);
+  return computed;
 }
 
-/**
- * Propose a schedule — tasks-to-slots by priority, duration, and energy.
- *
- * TODO: replace with Claude call.
- *   Input:  { date, unscheduledTasks, freeWindows }
- *   Output: { suggestions: PlanSuggestion[] }
- */
+/** Offer starting steps in recorded free windows, without applying them. */
 export async function generatePlan(
   date: string,
   unscheduledItems: CalendarItem[],
   freeWindows: FreeWindow[]
 ): Promise<PlanSuggestion[]> {
-  // Mock ignores inputs; real implementation (Phase 4) will thread them
-  // into the Claude prompt payload. Silenced to avoid dead-arg lints.
-  void date;
-  void unscheduledItems;
-  void freeWindows;
-  return delay(mockPlanSuggestions());
+  const windows = freeWindows.filter((window) => window.date === date).map((window) => ({ ...window }));
+  const suggestions: PlanSuggestion[] = [];
+  const seen = new Set<string>();
+  const toMinutes = (time: string) => { const [h, m] = time.split(":").map(Number); return h * 60 + m; };
+  const toTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  for (const item of unscheduledItems) {
+    if (item.date !== date || item.source_type !== "task" || item.start_time || item.status === "done" || item.status === "cancelled" || seen.has(item.source_id)) continue;
+    seen.add(item.source_id);
+    // Without the user's block length we cannot turn estimated_blocks into minutes.
+    // Offer an explicit 20-minute starting step, not a claimed completion estimate.
+    const duration = 20;
+    const window = windows.find((candidate) => toMinutes(candidate.end) - toMinutes(candidate.start) >= duration);
+    if (!window) break;
+    const end = toTime(toMinutes(window.start) + duration);
+    suggestions.push({ id: `plan-${date}-${item.source_id}`, task_id: item.source_id, title: item.title,
+      slot: { start: window.start, end }, rationale: "A 20-minute starting step in an unoccupied window of your recorded schedule. Review before applying.", energy: "shallow" });
+    window.start = end;
+  }
+  return suggestions;
 }
 
 // ──────────────────────────────────────────────────────────────────────

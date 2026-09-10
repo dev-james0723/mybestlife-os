@@ -1,5 +1,7 @@
 "use client";
 
+import { recordedMonthlyCost } from "@/lib/vault/recorded-cost";
+
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { SoftwareVaultEntry } from "@/types/database";
@@ -144,15 +146,7 @@ export const useVaultData = create<VaultDataState>((set, get) => ({
 /* ── Selectors / helpers ─────────────────────────────────────────── */
 
 export function parseMonthlyCost(entry: SoftwareVaultEntry): number {
-  if (entry.cost_amount == null) return 0;
-  const amount = Number(entry.cost_amount);
-  if (!Number.isFinite(amount) || amount <= 0) return 0;
-  const period = (entry.cost_period ?? "").toLowerCase();
-  if (/(year|yr|annual)/.test(period)) return amount / 12;
-  if (/(week|wk)/.test(period)) return amount * 52 / 12;
-  if (/(day|daily)/.test(period)) return amount * 365 / 12;
-  if (/(quarter)/.test(period)) return amount / 3;
-  return amount;
+  return recordedMonthlyCost(entry) ?? 0;
 }
 
 /** Rows considered part of the recurring monthly spend: subscription + "Active" (legacy using). */

@@ -80,7 +80,7 @@ function MoodTrendsChartInner({
     const counts = new Map<string, number>();
     for (const q of QUADRANTS) counts.set(q, 0);
     for (const e of inWindow) {
-      counts.set(e.quadrant, (counts.get(e.quadrant) ?? 0) + 1);
+      if (e.quadrant) counts.set(e.quadrant, (counts.get(e.quadrant) ?? 0) + 1);
     }
     const quadrantData: QuadrantSlice[] = QUADRANTS.filter(
       (q) => (counts.get(q) ?? 0) > 0,

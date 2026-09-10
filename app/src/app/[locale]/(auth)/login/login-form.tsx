@@ -1,5 +1,7 @@
 "use client";
 
+import { safeReturnPath } from "@/lib/auth-return-path";
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Brain, Mail } from "lucide-react";
@@ -114,7 +116,7 @@ export function LoginForm() {
       const { session } = await signUpWithEmail(email, password);
       if (session) {
         toast.success(ui.toastAccountReady);
-        window.location.href = dashboardHref;
+        window.location.href = safeReturnPath(searchParams.get("next"), dashboardHref);
         return;
       }
       setVerificationSentTo(email.trim());
@@ -326,7 +328,7 @@ export function LoginForm() {
           ) : null}
 
           <p className="text-xs text-center text-muted-foreground pt-4">
-            {ui.termsNotice}
+            <a href={dashboardHref.replace(/dashboard$/, "privacy")} className="underline">{language.startsWith("zh") ? "資料與私隱" : "Data and privacy"}</a>{" · "}<a href={dashboardHref.replace(/dashboard$/, "help")} className="underline">{language.startsWith("zh") ? "開始使用" : "Getting started"}</a>
           </p>
         </CardContent>
       </Card>

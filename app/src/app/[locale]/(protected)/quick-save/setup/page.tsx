@@ -33,7 +33,7 @@ function messageForReason(reason: string | undefined) {
   if (reason === "error") {
     return "My Best Life OS could not save that share. Check the file type or try again.";
   }
-  return "Install the app on your phone, then use the native Share Sheet to save into My Best Life OS.";
+  return "Save a link or text in Knowledge Base. On supported devices, you can also share directly to the installed app.";
 }
 
 export default async function QuickSaveSetupPage({ params, searchParams }: PageProps) {
@@ -58,7 +58,7 @@ export default async function QuickSaveSetupPage({ params, searchParams }: PageP
                 Share Sheet setup
               </h2>
               <p className="text-sm leading-6 text-muted-foreground">
-                The OS share target appears only after the PWA is installed.
+                Direct sharing requires both an installed app and browser support. Installing alone does not guarantee a Share Sheet entry.
               </p>
             </div>
           </div>
@@ -66,10 +66,11 @@ export default async function QuickSaveSetupPage({ params, searchParams }: PageP
             <li>Open My Best Life OS on your phone.</li>
             <li>Add it to Home Screen / Install app.</li>
             <li>
-              Use Share → My Best Life OS from apps like X, Instagram, Facebook,
-              Safari, Chrome, etc.
+              Open Share in another app and look for My Best Life OS. If it is absent, copy the link or text and save it through Knowledge Base instead.
             </li>
           </ol>
+          <p className="text-sm text-muted-foreground">Browser support varies. <a className="underline" href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/share_target" target="_blank" rel="noreferrer">Check supported browsers</a>.</p>
+          <Button render={<Link href={withLocalePrefix(slug, "/knowledge-base")} />}>Open Knowledge Base to save manually</Button>
           <div className="grid gap-2 sm:grid-cols-2">
             <Button
               render={<Link href={withLocalePrefix(slug, "/settings")} />}

@@ -47,10 +47,8 @@ import { useAppStore } from "@/stores/app-store";
 import { useTheme } from "@/lib/theme-context";
 import { getThemedCategoryLabel, getThemedItemLabel } from "@/lib/theme-labels";
 import { getSidebarFooterCopy } from "@/lib/i18n/sidebar-ui";
-import { getThemeUiCopy } from "@/lib/i18n/theme-ui";
 import { getAppDisplayName } from "@/lib/i18n/app-brand";
 import { cn } from "@/lib/utils";
-import { useCurrentTime } from "@/hooks/use-current-time";
 import type { AppLocale } from "@/lib/i18n/app-locale";
 import type { UiTheme } from "@/types/database";
 import type { ColorMode } from "@/types/database";
@@ -117,18 +115,10 @@ function StaggerItem({ enabled, children }: StaggerItemProps) {
   return <div>{children}</div>;
 }
 
-/** Every primary nav category — keeps the sidebar list complete (incl. Resources). */
-const PRIORITY_CATEGORIES: string[] = [
-  "commandCenter",
-  "self",
-  "relationship",
-  "career",
-  "goalsExecution",
-  "resources",
-  "knowledge",
-  "learning",
-];
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const PRIMARY_DESTINATIONS = ["dashboard", "tasks", "projects", "knowledge-base"];
+const primaryItems = PRIMARY_DESTINATIONS.flatMap((id) =>
+  navigationCategories.flatMap((category) => category.items.filter((item) => item.itemId === id)),
+);
 const COMPANION_PANEL_REVEAL_DELAY_MS = 300;
 
 export function AppSidebar() {
@@ -147,34 +137,14 @@ export function AppSidebar() {
   const { uiTheme, colorMode } = useTheme();
   const focusNavigation = useFocusNavigation();
   const footer = getSidebarFooterCopy(language);
-  const tui = getThemeUiCopy(language);
-  const currentTime = useCurrentTime();
   const isGlassTheme = uiTheme === "default";
-
-  const isNewUser =
-    !profile?.created_at ||
-    currentTime.getTime() - new Date(profile.created_at).getTime() < SEVEN_DAYS_MS;
-
-  const { priorityCategories, secondaryCategories } = useMemo(() => {
-    const focusAreas = profile?.focus_areas ?? [];
-    const categoryMatchesFocus = (c: (typeof navigationCategories)[number]) =>
-      focusAreas.some(
-        (fa) =>
-          c.categoryId === fa ||
-          c.items.some((item) => item.itemId === fa) ||
-          (c.categoryId === "learning" && fa === "garden")
-      );
-    const priority = navigationCategories.filter(
-      (c) => PRIORITY_CATEGORIES.includes(c.categoryId) || categoryMatchesFocus(c)
-    );
-    const priorityIds = new Set(priority.map((c) => c.categoryId));
-    const secondary = navigationCategories.filter((c) => !priorityIds.has(c.categoryId));
-    return { priorityCategories: priority, secondaryCategories: secondary };
-  }, [profile?.focus_areas]);
-
-  const [showMore, setShowMore] = useState(!isNewUser);
+  const chinese = language === "zh-TW" || language === "zh-CN";
+  const isPrimaryRoute = primaryItems.some((item) =>
+    pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`),
+  );
+  const [moreChoice, setMoreChoice] = useState<{ path: string; open: boolean } | null>(null);
+  const showMore = moreChoice?.path === pathWithoutLocale ? moreChoice.open : !isPrimaryRoute;
   const [showCompanionPanel, setShowCompanionPanel] = useState(false);
-  const toggleShowMore = useCallback(() => setShowMore((prev) => !prev), []);
   const menuItemsReady = !authLoading && (!user || !profileLoading);
   const companionRevealDelayMs =
     isGlassTheme ? COMPANION_PANEL_REVEAL_DELAY_MS : 0;
@@ -251,7 +221,7 @@ export function AppSidebar() {
                   variant="ghost"
                   size="icon"
                   className="ml-auto shrink-0"
-                  aria-label="Close menu"
+                  aria-label={chinese ? "關閉選單" : "Close menu"}
                   onClick={closeMobileSidebar}
                 >
                   <X className="size-5" aria-hidden />
@@ -263,74 +233,45 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <StaggerContainer enabled={isGlassTheme}>
-          {priorityCategories.map((category) => (
-            <StaggerItem
-              key={category.categoryId}
-              enabled={isGlassTheme}
-            >
-              <CategoryGroup
-                category={category}
-                localeSlug={localeSlug}
-                pathWithoutLocale={pathWithoutLocale}
-                currentSearch={currentSearch}
-                uiTheme={uiTheme}
-                colorMode={colorMode}
-                language={language}
-                onNavigate={handleSidebarNavigate}
-              />
-            </StaggerItem>
-          ))}
-          <StaggerItem enabled={isGlassTheme}>
-            <GardenNavButton
-              localeSlug={localeSlug}
-              pathWithoutLocale={pathWithoutLocale}
-              onNavigate={handleSidebarNavigate}
-              uiTheme={uiTheme}
-              colorMode={colorMode}
-              language={language}
-            />
-          </StaggerItem>
-        </StaggerContainer>
-
-        {secondaryCategories.length > 0 && (
-          <>
-            <SidebarSeparator className="my-1" />
-            <div className="px-3 py-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2 text-xs text-muted-foreground"
-                onClick={toggleShowMore}
-                data-focus-hideable
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${showMore ? "rotate-180" : ""}`} />
-                {showMore ? tui.showLess : tui.showMore}
-              </Button>
-            </div>
-            {showMore && (
-              <StaggerContainer enabled={isGlassTheme}>
-                {secondaryCategories.map((category) => (
-                  <StaggerItem
-                    key={category.categoryId}
-                    enabled={isGlassTheme}
-                  >
-                    <CategoryGroup
-                      category={category}
-                      localeSlug={localeSlug}
-                      pathWithoutLocale={pathWithoutLocale}
-                      currentSearch={currentSearch}
-                      uiTheme={uiTheme}
-                      colorMode={colorMode}
-                      language={language}
-                      onNavigate={handleSidebarNavigate}
-                    />
-                  </StaggerItem>
-                ))}
-              </StaggerContainer>
-            )}
-          </>
-        )}
+        <SidebarGroup aria-label={chinese ? "主要導覽" : "Main navigation"}>
+          <SidebarMenu>
+            {primaryItems.map((item) => {
+              const href = withLocalePrefix(localeSlug, item.url);
+              const active = pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`);
+              return (
+                <SidebarMenuItem key={item.itemId}>
+                  <SidebarMenuButton render={<Link href={href} aria-current={active ? "page" : undefined} />}
+                    isActive={active} onClick={(event) => handleSidebarNavigate(href, event)} className="min-h-11">
+                    <IconWell icon={item.icon} targetType="nav_item" targetId={item.itemId} uiTheme={uiTheme} colorMode={colorMode} />
+                    <span className="font-semibold">{item.itemId === "dashboard" ? (chinese ? "今日" : "Today") : getThemedItemLabel(item.itemId, uiTheme, language)}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarSeparator className="my-1" />
+        <Collapsible open={showMore} onOpenChange={(open) => setMoreChoice({ path: pathWithoutLocale, open })}>
+          <div className="px-3 py-1">
+            <CollapsibleTrigger render={<Button variant="ghost" className="min-h-11 w-full justify-start gap-2 text-sm" />}>
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
+              {chinese ? "所有功能" : "All features"}
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <StaggerContainer enabled={isGlassTheme}>
+              {navigationCategories.map((category) => (
+                <StaggerItem key={category.categoryId} enabled={isGlassTheme}>
+                  <CategoryGroup category={category} localeSlug={localeSlug} pathWithoutLocale={pathWithoutLocale}
+                    currentSearch={currentSearch} uiTheme={uiTheme} colorMode={colorMode} language={language}
+                    onNavigate={handleSidebarNavigate} />
+                </StaggerItem>
+              ))}
+              <GardenNavButton localeSlug={localeSlug} pathWithoutLocale={pathWithoutLocale}
+                onNavigate={handleSidebarNavigate} uiTheme={uiTheme} colorMode={colorMode} language={language} />
+            </StaggerContainer>
+          </CollapsibleContent>
+        </Collapsible>
         {showCompanionPanel ? (
           <LazyTodayCompanionPanel onNavigate={handleSidebarNavigate} />
         ) : null}
@@ -483,7 +424,7 @@ function CategoryGroup({
 
     return (
       <SidebarGroup>
-        <Collapsible defaultOpen={false} className="group/collapsible">
+        <Collapsible key={pathWithoutLocale} defaultOpen={category.items.some((item) => pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`))} className="group/collapsible">
           <SidebarMenuItem>
             <div className="flex w-full items-center">
               <SidebarMenuButton
@@ -554,7 +495,7 @@ function CategoryGroup({
 
   return (
     <SidebarGroup>
-      <Collapsible defaultOpen={false} className="group/collapsible">
+      <Collapsible key={pathWithoutLocale} defaultOpen={category.items.some((item) => pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`))} className="group/collapsible">
         <SidebarMenuItem>
           <CollapsibleTrigger
             render={

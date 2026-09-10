@@ -225,7 +225,7 @@ export function computeFreeWindows(
   const start = minutes(workStart);
   const end = minutes(workEnd);
   const boxed = items
-    .filter((i) => i.start_time && i.end_time)
+    .filter((i) => i.date === date && i.start_time && i.end_time)
     .map((i) => ({ s: minutes(i.start_time!), e: minutes(i.end_time!) }))
     .sort((a, b) => a.s - b.s);
 

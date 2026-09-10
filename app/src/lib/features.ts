@@ -92,3 +92,25 @@ export const WEEKLY_REVIEW_ENABLED = resolveWeeklyReviewEnabled({
   nodeEnv: process.env.NODE_ENV,
   override: process.env.NEXT_PUBLIC_ENABLE_WEEKLY_REVIEW,
 });
+
+/** Incomplete tools remain available locally, but are excluded from public builds. */
+export const EXPERIMENTAL_TOOLS_ENABLED = resolveProductionHiddenFeatureEnabled({
+  nodeEnv: process.env.NODE_ENV,
+  override: process.env.NEXT_PUBLIC_ENABLE_EXPERIMENTAL_TOOLS,
+});
+
+/** These exact routes also enforce notFound() in their page or segment layout. */
+export function isDisabledFeatureRoute(pathname: string): boolean {
+  const routes: Array<[boolean, string]> = [
+    [LIFE_COMPANION_ENABLED, "/life-agent"],
+    [LEARNING_ENABLED, "/japanese-study"],
+    [NOTES_ENABLED, "/notes"],
+    [FINANCE_ENABLED, "/finance"],
+    [HEALTH_ENABLED, "/health"],
+    [WEEKLY_REVIEW_ENABLED, "/weekly-review"],
+    [EXPERIMENTAL_TOOLS_ENABLED, "/ai-assistant"],
+    [EXPERIMENTAL_TOOLS_ENABLED, "/business-analyst"],
+    [EXPERIMENTAL_TOOLS_ENABLED, "/youtube-radar"],
+  ];
+  return routes.some(([enabled, route]) => !enabled && (pathname === route || pathname.startsWith(`${route}/`)));
+}

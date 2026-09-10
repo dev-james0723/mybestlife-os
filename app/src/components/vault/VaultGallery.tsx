@@ -1,5 +1,7 @@
 "use client";
 
+import { formatRecordedCost, recordedCostTier, compareRecordedCosts } from "@/lib/vault/recorded-cost";
+
 import { useMemo } from "react";
 import { motion, LayoutGroup, useReducedMotion } from "framer-motion";
 import { REDUCED_MOTION_FADE } from "@/lib/animation/easings";
@@ -15,24 +17,9 @@ import {
   type VaultFilters,
   type VaultSortKey,
   type VaultViewMode,
-  parseMonthlyCost,
 } from "@/stores/vault-store";
 
-function costLabel(entry: SoftwareVaultEntry): string {
-  if (entry.cost_type === "Free") return "Free";
-  if (entry.cost_amount == null) return entry.cost_type;
-  return `$${Number(entry.cost_amount).toFixed(2)}${
-    entry.cost_period ? `/${entry.cost_period}` : ""
-  }`;
-}
 
-function costTier(entry: SoftwareVaultEntry): "free" | "low" | "mid" | "high" {
-  const monthly = parseMonthlyCost(entry);
-  if (entry.cost_type === "Free" || monthly === 0) return "free";
-  if (monthly < 10) return "low";
-  if (monthly < 30) return "mid";
-  return "high";
-}
 
 function applyFilters(
   entries: SoftwareVaultEntry[],
@@ -49,7 +36,7 @@ function applyFilters(
     }
     if (filters.status !== "all" && e.status !== filters.status) return false;
     if (filters.priority !== "all" && e.priority !== filters.priority) return false;
-    if (filters.costTier !== "all" && costTier(e) !== filters.costTier) return false;
+    if (filters.costTier !== "all" && recordedCostTier(e) !== filters.costTier) return false;
     if (filters.category !== "all" && e.category !== filters.category) return false;
     return true;
   });
@@ -66,7 +53,7 @@ function sortEntries(
     case "most-used":
       return arr.sort((a, b) => (b.launch_count ?? 0) - (a.launch_count ?? 0));
     case "cost-desc":
-      return arr.sort((a, b) => parseMonthlyCost(b) - parseMonthlyCost(a));
+      return arr.sort(compareRecordedCosts);
     case "alpha":
     default:
       return arr.sort((a, b) => a.app_name.localeCompare(b.app_name));
@@ -139,7 +126,7 @@ export function VaultGallery({ entries, viewMode, onSelect, emptyState }: Props)
                 <>
                   <StatusBadge value={entry.status} />
                   <Badge variant="outline">{entry.priority}</Badge>
-                  <Badge variant="outline">{costLabel(entry)}</Badge>
+                  <Badge variant="outline">{formatRecordedCost(entry, language)}</Badge>
                   {entry.is_default_stack && (
                     <Badge variant="secondary" className="gap-1">
                       <Star className="h-3 w-3 fill-current" />

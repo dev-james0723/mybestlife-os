@@ -128,7 +128,7 @@ function EntryCard({
   copy: JournalUiCopy;
   onClick: () => void;
 }) {
-  const meta = QUADRANT_META[entry.quadrant];
+  const meta = entry.quadrant ? QUADRANT_META[entry.quadrant] : null;
   const firstBullet = entry.bullets?.items?.[0] ?? "";
   const topicName = copy.topicName[entry.topic as keyof typeof copy.topicName] ?? entry.topic;
 
@@ -146,15 +146,15 @@ function EntryCard({
           {formatEntryDate(entry.entryDate)}
         </span>
         <Badge variant="secondary">{topicName}</Badge>
-        <Badge
+        {meta && entry.quadrant && <Badge
           className={cn(meta.bgSelectedClass, meta.borderClass, meta.textClass, "border")}
           variant="outline"
         >
           {copy.quadrantName[entry.quadrant]}
-        </Badge>
-        <Badge variant="outline">
+        </Badge>}
+        {entry.primaryEmotion && <Badge variant="outline">
           {entry.primaryEmotion} · {copy.intensityBadge(entry.intensity)}
-        </Badge>
+        </Badge>}
       </div>
       {firstBullet && (
         <p className="mt-2 line-clamp-2 text-sm text-foreground">{firstBullet}</p>

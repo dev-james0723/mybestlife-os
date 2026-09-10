@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Link2, Users, Building2, Lightbulb, Briefcase, Info } from "lucide-react";
+import { Plus, Link2, Users, Building2, Lightbulb, Briefcase } from "lucide-react";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
 import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   CareerEmptyState,
   CareerFilterChips,
-  CareerHelpPanel,
   CareerMetricCard,
   CareerMetricGrid,
   CareerSectionPanel,
@@ -56,6 +55,7 @@ export function NetworkGraph() {
   const nodesQ = useCareerNetworkNodes();
   const edgesQ = useCareerNetworkEdges();
 
+  const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [addNodeOpen, setAddNodeOpen] = useState(false);
   const [addEdgeOpen, setAddEdgeOpen] = useState(false);
@@ -117,7 +117,8 @@ export function NetworkGraph() {
     [copy.filters, nodesQ.data],
   );
 
-  if (nodesQ.isLoading || edgesQ.isLoading) return <LoadingPage />;
+  if (nodesQ.isLoading) return <LoadingPage />;
+  if (nodesQ.isError) return <div role="alert"><p>{language.startsWith("zh") ? "未能載入人脈" : "Could not load your connections"}</p><OSControl onClick={() => void nodesQ.refetch()}>{language.startsWith("zh") ? "重試" : "Retry"}</OSControl></div>;
 
   const hotCount = (nodesQ.data ?? []).filter(
     (n) => computeWarmth(n.last_interaction_date) === "hot",
@@ -145,10 +146,8 @@ export function NetworkGraph() {
       }
     >
       <div className="space-y-5">
-        <CareerHelpPanel icon={Info} title="What the graph means">
-          Nodes are people, organizations, projects, and opportunities. Ring color
-          shows relationship warmth so you can see where a reconnect or new link matters.
-        </CareerHelpPanel>
+        <p className="text-sm text-muted-foreground">{language.startsWith("zh") ? "保存人物、組織及相關工作。互動時間只代表你記錄的日期。" : "Keep people, organizations, and related work together. Interaction dates reflect only what you have recorded."}</p>
+        <div className="flex gap-2"><OSControl aria-pressed={view === "list"} onClick={() => setView("list")}>{language.startsWith("zh") ? "清單" : "List"}</OSControl><OSControl aria-pressed={view === "map"} onClick={() => setView("map")}>{language.startsWith("zh") ? "關係圖" : "Map"}</OSControl></div>
 
         <CareerMetricGrid className="xl:grid-cols-3">
           <CareerMetricCard
@@ -175,7 +174,7 @@ export function NetworkGraph() {
           ariaLabel="Filter career network"
         />
 
-        <LegendPanel copy={copy} />
+        {view === "map" ? <LegendPanel copy={copy} /> : null}
 
         {filteredNodes.length === 0 ? (
           <CareerEmptyState
@@ -185,6 +184,8 @@ export function NetworkGraph() {
             actionLabel={copy.addNode}
             onAction={() => setAddNodeOpen(true)}
           />
+        ) : view === "list" ? (
+          <ul className="space-y-2">{filteredNodes.map((node) => <li key={node.id}><button type="button" onClick={() => setActiveNode(node)} className="min-h-11 w-full rounded-xl border p-4 text-left focus-visible:outline-2 focus-visible:outline-ring"><span className="block break-words font-medium">{node.name}</span><span className="text-xs text-muted-foreground">{copy.form.nodeTypes[node.node_type]}{node.last_interaction_date ? ` · ${node.last_interaction_date}` : ""}</span></button></li>)}</ul>
         ) : (
           <CareerSectionPanel
             title="Relationship map"
@@ -260,6 +261,7 @@ export function NetworkGraph() {
           </CareerSectionPanel>
         )}
 
+        {view === "map" && edgesQ.isError ? <p role="alert">{language.startsWith("zh") ? "未能載入連結，仍可使用清單。" : "Connections could not load. You can still use the list."}</p> : null}
         <ReconnectSuggestions nodes={nodesQ.data ?? []} />
       </div>
 

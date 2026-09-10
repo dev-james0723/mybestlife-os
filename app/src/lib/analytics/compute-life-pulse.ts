@@ -295,7 +295,7 @@ function computeFocusScore(params: {
 }
 
 function computeEmotionalLoadScore(entries: JournalEntry[], rangeDays: number): number {
-  if (entries.length === 0) return 20;
+  if (entries.length === 0) return 0;
   const averageIntensity =
     entries.reduce((sum, entry) => sum + entry.intensity, 0) / entries.length;
   const highIntensityRate = percent(
@@ -600,11 +600,12 @@ export function computeLifePulse(params: {
       isDateInRange(plan.plan_date, params.range.previousStart, params.range.previousEnd),
     ),
   });
-  const emotionalLoad = computeEmotionalLoadScore(rangeJournals, params.range.days);
+  const emotionalJournals = rangeJournals.filter((entry) => entry.quadrant != null);
+  const hasEmotionalSignal = emotionalJournals.length >= 3;
+  const previousEmotionalJournals = params.journalEntries.filter((entry) => entry.quadrant != null && isDateInRange(entry.entryDate, params.range.previousStart, params.range.previousEnd));
+  const emotionalLoad = computeEmotionalLoadScore(emotionalJournals, params.range.days);
   const previousEmotionalLoad = computeEmotionalLoadScore(
-    params.journalEntries.filter((entry) =>
-      isDateInRange(entry.entryDate, params.range.previousStart, params.range.previousEnd),
-    ),
+    previousEmotionalJournals,
     params.range.days,
   );
   const systemCoherence = computeSystemCoherenceScore({
@@ -658,24 +659,17 @@ export function computeLifePulse(params: {
     {
       key: "emotional_load",
       label: "Emotional Load",
-      score: round(emotionalLoad),
-      trend: loadTrend.direction,
-      trendValue: loadTrend.value,
-      trendLabel: loadTrend.label,
-      signal: `${rangeJournals.length} journals · ${round(
-        rangeJournals.reduce((sum, entry) => sum + entry.intensity, 0) /
-          Math.max(1, rangeJournals.length),
-        1,
-      )}/10 avg intensity`,
-      interpretation:
-        rangeJournals.length === 0
-          ? "Emotional data is limited; this score is conservative."
-          : emotionalLoad >= 70
-            ? "Load is high. That can mean pressure, or meaningful processing."
-            : emotionalLoad >= 45
-              ? "There is emotional signal without clear overload."
-              : "Emotional load looks light in this lens.",
-      tone: emotionalLoad >= 70 ? "load" : emotionalLoad >= 45 ? "neutral" : "positive",
+      score: hasEmotionalSignal ? round(emotionalLoad) : null,
+      trend: hasEmotionalSignal && previousEmotionalJournals.length >= 3 ? loadTrend.direction : "steady",
+      trendValue: hasEmotionalSignal && previousEmotionalJournals.length >= 3 ? loadTrend.value : 0,
+      trendLabel: previousEmotionalJournals.length >= 3 ? loadTrend.label : "Not enough previous entries to compare",
+      signal: `${emotionalJournals.length} entries with an emotion recorded · at least 3 needed`,
+      interpretation: !hasEmotionalSignal
+        ? "Not enough data yet. Optional emotion entries help describe this period; this is not a health assessment."
+        : emotionalLoad >= 70
+          ? "The emotions you recorded were often intense. This does not establish their cause."
+          : "Based on the emotions you chose to record in this period; not a health assessment.",
+      tone: !hasEmotionalSignal ? "neutral" : emotionalLoad >= 70 ? "load" : "neutral",
     },
     {
       key: "system_coherence",
@@ -699,10 +693,10 @@ export function computeLifePulse(params: {
   if (completionScore >= 65 && focusScore < 55) {
     statusSummary =
       "You are moving, but not fully aligned. Execution improved while focus remains scattered.";
-  } else if (completionScore >= 65 && emotionalLoad >= 70) {
+  } else if (hasEmotionalSignal && completionScore >= 65 && emotionalLoad >= 70) {
     statusSummary =
       "You are progressing under pressure. The work is moving, but the emotional cost deserves attention.";
-  } else if (completionScore < 45 && emotionalLoad < 40) {
+  } else if (hasEmotionalSignal && completionScore < 45 && emotionalLoad < 40) {
     statusSummary =
       "The system is quiet. This may be real recovery, or drift if important projects are still open.";
   } else if (systemCoherence < 50) {

@@ -71,14 +71,14 @@ const en: CareerSetupQuestionCopy = {
   questions: {
     "current-state-summary": {
       prompt: "Which line sounds most like you right now?",
-      helper: "Pick the one that stings a little — that's usually the true one.",
+      helper: "Choose the closest fit, write your own, or skip for now.",
     },
     "current-identity": {
       prompt: "What do you mostly do these days?",
       helper: "Closest fit is fine. You can type your own if none fit.",
     },
     "what-success-buys": {
-      prompt: "You say you want to succeed — but what do you actually want it to buy?",
+      prompt: "What would you like career success to make possible in your life?",
       helper: "Choose as many as ring true.",
     },
     "motivation-drivers": {
@@ -322,14 +322,14 @@ const zhTW: CareerSetupQuestionCopy = {
   questions: {
     "current-state-summary": {
       prompt: "哪一句現在最像你？",
-      helper: "選那個讓你有點刺痛的——通常那才是真的。",
+      helper: "選最接近的、用自己的說法回答，或暫時略過。",
     },
     "current-identity": {
       prompt: "你最近主要在做什麼？",
       helper: "選最接近的就好，都不像可以自己寫。",
     },
     "what-success-buys": {
-      prompt: "你說想成功，但你真正想換來的是什麼？",
+      prompt: "你希望職涯上的成功，為生活帶來哪些可能？",
       helper: "符合的都可以選。",
     },
     "motivation-drivers": {

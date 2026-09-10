@@ -1,17 +1,14 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useCallback, useId, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { OSSegmentedControl } from "@/components/ui/os-primitives";
 import { AssetsView } from "@/components/resources/assets/AssetsView";
 import { DocumentsView } from "@/components/resources/documents/DocumentsView";
-import { useHydrationSafeReducedMotion } from "@/hooks/use-hydration-safe-reduced-motion";
 import { useAppStore } from "@/stores/app-store";
 import { useTheme } from "@/lib/theme-context";
 import { getThemedItemLabel } from "@/lib/theme-labels";
-import { EASE_OUT_EXPO } from "@/lib/animation/easings";
 
 const TAB_VALUES = ["assets", "documents"] as const;
 type ResourcesTabValue = (typeof TAB_VALUES)[number];
@@ -24,6 +21,7 @@ function parseTab(value: string | null): ResourcesTabValue {
 }
 
 export function ResourcesTabs() {
+  const tabId = useId();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -56,7 +54,6 @@ export function ResourcesTabs() {
     { id: "assets" as const, label: assetsLabel },
     { id: "documents" as const, label: documentsLabel },
   ];
-  const prefersReduced = useHydrationSafeReducedMotion();
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -65,29 +62,18 @@ export function ResourcesTabs() {
         value={activeTab}
         onValueChange={handleTabChange}
         ariaLabel={`${assetsLabel} / ${documentsLabel}`}
+        getTabId={(value) => `${tabId}-${value}-tab`}
+        getPanelId={(value) => `${tabId}-${value}-panel`}
         className="mb-4 w-full max-w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none"
         layoutId="resources-tab-active-pill"
       />
 
-      <TabsContent value="assets">
-        <motion.div
-          key="assets-panel"
-          initial={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
-        >
-          <AssetsView />
-        </motion.div>
+      <p className="mb-4 text-sm text-muted-foreground">{language.startsWith("zh") ? "物品與保養：記錄電腦、樂器等實物。文件與到期：保存收據、保單及合約。" : "Assets tracks physical items and maintenance, such as a laptop or instrument. Documents keeps receipts, policies, and contracts with expiry dates."}</p>
+      <TabsContent value="assets" id={`${tabId}-assets-panel`} aria-labelledby={`${tabId}-assets-tab`}>
+        <AssetsView />
       </TabsContent>
-      <TabsContent value="documents">
-        <motion.div
-          key="documents-panel"
-          initial={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
-        >
-          <DocumentsView />
-        </motion.div>
+      <TabsContent value="documents" id={`${tabId}-documents-panel`} aria-labelledby={`${tabId}-documents-tab`}>
+        <DocumentsView />
       </TabsContent>
     </Tabs>
   );

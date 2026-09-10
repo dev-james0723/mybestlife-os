@@ -1,5 +1,6 @@
 "use server";
 
+import { insertOrRecoverOwned } from "@/lib/repositories/insert-or-recover";
 import { after } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -512,6 +513,7 @@ function processingStepFor(sourceType: SourceType): string {
 // ── Public mutations ──────────────────────────────────────────────────────
 
 export type AddKnowledgeFromUrlOptions = {
+  operationId?: string;
   thumbnailStyle?: ThumbnailStyle;
   /** Set by the Add modal for YouTube links when the user toggles the
    *  "Generate transcript" option. */
@@ -608,13 +610,11 @@ export async function addKnowledgeFromUrl(
     transcriptText,
   });
 
-  const { data, error } = await supabase
-    .from("knowledge_items")
-    .insert(insertPayload)
-    .select()
-    .single();
-  if (error) throw error;
-  const item = mapRowToItem(data as Record<string, unknown>);
+  const { data, recovered } = await insertOrRecoverOwned(
+    supabase, "knowledge_items", insertPayload, user.id, options.operationId,
+  );
+  const item = mapRowToItem(data);
+  if (recovered) return item;
 
   // 4. AI background job
   after(() =>
@@ -853,6 +853,7 @@ async function getUploadedObjectByteSize(
 }
 
 async function insertKnowledgeFileAndQueueAiProcessing(args: {
+  operationId?: string;
   userId: string;
   storagePath: string;
   originalFileName: string;
@@ -887,9 +888,7 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
     thumbnailUrl = knowledgeFilesProxyUrlFromStoragePath(thumbKey);
   }
 
-  const { data, error } = await supabase
-    .from("knowledge_items")
-    .insert({
+  const { data, recovered } = await insertOrRecoverOwned(supabase, "knowledge_items", {
       user_id: userId,
       title: originalFileName.replace(/\.[^.]+$/, ""),
       content_type: contentType,
@@ -906,12 +905,9 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
       transcript_status: "not_applicable",
       ask_enabled: true,
       title_source: "extracted",
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  const item = mapRowToItem(data as Record<string, unknown>);
+    }, userId, args.operationId);
+  const item = mapRowToItem(data);
+  if (recovered) return item;
 
   if (useMinerUQueue) {
     const { insertQueuedExtractionJob, markMinerUDispatchFailureAdmin } = await import(
@@ -1082,6 +1078,7 @@ async function insertKnowledgeFileAndQueueAiProcessing(args: {
  * (e.g. client-side upload). Validates ownership, size limits, then inserts the row + AI pipeline.
  */
 export async function finalizeKnowledgeFileUpload(input: {
+  operationId?: string;
   storagePath: string;
   originalFileName: string;
   mimeType?: string | null;
@@ -1153,6 +1150,7 @@ export async function finalizeKnowledgeFileUpload(input: {
 
   return insertKnowledgeFileAndQueueAiProcessing({
     userId: user.id,
+    operationId: input.operationId,
     storagePath: input.storagePath,
     originalFileName: input.originalFileName,
     fileMimeType: resolvedMime,
@@ -1217,6 +1215,9 @@ export async function addKnowledgeFromFile(
 }
 
 export type AddKnowledgeFromTextOptions = {
+  operationId?: string;
+  /** Explicitly false saves the original without dispatching any AI work. */
+  analyze?: boolean;
   thumbnailStyle?: ThumbnailStyle;
   /** Fine-grained source type chosen by the classifier on the client. */
   sourceType?: SourceType;
@@ -1270,19 +1271,18 @@ export async function addKnowledgeFromText(
   const insertPayload = buildInsertPayload({
     userId: user.id,
     ingest,
-    thumbnailStyle,
-    processingStep: "Starting AI processing…",
+    thumbnailStyle: options.analyze === false ? "na" : thumbnailStyle,
+    initialStatus: options.analyze === false ? "ready" : "processing",
+    processingStep: options.analyze === false ? null : "Starting AI processing…",
   });
 
-  const { data, error } = await supabase
-    .from("knowledge_items")
-    .insert(insertPayload)
-    .select()
-    .single();
-  if (error) throw error;
-  const item = mapRowToItem(data as Record<string, unknown>);
+  const { data, recovered } = await insertOrRecoverOwned(
+    supabase, "knowledge_items", insertPayload, user.id, options.operationId,
+  );
+  const item = mapRowToItem(data);
+  if (recovered) return item;
 
-  after(() =>
+  if (options.analyze !== false) after(() =>
     runSourceAwareAIProcessing({
       itemId: item.id,
       userId: user.id,

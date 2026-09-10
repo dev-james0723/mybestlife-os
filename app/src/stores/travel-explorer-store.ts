@@ -61,6 +61,8 @@ type TravelExplorerStore = {
   /** Bump to trigger a replay of the flythrough. */
   replayNonce: number;
   requestReplay: () => void;
+  skipNonce: number;
+  requestSkip: () => void;
 
   // Trip planning panel
   tripPanelOpen: boolean;
@@ -92,6 +94,8 @@ export const useTravelExplorerStore = create<TravelExplorerStore>((set) => ({
   setCruisePaused: (paused) => set({ cruisePaused: paused }),
   replayNonce: 0,
   requestReplay: () => set((s) => ({ replayNonce: s.replayNonce + 1 })),
+  skipNonce: 0,
+  requestSkip: () => set((s) => ({ skipNonce: s.skipNonce + 1 })),
 
   tripPanelOpen: true,
   setTripPanelOpen: (open) => set({ tripPanelOpen: open }),

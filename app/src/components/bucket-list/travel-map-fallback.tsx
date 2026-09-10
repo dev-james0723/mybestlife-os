@@ -2,6 +2,9 @@
 
 import { Compass, MapPin, Route } from "lucide-react";
 
+import { useAppStore } from "@/stores/app-store";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
   TravelMapMarker,
@@ -16,6 +19,7 @@ type TravelMapFallbackProps = {
   message?: string;
   className?: string;
   loading?: boolean;
+  onRetry?: () => void;
 };
 
 const clampPercent = (value: number) => Math.max(8, Math.min(92, value));
@@ -44,7 +48,9 @@ export function TravelMapFallback({
   message = "Your mapped travel dreams are still available while the live map layer reconnects.",
   className,
   loading = false,
+  onRetry,
 }: TravelMapFallbackProps) {
+  const copy = getUxJourneyCopy(useAppStore((state) => state.language));
   const visibleMarkers = markers.slice(0, 10);
   const hasMarkers = visibleMarkers.length > 0;
 
@@ -147,6 +153,7 @@ export function TravelMapFallback({
           </div>
         </div>
 
+        {onRetry ? <Button variant="outline" onClick={onRetry} className="mt-3 min-h-11">{copy.mapRetry}</Button> : null}
         {hasMarkers ? (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleMarkers.slice(0, 4).map((marker) => (

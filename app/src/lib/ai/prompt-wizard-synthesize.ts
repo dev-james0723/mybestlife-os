@@ -1,53 +1,69 @@
 import type { AppLocale } from "@/lib/i18n/app-locale";
-import type { PromptCreatorWizardState, PromptTopCategory } from "@/types/prompt";
+import {
+  extractVariableNames,
+  type PromptTopCategory,
+  type PromptVariable,
+} from "@/types/prompt";
 
-/**
- * Builds the user message sent to Gemini for wizard synthesis (Phase 4).
- */
+export type PromptWizardSynthesisInput = {
+  goalOrRoughPrompt: string;
+  context: string;
+  outputFormat: string;
+  toneStyle: string[];
+};
+
+/** Builds the user message from the three answers visible in the current UI. */
 export function buildWizardSynthesisUserMessage(
-  state: PromptCreatorWizardState,
+  state: PromptWizardSynthesisInput,
   locale: AppLocale,
 ): string {
   const tones = state.toneStyle.filter(Boolean).join(", ") || "(none specified)";
-  const vars = state.variables.map((v) => ({
-    name: v.name,
-    label: v.label,
-    required: v.required,
-    description: v.description,
-    example: v.example,
-  }));
-  const ex = state.examples
-    .filter((e) => e.input.trim() || e.expectedOutput.trim())
-    .map((e, i) => ({
-      index: i + 1,
-      user: e.input.trim(),
-      assistant: e.expectedOutput.trim(),
-    }));
 
   return JSON.stringify(
     {
       appLocale: locale,
-      goal: state.goal.trim(),
-      expertRole: state.expertRole.trim(),
+      goalOrRoughPrompt: state.goalOrRoughPrompt.trim(),
       context: state.context.trim(),
       outputFormat: state.outputFormat.trim(),
       toneStyle: tones,
-      variablesAuthorView: vars,
-      guardrails: state.guardrails.trim(),
-      examples: ex,
     },
     null,
     2,
   );
 }
 
+/**
+ * Keeps saved variable metadata aligned with a user-edited prompt body.
+ * Metadata from synthesis is preserved only for placeholders that still
+ * exist; newly typed placeholders receive safe defaults.
+ */
+export function reconcilePromptVariables(
+  body: string,
+  suggested: readonly PromptVariable[],
+): PromptVariable[] {
+  const suggestedByName = new Map(
+    suggested.map((variable) => [variable.name.trim(), variable] as const),
+  );
+
+  return extractVariableNames(body).map((name) => {
+    const match = suggestedByName.get(name);
+    return {
+      name,
+      label: match?.label?.trim() || null,
+      description: match?.description?.trim() || null,
+      required: match?.required ?? true,
+      example: match?.example?.trim() || null,
+    };
+  });
+}
+
 export function wizardSynthesisSystemInstruction(
   topCategories: readonly PromptTopCategory[],
 ): string {
   const enumLine = topCategories.join(", ");
-  return `You are a senior prompt engineer helping a user author a reusable LLM system/user prompt for a personal productivity app.
+  return `You are a senior prompt engineer helping a user improve or author a reusable LLM prompt for a personal productivity app.
 
-Your task: read the structured JSON the user sends (goal, expertRole, context, outputFormat, toneStyle, variablesAuthorView, guardrails, examples). Then output ONE JSON object ONLY (no markdown fences) with this exact shape:
+Your task: read the short structured JSON the user sends (goalOrRoughPrompt, context, outputFormat, toneStyle). The first field may be either a plain-language outcome or an existing rough prompt. If it is a rough prompt, preserve its intent while making it clearer, more reliable, and reusable. Then output ONE JSON object ONLY (no markdown fences) with this exact shape:
 {
   "title": "short human title for the prompt card",
   "description": "one-line summary of what the prompt does",
@@ -66,11 +82,10 @@ Your task: read the structured JSON the user sends (goal, expertRole, context, o
 }
 
 Rules for "body":
-- Write the prompt so it stands alone: include role, task, output expectations, and constraints from the user's fields.
-- If variablesAuthorView is non-empty, the body MUST include a placeholder {name} for every listed name (exact spelling). You may add additional variables only if clearly needed; list every placeholder you introduce in "variables".
-- If variablesAuthorView is empty, infer 0–6 high-value variables yourself when the task clearly benefits (otherwise use an empty array and a body without placeholders).
-- Reflect toneStyle and guardrails in the prose.
-- If examples are provided, weave similar structure or a short few-shot block into the body when it improves reliability.
+- Write the prompt so it stands alone: include a useful role, task, output expectations, and the user's visible constraints when they improve the result.
+- Infer 0–6 high-value variables when the task clearly benefits; list every placeholder you introduce in "variables". Otherwise, use an empty array and a body without placeholders.
+- Reflect the requested output format and tone without adding needless boilerplate.
+- Never copy the surrounding JSON labels into the final body.
 
 Rules for "top_category": MUST be exactly one of these literal strings:
 ${enumLine}

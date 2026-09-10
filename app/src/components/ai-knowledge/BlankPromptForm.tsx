@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,11 @@ import {
   type PromptTopCategory,
 } from "@/types/prompt";
 import { cn } from "@/lib/utils";
+import { blankPromptDraftSchema } from "@/lib/form-draft-schemas";
+import { useAccountDraft } from "@/hooks/use-account-draft";
+import { LocalDraftStatus } from "@/components/shared/local-draft-status";
+import { z } from "zod";
+const initialDraft: z.infer<typeof blankPromptDraftSchema> = { operationId: null, title: "", description: "", body: "", tagsRaw: "", topCategory: "life_personal_growth" };
 
 function parseTags(raw: string): string[] {
   return raw
@@ -58,17 +63,15 @@ export function BlankPromptForm({
 
   const createUserPrompt = usePromptStore((s) => s.createUserPrompt);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [body, setBody] = useState("");
-  const [tagsRaw, setTagsRaw] = useState("");
-  const [topCategory, setTopCategory] = useState<PromptTopCategory>(
-    "life_personal_growth",
-  );
+  const { draft, setDraft, clearDraft, ready, storageError } = useAccountDraft("prompt:manual", initialDraft, blankPromptDraftSchema);
+  const { title, description, body, tagsRaw, topCategory } = draft;
+  const fieldId = useId();
+  const operationId = useRef<string | null>(null);
+  const setField = useCallback(<K extends keyof typeof draft>(key: K, value: typeof draft[K]) => setDraft((previous) => ({ ...previous, [key]: value })), [setDraft]);
+  const [allowMetadata, setAllowMetadata] = useState(false);
   const [saving, setSaving] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
 
-  const titleEditedRef = useRef(false);
 
   useEffect(() => {
     const text = body.trim();
@@ -78,7 +81,7 @@ export function BlankPromptForm({
       setMetadataLoading(false);
     };
 
-    if (text.length < 40) {
+    if (!ready || !allowMetadata || text.length < 40) {
       return () => {
         ac.abort();
         clearLoad();
@@ -105,22 +108,13 @@ export function BlankPromptForm({
             short_description?: string;
             suggested_title?: string;
           };
-          if (data.tags?.length) {
-            setTagsRaw(data.tags.join(", "));
-          }
-          if (data.top_category && PROMPT_TOP_CATEGORIES.includes(data.top_category)) {
-            setTopCategory(data.top_category);
-          }
-          if (typeof data.short_description === "string" && data.short_description.trim()) {
-            setDescription(data.short_description.trim());
-          }
-          if (
-            !titleEditedRef.current &&
-            typeof data.suggested_title === "string" &&
-            data.suggested_title.trim()
-          ) {
-            setTitle(data.suggested_title.trim());
-          }
+          setDraft((previous) => ({
+            ...previous,
+            tagsRaw: previous.tagsRaw || data.tags?.join(", ") || "",
+            description: previous.description || data.short_description?.trim() || "",
+            title: previous.title || data.suggested_title?.trim() || "",
+            topCategory: previous.topCategory === initialDraft.topCategory && data.top_category && PROMPT_TOP_CATEGORIES.includes(data.top_category) ? data.top_category : previous.topCategory,
+          }));
         } catch (e) {
           if ((e as Error).name === "AbortError" || ac.signal.aborted) return;
         } finally {
@@ -136,9 +130,10 @@ export function BlankPromptForm({
       ac.abort();
       clearLoad();
     };
-  }, [body, language]);
+  }, [body, language, allowMetadata, ready, setDraft]);
 
   const handleSave = async () => {
+    if (saving || !ready) return;
     if (!title.trim() || !body.trim()) {
       toast.error(ui.toast.createFailed);
       return;
@@ -153,7 +148,10 @@ export function BlankPromptForm({
         required: true,
         example: null,
       }));
+      operationId.current ??= draft.operationId ?? crypto.randomUUID();
+      setField("operationId", operationId.current);
       await createUserPrompt({
+        id: operationId.current,
         title: title.trim(),
         description: description.trim(),
         body,
@@ -161,6 +159,7 @@ export function BlankPromptForm({
         tags: parseTags(tagsRaw),
         variables,
       });
+      clearDraft();
       toast.success(ui.toast.created);
       if (onSuccess) {
         onSuccess();
@@ -198,8 +197,10 @@ export function BlankPromptForm({
       </Button>
     ) : null;
 
+  if (!ready) return <p role="status">{language.startsWith("zh") ? "載入草稿…" : "Loading draft…"}</p>;
   return (
     <div className="space-y-4">
+      <LocalDraftStatus unavailable={storageError} />
       {backControl}
 
       <div
@@ -210,35 +211,33 @@ export function BlankPromptForm({
             : "border-border bg-card",
         )}
       >
-        <p className="text-xs text-muted-foreground flex items-start gap-2">
-          <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 opacity-80" />
-          {ui.create.autoMetadataHint}
-        </p>
+        <label className="flex items-start gap-2 text-sm text-muted-foreground"><input type="checkbox" checked={allowMetadata} onChange={(event) => setAllowMetadata(event.target.checked)} className="mt-1" /><span>{language.startsWith("zh") ? "選用 AI 標題與分類：會把這段提示詞傳送到 AI 服務。不選亦可直接儲存。" : "Optional AI title and categories: sends this prompt to the AI service. You can save with this off."}</span></label>
 
         <div className="space-y-1.5">
-          <Label>{w.blankBody}</Label>
+          <Label htmlFor={`${fieldId}-body`}>{w.blankBody}</Label>
           <Textarea
+            id={`${fieldId}-body`}
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => setField("body", e.target.value)}
             rows={variant === "embedded" ? 14 : 18}
             className="font-mono text-xs"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>{w.blankTitle}</Label>
+          <Label htmlFor={`${fieldId}-title`}>{w.blankTitle}</Label>
           <Input
+            id={`${fieldId}-title`}
             value={title}
             onChange={(e) => {
-              titleEditedRef.current = true;
-              setTitle(e.target.value);
+              setField("title", e.target.value);
             }}
           />
         </div>
 
         <div className="space-y-1.5 relative">
           <div className="flex items-center justify-between gap-2">
-            <Label>{w.blankDescription}</Label>
+            <Label htmlFor={`${fieldId}-description`}>{w.blankDescription}</Label>
             {metadataLoading ? (
               <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -247,8 +246,9 @@ export function BlankPromptForm({
             ) : null}
           </div>
           <Input
+            id={`${fieldId}-description`}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => setField("description", e.target.value)}
           />
         </div>
 
@@ -256,9 +256,10 @@ export function BlankPromptForm({
           <Label>{w.categoryLabel}</Label>
           <Select
             value={topCategory}
-            onValueChange={(v) => setTopCategory(v as PromptTopCategory)}
+            itemToStringLabel={(value) => ui.topCategoryLabels[value as PromptTopCategory] ?? String(value)}
+            onValueChange={(v) => setField("topCategory", v as PromptTopCategory)}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label={w.categoryLabel}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -272,10 +273,11 @@ export function BlankPromptForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label>{w.blankTags}</Label>
+          <Label htmlFor={`${fieldId}-tags`}>{w.blankTags}</Label>
           <Input
+            id={`${fieldId}-tags`}
             value={tagsRaw}
-            onChange={(e) => setTagsRaw(e.target.value)}
+            onChange={(e) => setField("tagsRaw", e.target.value)}
             placeholder={w.tagsPlaceholder}
           />
         </div>

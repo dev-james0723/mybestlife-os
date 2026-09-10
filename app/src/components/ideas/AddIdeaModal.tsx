@@ -26,12 +26,7 @@ import {
 } from "@/components/shared/rich-text-editor";
 import { fetchIdeaAiEnrich } from "@/lib/ideas/fetchIdeaAiEnrich";
 import { fetchIdeaAutoEnrich } from "@/lib/ideas/fetchIdeaAutoEnrich";
-import { fetchIdeaCardVisual } from "@/lib/ideas/fetchIdeaCardVisual";
 import { fetchIdeaDraftMetadata } from "@/lib/ideas/fetchIdeaDraftMetadata";
-import {
-  fetchIdeaDraftVisual,
-  type IdeaDraftVisualResult,
-} from "@/lib/ideas/fetchIdeaDraftVisual";
 import { fallbackIdeaTitleFromPlain } from "@/lib/ideas/clamp-idea-title";
 import { stripHtml } from "@/lib/utils/html";
 import { useCreateIdea } from "@/hooks/use-ideas";
@@ -69,26 +64,21 @@ export function AddIdeaModal() {
   const [linkedTaskIds, setLinkedTaskIds] = useState<string[]>([]);
   const [linkedKnowledgeIds, setLinkedKnowledgeIds] = useState<string[]>([]);
 
+  const [allowAi, setAllowAi] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
-  const [visualLoading, setVisualLoading] = useState(false);
-  const [draftVisual, setDraftVisual] = useState<IdeaDraftVisualResult | null>(null);
-  const [draftVisualError, setDraftVisualError] = useState<string | null>(null);
   const [editorRevision, setEditorRevision] = useState(0);
+  const [userEditedAi, setUserEditedAi] = useState(false);
   const userEditedAiRef = useRef(false);
   const userEditedMetadataRef = useRef(false);
   const enrichAbortRef = useRef<AbortController | null>(null);
   const metadataAbortRef = useRef<AbortController | null>(null);
-  const visualAbortRef = useRef<AbortController | null>(null);
-  const visualContentKeyRef = useRef("");
 
   const reset = useCallback(() => {
     enrichAbortRef.current?.abort();
     metadataAbortRef.current?.abort();
-    visualAbortRef.current?.abort();
     enrichAbortRef.current = null;
     metadataAbortRef.current = null;
-    visualAbortRef.current = null;
     setTitle("");
     setSummary("");
     setStatus("captured");
@@ -102,12 +92,10 @@ export function AddIdeaModal() {
     setLinkedKnowledgeIds([]);
     setAiLoading(false);
     setMetadataLoading(false);
-    setVisualLoading(false);
-    setDraftVisual(null);
-    setDraftVisualError(null);
+    setAllowAi(false);
     userEditedAiRef.current = false;
+    setUserEditedAi(false);
     userEditedMetadataRef.current = false;
-    visualContentKeyRef.current = "";
     setEditorRevision(0);
     setEditorKey((k) => k + 1);
     editorRef.current?.reset();
@@ -123,7 +111,7 @@ export function AddIdeaModal() {
   const bumpEditor = useCallback(() => setEditorRevision((n) => n + 1), []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !allowAi) return;
     enrichAbortRef.current?.abort();
     const controller = new AbortController();
     enrichAbortRef.current = controller;
@@ -164,10 +152,10 @@ export function AddIdeaModal() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [open, editorRevision, ui.couldNotAiEnrich]);
+  }, [open, allowAi, editorRevision, ui.couldNotAiEnrich]);
 
   useEffect(() => {
-    if (!open || userEditedMetadataRef.current) return;
+    if (!open || !allowAi || userEditedMetadataRef.current) return;
     metadataAbortRef.current?.abort();
     const controller = new AbortController();
     metadataAbortRef.current = controller;
@@ -204,49 +192,7 @@ export function AddIdeaModal() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [open, editorRevision, captureKind, sourceType]);
-
-  useEffect(() => {
-    if (!open) return;
-    visualAbortRef.current?.abort();
-    const controller = new AbortController();
-    visualAbortRef.current = controller;
-    const timer = window.setTimeout(async () => {
-      const html = editorRef.current?.getHtml() ?? "";
-      const plain = stripHtml(html).trim();
-      const key = `${plain.slice(0, 800)}::${title.trim()}::${summary.trim()}`;
-      if (plain.length < 8) {
-        setDraftVisual(null);
-        setDraftVisualError(null);
-        setVisualLoading(false);
-        visualContentKeyRef.current = "";
-        return;
-      }
-      if (visualContentKeyRef.current === key && draftVisual) return;
-      visualContentKeyRef.current = key;
-      setVisualLoading(true);
-      setDraftVisualError(null);
-      try {
-        const visual = await fetchIdeaDraftVisual({
-          contentHtml: html,
-          title,
-          summary,
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted) return;
-        setDraftVisual(visual);
-      } catch (e) {
-        if ((e as DOMException | undefined)?.name === "AbortError") return;
-        setDraftVisualError(ui.visualPreviewFailed);
-      } finally {
-        if (!controller.signal.aborted) setVisualLoading(false);
-      }
-    }, 1800);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [open, editorRevision, title, summary, draftVisual, ui.visualPreviewFailed]);
+  }, [open, allowAi, editorRevision, captureKind, sourceType]);
 
   const markMetadataEdited = () => {
     userEditedMetadataRef.current = true;
@@ -283,7 +229,7 @@ export function AddIdeaModal() {
       const created = await createIdea.mutateAsync({
         content: html.trim() || text,
         title: resolvedTitle,
-        ai_suggestions: resolvedSummary ? { summary: resolvedSummary } : null,
+        ai_suggestions: { ...(resolvedSummary ? { summary: resolvedSummary } : {}), enrichment_opt_in: allowAi, visual_opt_in: false },
         status,
         source_type: sourceType,
         capture_kind: captureKind,
@@ -296,19 +242,10 @@ export function AddIdeaModal() {
         linked_knowledge_item_ids: linkedKnowledgeIds,
       });
       upsertIdea(created);
-      void fetchIdeaAutoEnrich({ ideaId: created.id, includeVisual: true })
-        .then(upsertIdea)
-        .catch((err) => {
-          console.warn("[ideas/add] auto-enrich failed:", err instanceof Error ? err.message : String(err));
-          void fetchIdeaCardVisual({ ideaId: created.id })
-            .then(upsertIdea)
-            .catch((e2) => {
-              console.warn(
-                "[ideas/add] card-visual fallback failed:",
-                e2 instanceof Error ? e2.message : String(e2),
-              );
-            });
-        });
+      if (allowAi) {
+        void fetchIdeaAutoEnrich({ ideaId: created.id, includeVisual: false })
+          .then(upsertIdea).catch(() => undefined);
+      }
       closeAddModal();
       reset();
     } catch {
@@ -332,46 +269,6 @@ export function AddIdeaModal() {
           <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:gap-6">
             <div className="min-w-0 space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label>{ui.visualPreviewSection}</Label>
-                {visualLoading ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                    {ui.visualPreviewGenerating}
-                  </span>
-                ) : draftVisual ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                    <Sparkles className="h-3 w-3" aria-hidden />
-                    {ui.geminiHint}
-                  </span>
-                ) : null}
-              </div>
-              <div className="relative flex aspect-[4/3] max-h-[260px] min-h-[150px] w-full items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-muted/20">
-                {draftVisual?.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- draft data URL preview from Gemini/SVG fallback
-                  <img
-                    src={draftVisual.imageUrl}
-                    alt=""
-                    className="h-full w-full object-cover object-center"
-                  />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-sky-200/80 via-rose-100/50 to-blue-300/70 text-sky-900/70 dark:from-slate-800 dark:via-violet-950/40 dark:to-slate-900 dark:text-slate-300/80">
-                    {visualLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin opacity-80" aria-hidden />
-                    ) : (
-                      <Sparkles className="h-5 w-5 opacity-70" aria-hidden />
-                    )}
-                    <span className="px-4 text-center text-[11px] font-medium leading-tight opacity-80">
-                      {visualLoading ? ui.visualPreviewGenerating : ui.visualPending}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {draftVisualError ? (
-                <p className="text-xs text-muted-foreground">{draftVisualError}</p>
-              ) : null}
-            </div>
-            <div className="space-y-2">
               <Label>{ui.contentLabel}</Label>
               <RichTextEditor
                 key={editorKey}
@@ -389,7 +286,7 @@ export function AddIdeaModal() {
                 {aiLoading ? (
                   <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" aria-hidden />
                 ) : null}
-                {!aiLoading && (title || summary) ? (
+                {allowAi && !userEditedAi && !aiLoading && (title || summary) ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                     <Sparkles className="h-3 w-3" aria-hidden />
                     {ui.geminiHint}
@@ -400,13 +297,23 @@ export function AddIdeaModal() {
                 id="add-idea-title"
                 value={title}
                 onChange={(e) => {
-                  userEditedAiRef.current = true;
+                  userEditedAiRef.current = true; setUserEditedAi(true);
                   setTitle(e.target.value);
                 }}
-                placeholder={ui.titlePlaceholder}
+                placeholder={language.startsWith("zh") ? "選填；留空會使用第一句文字" : "Optional; leave blank to use the first line"}
               />
             </div>
-            <div className="space-y-2">
+            <label className="flex items-start gap-2 text-sm text-muted-foreground">
+              <Checkbox checked={allowAi} onCheckedChange={(checked) => {
+                setAllowAi(Boolean(checked));
+                if (!checked) {
+                  enrichAbortRef.current?.abort(); metadataAbortRef.current?.abort();
+                  setAiLoading(false); setMetadataLoading(false);
+                }
+              }} />
+              {language.startsWith("zh") ? "選用 AI 整理標題、摘要與分類：會將內容傳送至 AI 服務。圖片可在儲存後另行選用。" : "Optional AI title, summary and categories: sends this content to the AI service. Images can be added after saving."}
+            </label>
+            {allowAi ? <div className="space-y-2">
               <Label htmlFor="add-idea-summary">{ui.aiSummaryLabel}</Label>
               <Textarea
                 id="add-idea-summary"
@@ -416,10 +323,11 @@ export function AddIdeaModal() {
                 rows={3}
                 className="resize-y text-sm leading-relaxed bg-muted/20"
               />
-            </div>
+            </div> : null}
           </div>
 
-          <div className="min-w-0 space-y-4 rounded-xl border border-border/60 bg-muted/10 p-3 sm:p-4">
+          <details className="min-w-0 space-y-4 rounded-xl border border-border/60 bg-muted/10 p-3 sm:p-4">
+            <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">{language.startsWith("zh") ? "分類與連結（選填）" : "Categories & links (optional)"}</summary>
             {metadataLoading ? (
               <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -571,7 +479,7 @@ export function AddIdeaModal() {
                 </div>
               </div>
             ) : null}
-          </div>
+          </details>
           </div>
         </div>
 

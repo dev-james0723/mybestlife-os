@@ -16,7 +16,7 @@ function CollapsibleTrigger({ ...props }: CollapsiblePrimitive.Trigger.Props) {
 
 /** Base UI drives `--collapsible-panel-height`; height + transition enable smooth open/close. */
 const collapsiblePanelAnimationClasses =
-  "box-border h-[var(--collapsible-panel-height)] overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none data-[starting-style]:h-0 data-[ending-style]:h-0"
+  "box-border h-[var(--collapsible-panel-height)] overflow-hidden transition-[height] duration-240 ease-out motion-reduce:transition-none data-[starting-style]:h-0 data-[ending-style]:h-0"
 
 function CollapsibleContent({
   className,

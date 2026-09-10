@@ -1,6 +1,7 @@
 "use client";
 
 import type { MindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
+import { useAppStore } from "@/stores/app-store";
 import { Input } from "@/components/ui/input";
 import { Sparkles, Users } from "lucide-react";
 import {
@@ -27,6 +28,7 @@ export function MindCouncilHero({
   onRecommend,
   onAskCouncil,
 }: MindCouncilHeroProps) {
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
   const chips = [
     { label: ui.chipShipProduct, text: "Help me ship a focused MVP this month." },
     { label: ui.chipInvestLongTerm, text: "Long-term investing mindset for a volatile market." },
@@ -39,13 +41,11 @@ export function MindCouncilHero({
     <OSGlassPanel className="p-6 sm:p-8">
       <div className="relative space-y-5">
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            {ui.disclaimerShort}
-          </p>
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{ui.heroTitle}</h2>
           <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">{ui.heroSubtitle}</p>
         </div>
         <Input
+          aria-label={ui.heroPlaceholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={ui.heroPlaceholder}
@@ -66,6 +66,7 @@ export function MindCouncilHero({
             </OSControl>
           ))}
         </div>
+        <p className="text-xs leading-relaxed text-muted-foreground">{chinese ? "AI 會參考人物的公開思想模擬視角，並非本人回覆。送出提問會將問題及選定視角傳送至 AI 服務。" : "AI simulates perspectives inspired by public ideas; these are not replies from the people themselves. Asking sends your question and chosen perspectives to the AI service."}</p>
         <OSActionRow className="sm:justify-start">
           <OSPrimaryAction
             type="button"

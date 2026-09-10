@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAppStore } from "@/stores/app-store";
 import { Check, Copy, Link2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -56,6 +57,7 @@ export function CreateShareModal({
   bundleId,
   subjectLabel,
 }: CreateShareModalProps) {
+  const language = useAppStore((state) => state.language);
   const createCopy = copy.shares.create;
   const createMutation = useCreateShare();
 
@@ -132,10 +134,20 @@ export function CreateShareModal({
   };
 
   const handleCreate = async () => {
+    if (createMutation.isPending) return;
     if (passwordEnabled && password.length < 6) {
       toast.error(createCopy.passwordHint);
       return;
     }
+    if (expiration === "custom" && (!customExpiration || !Number.isFinite(Date.parse(customExpiration)) || Date.parse(customExpiration) <= Date.now())) {
+      toast.error(language.startsWith("zh") ? "請選擇未來的到期時間。" : "Choose an expiration time in the future.");
+      return;
+    }
+    if (maxViewsMode === "custom" && (!/^\d+$/.test(customMaxViews) || Number(customMaxViews) < 1 || Number(customMaxViews) > 1000000)) {
+      toast.error(language.startsWith("zh") ? "請輸入 1 至 1,000,000 的整數瀏覽次數。" : "Enter a whole view limit between 1 and 1,000,000.");
+      return;
+    }
+    try {
     const result = await createMutation.mutateAsync({
       shareType,
       fileId: shareType === "single_file" ? fileId ?? null : null,
@@ -148,6 +160,7 @@ export function CreateShareModal({
       watermarkEnabled: watermark,
     });
     setCreatedShare(result);
+    } catch { /* Mutation reports the failure; preserve all fields for retry. */ }
   };
 
   const copyLink = async () => {
@@ -157,7 +170,7 @@ export function CreateShareModal({
       toast.success(copy.shares.toasts.linkCopied);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* ignore */
+      toast.error(language.startsWith("zh") ? "未能自動複製。請選取連結後手動複製。" : "Could not copy automatically. Select the link and copy it manually.");
     }
   };
 
@@ -214,7 +227,7 @@ export function CreateShareModal({
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">{createCopy.description}</p>
             {subjectLabel ? (
-              <p className="truncate rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <p className="break-words rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 {subjectLabel}
               </p>
             ) : null}
@@ -249,6 +262,7 @@ export function CreateShareModal({
                 <>
                   <Input
                     type="password"
+                    aria-label={createCopy.passwordPlaceholder}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={createCopy.passwordPlaceholder}
@@ -268,7 +282,7 @@ export function CreateShareModal({
                   value={expiration}
                   onValueChange={(v) => v && setExpiration(v as ExpirationOption)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label={createCopy.expirationLabel}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -284,6 +298,7 @@ export function CreateShareModal({
                 {expiration === "custom" ? (
                   <Input
                     type="datetime-local"
+                    aria-label={createCopy.expirationCustom}
                     value={customExpiration}
                     onChange={(e) => setCustomExpiration(e.target.value)}
                   />
@@ -296,7 +311,7 @@ export function CreateShareModal({
                   value={maxViewsMode}
                   onValueChange={(v) => v && setMaxViewsMode(v as MaxViewsOption)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label={createCopy.maxViewsLabel}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -310,6 +325,7 @@ export function CreateShareModal({
                 {maxViewsMode === "custom" ? (
                   <Input
                     type="number"
+                    aria-label={createCopy.customViewsLabel}
                     min={1}
                     value={customMaxViews}
                     onChange={(e) => setCustomMaxViews(e.target.value)}

@@ -1,5 +1,7 @@
 "use client";
 
+import { formatRecordedCost } from "@/lib/vault/recorded-cost";
+
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -41,15 +43,6 @@ async function readRecordUseResponse(response: Response): Promise<RecordUseRespo
   };
 }
 
-function costLabel(entry: SoftwareVaultEntry): string {
-  if (entry.cost_type === "Free") return "Free";
-  if (entry.cost_amount == null || Number.isNaN(Number(entry.cost_amount))) {
-    return entry.cost_type;
-  }
-  const n = Number(entry.cost_amount);
-  const period = entry.cost_period ? ` / ${entry.cost_period}` : "";
-  return `$${n.toFixed(2)}${period}`;
-}
 
 type Props = {
   entry: SoftwareVaultEntry | null;
@@ -237,7 +230,7 @@ export function VaultDetailModal({
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{entry.status}</Badge>
                 <Badge variant="outline">{entry.priority}</Badge>
-                <Badge variant="outline">{costLabel(entry)}</Badge>
+                <Badge variant="outline">{formatRecordedCost(entry, language)}</Badge>
               </div>
               <div className="flex w-full flex-col items-start gap-2 min-[430px]:flex-row min-[430px]:flex-wrap">
                 <Button

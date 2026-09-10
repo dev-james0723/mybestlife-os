@@ -26,7 +26,16 @@ export type GardenNote = {
   instrument: Instrument;
 };
 export type GardenCue =
-  AdventureFeedback | "buddy" | "confirm" | "cancel" | "open";
+  | AdventureFeedback
+  | "buddy"
+  | "confirm"
+  | "cancel"
+  | "open"
+  | "step-grass"
+  | "step-path"
+  | "flutter"
+  | "plant-grass"
+  | "plant-flower";
 export function normalizeGardenMix(value: Partial<GardenMix>): GardenMix {
   const volume = (key: "music" | "effects" | "ambience") =>
     typeof value[key] === "number" && Number.isFinite(value[key])
@@ -122,6 +131,8 @@ export class GardenAudioGraph {
   private readonly noise: AudioBuffer;
   private ambienceStarted = false;
   private variation = 0;
+  private windGain: GainNode | null = null;
+  private rainGain: GainNode | null = null;
   constructor(readonly ctx: BaseAudioContext) {
     this.master = ctx.createGain();
     this.master.gain.value = 0.8;
@@ -248,6 +259,7 @@ export class GardenAudioGraph {
     source.stop(at + duration + 0.03);
   }
   cue(kind: GardenCue, at = this.ctx.currentTime, pan = 0) {
+    if (this.sources.size > 220) return;
     const play = (
       midi: number,
       offset = 0,
@@ -260,21 +272,55 @@ export class GardenAudioGraph {
         at,
         "effects",
       );
+    const variation = this.variation++ % 7;
     switch (kind) {
+      case "step-grass":
+      case "step-path":
+        this.rustle(
+          at,
+          0.075 + variation * 0.005,
+          0.045 + variation * 0.003,
+          kind === "step-path" ? 400 + variation * 40 : 950 + variation * 120,
+          pan,
+        );
+        break;
+      case "flutter":
+        for (let i = 0; i < 3; i++)
+          this.rustle(at + i * 0.085, 0.055, 0.022, 2400 + i * 150, pan);
+        break;
+      case "shelter-open":
+      case "shelter-close":
+        this.rustle(at, 0.42, 0.13, 1100, pan);
+        break;
       case "water":
       case "refill":
+      case "rainwater":
         this.rustle(at, kind === "refill" ? 1.1 : 0.7, 0.16, 1800, pan);
         [74, 81, 76, 86, 79].forEach((n, i) =>
           play(n, i * 0.105, 0.032, 0.18, "bell"),
         );
         break;
       case "plant":
-        this.rustle(at, 0.21, 0.25, 550, pan);
+      case "plant-grass":
+      case "plant-flower":
+        this.rustle(
+          at,
+          0.18 + variation * 0.012,
+          0.2,
+          kind === "plant-grass" ? 1050 : 550 + variation * 35,
+          pan,
+        );
         play(55, 0, 0.075, 0.2);
-        play(72, 0.13, 0.045, 0.55, "harp");
+        play(kind === "plant-flower" ? 79 : 72, 0.13, 0.045, 0.55, "harp");
         break;
       case "harvest":
-        this.rustle(at, 0.15, 0.15, 2700, pan);
+        this.rustle(
+          at,
+          0.12 + variation * 0.01,
+          0.15,
+          2100 + variation * 140,
+          pan,
+        );
         [72, 76, 79].forEach((n, i) => play(n, i * 0.095, 0.07, 1.1, "harp"));
         break;
       case "forage":
@@ -310,6 +356,7 @@ export class GardenAudioGraph {
       case "dash":
         this.rustle(at, 0.24, 0.13, 950, pan);
         break;
+      case "rain-wait":
       case "need-water":
       case "need-basket":
       case "growing":
@@ -347,8 +394,37 @@ export class GardenAudioGraph {
     source.connect(filter).connect(gain).connect(this.groups.ambience);
     this.track(source, [filter, gain]);
     this.track(lfo, [depth]);
+    this.windGain = gain;
+    const rainSource = this.ctx.createBufferSource(),
+      rainFilter = this.ctx.createBiquadFilter(),
+      rainGain = this.ctx.createGain();
+    rainSource.buffer = this.noise;
+    rainSource.loop = true;
+    rainSource.playbackRate.value = 1.37;
+    rainFilter.type = "highpass";
+    rainFilter.frequency.value = 1700;
+    rainGain.gain.value = 0;
+    rainSource
+      .connect(rainFilter)
+      .connect(rainGain)
+      .connect(this.groups.ambience);
+    this.track(rainSource, [rainFilter, rainGain]);
+    this.rainGain = rainGain;
+    rainSource.start(at);
     source.start(at);
     lfo.start(at);
+  }
+  weather(raining: boolean, night: boolean) {
+    this.rainGain?.gain.setTargetAtTime(
+      raining ? 0.065 : 0,
+      this.ctx.currentTime,
+      0.8,
+    );
+    this.windGain?.gain.setTargetAtTime(
+      raining ? 0.09 : night ? 0.035 : 0.065,
+      this.ctx.currentTime,
+      1.5,
+    );
   }
   bird(at: number, night: boolean) {
     if (night) return;
@@ -393,6 +469,7 @@ export class GardenAudio {
   private preferences = defaultGardenMix;
   private playing = false;
   private night = false;
+  private raining = false;
   private blooming = false;
   private step = 0;
   private nextAt = 0;
@@ -403,6 +480,12 @@ export class GardenAudio {
     this.night = night;
     this.graph?.mix(this.preferences);
     if (!this.preferences.sound) this.sleep();
+  }
+  setAtmosphere(night: boolean, raining: boolean) {
+    if (this.night === night && this.raining === raining) return;
+    this.night = night;
+    this.raining = raining;
+    this.graph?.weather(raining, night);
   }
   setBlooming(blooming: boolean) {
     this.blooming = blooming;
@@ -430,6 +513,7 @@ export class GardenAudio {
           if (cue) this.play(cue);
           if (!this.ctx || !this.graph || this.timer) return;
           this.graph.startAmbience(this.ctx.currentTime);
+          this.graph.weather(this.raining, this.night);
           this.nextAt = Math.max(this.nextAt, this.ctx.currentTime + 0.06);
           const schedule = () => {
             if (!this.ctx || !this.graph || this.ctx.state !== "running")

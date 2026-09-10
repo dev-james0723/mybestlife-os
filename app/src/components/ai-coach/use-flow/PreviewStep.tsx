@@ -18,6 +18,7 @@ interface Props {
   missingVariables: string[];
   onEditedText: (next: string) => void;
   hideNextTime: boolean;
+  allowHidePreview?: boolean;
   onToggleHideNextTime: (v: boolean) => void;
 }
 
@@ -28,6 +29,7 @@ export function PreviewStep({
   missingVariables,
   onEditedText,
   hideNextTime,
+  allowHidePreview = true,
   onToggleHideNextTime,
 }: Props) {
   const [editing, setEditing] = useState(false);
@@ -114,13 +116,13 @@ export function PreviewStep({
         </pre>
       )}
 
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+      {allowHidePreview && <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
         <Checkbox
           checked={hideNextTime}
           onCheckedChange={(v) => onToggleHideNextTime(v === true)}
         />
         {copy.flow.preview.hideToggle}
-      </label>
+      </label>}
     </div>
   );
 }

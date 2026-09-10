@@ -14,11 +14,14 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,6 +112,7 @@ export function AssetIntelligenceModal({
   onToggleFavorite,
   categoryLabel,
 }: AssetIntelligenceModalProps) {
+  const locale = useLocaleSlug();
   const language = useAppStore((s) => s.language);
   const t = getAssetIntelUiCopy(language).modal;
   const resources = getResourcesUiCopy(language);
@@ -265,9 +269,10 @@ export function AssetIntelligenceModal({
                       label={categoryLabel}
                     />
                   )}
-                  <h2 className="text-2xl font-bold leading-tight tracking-tight">
+                  <DialogTitle className="text-2xl font-bold leading-tight tracking-tight">
                     {asset.name}
-                  </h2>
+                  </DialogTitle>
+                  {asset.document_id && <Link href={`/${locale}/resources?tab=documents&documentId=${asset.document_id}`} className="inline-flex items-center gap-2 break-words text-sm underline"><Link2 className="size-4 shrink-0" />{documentsById.get(asset.document_id) ?? resources.assetForm.linkedDocumentLabel}</Link>}
                   {asset.location && (
                     <p className="flex items-center gap-1 text-sm text-muted-foreground">
                       <MapPin className="size-3.5" /> {asset.location}
@@ -278,6 +283,7 @@ export function AssetIntelligenceModal({
                   type="button"
                   onClick={() => onToggleFavorite(asset)}
                   aria-pressed={asset.is_favorite}
+                  aria-label={language.startsWith("zh") ? "收藏物品" : "Favorite asset"}
                   className="inline-flex size-9 items-center justify-center rounded-full hover:bg-muted"
                 >
                   <Star
@@ -512,6 +518,8 @@ function EvidencePanel({
   pendingRole: AssetDocumentRole;
   setPendingRole: (r: AssetDocumentRole) => void;
 }) {
+  const locale = useLocaleSlug();
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
   return (
     <SectionCard icon={<ImageIcon className="size-4" />} title={t.attachments}>
       <div className="space-y-4">
@@ -561,9 +569,9 @@ function EvidencePanel({
             >
               <span className="flex items-center gap-2 truncate">
                 <Link2 className="size-3.5 text-muted-foreground" />
-                <span className="truncate">
-                  {documentsById.get(d.document_id) ?? d.document_id}
-                </span>
+                <Link className="break-words underline" href={`/${locale}/resources?tab=documents&documentId=${d.document_id}`}>
+                  {documentsById.get(d.document_id) ?? (chinese ? "查看已連結文件" : "View linked document")}
+                </Link>
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   {d.document_role}
                 </span>

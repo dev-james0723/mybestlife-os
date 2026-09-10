@@ -13,13 +13,13 @@ import { SIGNALS_FOLLOWUPS_STORAGE_KEY } from "./constants";
 import type { SignalFollowUp, SignalFollowUpStatus, SignalItem } from "./types";
 
 function isBrowser(): boolean {
-  return typeof window !== "undefined" && !!window.localStorage;
+  return typeof window !== "undefined";
 }
 
-export function loadFollowUps(): SignalFollowUp[] {
-  if (!isBrowser()) return [];
+export function loadFollowUps(userId: string | null = null): SignalFollowUp[] {
+  if (!userId || !isBrowser()) return [];
   try {
-    const raw = window.localStorage.getItem(SIGNALS_FOLLOWUPS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(`${SIGNALS_FOLLOWUPS_STORAGE_KEY}:${userId}`);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -32,24 +32,24 @@ export function loadFollowUps(): SignalFollowUp[] {
   }
 }
 
-function persist(followUps: SignalFollowUp[]): void {
-  if (!isBrowser()) return;
+function persist(followUps: SignalFollowUp[], userId: string | null): void {
+  if (!userId || !isBrowser()) return;
   try {
-    window.localStorage.setItem(SIGNALS_FOLLOWUPS_STORAGE_KEY, JSON.stringify(followUps));
+    window.localStorage.setItem(`${SIGNALS_FOLLOWUPS_STORAGE_KEY}:${userId}`, JSON.stringify(followUps));
   } catch {
     // non-fatal
   }
 }
 
 /** Begin (or re-open) tracking a story. Idempotent on signalId. */
-export function trackFollowUp(signal: SignalItem): SignalFollowUp[] {
+export function trackFollowUp(signal: SignalItem, userId: string | null = null): SignalFollowUp[] {
   const now = new Date().toISOString();
-  const existing = loadFollowUps();
+  const existing = loadFollowUps(userId);
   const idx = existing.findIndex((f) => f.signalId === signal.id);
   if (idx >= 0) {
     const next = [...existing];
     next[idx] = { ...next[idx], status: "watching", updatedAt: now };
-    persist(next);
+    persist(next, userId);
     return next;
   }
   const entry: SignalFollowUp = {
@@ -64,32 +64,33 @@ export function trackFollowUp(signal: SignalItem): SignalFollowUp[] {
     updatedAt: now,
   };
   const next = [entry, ...existing];
-  persist(next);
+  persist(next, userId);
   return next;
 }
 
 export function setFollowUpStatus(
   signalId: string,
   status: SignalFollowUpStatus,
+  userId: string | null = null,
 ): SignalFollowUp[] {
   const now = new Date().toISOString();
-  const next = loadFollowUps().map((f) =>
+  const next = loadFollowUps(userId).map((f) =>
     f.signalId === signalId ? { ...f, status, updatedAt: now } : f,
   );
-  persist(next);
+  persist(next, userId);
   return next;
 }
 
-export function removeFollowUp(signalId: string): SignalFollowUp[] {
-  const next = loadFollowUps().filter((f) => f.signalId !== signalId);
-  persist(next);
+export function removeFollowUp(signalId: string, userId: string | null = null): SignalFollowUp[] {
+  const next = loadFollowUps(userId).filter((f) => f.signalId !== signalId);
+  persist(next, userId);
   return next;
 }
 
-export function clearFollowUps(): void {
-  if (!isBrowser()) return;
+export function clearFollowUps(userId: string | null = null): void {
+  if (!userId || !isBrowser()) return;
   try {
-    window.localStorage.removeItem(SIGNALS_FOLLOWUPS_STORAGE_KEY);
+    window.localStorage.removeItem(`${SIGNALS_FOLLOWUPS_STORAGE_KEY}:${userId}`);
   } catch {
     // ignore
   }
@@ -102,7 +103,8 @@ export function clearFollowUps(): void {
  */
 export function reconcileFollowUps(
   pool: SignalItem[],
-  followUps: SignalFollowUp[] = loadFollowUps(),
+  followUps: SignalFollowUp[],
+  userId: string | null = null,
 ): SignalFollowUp[] {
   if (followUps.length === 0) return followUps;
   let changed = false;
@@ -127,7 +129,7 @@ export function reconcileFollowUps(
       updatedAt: new Date().toISOString(),
     };
   });
-  if (changed) persist(next);
+  if (changed) persist(next, userId);
   return next;
 }
 

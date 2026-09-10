@@ -1,0 +1,65 @@
+{
+  "checked_at": "2026-09-09T00:04:52.848072+00:00",
+  "scope": "research documents and standalone 2D illustration only",
+  "state": "pass",
+  "pages": {
+    "index.html": {
+      "h2": 15,
+      "unique_ids": 23
+    },
+    "current-review.html": {
+      "h2": 10,
+      "unique_ids": 10
+    },
+    "repo-audit.html": {
+      "h2": 7,
+      "unique_ids": 7
+    },
+    "sources.html": {
+      "h2": 6,
+      "unique_ids": 6
+    }
+  },
+  "local_links_checked": 102,
+  "proposal_sections": 14,
+  "daily_action_rows": 10,
+  "errors": [],
+  "browser_checks": {
+    "state": "passed",
+    "desktop": {
+      "width": 1280,
+      "height": 900,
+      "document_width": 1265,
+      "screenshot": "delivery-desktop.png"
+    },
+    "mobile": {
+      "width": 320,
+      "height": 740,
+      "document_width": 305,
+      "screenshot": "delivery-mobile-320.png",
+      "minimum_demo_button_height_css_px": 44
+    },
+    "illustration": [
+      "shade layout enabled fish and snail observations",
+      "subsequent observation recorded dragonfly",
+      "returning to open layout kept all three discoveries"
+    ],
+    "viewport_override_reset": true,
+    "latest_gameplay_test": false
+  },
+  "limitations": [
+    "No new 3D gameplay validation",
+    "No production account/schema validation",
+    "No participants or retention data"
+  ],
+  "documents": {
+    "proposal.zh-TW.md": "0d5dc2c744fe7bddda5d6f2b8b094cfb2e2ae482de66432ce8218669736bd9a2",
+    "current-review.zh-TW.md": "ab1baab3d7aa7d8b38e0015b136b2725c4015348c4616cce6b5b0df0ff263347",
+    "sources.md": "300d05a1ff93c1787719177eae1632a87d6a980d009d19f1bb4097a8fbee253f",
+    "research-delivery.md": "c0a28e6f4416bbfe0bc1a5ac1729a10598944a7f12ea8e801a275b6f885959f4",
+    "index.html": "998be7bd0791472aad230b60ec6f6bcca49c0bdc5dc1f84b49c032c08e790c95",
+    "current-review.html": "70841f658f4603847ed34345d9f6404c991cf2bf60f4409c1fc6701889a6dbfa",
+    "sources.html": "8cf2343a37aa51f37d10ce4ccf925bd9b9670473c9872e031cbd19e1bc30fa2b",
+    "repo-audit.html": "123dff94d1a317ff3e3acbe278e05e50b14f99acb562eb16d9e15476d084fe66"
+  }
+}

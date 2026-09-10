@@ -1,0 +1,101 @@
+{
+  "checkedAt": "2026-09-08T23:40:36.900136+00:00",
+  "scope": "Research documents only. Runtime source read and fingerprinted, not built or tested in this review. No production schema refresh or deployment.",
+  "pages": [
+    {
+      "page": "index.html",
+      "lang": "zh-Hant",
+      "sections": 15,
+      "links": 29,
+      "sha256": "5eeb32f9dbbf473a1bdb4613f35f40f4ad416d4c9df9a11625b46034feb35257"
+    },
+    {
+      "page": "repo-audit.html",
+      "lang": "zh-Hant",
+      "sections": 7,
+      "links": 15,
+      "sha256": "123dff94d1a317ff3e3acbe278e05e50b14f99acb562eb16d9e15476d084fe66"
+    },
+    {
+      "page": "sources.html",
+      "lang": "zh-Hant",
+      "sections": 6,
+      "links": 32,
+      "sha256": "143162a0f16f4130b0c80ffa7a6dfe73927d18639809d59d4b43975393eb0ab8"
+    },
+    {
+      "page": "current-review.html",
+      "lang": "zh-Hant",
+      "sections": 10,
+      "links": 34,
+      "sha256": "8ac6631f3443a0148dc390d99adca4a662f2b6e0f752e287634445467ab5a13f"
+    }
+  ],
+  "failures": [],
+  "runtimeSourceHashes": {
+    "app/src/lib/repositories/garden.ts": "93e6bbfffea4aa6cad3c70f4e91c104263a5bc1147c2042c786fe4d762157000",
+    "app/src/lib/repositories/tasks.ts": "31c7e83c8bde5c3501b6df24fa4c2c191146330dcf216d956bb4a0eb2f3a4079",
+    "app/src/lib/repositories/habits.ts": "abbbddcaac42100662bc369b3f1f7c30b5962cad8e90701e16a51a44480ef20c",
+    "app/src/lib/repositories/journal.ts": "8488ad70905fad13cc8423e48526129615d9d472ba2ddc9ec51cb310f8656ed5",
+    "app/src/lib/repositories/garden-pond.ts": "b7956a219662445d37e68c21bbe77962e7ee171553a918c8b1d089b3ea5606de",
+    "app/src/lib/garden/pond.ts": "3a1e530d2c9997abd266b66a5c8c53de74b6301bd4e774922fd20d1bca505c6c",
+    "app/src/lib/garden/pond-persistence.ts": "7065f79645cbbb1a4a9672445ef0b022a2573bec2fe00d7d09c3a39f4a2bb07c",
+    "app/src/components/garden/pond-world.ts": "dc8af4c37d27d2eae9d330373bcadf4fa514a9bdeecbd2e3ce204f6dd7703f31",
+    "app/src/components/garden/AdventureScene.tsx": "7db871fe3e63cc0d7d586db791f8b166f909aa871cfd22fe782e67ffd4d394e3",
+    "app/src/components/garden/PondPanel.tsx": "6dd6e30a6632dbd89ad16a4a8d3457a13357807a8b9b64194db97e68dbc9cb90",
+    "app/src/components/garden/PondEvidenceLinks.tsx": "b1395f28d94e0ab359617da4a169688cf3330c9672cca2af8de3e4a222347c6b",
+    "app/src/hooks/use-garden-buddy-invitations.ts": "8dde7a4a977eb0fcedd0a5f17f1bb772fabfc7cc08d56952e9b303aa8bc82a23",
+    "app/supabase/migrations/20260908162634_garden_living_pond.sql": "0bb68e452bd97a7b74e0be612ab18d9a0ecb51c1977155e2131db6e06aa4caf8"
+  },
+  "status": "pass",
+  "browserChecks": [
+    {
+      "kind": "desktop report rendering",
+      "result": "visually inspected",
+      "artifact": "review-desktop.png"
+    },
+    {
+      "kind": "320px report layout",
+      "viewportWidth": 320,
+      "documentWidth": 305,
+      "minimumButtonHeight": 44,
+      "artifact": "review-mobile-320.png",
+      "result": "no page overflow; table and contents navigation use scoped horizontal scroll"
+    },
+    {
+      "kind": "2D design model only",
+      "actions": "Select shade layout, observe, then observe again",
+      "observed": [
+        "dawnfish and leafsnail recorded",
+        "dragonfly recorded"
+      ],
+      "result": "pass; no account connection or 3D gameplay claimed"
+    }
+  ],
+  "commands": [
+    "python3 docs/garden-research/v3/build-report.py",
+    "Python HTMLParser local-reference and unique-anchor validation",
+    "Browser: desktop rendering, 320px layout, two real button observations"
+  ],
+  "changedScope": [
+    "proposal.zh-TW.md",
+    "repo-audit.md",
+    "sources.md",
+    "current-review.zh-TW.md",
+    "build-report.py",
+    "index.html",
+    "repo-audit.html",
+    "sources.html",
+    "current-review.html",
+    "research-review-validation.json",
+    "review-desktop.png",
+    "review-mobile-320.png"
+  ],
+  "notRun": [
+    "runtime build/tests",
+    "current production schema verification",
+    "production migrations/push/deploy",
+    "physical-device gameplay and audio",
+    "real-player enjoyment or retention research"
+  ]
+}

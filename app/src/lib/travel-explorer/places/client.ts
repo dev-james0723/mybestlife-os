@@ -11,10 +11,20 @@ import type {
   TextResponse,
 } from "./places-provider";
 
-async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`places_client_http_${res.status}`);
-  return (await res.json()) as T;
+async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener("abort", abort, { once: true });
+  const timeout = setTimeout(abort, 12000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`places_client_http_${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", abort);
+  }
 }
 
 export function fetchNearby(lat: number, lng: number, max = 10): Promise<NearbyResponse> {
@@ -29,13 +39,13 @@ export function fetchPlaceDetails(placeId: string): Promise<DetailsResponse> {
   );
 }
 
-export function searchPlacesText(query: string, bias?: { lat: number; lng: number }): Promise<TextResponse> {
+export function searchPlacesText(query: string, bias?: { lat: number; lng: number }, signal?: AbortSignal): Promise<TextResponse> {
   const q = new URLSearchParams({ q: query });
   if (bias) {
     q.set("lat", String(bias.lat));
     q.set("lng", String(bias.lng));
   }
-  return getJson<TextResponse>(`/api/travel/places/text?${q.toString()}`);
+  return getJson<TextResponse>(`/api/travel/places/text?${q.toString()}`, signal);
 }
 
 export function autocompletePlaces(

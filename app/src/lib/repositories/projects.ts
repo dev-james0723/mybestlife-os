@@ -12,6 +12,7 @@ async function getCurrentUserId(): Promise<string> {
 }
 
 export type CreateProjectInput = {
+  id?: string;
   name: string;
   description?: string;
   status?: Project["status"];
@@ -24,7 +25,7 @@ export type CreateProjectInput = {
   thumbnail_style?: Exclude<ThumbnailStyle, "na">;
 };
 
-export type UpdateProjectInput = Partial<CreateProjectInput>;
+export type UpdateProjectInput = Partial<Omit<CreateProjectInput, "id">>;
 
 export const projectsRepository = {
   async getAll(): Promise<Project[]> {
@@ -53,13 +54,13 @@ export const projectsRepository = {
     const userId = await getCurrentUserId();
     const { data, error } = await supabase
       .from("projects")
-      .insert({
+      .upsert({
         ...input,
         user_id: userId,
         status: input.status ?? "planning",
         priority: input.priority ?? "medium",
         tags: input.tags ?? [],
-      })
+      }, { onConflict: "id" })
       .select()
       .single();
     if (error) throw ensureError(error, "Failed to create project");

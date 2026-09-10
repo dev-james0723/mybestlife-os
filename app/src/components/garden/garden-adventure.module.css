@@ -242,6 +242,8 @@
   gap: 12px;
   pointer-events: auto;
 }
+.hudTop[data-pond-open="true"] { justify-content: flex-end; right: max(82px, calc(env(safe-area-inset-right) + 58px)); }
+.hudTop[data-pond-open="true"] :is(.canMeter, .skyStatus) { display: none; }
 .canMeter {
   display: flex;
   align-items: center;
@@ -1001,5 +1003,405 @@
   .garden *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Liquid-glass HUD: local contrast is independent of the OS theme and sky time. */
+.viewport {
+  --garden-glass: rgba(238, 247, 243, 0.54);
+  --garden-line: rgba(255, 255, 255, 0.62);
+  --garden-ink: #233c35;
+  --garden-muted: #39574b;
+  color: var(--garden-ink);
+}
+.viewport[data-high-contrast="true"] {
+  --garden-glass: #f1f6ee;
+  --garden-line: #71877c;
+  --garden-muted: #2d483d;
+}
+.objective,
+.canMeter,
+.tools,
+.buddyMessage,
+.cameraTools,
+.trailStatus,
+.skyStatus,
+.viewToggle,
+.menu {
+  background: var(--garden-glass);
+  border: 1px solid var(--garden-line);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 #ffffff80,
+    inset 0 -1px 0 #ffffff18,
+    0 8px 28px #183b3620;
+}
+.viewport[data-high-contrast="true"]
+  :is(
+    .objective,
+    .canMeter,
+    .tools,
+    .buddyMessage,
+    .cameraTools,
+    .trailStatus,
+    .skyStatus,
+    .viewToggle,
+    .menu
+  ) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.menu {
+  background: rgba(239, 247, 242, 0.88);
+}
+.objective {
+  max-width: 278px;
+  padding: 13px 16px;
+}
+.objective h2 {
+  font-size: 18px;
+  margin: 5px 0 8px;
+}
+.viewToggle {
+  position: absolute;
+  top: max(20px, env(safe-area-inset-top));
+  right: max(24px, env(safe-area-inset-right));
+  z-index: 4;
+  display: flex;
+  padding: 3px;
+  border-radius: 17px;
+}
+.viewToggle button {
+  width: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.hudRight .canMeter,
+.skyStatus {
+  margin-right: 58px;
+}
+.skyStatus {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.skyStatus small {
+  font-size: 9px;
+}
+.hudBottom .movement {
+  grid-column: 1;
+  grid-row: 1;
+}
+.hudBottom .buddyMessage {
+  grid-column: 2;
+  grid-row: 1;
+}
+.hudBottom .actions {
+  grid-column: 3;
+  grid-row: 1;
+}
+.viewport[data-hand="right"] .hudBottom {
+  grid-template-columns: 230px minmax(0, 400px) 180px;
+}
+.viewport[data-hand="right"] .movement {
+  grid-column: 3;
+  align-items: flex-end;
+}
+.viewport[data-hand="right"] .actions {
+  grid-column: 1;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+.viewport[data-hand="right"] .cameraTools {
+  right: auto;
+  left: max(24px, env(safe-area-inset-left));
+}
+.viewport[data-clean="true"]
+  :is(
+    .hudTop,
+    .buddyMessage,
+    .cameraTools,
+    .trailStatus,
+    .keyboardHint,
+    .fullscreenNotice
+  ),
+.viewport[data-objectives="false"] :is(.objective, .canMeter, .trailStatus),
+.viewport[data-hints="false"] :is(.keyboardHint, .cameraTools),
+.viewport[data-buddy-info="false"] .buddyMessage,
+.viewport[data-observe="true"] .hudBottom {
+  display: none;
+}
+.viewport[data-clean="true"] .hudBottom {
+  opacity: 0.65;
+}
+.viewport[data-clean="true"] .hudBottom:focus-within,
+.viewport[data-clean="true"] .hudBottom:hover {
+  opacity: 1;
+}
+.presentationPanel {
+  display: grid;
+  gap: 12px;
+}
+.presentationPanel h3 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+.presentationPanel p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.presentationPanel select {
+  max-width: 55%;
+  min-height: 44px;
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: var(--garden-glass, #f0f4ef);
+  color: var(--garden-ink, inherit);
+  border: 1px solid var(--garden-line, #ced8d0);
+}
+.presentationPanel input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #618758;
+  flex-shrink: 0;
+}
+.osSettings {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.osSettings h2 {
+  font-size: 20px;
+  margin: 0 0 20px;
+  font-weight: 600;
+}
+.osSettings .presentationPanel {
+  max-width: 760px;
+}
+.osSettings .settingRow {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 620px) {
+  .viewToggle {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .hudRight {
+    padding-top: 57px;
+  }
+  .hudRight .canMeter {
+    margin-right: 0;
+    top: 164px;
+  }
+  .skyStatus {
+    position: absolute;
+    top: 205px;
+    left: 0;
+    margin: 0;
+    gap: 5px;
+    font-size: 10px;
+  }
+  .skyStatus small {
+    display: none;
+  }
+  .objective {
+    max-width: calc(100% - 64px);
+    padding: 12px 14px;
+  }
+  .trailStatus {
+    top: 249px;
+  }
+  .hudBottom .movement {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .hudBottom .buddyMessage {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .hudBottom .actions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .viewport[data-hand="right"] .hudBottom {
+    grid-template-columns: 1fr 96px;
+  }
+  .viewport[data-hand="right"] .movement {
+    grid-column: 2;
+  }
+  .viewport[data-hand="right"] .actions {
+    grid-column: 1;
+  }
+  .viewport[data-hand="right"] .cameraTools {
+    left: max(16px, env(safe-area-inset-left));
+  }
+  .presentationPanel select {
+    font-size: 12px;
+    max-width: 57%;
+  }
+}
+@media (max-width: 370px) {
+  .viewport[data-hand="right"] .hudBottom {
+    grid-template-columns: 1fr 84px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .viewToggle {
+    top: max(9px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .hudRight {
+    padding: 0 57px 0 0;
+  }
+  .hudRight .canMeter {
+    margin-right: 0;
+  }
+  .skyStatus {
+    display: none;
+  }
+  .hudBottom .movement {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .hudBottom .buddyMessage {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .hudBottom .actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .viewport[data-hand="right"] .hudBottom {
+    grid-template-columns: 205px minmax(0, 300px) 92px;
+  }
+  .viewport[data-hand="right"] .movement {
+    grid-column: 3;
+  }
+  .viewport[data-hand="right"] .actions {
+    grid-column: 1;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .viewport {
+    --garden-glass: #f1f6ee;
+  }
+  .viewport
+    :is(
+      .objective,
+      .canMeter,
+      .tools,
+      .buddyMessage,
+      .cameraTools,
+      .trailStatus,
+      .skyStatus,
+      .viewToggle,
+      .menu
+    ) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.petLibrary {
+  border-top: 1px solid #71847444;
+  padding-top: 14px;
+  margin-top: 16px;
+}
+.petLibrary form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.petLibrary form > label {
+  display: grid;
+  gap: 7px;
+}
+.petLibrary input:not([type="checkbox"]),
+.petLibrary select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #879d8f66;
+  border-radius: 10px;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #263d34;
+}
+.petLibrary button {
+  min-height: 44px;
+  border: 1px solid #728b7c77;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: rgba(238, 247, 239, 0.65);
+  color: #263d34;
+}
+.petLibrary button:disabled {
+  opacity: 0.5;
+}
+.petCards {
+  display: grid;
+  gap: 10px;
+}
+.petCards article {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(244, 249, 243, 0.35);
+  flex-wrap: wrap;
+}
+.petCards article img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.petCards article > div {
+  flex: 1;
+  min-width: 100px;
+}
+.petCards p {
+  margin: 4px 0;
+}
+
+/* Pond controls reserve a single top row so all twelve habitat positions remain reachable. */
+@media (max-width: 700px) {
+  .hudTop[data-pond-open="true"] { top: max(12px, env(safe-area-inset-top)); right: 72px; left: 10px; }
+  .hudTop[data-pond-open="true"] .tools { flex-direction: row; gap: 0; }
+  .hudTop[data-pond-open="true"] .tools button:first-child { display: none; }
+}
+
+/* Tilt stays beside the existing movement controls in either handedness. */
+.tiltCompact { max-width: 140px; pointer-events: auto; }
+.tiltButtons { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.garden .tiltButtons button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; font-size: 12px; background: var(--garden-glass, #edf4e2e8); color: #243c2a; border: 1px solid #ffffff90; border-radius: 14px; backdrop-filter: blur(12px); }
+.garden .tiltCompact .tiltButtons { gap: 3px; flex-wrap: nowrap; }
+.garden .tiltCompact button { min-width: 44px; padding: 6px; font-variant-numeric: tabular-nums; }
+.tiltHint { display: block; max-width: 110px; margin-top: 4px; padding: 0 3px; font-size: 10px; color: #203b29; background: #edf4e2e8; border-radius: 5px; }
+.tiltHint:empty { display: none; }
+.tiltSettings { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #54745a30; }
+.tiltSettings h3 { display: flex; gap: 8px; align-items: center; }
+.tiltSettings .tiltButtons { margin: 12px 0; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .movement { gap: 4px; }
+  .tiltHint { max-width: 125px; }
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  .viewport[data-tilt-access="listening"] .cameraTools {
+    bottom: max(300px, calc(env(safe-area-inset-bottom) + 276px));
   }
 }

@@ -3,6 +3,8 @@
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
 
+import { useGsapPopup } from "@/hooks/use-gsap-popup"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -41,14 +43,18 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  ref: forwardedRef,
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
   size?: "default" | "sm"
 }) {
+  const motionRef = useGsapPopup("dialog", forwardedRef)
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Popup
+        ref={motionRef}
+        data-os-motion="dialog"
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(

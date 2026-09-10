@@ -247,9 +247,8 @@ export function ShareCard({ share, copy, onOpenLogs }: ShareCardProps) {
               onClick={async () => {
                 try {
                   await revoke.mutateAsync(share.id);
-                } finally {
                   setConfirmRevoke(false);
-                }
+                } catch { /* Mutation reports the error; keep the confirmation for retry. */ }
               }}
             >
               {copy.shares.card.revoke}

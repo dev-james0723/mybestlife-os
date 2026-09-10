@@ -1,361 +1,184 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  Crosshair,
-  Search,
-  Radar,
-  Plane,
-  Gauge,
-  Navigation,
-  Bookmark,
-  CalendarRange,
-  Sparkles,
-  ChevronRight,
-} from "lucide-react";
-import { toast } from "sonner";
-
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Crosshair, Search, ArrowUpRight, ArrowRight, Loader2, RotateCcw, SkipForward, Pause, Play, Globe2, MapPin } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
-import { getTravelExplorerUiCopy } from "@/lib/i18n/travel-explorer-ui";
+import { getTravelExplorerUiCopy, type TravelExplorerUiCopy } from "@/lib/i18n/travel-explorer-ui";
 import { useTravelExplorerStore } from "@/stores/travel-explorer-store";
-import type { EnginePhase } from "@/lib/travel-explorer/engine/engine-adapter";
-import {
-  usePlacesNearby,
-  useSavedPlaces,
-  useTravelDestinations,
-  useUpsertDestination,
-} from "@/hooks/use-travel-explorer";
+import { usePlacesNearby, useSavedPlaces, useTravelDestinations, useUpsertDestination } from "@/hooks/use-travel-explorer";
 import { searchPlacesText } from "@/lib/travel-explorer/places/client";
-import { ExplorerGlobe } from "./globe/explorer-globe";
+import { ExplorerGlobe, type GlobeStatus } from "./globe/explorer-globe";
 import { PoiDetailPopup } from "./poi-detail-popup";
+import styles from "./explorer-console.module.css";
 
-/**
- * Explorer Console — the Travel workspace shell.
- *
- * DEGRADE-FIRST: this renders beautifully with NO 3D engine, NO API keys
- * and NO data — the static "settled" fallback frame mandated by the build
- * rules. The R3F globe (Route D′) mounts into `#explorer-stage` in a later
- * Wave B step behind a capability + key check; until then the stage shows
- * the dark-tech gradient + glass HUD so the page is never broken.
- */
-
-const GLASS =
-  "border border-white/15 bg-[rgba(16,24,38,0.55)] backdrop-blur-xl " +
-  "shadow-[0_8px_32px_rgba(0,0,0,0.35)]";
-const LABEL = "text-[11px] font-semibold uppercase tracking-[0.12em] text-white/55";
-const CYAN = "#7FE3F0";
+const GLASS = "border border-white/15 bg-[#101b2de8] shadow-lg sm:bg-[#101b2dbd] sm:backdrop-blur-md";
+type Destination = { name: string; lat: number; lng: number };
+const FEATURED: Destination[] = [
+  { name: "Tokyo", lat: 35.6762, lng: 139.6503 },
+  { name: "Paris", lat: 48.8566, lng: 2.3522 },
+  { name: "New York", lat: 40.7128, lng: -74.006 },
+];
 
 export function ExplorerConsole() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getTravelExplorerUiCopy(language), [language]);
-
-  const telemetry = useTravelExplorerStore((s) => s.telemetry);
-  const phase = useTravelExplorerStore((s) => s.phase);
-  const activeDestinationId = useTravelExplorerStore((s) => s.activeDestinationId);
-  const setActiveDestinationId = useTravelExplorerStore((s) => s.setActiveDestinationId);
+  const reducedMotion = useReducedMotion() ?? false;
+  const activeId = useTravelExplorerStore((s) => s.activeDestinationId);
   const openDetail = useTravelExplorerStore((s) => s.openDetail);
-
   const { data: destinations } = useTravelDestinations();
-  const activeDestination = useMemo(
-    () => (destinations ?? []).find((d) => d.id === activeDestinationId) ?? null,
-    [destinations, activeDestinationId],
-  );
-  const { data: nearby } = usePlacesNearby(
-    activeDestination?.center_lat,
-    activeDestination?.center_lng,
-  );
-  const pois = useMemo(() => nearby?.items ?? [], [nearby]);
-  const { data: savedPlaces } = useSavedPlaces(activeDestinationId);
-  const savedIds = useMemo(
-    () => new Set((savedPlaces ?? []).map((s) => s.place_id)),
-    [savedPlaces],
-  );
-
-  const upsertDestination = useUpsertDestination();
+  const upsert = useUpsertDestination();
+  const [destination, setDestination] = useState<Destination | null>(null);
+  const [status, setStatus] = useState<GlobeStatus>("loading");
+  const [globeKey, setGlobeKey] = useState(0);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<Destination[]>([]);
+  const [error, setError] = useState("");
+  const [saveState, setSaveState] = useState<"saving" | "saved" | "failed" | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const request = useRef<AbortController | null>(null);
+  const selection = useRef(0);
+  const { data: nearby, isError: nearbyFailed } = usePlacesNearby(destination?.lat, destination?.lng);
+  const { data: savedPlaces } = useSavedPlaces(activeId);
+  const savedIds = useMemo(() => new Set((savedPlaces ?? []).map((p) => p.place_id)), [savedPlaces]);
+  const target = useMemo(() => destination ? { lat: destination.lat, lng: destination.lng } : null, [destination]);
 
-  const runSearch = async () => {
-    const q = query.trim();
-    if (!q || searching) return;
-    setSearching(true);
+  useEffect(() => {
+    useTravelExplorerStore.setState({ activeDestinationId: null, phase: "space", viewState: "idle", cruisePaused: false, detailPlaceId: null });
+    return () => { request.current?.abort(); selection.current += 1; };
+  }, []);
+
+  const saveDestination = async (place: Destination, version: number) => {
+    setSaveState("saving");
     try {
-      const res = await searchPlacesText(q);
-      const first = res.items[0];
-      if (!first) {
-        toast.error(copy.searchFailed);
-        return;
-      }
-      const dest = await upsertDestination.mutateAsync({
-        slug: slugify(first.name || q, first.lat, first.lng),
-        name: first.name || q,
-        center_lat: first.lat,
-        center_lng: first.lng,
-        provider: "google",
+      const row = await upsert.mutateAsync({
+        slug: `${place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${place.lat.toFixed(4)}_${place.lng.toFixed(4)}`.slice(0, 80),
+        name: place.name, center_lat: place.lat, center_lng: place.lng, provider: "google",
       });
-      setActiveDestinationId(dest.id);
+      if (selection.current !== version) return;
+      useTravelExplorerStore.getState().setActiveDestinationId(row.id);
+      setSaveState("saved");
     } catch {
-      toast.error(copy.searchFailed);
-    } finally {
-      setSearching(false);
+      if (selection.current === version) setSaveState("failed");
     }
   };
 
-  const phaseLabel = phaseToLabel(phase, copy);
+  const choose = (place: Destination, savedId?: string) => {
+    if (!Number.isFinite(place.lat) || !Number.isFinite(place.lng) || Math.abs(place.lat) > 90 || Math.abs(place.lng) > 180) { setError(copy.searchFailed); return; }
+    request.current?.abort();
+    const version = ++selection.current;
+    setSearching(false); setResults([]); setError(""); setQuery(place.name); setDestination(place);
+    input.current?.blur();
+    useTravelExplorerStore.setState({ activeDestinationId: savedId ?? null, cruisePaused: false, detailPlaceId: null });
+    useTravelExplorerStore.getState().requestReplay();
+    if (savedId) setSaveState("saved");
+    else void saveDestination(place, version);
+  };
+
+  const runSearch = async () => {
+    const text = query.trim();
+    if (!text) { input.current?.focus(); return; }
+    request.current?.abort();
+    const controller = new AbortController(); request.current = controller;
+    setSearching(true); setResults([]); setError("");
+    // These geographic shortcuts work even when Places is temporarily offline.
+    const featured = FEATURED.find((p) => p.name.toLowerCase() === text.toLowerCase());
+    if (featured) { choose(featured); return; }
+    try {
+      const response = await searchPlacesText(text, undefined, controller.signal);
+      if (controller.signal.aborted) return;
+      const places = response.items.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)).slice(0, 5).map((p) => ({ name: p.name, lat: p.lat, lng: p.lng }));
+      if (!places.length) setError(copy.searchFailed);
+      else setResults(places);
+    } catch {
+      if (!controller.signal.aborted) setError(copy.searchUnavailable);
+    } finally {
+      if (request.current === controller) setSearching(false);
+    }
+  };
+
+  const returnToOrbit = () => {
+    request.current?.abort(); selection.current += 1;
+    setDestination(null); setQuery(""); setResults([]); setSearching(false); setError(""); setSaveState(null);
+    useTravelExplorerStore.setState({ activeDestinationId: null, cruisePaused: false, detailPlaceId: null });
+  };
+  const is3D = status !== "unavailable" && status !== "loading";
 
   return (
-    <div
-      className={cn(
-        "relative isolate min-h-[78vh] w-full overflow-hidden rounded-2xl",
-        "bg-[linear-gradient(180deg,#0E1A2B_0%,#16304C_55%,#1B3A5C_100%)]",
-        "text-white",
-      )}
-    >
-      {/* Stage — Route D′ globe mounts here (covers the wash when it renders;
-          falls back to the static gradient + radar when no key / no WebGL). */}
+    <section className={cn(styles.console, "relative isolate w-full overflow-hidden rounded-2xl text-white")} data-testid="travel-console" data-globe-status={status} aria-label={copy.consoleTitle}>
       <div id="explorer-stage" className="absolute inset-0">
-        <div aria-hidden>
-          {/* Static aerial-fallback wash + faint horizon haze. */}
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[radial-gradient(120%_80%_at_50%_120%,rgba(175,198,218,0.28),transparent_70%)]" />
-          <RadarReticle />
-        </div>
-        <ExplorerGlobe
-          target={
-            activeDestination
-              ? { lat: activeDestination.center_lat, lng: activeDestination.center_lng }
-              : null
-          }
-          pois={pois}
-          savedIds={savedIds}
-          onSelectPoi={openDetail}
-        />
+        <div className={styles.earthFallback} aria-hidden="true" />
+        <ExplorerGlobe key={globeKey} target={target} pois={nearby?.items} savedIds={savedIds} onSelectPoi={openDetail} onStatus={setStatus} />
       </div>
+      <div className={styles.shade} aria-hidden="true" />
 
-      {/* ── Top bar ───────────────────────────────────────────── */}
-      <header className="absolute inset-x-0 top-0 z-20 flex items-center gap-3 px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-2">
-          <span
-            className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-white/5"
-            style={{ color: CYAN }}
-          >
-            <Crosshair className="h-4 w-4" />
-          </span>
-          <span className="hidden text-sm font-semibold tracking-[0.14em] sm:inline">
-            {copy.consoleTitle}
-          </span>
+      <header className="absolute inset-x-0 top-0 z-30 p-3 sm:p-5">
+        <div className="mb-3 flex items-center justify-between gap-2 text-[10px] font-semibold tracking-[0.16em] text-cyan-100/80">
+          <span className="flex items-center gap-2"><Crosshair className="h-4 w-4" />{copy.consoleTitle}</span>
+          <span className="flex items-center gap-1.5 tracking-normal" role="status"><span className={cn("h-1.5 w-1.5 rounded-full", is3D ? "bg-cyan-300" : "bg-amber-200")} />{status === "loading" ? copy.loadingGlobe : status === "detailed" ? copy.cityDetail : status === "unavailable" ? copy.mapView : copy.worldView}</span>
         </div>
-
-        {/* Destination search — type a city, Enter to fly there. */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void runSearch();
-          }}
-          className={cn("flex flex-1 items-center gap-2 rounded-full px-3 py-1.5", GLASS)}
-        >
-          <Search className="h-4 w-4 shrink-0 text-white/50" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={copy.searchPlaceholder}
-            className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
-            aria-label={copy.searchPlaceholder}
-          />
+        <form onSubmit={(e) => { e.preventDefault(); void runSearch(); }} className={cn("flex min-h-12 items-center gap-2 rounded-2xl p-1 pl-3", GLASS)} aria-busy={searching}>
+          <Search className="h-4 w-4 shrink-0 text-white/60" />
+          <input data-slot="travel-search" ref={input} type="search" enterKeyHint="search" autoComplete="off" value={query} onChange={(e) => { setQuery(e.target.value); setResults([]); setError(""); request.current?.abort(); setSearching(false); }} placeholder={copy.searchPlaceholder} aria-label={copy.searchPlaceholder} aria-describedby={error ? "travel-search-error" : undefined} className={styles.searchInput} />
+          <button type="submit" disabled={searching} aria-label={copy.searchAction} className={styles.searchButton}>
+            {searching ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <ArrowRight className="h-4 w-4" />}
+          </button>
         </form>
-
-        <div className="hidden items-center gap-2 md:flex">
-          <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium", GLASS)}>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#46D17F" }} />
-            {copy.online}
-          </span>
-        </div>
+        {error && <p id="travel-search-error" role="alert" className="mt-2 rounded-xl border border-amber-200/20 bg-[#182030] p-3 text-sm text-amber-100">{error}</p>}
+        {results.length > 0 && <div className={cn("mt-2 overflow-hidden rounded-2xl p-1", GLASS)} aria-label={copy.chooseResult}>
+          <p className="px-3 py-2 text-xs text-white/60">{copy.chooseResult}</p>
+          {results.map((place, i) => <button type="button" key={`${place.lat}-${place.lng}-${i}`} onClick={() => choose(place)} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200"><MapPin className="h-4 w-4 shrink-0 text-cyan-200" /><span className="min-w-0 flex-1 truncate text-sm">{place.name}</span><span className="text-[10px] text-white/50">{place.lat.toFixed(2)}, {place.lng.toFixed(2)}</span><ArrowRight className="h-4 w-4" /></button>)}
+        </div>}
       </header>
 
-      {/* Phase stepper */}
-      <div className="absolute left-1/2 top-16 z-20 -translate-x-1/2">
-        <div className={cn("rounded-full px-3 py-1 text-[11px] font-medium tracking-[0.1em]", GLASS)}>
-          <span style={{ color: CYAN }}>{phaseLabel}</span>
-        </div>
-      </div>
+      {destination && <div className="pointer-events-none absolute inset-x-3 top-32 z-10 flex items-start justify-between gap-2 sm:inset-x-5">
+        <div className={cn("max-w-[70%] rounded-xl px-3 py-2", GLASS)}><p className="text-[10px] uppercase tracking-widest text-cyan-100/60">{copy.currentDestination}</p><h2 className="truncate text-lg font-semibold">{destination.name}</h2></div>
+        <button type="button" onClick={returnToOrbit} className={cn("pointer-events-auto flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs", GLASS)}><Globe2 className="h-4 w-4" />{copy.returnOrbit}</button>
+      </div>}
 
-      {/* ── Left telemetry console ────────────────────────────── */}
-      <aside className="absolute left-4 top-28 z-20 hidden w-[300px] flex-col gap-3 lg:flex">
-        <section className={cn("rounded-2xl p-4", GLASS)}>
-          <p className={LABEL}>{copy.currentDestination}</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight">
-            {activeDestination?.name ?? copy.noDestination}
-          </p>
-        </section>
-
-        <section className={cn("rounded-2xl p-4", GLASS)}>
-          <p className={LABEL}>{copy.cityCurvation}</p>
-          <div className="mt-2 flex items-center gap-3">
-            <CurvationRing value={telemetry.progress01} />
-            <span className="font-mono text-3xl font-semibold tabular-nums">
-              {Math.round(telemetry.progress01 * 100)}
-              <span className="text-base text-white/50">%</span>
-            </span>
+      <div className={cn("pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pt-16 sm:px-6", status === "detailed" ? "pb-20" : "pb-5 sm:pb-6")}>
+        {!destination ? <div className="mx-auto max-w-xl text-center">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-200">{copy.readyToExplore}</p>
+          <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">{copy.emptyTitle}</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/65">{copy.emptyBody}</p>
+          <div className="pointer-events-auto mt-4 flex flex-wrap justify-center gap-2">
+            {FEATURED.map((place) => <button key={place.name} type="button" onClick={() => choose(place)} className={cn("flex min-h-11 items-center gap-2 rounded-full px-4 text-sm transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-cyan-200", GLASS)}>{place.name}<ArrowUpRight className="h-3.5 w-3.5 text-cyan-200" /></button>)}
           </div>
-        </section>
-
-        <section className={cn("rounded-2xl p-4", GLASS)}>
-          <p className={LABEL}>{copy.flightInformation}</p>
-          <dl className="mt-2 space-y-1.5 text-sm">
-            <TelemetryRow icon={Plane} label={copy.altitude} value={`${formatInt(telemetry.altitudeMeters)} m`} />
-            <TelemetryRow icon={Gauge} label={copy.speed} value={`${formatInt(telemetry.speedKmh)} km/h`} />
-            <TelemetryRow
-              icon={Navigation}
-              label={copy.coordinates}
-              value={`${telemetry.lookAt.lat.toFixed(3)}, ${telemetry.lookAt.lng.toFixed(3)}`}
-            />
-          </dl>
-        </section>
-      </aside>
-
-      {/* ── Center: empty / fallback state ────────────────────── */}
-      {!activeDestinationId && (
-        <div className="absolute inset-0 z-10 grid place-items-center px-6">
-          <div className="max-w-md text-center">
-            <span
-              className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full border border-white/15 bg-white/5"
-              style={{ color: CYAN }}
-            >
-              <Radar className="h-7 w-7" />
-            </span>
-            <h2 className="text-balance text-xl font-semibold sm:text-2xl">{copy.emptyTitle}</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-white/60">{copy.emptyBody}</p>
-            <button data-control-variant="default"
-              type="button"
-              onClick={() => void runSearch()}
-              disabled={searching}
-              className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-[#06121f] transition hover:brightness-110 disabled:opacity-60"
-            >
-              {copy.beginDescent}
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Right trip panel (Wanderlog scaffold) ─────────────── */}
-      <aside className="absolute right-4 top-28 z-20 hidden w-[300px] flex-col gap-3 xl:flex">
-        <TripBlock icon={Bookmark} title={copy.savedPlaces} empty={copy.noSavedPlaces} />
-        <TripBlock icon={CalendarRange} title={copy.itinerary} />
-        <TripBlock icon={Sparkles} title={copy.smartRecs} />
-      </aside>
-
-      {/* Fallback notice */}
-      <div className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 px-4">
-        <p className={cn("rounded-full px-3 py-1 text-center text-[11px] text-white/55", GLASS)}>
-          {copy.fallbackNotice}
+          <button type="button" onClick={() => { input.current?.focus(); if (query.trim()) void runSearch(); }} className="pointer-events-auto mt-3 min-h-11 px-4 text-sm font-medium text-cyan-200 underline underline-offset-4">{copy.chooseAnother}</button>
+          {Boolean(destinations?.length) && <div className="pointer-events-auto mt-3 flex flex-wrap justify-center gap-2" aria-label={copy.recentDestinations}>
+            {destinations?.slice(0, 3).map((d) => <button key={d.id} type="button" onClick={() => choose({ name: d.name, lat: d.center_lat, lng: d.center_lng }, d.id)} className="min-h-11 rounded-xl bg-white/10 px-3 text-xs">{d.name}</button>)}
+          </div>}
+        </div> : <div className="pointer-events-auto mx-auto max-w-xl">
+          <FlightHud copy={copy} enabled={is3D} reducedMotion={reducedMotion} />
+          {saveState === "saving" && <p role="status" className="mt-2 text-center text-xs text-white/60">{copy.savingPlace}</p>}
+          {saveState === "saved" && <p role="status" className="mt-2 text-center text-xs text-cyan-100/70">{copy.destinationSaved}</p>}
+          {saveState === "failed" && <div role="status" className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-[#192334] px-3 py-2 text-xs text-amber-100"><span>{copy.saveFailed}</span><button type="button" onClick={() => void saveDestination(destination, selection.current)} className="min-h-11 shrink-0 px-2 underline">{copy.retrySave}</button></div>}
+          {nearby?.items?.length ? <details className={cn("mt-2 rounded-xl px-3", GLASS)}><summary className="cursor-pointer py-3 text-xs">{copy.nearbyPlaces} · {nearby.items.length}</summary><div className="max-h-32 overflow-y-auto pb-2">{nearby.items.map((p) => <button key={p.providerPlaceId} onClick={() => openDetail(p.providerPlaceId)} className="block min-h-11 w-full truncate text-left text-sm">{p.name}{savedIds.has(p.providerPlaceId) ? " ✓" : ""}</button>)}</div></details> : nearbyFailed ? <p className="mt-2 text-center text-xs text-white/55">{copy.nearbyUnavailable}</p> : null}
+        </div>}
+        <p className="mx-auto mt-3 max-w-xl text-center text-[10px] leading-relaxed text-white/55">
+          {status === "unavailable" ? copy.webglUnavailable : status === "tiles-error" ? copy.tilesUnavailable : status === "detailed" ? copy.gestureHint : copy.worldNotice}
+          {(status === "unavailable" || status === "tiles-error") && <button type="button" onClick={() => { setStatus("loading"); setGlobeKey((n) => n + 1); }} className="pointer-events-auto ml-2 min-h-11 underline">{copy.retryGlobe}</button>}
         </p>
       </div>
-
-      {/* Attribution — always visible when tiles render (ToS). */}
-      <p className="absolute bottom-2 right-3 z-20 text-[10px] text-white/40">{copy.attribution}</p>
-
-      <PoiDetailPopup destinationId={activeDestinationId} />
-    </div>
-  );
-}
-
-function phaseToLabel(phase: EnginePhase, copy: ReturnType<typeof getTravelExplorerUiCopy>): string {
-  switch (phase) {
-    case "entering_atmosphere":
-      return copy.phaseEnteringAtmosphere;
-    case "approaching":
-      return copy.phaseApproaching;
-    case "cruising":
-      return copy.phaseCruising;
-    default:
-      return copy.phaseLeavingOrbit;
-  }
-}
-
-function formatInt(n: number): string {
-  return Math.round(n).toLocaleString();
-}
-
-function slugify(name: string, lat: number, lng: number): string {
-  const base = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const geo = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
-  return (base ? `${base}-${geo}` : geo).slice(0, 80);
-}
-
-function TelemetryRow({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Plane;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="flex items-center gap-2 text-white/55">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </span>
-      <span className="font-mono tabular-nums text-white/90">{value}</span>
-    </div>
-  );
-}
-
-function CurvationRing({ value }: { value: number }) {
-  const r = 18;
-  const c = 2 * Math.PI * r;
-  const offset = c * (1 - Math.max(0, Math.min(1, value)));
-  return (
-    <svg width="44" height="44" viewBox="0 0 44 44" className="shrink-0 -rotate-90" aria-hidden>
-      <circle cx="22" cy="22" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
-      <circle
-        cx="22"
-        cy="22"
-        r={r}
-        fill="none"
-        stroke={CYAN}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={offset}
-      />
-    </svg>
-  );
-}
-
-function TripBlock({
-  icon: Icon,
-  title,
-  empty,
-}: {
-  icon: typeof Bookmark;
-  title: string;
-  empty?: string;
-}) {
-  return (
-    <section className={cn("rounded-2xl p-4", GLASS)}>
-      <p className={cn(LABEL, "flex items-center gap-2")}>
-        <Icon className="h-3.5 w-3.5" style={{ color: CYAN }} />
-        {title}
-      </p>
-      {empty && <p className="mt-2 text-sm text-white/45">{empty}</p>}
+      <PoiDetailPopup destinationId={activeId} />
     </section>
   );
 }
 
-function RadarReticle() {
-  return (
-    <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 opacity-40">
-      <div className="absolute inset-0 rounded-full border border-[rgba(91,214,232,0.35)]" />
-      <div className="absolute inset-6 rounded-full border border-[rgba(91,214,232,0.25)]" />
-      <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: CYAN }} />
+function FlightHud({ copy, enabled, reducedMotion }: { copy: TravelExplorerUiCopy; enabled: boolean; reducedMotion: boolean }) {
+  const telemetry = useTravelExplorerStore((s) => s.telemetry);
+  const phase = useTravelExplorerStore((s) => s.phase);
+  const paused = useTravelExplorerStore((s) => s.cruisePaused);
+  const store = useTravelExplorerStore;
+  const flying = phase === "entering_atmosphere" || phase === "approaching";
+  const label = !enabled ? copy.mapView : phase === "manual" ? copy.manualControl : paused && flying ? copy.flightPaused : flying ? (phase === "approaching" ? copy.phaseApproaching : copy.phaseLeavingOrbit) : copy.arrived;
+  return <div className={cn("rounded-2xl p-3 sm:p-4", GLASS)} data-testid="travel-flight-hud" data-phase={phase}>
+    <div className="flex items-center justify-between gap-2 text-xs"><span className="font-medium text-cyan-100" role="status">{label}</span><span className="font-mono text-white/60">{enabled ? `${Math.round(telemetry.altitudeMeters / 1000).toLocaleString()} km` : "—"}</span></div>
+    {enabled && <div role="progressbar" aria-label={copy.flightProgress} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(telemetry.progress01 * 100)} className="mt-3 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-cyan-200" style={{ transform: `scaleX(${telemetry.progress01})`, transition: reducedMotion ? "none" : "transform 200ms linear" }} /></div>}
+    <div className="mt-2 flex items-center justify-center gap-2">
+      {flying && enabled ? <><button type="button" onClick={() => store.getState().setCruisePaused(!paused)} className="flex min-h-11 items-center gap-2 rounded-full px-4 text-xs hover:bg-white/10">{paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}{paused ? copy.resumeFlight : copy.pauseFlight}</button><button type="button" onClick={() => store.getState().requestSkip()} className="flex min-h-11 items-center gap-2 rounded-full px-4 text-xs hover:bg-white/10"><SkipForward className="h-4 w-4" />{copy.skipFlight}</button></> : <button type="button" disabled={!enabled} onClick={() => { store.getState().setCruisePaused(false); store.getState().requestReplay(); }} className="flex min-h-11 items-center gap-2 rounded-full px-4 text-xs hover:bg-white/10 disabled:opacity-40"><RotateCcw className="h-4 w-4" />{copy.replayFlight}</button>}
     </div>
-  );
+  </div>;
 }

@@ -88,13 +88,13 @@ export function FileCard({
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link
           href={detailHref}
-          className="line-clamp-1 text-sm font-medium text-foreground hover:underline"
+          className="break-words text-sm font-medium text-foreground hover:underline"
           title={file.filename}
         >
           {file.filename}
         </Link>
         <p className="text-xs text-muted-foreground">
-          {mimeShort}
+          v{file.current_version || 1} · {mimeShort}
           <span aria-hidden> · </span>
           {formatFileSize(file.file_size)}
         </p>

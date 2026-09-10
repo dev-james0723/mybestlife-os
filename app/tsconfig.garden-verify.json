@@ -4,6 +4,8 @@
   "include": [
     "next-env.d.ts",
     "src/app/[locale]/(protected)/garden/page.tsx",
+    "src/app/[locale]/(protected)/habits/page.tsx",
+    "src/app/[locale]/(protected)/tasks/page.tsx",
     "src/components/garden/**/*.tsx",
     "src/components/garden/**/*.ts",
     "src/hooks/use-garden.ts",

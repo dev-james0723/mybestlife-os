@@ -86,6 +86,7 @@ export function useGenerateNeuralSkill() {
       roleModelId: string;
       roleModelName: string;
       context: RoleModelInsightContextPayload;
+      requireResearch?: boolean;
     }): Promise<RoleModelNeuralSkill> => {
       let response: Response;
       try {
@@ -96,6 +97,7 @@ export function useGenerateNeuralSkill() {
             roleModelId: args.roleModelId,
             language: locale,
             context: args.context,
+            requireResearch: args.requireResearch,
           }),
         });
       } catch (error) {

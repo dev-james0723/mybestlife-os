@@ -1,0 +1,45 @@
+import assert from "node:assert/strict";
+import {mkdir,writeFile} from "node:fs/promises";
+import {createGardenFixture,accounts} from "./sky-garden-fixture.mjs";
+const output=process.env.SKY_VERIFY_OUT??"../artifacts/sky-garden/mobile",fixture=await createGardenFixture(output),checks=[];
+const state=p=>p.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__.snapshot());
+const diagnostics=p=>p.locator("canvas[data-garden-diagnostics]").evaluate(el=>JSON.parse(el.dataset.gardenDiagnostics));
+const settings=async p=>{await p.getByRole("button",{name:"Garden settings",exact:true}).click();};
+const close=async p=>{await p.getByRole("button",{name:"Close menu and resume",exact:true}).click();};
+try {
+ await mkdir(output,{recursive:true});
+ const test=await fixture.open({width:390,height:844},{touch:true,record:true});const p=test.page;
+ await p.getByRole("button",{name:"Enter Garden",exact:true}).click();
+ await settings(p);await p.getByLabel("Time of day",{exact:true}).selectOption("day");await p.getByLabel("Garden weather",{exact:true}).selectOption("clear");await close(p);await p.waitForTimeout(1500);
+ const selector=await p.locator('[data-garden-controls]').evaluate(el=>[...el.querySelectorAll('[aria-label]')].map(e=>({label:e.getAttribute('aria-label'),role:e.getAttribute('role')})));
+ const controls=p.locator('[data-garden-controls]');
+ let box=await p.getByLabel("Move joystick",{exact:true}).boundingBox();
+ assert(box&&box.x<195,"default joystick is left");
+ await p.screenshot({path:`${output}/phone-left-day.png`});
+ await settings(p);await p.getByLabel("Joystick position",{exact:true}).selectOption("right");await p.getByLabel("Garden companion",{exact:true}).selectOption("xiaoba");await p.getByLabel("Show pet information",{exact:true}).uncheck();await p.getByLabel("Bring a pet into the world",{exact:true}).uncheck();await close(p);
+ assert.equal(await controls.getAttribute("data-hand"),"right");
+ await p.waitForTimeout(300);assert.equal((await diagnostics(p)).companion.visible,false);
+ box=await p.getByLabel("Move joystick",{exact:true}).boundingBox();assert(box&&box.x>195,"right joystick moves right");
+ await p.screenshot({path:`${output}/phone-right.png`});
+ checks.push("left default / right saved placement","independent Buddy card and 3D visibility");
+ // CDP multi-touch uses real browser pointer/touch dispatch, including staggered lifts.
+ const cdp=await test.context.newCDPSession(p),before=await state(p),beforeCamera=(await diagnostics(p)).camera.distance;
+ const a={x:130,y:400,id:1},b={x:250,y:400,id:2};
+ await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[a,b]});
+ for(let i=1;i<=5;i++)await cdp.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[{...a,x:130-i*9},{...b,x:250+i*9}]});
+ await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[a]});await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});await p.waitForTimeout(400);
+ assert((await diagnostics(p)).camera.distance<beforeCamera-2,"pinch spread zooms in");const after=await state(p);assert.equal(after.target,null);assert(Math.hypot(after.player.x-before.player.x,after.player.z-before.player.z)<.03,"pinch never emits a walking tap");
+ await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[a,b]});await cdp.send("Input.dispatchTouchEvent",{type:"touchCancel",touchPoints:[]});
+ checks.push("two-finger pinch zoom","staggered lift and touchCancel do not move player");
+ await p.getByRole("button",{name:"Hide interface",exact:true}).click();assert.equal(await p.locator('[data-garden-controls] header').isVisible(),false);assert.equal(await p.getByLabel("Move joystick",{exact:true}).isVisible(),true);await p.screenshot({path:`${output}/phone-clean.png`});await p.getByRole("button",{name:"Show interface",exact:true}).click();
+ await settings(p);await p.getByLabel("Time of day",{exact:true}).selectOption("night");await p.getByLabel("Garden weather",{exact:true}).selectOption("rain");await close(p);await p.waitForTimeout(2500);await p.screenshot({path:`${output}/phone-night-rain.png`});
+ await p.setViewportSize({width:844,height:390});await p.waitForTimeout(600);await p.screenshot({path:`${output}/landscape-right.png`});
+ box=await p.getByLabel("Move joystick",{exact:true}).boundingBox();assert(box&&box.x>600&&box.y+box.height<=390,"landscape safe area");
+ await p.reload();await p.getByRole("button",{name:"Enter Garden",exact:true}).click();await settings(p);assert.equal(await p.getByLabel("Joystick position",{exact:true}).inputValue(),"right");assert.equal(await p.getByLabel("Garden companion",{exact:true}).inputValue(),"xiaoba");
+ checks.push("phone portrait/landscape","account preference reload","night and rain");
+ await close(p);await test.context.close();
+ const other=await fixture.open({width:390,height:844},{touch:true,account:"B"});await other.page.getByRole("button",{name:"Enter Garden",exact:true}).click();await settings(other.page);assert.equal(await other.page.getByLabel("Joystick position",{exact:true}).inputValue(),"left");checks.push("second account starts with its own preferences");
+ assert.deepEqual(test.errors,[]);assert.deepEqual(test.rendererErrors,[]);assert.deepEqual(other.errors,[]);await other.context.close();
+ await writeFile(`${output}/results.json`,JSON.stringify({execution:"Chrome touch emulation, isolated account fixtures; not physical phone testing",checks,passed:true,controls:selector},null,2));
+}catch(error){for(const c of fixture.browser.contexts())for(const p of c.pages()){await p.screenshot({path:`${output}/failure.png`}).catch(()=>{});await writeFile(`${output}/failure.txt`,`${error.stack}\n${await p.locator("body").innerText().catch(()=>"")}`);}throw error;}finally{await fixture.close();}
+console.log(checks);

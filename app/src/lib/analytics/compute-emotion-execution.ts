@@ -23,7 +23,7 @@ function dominantQuadrant(entries: JournalEntry[]): EmotionQuadrant | null {
   if (entries.length === 0) return null;
   const counts = entries.reduce(
     (acc, entry) => {
-      acc[entry.quadrant] += 1;
+      if (entry.quadrant) acc[entry.quadrant] += 1;
       return acc;
     },
     { RED: 0, YELLOW: 0, BLUE: 0, GREEN: 0 } satisfies Record<EmotionQuadrant, number>,
@@ -41,7 +41,7 @@ export function computeEmotionExecution(params: {
   const granularity = getAnalyticsBucketGranularity(params.range);
   const buckets = eachBucketInAnalyticsRange(params.range).map<EmotionExecutionBucket>((bucket) => {
     const entries = params.journalEntries.filter((entry) =>
-      isDateInRange(entry.entryDate, bucket.start, bucket.end),
+      entry.quadrant !== null && Number.isFinite(entry.intensity) && isDateInRange(entry.entryDate, bucket.start, bucket.end),
     );
     const averageIntensity =
       entries.length === 0

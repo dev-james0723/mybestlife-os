@@ -87,7 +87,10 @@ export type UseCareerMirror = {
   /** Draft answers seeded from `profile.setup_answers`. */
   draftAnswers: SetupAnswers;
   isLoading: boolean;
+  loadError: boolean;
+  retryLoad: () => void;
   isSaving: boolean;
+  saveError: boolean;
   /** Debounced (~800ms) autosave of the draft answers + status + score. */
   saveDraft: (answers: SetupAnswers, status?: CareerSetupStatus) => void;
   /** Flush any pending debounced save immediately (returns the awaited save). */
@@ -116,6 +119,8 @@ export function useCareerMirror(): UseCareerMirror {
   const qc = useQueryClient();
   const profileQuery = useCareerProfile();
   const upsert = useUpsertCareerProfile();
+  const [saveError, setSaveError] = React.useState(false);
+  const saveQueue = React.useRef<Promise<void>>(Promise.resolve());
 
   const profile = (profileQuery.data as CareerProfile | null) ?? null;
 
@@ -142,12 +147,23 @@ export function useCareerMirror(): UseCareerMirror {
   );
 
   const runSave = React.useCallback(
-    async (answers: SetupAnswers, status: CareerSetupStatus) => {
-      await upsertRef.current.mutateAsync({
-        setup_answers: answers as Record<string, SetupAnswer>,
-        setup_status: status,
-        completion_score: computeSetupCompletionScore(answers),
-      } as Parameters<typeof upsertRef.current.mutateAsync>[0]);
+    (answers: SetupAnswers, status: CareerSetupStatus) => {
+      // Serialize snapshots so a slow older save cannot overwrite the latest answers.
+      const pending = saveQueue.current.catch(() => undefined).then(async () => {
+        try {
+          await upsertRef.current.mutateAsync({
+            setup_answers: answers as Record<string, SetupAnswer>,
+            setup_status: status,
+            completion_score: computeSetupCompletionScore(answers),
+          } as Parameters<typeof upsertRef.current.mutateAsync>[0]);
+          setSaveError(false);
+        } catch (error) {
+          setSaveError(true);
+          throw error;
+        }
+      });
+      saveQueue.current = pending;
+      return pending;
     },
     [],
   );
@@ -157,7 +173,7 @@ export function useCareerMirror(): UseCareerMirror {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         timerRef.current = null;
-        void runSave(answers, status);
+        void runSave(answers, status).catch(() => undefined);
       }, SAVE_DEBOUNCE_MS);
     },
     [runSave],
@@ -233,7 +249,10 @@ export function useCareerMirror(): UseCareerMirror {
     profile,
     draftAnswers,
     isLoading: profileQuery.isLoading,
+    loadError: profileQuery.isError,
+    retryLoad: () => { void profileQuery.refetch(); },
     isSaving: upsert.isPending,
+    saveError,
     saveDraft,
     flushDraft,
     synthesize,

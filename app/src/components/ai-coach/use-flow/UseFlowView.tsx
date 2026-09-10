@@ -97,11 +97,12 @@ export function UseFlowView({ promptId }: { promptId: string }) {
     return null;
   }, [kind, systemQ.data, customQ.data]);
 
-  const showPreview = prefsQ.data?.show_prompt_preview ?? true;
+  const showPreview = true;
   const totalSteps = showPreview
     ? TOTAL_STEPS_WITH_PREVIEW
     : TOTAL_STEPS_NO_PREVIEW;
 
+  const [profileFields, setProfileFields] = useState<string[]>([]);
   const [step, setStep] = useState<Step>(0);
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -134,7 +135,16 @@ export function UseFlowView({ promptId }: { promptId: string }) {
   const compiled = compilePrompt({
     prompt,
     locale: language,
-    profile: profileQ.data ?? null,
+    profile: profileQ.data && profileFields.length ? {
+      ...profileQ.data,
+      current_role: profileFields.includes("current_role") ? profileQ.data.current_role : null,
+      industry: profileFields.includes("industry") ? profileQ.data.industry : null,
+      years_experience: profileFields.includes("years_experience") ? profileQ.data.years_experience : null,
+      top_skills: profileFields.includes("top_skills") ? profileQ.data.top_skills : [],
+      target_roles: profileFields.includes("target_roles") ? profileQ.data.target_roles : [],
+      career_goals: profileFields.includes("career_goals") ? profileQ.data.career_goals : null,
+      pain_points: profileFields.includes("pain_points") ? profileQ.data.pain_points : null,
+    } : null,
     variables,
     attachments,
     tool: tool ?? "chatgpt",
@@ -255,7 +265,8 @@ export function UseFlowView({ promptId }: { promptId: string }) {
         / <span className="text-foreground">{copy.breadcrumb.use}</span>
       </nav>
 
-      <ol className="flex items-center gap-2 text-xs" aria-label="Steps">
+      <details className="rounded-xl border p-4"><summary className="min-h-11 cursor-pointer text-sm font-medium">{language.startsWith("zh") ? "這次提問使用的職涯資料（選填）" : "Career context for this prompt (optional)"}</summary><p className="mb-3 text-xs text-muted-foreground">{language.startsWith("zh") ? "來源：Career Coach 個人檔案。只會加入你選取的欄位；最後一步可檢查及修改完整內容。" : "Source: your Career Coach profile. Only selected fields are added. Review and edit the complete text in the final step."}</p>{profileQ.data && (["current_role", "industry", "years_experience", "top_skills", "target_roles", "career_goals", "pain_points"] as const).map((field) => <label key={field} className="flex min-h-11 items-start gap-3 py-2 text-sm"><input type="checkbox" className="mt-1" checked={profileFields.includes(field)} onChange={(event) => { setProfileFields((fields) => event.target.checked ? [...fields, field] : fields.filter((key) => key !== field)); setEditedText(null); }} /><span>{field.replaceAll("_", " ")}<span className="block text-muted-foreground">{Array.isArray(profileQ.data?.[field]) ? (profileQ.data?.[field] as string[]).join(", ") : profileQ.data?.[field] ?? "—"}</span></span></label>)}</details>
+      <ol className="flex flex-wrap items-center gap-2 text-xs" aria-label="Steps">
         {[0, 1, 2, ...(showPreview ? [3] : [])].map((i) => (
           <li
             key={i}
@@ -291,6 +302,7 @@ export function UseFlowView({ promptId }: { promptId: string }) {
             optional={optional}
             values={variables}
             onChange={(n, v) => {
+              setEditedText(null);
               setVariables((prev) => ({ ...prev, [n]: v }));
               if (errors[n] && v.trim()) {
                 setErrors((prev) => {
@@ -308,21 +320,22 @@ export function UseFlowView({ promptId }: { promptId: string }) {
             filterCategories={prompt.attachment_categories}
             allFiles={filesQ.data ?? []}
             selectedIds={selectedFileIds}
-            onToggle={(id) =>
+            onToggle={(id) => {
+              setEditedText(null);
               setSelectedFileIds((prev) => {
                 const next = new Set(prev);
                 if (next.has(id)) next.delete(id);
                 else next.add(id);
                 return next;
-              })
-            }
+              });
+            }}
             vaultHref={vaultHref}
           />
         ) : isAIToolStep ? (
           <AIToolStep
             copy={copy}
             value={tool ?? "chatgpt"}
-            onChange={setTool}
+            onChange={(value) => { setEditedText(null); setTool(value); }}
             defaultAI={prefsQ.data?.default_ai ?? "chatgpt"}
             customConfigured={Boolean(prefsQ.data?.custom_ai_url)}
             meta={compiled.meta}
@@ -340,6 +353,7 @@ export function UseFlowView({ promptId }: { promptId: string }) {
             onEditedText={setEditedText}
             hideNextTime={hidePreviewNextTime}
             onToggleHideNextTime={setHidePreviewNextTime}
+            allowHidePreview={false}
           />
         ) : null}
       </div>

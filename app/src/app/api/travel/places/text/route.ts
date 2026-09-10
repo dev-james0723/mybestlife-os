@@ -7,6 +7,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { readPlaceCoordinates } from "@/lib/travel-explorer/places/coordinates";
 
 import { GooglePlacesProvider } from "@/lib/travel-explorer/places/google-provider";
 import {
@@ -16,7 +17,7 @@ import {
   requireTravelContext,
   travelPlacesError,
 } from "@/lib/travel-explorer/places/usage";
-import type { GeoBias, TextResponse } from "@/lib/travel-explorer/places/places-provider";
+import type { TextResponse } from "@/lib/travel-explorer/places/places-provider";
 
 export const runtime = "nodejs";
 
@@ -29,10 +30,7 @@ export async function GET(request: Request) {
   if (!query) {
     return NextResponse.json({ error: "missing_query" }, { status: 400 });
   }
-  const lat = Number(url.searchParams.get("lat"));
-  const lng = Number(url.searchParams.get("lng"));
-  const bias: GeoBias | undefined =
-    Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
+  const bias = readPlaceCoordinates(url.searchParams);
 
   const quota = await assertTravelPlacesQuota(auth.ctx, "text");
   if (!quota.ok) return quota.response;

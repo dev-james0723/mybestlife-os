@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useLocaleSlug } from "@/hooks/use-locale-slug";
+import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { useMemo, useState } from "react";
 import {
   Edit2,
@@ -30,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageShell } from "@/components/shared/page-shell";
 import { LoadingPage } from "@/components/shared/loading-state";
-import { OSIconControl, OSPrimaryAction } from "@/components/ui/os-primitives";
+import { OSControl, OSIconControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   CareerEmptyState,
   CareerFilterChips,
@@ -43,11 +46,13 @@ import {
   useCareerEvents,
   useDeleteCareerEvent,
 } from "@/hooks/use-career-events";
+import { useCareerDecisions } from "@/hooks/use-career-decisions";
 import { useCareerVaultFiles } from "@/hooks/use-career-vault";
 import { useCareerVaultShares } from "@/hooks/use-career-vault-shares";
 import { useCareerOpportunities } from "@/hooks/use-career-opportunities";
 import type {
   CareerEvent,
+  CareerDecision,
   CareerEventType,
   CareerOpportunity,
   CareerVaultFile,
@@ -58,6 +63,7 @@ import { EventFormModal } from "./EventFormModal";
 type FilterKey = "all" | "education" | "jobs" | "files" | "events" | "shares" | "opportunities";
 
 type TimelineRow =
+  | { kind: "decision"; date: string; decision: CareerDecision }
   | { kind: "event"; date: string; event: CareerEvent }
   | { kind: "file"; date: string; file: CareerVaultFile }
   | { kind: "share"; date: string; share: CareerVaultShare }
@@ -106,8 +112,10 @@ function formatMonthDay(dateIso: string, locale: string): string {
 
 export function CareerTimeline() {
   const language = useAppStore((s) => s.language);
+  const localeSlug = useLocaleSlug();
   const copy = getCareerPhase5Copy(language).timeline;
   const eventsQ = useCareerEvents();
+  const decisionsQ = useCareerDecisions();
   const filesQ = useCareerVaultFiles();
   const sharesQ = useCareerVaultShares();
   const oppsQ = useCareerOpportunities();
@@ -120,6 +128,7 @@ export function CareerTimeline() {
 
   const rows = useMemo<TimelineRow[]>(() => {
     const out: TimelineRow[] = [];
+    for (const decision of decisionsQ.data ?? []) out.push({ kind: "decision", date: decision.decided_at, decision });
     for (const e of eventsQ.data ?? []) {
       out.push({ kind: "event", date: e.start_date, event: e });
     }
@@ -140,7 +149,7 @@ export function CareerTimeline() {
       });
     }
     return out.sort((a, b) => b.date.localeCompare(a.date));
-  }, [eventsQ.data, filesQ.data, sharesQ.data, oppsQ.data]);
+  }, [eventsQ.data, filesQ.data, sharesQ.data, oppsQ.data, decisionsQ.data]);
 
   const filtered = useMemo(() => {
     return rows.filter((row) => rowMatchesFilter(row, filter));
@@ -167,7 +176,7 @@ export function CareerTimeline() {
     return Array.from(map.entries());
   }, [filtered]);
 
-  if (eventsQ.isLoading || filesQ.isLoading) return <LoadingPage />;
+  if (eventsQ.isLoading || filesQ.isLoading || decisionsQ.isLoading) return <LoadingPage />;
 
   return (
     <PageShell
@@ -187,6 +196,7 @@ export function CareerTimeline() {
       }
     >
       <div className="space-y-5">
+        {(eventsQ.isError || filesQ.isError || sharesQ.isError || oppsQ.isError || decisionsQ.isError) && <div role="alert" className="space-y-2 rounded-xl border p-4"><p>{language.startsWith("zh") ? "部分時間線資料未能載入，以下可能不完整。" : "Some timeline sources could not load. The entries below may be incomplete."}</p><OSControl onClick={() => { void eventsQ.refetch(); void filesQ.refetch(); void sharesQ.refetch(); void oppsQ.refetch(); void decisionsQ.refetch(); }}>{language.startsWith("zh") ? "重試" : "Retry"}</OSControl></div>}
         <CareerHelpPanel icon={Info} title="What appears here?">
           Manual milestones, Career Vault files, shared files, applications,
           education, jobs, awards, projects, speaking, publications, and other
@@ -245,7 +255,7 @@ export function CareerTimeline() {
                               ) : null}
                             </div>
                             <div className="mt-1 text-sm font-semibold">
-                              {titleFor(row)}
+                              {row.kind === "decision" ? <Link className="break-words underline" href={withLocalePrefix(localeSlug, `/career/journal#decision-${row.decision.id}`)}>{titleFor(row)}</Link> : row.kind === "file" ? <Link className="break-words underline" href={withLocalePrefix(localeSlug, `/career/vault/${row.file.id}`)} title={row.file.filename}>{titleFor(row)}</Link> : row.kind === "opportunity" ? <Link className="break-words underline" href={withLocalePrefix(localeSlug, `/career/pipeline/${row.opportunity.id}`)}>{titleFor(row)}</Link> : titleFor(row)}
                             </div>
                             {subtitleFor(row) ? (
                               <div className="text-xs text-muted-foreground">
@@ -340,7 +350,7 @@ function rowMatchesFilter(row: TimelineRow, filter: FilterKey): boolean {
   if (filter === "shares") return row.kind === "share";
   if (filter === "opportunities") return row.kind === "opportunity";
   if (filter === "events") {
-    return row.kind === "event" && row.event.event_type !== "milestone";
+    return row.kind === "decision" || (row.kind === "event" && row.event.event_type !== "milestone");
   }
   if (filter === "education") {
     return (
@@ -362,6 +372,7 @@ function rowMatchesFilter(row: TimelineRow, filter: FilterKey): boolean {
 }
 
 function rowKey(r: TimelineRow, idx: number): string {
+  if (r.kind === "decision") return `d-${r.decision.id}`;
   if (r.kind === "event") return `e-${r.event.id}`;
   if (r.kind === "file") return `f-${r.file.id}-${idx}`;
   if (r.kind === "share") return `s-${r.share.id}`;
@@ -369,6 +380,7 @@ function rowKey(r: TimelineRow, idx: number): string {
 }
 
 function iconFor(r: TimelineRow): React.ReactNode {
+  if (r.kind === "decision") return <BookOpen className="h-3 w-3" />;
   if (r.kind === "event") return ICONS[r.event.event_type] ?? <History className="h-3 w-3" />;
   if (r.kind === "file") return <FileText className="h-3 w-3" />;
   if (r.kind === "share") return <Link2 className="h-3 w-3" />;
@@ -376,13 +388,15 @@ function iconFor(r: TimelineRow): React.ReactNode {
 }
 
 function titleFor(r: TimelineRow): React.ReactNode {
+  if (r.kind === "decision") return r.decision.title;
   if (r.kind === "event") return r.event.title;
-  if (r.kind === "file") return r.file.filename;
+  if (r.kind === "file") return r.file.filename.replace(/_/g, " ");
   if (r.kind === "share") return `Share: ${r.share.share_type}`;
   return `${r.opportunity.role_title} — ${r.opportunity.company_name}`;
 }
 
 function subtitleFor(r: TimelineRow): string | null {
+  if (r.kind === "decision") return r.decision.decision ?? r.decision.context;
   if (r.kind === "event") {
     const parts = [r.event.organization, r.event.location].filter(Boolean);
     return parts.length > 0 ? parts.join(" · ") : null;

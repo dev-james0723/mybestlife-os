@@ -13,6 +13,18 @@
 
 export type WeatherCoords = { lat: number; lon: number; city?: string };
 
+export type DeviceGeolocationErrorReason =
+  | "unsupported"
+  | "insecure_context"
+  | "permission_denied"
+  | "position_unavailable"
+  | "timeout"
+  | "unknown";
+
+export type DeviceGeolocationResult =
+  | { status: "ok"; coords: WeatherCoords }
+  | { status: "error"; reason: DeviceGeolocationErrorReason };
+
 export type WeatherSnapshot = {
   status: "ok";
   tempC: number;
@@ -37,6 +49,7 @@ export type WeatherResult = WeatherSnapshot | WeatherError;
 
 const OWM_CURRENT = "https://api.openweathermap.org/data/2.5/weather";
 const IP_GEO = "http://ip-api.com/json/?fields=status,message,city,lat,lon";
+const DEVICE_GEOLOCATION_TIMEOUT_MS = 15_000;
 
 /**
  * Read the publishable OpenWeather key. Env is intentionally
@@ -109,24 +122,78 @@ export async function resolveLocation(): Promise<WeatherCoords | null> {
 }
 
 /**
- * Triggers the browser location permission prompt (onboarding / settings).
- * Unlike `resolveLocation`, this does not silently skip when permission is not pre-granted.
+ * Triggers the browser location permission prompt and preserves the failure
+ * reason so interactive callers can explain why locating did not work.
  */
-export function requestDeviceGeolocation(): Promise<WeatherCoords | null> {
-  if (typeof navigator === "undefined" || !navigator.geolocation) {
-    return Promise.resolve(null);
+export function requestDeviceGeolocationResult(): Promise<DeviceGeolocationResult> {
+  if (typeof window !== "undefined" && !window.isSecureContext) {
+    return Promise.resolve({ status: "error", reason: "insecure_context" });
   }
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    return Promise.resolve({ status: "error", reason: "unsupported" });
+  }
+
   return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-        }),
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 15_000, maximumAge: 0 }
+    let settled = false;
+    const finish = (result: DeviceGeolocationResult) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(watchdog);
+      resolve(result);
+    };
+    // The browser's PositionOptions.timeout starts only after permission is
+    // granted. This watchdog also covers an ignored permission prompt.
+    const watchdog = window.setTimeout(
+      () => finish({ status: "error", reason: "timeout" }),
+      DEVICE_GEOLOCATION_TIMEOUT_MS,
     );
+
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          finish({
+            status: "ok",
+            coords: {
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+            },
+          }),
+        (error) =>
+          finish({
+            status: "error",
+            reason: geolocationErrorReason(error.code),
+          }),
+        {
+          enableHighAccuracy: true,
+          timeout: DEVICE_GEOLOCATION_TIMEOUT_MS,
+          maximumAge: 0,
+        },
+      );
+    } catch {
+      finish({ status: "error", reason: "unknown" });
+    }
   });
+}
+
+/**
+ * Backwards-compatible nullable wrapper for existing non-interactive callers.
+ */
+export async function requestDeviceGeolocation(): Promise<WeatherCoords | null> {
+  const result = await requestDeviceGeolocationResult();
+  return result.status === "ok" ? result.coords : null;
+}
+
+function geolocationErrorReason(code: number): DeviceGeolocationErrorReason {
+  switch (code) {
+    case 1:
+      return "permission_denied";
+    case 2:
+      return "position_unavailable";
+    case 3:
+      return "timeout";
+    default:
+      return "unknown";
+  }
 }
 
 export async function fetchCurrentWeather(

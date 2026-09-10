@@ -207,7 +207,7 @@ function buildFallbackScript(metrics: AIAnalyticsContext): z.infer<typeof script
   const focus =
     metrics.pulseScores.find((score) => score.key === "focus_consistency")?.score ?? 0;
   const load =
-    metrics.pulseScores.find((score) => score.key === "emotional_load")?.score ?? 0;
+    metrics.pulseScores.find((score) => score.key === "emotional_load")?.score ?? "unavailable because there are too few emotion entries";
   const coherence =
     metrics.pulseScores.find((score) => score.key === "system_coherence")?.score ?? 0;
 

@@ -3,6 +3,8 @@
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 
+import { useGsapPopup } from "@/hooks/use-gsap-popup"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
@@ -59,15 +61,19 @@ function DialogContent({
   children,
   showCloseButton = true,
   size = "sm",
+  ref: forwardedRef,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
   size?: DialogSize
 }) {
+  const motionRef = useGsapPopup("dialog", forwardedRef)
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
+        ref={motionRef}
+        data-os-motion="dialog"
         data-slot="dialog-content"
         className={cn(
           "glass-modal-surface fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-4 text-sm text-popover-foreground duration-100 outline-none isolate scheme-light dark:scheme-dark data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",

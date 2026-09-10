@@ -35,7 +35,6 @@ export function useUpsertDestination() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: travelKeys.destinations });
     },
-    onError: () => toast.error("Could not set that destination"),
   });
 }
 

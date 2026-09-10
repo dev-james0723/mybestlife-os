@@ -620,7 +620,7 @@ export type JournalEntry = {
   userId: string;
   entryDate: string; // YYYY-MM-DD
   topic: string;
-  quadrant: "RED" | "YELLOW" | "BLUE" | "GREEN";
+  quadrant: "RED" | "YELLOW" | "BLUE" | "GREEN" | null;
   primaryEmotion: string;
   secondaryEmotion: string | null;
   intensity: number;

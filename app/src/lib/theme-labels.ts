@@ -62,7 +62,7 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
       career: { en: "Home Page", "zh-TW": "首頁" },
       "career-compass": { en: "Compass", "zh-TW": "指南針" },
       "career-profile": { en: "Profile", "zh-TW": "個人檔案" },
-      "career-vault": { en: "Career Vault", "zh-TW": "職涯檔案庫" },
+      "career-vault": { en: "Career Materials", "zh-TW": "職涯材料" },
       "career-coach": { en: "AI Career Coach", "zh-TW": "AI 職涯教練" },
       "career-pipeline": { en: "Pipeline", "zh-TW": "職涯管道" },
       "career-timeline": { en: "Timeline", "zh-TW": "時間軸" },
@@ -83,7 +83,7 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
       finance: { en: "Finance", "zh-TW": "財務" },
       assets: { en: "Assets", "zh-TW": "資產" },
       documents: { en: "Documents", "zh-TW": "文件" },
-      "software-vault": { en: "Software Vault", "zh-TW": "軟體庫" },
+      "software-vault": { en: "Tools & Subscriptions", "zh-TW": "工具與訂閱" },
       relationship: { en: "Relationships", "zh-TW": "人際關係" },
       relationships: { en: "Relationships", "zh-TW": "人際關係" },
       "role-model": { en: "Role Model", "zh-TW": "榜樣" },
@@ -278,6 +278,13 @@ const themeLabelsMap: Record<UiTheme, ThemeLabels> = {
   },
 };
 
+/**
+ * Visual themes may change color, typography, icons, and atmosphere, but app
+ * taxonomy stays stable. Keep Default as the canonical source for every page,
+ * subpage, menu, command-palette, and quick-action label.
+ */
+const CANONICAL_LABEL_THEME: UiTheme = "default";
+
 function resolveItemId(key: string): string {
   return SPEC_TO_ITEM_ID[key] ?? key;
 }
@@ -436,29 +443,25 @@ const THEMED_CATEGORY_DESCRIPTIONS: Partial<
 };
 
 /**
- * Get a themed label for a navigation category.
- * Uses the user's language to pick en/zh-TW themed label.
+ * Get the canonical Default-theme label for a navigation category.
+ * The visual theme argument remains in the public API so existing callers do
+ * not need theme-specific branches.
  * Falls back to nav-labels.ts for unsupported locales (ja, ko, fr, etc.).
  */
 export function getThemedCategoryLabel(
   categoryId: string,
-  uiTheme: UiTheme,
+  _uiTheme: UiTheme,
   locale: AppLocale
 ): string {
   const themedLocale = resolveThemedLocale(locale);
   if (!themedLocale) return navCategoryTitle(categoryId, locale);
 
-  const labels = themeLabelsMap[uiTheme]?.categories[categoryId];
+  const labels = themeLabelsMap[CANONICAL_LABEL_THEME].categories[categoryId];
   if (!labels) return navCategoryTitle(categoryId, locale);
 
   return labels[themedLocale];
 }
 
-/**
- * Get a themed label for a navigation item.
- * Uses the user's language to pick en/zh-TW themed label.
- * Falls back to nav-labels.ts for unsupported locales (ja, ko, fr, etc.).
- */
 /**
  * Get a themed page description for a navigation category.
  * Returns null when the theme has no override (caller should then use its
@@ -474,24 +477,28 @@ export function getThemedCategoryDescription(
   return labels[locale];
 }
 
+/**
+ * Get the canonical Default-theme label for a page or subpage.
+ * Falls back to nav-labels.ts for unsupported locales (ja, ko, fr, etc.).
+ */
 export function getThemedItemLabel(
   itemId: string,
-  uiTheme: UiTheme,
+  _uiTheme: UiTheme,
   locale: AppLocale
 ): string {
   const resolved = resolveItemId(itemId);
 
-  // 1. Full-locale theme override takes precedence so themed terms (e.g.
-  //    Crewmates / Legends) survive across all supported locales.
+  // Full-locale overrides intentionally resolve through Default. Default has
+  // no alternate taxonomy, so every visual theme receives the same names.
   const overrideKey = ITEM_ALIASES[resolved] ?? resolved;
-  const override = FULL_LOCALE_ITEM_OVERRIDES[uiTheme]?.[overrideKey];
+  const override = FULL_LOCALE_ITEM_OVERRIDES[CANONICAL_LABEL_THEME]?.[overrideKey];
   if (override) return override[locale];
 
-  // 2. Standard en/zh-TW themed table.
+  // Standard en/zh-TW canonical table.
   const themedLocale = resolveThemedLocale(locale);
   if (!themedLocale) return navItemTitle(resolved, locale);
 
-  const labels = themeLabelsMap[uiTheme]?.items[resolved];
+  const labels = themeLabelsMap[CANONICAL_LABEL_THEME].items[resolved];
   if (!labels) return navItemTitle(resolved, locale);
 
   return labels[themedLocale];

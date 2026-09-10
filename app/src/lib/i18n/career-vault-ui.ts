@@ -610,14 +610,14 @@ export type CareerVaultCopy = {
 };
 
 const en: CareerVaultCopy = {
-  pageTitle: "Career Vault",
+  pageTitle: "Career Materials",
   pageDescription:
     "Store, organize, version, and reuse resumes, portfolios, certificates, references, and career assets.",
   landing: {
     title: "Career",
     description:
       "Your professional command center — keep every career document in one place and ready to use.",
-    vaultCardTitle: "Career Vault",
+    vaultCardTitle: "Career Materials",
     vaultCardDescription:
       "Upload and organize resumes, bios, photos, certificates, portfolios and more.",
     openVault: "Open vault",
@@ -1261,12 +1261,12 @@ Option B — SQL Editor
 
 const overrides: Partial<Record<AppLocale, DeepPartial<CareerVaultCopy>>> = {
   "zh-TW": {
-    pageTitle: "職涯檔案庫",
+    pageTitle: "職涯材料",
     pageDescription: "集中管理履歷、簡介、大頭照、作品集與其他職涯文件。",
     landing: {
       title: "職涯",
       description: "你的職涯指揮中心——把每份職涯文件都放在隨手可用的地方。",
-      vaultCardTitle: "職涯檔案庫",
+      vaultCardTitle: "職涯材料",
       vaultCardDescription: "上傳並整理履歷、簡介、大頭照、證書、作品集等。",
       openVault: "開啟檔案庫",
     },

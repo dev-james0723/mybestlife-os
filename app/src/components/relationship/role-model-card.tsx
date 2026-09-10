@@ -90,7 +90,7 @@ export function RoleModelCard({
           as="article"
           role="button"
           tabIndex={0}
-          className="group cursor-pointer transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
+          className="group cursor-pointer focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
           onClick={onClick}
           onKeyDown={(event) => activateCard(event, onClick)}
         >
@@ -156,7 +156,7 @@ export function RoleModelCard({
         as="article"
         role="button"
         tabIndex={0}
-        className="group h-full cursor-pointer transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
+        className="group h-full cursor-pointer focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
         onClick={onClick}
         onKeyDown={(event) => activateCard(event, onClick)}
       >
@@ -325,6 +325,7 @@ function FavoriteButton({
 }
 
 function activateCard(event: KeyboardEvent<HTMLElement>, onClick: () => void) {
+  if (event.target !== event.currentTarget) return;
   if (event.key !== "Enter" && event.key !== " ") return;
   event.preventDefault();
   onClick();

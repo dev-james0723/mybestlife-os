@@ -31,7 +31,7 @@ export function ResumeResponseRatesTable() {
         <h2 className="text-sm font-semibold">{copy.title}</h2>
         <p className="text-xs text-muted-foreground">{copy.description}</p>
       </div>
-      {rows.length === 0 ? (
+      {oppsQ.isLoading || filesQ.isLoading ? <p role="status">{language.startsWith("zh") ? "載入中…" : "Loading…"}</p> : oppsQ.isError || filesQ.isError ? <button className="min-h-11 text-sm underline" onClick={() => { void oppsQ.refetch(); void filesQ.refetch(); }}>{language.startsWith("zh") ? "未能載入，按此重試" : "Could not load. Try again"}</button> : rows.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
           {copy.empty}
         </p>
@@ -56,7 +56,7 @@ export function ResumeResponseRatesTable() {
               {rows.map((r) => (
                 <tr key={r.resumeId} className="border-b last:border-b-0">
                   <td className="py-2 pr-3">
-                    <span className="block max-w-[22ch] truncate">
+                    <span className="block max-w-[22ch] break-words">
                       {r.label}
                     </span>
                   </td>
@@ -67,7 +67,7 @@ export function ResumeResponseRatesTable() {
                     {r.interviews}
                   </td>
                   <td className="py-2 pl-3 text-right tabular-nums font-semibold">
-                    {r.rate}%
+                    {r.applications < 5 ? (language.startsWith("zh") ? "樣本不足" : "Too few applications") : `${r.rate}%`}
                   </td>
                 </tr>
               ))}

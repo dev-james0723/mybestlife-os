@@ -206,7 +206,7 @@ export const navigationCategories: NavCategory[] = [
       },
       {
         itemId: "career-vault",
-        title: "Career Vault",
+        title: "Career Materials",
         url: "/career/vault",
         icon: FolderOpen,
       },
@@ -276,7 +276,7 @@ export const navigationCategories: NavCategory[] = [
         icon: FileText,
         searchParams: { tab: "documents" },
       },
-      { itemId: "software-vault", title: "Software Vault", url: "/vault", icon: Package },
+      { itemId: "software-vault", title: "Tools & Subscriptions", url: "/vault", icon: Package },
     ],
   },
   {

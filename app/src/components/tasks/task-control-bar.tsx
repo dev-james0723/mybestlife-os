@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -20,7 +21,6 @@ import {
   OSSegmentedControl,
 } from "@/components/ui/os-primitives";
 import {
-  filterHorizontalScrollClassName,
   filterSearchControlClassName,
 } from "@/components/shared/filter-scroll";
 import {
@@ -163,6 +163,7 @@ export function TaskControlBar({
   onOpenAdvanced,
   onClearAll,
 }: TaskControlBarProps) {
+  const [expanded, setExpanded] = useState(false);
   const statusOptions: Option[] = [
     { value: "all", label: formatAllFilterLabel(copy, copy.filterStatus) },
     ...getTaskStatusOptions(copy),
@@ -183,8 +184,8 @@ export function TaskControlBar({
   const showClear = activeFilterCount > 0 || filter.search.trim().length > 0;
 
   return (
-    <div className={cn(filterHorizontalScrollClassName, "rounded-[1.25rem] border border-border/60 bg-white/50 p-3 dark:border-white/10 dark:bg-white/[0.035]")}>
-      <div className={cn(filterSearchControlClassName, "lg:max-w-sm")}>
+    <div className={cn("flex min-w-0 flex-wrap items-center gap-2", "rounded-[1.25rem] border border-border/60 bg-white/50 p-3 dark:border-white/10 dark:bg-white/[0.035]")}>
+      <div className={cn(filterSearchControlClassName, "w-full min-w-0 basis-full sm:basis-auto lg:max-w-sm")}>
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filter.search}
@@ -194,6 +195,8 @@ export function TaskControlBar({
         />
       </div>
 
+      <OSControl className="sm:hidden" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{centerCopy.advancedFilters}{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</OSControl>
+      <div className={cn(expanded ? "flex" : "hidden", "min-w-0 flex-wrap items-center gap-2 sm:flex")}>
       <QuickSelect
         value={filter.status}
         options={statusOptions}
@@ -238,6 +241,7 @@ export function TaskControlBar({
         </OSIconControl>
       </div>
 
+      </div>
       {onOpenAdvanced && (
         <OSControl className="shrink-0" onClick={onOpenAdvanced}>
           <SlidersHorizontal className="h-4 w-4" />

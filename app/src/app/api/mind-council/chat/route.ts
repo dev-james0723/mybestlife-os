@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
-import { getPresetSkillById } from "@/lib/mind-council/preset-skills";
+import { resolveSavedMindSkill, type ResolvedMindSkill } from "@/lib/mind-council/resolve-saved-skill";
 import { invokeMindSkill, mindCouncilPublicDisclaimer } from "@/lib/mind-council/skill-runtime";
-import type { ChatMessageRole, MindSkill } from "@/lib/mind-council/types";
+import type { ChatMessageRole } from "@/lib/mind-council/types";
 
 export const runtime = "nodejs";
 
@@ -42,8 +42,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "skillId is required" }, { status: 400 });
   }
 
-  let skill: MindSkill | undefined = getPresetSkillById(skillId);
-  if (!skill && skillId.startsWith("custom-")) {
+  let skill: ResolvedMindSkill | undefined;
+  try {
+    skill = await resolveSavedMindSkill(supabase, user.id, skillId);
+  } catch {
+    return NextResponse.json({ error: "Could not load the saved skill" }, { status: 503 });
+  }
+  // Browser-only legacy custom lenses remain usable; persisted IDs must never
+  // fall back to a client-supplied identity or prompt after a failed lookup.
+  if (!skill && skillId.startsWith("custom-") && !skillId.startsWith("custom-rm-")) {
     const customLensTitle =
       typeof json.customLensTitle === "string" ? json.customLensTitle.trim() : "";
     const customSystemHint =
@@ -101,6 +108,7 @@ export async function POST(req: Request) {
       agentId: skill.agentId,
       lensTitle: skill.lensTitle,
       systemPromptHint: skill.systemPromptHint,
+      skillMarkdown: skill.skillMarkdown,
       locale,
       contents,
     });

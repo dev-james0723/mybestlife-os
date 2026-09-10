@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   CalendarClock,
@@ -31,7 +32,6 @@ import {
 import { itemsForDate } from "@/lib/calendar/projection";
 import { ConflictWarningPanel } from "@/components/calendar/conflict-warning-panel";
 import { FreeWindowPanel } from "@/components/calendar/free-window-panel";
-import { EnergyArcChart } from "@/components/calendar/energy-arc-chart";
 import type {
   CalendarItem,
   CalendarItemTask,
@@ -55,6 +55,7 @@ function unscheduledTasksFor(items: CalendarItem[], dateIso: string): CalendarIt
 }
 
 export function AIPlanTab() {
+  const router = useRouter();
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
@@ -78,18 +79,16 @@ export function AIPlanTab() {
       const dayItems = itemsForDate(items, dateIso);
       const unscheduled = unscheduledTasksFor(items, dateIso);
 
-      // Fire all four AI calls in parallel. Real providers can be swapped
-      // in via lib/calendar/ai/index.ts without touching this surface.
-      const [summary, windows, detected, plan] = await Promise.all([
+      // All calculations use the loaded calendar records.
+      const [summary, windows, detected] = await Promise.all([
         summarizeDay(dateIso, dayItems),
         findFreeWindows(dateIso, dayItems),
         detectConflicts(dayItems),
-        generatePlan(dateIso, unscheduled, []),
       ]);
 
       // Resolve plan against the freshly computed free windows so it
       // references slots that actually exist.
-      void windows;
+      const plan = await generatePlan(dateIso, unscheduled, windows);
 
       setSummaryText(summary.text);
       setFreeWindows(windows);
@@ -154,6 +153,8 @@ export function AIPlanTab() {
               {isGenerating ? copy.aiGenerating : copy.aiGenerate}
             </Button>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">{copy.aiEmptyState}</p>
+          {hasGenerated && suggestions.length === 0 && <p role="status" className="mt-3 text-sm">{language.startsWith("zh") ? "沒有可安排的未完成任務，或已記錄的時段沒有足夠空檔。" : "No unscheduled tasks fit the available recorded windows."}</p>}
           {summaryText && (
             <p className="mt-4 text-sm leading-relaxed text-foreground/90">
               {summaryText}
@@ -262,16 +263,6 @@ export function AIPlanTab() {
           </GlassPanel>
         )}
 
-        {hasGenerated && suggestions.length > 0 && (
-          <EnergyArcChart
-            title={copy.aiEnergyArcTitle}
-            suggestions={suggestions.map((s) => s.suggestion)}
-            legendDeep={copy.energyDeep}
-            legendShallow={copy.energyShallow}
-            legendRecovery={copy.energyRecovery}
-          />
-        )}
-
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
@@ -298,7 +289,7 @@ export function AIPlanTab() {
               scheduleCta={copy.quickAdd}
               windows={freeWindows}
               emptyLabel={copy.todayNoFreeWindows}
-              onSchedule={() => toast.success(copy.aiAccept)}
+              onSchedule={() => router.push(plannerHref)}
             />
           </>
         ) : (

@@ -1,0 +1,71 @@
+{
+  "releaseCommit": "c1ca2a2abf1efba428a8a9a135318e4a69148dac",
+  "checkoutHead": "d467ab83f2a949f7738b01d6c99aa2bfc09092bb",
+  "files": [
+    {
+      "path": "app/src/types/database.ts",
+      "matchesRelease": false,
+      "workingSha256": "ae0d1895096145363440536477022f1238f4928d0f0e7dd61c2c590aa020324d"
+    },
+    {
+      "path": "app/src/lib/repositories/tasks.ts",
+      "matchesRelease": false,
+      "workingSha256": "31c7e83c8bde5c3501b6df24fa4c2c191146330dcf216d956bb4a0eb2f3a4079"
+    },
+    {
+      "path": "app/src/lib/repositories/projects.ts",
+      "matchesRelease": false,
+      "workingSha256": "41d4c4f530dfd97172ead476d2bd54315fd9543314aea2f78a55874df139e613"
+    },
+    {
+      "path": "app/src/lib/repositories/goals.ts",
+      "matchesRelease": true,
+      "workingSha256": "f53906e8a06e798fb97d9df3bcde42cdc51e1bcc19d1c03bdbf3a8b57a75ba19"
+    },
+    {
+      "path": "app/src/lib/repositories/journal.ts",
+      "matchesRelease": false,
+      "workingSha256": "8488ad70905fad13cc8423e48526129615d9d472ba2ddc9ec51cb310f8656ed5"
+    },
+    {
+      "path": "app/src/lib/repositories/habits.ts",
+      "matchesRelease": true,
+      "workingSha256": "abbbddcaac42100662bc369b3f1f7c30b5962cad8e90701e16a51a44480ef20c"
+    },
+    {
+      "path": "app/src/lib/repositories/grateful-things.ts",
+      "matchesRelease": true,
+      "workingSha256": "f25521e123b887c6b279a45b68b5b5d8899395bd0609446617785afbe4f118e7"
+    },
+    {
+      "path": "app/src/lib/repositories/about-me.ts",
+      "matchesRelease": false,
+      "workingSha256": "ed525c8f67332c0554b7ce487b6d9cd5d0bd032739cd829a2e34ba4493bdeb17"
+    },
+    {
+      "path": "app/src/lib/features.ts",
+      "matchesRelease": false,
+      "workingSha256": "8bb3e33662d46a6245db54c09129896414d04c03ceb2ccaa8f8b3febcecc9a1c"
+    },
+    {
+      "path": "app/src/lib/repositories/planner-focus-sessions.ts",
+      "matchesRelease": true,
+      "workingSha256": "a9173df87a8e2ea2fdcfa7d620082176009f40cca07cc557a1ca5b9f81a237a6"
+    },
+    {
+      "path": "app/src/components/garden/GardenAdventure.tsx",
+      "matchesRelease": true,
+      "workingSha256": "8951a6bf286fcc39d5efc525cc4eca4da2e5ffccc5626ed6798c4447811074f6"
+    },
+    {
+      "path": "app/src/components/garden/AdventureScene.tsx",
+      "matchesRelease": true,
+      "workingSha256": "708b4957e3ecfe9bcd357c750ad5f4f3e8491caf1ba022afc96634ad9406dc67"
+    },
+    {
+      "path": "app/src/lib/garden/audio.ts",
+      "matchesRelease": true,
+      "workingSha256": "5090ddc1b2a86028b67255cf00c420114a45cd7f423c69c088d82dbaa94e3910"
+    }
+  ]
+}

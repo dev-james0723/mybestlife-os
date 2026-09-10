@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAppStore } from "@/stores/app-store";
+import { CreateProjectModal } from "@/components/projects/create-project-modal";
 import { PageShell } from "@/components/shared/page-shell";
 import { FilterBar } from "@/components/shared/filter-bar";
 import { EntityCard } from "@/components/shared/entity-card";
@@ -234,6 +237,10 @@ function GoalDetailModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const router = useRouter();
+  const projectsHref = useLocalizedPath("/projects");
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
+  const [showProject, setShowProject] = useState(false);
   const { data: keyResults, isLoading: krLoading } = useKeyResults(goal.id);
   const updateGoal = useUpdateGoal();
   const deleteGoal = useDeleteGoal();
@@ -384,7 +391,7 @@ function GoalDetailModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && !showProject} onOpenChange={onOpenChange}>
         <OSDialogSurface size="2xl" className="max-h-[85dvh] overflow-y-auto">
           {editing ? (
             <>
@@ -661,6 +668,7 @@ function GoalDetailModal({
               </div>
 
               <DialogFooter>
+                <OSPrimaryAction onClick={() => setShowProject(true)}>{chinese ? "從這個目標開始一個專案" : "Start a project from this goal"}</OSPrimaryAction>
                 <OSControl onClick={enterEditMode}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit
@@ -670,6 +678,8 @@ function GoalDetailModal({
           )}
         </OSDialogSurface>
       </Dialog>
+
+      <CreateProjectModal open={showProject} onOpenChange={setShowProject} preset={{ name: goal.name, description: goal.description ?? "", status: "planning", priority: "medium", tags: [], suggestedTasks: [] }} onCreated={(project) => { onOpenChange(false); router.push(`${projectsHref}?openId=${project.id}`); }} />
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-2xl border border-slate-200/80 bg-white/94 shadow-[0_24px_90px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/12 dark:bg-slate-950/94">

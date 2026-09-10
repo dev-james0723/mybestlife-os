@@ -10,6 +10,7 @@ import { LoadingPage } from "@/components/shared/loading-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { OSPageHeader } from "@/components/ui/os-primitives";
+import { FirstStepCard } from "@/components/onboarding/first-step-card";
 import { MotivationCard } from "@/components/dashboard/motivation-card";
 import { TodaysKnowledgePickCard } from "@/components/dashboard/todays-knowledge-pick-card";
 import { TodayBlockView } from "@/components/calendar/today-block";
@@ -238,6 +239,8 @@ export default function DashboardPage() {
           }
         />
       </div>
+
+      <FirstStepCard />
 
       <div data-motion-reveal>
         <TodayBlockView today={today} showWeatherWidget={false} />

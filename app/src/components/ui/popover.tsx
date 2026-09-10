@@ -3,6 +3,8 @@
 import * as React from "react"
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
 
+import { useGsapPopup } from "@/hooks/use-gsap-popup"
+
 import { cn } from "@/lib/utils"
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
@@ -19,12 +21,14 @@ function PopoverContent({
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
+  ref: forwardedRef,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  const motionRef = useGsapPopup("popover", forwardedRef)
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -37,11 +41,13 @@ function PopoverContent({
           // backdrop-filter on the Popup *child* breaks under a transformed
           // ancestor in WebKit — End Time / block pickers looked solid while
           // Start could look fine depending on placement.
-          "glass-modal-surface isolate z-50 overflow-hidden rounded-xl",
+          "isolate z-50",
         )}
       >
         <PopoverPrimitive.Popup
-          data-slot="popover-content"
+          ref={motionRef}
+        data-os-motion="popover"
+        data-slot="popover-content"
           className={cn(
             "z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-xl bg-transparent p-2.5 text-sm text-popover-foreground outline-hidden duration-100 scheme-light dark:scheme-dark data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
             className

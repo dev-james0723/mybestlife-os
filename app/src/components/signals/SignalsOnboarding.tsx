@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, type SetStateAction } from "react";
 import { ArrowLeft, ArrowRight, Check, Radar } from "lucide-react";
 
+import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
@@ -22,25 +23,25 @@ import {
 } from "@/lib/signals/constants";
 import type { SignalsPreferences } from "@/lib/signals/types";
 
+import { z } from "zod";
+import { useAccountDraft } from "@/hooks/use-account-draft";
+import { LocalDraftStatus } from "@/components/shared/local-draft-status";
+const draftSchema = z.object({ step: z.number().int().min(1).max(3), purposes: z.array(z.enum(SIGNAL_PURPOSE_IDS)).max(MAX_PURPOSES), topics: z.array(z.enum(SIGNAL_TOPIC_IDS)).max(MAX_TOPICS), consent: z.object({ useBrainContext: z.boolean(), useProjects: z.boolean(), useCalendar: z.boolean(), useTasks: z.boolean(), useLocation: z.boolean(), useReadingBehavior: z.boolean() }) });
 type Props = {
   copy: SignalsUiCopy;
-  onComplete: (patch: Partial<SignalsPreferences>) => void;
+  onComplete: (patch: Partial<SignalsPreferences>) => boolean;
+  initialPreferences: SignalsPreferences;
+  onCancel?: () => void;
 };
 
 const TOTAL_STEPS = 4;
 
-export function SignalsOnboarding({ copy, onComplete }: Props) {
-  const [step, setStep] = useState(0);
-  const [purposes, setPurposes] = useState<SignalPurposeId[]>([]);
-  const [topics, setTopics] = useState<SignalTopicId[]>([]);
-  const [consent, setConsent] = useState<Record<SignalConsentKey, boolean>>({
-    useBrainContext: false,
-    useProjects: false,
-    useCalendar: false,
-    useTasks: false,
-    useLocation: false,
-    useReadingBehavior: false,
-  });
+export function SignalsOnboarding({ copy, onComplete, initialPreferences, onCancel }: Props) {
+  const chinese = useAppStore((s) => s.language).startsWith("zh");
+  const initialDraft: z.infer<typeof draftSchema> = { step: 1, purposes: initialPreferences.purposes.filter((value): value is SignalPurposeId => SIGNAL_PURPOSE_IDS.includes(value as SignalPurposeId)), topics: initialPreferences.followedTopics.filter((value): value is SignalTopicId => SIGNAL_TOPIC_IDS.includes(value as SignalTopicId)), consent: { useBrainContext: initialPreferences.useBrainContext, useProjects: initialPreferences.useProjects, useCalendar: initialPreferences.useCalendar, useTasks: initialPreferences.useTasks, useLocation: initialPreferences.useLocation, useReadingBehavior: initialPreferences.useReadingBehavior } };
+  const { draft, setDraft, clearDraft, ready, storageError } = useAccountDraft("signals:setup", initialDraft, draftSchema);
+  const { step, purposes, topics, consent } = draft;
+  const setField = useCallback(<K extends keyof typeof draft>(key: K, value: SetStateAction<typeof draft[K]>) => setDraft((previous) => ({ ...previous, [key]: typeof value === "function" ? (value as (current: typeof draft[K]) => typeof draft[K])(previous[key]) : value })), [setDraft]);
 
   const seededTopics = useMemo(() => {
     const seed = new Set<SignalTopicId>();
@@ -51,7 +52,7 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
   }, [purposes]);
 
   const togglePurpose = (id: SignalPurposeId) => {
-    setPurposes((prev) =>
+    setField("purposes", (prev) =>
       prev.includes(id)
         ? prev.filter((p) => p !== id)
         : prev.length >= MAX_PURPOSES
@@ -61,7 +62,7 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
   };
 
   const toggleTopic = (id: SignalTopicId) => {
-    setTopics((prev) =>
+    setField("topics", (prev) =>
       prev.includes(id)
         ? prev.filter((t) => t !== id)
         : prev.length >= MAX_TOPICS
@@ -73,15 +74,15 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
   const goNext = () => {
     if (step === 1 && topics.length === 0) {
       // Entering topics → pre-seed from chosen purposes (truthful, deterministic).
-      setTopics(seededTopics.slice(0, MAX_TOPICS));
+      setField("topics", seededTopics.slice(0, MAX_TOPICS));
     }
-    setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
+    setField("step", (s) => Math.min(TOTAL_STEPS - 1, s + 1));
   };
-  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  const goBack = () => setField("step", (s) => Math.max(1, s - 1));
 
   const finish = () => {
     const finalTopics = topics.length > 0 ? topics : seededTopics;
-    onComplete({
+    const saved = onComplete({
       onboardingCompleted: true,
       purposes,
       followedTopics: finalTopics.length > 0 ? finalTopics : ["AI", "World affairs", "Technology"],
@@ -92,6 +93,7 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
       useLocation: consent.useLocation,
       useReadingBehavior: consent.useReadingBehavior,
     });
+    if (saved) clearDraft();
   };
 
   const canContinue =
@@ -100,18 +102,21 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
     (step === 2 && topics.length >= MIN_TOPICS) ||
     step === 3;
 
+  if (!ready) return <p role="status">{chinese ? "載入草稿…" : "Loading draft…"}</p>;
   return (
     <div className="mx-auto max-w-2xl py-6 sm:py-10">
+      <LocalDraftStatus unavailable={storageError} />
+      {onCancel && <Button variant="ghost" onClick={onCancel}>{chinese ? "返回動態，保留原有偏好" : "Return to feed with existing preferences"}</Button>}
       <GlassPanel className="calendar-specular-highlight overflow-hidden p-6 sm:p-8">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="flex size-7 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Radar className="h-4 w-4" />
           </span>
-          <span>{copy.onboarding.step(step + 1, TOTAL_STEPS)}</span>
+          <span>{step === 1 ? copy.onboarding.purposeTitle : copy.onboarding.step(step + 1, TOTAL_STEPS)}</span>
         </div>
 
         {/* Progress dots */}
-        <div className="mt-3 flex gap-1.5" aria-hidden>
+        <div className="mt-3 hidden gap-1.5" aria-hidden>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <span
               key={i}
@@ -209,7 +214,7 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
                     <Checkbox
                       checked={consent[key]}
                       onCheckedChange={(checked) =>
-                        setConsent((prev) => ({ ...prev, [key]: checked === true }))
+                        setField("consent", (prev) => ({ ...prev, [key]: checked === true }))
                       }
                       className="mt-0.5"
                     />
@@ -232,24 +237,26 @@ export function SignalsOnboarding({ copy, onComplete }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-between gap-2">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
           <div>
-            {step > 0 && (
+            {step > 1 && (
               <Button variant="ghost" size="sm" onClick={goBack}>
                 <ArrowLeft />
                 {copy.onboarding.back}
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={finish}>
               {copy.onboarding.skip}
             </Button>
             {step < TOTAL_STEPS - 1 ? (
-              <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={goNext} disabled={!canContinue}>
-                {copy.onboarding.continue}
+              <>
+              {step === 1 ? <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={finish} disabled={!canContinue}>{copy.onboarding.finish}</Button> : null}
+              <Button variant={step === 1 ? "outline" : "default"} size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={goNext} disabled={!canContinue}>
+                {step === 1 ? (chinese ? "更多偏好（選填）" : "More preferences (optional)") : copy.onboarding.continue}
                 <ArrowRight />
-              </Button>
+              </Button></>
             ) : (
               <Button size="sm" className="h-11 px-4 sm:h-7 sm:px-2.5" onClick={finish}>
                 <Check />

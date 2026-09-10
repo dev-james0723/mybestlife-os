@@ -63,7 +63,9 @@ export function IdeasAutoEnrichmentRunner({ items }: { items: Idea[] }) {
 
     const queue = items
       .filter((idea) => {
-        const needs = needsTextEnrichment(idea) || needsCardVisual(idea);
+        const preferences = idea.ai_suggestions as Record<string, unknown> | null;
+        if (preferences?.enrichment_opt_in !== true) return false;
+        const needs = needsTextEnrichment(idea) || (preferences?.visual_opt_in === true && needsCardVisual(idea));
         return needs && !queuedRef.current.has(idea.id);
       })
       .slice(0, 12);
@@ -78,12 +80,13 @@ export function IdeasAutoEnrichmentRunner({ items }: { items: Idea[] }) {
       for (const idea of queue) {
         if (cancelled) break;
         try {
-          const visualOnly = needsCardVisual(idea) && !needsTextEnrichment(idea);
+          const allowVisual = (idea.ai_suggestions as Record<string, unknown> | null)?.visual_opt_in === true;
+          const visualOnly = allowVisual && needsCardVisual(idea) && !needsTextEnrichment(idea);
           const enriched = visualOnly
             ? await fetchIdeaCardVisual({ ideaId: idea.id })
             : await fetchIdeaAutoEnrich({
                 ideaId: idea.id,
-                includeVisual: needsCardVisual(idea),
+                includeVisual: allowVisual && needsCardVisual(idea),
               });
           if (!cancelled) upsertIdea(enriched);
         } catch (err) {

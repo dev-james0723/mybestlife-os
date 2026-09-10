@@ -131,7 +131,7 @@ export function DecisionFormDialog({ open, onOpenChange, existing }: Props) {
     setOptions((prev) => prev.filter((_, i) => i !== idx));
 
   const onSubmit = async () => {
-    if (!title.trim()) return;
+    if (!title.trim() || create.isPending || update.isPending) return;
     const cleanedOptions = options
       .filter((o) => o.name.trim().length > 0)
       .map((o) => ({
@@ -141,6 +141,7 @@ export function DecisionFormDialog({ open, onOpenChange, existing }: Props) {
         cons: o.cons.map((c) => c.trim()).filter(Boolean),
       }));
 
+    try {
     if (existing) {
       await update.mutateAsync({
         id: existing.id,
@@ -172,6 +173,7 @@ export function DecisionFormDialog({ open, onOpenChange, existing }: Props) {
       });
     }
     onOpenChange(false);
+    } catch { /* Keep the decision draft; mutation reports the save error. */ }
   };
 
   const busy = create.isPending || update.isPending;

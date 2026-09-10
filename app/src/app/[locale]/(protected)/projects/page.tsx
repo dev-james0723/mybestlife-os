@@ -766,6 +766,7 @@ export default function ProjectsPage() {
       {/* Modals */}
       <CreateProjectModal
         open={showCreate}
+        onCreated={setSelectedProject}
         onOpenChange={setShowCreate}
       />
 

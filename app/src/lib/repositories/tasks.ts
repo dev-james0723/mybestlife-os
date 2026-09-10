@@ -9,6 +9,7 @@ import type {
 const TASK_SELECT = "*, project:projects(id, name, status, priority)";
 
 export type CreateTaskInput = {
+  id?: string;
   title: string;
   description?: string;
   project_id?: string | null;
@@ -29,7 +30,7 @@ export type CreateTaskInput = {
   calendar_provider?: CalendarProvider | null;
 };
 
-export type UpdateTaskInput = Partial<CreateTaskInput> & {
+export type UpdateTaskInput = Partial<Omit<CreateTaskInput, "id">> & {
   completed_at?: string | null;
 };
 
@@ -75,13 +76,13 @@ export const tasksRepository = {
     const userId = await getCurrentUserId();
     const { data, error } = await supabase
       .from("tasks")
-      .insert({
+      .upsert({
         ...input,
         user_id: userId,
         status: input.status ?? "todo",
         priority: input.priority ?? "medium",
         tags: input.tags ?? [],
-      })
+      }, { onConflict: "id" })
       .select(TASK_SELECT)
       .single();
     if (error) throw error;

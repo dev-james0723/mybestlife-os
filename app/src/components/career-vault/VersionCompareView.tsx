@@ -128,6 +128,7 @@ export function VersionCompareView({ fileId }: VersionCompareViewProps) {
   const right = sideById(rightId);
 
   if (fileQuery.isLoading || versionsQuery.isLoading) return <LoadingPage />;
+  if (fileQuery.isError || versionsQuery.isError) return <div role="alert" className="space-y-3"><p>{copy.errors.fetchFailed}</p><Button onClick={() => { void fileQuery.refetch(); void versionsQuery.refetch(); }}>{language.startsWith("zh") ? "重試" : "Retry"}</Button></div>;
   if (!fileQuery.data) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center text-sm text-muted-foreground">

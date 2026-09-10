@@ -7,6 +7,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { readPlaceCoordinates } from "@/lib/travel-explorer/places/coordinates";
 
 import { GooglePlacesProvider } from "@/lib/travel-explorer/places/google-provider";
 import {
@@ -25,11 +26,11 @@ export async function GET(request: Request) {
   if (!auth.ok) return auth.response;
 
   const url = new URL(request.url);
-  const lat = Number(url.searchParams.get("lat"));
-  const lng = Number(url.searchParams.get("lng"));
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+  const coordinates = readPlaceCoordinates(url.searchParams);
+  if (!coordinates) {
     return NextResponse.json({ error: "invalid_coordinates" }, { status: 400 });
   }
+  const { lat, lng } = coordinates;
   const radius = Number(url.searchParams.get("radius")) || undefined;
   const max = Number(url.searchParams.get("max")) || undefined;
 

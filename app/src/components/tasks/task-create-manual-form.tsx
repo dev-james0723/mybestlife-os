@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +31,9 @@ import {
 import { TASK_CATEGORIES } from "@/lib/tasks/task-categories";
 import type { TaskDraft } from "@/lib/tasks/task-create";
 
+import { useAppStore } from "@/stores/app-store";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
+
 const NONE = "none";
 
 interface TaskCreateManualFormProps {
@@ -43,6 +46,7 @@ interface TaskCreateManualFormProps {
   centerCopy: TasksCenterUiCopy;
   submitLabel?: string;
   onCancel?: () => void;
+  compact?: boolean;
 }
 
 export function TaskCreateManualForm({
@@ -55,7 +59,10 @@ export function TaskCreateManualForm({
   centerCopy,
   submitLabel,
   onCancel,
+  compact = false,
 }: TaskCreateManualFormProps) {
+  const titleId = useId();
+  const journeyCopy = getUxJourneyCopy(useAppStore((state) => state.language));
   const statusOptions = useMemo(() => getTaskStatusOptions(copy), [copy]);
   const priorityOptions = useMemo(() => getTaskPriorityOptions(copy), [copy]);
   const categoryOptions = useMemo(
@@ -95,7 +102,7 @@ export function TaskCreateManualForm({
   );
 
   const handleSubmit = () => {
-    if (!title.trim()) return;
+    if (!title.trim() || isPending) return;
     const tags = tagsInput
       .split(",")
       .map((t) => t.trim())
@@ -118,15 +125,24 @@ export function TaskCreateManualForm({
     <div className="space-y-4">
       <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
         <div className="space-y-2">
-          <Label>{copy.labelTitle}</Label>
+          <Label htmlFor={titleId}>{copy.labelTitle}</Label>
           <Input
+            id={titleId}
             value={title}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                handleSubmit();
+              }
+            }}
             autoFocus
             onChange={(e) => setTitle(e.target.value)}
             placeholder={copy.placeholderTaskTitle}
             className="h-11 min-h-11 rounded-xl"
           />
         </div>
+        <details open={compact ? undefined : true} className="space-y-4">
+          <summary className="min-h-11 cursor-pointer rounded-lg py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">{journeyCopy.optionalDetails}</summary>
         <div className="space-y-2">
           <Label>{copy.labelDescription}</Label>
           <Textarea
@@ -267,6 +283,7 @@ export function TaskCreateManualForm({
             className="h-11 min-h-11 rounded-xl"
           />
         </div>
+        </details>
       </div>
 
       <DialogFooter>

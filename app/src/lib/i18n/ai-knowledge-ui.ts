@@ -130,6 +130,9 @@ export type AiKnowledgeUiCopy = {
     copyBody: string;
     runWithAi: string;
     providerGemini: string;
+    openInAi: string;
+    openInAiHint: string;
+    openInProvider: (provider: string) => string;
   };
 
   /** Phase 5 — run log + quick stats on the Activity tab. */
@@ -200,14 +203,38 @@ export type AiKnowledgeUiCopy = {
     autoMetadataLoading: string;
   };
 
-  /** Phase 4 — guided prompt creator (8 steps + review). */
+  /** Conversational prompt creator (three lightweight questions + review). */
   createWizard: {
     pageTitle: string;
     pageDescription: string;
+    conversationTitle: string;
+    conversationDescription: string;
     stepOf: (current: number, total: number) => string;
     steps: Record<PromptWizardStepId, { title: string; hint: string }>;
     next: string;
     back: string;
+    skip: string;
+    optional: string;
+    answerPlaceholder: {
+      goal: string;
+      context: string;
+      output: string;
+    };
+    outputChoices: {
+      choose: string;
+      bullets: string;
+      steps: string;
+      table: string;
+      polishedDraft: string;
+    };
+    toneQuestion: string;
+    toneChoices: {
+      clear: string;
+      concise: string;
+      warm: string;
+      expert: string;
+    };
+    buildPrompt: string;
     reviewTitle: string;
     reviewHint: string;
     backToSteps: string;
@@ -279,6 +306,9 @@ export type AiKnowledgeUiCopy = {
     wizardDraftReady: string;
     copyBodySuccess: string;
     copyBodyFailed: string;
+    openedInAi: (provider: string) => string;
+    openedInAiPaste: (provider: string) => string;
+    aiChatOpenFailed: string;
     folderCreated: (name: string) => string;
     folderCreateFailed: string;
     folderUpdated: string;
@@ -428,12 +458,12 @@ const en: AiKnowledgeUiCopy = {
   promptCard: {
     libraryBadge: "Library",
     customBadge: "Custom",
-    forkedFromBadge: (sourceSlug) => `Forked from ${sourceSlug}`,
+    forkedFromBadge: (sourceSlug) => `Copied from ${sourceSlug}`,
     featuredBadge: "Featured",
     favorite: "Favorite",
     unfavorite: "Unfavorite",
     run: "Run",
-    fork: "Fork",
+    fork: "Copy & edit",
     edit: "Edit",
     delete: "Delete",
     variablesCount: (n) =>
@@ -453,6 +483,10 @@ const en: AiKnowledgeUiCopy = {
     copyBody: "Copy prompt",
     runWithAi: "Run with AI",
     providerGemini: "Gemini",
+    openInAi: "Open in an AI chat",
+    openInAiHint:
+      "The prompt is copied as a backup and opened in a new tab, pre-filled when the provider supports it.",
+    openInProvider: (provider) => `Open in ${provider}`,
   },
   run: {
     title: "Run prompt",
@@ -475,7 +509,7 @@ const en: AiKnowledgeUiCopy = {
     startBlank: "Start blank",
     startWithWizard: "Start with AI wizard",
     wizardComingSoon:
-      "Eight guided steps (goal → examples), then Gemini drafts your prompt — edit and save when you are happy.",
+      "Answer three quick questions. AI turns your answers into a polished prompt you can review and save.",
     blankCardBody:
       "Write title, description, and full prompt body yourself. Variables use {name} placeholders.",
     editCopyThenBlank:
@@ -483,39 +517,42 @@ const en: AiKnowledgeUiCopy = {
     backToLibrary: "Back to library",
     modalTitle: "Add prompt",
     modalDescription:
-      "Start from scratch or let the AI wizard guide you — same flow as before, now in a glass panel.",
+      "Write your own reusable prompt, or choose AI help to organize a draft. Review it before saving.",
     addManually: "Add Manually",
-    addWithWizard: "Add with AI Wizard",
+    addWithWizard: "Build with AI",
     manualCardDescription:
       "Write the full prompt body; tags, category, and short description can be filled automatically from your text.",
     wizardCardDescription:
-      "Eight guided steps (goal → examples), then Gemini drafts your prompt — edit and save when you are happy.",
+      "Describe the outcome once, add only the context you want, and let AI shape the reusable prompt.",
     modalBackToChoice: "Other options",
     autoMetadataHint:
       "After you write enough of the prompt body, we suggest tags, category, and a short description (you can edit them).",
     autoMetadataLoading: "Suggesting metadata…",
   },
   createWizard: {
-    pageTitle: "AI prompt wizard",
+    pageTitle: "Build a prompt with AI",
     pageDescription:
-      "Answer each step; on Review, generate a draft with Gemini, tweak it, then save to My prompts.",
+      "A short conversation turns your idea into a reusable prompt you can review before saving.",
+    conversationTitle: "Let’s shape the prompt together",
+    conversationDescription:
+      "Only the first answer is required. Skip anything else and AI will make sensible choices.",
     stepOf: (c, t) => `Step ${c} of ${t}`,
     steps: {
       goal: {
-        title: "Goal",
-        hint: "What should the AI help you accomplish? Be specific about success criteria.",
+        title: "What should this prompt help you do?",
+        hint: "Describe the result, or paste a rough prompt you want AI to improve.",
       },
       expert_role: {
         title: "Expert role",
         hint: "Who should the model act as? (e.g. “senior product manager”, “kind writing coach”).",
       },
       context: {
-        title: "Context",
-        hint: "Background the model needs: audience, product, constraints, links, or assumptions.",
+        title: "What should it know before it starts?",
+        hint: "Add an audience, situation, source material, or constraint only if it matters.",
       },
       output_format: {
-        title: "Output format",
-        hint: "How should the answer be structured? (bullets, JSON, memo, table, code blocks, etc.)",
+        title: "What should a great answer feel like?",
+        hint: "Pick a format and tone, or leave both to AI.",
       },
       tone_style: {
         title: "Tone & style",
@@ -534,8 +571,30 @@ const en: AiKnowledgeUiCopy = {
         hint: "Optional few-shot pairs: sample user input and the ideal assistant reply.",
       },
     },
-    next: "Next",
+    next: "Next question",
     back: "Back",
+    skip: "Skip for now",
+    optional: "Optional",
+    answerPlaceholder: {
+      goal: "Describe the outcome — or paste your current prompt here",
+      context: "e.g. I’m applying for a senior product role in health tech",
+      output: "Add any special preference, or leave this blank",
+    },
+    outputChoices: {
+      choose: "Let AI choose",
+      bullets: "Bullet list",
+      steps: "Step by step",
+      table: "Table",
+      polishedDraft: "Polished draft",
+    },
+    toneQuestion: "Tone",
+    toneChoices: {
+      clear: "Clear",
+      concise: "Concise",
+      warm: "Warm",
+      expert: "Expert",
+    },
+    buildPrompt: "Build my prompt",
     reviewTitle: "Review & generate",
     reviewHint:
       "Generate a draft from your answers. You can edit title, description, body, category, and tags before saving.",
@@ -578,10 +637,10 @@ const en: AiKnowledgeUiCopy = {
     errorBodyGeneric: "We could not load your prompts. Please retry.",
     emptyLibraryTitle: "Library is empty",
     emptyLibraryDescription:
-      "Run the seed script to import prompts from the awesome-prompts library.",
+      "No library prompts are available yet. Create a prompt to start your own collection.",
     emptyMyPromptsTitle: "No prompts yet",
     emptyMyPromptsDescription:
-      "Fork a library prompt or create one from scratch to fill your arsenal.",
+      "Copy a library prompt to edit, or write one for your own task.",
     emptyFavoritesTitle: "No favorites yet",
     emptyFavoritesDescription: "Star prompts you love to keep them one tap away.",
     emptyRecentTitle: "Nothing recent",
@@ -597,8 +656,8 @@ const en: AiKnowledgeUiCopy = {
     favoriteAdded: "Added to favorites",
     favoriteRemoved: "Removed from favorites",
     favoriteFailed: "Couldn't update favorites",
-    forked: (title) => `Forked "${title}" to your prompts`,
-    forkFailed: "Couldn't fork this prompt",
+    forked: (title) => `Copied "${title}" to your prompts`,
+    forkFailed: "Couldn't copy this prompt",
     created: "Prompt created",
     createFailed: "Couldn't save prompt",
     updated: "Prompt updated",
@@ -611,6 +670,11 @@ const en: AiKnowledgeUiCopy = {
     wizardDraftReady: "Draft generated — review and save below.",
     copyBodySuccess: "Prompt copied to clipboard",
     copyBodyFailed: "Couldn't copy the prompt",
+    openedInAi: (provider) => `Opened the prompt in ${provider}.`,
+    openedInAiPaste: (provider) =>
+      `Opened ${provider}. The prompt is copied — paste it to continue.`,
+    aiChatOpenFailed:
+      "The browser blocked the new tab. The prompt is still copied to your clipboard.",
     folderCreated: (name) => `Folder "${name}" created`,
     folderCreateFailed: "Couldn't create the folder",
     folderUpdated: "Folder updated",
@@ -742,6 +806,9 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     copyBody: "複製提示詞",
     runWithAi: "使用 AI 執行",
     providerGemini: "Gemini",
+    openInAi: "在 AI 對話中開啟",
+    openInAiHint: "系統會先複製提示詞，再於新分頁開啟 AI；支援時會自動填入內容。",
+    openInProvider: (provider) => `在 ${provider} 開啟`,
   },
   run: {
     title: "執行提示詞",
@@ -763,7 +830,7 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     startBlank: "從空白開始",
     startWithWizard: "使用 AI 小幫手",
     wizardComingSoon:
-      "八個引導步驟（目標→範例），接著由 Gemini 產出草稿，你可再編輯後儲存。",
+      "回答三個簡短問題，AI 會整理成可檢查、可儲存的完整提示詞。",
     blankCardBody:
       "自行撰寫標題、說明與完整內容；變數請使用 {名稱} 占位符。",
     editCopyThenBlank:
@@ -771,21 +838,62 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     backToLibrary: "返回精選庫",
     modalTitle: "新增提示詞",
     modalDescription:
-      "與知識庫相同的玻璃面板：手動撰寫或由 AI 精靈引導，全程不需離開此頁。",
+      "自行撰寫可重用的提示詞，或選用 AI 整理草稿。檢查內容後再儲存。",
     addManually: "手動新增",
-    addWithWizard: "使用 AI 精靈新增",
+    addWithWizard: "用 AI 建立",
     manualCardDescription:
       "先撰寫完整提示詞內容；系統會依內容建議標籤、分類與簡短說明（你可再修改）。",
     wizardCardDescription:
-      "八個引導步驟（目標→範例），接著由 Gemini 產出草稿，你可再編輯後儲存。",
+      "先說明想達成的結果，只補充必要背景，其餘由 AI 整理成可重用提示詞。",
     modalBackToChoice: "其他方式",
     autoMetadataHint:
       "輸入足夠長度的提示詞內容後，會自動建議標籤、頂層分類與簡短說明（皆可手動調整）。",
     autoMetadataLoading: "正在產生建議…",
   },
   createWizard: {
-    pageTitle: "AI 提示詞小幫手",
+    pageTitle: "用 AI 建立提示詞",
+    pageDescription: "用一段簡短對話，把你的想法整理成可重用、可先檢查的提示詞。",
+    conversationTitle: "一起把提示詞整理好",
+    conversationDescription: "只需回答第一題；其他問題可以略過，讓 AI 作合理判斷。",
     stepOf: (c, t) => `第 ${c} 步，共 ${t} 步`,
+    steps: {
+      goal: {
+        title: "你想用這個提示詞完成什麼？",
+        hint: "描述想要的結果，或貼上希望 AI 改善的初稿提示詞。",
+      },
+      context: {
+        title: "開始前，它需要知道什麼？",
+        hint: "只在有需要時補充對象、情境、資料或限制。",
+      },
+      output_format: {
+        title: "理想答案應該是什麼感覺？",
+        hint: "選擇格式與語氣，或全部交給 AI。",
+      },
+    },
+    next: "下一題",
+    back: "返回",
+    skip: "暫時略過",
+    optional: "選填",
+    answerPlaceholder: {
+      goal: "描述想要的結果，或在這裡貼上現有提示詞",
+      context: "例如：我正在申請醫療科技公司的資深產品職位",
+      output: "如有特別要求可在此補充，否則留空",
+    },
+    outputChoices: {
+      choose: "由 AI 決定",
+      bullets: "重點列表",
+      steps: "逐步說明",
+      table: "表格",
+      polishedDraft: "完整草稿",
+    },
+    toneQuestion: "語氣",
+    toneChoices: {
+      clear: "清楚",
+      concise: "精簡",
+      warm: "親切",
+      expert: "專業",
+    },
+    buildPrompt: "建立我的提示詞",
   },
   states: {
     loading: "載入提示詞中…",
@@ -823,6 +931,9 @@ const zhTW: DeepPartial<AiKnowledgeUiCopy> = {
     wizardDraftReady: "草稿已產生，請於下方檢視並儲存。",
     copyBodySuccess: "提示詞已複製到剪貼簿",
     copyBodyFailed: "複製失敗",
+    openedInAi: (provider) => `已在 ${provider} 開啟提示詞。`,
+    openedInAiPaste: (provider) => `已開啟 ${provider}。提示詞已複製，請貼上後繼續。`,
+    aiChatOpenFailed: "瀏覽器阻擋了新分頁；提示詞仍已複製到剪貼簿。",
     folderCreated: (name) => `已建立資料夾「${name}」`,
     folderCreateFailed: "建立資料夾失敗",
     folderUpdated: "資料夾已更新",

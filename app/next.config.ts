@@ -132,6 +132,10 @@ const nextConfig: NextConfig = {
     ],
   },
   outputFileTracingRoot: workspaceRoot,
+  outputFileTracingIncludes: {
+    "/api/ai/role-model/distill-skill": ["./src/lib/mind-council/nuwa/**/*.md"],
+    "/api/mind-council/*": ["./src/lib/mind-council/bundled-skills/**/*.md", "./src/lib/mind-council/bundled-skills/manifest.json"],
+  },
   turbopack: {
     root: workspaceRoot,
   },
@@ -142,7 +146,9 @@ const nextConfig: NextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       {
         key: "Permissions-Policy",
-        value: "camera=(self), microphone=(self), geolocation=()",
+        // Weather, onboarding, Settings, and Signals all expose explicit
+        // user-initiated location controls. Keep access same-origin only.
+        value: "camera=(self), microphone=(self), geolocation=(self)",
       },
     ];
     if (process.env.VERCEL_ENV === "production") {

@@ -4,6 +4,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 
 import { OSControl } from "@/components/ui/os-primitives";
 import type { WeatherUiCopy } from "@/lib/i18n/weather-ui";
+import type { WeatherCoords } from "@/lib/weather/openweather";
 import type { WeatherLocation } from "@/lib/weather/types";
 
 import { WeatherLocationSearch } from "./WeatherLocationSearch";
@@ -13,7 +14,8 @@ interface WeatherTopBarProps {
   selectedLabel?: string;
   onSelect: (location: WeatherLocation) => void;
   onClear: () => void;
-  onUseMyLocation: () => void;
+  onUseMyLocation: () => Promise<WeatherCoords | null>;
+  locating: boolean;
   onRefresh: () => void;
   refreshing: boolean;
 }
@@ -29,6 +31,7 @@ export function WeatherTopBar({
   onSelect,
   onClear,
   onUseMyLocation,
+  locating,
   onRefresh,
   refreshing,
 }: WeatherTopBarProps) {
@@ -40,6 +43,7 @@ export function WeatherTopBar({
         onSelect={onSelect}
         onClear={onClear}
         onUseMyLocation={onUseMyLocation}
+        locating={locating}
       />
       <OSControl
         type="button"

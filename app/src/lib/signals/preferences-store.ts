@@ -1,7 +1,7 @@
 /**
  * Signals — preferences storage adapter.
  *
- * MVP uses localStorage (privacy-safe, instant, zero migration risk). The shape
+ * MVP uses account-scoped browser storage. The shape
  * is the durable contract; only the *backend* is provisional.
  *
  * TODO(Supabase): swap the read/write impl for a `user_signal_prefs` table
@@ -15,41 +15,37 @@ import {
   SIGNALS_PREFS_STORAGE_KEY,
 } from "./constants";
 import type { SignalsPreferences } from "./types";
+import { z } from "zod";
+
+const strings = z.array(z.string().max(4000)).max(1000).catch([]);
+const bool = z.boolean().catch(false);
+const preferencesSchema = z.object({
+  onboardingCompleted: bool, purposes: strings, followedTopics: strings, hiddenTopics: strings, preferredSources: strings, mutedSources: strings,
+  feedIntensity: z.enum(["top3", "light", "balanced", "deep"]).catch("light"),
+  tone: z.enum(["calm", "executive", "analytical", "local-first", "global-first", "career-focused", "learning-focused"]).catch("calm"),
+  useBrainContext: bool, useProjects: bool, useCalendar: bool, useTasks: bool, useLocation: bool, useReadingBehavior: bool,
+  viewMode: z.enum(["editorial", "grid", "table", "compact", "gallery"]).catch("editorial"),
+  gallery: z.object({ enabled: bool, speed: z.enum(["slow", "normal", "fast"]).catch("slow") }).catch({ enabled: false, speed: "slow" }),
+  customTopics: z.array(z.object({ id: z.string(), name: z.string(), keywords: strings, sources: strings.optional(), rssFeeds: strings.optional(), priority: z.enum(["low", "normal", "high"]), includeInTop3: bool, muted: bool, createdAt: z.string(), updatedAt: z.string() })).max(1000).catch([]),
+  marketsEnabled: bool, videoEnabled: bool,
+  localLocation: z.object({ city: z.string().optional(), region: z.string().optional(), country: z.string().optional(), countryCode: z.string().optional(), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(), precision: z.enum(["gps", "city", "region", "manual", "unknown"]).optional() }).optional().catch(undefined),
+});
 
 function isBrowser(): boolean {
-  return typeof window !== "undefined" && !!window.localStorage;
+  return typeof window !== "undefined";
 }
 
 /** Merge a (possibly partial / legacy) stored object onto safe defaults. */
 export function normalizePreferences(
   input: Partial<SignalsPreferences> | null | undefined,
 ): SignalsPreferences {
-  if (!input) return { ...DEFAULT_SIGNALS_PREFERENCES };
-  return {
-    ...DEFAULT_SIGNALS_PREFERENCES,
-    ...input,
-    purposes: input.purposes ?? [],
-    followedTopics: input.followedTopics ?? [],
-    hiddenTopics: input.hiddenTopics ?? [],
-    preferredSources: input.preferredSources ?? [],
-    mutedSources: input.mutedSources ?? [],
-    localLocation: input.localLocation,
-    // Visual / personalization upgrade — tolerate older stored shapes.
-    viewMode: input.viewMode ?? DEFAULT_SIGNALS_PREFERENCES.viewMode,
-    gallery: {
-      ...DEFAULT_SIGNALS_PREFERENCES.gallery,
-      ...(input.gallery ?? {}),
-    },
-    customTopics: input.customTopics ?? [],
-    marketsEnabled: input.marketsEnabled ?? DEFAULT_SIGNALS_PREFERENCES.marketsEnabled,
-    videoEnabled: input.videoEnabled ?? DEFAULT_SIGNALS_PREFERENCES.videoEnabled,
-  };
+  return preferencesSchema.parse(input && typeof input === "object" ? input : {});
 }
 
-export function loadPreferences(): SignalsPreferences {
-  if (!isBrowser()) return { ...DEFAULT_SIGNALS_PREFERENCES };
+export function loadPreferences(userId: string | null): SignalsPreferences {
+  if (!userId || !isBrowser()) return { ...DEFAULT_SIGNALS_PREFERENCES };
   try {
-    const raw = window.localStorage.getItem(SIGNALS_PREFS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(`${SIGNALS_PREFS_STORAGE_KEY}:${userId}`);
     if (!raw) return { ...DEFAULT_SIGNALS_PREFERENCES };
     return normalizePreferences(JSON.parse(raw) as Partial<SignalsPreferences>);
   } catch {
@@ -57,19 +53,20 @@ export function loadPreferences(): SignalsPreferences {
   }
 }
 
-export function savePreferences(prefs: SignalsPreferences): void {
-  if (!isBrowser()) return;
+export function savePreferences(prefs: SignalsPreferences, userId: string | null): boolean {
+  if (!userId || !isBrowser()) return false;
   try {
-    window.localStorage.setItem(SIGNALS_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    window.localStorage.setItem(`${SIGNALS_PREFS_STORAGE_KEY}:${userId}`, JSON.stringify(prefs));
+    return true;
   } catch {
-    // Storage full / disabled — non-fatal; prefs simply won't persist.
+    return false;
   }
 }
 
-export function clearPreferences(): void {
-  if (!isBrowser()) return;
+export function clearPreferences(userId: string | null): void {
+  if (!userId || !isBrowser()) return;
   try {
-    window.localStorage.removeItem(SIGNALS_PREFS_STORAGE_KEY);
+    window.localStorage.removeItem(`${SIGNALS_PREFS_STORAGE_KEY}:${userId}`);
   } catch {
     // ignore
   }

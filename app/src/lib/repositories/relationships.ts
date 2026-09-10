@@ -3,7 +3,7 @@
  * personal-CRM table (see migration 20260419140000_relationships_redesign).
  *
  * Conventions match `roleModelsRepository`:
- *   - Explicit SELECT columns (vs `*`) so the wire shape is locked.
+ *   - Optional columns are normalized so basic contacts work across schema versions.
  *   - `mapRow` coerces the loose `Record<string, unknown>` from supabase-js
  *     into the strict `Relationship` shape, normalizing nulls & arrays.
  *   - `buildPayload` only forwards keys the caller actually provided, so a
@@ -18,33 +18,15 @@ import type {
 } from "@/types/relationship";
 import { normalizeRelationshipSocialLinks } from "@/types/relationship";
 
-const SELECT_COLUMNS = [
-  "id",
-  "user_id",
-  "person_name",
-  "photo_url",
-  "category",
-  "relationship_strength",
-  "email",
-  "phone",
-  "social_links",
-  "last_contact_date",
-  "last_interaction_notes",
-  "next_action",
-  "next_action_date",
-  "commitments_made",
-  "preferences_and_details",
-  "general_notes",
-  "tags",
-  "linked_project_id",
-  "linked_project_ids",
-  "linked_goal_ids",
-  "linked_note_ids",
-  "linked_idea_ids",
-  "is_favorite",
-  "created_at",
-  "updated_at",
-].join(", ");
+const optionalLinkColumns = ["social_links", "linked_project_ids", "linked_goal_ids", "linked_note_ids", "linked_idea_ids"];
+/** Retry only a rejected schema operation, never a network/unknown commit failure. */
+function legacyPayload(payload: Record<string, unknown>, error: {code?: string; message?: string} | null) {
+  if (!error || !["PGRST204", "42703"].includes(error.code ?? "") || !optionalLinkColumns.some((key) => error.message?.includes(key))) return null;
+  if (optionalLinkColumns.some((key) => Array.isArray(payload[key]) && (payload[key] as unknown[]).length > 0)) {
+    throw new Error("This site's relationship links need an update before they can be saved. Your form is kept open; you can save basic contact details without links.");
+  }
+  return Object.fromEntries(Object.entries(payload).filter(([key]) => !optionalLinkColumns.includes(key)));
+}
 
 function mapRow(row: Record<string, unknown>): Relationship {
   const linkedProjectId = (row.linked_project_id as string | null) ?? null;
@@ -135,7 +117,9 @@ export const relationshipsRepository = {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("relationships")
-      .select(SELECT_COLUMNS)
+      // Accept the currently deployed schema while the additive links migration
+      // is pending. mapRow supplies defaults for absent optional link columns.
+      .select("*")
       // Server-side sort is just a stable seed — the gallery applies its
       // own client-side sort (lastContactDate desc → person_name asc) via
       // useMemo. Ordering by created_at keeps the cache deterministic.
@@ -150,7 +134,7 @@ export const relationshipsRepository = {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("relationships")
-      .select(SELECT_COLUMNS)
+      .select("*")
       .eq("id", id)
       .single();
     if (error) throw error;
@@ -177,11 +161,13 @@ export const relationshipsRepository = {
       payload.relationship_strength = "new";
     if (input.is_favorite === undefined) payload.is_favorite = false;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("relationships")
       .insert(payload)
-      .select(SELECT_COLUMNS)
+      .select("*")
       .single();
+    const legacy = legacyPayload(payload, error);
+    if (legacy) ({data, error} = await supabase.from("relationships").insert(legacy).select("*").single());
     if (error) throw error;
     return mapRow(data as unknown as Record<string, unknown>);
   },
@@ -194,12 +180,14 @@ export const relationshipsRepository = {
     // the server will write.
     payload.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("relationships")
       .update(payload)
       .eq("id", id)
-      .select(SELECT_COLUMNS)
+      .select("*")
       .single();
+    const legacy = legacyPayload(payload, error);
+    if (legacy) ({data, error} = await supabase.from("relationships").update(legacy).eq("id", id).select("*").single());
     if (error) throw error;
     return mapRow(data as unknown as Record<string, unknown>);
   },

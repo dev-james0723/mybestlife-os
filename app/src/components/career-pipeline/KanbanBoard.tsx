@@ -14,7 +14,6 @@ import {
   Briefcase,
   CalendarClock,
   ClipboardList,
-  Info,
   Plus,
   Trophy,
 } from "lucide-react";
@@ -23,7 +22,6 @@ import { LoadingPage } from "@/components/shared/loading-state";
 import { OSControl, OSPrimaryAction } from "@/components/ui/os-primitives";
 import {
   CareerEmptyState,
-  CareerHelpPanel,
   CareerMetricCard,
   CareerMetricGrid,
   CareerSectionPanel,
@@ -40,6 +38,7 @@ import type {
   CareerOpportunity,
   OpportunityStage,
 } from "@/types/career-vault";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { STAGE_ORDER } from "./PipelineConstants";
 import { StageColumn } from "./StageColumn";
 import { NewOpportunityModal } from "./NewOpportunityModal";
@@ -51,6 +50,7 @@ export function KanbanBoard() {
 
   const opportunitiesQuery = useCareerOpportunities();
   const setStageMutation = useSetOpportunityStage();
+  const [view, setView] = useState<"list" | "board">("list");
   const [newOpen, setNewOpen] = useState(false);
 
   const opportunities = useMemo(
@@ -167,12 +167,13 @@ export function KanbanBoard() {
           />
         </CareerMetricGrid>
 
-        <CareerHelpPanel icon={Info} title="How to use this workspace">
-          Drag an opportunity when the stage changes. Open a card to attach Vault files,
-          log interviews, track next actions, and keep the story of each role in one place.
-        </CareerHelpPanel>
-
-        {opportunities.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{language.startsWith("zh") ? "先記一個機會，再設定下一步及日期。開啟項目可附上材料與面試記錄。" : "Track one opportunity, then give it a next action and date. Open it to attach materials and interview notes."}</p>
+        <div className="flex gap-2" aria-label="Pipeline view">
+          <OSControl aria-pressed={view === "list"} onClick={() => setView("list")}>{language.startsWith("zh") ? "清單" : "List"}</OSControl>
+          <OSControl aria-pressed={view === "board"} onClick={() => setView("board")}>{language.startsWith("zh") ? "階段看板" : "Stage board"}</OSControl>
+        </div>
+        {opportunitiesQuery.isError ? <p role="alert"><button className="min-h-11 underline" onClick={() => void opportunitiesQuery.refetch()}>{language.startsWith("zh") ? "未能載入，按此重試" : "Could not load. Try again"}</button></p> : null}
+        {!opportunitiesQuery.isError && opportunities.length === 0 ? (
           <CareerEmptyState
             icon={Briefcase}
             title="Start your first opportunity"
@@ -182,6 +183,18 @@ export function KanbanBoard() {
           />
         ) : null}
 
+        {view === "list" ? <div className="space-y-3">
+          {opportunities.map((opportunity) => <article key={opportunity.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <Link href={buildDetailHref(opportunity.id)} className="font-medium underline underline-offset-4 break-words">{opportunity.company_name} · {opportunity.role_title}</Link>
+              <p className="mt-1 text-sm text-muted-foreground">{opportunity.notes || (language.startsWith("zh") ? "開啟機會以設定下一步" : "Open this opportunity to set a next action")}{opportunity.next_action_date ? ` · ${opportunity.next_action_date}` : ""}</p>
+            </div>
+            <Select value={opportunity.stage} itemToStringLabel={(value) => copy.pipeline.stages[value as OpportunityStage] ?? String(value)} onValueChange={(value) => { if (value && STAGE_ORDER.includes(value as OpportunityStage)) setStageMutation.mutate({ id: opportunity.id, stage: value as OpportunityStage }); }} disabled={setStageMutation.isPending}>
+              <SelectTrigger aria-label={`${opportunity.company_name} stage`} className="min-h-11 sm:w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>{STAGE_ORDER.map((stage) => <SelectItem key={stage} value={stage}>{copy.pipeline.stages[stage]}</SelectItem>)}</SelectContent>
+            </Select>
+          </article>)}
+        </div> : (
         <CareerSectionPanel
           title="Opportunity board"
           description="Each column is a stage. The board scrolls horizontally on small screens so drag-and-drop stays usable."
@@ -200,6 +213,7 @@ export function KanbanBoard() {
             </div>
           </DndContext>
         </CareerSectionPanel>
+        )}
       </div>
 
       <NewOpportunityModal

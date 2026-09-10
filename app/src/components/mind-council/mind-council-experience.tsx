@@ -16,7 +16,11 @@ import { useAppStore } from "@/stores/app-store";
 import { getMindCouncilUiCopy } from "@/lib/i18n/mind-council-ui";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
 import { PRESET_MIND_SKILLS, getFeaturedPresetSkills } from "@/lib/mind-council/preset-skills";
-import { useRoleModelMindSkills } from "@/hooks/use-role-model-neural-skills";
+import { neuralSkillToMindSkill, useGenerateNeuralSkill, useRoleModelMindSkills } from "@/hooks/use-role-model-neural-skills";
+import { roleModelsRepository } from "@/lib/repositories/role-models";
+import { roleModelNeuralSkillsRepository } from "@/lib/repositories/role-model-neural-skills";
+import { createCouncilSkill, type CreateCouncilSkillInput } from "@/lib/mind-council/create-council-skill";
+import { useQueryClient } from "@tanstack/react-query";
 import type { MindSkill } from "@/lib/mind-council/types";
 import { toast } from "sonner";
 import { PlusCircle } from "lucide-react";
@@ -24,7 +28,6 @@ import {
   OSMotionPanel,
   OSFrostedPanel,
   OSPrimaryAction,
-  OSSolidPanel,
 } from "@/components/ui/os-primitives";
 
 const CUSTOM_KEY = "mind-council-custom-skills-v1";
@@ -42,18 +45,12 @@ function loadCustomFromStorage(): MindSkill[] {
   }
 }
 
-function saveCustomToStorage(skills: MindSkill[]) {
-  try {
-    window.localStorage.setItem(CUSTOM_KEY, JSON.stringify(skills));
-  } catch {
-    /* ignore */
-  }
-}
-
 export function MindCouncilExperience() {
   const language = useAppStore((s) => s.language);
   const locale = parseAppLocale(language);
   const ui = getMindCouncilUiCopy(locale);
+  const generate = useGenerateNeuralSkill();
+  const queryClient = useQueryClient();
 
   const [heroInput, setHeroInput] = useState("");
   const [councilIds, setCouncilIds] = useState<string[]>([]);
@@ -230,10 +227,10 @@ export function MindCouncilExperience() {
       toast.message(ui.toastNeedTwoAdvisors);
       return;
     }
-    const nonPreset = councilIds.some((id) => id.startsWith("custom-"));
+    const nonPreset = councilIds.some((id) => id.startsWith("custom-") && !id.startsWith("custom-rm-"));
     if (nonPreset) {
       toast.message(
-        "Group council currently uses preset advisors only. Remove custom lenses from the bar.",
+        "This group contains a browser-only lens. Create a saved skill for it before starting a group session.",
       );
       return;
     }
@@ -241,26 +238,19 @@ export function MindCouncilExperience() {
     setGroupOpen(true);
   }, [councilIds, ui.toastNeedTwoAdvisors]);
 
-  const onCreateSkill = useCallback((payload: { lensTitle: string; systemPromptHint: string }) => {
-    const id = `custom-${crypto.randomUUID()}`;
-    const skill: MindSkill = {
-      skillId: id,
-      agentId: id,
-      skillProvider: "custom",
-      status: "ready",
-      category: "philosophy",
-      lensTitle: payload.lensTitle,
-      lensSubtitle: "Your locally stored interpretive lens.",
-      systemPromptHint: payload.systemPromptHint,
-      avatarGradient: ["#334155", "#cbd5e1"],
-    };
-    setCustomSkills((prev) => {
-      const n = [...prev, skill];
-      saveCustomToStorage(n);
-      return n;
+  const onCreateSkill = useCallback(async (payload: CreateCouncilSkillInput) => {
+    const saved = await createCouncilSkill(payload, {
+      getRoleModels: roleModelsRepository.getAll,
+      createRoleModel: roleModelsRepository.create,
+      getSkills: roleModelNeuralSkillsRepository.getAll,
+      generate: generate.mutateAsync,
     });
-    toast.success("Saved to this browser.");
-  }, []);
+    void queryClient.invalidateQueries({ queryKey: ["role-models"] });
+    void queryClient.invalidateQueries({ queryKey: ["role-model-neural-skills"] });
+    setCreateOpen(false);
+    setChatPrompt(undefined);
+    openChat(neuralSkillToMindSkill(saved));
+  }, [generate.mutateAsync, queryClient, openChat]);
 
   return (
     <PageShell title={ui.pageTitle} description={ui.pageDescription}>
@@ -274,9 +264,7 @@ export function MindCouncilExperience() {
           onAskCouncil={openCouncil}
         />
 
-        <OSSolidPanel className="border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-muted-foreground shadow-none">
-          {ui.disclaimerPanel}
-        </OSSolidPanel>
+
 
         <ReadySkillsSection
           ui={ui}

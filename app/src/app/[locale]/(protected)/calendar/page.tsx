@@ -1,8 +1,12 @@
 "use client";
 
-import { Suspense, useCallback, useMemo } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import Link from "next/link";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useLocalizedPath } from "@/hooks/use-locale-slug";
+import { useCalendarItems } from "@/hooks/use-calendar";
 import {
   CalendarDays,
   CalendarRange,
@@ -32,7 +36,10 @@ function CalendarPageInner() {
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const prefersReduced = useReducedMotion();
+  const [showMore, setShowMore] = useState(false);
+  const calendar = useCalendarItems();
+  const plannerHref = useLocalizedPath("/daily-planner");
+  const chinese = language.startsWith("zh");
 
   const activeTab: TabId = useMemo(() => {
     const param = searchParams?.get("tab") ?? null;
@@ -53,19 +60,19 @@ function CalendarPageInner() {
   >(
     () => [
       { id: "today", label: copy.tabToday, icon: Sun },
-      { id: "agenda", label: copy.tabAgenda, icon: ListOrdered },
       { id: "week", label: copy.tabWeek, icon: CalendarRange },
       { id: "month", label: copy.tabMonth, icon: CalendarDays },
+      { id: "agenda", label: copy.tabAgenda, icon: ListOrdered },
       { id: "ai-plan", label: copy.tabAIPlan, icon: Sparkles },
     ],
     [copy]
   );
 
   return (
-    <PageShell title={copy.pageTitle} description={copy.pageDescription}>
-      <div data-calendar-surface className="space-y-5">
+    <PageShell title={copy.pageTitle} description={chinese ? "日曆查看時間安排；到每日計劃選擇下一步。" : "Calendar shows when things happen. Use Daily Planner to choose what to do next."} actions={<Button variant="outline" render={<Link href={plannerHref} />}>{chinese ? "安排今日" : "Plan today"}</Button>}>
+      <Tabs value={activeTab} onValueChange={(value) => { if (isTabId(value)) setTab(value); }} data-calendar-surface className="space-y-5">
         <OSSegmentedControl
-          items={tabDefs}
+          items={tabDefs.filter((tab) => showMore || ["today", "week", "month", activeTab].includes(tab.id))}
           value={activeTab}
           onValueChange={setTab}
           ariaLabel={copy.pageTitle}
@@ -74,26 +81,14 @@ function CalendarPageInner() {
           layoutId="calendar-tab-pill"
         />
 
-        {/* Tab content — crossfade on change */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            id={`calendar-tabpanel-${activeTab}`}
-            role="tabpanel"
-            aria-labelledby={`calendar-tab-${activeTab}`}
-            initial={prefersReduced ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === "today" && <TodayTab />}
-            {activeTab === "agenda" && <AgendaTab />}
-            {activeTab === "week" && <WeekTab />}
-            {activeTab === "month" && <MonthTab />}
-            {activeTab === "ai-plan" && <AIPlanTab />}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+        <Button variant="ghost" aria-expanded={showMore} onClick={() => setShowMore((value) => !value)}>{chinese ? (showMore ? "較少檢視" : "更多檢視") : (showMore ? "Fewer views" : "More views")}</Button>
+        {calendar.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm"><p>{chinese ? "部分日程未能載入；下方只顯示已取得的資料。" : "Some schedule sources could not load. The entries below may be incomplete."}</p><Button variant="outline" onClick={() => void calendar.refetch()}>{chinese ? "重試" : "Retry"}</Button></div> : calendar.isFetching ? <p role="status" className="text-sm text-muted-foreground">{chinese ? "正在更新日程，其他項目仍可查看…" : "Updating schedule sources; available entries remain usable…"}</p> : null}
+        <TabsContent value="today" id="calendar-tabpanel-today" aria-labelledby="calendar-tab-today"><TodayTab /></TabsContent>
+        <TabsContent value="week" id="calendar-tabpanel-week" aria-labelledby="calendar-tab-week"><WeekTab /></TabsContent>
+        <TabsContent value="month" id="calendar-tabpanel-month" aria-labelledby="calendar-tab-month"><MonthTab /></TabsContent>
+        <TabsContent value="agenda" id="calendar-tabpanel-agenda" aria-labelledby="calendar-tab-agenda"><AgendaTab /></TabsContent>
+        <TabsContent value="ai-plan" id="calendar-tabpanel-ai-plan" aria-labelledby="calendar-tab-ai-plan"><AIPlanTab /></TabsContent>
+      </Tabs>
     </PageShell>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAppStore } from "@/stores/app-store";
 import { getCalendarUiCopy } from "@/lib/i18n/calendar-ui";
 import { useCalendarItems } from "@/hooks/use-calendar";
@@ -16,7 +16,6 @@ export function MonthTab() {
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const { data: items, isLoading } = useCalendarItems();
   const [mode, setMode] = useMonthViewMode();
-  const prefersReduced = useReducedMotion();
   const rows = items ?? [];
 
   const labels = useMemo(
@@ -34,25 +33,11 @@ export function MonthTab() {
         <MonthViewToggle value={mode} onChange={setMode} labels={labels} />
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={mode}
-          initial={prefersReduced ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={prefersReduced ? { opacity: 0 } : { opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {mode === "complete" && (
-            <MonthViewComplete items={rows} isLoading={isLoading} />
-          )}
-          {mode === "minimal" && (
-            <MonthViewMinimal items={rows} isLoading={isLoading} />
-          )}
-          {mode === "orbital" && (
-            <MonthViewOrbital items={rows} isLoading={isLoading} />
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <Tabs value={mode}>
+        <TabsContent value="complete" aria-label={labels.complete}><MonthViewComplete items={rows} isLoading={isLoading} /></TabsContent>
+        <TabsContent value="minimal" aria-label={labels.minimal}><MonthViewMinimal items={rows} isLoading={isLoading} /></TabsContent>
+        <TabsContent value="orbital" aria-label={labels.orbital}><MonthViewOrbital items={rows} isLoading={isLoading} /></TabsContent>
+      </Tabs>
     </div>
   );
 }

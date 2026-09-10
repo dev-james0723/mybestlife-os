@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
 import { CouncilSynthesisPanel } from "@/components/mind-council/CouncilSynthesisPanel";
+import { MindCouncilRichText } from "./MindCouncilRichText";
+import { advisorDisplayName } from "@/lib/mind-council/conversation-contract";
 
 export type GroupAdvisorPayload = {
   skillId: string;
@@ -82,6 +84,7 @@ export function GroupCouncilPanel({
         <SheetHeader className="border-b border-border/60 bg-card/40 p-4 backdrop-blur-xl">
           <SheetTitle>{ui.groupPanelTitle}</SheetTitle>
           <SheetDescription>{ui.groupPanelSubtitle}</SheetDescription>
+          <p className="text-xs text-muted-foreground">{ui.disclaimerShort}</p>
         </SheetHeader>
         <ScrollArea className="h-[calc(100dvh-200px)]">
           <div className="space-y-4 p-4">
@@ -114,9 +117,9 @@ export function GroupCouncilPanel({
                   className="rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm backdrop-blur-md"
                 >
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {r.lensTitle}
+                    {advisorDisplayName(r.lensTitle)}
                   </h3>
-                  <div className="max-w-none whitespace-pre-wrap text-sm leading-relaxed">{r.reply}</div>
+                  <MindCouncilRichText source={r.reply} />
                 </article>
               ))}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { addDays, format, subDays } from "date-fns";
 
 import { useTasks } from "@/hooks/use-tasks";
@@ -44,6 +44,8 @@ type UseCalendarItemsReturn = {
   data: CalendarItem[] | undefined;
   isLoading: boolean;
   isFetching: boolean;
+  isError: boolean;
+  refetch: () => Promise<void>;
 };
 
 function shouldUseMockCalendar(args: {
@@ -64,36 +66,49 @@ function shouldUseMockCalendar(args: {
 export function useCalendarItems(): UseCalendarItemsReturn {
   const today = useMemo(() => new Date(), []);
 
-  const { data: taskRows, isLoading: tasksLoading } = useTasks();
-  const { data: goalRows, isLoading: goalsLoading } = useGoals();
-  const { data: habitRows, isLoading: habitsLoading } = useHabits();
-  const { data: profile, isLoading: profileLoading } = useProfile();
+  const tasksQuery = useTasks();
+  const { data: taskRows, isLoading: tasksLoading } = tasksQuery;
+  const goalsQuery = useGoals();
+  const { data: goalRows, isLoading: goalsLoading } = goalsQuery;
+  const habitsQuery = useHabits();
+  const { data: habitRows, isLoading: habitsLoading } = habitsQuery;
+  const profileQuery = useProfile();
+  const { data: profile, isLoading: profileLoading } = profileQuery;
 
   const rangeStart = useMemo(() => subDays(today, PAST_DAYS), [today]);
   const rangeEnd = useMemo(() => addDays(today, FUTURE_DAYS), [today]);
   const rangeFrom = format(rangeStart, "yyyy-MM-dd");
   const rangeTo = format(rangeEnd, "yyyy-MM-dd");
 
-  const { data: habitCompletionRows, isLoading: completionsLoading } =
-    useAllCompletions({
+  const completionsQuery = useAllCompletions({
       from: rangeFrom,
       to: rangeTo,
     });
+  const { data: habitCompletionRows, isLoading: completionsLoading } = completionsQuery;
 
-  const { data: dailyPlanRows, isLoading: dailyPlansLoading } = useDailyPlansInRange(
+  const dailyPlansQuery = useDailyPlansInRange(
     rangeFrom,
     rangeTo,
   );
+  const { data: dailyPlanRows, isLoading: dailyPlansLoading } = dailyPlansQuery;
 
   const blockMinutes = profile?.block_minutes ?? DEFAULT_BLOCK_MINUTES;
 
-  const isLoading =
+  const pendingSources =
     tasksLoading ||
     goalsLoading ||
     habitsLoading ||
     completionsLoading ||
     dailyPlansLoading ||
     profileLoading;
+  const queries = [tasksQuery, goalsQuery, habitsQuery, completionsQuery, dailyPlansQuery, profileQuery];
+  const isFetching = queries.some((query) => query.isFetching);
+  const isError = queries.some((query) => query.isError);
+  const isLoading = pendingSources && [taskRows, goalRows, habitRows, dailyPlanRows].every((rows) => rows === undefined);
+  const refetch = useCallback(async () => {
+    await Promise.allSettled([tasksQuery.refetch(), goalsQuery.refetch(), habitsQuery.refetch(), completionsQuery.refetch(), dailyPlansQuery.refetch(), profileQuery.refetch()]);
+  }, [tasksQuery.refetch, goalsQuery.refetch, habitsQuery.refetch, completionsQuery.refetch, dailyPlansQuery.refetch, profileQuery.refetch]);
+
 
   const data = useMemo<CalendarItem[] | undefined>(() => {
     if (shouldUseMockCalendar({ taskRows, goalRows, habitRows, dailyPlanRows })) {
@@ -155,7 +170,7 @@ export function useCalendarItems(): UseCalendarItemsReturn {
     blockMinutes,
   ]);
 
-  return { data, isLoading, isFetching: isLoading };
+  return { data, isLoading, isFetching, isError, refetch };
 }
 
 export { CALENDAR_QUERY_KEY };

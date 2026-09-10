@@ -3,6 +3,7 @@ import {
   findNavigationItemForPathname,
   resolveThemedPageTitle,
 } from "@/lib/navigation/page-title";
+import { UI_THEMES } from "@/lib/theme-config";
 
 const baseOptions = {
   uiTheme: "default" as const,
@@ -62,5 +63,36 @@ describe("page title navigation resolution", () => {
         fallbackTitle: "Relationships",
       }),
     ).toBe("People");
+  });
+
+  it.each([
+    ["/en/dashboard", "Dashboard"],
+    ["/en/journal", "Journal"],
+    ["/en/career/timeline", "Timeline"],
+    ["/en/vault", "Tools & Subscriptions"],
+  ])("keeps %s on the Default-theme title across every visual theme", (pathname, title) => {
+    for (const uiTheme of UI_THEMES) {
+      expect(
+        resolveThemedPageTitle({
+          pathname,
+          fallbackTitle: "Fallback",
+          uiTheme,
+          language: "en",
+        }),
+      ).toBe(title);
+    }
+  });
+
+  it("keeps localized page names theme-invariant", () => {
+    for (const uiTheme of UI_THEMES) {
+      expect(
+        resolveThemedPageTitle({
+          pathname: "/zh-hk/dashboard",
+          fallbackTitle: "後備標題",
+          uiTheme,
+          language: "zh-TW",
+        }),
+      ).toBe("儀表板");
+    }
   });
 });

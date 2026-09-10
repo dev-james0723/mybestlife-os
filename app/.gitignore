@@ -15,7 +15,12 @@
 
 # next.js
 /.next/
+/.next-*/
+/.next-ux-*/
 /.next-brain-*/
+/.next-ai-knowledge-*/
+/.next-garden-verify/
+/.next-tilt-verify/
 /out/
 
 # production
@@ -41,5 +46,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-/.next-garden-verify/

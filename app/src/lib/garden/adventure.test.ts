@@ -23,7 +23,9 @@ function tick(state: AdventureState, seconds = 1) {
 function act(state: AdventureState, point: { x: number; z: number }) {
   Object.assign(state.player, point, { vx: 0, vz: 0 });
   interactAdventure(state);
-  tick(state);
+  for (let frame = 0; frame < 180 && state.action; frame++)
+    stepAdventure(state, 1 / 60, idle);
+  expect(state.action).toBeNull();
 }
 
 describe("Garden adventure", () => {
@@ -108,12 +110,15 @@ describe("Garden adventure", () => {
     const a = createAdventure(),
       b = createAdventure();
     a.phase = b.phase = "playing";
+    // Compare free movement away from the now-solid delivery crate at spawn.
+    Object.assign(a.player, { x: 0, z: 0 });
+    Object.assign(b.player, { x: 0, z: 0 });
     for (let i = 0; i < 30; i++) {
       stepAdventure(a, 1 / 60, { ...idle, x: 1 });
       stepAdventure(b, 1 / 60, { x: 1, z: -1, yaw: 0 });
     }
-    expect(Math.hypot(a.player.x, a.player.z - HOME.z)).toBeCloseTo(
-      Math.hypot(b.player.x, b.player.z - HOME.z),
+    expect(Math.hypot(a.player.x, a.player.z)).toBeCloseTo(
+      Math.hypot(b.player.x, b.player.z),
       3,
     );
     const c = createAdventure();

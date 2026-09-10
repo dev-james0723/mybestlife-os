@@ -15,7 +15,8 @@ body:has([data-app-design="projects"]) {
   --os-surface: rgb(255 255 255 / 78%);
   --os-surface-hover: rgb(255 255 255 / 94%);
   --os-field: rgb(255 255 255 / 76%);
-  --os-floating: rgb(255 255 255 / 94%);
+  --os-floating: rgb(255 255 255 / 76%);
+  --os-reading: rgb(255 255 255 / 94%);
   --os-stroke: rgb(203 213 225 / 65%);
   --os-ink: #0f172a;
   --os-ink-muted: #526072;
@@ -55,7 +56,8 @@ body:has([data-app-design="projects"]) {
   --os-surface: rgb(255 255 255 / 5.5%);
   --os-surface-hover: rgb(255 255 255 / 9%);
   --os-field: rgb(255 255 255 / 6%);
-  --os-floating: rgb(24 24 27 / 94%);
+  --os-floating: rgb(20 24 32 / 72%);
+  --os-reading: rgb(24 24 27 / 94%);
   --os-stroke: rgb(255 255 255 / 12%);
   --os-ink: #f8fafc;
   --os-ink-muted: #b5bfcc;
@@ -292,4 +294,11 @@ body:has([data-app-design="projects"]) {
     --os-field: #27272a;
     --os-floating: #18181b;
   }
+}
+
+/* Reading-heavy overlays may explicitly request a denser surface. */
+body:has([data-app-design="projects"]) [data-overlay-material="reading"] { background: var(--os-reading); }
+@supports not (backdrop-filter: blur(1px)) {
+  body:has([data-app-design="projects"]) { --os-floating: #fff; }
+  .dark body:has([data-app-design="projects"]) { --os-floating: #18181b; }
 }

@@ -10,6 +10,36 @@ import { createLocaleCopyMap } from "./copy-helpers";
  * incrementally without breaking `npm run check:i18n`.
  */
 export type TravelExplorerUiCopy = {
+  destinationSaved: string;
+  retryLoad: string;
+  savingPlace: string;
+  loadingGlobe: string;
+  cityDetail: string;
+  mapView: string;
+  worldView: string;
+  searchAction: string;
+  chooseResult: string;
+  chooseAnother: string;
+  returnOrbit: string;
+  readyToExplore: string;
+  recentDestinations: string;
+  searchUnavailable: string;
+  saveFailed: string;
+  retrySave: string;
+  nearbyPlaces: string;
+  nearbyUnavailable: string;
+  webglUnavailable: string;
+  tilesUnavailable: string;
+  gestureHint: string;
+  worldNotice: string;
+  retryGlobe: string;
+  manualControl: string;
+  flightPaused: string;
+  arrived: string;
+  flightProgress: string;
+  pauseFlight: string;
+  resumeFlight: string;
+
   // Workspace tabs
   tabOverview: string;
   tabTravel: string;
@@ -64,6 +94,36 @@ export type TravelExplorerUiCopy = {
 };
 
 const en: TravelExplorerUiCopy = {
+  destinationSaved: "Saved to your destinations",
+  retryLoad: "Try again",
+  savingPlace: "Saving…",
+  loadingGlobe: "Loading globe",
+  cityDetail: "3D city detail",
+  mapView: "World preview",
+  worldView: "3D world",
+  searchAction: "Search destinations",
+  chooseResult: "Choose a destination to fly there",
+  chooseAnother: "Search another city",
+  returnOrbit: "Orbit",
+  readyToExplore: "A world of possibilities",
+  recentDestinations: "Recent destinations",
+  searchUnavailable: "Search is unavailable right now. Try again, or explore Tokyo, Paris or New York below.",
+  saveFailed: "Exploring now. This destination has not been saved.",
+  retrySave: "Retry save",
+  nearbyPlaces: "Nearby places",
+  nearbyUnavailable: "Nearby places are temporarily unavailable.",
+  webglUnavailable: "Interactive 3D is unavailable on this device. You can still choose destinations.",
+  tilesUnavailable: "City detail is unavailable. Explore the world globe or retry 3D.",
+  gestureHint: "Drag to explore · Pinch to zoom · Touch the globe to take control",
+  worldNotice: "World view · Drag to explore, pinch to zoom. City imagery appears when available.",
+  retryGlobe: "Retry 3D",
+  manualControl: "You’re in control",
+  flightPaused: "Flight paused",
+  arrived: "Ready to explore",
+  flightProgress: "Flight progress",
+  pauseFlight: "Pause",
+  resumeFlight: "Resume",
+
   tabOverview: "Overview",
   tabTravel: "Travel",
   tabMap: "Map",
@@ -86,9 +146,9 @@ const en: TravelExplorerUiCopy = {
   coordinates: "Coordinates",
   eta: "ETA",
 
-  emptyTitle: "Search a city to begin your descent",
+  emptyTitle: "Where will you go next?",
   emptyBody:
-    "Pick a destination — or one of your Bucket List travel dreams — and the console will fly you in from orbit.",
+    "Pick a city and fly there from orbit. Your next adventure starts with a little curiosity.",
   beginDescent: "Begin descent",
   fallbackNotice:
     "Cinematic 3D activates once Google Maps tiles are configured. Planning works without it.",
@@ -112,6 +172,36 @@ const en: TravelExplorerUiCopy = {
 
 const COPY = createLocaleCopyMap<TravelExplorerUiCopy>(en, {
   "zh-TW": {
+    destinationSaved: "已儲存至你的目的地",
+    retryLoad: "重試",
+    savingPlace: "正在儲存…",
+    loadingGlobe: "正在載入地球",
+    cityDetail: "3D 城市細節",
+    mapView: "世界預覽",
+    worldView: "3D 世界",
+    searchAction: "搜尋目的地",
+    chooseResult: "選擇目的地，開始飛行",
+    chooseAnother: "搜尋其他城市",
+    returnOrbit: "返回軌道",
+    readyToExplore: "探索世界的可能",
+    recentDestinations: "最近的目的地",
+    searchUnavailable: "目前無法搜尋，請重試或探索下方的 Tokyo、Paris 或 New York。",
+    saveFailed: "正在探索。此目的地尚未儲存。",
+    retrySave: "重試儲存",
+    nearbyPlaces: "附近景點",
+    nearbyUnavailable: "暫時無法載入附近景點。",
+    webglUnavailable: "此裝置無法使用互動 3D，仍可選擇目的地。",
+    tilesUnavailable: "暫時無法載入城市細節，仍可探索地球或重試 3D。",
+    gestureHint: "拖曳探索 · 雙指縮放 · 觸碰地球接手控制",
+    worldNotice: "世界視角 · 拖曳探索、雙指縮放。城市影像可用時將自動顯示。",
+    retryGlobe: "重試 3D",
+    manualControl: "由你控制",
+    flightPaused: "飛行已暫停",
+    arrived: "開始探索",
+    flightProgress: "飛行進度",
+    pauseFlight: "暫停",
+    resumeFlight: "繼續",
+
     tabOverview: "總覽",
     tabTravel: "旅行",
     tabMap: "地圖",
@@ -130,8 +220,8 @@ const COPY = createLocaleCopyMap<TravelExplorerUiCopy>(en, {
     speed: "速度",
     coordinates: "座標",
     eta: "預計抵達",
-    emptyTitle: "搜尋一個城市，開始你的降落",
-    emptyBody: "選擇一個目的地，或你願望清單中的旅行夢想，控制台便會帶你從軌道飛入。",
+    emptyTitle: "下一站，想去哪裡？",
+    emptyBody: "選擇一座城市，從軌道飛往目的地。下一趟冒險，就從好奇心開始。",
     beginDescent: "開始降落",
     fallbackNotice: "設定 Google 地圖圖磚後即可啟用電影感 3D。規劃功能無需它即可使用。",
     replayFlight: "重播飛行",

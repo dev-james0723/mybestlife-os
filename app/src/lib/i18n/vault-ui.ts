@@ -539,11 +539,11 @@ function makeCopy(
 }
 
 const en = makeCopy({
-  navDefault: "Software Vault",
+  navDefault: "Tools & Subscriptions",
   navAstronaut: "Software Arsenal",
   navAcademia: "Instrumentarium",
   navForest: "Tool Grotto",
-  titleDefault: "Software Vault",
+  titleDefault: "Tools & Subscriptions",
   titleAstronaut: "Software Arsenal",
   titleAcademia: "Instrumentarium",
   titleForest: "Tool Grotto",
@@ -703,11 +703,11 @@ const en = makeCopy({
 });
 
 const zhTW = makeCopy({
-  navDefault: "軟體庫",
+  navDefault: "工具與訂閱",
   navAstronaut: "軟體軍火庫",
   navAcademia: "工具典藏",
   navForest: "工具樹洞",
-  titleDefault: "軟體庫",
+  titleDefault: "工具與訂閱",
   titleAstronaut: "軟體軍火庫",
   titleAcademia: "工具典藏",
   titleForest: "工具樹洞",

@@ -2,6 +2,8 @@
 
 import { Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { useAppStore } from "@/stores/app-store";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { DailySummary } from "@/lib/calendar/types";
@@ -11,16 +13,18 @@ type Props = {
   isLoading: boolean;
   skeletonLabel: string;
   className?: string;
+  onRetry?: () => void;
 };
 
 export function AISummaryCard({
   summary,
   isLoading,
   skeletonLabel,
-  className,
+  className, onRetry,
 }: Props) {
   const prefersReduced = useReducedMotion();
-  if (isLoading || !summary) {
+  const chinese = useAppStore((state) => state.language).startsWith("zh");
+  if (isLoading) {
     return (
       <div
         className={cn(
@@ -39,6 +43,8 @@ export function AISummaryCard({
       </div>
     );
   }
+
+  if (!summary) return <div className={cn("space-y-2 rounded-xl border p-4 text-sm text-muted-foreground", className)}><p>{chinese ? "暫時未能整理完整日程摘要。你仍可查看已載入的項目。" : "A complete schedule summary is unavailable. You can still use the entries that loaded."}</p>{onRetry && <Button variant="outline" onClick={onRetry}>{chinese ? "重試摘要" : "Retry summary"}</Button>}</div>;
 
   return (
     <motion.div

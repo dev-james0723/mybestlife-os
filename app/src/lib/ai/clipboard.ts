@@ -18,8 +18,9 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 
+  let ta: HTMLTextAreaElement | null = null;
   try {
-    const ta = document.createElement("textarea");
+    ta = document.createElement("textarea");
     ta.value = text;
     ta.setAttribute("readonly", "");
     ta.style.position = "fixed";
@@ -27,10 +28,10 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     ta.style.pointerEvents = "none";
     document.body.appendChild(ta);
     ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
+    return document.execCommand("copy");
   } catch {
     return false;
+  } finally {
+    ta?.remove();
   }
 }

@@ -92,12 +92,8 @@ export default function GoogleCalendarPage() {
         </OSFrostedPanel>
 
         <OSSolidPanel className="space-y-2 p-4 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">{ui.googleCalendarSetupTitle}</p>
-          <ul className="list-disc space-y-1 pl-4">
-            <li>{ui.googleCalendarSetupStepSupabase}</li>
-            <li>{ui.googleCalendarSetupStepGoogleCloud}</li>
-            <li>{ui.googleCalendarSetupStepConsent}</li>
-          </ul>
+          <p className="font-medium text-foreground">{locale.startsWith("zh") ? "日曆連接是選用功能" : "Calendar connection is optional"}</p>
+          <p>{locale.startsWith("zh") ? "連接後可在計劃頁使用 Google 日曆同步。Google 會顯示需要的存取權限，請先檢查再決定是否繼續。你亦可取消並繼續使用每日計劃。" : "Connect to use Google Calendar sync in your planner. Review the access requested on Google’s permission screen before continuing. You can cancel and keep planning without a connection."}</p>
         </OSSolidPanel>
       </div>
     </PageShell>

@@ -43,6 +43,7 @@ export async function resolveShare(
   let res: Response;
   try {
     res = await fetch(endpoint, {
+      signal: AbortSignal.timeout(15_000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",

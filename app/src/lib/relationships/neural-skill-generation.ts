@@ -2,6 +2,7 @@ import type {
   NeuralSkillContent,
   RoleModelNeuralSkill,
 } from "@/types/role-model-intelligence";
+import { advisorDisplayName, buildAdvisorConversationContract } from "@/lib/mind-council/conversation-contract";
 
 export type NeuralSkillGenerationStage = "generate" | "persist";
 
@@ -135,6 +136,9 @@ export function formatNeuralSkillGenerationError(error: unknown): string {
   if (failure.code === "missing_gemini_api_key") {
     return "Neural Skill generation is not configured on the server yet.";
   }
+  if (failure.code === "research_unavailable") {
+    return "Public-source research could not finish. Your profile is saved; try again to create the skill.";
+  }
   if (failure.code === "ai_generation_failed" && failure.detail?.includes("429")) {
     return "The AI provider is out of quota and its fallback could not complete. Please try again later.";
   }
@@ -176,4 +180,33 @@ export function buildNeuralSkillSystemPrompt(content: NeuralSkillContent): strin
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+/** Compile all distilled fields, including legacy rows, into a reusable skill. */
+export function compileNeuralSkillMarkdown(content: NeuralSkillContent): string {
+  const name = advisorDisplayName(content.lensTitle);
+  return [
+    "---",
+    `name: ${JSON.stringify(`${name}-perspective`)}`,
+    `description: ${JSON.stringify(content.lensSubtitle)}`,
+    "---",
+    `# ${name} · Thinking and conversation skill`,
+    "## Conversation",
+    buildAdvisorConversationContract(content.lensTitle),
+    "## Answer workflow and expression DNA",
+    buildNeuralSkillSystemPrompt(content),
+    "## Evidence and research cutoff",
+    content.distillation
+      ? `Generated: ${content.distillation.generatedAt}\nMode: ${content.distillation.mode}\n${content.distillation.researchNotes || "No verified web research was available. Use only the saved profile."}`
+      : "Legacy saved skill: research date and source notes were not recorded. Do not assume current information.",
+    "> Based on [Nuwa · Skill Creation](https://github.com/alchaincyf/nuwa-skill) by [Huashu](https://x.com/AlchainHust).",
+  ].join("\n\n");
+}
+
+export function packageNeuralSkill(
+  content: NeuralSkillContent,
+  evidence: NonNullable<NeuralSkillContent["distillation"]>,
+): NeuralSkillContent {
+  const packaged = { ...content, distillation: evidence };
+  return { ...packaged, skillMarkdown: compileNeuralSkillMarkdown(packaged) };
 }

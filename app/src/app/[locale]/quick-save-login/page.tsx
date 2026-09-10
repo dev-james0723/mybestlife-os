@@ -20,7 +20,7 @@ export default async function QuickSaveLoginPage({ params }: PageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button render={<Link href={withLocalePrefix(slug, "/login")} />} className="w-full">
+          <Button render={<Link href={`${withLocalePrefix(slug, "/login")}?next=${encodeURIComponent(withLocalePrefix(slug, "/quick-save/setup"))}`} />} className="w-full">
             Log in
           </Button>
         </CardContent>

@@ -125,7 +125,7 @@ function GalleryCard({
 
         {/* Hover overlay */}
         <div className="absolute inset-0 hidden flex-col justify-end bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
-          <p className="text-sm font-medium text-white line-clamp-2">
+          <p className="text-sm font-medium text-white break-words">
             {project.name}
           </p>
           {summary && (
@@ -137,7 +137,7 @@ function GalleryCard({
 
         {/* Mobile: always show title */}
         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/60 to-transparent p-3 sm:hidden">
-          <p className="text-sm font-medium text-white line-clamp-2">
+          <p className="text-sm font-medium text-white break-words">
             {project.name}
           </p>
         </div>
@@ -145,7 +145,7 @@ function GalleryCard({
 
       {/* Card body */}
       <div className="p-3 space-y-2">
-        <h4 className="text-sm font-medium leading-snug line-clamp-1 hidden sm:block">
+        <h4 className="text-sm font-medium leading-snug break-words hidden sm:block">
           {project.name}
         </h4>
         {summary && (

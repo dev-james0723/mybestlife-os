@@ -138,6 +138,8 @@ function toPromptRun(row: PromptRunRow): PromptRun {
 // ---------------------------------------------------------------------------
 
 export type NewUserPromptInput = {
+  /** Reused for a retry after an uncertain create response. */
+  id?: string;
   title: string;
   description?: string;
   body: string;
@@ -253,6 +255,7 @@ export const aiKnowledgeRepository = {
     const supabase = createClient();
     const slug = input.slug ?? slugifyTitle(input.title);
     const payload = {
+      ...(input.id ? { id: input.id } : {}),
       slug,
       title_i18n: { en: input.title },
       description_i18n: { en: input.description ?? "" },
@@ -268,7 +271,7 @@ export const aiKnowledgeRepository = {
     };
     const { data, error } = await supabase
       .from("ai_user_prompts")
-      .insert(payload)
+      .upsert(payload, { onConflict: "id" })
       .select()
       .single();
     if (error) throw error;

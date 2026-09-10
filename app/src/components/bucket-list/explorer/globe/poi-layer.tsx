@@ -10,6 +10,7 @@
  * (no distanceFactor) — distance-reactive scaling is a visual-tuning pass.
  */
 
+import { useTravelExplorerStore } from "@/stores/travel-explorer-store";
 import { Html } from "@react-three/drei";
 import { EastNorthUpFrame } from "3d-tiles-renderer/r3f";
 import { Bookmark, Star } from "lucide-react";
@@ -26,6 +27,8 @@ type Props = {
 };
 
 export function PoiLayer({ pois, savedIds, onSelect }: Props) {
+  const phase = useTravelExplorerStore((s) => s.phase);
+  if (phase !== "settled" && phase !== "manual") return null;
   return (
     <>
       {pois.map((p) => (
@@ -35,7 +38,7 @@ export function PoiLayer({ pois, savedIds, onSelect }: Props) {
           lon={p.lng * DEG2RAD}
           height={0}
         >
-          <Html center style={{ pointerEvents: "auto" }}>
+          <Html center occlude zIndexRange={[5, 0]} style={{ pointerEvents: "auto" }}>
             <button
               type="button"
               onClick={() => onSelect(p.providerPlaceId)}

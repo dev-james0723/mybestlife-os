@@ -17,11 +17,15 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useReducedMotion } from "framer-motion";
 import {
+  Eye,
+  EyeOff,
+  CloudSun,
   ArrowRight,
   Check,
   Compass,
   Droplets,
   Flower2,
+  Fish,
   Home,
   Leaf,
   Loader2,
@@ -51,14 +55,22 @@ import {
   useUseFertilizer,
   useGardenInventory,
 } from "@/hooks/use-garden";
+import { useGardenPresentation } from "@/hooks/use-garden-presentation";
+import { useGardenTilt } from "@/hooks/use-garden-tilt";
+import { GardenTiltControls } from "./GardenTiltControls";
+import { sampleGardenAtmosphere } from "@/lib/garden/presentation";
+import { GardenPresentationControls } from "./GardenPresentationControls";
 import { useGardenAdventure } from "@/hooks/use-garden-adventure";
-import { useTheme } from "@/lib/theme-context";
+import { LIVING_POND_ENABLED } from "@/lib/garden/pond-config";
+
 import { useAppStore } from "@/stores/app-store";
+import { useGardenPets } from "@/hooks/use-garden-pets";
 import { useOSBuddyStore } from "@/stores/os-buddy-store";
 import { withAppLocalePrefix } from "@/lib/i18n/locale-path";
 import { gardenDay, type Point } from "@/lib/garden/game";
 import {
   ADVENTURE,
+  ADVENTURE_POND,
   adventureDestinations,
   adventureSnapshot,
   canDeliver,
@@ -90,8 +102,10 @@ import type {
   GardenQuality,
 } from "./AdventureScene";
 import styles from "./garden-adventure.module.css";
+import type { PondFrame } from "./pond-world";
 
 const Scene = dynamic(() => import("./AdventureScene"), { ssr: false });
+const PondPanel = dynamic(() => import("./PondPanel"), { ssr: false });
 class SceneBoundary extends Component<
   { children: ReactNode; fallback: ReactNode; onError: () => void },
   { failed: boolean }
@@ -144,8 +158,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
   const language = useAppStore((s) => s.language),
     zh = language.startsWith("zh");
   const t = (en: string, chinese: string) => (zh ? chinese : en);
-  const { colorMode } = useTheme(),
-    osReduced = useReducedMotion();
+  const osReduced = useReducedMotion();
   const plant = useActiveGarden(),
     collection = useGardenCollection(),
     history = useGardenCareHistory(day),
@@ -168,9 +181,9 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     waterBonusApplied = useRef(false),
     drawRef = useRef<AdventureDraw | null>(null),
     cameraRef = useRef<AdventureCamera>({
-      yaw: 0.2,
-      pitch: 0.65,
-      distance: 12,
+      yaw: 0.65,
+      pitch: 0.32,
+      distance: 22,
       overview: false,
     });
   const keys = useRef(new Set<string>()),
@@ -181,6 +194,8 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     enterButton = useRef<HTMLButtonElement>(null),
     audioRef = useRef<GardenAudio | null>(null);
   const [snapshot, setSnapshot] = useState(() => createAdventure(day));
+  const [pondOpen, setPondOpen] = useState(false);
+  const pondRef = useRef<PondFrame>({ world: null, open: false, activity: "arrange", anchors: [], selectedSlot: null, ghost: null, route: [], routeVersion: 0, onSlot: null });
   const [entered, setEntered] = useState(false),
     [nativeFullscreen, setNativeFullscreen] = useState(false),
     [fullscreenFallback, setFullscreenFallback] = useState(false);
@@ -200,7 +215,50 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     [buddyLine, setBuddyLine] = useState("");
   const [stickVisual, setStickVisual] = useState({ x: 0, y: 0 });
   const stickPress = useRef<{ id: number; x: number; y: number } | null>(null);
+  const tilt = useGardenTilt();
+  const { read: readTilt, disable: disableTilt } = tilt;
+  const { presentation } = useGardenPresentation(userId);
+  const [cleanView, setCleanView] = useState(false),
+    [observeOnly, setObserveOnly] = useState(false);
+  const observeRef = useRef(false);
+  useEffect(() => {
+    observeRef.current = observeOnly;
+  }, [observeOnly]);
+  const [worldNow, setWorldNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setWorldNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const atmosphere = sampleGardenAtmosphere(
+    worldNow,
+    identity.data?.timezone,
+    presentation,
+  );
+  const atmosphereRef = useRef(atmosphere);
+  useEffect(() => {
+    atmosphereRef.current = atmosphere;
+  }, [atmosphere]);
   const buddy = identity.data;
+  const personalPets = useGardenPets(userId);
+  const selectedPersonalPet = personalPets.data?.pets.find(
+    (p) => `custom:${p.id}` === presentation.pet && p.status === "ready",
+  );
+  const [petModelState, setPetModelState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const pet =
+    presentation.pet === "account"
+      ? (buddy?.pet ?? "xiaoba")
+      : presentation.pet;
+  const petName =
+    selectedPersonalPet?.name ??
+    (presentation.pet.startsWith("custom:")
+      ? t("Personal pet", "個人寵物")
+      : pet === buddy?.pet
+        ? buddy.name
+        : pet === "doge"
+          ? "Doge"
+          : "Xiaoba");
   const buddyEnabledOverride = useOSBuddyStore((s) => s.osBuddyEnabledOverride);
   const buddyEnabled = !!buddy?.enabled && buddyEnabledOverride !== false;
   const settings = account.data?.settings ?? defaultAdventureSettings;
@@ -233,7 +291,10 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
   function unlockSound(cue?: GardenCue) {
     if (!preferencesRef.current.sound) return;
     audioRef.current ??= new GardenAudio();
-    audioRef.current.configure(preferencesRef.current, colorMode === "dark");
+    audioRef.current.configure(
+      preferencesRef.current,
+      atmosphereRef.current.night,
+    );
     audioRef.current.setPlaying(
       stateRef.current.phase === "playing" && !document.hidden,
     );
@@ -262,7 +323,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
   function changePreferences(next: DevicePreferences) {
     preferencesRef.current = next;
     setPreferences(next);
-    audioRef.current?.configure(next, colorMode === "dark");
+    audioRef.current?.configure(next, atmosphereRef.current.night);
     try {
       localStorage.setItem(
         "mblos:garden-adventure:device",
@@ -300,44 +361,92 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
       previous = 0,
       accumulator = 0,
       lastUi = 0,
-      lastEvent = 0;
+      lastEvent = 0,
+      footTravel = 0,
+      flutterAt = 0;
     function tick(time: number) {
       const state = stateRef.current,
         down = keys.current;
       const delta = previous ? Math.min((time - previous) / 1000, 0.1) : 0;
       accumulator += delta;
       previous = time;
+      const before = { x: state.player.x, z: state.player.z };
+      const keyboardMoving = ["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].some(key => down.has(key));
+      const tiltInput = readTilt(time, state.phase !== "playing" || document.hidden || capturePaused.current || observeRef.current || pondRef.current.open);
+      const useTilt = !keyboardMoving && stickPress.current === null;
       const input = {
         x:
+          (useTilt ? tiltInput.x : 0) +
           stick.current.x +
           Number(down.has("d") || down.has("arrowright")) -
           Number(down.has("a") || down.has("arrowleft")),
         z:
+          (useTilt ? tiltInput.z : 0) +
           stick.current.z +
           Number(down.has("s") || down.has("arrowdown")) -
           Number(down.has("w") || down.has("arrowup")),
         yaw: cameraRef.current.overview ? 0 : cameraRef.current.yaw,
         interact: intent.current.interact,
         dash: intent.current.dash,
+        preciseMovement: useTilt && Math.hypot(tiltInput.x, tiltInput.z) > 0,
       };
+      if (pondRef.current.open) {
+        input.x = 0; input.z = 0; input.interact = false; input.dash = false;
+        state.target = null;
+      }
       if (down.has("q")) cameraRef.current.yaw += delta * 1.2;
       if (down.has("r")) cameraRef.current.yaw -= delta * 1.2;
       while (accumulator >= 1 / 60) {
-        if (!document.hidden && !capturePaused.current)
+        if (!document.hidden && !capturePaused.current && !observeRef.current)
           stepAdventure(state, 1 / 60, input);
         input.interact = false;
         input.dash = false;
         intent.current = { interact: false, dash: false };
         accumulator -= 1 / 60;
       }
+      state.weather = atmosphereRef.current.weather;
       drawRef.current?.(state, time);
+      audioRef.current?.setAtmosphere(
+        atmosphereRef.current.night,
+        atmosphereRef.current.weather === "rain",
+      );
+      if (
+        state.phase === "playing" &&
+        !observeRef.current &&
+        !document.hidden
+      ) {
+        const travelled = Math.hypot(
+          state.player.x - before.x,
+          state.player.z - before.z,
+        );
+        if (travelled < 1) footTravel += travelled;
+        if (footTravel > 0.42) {
+          footTravel %= 0.42;
+          sound(Math.abs(state.player.x) < 1.2 ? "step-path" : "step-grass");
+        }
+        if (
+          time - flutterAt > 2400 &&
+          Math.hypot(state.player.x + 1.7, state.player.z + 6.4) < 4
+        ) {
+          sound("flutter");
+          flutterAt = time;
+        }
+      }
       audioRef.current?.setBlooming(
         state.beds.some((bed) => bed.stage === "harvested"),
       );
       for (const event of state.events)
         if (event.seq > lastEvent) {
           lastEvent = event.seq;
-          sound(event.kind);
+          sound(
+            event.kind === "plant"
+              ? event.action === "plant:1"
+                ? "plant-grass"
+                : event.action === "plant:2"
+                  ? "plant-flower"
+                  : "plant"
+              : event.kind,
+          );
           setFeedback(event);
           if (event.action) accountRef.current.enqueue(event.action, state.day);
           if (
@@ -370,7 +479,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
       audioRef.current?.dispose();
       audioRef.current = null;
     };
-  }, [pause, sound, sync]);
+  }, [pause, sound, sync, readTilt]);
   useEffect(() => {
     // Verification shortcuts are compiled out of normal builds and restricted to loopback.
     if (
@@ -398,6 +507,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
             "paused",
             "fail-or-retry",
             "hero-asset",
+            "island-asset",
             "garden-complete",
           ].includes(name)
         )
@@ -436,10 +546,10 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
         state.nearby = nearestAdventureTarget(state);
         stateRef.current = state;
         cameraRef.current = {
-          yaw: 0.2,
-          pitch: 0.65,
-          distance: name === "hero-asset" ? 7 : 12,
-          overview: false,
+          yaw: 0.65,
+          pitch: 0.32,
+          distance: name === "hero-asset" ? 7 : 22,
+          overview: name === "island-asset",
         };
         clearInput();
         setEntered(true);
@@ -505,13 +615,31 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     setUnavailable(true);
     setReady(true);
   }, []);
+  const openPond = useCallback(() => {
+    if (!LIVING_POND_ENABLED || stateRef.current.swing.mode !== "idle") return;
+    clearInput();
+    stateRef.current.target = null;
+    stateRef.current.action = null;
+    stateRef.current.player.x = ADVENTURE_POND.x;
+    stateRef.current.player.z = ADVENTURE_POND.z + 2.85;
+    stateRef.current.player.vx = 0;
+    stateRef.current.player.vz = 0;
+    cameraRef.current.yaw = 0.05;
+    cameraRef.current.pitch = 1.18;
+    cameraRef.current.distance = 10;
+    pondRef.current.open = true;
+    setPondOpen(true);
+    sync();
+  }, [clearInput, sync]);
   const target = useCallback(
     (p: Point) => {
+      if (observeRef.current) return;
+      if (LIVING_POND_ENABLED && Math.hypot(p.x - ADVENTURE_POND.x, p.z - ADVENTURE_POND.z) < ADVENTURE_POND.radius) { openPond(); return; }
       navigateAdventure(stateRef.current, p);
       sync();
       panel.current?.focus({ preventScroll: true });
     },
-    [sync],
+    [sync, openPond],
   );
   function enter() {
     stateRef.current.phase = "playing";
@@ -535,6 +663,9 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     unlockSound("confirm");
   }
   function leave() {
+    disableTilt();
+    pondRef.current.open = false;
+    setPondOpen(false);
     audioRef.current?.play("cancel");
     pause();
     if (document.fullscreenElement === panel.current)
@@ -578,12 +709,16 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     }
     if (e.key === "Escape") {
       e.preventDefault();
-      if (menu) {
+      if (pondOpen) {
+        pondRef.current.open = false;
+        setPondOpen(false);
+        panel.current?.focus({ preventScroll: true });
+      } else if (menu) {
         setMenu(null);
       } else pause();
       return;
     }
-    if (e.target !== e.currentTarget || stateRef.current.phase !== "playing")
+    if (pondOpen || e.target !== e.currentTarget || stateRef.current.phase !== "playing")
       return;
     const key = e.key.toLowerCase();
     if (
@@ -644,6 +779,17 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                 : t("Harvested", "已採收");
       return verb ? action : `${names[bed.id]} · ${action}`;
     }
+    if (destination.kind === "swing")
+      return snapshot.swing.mode === "riding" ? t("Get off swing", "落鞦韆")
+        : ["stopping", "dismounting"].includes(snapshot.swing.mode) ? t("Slowing to a stop…", "正在慢慢停低…")
+        : snapshot.swing.mode === "boarding" ? t("Taking a seat…", "正在坐低…")
+        : t("Ride the swing", "玩鞦韆");
+    if (destination.kind === "shelter")
+      return snapshot.shelterOpen
+        ? t("Fold shade canopy", "收起遮棚")
+        : t("Open shade canopy", "打開遮棚");
+    if (destination.kind === "rain-barrel")
+      return t("Collect rainwater", "收集雨水");
     if (destination.kind === "well")
       return t("Refill watering can", "補滿水壺");
     if (destination.kind === "home")
@@ -722,6 +868,22 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
         "need-basket": t(
           "Harvest 3 flower beds and gather 3 finds, then bring them home.",
           "採收三個花圃、找到三份野生收穫，再帶回家。",
+        ),
+        "shelter-open": t(
+          "Canopy open. A dry corner to watch the clouds.",
+          "遮棚打開了，在這裡安心看雲。",
+        ),
+        "shelter-close": t(
+          "Canopy folded. Let the light in.",
+          "遮棚收好了，讓陽光透進來。",
+        ),
+        rainwater: t(
+          "A can of collected rainwater, ready for the beds.",
+          "收集了一壺雨水，可以照料花圃了。",
+        ),
+        "rain-wait": t(
+          "The barrel fills during garden rain. The pond pump is always available.",
+          "遊戲下雨時雨桶會慢慢蓄水，池塘水泵隨時可用。",
         ),
         cancelled: "",
       }[feedback.kind]
@@ -863,6 +1025,15 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
     <div
       ref={panel}
       className={`${styles.viewport} ${entered ? styles.immersive : ""}`}
+      data-clean={cleanView}
+      data-hand={presentation.hand}
+      data-hints={presentation.hints}
+      data-objectives={presentation.objectives}
+      data-buddy-info={presentation.buddyInfo}
+      data-high-contrast={presentation.highContrast}
+      data-observe={observeOnly}
+      data-tilt-access={tilt.access}
+      data-tilt-status={tilt.enabled ? tilt.reading.status : tilt.access}
       role={entered ? "dialog" : "region"}
       aria-modal={entered || undefined}
       aria-label={t("Your garden world", "你的花園世界")}
@@ -888,10 +1059,15 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
             stateRef={stateRef}
             drawRef={drawRef}
             cameraRef={cameraRef}
+            pondRef={pondRef}
             active={entered}
-            dark={colorMode === "dark"}
-            pet={buddy?.pet ?? "xiaoba"}
-            buddyEnabled={buddyEnabled}
+            dark={false}
+            atmosphere={atmosphere}
+            pet={pet === "doge" ? "doge" : "xiaoba"}
+            personalPetUrl={selectedPersonalPet?.modelUrl ?? undefined}
+            personalPetSelected={presentation.pet.startsWith("custom:")}
+            onPetModelState={setPetModelState}
+            buddyEnabled={buddyEnabled && presentation.buddyVisible}
             plant={plant.data?.plant_type ?? "sunflower"}
             stage={plant.data?.growth_stage ?? 1}
             collection={(collection.data ?? []).map((p) => p.plant_type)}
@@ -906,6 +1082,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
           />
         )}
       </SceneBoundary>
+      {LIVING_POND_ENABLED && entered && <PondPanel userId={userId} open={pondOpen && playing} frameRef={pondRef} onClose={() => { pondRef.current.open = false; setPondOpen(false); panel.current?.focus({ preventScroll: true }); }} sound={sound} zh={language.startsWith("zh")} fallback={unavailable} reduced={reduced} buddyName={buddyEnabled ? buddy?.name ?? null : null} />}
       {!ready && (
         <div className={styles.loadingOverlay}>
           <Loader2 className="animate-spin" />
@@ -964,8 +1141,56 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
               </button>
             </div>
           )}
-          <header className={styles.hudTop}>
-            <div className={styles.objective}>
+          <div className={styles.viewToggle}>
+            <button
+              type="button"
+              aria-label={
+                cleanView
+                  ? t("Show interface", "顯示介面")
+                  : t("Hide interface", "隱藏介面")
+              }
+              aria-pressed={cleanView}
+              onClick={() => setCleanView((v) => !v)}
+            >
+              {cleanView ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+            {cleanView && (
+              <>
+                <button
+                  type="button"
+                  aria-label={t("Garden settings", "花園設定")}
+                  onClick={() => {
+                    pause();
+                    setMenu("settings");
+                  }}
+                >
+                  <Settings2 size={18} />
+                </button>
+                <button
+                  type="button"
+                  aria-label={
+                    playing ? t("Pause", "暫停") : t("Resume", "繼續")
+                  }
+                  onClick={() => {
+                    setObserveOnly(false);
+                    if (playing) pause();
+                    else resume();
+                  }}
+                >
+                  {playing ? <Pause size={18} /> : <Play size={18} />}
+                </button>
+                <button
+                  type="button"
+                  aria-label={t("Leave garden", "離開花園")}
+                  onClick={leave}
+                >
+                  <X size={18} />
+                </button>
+              </>
+            )}
+          </div>
+          <header className={styles.hudTop} data-pond-open={pondOpen}>
+            <div className={styles.objective} hidden={pondOpen}>
               <span className={styles.kicker}>
                 {t("Today’s little expedition", "今天的小探險")}
               </span>
@@ -1017,7 +1242,45 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                   <span key={i} data-filled={snapshot.water > i} />
                 ))}
               </div>
+              {presentation.pet.startsWith("custom:") &&
+                petModelState !== "ready" && (
+                  <span role="status">
+                    {petModelState === "error"
+                      ? t(
+                          "Pet model could not load. Choose a companion in settings.",
+                          "寵物模型未能讀取，請在設定選擇夥伴。",
+                        )
+                      : t("Your pet is getting ready…", "你的寵物正在準備⋯")}
+                  </span>
+                )}
+              <div className={styles.skyStatus} title={atmosphere.timezone}>
+                <CloudSun size={15} />
+                {t(
+                  {
+                    clear: "Clear",
+                    cloudy: "Cloudy",
+                    rain: "Rain",
+                    mist: "Mist",
+                  }[atmosphere.weather],
+                  { clear: "晴天", cloudy: "多雲", rain: "下雨", mist: "薄霧" }[
+                    atmosphere.weather
+                  ],
+                )}
+                <span>
+                  {String(Math.floor(atmosphere.hour)).padStart(2, "0")}:
+                  {String(Math.floor((atmosphere.hour % 1) * 60)).padStart(
+                    2,
+                    "0",
+                  )}
+                </span>
+                <small>
+                  {atmosphere.preview
+                    ? t("Preview", "預覽")
+                    : t("Garden weather", "遊戲天氣")}
+                </small>
+              </div>
               <div className={styles.tools}>
+                {LIVING_POND_ENABLED && <button type="button" onClick={openPond} disabled={snapshot.swing.mode !== "idle"} aria-label={t("Enter living pond", "走進活水魚塘")} title={snapshot.swing.mode !== "idle" ? t("Get off the swing first", "先落鞦韆") : t("Living pond", "活水魚塘")}><Fish size={18}/></button>}
                 <button
                   type="button"
                   title={t("Map & field notes", "地圖與探索筆記")}
@@ -1077,7 +1340,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
               </div>
             </div>
           </header>
-          {snapshot.trail.phase === "following" && (
+          {!pondOpen && snapshot.trail.phase === "following" && (
             <div className={styles.trailStatus}>
               <Sparkles size={16} />
               {t("Butterfly trail", "蝴蝶小徑")} {snapshot.trail.index + 1}/3{" "}
@@ -1092,9 +1355,10 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
               )}
             </div>
           )}
-          {playing && (
+          {playing && !pondOpen && (
             <div className={styles.hudBottom}>
               <div className={styles.movement}>
+                <GardenTiltControls tilt={tilt} zh={zh} compact />
                 <button
                   type="button"
                   className={styles.joystick}
@@ -1131,12 +1395,15 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                     width={44}
                     height={44}
                     unoptimized
-                    src={`/os-buddy/pets/${buddy.pet}/${feedback?.kind === "deliver" ? "jumping" : "idle"}.gif`}
-                    alt={buddy.name}
+                    src={
+                      selectedPersonalPet?.photoUrl ??
+                      `/os-buddy/pets/${pet === "doge" ? "doge" : "xiaoba"}/${feedback?.kind === "deliver" ? "jumping" : "idle"}.gif`
+                    }
+                    alt={petName}
                   />
                 )}
                 <div>
-                  {buddy && buddyEnabled && <strong>{buddy.name}</strong>}
+                  {buddy && buddyEnabled && <strong>{petName}</strong>}
                   <p>
                     {feedbackCopy ||
                       buddyLine ||
@@ -1151,7 +1418,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                 <button
                   type="button"
                   className={styles.dash}
-                  disabled={snapshot.player.cooldown > 0.05}
+                  disabled={snapshot.player.cooldown > 0.05 || snapshot.swing.mode !== "idle"}
                   onClick={() => {
                     intent.current.dash = true;
                     panel.current?.focus({ preventScroll: true });
@@ -1164,7 +1431,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                   type="button"
                   data-testid="garden-action"
                   className={styles.action}
-                  disabled={!snapshot.nearby || !!snapshot.action}
+                  disabled={!snapshot.nearby || !!snapshot.action || ["boarding", "stopping", "dismounting"].includes(snapshot.swing.mode)}
                   onClick={() => {
                     intent.current.interact = true;
                     panel.current?.focus({ preventScroll: true });
@@ -1195,9 +1462,9 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
               aria-label={t("Reset camera", "重設視角")}
               onClick={() => {
                 cameraRef.current = {
-                  yaw: 0.2,
-                  pitch: 0.65,
-                  distance: 12,
+                  yaw: 0.65,
+                  pitch: 0.32,
+                  distance: 22,
                   overview: false,
                 };
               }}
@@ -1296,6 +1563,7 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                           type="button"
                           key={`${destination.kind}:${destination.id}`}
                           data-testid={`garden-destination-${destination.kind}-${destination.id}`}
+                          disabled={["riding", "stopping", "dismounting"].includes(snapshot.swing.mode)}
                           onClick={() => {
                             resume();
                             target(destination.point);
@@ -1343,6 +1611,25 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                   </>
                 ) : menu === "settings" ? (
                   <>
+                    <GardenTiltControls tilt={tilt} zh={zh} />
+                    <GardenPresentationControls userId={userId} zh={zh} />
+                    <label className={styles.settingRow}>
+                      <span>
+                        {t(
+                          "Observation mode · camera only",
+                          "觀賞模式 · 只操作鏡頭",
+                        )}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={observeOnly}
+                        onChange={(e) => {
+                          setObserveOnly(e.target.checked);
+                          setCleanView(e.target.checked);
+                          clearInput();
+                        }}
+                      />
+                    </label>
                     <label className={styles.settingRow}>
                       {t("Rendering quality", "畫面品質")}
                       <select
@@ -1381,8 +1668,8 @@ function AccountGarden({ userId, day }: { userId: string; day: string }) {
                     </label>
                     <p>
                       {t(
-                        "Drag the world to look around. Scroll to zoom. Q / R rotate the camera. Touch controls work in both orientations.",
-                        "拖曳畫面環顧四周，滾動縮放，Q / R 旋轉視角；觸控支援直向與橫向。",
+                        "Drag to look around. Pinch with two fingers, scroll, or use + / − to zoom. Q / R rotate. Touch controls work in both orientations.",
+                        "拖曳環顧四周；雙指收合／放開、滾動或＋／−縮放。Q / R 旋轉；觸控支援直向與橫向。",
                       )}
                     </p>
                     <div className={styles.audioSettings}>

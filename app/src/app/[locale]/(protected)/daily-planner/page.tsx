@@ -173,6 +173,7 @@ import {
 } from "@/components/daily-planner/time-summary-carousel";
 import { FreePlanBoard } from "@/components/daily-planner/free-plan-board";
 import { FreePlanSummary } from "@/components/daily-planner/free-plan-summary";
+import { getUxJourneyCopy } from "@/lib/i18n/ux-journey-ui";
 import { PlanningModeToggle } from "@/components/daily-planner/planning-mode-toggle";
 import {
   AutoPlanPanel,
@@ -1091,6 +1092,13 @@ export default function DailyPlannerPage() {
 
   // ── date state ──
   const [selectedDate, setSelectedDate] = useState(new Date());
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("date");
+    if (requested && /^\d{4}-\d{2}-\d{2}$/.test(requested)) {
+      const date = parseISO(requested);
+      if (!Number.isNaN(date.getTime())) setSelectedDate(date);
+    }
+  }, []);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const tomorrowStr = format(addDays(selectedDate, 1), "yyyy-MM-dd");
 
@@ -1104,10 +1112,10 @@ export default function DailyPlannerPage() {
   const [tasks, setTasks] = useState<LocalPlanTask[]>([]);
   /**
    * Free Planning bucket. Lives alongside `tasks` (time-block) on the same daily_plans row so
-   * switching modes never deletes data. Default mode is `time-block` per spec.
+   * switching modes never deletes data. New plans begin in Free Plan.
    */
   const [freeTasks, setFreeTasks] = useState<FreePlanTask[]>([]);
-  const [mode, setMode] = useState<PlanningMode>("time-block");
+  const [mode, setMode] = useState<PlanningMode>("free");
   const pendingAdaptiveModeDateRef = useRef<string | null>(null);
   const [autoPlanPreview, setAutoPlanPreview] = useState<AutoPlanSchedule | null>(null);
   const [autoPlanBufferMinutes, setAutoPlanBufferMinutes] = useState(10);
@@ -1279,7 +1287,7 @@ export default function DailyPlannerPage() {
       }
       setFreeTasks(plan.free_tasks ?? []);
       if (pendingAdaptiveModeDateRef.current !== dateStr) {
-        setMode(plan.mode ?? "time-block");
+        setMode(new URLSearchParams(window.location.search).get("mode") === "free" ? "free" : plan.mode ?? "free");
       }
       setStartTime(plan.start_time ?? DEFAULT_PLAN_START_TIME);
       setEndTime(plan.end_time ?? DEFAULT_PLAN_END_TIME);
@@ -1293,7 +1301,7 @@ export default function DailyPlannerPage() {
       }
       setFreeTasks([]);
       if (pendingAdaptiveModeDateRef.current !== dateStr) {
-        setMode("time-block");
+        setMode("free");
       }
       setStartTime(DEFAULT_PLAN_START_TIME);
       setEndTime(DEFAULT_PLAN_END_TIME);
@@ -2980,8 +2988,13 @@ export default function DailyPlannerPage() {
                     adaptiveLabel={autoPlanCopy.modeLabel}
                   />
                 </div>
+              </div>
+            </div>
+
+            <details key={mode} open={mode === "free" ? undefined : true} className="space-y-4">
+              <summary className="min-h-11 cursor-pointer rounded-lg py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">{getUxJourneyCopy(language).planningSettings}</summary>
                 <div className="flex flex-col items-stretch gap-1 sm:items-end">
-                  <OSPrimaryAction
+                  <OSControl
                     className="relative w-full shrink-0 gap-2 sm:w-auto"
                     onClick={() => void handleCalendarSyncNow()}
                     disabled={plannerGcalPushSpinning}
@@ -2997,12 +3010,12 @@ export default function DailyPlannerPage() {
                         aria-hidden
                       />
                     )}
-                    <span className="truncate">
+                    <span className="whitespace-normal text-left">
                       {plannerGcalPushSpinning
                         ? copy.googleCalendarSyncingNowButton
                         : copy.googleCalendarSyncNowButton}
                     </span>
-                  </OSPrimaryAction>
+                  </OSControl>
                   {lastGcalStamp ? (
                     <p className="max-w-[18rem] text-[10px] leading-snug text-muted-foreground text-right tabular-nums">
                       {copy.googleCalendarLastUpdatedLabel(lastGcalStamp)}
@@ -3016,9 +3029,6 @@ export default function DailyPlannerPage() {
                     </p>
                   ) : null}
                 </div>
-              </div>
-            </div>
-
             <Separator className="bg-border/45" />
 
             {/* Time pickers */}
@@ -3101,7 +3111,49 @@ export default function DailyPlannerPage() {
                 </div>
               </>
             )}
+            </details>
           </OSFrostedPanel>
+
+          {mode === "free" ? <p className="text-sm text-muted-foreground">{getUxJourneyCopy(language).plannerStart}</p> : null}
+          {/* ─── Free Planning board (Free mode only) ─── */}
+          {/* Single-column flow on every breakpoint: each priority section gets the full content
+           *  width so long task names breathe instead of compressing into 4 narrow ribbons.
+           *  The Free Plan Summary lives at the bottom as a recap, not a competing right rail. */}
+          {mode === "free" && (
+            <div className="space-y-6">
+              <FreePlanBoard
+                copy={copy}
+                tasks={freeTasks}
+                onChange={updateFreeTasks}
+                onStartFocus={openStartFocusForFreeTask}
+                secondaryActions={
+                  <>
+                    <OSPrimaryAction
+                      type="button"
+                      className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
+                      onClick={() => setCreateAiDialogOpen(true)}
+                    >
+                      <Wand2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{copy.createTaskWithAi}</span>
+                    </OSPrimaryAction>
+                    <OSControl
+                      type="button"
+                      className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
+                      onClick={() => setImportDialogOpen(true)}
+                    >
+                      <FolderInput className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{copy.importFromTasks}</span>
+                    </OSControl>
+                  </>
+                }
+              />
+              <FreePlanSummary
+                copy={copy}
+                tasks={freeTasks}
+                windowLabel={freePlanningWindowLabel}
+              />
+            </div>
+          )}
 
           <TodayFocusStrip
             copy={copy}
@@ -3400,46 +3452,6 @@ export default function DailyPlannerPage() {
                   }}
                 />
               </div>
-            </div>
-          )}
-
-          {/* ─── Free Planning board (Free mode only) ─── */}
-          {/* Single-column flow on every breakpoint: each priority section gets the full content
-           *  width so long task names breathe instead of compressing into 4 narrow ribbons.
-           *  The Free Plan Summary lives at the bottom as a recap, not a competing right rail. */}
-          {mode === "free" && (
-            <div className="space-y-6">
-              <FreePlanBoard
-                copy={copy}
-                tasks={freeTasks}
-                onChange={updateFreeTasks}
-                onStartFocus={openStartFocusForFreeTask}
-                secondaryActions={
-                  <>
-                    <OSPrimaryAction
-                      type="button"
-                      className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
-                      onClick={() => setCreateAiDialogOpen(true)}
-                    >
-                      <Wand2 className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{copy.createTaskWithAi}</span>
-                    </OSPrimaryAction>
-                    <OSControl
-                      type="button"
-                      className="h-11 min-h-11 flex-1 gap-2 rounded-xl"
-                      onClick={() => setImportDialogOpen(true)}
-                    >
-                      <FolderInput className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{copy.importFromTasks}</span>
-                    </OSControl>
-                  </>
-                }
-              />
-              <FreePlanSummary
-                copy={copy}
-                tasks={freeTasks}
-                windowLabel={freePlanningWindowLabel}
-              />
             </div>
           )}
 

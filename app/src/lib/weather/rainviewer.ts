@@ -3,23 +3,31 @@
  * Docs: https://www.rainviewer.com/api.html
  *
  * The public weather-maps endpoint returns the list of available radar
- * frames (≈2h of past observations + ≈30min nowcast). Each frame has a
+ * frames (about 2h of past observations). Each frame has a
  * `path`; the tile URL is assembled as:
  *
  *   {host}{path}/{size}/{z}/{x}/{y}/{color}/{smooth}_{snow}.png
  *
- * No API key, no rate-limit headaches for a page that refreshes at most
- * once a minute.
+ * No API key is required. The public service is rate-limited, so callers
+ * load the index once and cache tile layers while the panel is mounted.
  */
 
 const RAINVIEWER_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
+
+/** Official RainViewer raster basemap; unlike CARTO's legacy public URL, it
+ * does not return an "API KEY REQUIRED" watermark tile. */
+export const RAINVIEWER_BASEMAP_URL =
+  "https://maps.rainviewer.com/styles/m2_dark/256/{z}/{x}/{y}.png";
+
+export const RAINVIEWER_ATTRIBUTION =
+  'Basemap &amp; weather data <a href="https://www.rainviewer.com/">RainViewer</a>';
 
 export type RadarFrame = {
   /** Unix seconds. */
   time: number;
   /** Tile path fragment, e.g. "/v2/radar/1700000000". */
   path: string;
-  /** True for nowcast (future) frames. */
+  /** True only for legacy providers that still return future frames. */
   nowcast: boolean;
 };
 
@@ -67,8 +75,8 @@ export async function fetchRadarFrames(): Promise<RadarFrames | null> {
 /**
  * Build a Leaflet-compatible tile URL template for a given frame.
  *
- * color scheme 4 = "The Weather Channel" (green → yellow → red), which
- * matches the precipitation legend in the card design.
+ * RainViewer discontinued every free color scheme except Universal Blue
+ * (scheme 2) in 2026.
  */
 export function radarTileUrl(
   host: string,
@@ -76,17 +84,17 @@ export function radarTileUrl(
   opts?: { size?: 256 | 512; color?: number; smooth?: boolean; snow?: boolean },
 ): string {
   const size = opts?.size ?? 256;
-  const color = opts?.color ?? 4;
+  const color = opts?.color ?? 2;
   const smooth = opts?.smooth === false ? 0 : 1;
   const snow = opts?.snow === false ? 0 : 1;
   return `${host}${frame.path}/${size}/{z}/{x}/{y}/${color}/${smooth}_${snow}.png`;
 }
 
-/** Legend stops for RainViewer color scheme 4 (light → heavy). */
+/** Representative stops from RainViewer's Universal Blue scale. */
 export const RADAR_LEGEND_STOPS = [
-  { color: "#7ec0a6", label: "Light" },
-  { color: "#a7cf6b", label: "" },
-  { color: "#c8e53a", label: "Moderate" },
-  { color: "#f4c20d", label: "" },
-  { color: "#e8542a", label: "Heavy" },
+  { color: "#88ddee", label: "Light" },
+  { color: "#00a3e0", label: "" },
+  { color: "#005588", label: "Moderate" },
+  { color: "#ffaa00", label: "" },
+  { color: "#c10000", label: "Heavy" },
 ];

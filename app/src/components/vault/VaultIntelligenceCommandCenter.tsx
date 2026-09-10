@@ -289,9 +289,6 @@ export function VaultIntelligenceCommandCenter({
               Tool Stack Intelligence
             </CardTitle>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Badge variant={page.healthScore >= 75 ? "secondary" : "outline"}>
-                Health {page.healthScore}/100
-              </Badge>
               <span>{entries.length} tools</span>
               <span>{page.generatedAt.slice(0, 10)}</span>
             </div>

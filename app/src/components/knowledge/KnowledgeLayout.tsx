@@ -27,6 +27,20 @@ import { useCommandLightInteraction } from "@/hooks/use-command-light-interactio
 import { knowledgeCommandLightOpacityToCssValue } from "@/lib/knowledge/command-light-preferences";
 import { normalizeKnowledgeQuickFilters } from "@/lib/knowledge/quick-filters";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+
+function KnowledgeLibrarySearch() {
+  const language = useAppStore((s) => s.language);
+  const query = useKnowledgeStore((s) => s.searchQuery);
+  const setQuery = useKnowledgeStore((s) => s.setSearchQuery);
+  const zh = language.startsWith("zh");
+  return (
+    <label className="block space-y-1.5 text-sm font-medium">
+      <span>{zh ? "搜尋已儲存的知識" : "Search saved knowledge"}</span>
+      <Input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={zh ? "搜尋標題、內容和標籤" : "Search titles, content and tags"} />
+    </label>
+  );
+}
 
 interface KnowledgeLayoutProps {
   initialItems: KnowledgeItem[];
@@ -330,6 +344,7 @@ export function KnowledgeLayout({
   const openAIPanel = useKnowledgeStore((s) => s.openAIPanel);
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const currentView = useKnowledgeStore((s) => s.currentView);
+  const itemCount = useKnowledgeStore((s) => s.items.length);
   const profile = useProfile();
   const commandLightOpacity = knowledgeCommandLightOpacityToCssValue(
     profile.data?.knowledge_command_light_opacity,
@@ -576,8 +591,11 @@ export function KnowledgeLayout({
             }`}
           >
             <KnowledgeAddDropZone ui={ui} />
-            <KnowledgeAskCommandSection userId={userId} />
-            <KnowledgeInquiryAgent />
+            <KnowledgeLibrarySearch />
+            {itemCount > 0 ? <details className="rounded-xl border border-border/50 p-3">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">{language.startsWith("zh") ? "使用 AI：根據已保存來源回答或搜尋片段" : "Use AI: answer from saved sources or find relevant passages"}</summary>
+              <div className="space-y-4 pt-3"><KnowledgeAskCommandSection userId={userId} /><KnowledgeInquiryAgent /></div>
+            </details> : null}
 
             <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">
               <CardContent className="flex flex-1 flex-col gap-0 p-0">

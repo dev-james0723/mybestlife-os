@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, FileText, Share2, Trash2 } from "lucide-react";
@@ -32,7 +32,6 @@ import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { withLocalePrefix } from "@/lib/i18n/locale-path";
 import { getCareerVaultCopy } from "@/lib/i18n/career-vault-ui";
 import {
-  useBundleFiles,
   useCareerVaultBundle,
   useDeleteBundle,
   useMarkBundleExported,
@@ -62,7 +61,6 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
 
   const bundleQuery = useCareerVaultBundle(bundleId);
   const filesQuery = useCareerVaultFiles();
-  const bundleFilesQuery = useBundleFiles(bundleQuery.data);
   const updateMutation = useUpdateBundle();
   const deleteMutation = useDeleteBundle();
   const markExported = useMarkBundleExported();
@@ -81,8 +79,10 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
+  const seededBundleId = useRef<string | null>(null);
   useEffect(() => {
-    if (!bundle) return;
+    if (!bundle || seededBundleId.current === bundle.id) return;
+    seededBundleId.current = bundle.id;
     setName(bundle.name);
     setDescription(bundle.description ?? "");
     setIncludeCover(bundle.include_cover_page);
@@ -114,10 +114,13 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
   const totalBytes = estimateBundleBytes(orderedFiles);
   const tooLarge = totalBytes > BUNDLE_MAX_BYTES;
 
-  if (bundleQuery.isLoading || filesQuery.isLoading || !bundle) {
+  if (bundleQuery.isLoading || filesQuery.isLoading) {
     return <LoadingPage />;
   }
 
+  if (bundleQuery.isError || filesQuery.isError || !bundle) return <div role="alert" className="space-y-3"><p>{language.startsWith("zh") ? "未能載入套件或材料。請重試。" : "Could not load the bundle or its materials. Please retry."}</p><Button onClick={() => { void bundleQuery.refetch(); void filesQuery.refetch(); }}>{language.startsWith("zh") ? "重試" : "Retry"}</Button></div>;
+
+  const missingFiles = fileOrder.length - orderedFiles.length;
   const defaultFilename = () =>
     (name || "bundle")
       .toLowerCase()
@@ -125,7 +128,8 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
       .slice(0, 60);
 
   const handleSave = async () => {
-    await updateMutation.mutateAsync({
+    if (updateMutation.isPending || !name.trim()) return;
+    try { await updateMutation.mutateAsync({
       id: bundle.id,
       updates: {
         name,
@@ -137,12 +141,14 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
         cover_recipient: recipient || null,
       },
     });
+    } catch { /* Keep the edit state; mutation reports the error. */ }
   };
 
   const handleExport = async () => {
+    if (exporting || tooLarge || missingFiles) return;
     try {
       setExporting(true);
-      const files = bundleFilesQuery.data ?? orderedFiles;
+      const files = orderedFiles;
       const result = await exportBundle({
         bundle: {
           name,
@@ -157,7 +163,12 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
         coverFilenameLabel: copy.bundles.coverFilename,
         coverDateLabel: new Date().toLocaleDateString(),
       });
-      await markExported.mutateAsync(bundle.id);
+      try {
+        await markExported.mutateAsync(bundle.id);
+      } catch {
+        toast.warning(language.startsWith("zh") ? "檔案已下載，但未能更新匯出時間。" : "Download completed, but the export timestamp could not be updated.");
+        return;
+      }
       if (result.skippedFiles.length > 0) {
         toast.warning(
           copy.bundles.toasts.exportWithSkipped(result.skippedFiles.length),
@@ -176,13 +187,13 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
     try {
       await deleteMutation.mutateAsync(bundle.id);
       router.push(bundlesHref);
-    } finally {
       setConfirmDelete(false);
-    }
+    } catch { /* Mutation reports the error; keep the confirmation for retry. */ }
   };
 
   return (
     <div className="space-y-6">
+      {missingFiles > 0 && <p role="alert">{language.startsWith("zh") ? "部分材料已無法存取。匯出前請重新選擇材料。" : "Some materials are unavailable. Review your file selection before exporting."}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="sm" render={<Link href={bundlesHref} />}>
           <ArrowLeft className="mr-1 h-4 w-4" />
@@ -218,7 +229,7 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label>{copy.bundles.wizard.nameLabel}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input aria-label={copy.bundles.wizard.nameLabel} value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label>{copy.bundles.wizard.descriptionLabel}</Label>
@@ -294,6 +305,7 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
           <div className="space-y-1">
             <Label>{copy.bundles.wizard.filenameLabel}</Label>
             <Input
+              aria-label={copy.bundles.wizard.filenameLabel}
               value={filename}
               onChange={(e) => setFilename(e.target.value)}
               placeholder={defaultFilename()}
@@ -330,7 +342,7 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
           <Button
             variant="outline"
             onClick={handleSave}
-            disabled={updateMutation.isPending}
+            disabled={updateMutation.isPending || !name.trim()}
           >
             {updateMutation.isPending
               ? copy.bundles.wizard.saving
@@ -338,7 +350,7 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
           </Button>
           <Button
             onClick={handleExport}
-            disabled={exporting || orderedFiles.length === 0}
+            disabled={exporting || tooLarge || missingFiles > 0 || orderedFiles.length === 0}
           >
             <Download className="mr-1 h-4 w-4" />
             {exporting

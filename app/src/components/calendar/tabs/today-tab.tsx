@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, CalendarClock, CheckCircle2, Plus, Sparkles } from "lucide-react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ export function TodayTab() {
   const language = useAppStore((s) => s.language);
   const copy = useMemo(() => getCalendarUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
-  const prefersReduced = useReducedMotion();
   const plannerHref = useLocalizedPath("/daily-planner");
 
   const {
@@ -39,7 +37,7 @@ export function TodayTab() {
     conflicts,
     isLoadingSummary,
     isLoadingCalendar,
-    isLoadingConflicts,
+    isLoadingConflicts, isIncomplete, retryAnalysis,
   } = useTodayContext();
 
   const today = useMemo(() => new Date(), []);
@@ -49,11 +47,8 @@ export function TodayTab() {
   );
 
   return (
-    <motion.div
+    <div
       data-calendar-surface
-      initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
       className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
     >
       {/* Left column */}
@@ -69,13 +64,14 @@ export function TodayTab() {
               </h2>
             </div>
             <div className="ml-auto">
-              {context && (
+              {context && !isIncomplete && (
                 <DayLoadBadge load={context.load} label={copy.dayLoadLabels[context.load]} />
               )}
             </div>
           </div>
           <AISummaryCard
             summary={summary}
+            onRetry={isIncomplete ? undefined : retryAnalysis}
             isLoading={isLoadingSummary || isLoadingCalendar}
             skeletonLabel={copy.todaySummarySkeleton}
           />
@@ -128,11 +124,11 @@ export function TodayTab() {
 
         <GlassPanel className="calendar-specular-highlight p-5">
           <h3 className="mb-3 text-sm font-semibold">{copy.todayFreeWindowsTitle}</h3>
-          {context && context.free_windows.length > 0 ? (
+          {!isIncomplete && context && context.free_windows.length > 0 ? (
             <FreeWindowChips windows={context.free_windows} title="" />
           ) : (
             <p className="text-sm text-muted-foreground">
-              {copy.todayNoFreeWindows}
+              {isIncomplete ? (language.startsWith("zh") ? "完整日程載入後才會列出可用時間。" : "Available time appears after the full schedule loads.") : copy.todayNoFreeWindows}
             </p>
           )}
         </GlassPanel>
@@ -197,6 +193,6 @@ export function TodayTab() {
           </Button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

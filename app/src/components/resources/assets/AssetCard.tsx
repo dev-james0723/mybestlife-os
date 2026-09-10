@@ -127,7 +127,7 @@ export function AssetCard({
           </div>
 
           <h3 className="text-base font-semibold leading-snug tracking-tight text-foreground">
-            {asset.name}
+            {onClick ? <button type="button" className="text-left focus-visible:outline-2 focus-visible:outline-ring" onClick={(event) => { event.stopPropagation(); onClick(); }}>{asset.name}</button> : asset.name}
           </h3>
 
           <div className="flex items-end justify-between gap-3">

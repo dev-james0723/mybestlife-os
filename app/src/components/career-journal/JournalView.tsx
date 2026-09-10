@@ -99,11 +99,12 @@ export function JournalView() {
       : null;
 
   if (q.isLoading) return <LoadingPage />;
+  if (q.isError) return <div role="alert"><p>{language.startsWith("zh") ? "未能載入決策紀錄" : "Could not load your decisions"}</p><OSControl onClick={() => void q.refetch()}>{language.startsWith("zh") ? "重試" : "Retry"}</OSControl></div>;
 
   return (
     <PageShell
       title={copy.pageTitle}
-      description={copy.pageDescription}
+      description={language.startsWith("zh") ? "記下今天的職涯決定及理由。例如：接受這個面試，因為它讓我試試新的工作方向。" : "Record a career decision and why you made it. For example: accept this interview to explore a new direction."}
       actions={
         <OSPrimaryAction
           className="gap-2"
@@ -118,7 +119,7 @@ export function JournalView() {
       }
     >
       <div className="space-y-5">
-        <CareerMetricGrid>
+        {decisions.length > 0 ? <CareerMetricGrid>
           <CareerMetricCard
             icon={Scale}
             label="Decisions"
@@ -143,7 +144,7 @@ export function JournalView() {
             value={averageQuality === null ? "—" : `${averageQuality}/10`}
             description="Average score after reviewing the decision process."
           />
-        </CareerMetricGrid>
+        </CareerMetricGrid> : null}
 
         {decisions.length === 0 ? (
           <CareerEmptyState
@@ -165,6 +166,7 @@ export function JournalView() {
               {decisions.map((d) => (
                 <li
                   key={d.id}
+                  id={`decision-${d.id}`}
                   className="space-y-3 rounded-xl border border-white/55 bg-white/74 p-4 shadow-sm shadow-slate-900/5 dark:border-white/10 dark:bg-slate-950/72"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

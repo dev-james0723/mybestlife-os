@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
-import { getPresetSkillById } from "@/lib/mind-council/preset-skills";
+import { resolveSavedMindSkill } from "@/lib/mind-council/resolve-saved-skill";
 import {
   invokeMindCouncilSynthesis,
   invokeMindSkill,
@@ -53,7 +53,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Select between 2 and 5 advisors" }, { status: 400 });
   }
 
-  const skills = unique.map((id) => ({ id, skill: getPresetSkillById(id) }));
+  let skills;
+  try {
+    skills = await Promise.all(unique.map(async (id) => ({ id, skill: await resolveSavedMindSkill(supabase, user.id, id) })));
+  } catch {
+    return NextResponse.json({ error: "Could not load saved council skills" }, { status: 503 });
+  }
   if (skills.some((s) => !s.skill)) {
     return NextResponse.json({ error: "One or more skillIds are unknown" }, { status: 404 });
   }
@@ -71,6 +76,7 @@ export async function POST(req: Request) {
           agentId: s.agentId,
           lensTitle: s.lensTitle,
           systemPromptHint: s.systemPromptHint,
+          skillMarkdown: s.skillMarkdown,
           locale,
           contents,
         });

@@ -151,9 +151,12 @@ export function CustomPromptEditDrawer({
             <Label>{w.categoryLabel}</Label>
             <Select
               value={topCategory}
+              itemToStringLabel={(value) =>
+                ui.topCategoryLabels[value as PromptTopCategory] ?? String(value)
+              }
               onValueChange={(v) => setTopCategory(v as PromptTopCategory)}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={w.categoryLabel}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

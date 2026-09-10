@@ -83,7 +83,7 @@ export function SignalsView() {
   const copy = useMemo(() => getSignalsUiCopy(language), [language]);
   const dateLocale = useMemo(() => getDateFnsLocale(language), [language]);
 
-  const { prefs, ready, update, reset } = useSignalsPreferences();
+  const { prefs, ready, update, reset, storageError } = useSignalsPreferences();
   const memory = useSignalMemory();
   const followUps = useSignalFollowUps();
   const ctx = useLifeOsContext(prefs, memory.behavior);
@@ -98,6 +98,7 @@ export function SignalsView() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
   const [creatingTaskId, setCreatingTaskId] = useState<string | null>(null);
+  const [replaySetup, setReplaySetup] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState<SignalsFilterState>(DEFAULT_FILTER_STATE);
@@ -295,10 +296,10 @@ export function SignalsView() {
     );
   }
 
-  if (!prefs.onboardingCompleted) {
+  if (!prefs.onboardingCompleted || replaySetup) {
     return (
       <PageContainer>
-        <SignalsOnboarding copy={copy} onComplete={(patch) => update(patch)} />
+        <SignalsOnboarding copy={copy} initialPreferences={prefs} onComplete={(patch) => { const saved = update(patch); setReplaySetup(false); return saved; }} onCancel={replaySetup ? () => setReplaySetup(false) : undefined} />
       </PageContainer>
     );
   }
@@ -383,6 +384,7 @@ export function SignalsView() {
         filtersActive={filtersActive}
       />
 
+      <div className="flex flex-wrap items-center gap-3"><OSControl onClick={() => setReplaySetup(true)}>{language.startsWith("zh") ? "重看設定說明" : "Review setup"}</OSControl>{storageError && <p role="alert" className="text-sm text-muted-foreground">{language.startsWith("zh") ? "偏好暫未儲存。此瀏覽器可能不允許本機儲存。" : "Preferences could not be saved. This browser may be blocking local storage."}</p>}</div>
       {/* Filter bar (hidden until data is present) */}
       {data.status === "ok" && (
         <SignalsFilterBar

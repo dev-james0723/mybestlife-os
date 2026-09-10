@@ -47,6 +47,7 @@ export function CoverPageEditor({
         <div className="space-y-1">
           <Label>{w.coverTitleLabel}</Label>
           <Input
+            aria-label={w.coverTitleLabel}
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder={w.coverTitlePlaceholder}
@@ -56,6 +57,7 @@ export function CoverPageEditor({
         <div className="space-y-1">
           <Label>{w.coverSubtitleLabel}</Label>
           <Input
+            aria-label={w.coverSubtitleLabel}
             value={subtitle}
             onChange={(e) => onSubtitleChange(e.target.value)}
             placeholder={w.coverSubtitlePlaceholder}
@@ -65,6 +67,7 @@ export function CoverPageEditor({
         <div className="space-y-1">
           <Label>{w.coverRecipientLabel}</Label>
           <Input
+            aria-label={w.coverRecipientLabel}
             value={recipient}
             onChange={(e) => onRecipientChange(e.target.value)}
             placeholder={w.coverRecipientPlaceholder}

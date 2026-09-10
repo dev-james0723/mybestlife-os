@@ -4,15 +4,21 @@ import type { EngineCapability } from "./engine-adapter";
  * SSR-safe WebGL detection — mirrors the Brain sphere's probe. Returns
  * false on the server so the Canvas never mounts during SSR/build.
  */
+let webGLAvailable: boolean | undefined;
+
 export function detectWebGL(): boolean {
   if (typeof window === "undefined") return false;
+  if (webGLAvailable !== undefined) return webGLAvailable;
   try {
     const canvas = document.createElement("canvas");
-    return !!(
-      window.WebGLRenderingContext &&
-      (canvas.getContext("webgl2") || canvas.getContext("webgl"))
-    );
+    // Three r180 requires WebGL2. Release the probe: repeated getSnapshot
+    // calls previously leaked contexts and evicted the live canvas on iOS.
+    const context = canvas.getContext("webgl2");
+    webGLAvailable = Boolean(context);
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+    return webGLAvailable;
   } catch {
+    webGLAvailable = false;
     return false;
   }
 }

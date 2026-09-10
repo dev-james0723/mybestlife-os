@@ -182,14 +182,20 @@ function categoryLabel(
 export function CreateProjectModal({
   open,
   onOpenChange,
+  onCreated,
   preset,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onCreated?: (project: Project) => void;
   preset?: ProjectCreatePreset | null;
 }) {
   const queryClient = useQueryClient();
   const createProject = useCreateProject();
+  const attempt = useRef<{ projectId: string | null; itemIds: Map<string, string> }>({ projectId: null, itemIds: new Map() });
+  const busy = useRef(false);
+  const [savingAll, setSavingAll] = useState(false);
+  const itemId = (key: string) => { const ids = attempt.current.itemIds; if (!ids.has(key)) ids.set(key, crypto.randomUUID()); return ids.get(key)!; };
   const createTask = useCreateTask();
   const createProjectResources = useCreateProjectResources();
   const { data: existingProjects } = useProjects();
@@ -286,7 +292,7 @@ export function CreateProjectModal({
   const [endDate, setEndDate] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [thumbnailStyle, setThumbnailStyle] =
-    useState<ThumbnailStyle>("minimal");
+    useState<ThumbnailStyle>("na");
 
   // AI state
   const [aiMetadata, setAiMetadata] = useState<AiMetadata | null>(null);
@@ -361,6 +367,7 @@ export function CreateProjectModal({
   }, [open]);
 
   const reset = useCallback(() => {
+    attempt.current = { projectId: null, itemIds: new Map() };
     setName("");
     setDescription("");
     setStatus("planning");
@@ -368,7 +375,7 @@ export function CreateProjectModal({
     setStartDate("");
     setEndDate("");
     setTags([]);
-    setThumbnailStyle("minimal");
+    setThumbnailStyle("na");
     setAiMetadata(null);
     setAiLoading(false);
     setAiApplied(false);
@@ -384,6 +391,7 @@ export function CreateProjectModal({
   }, []);
 
   const handleOpenChange = (v: boolean) => {
+    if (busy.current) return;
     if (!v) {
       // Don't reset if AI is loading — data will be cached in sessionStorage
     } else {
@@ -393,7 +401,8 @@ export function CreateProjectModal({
         if (cached && !aiMetadata) applyAiData(cached);
       }
     }
-    if (!v && !aiLoading) reset();
+    // Closing preserves the form and operation ids so a partial save can be retried.
+    // Successful completion calls reset explicitly.
     onOpenChange(v);
   };
 
@@ -624,10 +633,13 @@ export function CreateProjectModal({
 
   const handleCreate = async () => {
     const projectName = name.trim() || titleFromDescription(description);
-    if (!projectName) return;
+    if (!projectName || busy.current) return;
+    busy.current = true; setSavingAll(true);
+    attempt.current.projectId ??= crypto.randomUUID();
 
     try {
       const project = await createProject.mutateAsync({
+        id: attempt.current.projectId!,
         name: projectName,
         description: description || undefined,
         status,
@@ -641,8 +653,9 @@ export function CreateProjectModal({
       });
 
       const checkedTasks = suggestedTasks.filter((t) => t.checked);
-      for (const task of checkedTasks) {
+      for (const [index, task] of checkedTasks.entries()) {
         await createTask.mutateAsync({
+          id: itemId(`task:${index}:${task.text}`),
           title: task.text,
           project_id: project.id,
           priority: "medium",
@@ -655,6 +668,7 @@ export function CreateProjectModal({
         await createProjectResources.mutateAsync({
           projectId: project.id,
           items: checkedResources.map((r, i) => ({
+            id: itemId(`resource:${i}:${r.url}`),
             project_id: project.id,
             category: r.category,
             title: r.title,
@@ -687,16 +701,20 @@ export function CreateProjectModal({
 
       reset();
       onOpenChange(false);
+      onCreated?.(project);
     } catch {
-      // Mutation onError handlers already show toasts
-    }
+      // Mutation onError handlers already show toasts. IDs and fields remain for retry.
+    } finally { busy.current = false; setSavingAll(false); }
   };
 
   const handleSaveAsDraft = async () => {
     const projectName = name.trim() || titleFromDescription(description);
-    if (!projectName) return;
+    if (!projectName || busy.current) return;
+    busy.current = true; setSavingAll(true);
+    attempt.current.projectId ??= crypto.randomUUID();
     try {
-      await createProject.mutateAsync({
+      const project = await createProject.mutateAsync({
+        id: attempt.current.projectId!,
         name: projectName,
         description: description || undefined,
         status: "planning",
@@ -704,12 +722,13 @@ export function CreateProjectModal({
       });
       reset();
       onOpenChange(false);
+      onCreated?.(project);
     } catch {
       // see handleCreate
-    }
+    } finally { busy.current = false; setSavingAll(false); }
   };
 
-  const isSubmitting = createProject.isPending;
+  const isSubmitting = savingAll || createProject.isPending || createTask.isPending || createProjectResources.isPending;
   const canSubmit =
     Boolean(name.trim() || titleFromDescription(description)) && !isSubmitting;
 

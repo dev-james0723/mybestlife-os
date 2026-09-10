@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { EXPERIMENTAL_TOOLS_ENABLED } from "@/lib/features";
+import { QuickJournalCapture } from "@/components/journal/QuickJournalCapture";
 import { PageShell } from "@/components/shared/page-shell";
 import {
   OSControl,
@@ -292,7 +294,8 @@ export default function JournalPage() {
       }
     >
       <div className="space-y-5 sm:space-y-6">
-        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(21rem,0.7fr)] xl:items-start">
+        <QuickJournalCapture chinese={language.startsWith("zh")} />
+        {EXPERIMENTAL_TOOLS_ENABLED && <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(21rem,0.7fr)] xl:items-start">
           {/* The writing flow is the visual anchor of the page. */}
           <OSGlassPanel
             as="section"
@@ -384,7 +387,7 @@ export default function JournalPage() {
               />
             </OSFrostedPanel>
           </aside>
-        </div>
+        </div>}
 
         {/* History and trends are secondary reference surfaces. */}
         <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)]">
@@ -417,7 +420,7 @@ export default function JournalPage() {
               title={copy.trendsTitle}
               description={copy.trendsDescription}
             />
-            <MoodTrendsChart entries={recentEntries ?? []} copy={copy} />
+            <MoodTrendsChart entries={(recentEntries ?? []).filter((entry) => entry.quadrant !== null && Number.isFinite(entry.intensity))} copy={copy} />
           </OSSolidPanel>
         </div>
       </div>

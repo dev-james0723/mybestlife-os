@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 
 import {
@@ -116,6 +117,8 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
     ref,
   ) {
   const [form, setForm] = useState<JournalFormState>(emptyFormState);
+  const locale = useAppStore((s) => s.language);
+  const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
@@ -208,11 +211,21 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
       const next: FieldErrors = {};
       for (const issue of parsed.error.issues) {
         const key = String(issue.path[0] ?? "_");
-        if (!next[key]) next[key] = issue.message;
+        const friendly: Record<string, string> = {
+          topic: `${copy.labelTopic}: ${copy.topicPlaceholder}`,
+          quadrant: copy.labelEmotionPicker,
+          primaryEmotion: `${copy.labelPrimaryEmotion}: ${copy.primaryEmotionPlaceholder}`,
+          bullets: locale.startsWith("zh") ? "請記下一件發生過的事。" : "Write at least one thing that happened.",
+          nextTinyStep: locale.startsWith("zh") ? "請寫下一個可以做的小步驟。" : "Write one small next step you can take.",
+        };
+        if (!next[key]) next[key] = friendly[key] ?? issue.message;
       }
       setErrors(next);
-      const firstMessage = parsed.error.issues[0]?.message ?? copy.toastSaveFailed;
-      toast.error(firstMessage);
+      requestAnimationFrame(() => {
+        const first = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? formRef.current?.querySelector<HTMLElement>('[data-journal-error-summary]');
+        first?.focus();
+        first?.scrollIntoView({ block: "center", behavior: "instant" });
+      });
       saveGateRef.current = false;
       return null;
     }
@@ -289,7 +302,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
     }
 
     return inserted;
-  }, [form, copy, onSaved, onSummaryReady, onSummaryFailed, savedEntryId]);
+  }, [form, copy, locale, onSaved, onSummaryReady, onSummaryFailed, savedEntryId]);
 
   useImperativeHandle(
     ref,
@@ -317,6 +330,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
 
   return (
     <form
+      ref={formRef}
       className="space-y-6 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:border-border/75 [&_[data-slot=input]]:bg-card/60 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:border-border/75 [&_[data-slot=textarea]]:bg-card/60 dark:[&_[data-slot=input]]:border-border/75 dark:[&_[data-slot=input]]:bg-card/60 dark:[&_[data-slot=textarea]]:border-border/75 dark:[&_[data-slot=textarea]]:bg-card/60"
       aria-busy={saving || undefined}
       onSubmit={(event) => {
@@ -324,6 +338,7 @@ export const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(
         void handleSave();
       }}
     >
+      {Object.keys(errors).length > 0 && <div data-journal-error-summary tabIndex={-1} role="alert" className="rounded-xl border border-destructive/40 p-4 text-sm text-destructive"><p className="font-medium">{locale.startsWith("zh") ? "請修正以下項目，內容仍保留在此。" : "Please check these fields. Your writing is still here."}</p><ul className="mt-2 list-disc pl-5">{Object.entries(errors).filter(([, value]) => value).map(([key, value]) => <li key={key}>{value}</li>)}</ul></div>}
       {/* Date + Topic — always visible. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">

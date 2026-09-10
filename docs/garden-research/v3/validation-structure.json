@@ -1,0 +1,64 @@
+{
+  "date": "2026-09-08",
+  "status": "pass",
+  "htmlPages": 3,
+  "localLinksChecked": 54,
+  "anchorsChecked": 26,
+  "externalLinkOccurrences": 23,
+  "externalLinks": "Primary sources read during research; this check does not re-fetch them.",
+  "sourceSnapshotChecks": [
+    {
+      "path": "app/src/types/database.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/tasks.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/projects.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/goals.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/journal.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/habits.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/grateful-things.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/about-me.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/features.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/repositories/planner-focus-sessions.ts",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/components/garden/GardenAdventure.tsx",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/components/garden/AdventureScene.tsx",
+      "unchangedSinceAudit": true
+    },
+    {
+      "path": "app/src/lib/garden/audio.ts",
+      "unchangedSinceAudit": true
+    }
+  ],
+  "errors": []
+}
