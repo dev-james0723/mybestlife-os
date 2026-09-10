@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useLocaleSlug } from "@/hooks/use-locale-slug";
 import { stripLeadingLocaleFromPathname, withLocalePrefix } from "@/lib/i18n/locale-path";
 import type { LocaleUrlSlug } from "@/lib/i18n/locale-slug";
-import { ChevronDown, ChevronRight, LogOut, Settings, ChevronsUpDown, Sprout, X } from "lucide-react";
+import { ChevronRight, LogOut, Settings, ChevronsUpDown, Sprout, X } from "lucide-react";
 import { LifeOsLogo } from "@/components/branding/life-os-logo";
 import {
   Sidebar,
@@ -104,7 +104,7 @@ type StaggerContainerProps = {
 };
 function StaggerContainer({ enabled, children }: StaggerContainerProps) {
   if (!enabled) return <>{children}</>;
-  return <div className="flex flex-col">{children}</div>;
+  return <div className="flex min-w-0 flex-col">{children}</div>;
 }
 type StaggerItemProps = {
   enabled: boolean;
@@ -112,13 +112,9 @@ type StaggerItemProps = {
 };
 function StaggerItem({ enabled, children }: StaggerItemProps) {
   if (!enabled) return <>{children}</>;
-  return <div>{children}</div>;
+  return <div className="min-w-0">{children}</div>;
 }
 
-const PRIMARY_DESTINATIONS = ["dashboard", "tasks", "projects", "knowledge-base"];
-const primaryItems = PRIMARY_DESTINATIONS.flatMap((id) =>
-  navigationCategories.flatMap((category) => category.items.filter((item) => item.itemId === id)),
-);
 const COMPANION_PANEL_REVEAL_DELAY_MS = 300;
 
 export function AppSidebar() {
@@ -139,11 +135,6 @@ export function AppSidebar() {
   const footer = getSidebarFooterCopy(language);
   const isGlassTheme = uiTheme === "default";
   const chinese = language === "zh-TW" || language === "zh-CN";
-  const isPrimaryRoute = primaryItems.some((item) =>
-    pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`),
-  );
-  const [moreChoice, setMoreChoice] = useState<{ path: string; open: boolean } | null>(null);
-  const showMore = moreChoice?.path === pathWithoutLocale ? moreChoice.open : !isPrimaryRoute;
   const [showCompanionPanel, setShowCompanionPanel] = useState(false);
   const menuItemsReady = !authLoading && (!user || !profileLoading);
   const companionRevealDelayMs =
@@ -207,7 +198,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader>
+      <SidebarHeader className="min-w-0 shrink-0">
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center gap-2.5 px-2 py-3">
@@ -232,52 +223,40 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup aria-label={chinese ? "主要導覽" : "Main navigation"}>
-          <SidebarMenu>
-            {primaryItems.map((item) => {
-              const href = withLocalePrefix(localeSlug, item.url);
-              const active = pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`);
-              return (
-                <SidebarMenuItem key={item.itemId}>
-                  <SidebarMenuButton render={<Link href={href} aria-current={active ? "page" : undefined} />}
-                    isActive={active} onClick={(event) => handleSidebarNavigate(href, event)} className="min-h-11">
-                    <IconWell icon={item.icon} targetType="nav_item" targetId={item.itemId} uiTheme={uiTheme} colorMode={colorMode} />
-                    <span className="font-semibold">{item.itemId === "dashboard" ? (chinese ? "今日" : "Today") : getThemedItemLabel(item.itemId, uiTheme, language)}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
-        <SidebarSeparator className="my-1" />
-        <Collapsible open={showMore} onOpenChange={(open) => setMoreChoice({ path: pathWithoutLocale, open })}>
-          <div className="px-3 py-1">
-            <CollapsibleTrigger render={<Button variant="ghost" className="min-h-11 w-full justify-start gap-2 text-sm" />}>
-              <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
-              {chinese ? "所有功能" : "All features"}
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent>
-            <StaggerContainer enabled={isGlassTheme}>
-              {navigationCategories.map((category) => (
-                <StaggerItem key={category.categoryId} enabled={isGlassTheme}>
-                  <CategoryGroup category={category} localeSlug={localeSlug} pathWithoutLocale={pathWithoutLocale}
-                    currentSearch={currentSearch} uiTheme={uiTheme} colorMode={colorMode} language={language}
-                    onNavigate={handleSidebarNavigate} />
-                </StaggerItem>
-              ))}
-              <GardenNavButton localeSlug={localeSlug} pathWithoutLocale={pathWithoutLocale}
-                onNavigate={handleSidebarNavigate} uiTheme={uiTheme} colorMode={colorMode} language={language} />
-            </StaggerContainer>
-          </CollapsibleContent>
-        </Collapsible>
+      <SidebarContent className="min-w-0 max-w-full overflow-x-hidden overflow-y-auto overscroll-x-none">
+        {/* Keep every navigation category visible without an extra disclosure. */}
+        <nav aria-label={chinese ? "主要導覽" : "Main navigation"} className="min-w-0 shrink-0">
+          <StaggerContainer enabled={isGlassTheme}>
+            {navigationCategories.map((category) => (
+              <StaggerItem key={category.categoryId} enabled={isGlassTheme}>
+                <CategoryGroup
+                  category={category}
+                  localeSlug={localeSlug}
+                  pathWithoutLocale={pathWithoutLocale}
+                  currentSearch={currentSearch}
+                  uiTheme={uiTheme}
+                  colorMode={colorMode}
+                  language={language}
+                  onNavigate={handleSidebarNavigate}
+                />
+              </StaggerItem>
+            ))}
+            <GardenNavButton
+              localeSlug={localeSlug}
+              pathWithoutLocale={pathWithoutLocale}
+              onNavigate={handleSidebarNavigate}
+              uiTheme={uiTheme}
+              colorMode={colorMode}
+              language={language}
+            />
+          </StaggerContainer>
+        </nav>
         {showCompanionPanel ? (
           <LazyTodayCompanionPanel onNavigate={handleSidebarNavigate} />
         ) : null}
       </SidebarContent>
 
-      <SidebarFooter className="shrink-0 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="min-w-0 shrink-0 group-data-[collapsible=icon]:hidden">
         <SidebarSeparator className="my-1" />
         <SidebarMenu>
           <SidebarMenuItem>
@@ -289,17 +268,17 @@ export function AppSidebar() {
                     className="data-[state=open]:bg-sidebar-accent data-open:bg-sidebar-accent"
                     aria-label={`${userName} account menu`}
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 shrink-0">
                       <AvatarImage src={userAvatar} />
                       <AvatarFallback>{userInitials}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col flex-1 text-left text-sm leading-tight">
+                    <div className="flex min-w-0 flex-1 flex-col text-left text-sm leading-tight">
                       <span className="font-medium truncate">{userName}</span>
                       <span className="text-xs text-muted-foreground truncate">
                         {userEmail}
                       </span>
                     </div>
-                    <ChevronsUpDown className="ml-auto h-4 w-4" />
+                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0" />
                   </SidebarMenuButton>
                 }
               />
@@ -426,12 +405,12 @@ function CategoryGroup({
       <SidebarGroup>
         <Collapsible key={pathWithoutLocale} defaultOpen={category.items.some((item) => pathWithoutLocale === item.url || pathWithoutLocale.startsWith(`${item.url}/`))} className="group/collapsible">
           <SidebarMenuItem>
-            <div className="flex w-full items-center">
+            <div className="flex w-full min-w-0 items-center">
               <SidebarMenuButton
                 render={<Link href={href} />}
                 isActive={isActive}
                 onClick={(event) => onNavigate(href, event)}
-                className="flex-1"
+                className="min-w-0 flex-1"
               >
                 <IconWell
                   icon={category.icon}
@@ -447,7 +426,7 @@ function CategoryGroup({
                   <button
                     type="button"
                     aria-label={`Toggle ${label}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 }
               >
@@ -507,8 +486,8 @@ function CategoryGroup({
                   uiTheme={uiTheme}
                   colorMode={colorMode}
                 />
-                <span className="font-semibold">{label}</span>
-                <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                <span className="min-w-0 flex-1 truncate font-semibold">{label}</span>
+                <ChevronRight className="ml-auto h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
               </SidebarMenuButton>
             }
           />
