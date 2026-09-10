@@ -3,7 +3,7 @@
 .root h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.025em; }
 .root h3 { margin: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
 .root p, .modal p { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
-.root button, .modal button { min-height: 44px; }
+.root button, .modal button { min-height: 44px; min-width: 44px; }
 .root button:focus-visible, .modal :is(button, input, select):focus-visible, .canvas:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .root button:disabled, .modal button:disabled { cursor: not-allowed; opacity: .5; }
 .header, .toolbar, .summary, .panelHeader, .controls, .firstUse, .notice, .error { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; min-width: 0; }
