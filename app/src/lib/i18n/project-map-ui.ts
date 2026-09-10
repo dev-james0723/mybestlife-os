@@ -22,7 +22,7 @@ const en = {
   formDescription: "Choose the projects, choose their relationship, then check the sentence before saving.",
   first: "First project", second: "Second project", relationship: "Relationship",
   chooseProject: "Choose a project", searchProjects: "Search projects", preview: "This connection means:",
-  kinds: { related: "is related to", "depends-on": "depends on", blocks: "blocks", contains: "contains as a subproject" } satisfies Record<ConnectionKind, string>,
+  kinds: { related: "is related to", "depends-on": "depends on", blocks: "blocks", contains: "contains" } satisfies Record<ConnectionKind, string>,
   hints: {
     related: "These projects have a useful association, without a required order.",
     "depends-on": "The second project is a prerequisite for the first. The arrow reads 'depends on', not 'do this next'.",
@@ -78,5 +78,5 @@ const zhCN: DeepPartial<ProjectMapUiCopy> = {
   first: "第一个项目", second: "第二个项目", relationship: "关系", chooseProject: "选择项目", searchProjects: "搜索项目", preview: "这个连接表示：",
   kinds: { related: "相关于", "depends-on": "依赖", blocks: "阻挡", contains: "包含以下子项目：" },
 };
-const copy = createLocaleCopyMap(en, { "zh-TW": zhTW, "zh-CN": zhCN });
+const copy = createLocaleCopyMap<ProjectMapUiCopy>(en, { "zh-TW": zhTW, "zh-CN": zhCN });
 export function getProjectMapUiCopy(locale: AppLocale): ProjectMapUiCopy { return copy[locale] ?? copy.en; }
