@@ -1,0 +1,59 @@
+name: Project connections checks
+on:
+  pull_request:
+    paths:
+      - 'app/src/components/projects/map-view.tsx'
+      - 'app/src/components/projects/project-map*'
+      - 'app/src/hooks/use-project-map-connections.ts'
+      - 'app/src/lib/projects/connections.ts'
+      - 'app/src/lib/i18n/project-map-ui.ts'
+      - 'app/scripts/test-project-connections*'
+      - 'app/tsconfig.project-map.json'
+      - 'app/supabase/migrations/20271025000000_project_connections.sql'
+      - '.github/workflows/project-connections.yml'
+permissions:
+  contents: read
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: app
+      - name: Production model tests
+        run: node --test scripts/test-project-connections.mjs
+        working-directory: app
+      - name: Scoped TypeScript including imported production dependencies
+        run: npx tsc --project tsconfig.project-map.json --noEmit --pretty false
+        working-directory: app
+      - name: Lint changed production files
+        run: npx eslint src/components/projects/map-view.tsx src/components/projects/project-map-canvas.tsx src/hooks/use-project-map-connections.ts src/lib/projects/connections.ts src/lib/i18n/project-map-ui.ts
+        working-directory: app
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: isolated-test-only
+          POSTGRES_DB: project_connections_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test the actual migration with two isolated users
+        env:
+          PGPASSWORD: isolated-test-only
+        run: psql -h 127.0.0.1 -U postgres -d project_connections_fixture -v ON_ERROR_STOP=1 -f app/scripts/test-project-connections-db.sql

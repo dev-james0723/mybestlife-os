@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": [
+    "next-env.d.ts",
+    "src/components/projects/map-view.tsx",
+    "src/components/projects/project-map-canvas.tsx",
+    "src/hooks/use-project-map-connections.ts",
+    "src/lib/projects/connections.ts",
+    "src/lib/i18n/project-map-ui.ts"
+  ],
+  "exclude": ["node_modules"]
+}
