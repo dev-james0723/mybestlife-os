@@ -1,0 +1,82 @@
+import { createLocaleCopyMap, type DeepPartial } from "./copy-helpers";
+import type { AppLocale } from "./app-locale";
+import type { ConnectionKind, ConnectionProblem } from "@/lib/projects/connections";
+
+const en = {
+  title: "Project connections", description: "See what belongs together, and what depends on what.",
+  connectProjects: "Connect projects", connect: "Connect", map: "Map", list: "Connection list",
+  connections: (n: number) => `${n} connection${n === 1 ? "" : "s"}`,
+  counts: (p: number, e: number) => `${p} projects · ${e} connections shown`,
+  selected: (name: string, n: number) => `${name} selected. ${n} connections.`,
+  hidden: (n: number) => `${n} connections are outside this view. Filters hide projects, not saved connections.`,
+  startTitle: "Start with one useful connection", startDescription: "Connect two projects when the relationship helps you plan. Unconnected projects are completely fine.",
+  firstConnection: "Make first connection", focus: "Show connected only", showAll: "Show all projects",
+  openProject: "Open project", inspect: "Project details", connection: "Connection details", close: "Close",
+  emptySelection: "Tap a project to keep its connections highlighted. Tap a connection label to inspect or edit it.",
+  noConnections: "No connections yet. This project can stand on its own.",
+  noProjects: "No projects in this view", noProjectsHint: "Create a project, or adjust your project filters.",
+  unknown: "Unavailable project", outside: "Project outside current filters",
+  derived: "Derived from a shared idea. Read-only here; edit the idea's project links to change it.",
+  shared: "Shared idea", edit: "Edit connection", remove: "Remove connection",
+  createTitle: "Connect two projects", editTitle: "Edit connection",
+  formDescription: "Choose the projects, choose their relationship, then check the sentence before saving.",
+  first: "First project", second: "Second project", relationship: "Relationship",
+  chooseProject: "Choose a project", searchProjects: "Search projects", preview: "This connection means:",
+  kinds: { related: "is related to", "depends-on": "depends on", blocks: "blocks", contains: "contains" } satisfies Record<ConnectionKind, string>,
+  hints: {
+    related: "These projects have a useful association, without a required order.",
+    "depends-on": "The second project is a prerequisite for the first. The arrow reads 'depends on', not 'do this next'.",
+    blocks: "The first project is currently preventing the second from moving forward.",
+    contains: "The first project is the parent. The second is its subproject.",
+  } satisfies Record<ConnectionKind, string>,
+  save: "Save connection", saving: "Saving…", saved: "Connection saved to your account", cancel: "Cancel",
+  removeTitle: "Remove this connection?", removeDescription: "Only the connection will be removed. Both projects stay exactly as they are. You can undo this action.",
+  removed: "Connection removed. Both projects were kept.", restored: "Connection restored", undo: "Undo",
+  loading: "Loading saved connections…", retry: "Retry",
+  errors: {
+    invalid: "Choose two different, available projects and a valid relationship.",
+    duplicate: "These projects already have a manual connection. Edit the existing connection instead.",
+    cycle: "This would create a circular dependency or hierarchy. Change the direction or relationship.",
+    conflict: "This connection changed on another device. Refresh the connections and reopen it before editing.",
+    forbidden: "Sign in again to access these project connections.",
+    unavailable: "Connection storage is not available yet. The project-connections database migration must be applied before saving.",
+    failed: "The connection could not be saved or loaded. Your input is kept; check your connection and retry.",
+  } satisfies Record<ConnectionProblem, string>,
+  help: "How to use this map", helpExplore: "Tap a card to inspect it without leaving the map. Open project takes you to its full details.",
+  helpConnect: "Use Connect to choose two projects and explain their relationship. No dragging is required to create a connection.",
+  helpList: "The Connection list provides the same inspect, connect, edit, and remove actions without navigating a canvas.",
+  navigationHint: "Drag empty canvas to pan. Pinch to zoom. Use the visible zoom, Fit, Arrange, and Move controls as alternatives.",
+  keyboardHint: "Tab moves between controls. Enter activates them. Focus the canvas and use arrow keys to pan, + or − to zoom, and 0 to fit.",
+  fit: "Fit", arrange: "Arrange", move: "Move map", zoomIn: "Zoom in", zoomOut: "Zoom out",
+  left: "Move view left", right: "Move view right", up: "Move view up", down: "Move view down",
+};
+export type ProjectMapUiCopy = typeof en;
+const zhTW: DeepPartial<ProjectMapUiCopy> = {
+  title: "專案連結", description: "看清哪些專案彼此相關，以及哪些事情互相依賴。",
+  connectProjects: "連結專案", connect: "連結", map: "關係圖", list: "連結列表",
+  connections: (n) => `${n} 個連結`, counts: (p, e) => `顯示 ${p} 個專案 · ${e} 個連結`,
+  selected: (name, n) => `已選取 ${name}，共有 ${n} 個連結。`, hidden: (n) => `${n} 個連結在目前視圖之外。篩選只會隱藏專案，不會刪除連結。`,
+  startTitle: "先建立一個真正有用的連結", startDescription: "當兩個專案的關係有助你規劃時才把它們連起來。沒有連線的專案也完全正常。",
+  firstConnection: "建立第一個連結", focus: "只顯示相連專案", showAll: "顯示所有專案",
+  openProject: "開啟專案", inspect: "專案詳情", connection: "連結詳情", close: "關閉",
+  emptySelection: "點選專案可持續高亮它的連結。點選連線標籤可查看或編輯。",
+  noConnections: "尚無連結。這個專案也可以獨立存在。", noProjects: "目前視圖沒有專案", noProjectsHint: "建立專案，或調整專案篩選條件。",
+  unknown: "無法取得專案", outside: "專案在目前篩選範圍之外", derived: "來自共用靈感，在此只能查看。請修改靈感的專案連結來更改此關係。",
+  shared: "共用靈感", edit: "編輯連結", remove: "移除連結", createTitle: "連結兩個專案", editTitle: "編輯連結",
+  formDescription: "選擇專案和關係，儲存前先確認句子的意思。", first: "第一個專案", second: "第二個專案", relationship: "關係", chooseProject: "選擇專案", searchProjects: "搜尋專案", preview: "這個連結代表：",
+  kinds: { related: "相關於", "depends-on": "依賴", blocks: "阻擋", contains: "包含以下子專案：" },
+  hints: { related: "兩個專案有實際關聯，但沒有必須先後完成的順序。", "depends-on": "第二個專案是第一個專案的先決條件。箭頭代表依賴，不是執行順序。", blocks: "第一個專案目前正在阻礙第二個專案前進。", contains: "第一個是母專案，第二個是它的子專案。" },
+  save: "儲存連結", saving: "儲存中…", saved: "連結已儲存至你的帳戶", cancel: "取消", removeTitle: "移除這個連結？", removeDescription: "只會移除連結，兩個專案都會保留。你可以復原這個操作。", removed: "連結已移除，兩個專案均已保留。", restored: "連結已復原", undo: "復原", loading: "正在載入已儲存的連結…", retry: "重試",
+  errors: { invalid: "請選擇兩個不同且可用的專案及有效關係。", duplicate: "這兩個專案已有手動連結，請編輯現有連結。", cycle: "這會形成循環依賴或層級。請更改方向或關係。", conflict: "另一部裝置已修改此連結。請重新載入並再次開啟。", forbidden: "請重新登入以存取專案連結。", unavailable: "連結儲存功能尚未啟用。需要先套用專案連結的資料庫遷移。", failed: "無法儲存或載入連結。你的輸入已保留，請檢查網絡後重試。" },
+  help: "如何使用關係圖", helpExplore: "點選卡片可在關係圖內查看詳情。按「開啟專案」查看完整內容。", helpConnect: "按「連結」選擇兩個專案並解釋它們的關係。不需要拖曳連線。", helpList: "連結列表提供相同的查看、建立、編輯及移除操作，不必移動畫布。", navigationHint: "拖曳空白畫布可平移，雙指可縮放。也可使用縮放、適合畫面、排列及移動按鈕。", keyboardHint: "Tab 切換控制項，Enter 啟動。聚焦畫布後，方向鍵可平移，+ 或 − 縮放，0 重設視圖。",
+  fit: "適合畫面", arrange: "排列", move: "移動畫布", zoomIn: "放大", zoomOut: "縮小", left: "視圖向左", right: "視圖向右", up: "視圖向上", down: "視圖向下",
+};
+const zhCN: DeepPartial<ProjectMapUiCopy> = {
+  title: "项目连接", description: "看清哪些项目彼此相关，以及哪些事情互相依赖。", connectProjects: "连接项目", connect: "连接", map: "关系图", list: "连接列表",
+  connections: (n) => `${n} 个连接`, counts: (p, e) => `显示 ${p} 个项目 · ${e} 个连接`,
+  openProject: "打开项目", close: "关闭", edit: "编辑连接", remove: "移除连接", save: "保存连接", cancel: "取消", undo: "撤销", retry: "重试",
+  first: "第一个项目", second: "第二个项目", relationship: "关系", chooseProject: "选择项目", searchProjects: "搜索项目", preview: "这个连接表示：",
+  kinds: { related: "相关于", "depends-on": "依赖", blocks: "阻挡", contains: "包含以下子项目：" },
+};
+const copy = createLocaleCopyMap<ProjectMapUiCopy>(en, { "zh-TW": zhTW, "zh-CN": zhCN });
+export function getProjectMapUiCopy(locale: AppLocale): ProjectMapUiCopy { return copy[locale] ?? copy.en; }

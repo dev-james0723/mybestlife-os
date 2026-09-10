@@ -1,536 +1,267 @@
 "use client";
 
-import { useMemo, useState, useCallback, useRef } from "react";
-import { Card } from "@/components/ui/card";
+import { useCallback, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { CircleHelp, Focus, Link2, List, Loader2, Network, Pencil, Unlink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import {
-  getProjectDateRangeLabelLocalized,
-  getProjectStatusLabel,
-} from "@/lib/projects/presentation";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useProjects } from "@/hooks/use-projects";
+import { useProjectConnections } from "@/hooks/use-project-connections";
 import { useAppStore } from "@/stores/app-store";
+import { getProjectStatusLabel } from "@/lib/projects/presentation";
+import { getProjectMapUiCopy, type ProjectMapUiCopy } from "@/lib/i18n/project-map-ui";
+import { CONNECTION_KINDS, ProjectConnectionError, buildProjectMapEdges, projectNeighborhood, validateConnection, type ConnectionDraft, type ProjectConnection, type ProjectMapEdge } from "@/lib/projects/connections";
 import type { ProjectWithMeta } from "@/app/[locale]/(protected)/projects/page";
-import type { Project } from "@/types/database";
-import type { Idea } from "@/types/database";
+import type { Project, Idea } from "@/types/database";
 import type { ProjectsUiCopy } from "@/lib/i18n/projects-ui";
-import { Maximize2, Move, MousePointer2, Sparkles } from "lucide-react";
+import { ProjectMapCanvas } from "./project-map-canvas";
+import styles from "./project-map.module.css";
 
-interface MapViewProps {
-  projects: ProjectWithMeta[];
-  ideas: Idea[];
-  onSelectProject: (project: Project) => void;
-  ui: ProjectsUiCopy;
+type Props = { projects: ProjectWithMeta[]; ideas: Idea[]; onSelectProject: (project: Project) => void; ui: ProjectsUiCopy };
+type Store = ReturnType<typeof useProjectConnections>;
+type EditorState = { id: string; sourceId: string; previous?: ProjectConnection };
+const EMPTY_RECORDS: ProjectConnection[] = [];
+function message(error: unknown, ui: ProjectMapUiCopy): string {
+  return ui.errors[error instanceof ProjectConnectionError ? error.problem : "failed"];
+}
+function useMedia(query: string) {
+  const subscribe = useCallback((notify: () => void) => {
+    const media = window.matchMedia(query);
+    media.addEventListener("change", notify);
+    return () => media.removeEventListener("change", notify);
+  }, [query]);
+  return useSyncExternalStore(subscribe, () => window.matchMedia(query).matches, () => false);
 }
 
-type Pos = { x: number; y: number };
-
-type EdgeKind = "shared-idea" | "related" | "depends-on" | "blocks" | "parent-child";
-
-type GraphEdge = {
-  id: string;
-  source: string;
-  target: string;
-  kind: EdgeKind;
-  label: string;
-};
-
-type PendingConnection = {
-  sourceId: string;
-  targetId: string;
-};
-
-function circleLayout(ids: string[], cx: number, cy: number, radius: number): Map<string, Pos> {
-  const map = new Map<string, Pos>();
-  const n = ids.length;
-  if (n === 0) return map;
-  ids.forEach((id, i) => {
-    const angle = (2 * Math.PI * i) / n - Math.PI / 2;
-    map.set(id, {
-      x: cx + radius * Math.cos(angle),
-      y: cy + radius * Math.sin(angle),
-    });
-  });
-  return map;
-}
-
-function buildIdeaEdges(ideas: Idea[], ui: ProjectsUiCopy): GraphEdge[] {
-  const edges: GraphEdge[] = [];
-  for (const idea of ideas) {
-    const ids = idea.linked_project_ids ?? [];
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = i + 1; j < ids.length; j++) {
-        edges.push({
-          id: `${idea.id}:${ids[i]}:${ids[j]}`,
-          source: ids[i],
-          target: ids[j],
-          kind: "shared-idea",
-          label: ui.relationshipTypeIdea,
-        });
-      }
-    }
-  }
-  return edges;
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  planning: "#60a5fa",
-  active: "#22c55e",
-  paused: "#fbbf24",
-  completed: "#34d399",
-  cancelled: "#94a3b8",
-};
-
-const EDGE_STYLE: Record<
-  EdgeKind,
-  {
-    stroke: string;
-    dasharray?: string;
-    marker?: boolean;
-  }
-> = {
-  "shared-idea": { stroke: "hsl(var(--muted-foreground))", dasharray: "5 5" },
-  related: { stroke: "hsl(var(--primary))", dasharray: "6 4" },
-  "depends-on": { stroke: "#2563eb", marker: true },
-  blocks: { stroke: "#dc2626", marker: true },
-  "parent-child": { stroke: "#7c3aed", marker: true },
-};
-
-export function ProjectMapView({
-  projects,
-  ideas,
-  onSelectProject,
-  ui,
-}: MapViewProps) {
+export function ProjectMapView(props: Props) {
+  const store = useProjectConnections();
+  const { data: allProjects } = useProjects();
   const language = useAppStore((s) => s.language);
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 720, h: 480 });
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [selectedForConnect, setSelectedForConnect] = useState<string | null>(null);
-  const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
-  const [pendingType, setPendingType] = useState<EdgeKind>("related");
-  const [manualEdges, setManualEdges] = useState<GraphEdge[]>([]);
-  const dragRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(
-    null,
-  );
+  const copy = getProjectMapUiCopy(language);
+  // Remount transient selections and undo state on an account switch. The cache
+  // and all mutations are independently scoped to the authenticated owner.
+  return <ProjectConnectionsWorkspace key={store.userId} {...props} store={store} copy={copy}
+    allProjects={(allProjects ?? props.projects.map((p) => p.project)).filter((p) => p.user_id === store.userId)} />;
+}
 
-  const visibleProjects = projects;
-  const idsForLayout = useMemo(() => visibleProjects.map((p) => p.project.id), [visibleProjects]);
-
-  const edges = useMemo(() => buildIdeaEdges(ideas, ui), [ideas, ui]);
-
-  const filteredEdges = useMemo(() => {
-    const idSet = new Set(idsForLayout);
-    return [...edges, ...manualEdges].filter(
-      ({ source, target }) => idSet.has(source) && idSet.has(target),
-    );
-  }, [edges, idsForLayout, manualEdges]);
-
-  const adjacency = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    for (const id of idsForLayout) map.set(id, new Set());
-    for (const edge of filteredEdges) {
-      map.get(edge.source)?.add(edge.target);
-      map.get(edge.target)?.add(edge.source);
-    }
-    return map;
-  }, [filteredEdges, idsForLayout]);
-
-  const layout = useMemo(() => {
-    const w = 720;
-    const h = 480;
-    const cx = w / 2;
-    const cy = h / 2;
-    const baseRadius = idsForLayout.length <= 2 ? Math.min(w, h) * 0.16 : Math.min(w, h) * 0.24;
-    const r = Math.min(
-      Math.min(w, h) * 0.32,
-      baseRadius + Math.max(0, idsForLayout.length - 3) * 12,
-    );
-    return { w, h, cx, cy, r, positions: circleLayout(idsForLayout, cx, cy, r) };
-  }, [idsForLayout]);
-
-  const handleNodeClick = useCallback(
-    (id: string) => {
-      if (isConnecting) {
-        if (selectedForConnect && selectedForConnect !== id) {
-          setPendingConnection({ sourceId: selectedForConnect, targetId: id });
-          setSelectedForConnect(null);
-          setPendingType("related");
-          return;
-        }
-        setSelectedForConnect(id);
-        return;
-      }
-
-      const p = projects.find((x) => x.project.id === id)?.project;
-      if (p) onSelectProject(p);
-    },
-    [isConnecting, onSelectProject, projects, selectedForConnect],
-  );
-
-  const idSet = useMemo(() => new Set(idsForLayout), [idsForLayout]);
-  const connectedIds = hoveredId ? adjacency.get(hoveredId) ?? new Set() : null;
-
-  const fitToScreen = useCallback(() => {
-    setViewBox({ x: 0, y: 0, w: layout.w, h: layout.h });
-  }, [layout.h, layout.w]);
-
-  const startPan = (clientX: number, clientY: number) => {
-    dragRef.current = {
-      x: clientX,
-      y: clientY,
-      startX: viewBox.x,
-      startY: viewBox.y,
-    };
+function ProjectConnectionsWorkspace({ projects, ideas, onSelectProject, ui: projectUi, store, copy: ui, allProjects }: Props & { store: Store; copy: ProjectMapUiCopy; allProjects: Project[] }) {
+  const desktop = useMedia("(min-width: 1200px)");
+  const phone = useMedia("(max-width: 649px)");
+  const [viewChoice, setViewChoice] = useState<"map" | "list" | null>(null);
+  const view = viewChoice ?? (phone ? "list" : "map");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [editor, setEditor] = useState<EditorState | null>(null);
+  const [removing, setRemoving] = useState<ProjectConnection | null>(null);
+  const [removed, setRemoved] = useState<ProjectConnection | null>(null);
+  const [help, setHelp] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [announcement, setAnnouncement] = useState("");
+  const [error, setError] = useState("");
+  const lastTrigger = useRef<HTMLElement | null>(null);
+  const connectButton = useRef<HTMLButtonElement>(null);
+  const records = store.query.data ?? EMPTY_RECORDS;
+  const lookup = useMemo(() => new Map(allProjects.map((p) => [p.id, p])), [allProjects]);
+  const knownIds = useMemo(() => new Set(lookup.keys()), [lookup]);
+  const allEdges = useMemo(() => buildProjectMapEdges(records, ideas, knownIds), [records, ideas, knownIds]);
+  const baseProjects = projects.map((p) => p.project).filter((p) => knownIds.has(p.id));
+  const baseIds = new Set(baseProjects.map((p) => p.id));
+  const selected = selectedId && baseIds.has(selectedId) ? lookup.get(selectedId) : undefined;
+  const selectedEdge = allEdges.find((edge) => edge.id === selectedEdgeId);
+  const focusActive = focused && !!selected;
+  const highlighted = selected ? projectNeighborhood(selected.id, allEdges) : new Set(selectedEdge ? [selectedEdge.source, selectedEdge.target] : []);
+  const visibleProjects = focusActive ? baseProjects.filter((p) => highlighted.has(p.id)) : baseProjects;
+  const visibleIds = new Set(visibleProjects.map((p) => p.id));
+  const visibleEdges = allEdges.filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target));
+  const counts = new Map<string, number>();
+  for (const edge of allEdges) { counts.set(edge.source, (counts.get(edge.source) ?? 0) + 1); counts.set(edge.target, (counts.get(edge.target) ?? 0) + 1); }
+  const disabled = store.busy || store.loading || store.query.isError || !store.userId;
+  const name = (id: string) => lookup.get(id)?.name ?? ui.unknown;
+  const sentence = (edge: ProjectMapEdge | ConnectionDraft) => {
+    const source = "source" in edge ? edge.source : edge.source_id;
+    const target = "target" in edge ? edge.target : edge.target_id;
+    return `${name(source)} ${edge.kind === "shared-idea" ? `· ${ui.shared} ·` : ui.kinds[edge.kind]} ${name(target)}`;
   };
-
-  const onWheel = (event: React.WheelEvent<SVGSVGElement>) => {
-    event.preventDefault();
-    const zoomFactor = event.deltaY > 0 ? 1.12 : 0.9;
-    setViewBox((current) => {
-      const nextW = Math.max(260, Math.min(layout.w * 1.8, current.w * zoomFactor));
-      const nextH = Math.max(180, Math.min(layout.h * 1.8, current.h * zoomFactor));
-      return {
-        x: current.x + (current.w - nextW) / 2,
-        y: current.y + (current.h - nextH) / 2,
-        w: nextW,
-        h: nextH,
-      };
-    });
-  };
-
-  const getRelationshipLabel = (kind: EdgeKind) => {
-    switch (kind) {
-      case "related":
-        return ui.relationshipTypeRelated;
-      case "depends-on":
-        return ui.relationshipTypeDependsOn;
-      case "blocks":
-        return ui.relationshipTypeBlocks;
-      case "parent-child":
-        return ui.relationshipTypeChild;
-      default:
-        return ui.relationshipTypeIdea;
-    }
-  };
-
-  const savePendingConnection = () => {
-    if (!pendingConnection) return;
-    setManualEdges((prev) => [
-      ...prev,
-      {
-        id: `manual:${pendingConnection.sourceId}:${pendingConnection.targetId}:${pendingType}:${prev.length}`,
-        source: pendingConnection.sourceId,
-        target: pendingConnection.targetId,
-        kind: pendingType,
-        label: getRelationshipLabel(pendingType),
-      },
-    ]);
-    setPendingConnection(null);
-    setIsConnecting(false);
-  };
-
-  if (projects.length === 0) {
-    return null;
+  function captureFocus() { lastTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }
+  function restoreFocus() { requestAnimationFrame(() => { (lastTrigger.current?.isConnected ? lastTrigger.current : connectButton.current)?.focus({ preventScroll: true }); }); }
+  function inspect(id: string) {
+    captureFocus(); setSelectedId(id); setSelectedEdgeId(null); setPanelOpen(true);
+    setAnnouncement(ui.selected(name(id), counts.get(id) ?? 0));
   }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1">
-            <Move className="h-3.5 w-3.5" />
-            {ui.relationshipHint}
-          </span>
-          {isConnecting && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-2 py-1 text-primary">
-              <MousePointer2 className="h-3.5 w-3.5" />
-              {ui.relationshipCreate}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={isConnecting ? "secondary" : "outline"}
-            size="sm"
-            onClick={() => {
-              setIsConnecting((current) => !current);
-              setSelectedForConnect(null);
-            }}
-          >
-            <MousePointer2 className="mr-1.5 h-3.5 w-3.5" />
-            {ui.relationshipCreate}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={fitToScreen}>
-            <Maximize2 className="mr-1.5 h-3.5 w-3.5" />
-            {ui.fitToScreen}
-          </Button>
-        </div>
-      </div>
-
-      <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b bg-muted/15 px-3 py-2 text-xs">
-          <div className="font-medium text-foreground">{ui.relationshipLegend}</div>
-          <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
-            {[
-              { key: "active", color: STATUS_COLOR.active, label: ui.statusActive },
-              { key: "planning", color: STATUS_COLOR.planning, label: ui.statusPlanning },
-              { key: "paused", color: STATUS_COLOR.paused, label: ui.statusPaused },
-              { key: "completed", color: STATUS_COLOR.completed, label: ui.statusCompleted },
-            ].map((item) => (
-              <span key={item.key} className="inline-flex items-center gap-1.5">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                {item.label}
-              </span>
-            ))}
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-px w-5 border-t border-dashed border-muted-foreground/70" />
-              {ui.relationshipTypeIdea}
-            </span>
-          </div>
-        </div>
-
-        <svg
-          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
-          className="h-[min(70vh,520px)] w-full touch-manipulation bg-muted/20"
-          role="img"
-          aria-label={ui.viewMap}
-          onWheel={onWheel}
-          onPointerDown={(event) => {
-            if ((event.target as SVGElement).closest("[data-node='true']")) return;
-            startPan(event.clientX, event.clientY);
-          }}
-          onPointerMove={(event) => {
-            if (!dragRef.current) return;
-            const deltaX = ((event.clientX - dragRef.current.x) / layout.w) * viewBox.w;
-            const deltaY = ((event.clientY - dragRef.current.y) / layout.h) * viewBox.h;
-            setViewBox((current) => ({
-              ...current,
-              x: dragRef.current!.startX - deltaX,
-              y: dragRef.current!.startY - deltaY,
-            }));
-          }}
-          onPointerUp={() => {
-            dragRef.current = null;
-          }}
-          onPointerLeave={() => {
-            dragRef.current = null;
-          }}
-        >
-          <defs>
-            <marker
-              id="graph-arrow"
-              markerWidth="10"
-              markerHeight="10"
-              refX="8"
-              refY="3"
-              orient="auto"
-            >
-              <path d="M0,0 L0,6 L9,3 z" fill="currentColor" />
-            </marker>
-          </defs>
-
-          {/* Edges */}
-          {filteredEdges.map((edge) => {
-            if (!idSet.has(edge.source) || !idSet.has(edge.target)) return null;
-            const pa = layout.positions.get(edge.source);
-            const pb = layout.positions.get(edge.target);
-            if (!pa || !pb) return null;
-            const isConnected =
-              hoveredId &&
-              (edge.source === hoveredId || edge.target === hoveredId);
-            const style = EDGE_STYLE[edge.kind];
-            const mx = (pa.x + pb.x) / 2;
-            const my = (pa.y + pb.y) / 2 - 16;
-            return (
-              <g key={edge.id}>
-                <line
-                  x1={pa.x}
-                  y1={pa.y}
-                  x2={pb.x}
-                  y2={pb.y}
-                  stroke={style.stroke}
-                  strokeOpacity={hoveredId ? (isConnected ? 0.9 : 0.12) : 0.35}
-                  strokeWidth={isConnected ? 2.6 : 2}
-                  strokeDasharray={style.dasharray}
-                  markerEnd={style.marker ? "url(#graph-arrow)" : undefined}
-                />
-                {isConnected && (
-                  <text
-                    x={mx}
-                    y={my}
-                    textAnchor="middle"
-                    className="fill-muted-foreground text-[10px] font-medium"
-                  >
-                    {edge.label}
-                  </text>
-                )}
-              </g>
-            );
-          })}
-
-          {filteredEdges.length === 0 && (
-            <foreignObject
-              x={layout.cx - 150}
-              y={layout.cy - 56}
-              width={300}
-              height={112}
-            >
-              <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed bg-background/90 px-4 text-center shadow-sm">
-                <Sparkles className="mb-2 h-5 w-5 text-primary" />
-                <p className="text-sm font-medium">{ui.relationshipNoEdgesTitle}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {ui.relationshipNoEdgesDescription}
-                </p>
-              </div>
-            </foreignObject>
-          )}
-
-          {/* Nodes */}
-          {visibleProjects.map((item) => {
-            const { project } = item;
-            const pos = layout.positions.get(project.id);
-            if (!pos) return null;
-            const fill =
-              STATUS_COLOR[project.status] ?? "hsl(var(--primary))";
-            const isHovered = hoveredId === project.id;
-            const isNeighbor = hoveredId ? connectedIds?.has(project.id) : false;
-            const isDimmed = hoveredId ? !isHovered && !isNeighbor : false;
-            const radius = 34;
-            return (
-              <g
-                key={project.id}
-                data-node="true"
-                className={cn("cursor-pointer transition-opacity", isDimmed && "opacity-25")}
-                onClick={() => handleNodeClick(project.id)}
-                onMouseEnter={() => setHoveredId(project.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                onFocus={() => setHoveredId(project.id)}
-                onBlur={() => setHoveredId(null)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleNodeClick(project.id);
-                  }
-                }}
-                tabIndex={0}
-                role="button"
-                aria-label={project.name}
-              >
-                <title>
-                  {`${project.name} · ${getProjectStatusLabel(project.status, ui)} · ${
-                    getProjectDateRangeLabelLocalized(project, language) || "-"
-                  }`}
-                </title>
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={radius}
-                  fill={fill}
-                  stroke={selectedForConnect === project.id ? "hsl(var(--primary))" : "white"}
-                  strokeOpacity={selectedForConnect === project.id ? 0.9 : 0.35}
-                  strokeWidth={selectedForConnect === project.id ? 4 : 2}
-                  className="transition-transform"
-                  style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
-                />
-                <text
-                  x={pos.x}
-                  y={pos.y + 4}
-                  textAnchor="middle"
-                  className="fill-white text-[11px] font-semibold"
-                  style={{ pointerEvents: "none" }}
-                >
-                  {project.name.trim().slice(0, 2)}
-                </text>
-                <foreignObject
-                  x={pos.x - 62}
-                  y={pos.y + 42}
-                  width={124}
-                  height={56}
-                  style={{ pointerEvents: "none" }}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <p className="line-clamp-2 text-[11px] font-medium leading-tight text-foreground">
-                      {project.name}
-                    </p>
-                    <span className="mt-1 inline-flex rounded-full border bg-background/90 px-2 py-0.5 text-[10px] text-muted-foreground shadow-sm">
-                      {getProjectStatusLabel(project.status, ui)}
-                    </span>
-                  </div>
-                </foreignObject>
-              </g>
-            );
-          })}
-        </svg>
-      </Card>
-
-      <p className="text-xs text-muted-foreground">{ui.relationshipHint}</p>
-
-      <Dialog
-        open={!!pendingConnection}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPendingConnection(null);
-            setSelectedForConnect(null);
-          }
-        }}
-      >
-        <DialogContent size="sm">
-          <DialogHeader>
-            <DialogTitle>{ui.relationshipChooseType}</DialogTitle>
-            <DialogDescription>{ui.relationshipCreate}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Select
-              value={pendingType}
-              onValueChange={(value) => setPendingType(value as EdgeKind)}
-              itemToStringLabel={(v) => getRelationshipLabel(v as EdgeKind)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={ui.relationshipTypeLabel} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="related">{ui.relationshipTypeRelated}</SelectItem>
-                <SelectItem value="depends-on">{ui.relationshipTypeDependsOn}</SelectItem>
-                <SelectItem value="blocks">{ui.relationshipTypeBlocks}</SelectItem>
-                <SelectItem value="parent-child">{ui.relationshipTypeChild}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {pendingConnection && (
-              <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-                {projects.find((item) => item.project.id === pendingConnection.sourceId)?.project.name}
-                {" → "}
-                {projects.find((item) => item.project.id === pendingConnection.targetId)?.project.name}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingConnection(null)}>
-              {ui.cancel}
-            </Button>
-            <Button onClick={savePendingConnection}>{ui.relationshipCreateAction}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+  function inspectEdge(id: string) { captureFocus(); setSelectedId(null); setSelectedEdgeId(id); setPanelOpen(true); }
+  function closePanel() { setPanelOpen(false); restoreFocus(); }
+  function connect(sourceId = "") {
+    captureFocus(); setPanelOpen(false); setError("");
+    setEditor({ id: crypto.randomUUID(), sourceId });
+  }
+  function edit(row: ProjectConnection) { captureFocus(); setPanelOpen(false); setError(""); setEditor({ id: row.id, sourceId: row.source_id, previous: row }); }
+  function connectionRow(edge: ProjectMapEdge) {
+    return <button type="button" className={styles.connectionRow} key={edge.id} onClick={() => inspectEdge(edge.id)}>
+      {sentence(edge)}
+      {(!baseIds.has(edge.source) || !baseIds.has(edge.target)) && <span>{ui.outside}</span>}
+      {edge.kind === "shared-idea" && <span>{ui.derived}</span>}
+    </button>;
+  }
+  const panel = <>
+    <div className={styles.panelHeader}><span className={styles.muted}>{selectedEdge ? ui.connection : ui.inspect}</span>
+      {panelOpen && <Button type="button" variant="ghost" size="icon" onClick={closePanel} aria-label={ui.close}><X /></Button>}
     </div>
-  );
+    <div className={styles.section}>
+      {panelOpen && selected ? <>
+        <span className={styles.status} data-status={selected.status}>{getProjectStatusLabel(selected.status, projectUi)}</span>
+        <h3>{selected.name}</h3>
+        <p className={styles.muted}>{ui.connections(counts.get(selected.id) ?? 0)}</p>
+        <Button type="button" onClick={() => connect(selected.id)} disabled={disabled || allProjects.length < 2}><Link2 />{ui.connect}</Button>
+        <Button type="button" variant="outline" onClick={() => { setPanelOpen(false); onSelectProject(selected); }}>{ui.openProject}</Button>
+        <div className={styles.connectionList}>
+          {allEdges.filter((edge) => edge.source === selected.id || edge.target === selected.id).map(connectionRow)}
+          {!counts.get(selected.id) && <p className={styles.muted}>{ui.noConnections}</p>}
+        </div>
+      </> : panelOpen && selectedEdge ? <>
+        <p className={styles.preview}>{sentence(selectedEdge)}</p>
+        <p className={styles.muted}>{selectedEdge.kind === "shared-idea" ? ui.derived : ui.hints[selectedEdge.kind]}</p>
+        {selectedEdge.record && <>
+          <Button type="button" variant="outline" disabled={disabled} onClick={() => edit(selectedEdge.record!)}><Pencil />{ui.edit}</Button>
+          <Button type="button" variant="outline" disabled={disabled} onClick={() => { captureFocus(); setPanelOpen(false); setError(""); setRemoving(selectedEdge.record!); }}><Unlink />{ui.remove}</Button>
+        </>}
+        {[selectedEdge.source, selectedEdge.target].map((id) => <Button key={id} type="button" variant="outline" disabled={!lookup.has(id)} onClick={() => { const p = lookup.get(id); if (p) { setPanelOpen(false); onSelectProject(p); } }}>{ui.openProject}: {name(id)}</Button>)}
+      </> : <><Network aria-hidden="true" /><h3>{ui.title}</h3><p className={styles.muted}>{ui.emptySelection}</p><p className={styles.muted}>{ui.helpConnect}</p></>}
+    </div>
+  </>;
+
+  return <section className={styles.root} aria-label={ui.title}>
+    <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
+    <header className={styles.header}>
+      <div><h2>{ui.title}</h2><p className={styles.muted}>{ui.description}</p></div>
+      <Button ref={connectButton} type="button" onClick={() => connect()} disabled={disabled || allProjects.length < 2}><Link2 />{ui.connectProjects}</Button>
+    </header>
+    {store.loading && <p role="status" className={styles.muted}>{ui.loading}</p>}
+    {store.query.isError && <div className={styles.error} role="alert"><span>{message(store.query.error, ui)}</span><Button type="button" variant="outline" disabled={store.query.isFetching} onClick={() => { void store.query.refetch(); }}>{ui.retry}</Button></div>}
+    {!store.loading && !store.userId && <p className={styles.error} role="alert">{ui.errors.forbidden}</p>}
+    {error && !removing && <p className={styles.error} role="alert">{error}</p>}
+    {notice && <div className={styles.notice}><span role="status" aria-live="polite">{notice}</span>
+      {removed && <Button type="button" variant="outline" disabled={disabled} onClick={async () => {
+        if (store.busy) return;
+        setError("");
+        try { await store.restore.mutateAsync(removed); setRemoved(null); setNotice(ui.restored); }
+        catch (e) { setError(message(e, ui)); }
+      }}>{ui.undo}</Button>}
+    </div>}
+    <div className={styles.toolbar}>
+      <div className={styles.toggle} role="group" aria-label={ui.title}>
+        <Button type="button" variant={view === "map" ? "secondary" : "ghost"} aria-pressed={view === "map"} onClick={() => setViewChoice("map")}><Network />{ui.map}</Button>
+        <Button type="button" variant={view === "list" ? "secondary" : "ghost"} aria-pressed={view === "list"} onClick={() => setViewChoice("list")}><List />{ui.list}</Button>
+      </div>
+      <div className={styles.controls}>
+        <Button type="button" variant="outline" disabled={!selected} aria-pressed={focusActive} onClick={() => setFocused(!focusActive)}><Focus />{focusActive ? ui.showAll : ui.focus}</Button>
+        <Button type="button" variant="ghost" size="icon" aria-label={ui.help} onClick={() => { captureFocus(); setHelp(true); }}><CircleHelp /></Button>
+      </div>
+    </div>
+    <div className={styles.workspace}>
+      <div className={styles.board}>
+        <div className={styles.summary}><span>{ui.counts(visibleProjects.length, visibleEdges.length)}</span><span>{store.busy ? ui.saving : ""}</span></div>
+        {!store.loading && !store.query.isError && allEdges.length === 0 && visibleProjects.length >= 2 && <div className={styles.firstUse}>
+          <div><h3>{ui.startTitle}</h3><p className={styles.muted}>{ui.startDescription}</p></div>
+          <Button type="button" variant="outline" disabled={disabled} onClick={() => connect()}>{ui.firstConnection}</Button>
+        </div>}
+        {visibleProjects.length === 0 ? <div className={styles.empty}><Network aria-hidden="true" /><h3>{ui.noProjects}</h3><p className={styles.muted}>{ui.noProjectsHint}</p></div>
+          : view === "map" ? <ProjectMapCanvas projects={visibleProjects} edges={visibleEdges} counts={counts} highlighted={highlighted}
+            selectedId={selected?.id ?? null} selectedEdgeId={selectedEdge?.id ?? null} disabled={disabled || allProjects.length < 2} ui={ui}
+            status={(p) => getProjectStatusLabel(p.status, projectUi)} sentence={sentence} onInspect={inspect} onConnect={connect} onInspectEdge={inspectEdge} />
+          : <div className={styles.projectList}>{visibleProjects.map((project) => <article key={project.id} className={styles.projectItem}>
+            <span className={styles.status} data-status={project.status}>{getProjectStatusLabel(project.status, projectUi)}</span>
+            <div className={styles.controls}><button type="button" className={styles.projectName} onClick={() => inspect(project.id)}>{project.name}</button>
+              <Button type="button" variant="outline" disabled={disabled || allProjects.length < 2} onClick={() => connect(project.id)}><Link2 />{ui.connect}</Button></div>
+            <div className={styles.connectionList}>{allEdges.filter((edge) => edge.source === project.id || edge.target === project.id).map(connectionRow)}</div>
+            {!counts.get(project.id) && <p className={styles.muted}>{ui.noConnections}</p>}
+          </article>)}</div>}
+        {allEdges.length > visibleEdges.length && <p className={styles.hint}>{ui.hidden(allEdges.length - visibleEdges.length)}</p>}
+      </div>
+      {desktop && <aside className={styles.inspector} aria-label={ui.inspect}>{panel}</aside>}
+    </div>
+    <Dialog open={!desktop && panelOpen && !editor && !removing && !help} onOpenChange={(open) => { if (!open) closePanel(); }}>
+      <DialogContent className={`${styles.modal} ${styles.sheet}`} showCloseButton={false}>
+        <DialogTitle className="sr-only">{ui.inspect}</DialogTitle><DialogDescription className="sr-only">{ui.description}</DialogDescription>{panel}
+      </DialogContent>
+    </Dialog>
+    <Dialog open={!!editor} onOpenChange={(open) => { if (!open && !store.busy) { setEditor(null); restoreFocus(); } }}>
+      <DialogContent size="lg" className={styles.modal} showCloseButton={false}>
+        <DialogHeader><DialogTitle>{editor?.previous ? ui.editTitle : ui.createTitle}</DialogTitle><DialogDescription>{ui.formDescription}</DialogDescription></DialogHeader>
+        {editor && <ConnectionEditor key={editor.id} editor={editor} projects={allProjects} records={records} store={store} ui={ui}
+          onCancel={() => { setEditor(null); restoreFocus(); }} onSaved={(row) => {
+            setEditor(null); setRemoved(null); setError(""); setNotice(ui.saved); setSelectedId(null); setSelectedEdgeId(row.id); setPanelOpen(desktop); restoreFocus();
+          }} />}
+      </DialogContent>
+    </Dialog>
+    <Dialog open={!!removing} onOpenChange={(open) => { if (!open && !store.busy) { setRemoving(null); setError(""); restoreFocus(); } }}>
+      <DialogContent size="md" className={styles.modal} showCloseButton={false}>
+        <DialogHeader><DialogTitle>{ui.removeTitle}</DialogTitle><DialogDescription>{ui.removeDescription}</DialogDescription></DialogHeader>
+        {removing && <p className={styles.preview}>{sentence(removing)}</p>}
+        {error && <p className={styles.error} role="alert">{error}</p>}
+        <DialogFooter><Button type="button" variant="outline" disabled={store.busy} onClick={() => { setRemoving(null); setError(""); restoreFocus(); }}>{ui.cancel}</Button>
+          <Button type="button" disabled={store.busy} onClick={async () => {
+            if (!removing || store.busy) return;
+            setError("");
+            try { const row = await store.remove.mutateAsync(removing); setRemoved(row); setRemoving(null); setSelectedEdgeId(null); setPanelOpen(false); setNotice(ui.removed); restoreFocus(); }
+            catch (e) { setError(message(e, ui)); }
+          }}>{store.busy ? ui.saving : ui.remove}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={help} onOpenChange={(open) => { setHelp(open); if (!open) restoreFocus(); }}>
+      <DialogContent size="md" className={styles.modal} showCloseButton={false}>
+        <DialogHeader><DialogTitle>{ui.help}</DialogTitle><DialogDescription>{ui.description}</DialogDescription></DialogHeader>
+        <p>{ui.helpExplore}</p><p>{ui.helpConnect}</p><p>{ui.navigationHint}</p><p>{ui.keyboardHint}</p><p>{ui.helpList}</p>
+        <DialogFooter><Button type="button" onClick={() => { setHelp(false); restoreFocus(); }}>{ui.close}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </section>;
+}
+
+function ConnectionEditor({ editor, projects, records, store, ui, onCancel, onSaved }: {
+  editor: EditorState; projects: Project[]; records: ProjectConnection[]; store: Store; ui: ProjectMapUiCopy;
+  onCancel: () => void; onSaved: (row: ProjectConnection) => void;
+}) {
+  const prefix = useId();
+  const [draft, setDraft] = useState<ConnectionDraft>(editor.previous ?? { source_id: editor.sourceId, target_id: "", kind: "related" });
+  const [requestId, setRequestId] = useState(editor.id);
+  const [sourceSearch, setSourceSearch] = useState("");
+  const [targetSearch, setTargetSearch] = useState("");
+  const [error, setError] = useState("");
+  function change(update: Partial<ConnectionDraft>) {
+    setDraft((old) => ({ ...old, ...update })); setError("");
+    if (!editor.previous) setRequestId(crypto.randomUUID());
+  }
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (store.busy) return;
+    const problem = validateConnection(draft, records, new Set(projects.map((p) => p.id)), editor.previous?.id ?? requestId);
+    if (problem) { setError(ui.errors[problem]); return; }
+    setError("");
+    try { onSaved(await store.save.mutateAsync({ id: requestId, draft, previous: editor.previous })); }
+    catch (e) { setError(message(e, ui)); }
+  }
+  const picker = (field: "source_id" | "target_id", label: string, search: string, setSearch: (s: string) => void) => <div className={styles.field}>
+    <label htmlFor={`${prefix}-${field}`}>{label}</label>
+    {projects.length > 8 && <input type="search" value={search} disabled={store.busy} onChange={(event) => setSearch(event.target.value)} placeholder={ui.searchProjects} aria-label={`${label}: ${ui.searchProjects}`} />}
+    <select id={`${prefix}-${field}`} required disabled={store.busy} value={draft[field]} onChange={(event) => change({ [field]: event.target.value })}>
+      <option value="" disabled>{ui.chooseProject}</option>
+      {projects.filter((p) => p.id === draft[field] || p.name.toLocaleLowerCase().includes(search.toLocaleLowerCase())).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+    </select>
+  </div>;
+  const source = projects.find((p) => p.id === draft.source_id);
+  const target = projects.find((p) => p.id === draft.target_id);
+  return <form className={styles.editor} onSubmit={submit} aria-busy={store.busy}>
+    {picker("source_id", ui.first, sourceSearch, setSourceSearch)}
+    <div className={styles.field}><label htmlFor={`${prefix}-kind`}>{ui.relationship}</label>
+      <select id={`${prefix}-kind`} value={draft.kind} disabled={store.busy} onChange={(event) => change({ kind: event.target.value as ConnectionDraft["kind"] })} aria-describedby={`${prefix}-hint`}>
+        {CONNECTION_KINDS.map((kind) => <option key={kind} value={kind}>{ui.kinds[kind]}</option>)}
+      </select><p id={`${prefix}-hint`} className={styles.muted}>{ui.hints[draft.kind]}</p>
+    </div>
+    {picker("target_id", ui.second, targetSearch, setTargetSearch)}
+    <div className={styles.preview} aria-live="polite"><p>{ui.preview}</p><p>{source?.name ?? ui.chooseProject} <strong>{ui.kinds[draft.kind]}</strong> {target?.name ?? ui.chooseProject}</p></div>
+    {error && <p className={styles.error} role="alert">{error}</p>}
+    <DialogFooter><Button type="button" variant="outline" disabled={store.busy} onClick={onCancel}>{ui.cancel}</Button>
+      <Button type="submit" disabled={store.busy || !source || !target}>{store.busy && <Loader2 aria-hidden="true" />}{store.busy ? ui.saving : ui.save}</Button></DialogFooter>
+  </form>;
 }
