@@ -1,0 +1,63 @@
+name: Project connections validation
+on:
+  pull_request:
+    paths:
+      - 'app/src/components/projects/map-view.tsx'
+      - 'app/src/components/projects/project-map*'
+      - 'app/src/lib/projects/connections*'
+      - 'app/src/lib/i18n/project-map-ui.ts'
+      - 'app/src/hooks/use-project-connections.ts'
+      - 'app/src/lib/repositories/project-connections.ts'
+      - 'app/scripts/project-map*'
+      - 'app/supabase/migrations/20260910210000_project_connections.sql'
+      - '.github/workflows/project-connections.yml'
+permissions:
+  contents: read
+concurrency:
+  group: project-connections-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_ci_only
+          POSTGRES_DB: project_map_ci
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            app/src
+            app/scripts
+            app/supabase
+            .github/workflows
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Unit tests for semantics and projection
+        run: npm test -- src/lib/projects/connections.test.ts
+      - name: PostgreSQL mutation and authorization tests
+        if: ${{ !cancelled() }}
+        env:
+          PGPASSWORD: disposable_ci_only
+        run: psql --host=127.0.0.1 --username=postgres --dbname=project_map_ci --file=scripts/project-map-db.test.sql
+      - name: Lint feature sources
+        if: ${{ !cancelled() }}
+        run: npx --no-install eslint src/components/projects/map-view.tsx src/components/projects/project-map-canvas.tsx src/lib/projects/connections.ts src/lib/projects/connections.test.ts src/lib/i18n/project-map-ui.ts src/hooks/use-project-connections.ts src/lib/repositories/project-connections.ts
+      - name: Full application TypeScript check
+        if: ${{ !cancelled() }}
+        run: npm run typecheck
