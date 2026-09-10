@@ -1,0 +1,69 @@
+.workspace { min-width: 0; display: grid; gap: 16px; }
+.header, .toolbar, .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.header { justify-content: space-between; }
+.header h2 { font-size: 20px; font-weight: 650; }
+.header p, .help { color: var(--muted-foreground); font-size: 12px; }
+.workspace button, .workspace summary, .workspace select, .workspace input { min-height: 44px; }
+.workspace button:focus-visible, .node button:focus-visible, .edgeLabel:focus-visible, .canvas:focus-visible, .controls summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.body { display: grid; gap: 16px; min-width: 0; }
+@media (min-width: 1280px) { .body { grid-template-columns: minmax(0,1fr) 300px; } }
+.panel { min-width: 0; border: 1px solid var(--border); border-radius: 18px; background: var(--card); overflow: hidden; }
+.callout { padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: color-mix(in srgb, var(--primary) 8%, var(--background)); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.callout h3 { font-size: 14px; font-weight: 650; }
+.callout p { font-size: 12px; color: var(--muted-foreground); }
+.toolbar { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted-foreground); }
+.controls { padding: 10px; border-bottom: 1px solid var(--border); }
+.controls button { min-width: 44px; min-height: 44px; }
+.controls details { position: relative; }
+.controls summary { padding: 12px; cursor: pointer; }
+.panButtons { position: absolute; right: 0; z-index: 6; display: flex; border: 1px solid var(--border); border-radius: 12px; background: var(--background); box-shadow: 0 8px 24px #0003; }
+.panButtons button { padding: 12px; }
+.canvasShell { min-width: 0; }
+.canvas { height: min(64vh,620px); min-height: 420px; width: 100%; background: var(--background); }
+.canvas :global(.react-flow__background) { opacity: .22; }
+.help { padding: 10px 14px; line-height: 1.5; border-top: 1px solid var(--border); }
+.node { width: 264px; height: 170px; background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 10px 25px #0002; overflow: hidden; }
+.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb,var(--primary) 35%, transparent), 0 10px 25px #0002; }
+.dimmed { opacity: .4; }
+.cardBody { display: block; text-align: left; width: 100%; height: 118px; padding: 14px 16px; }
+.status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); }
+.status i { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #64748b; }
+.status i[data-status="planning"] { background: #3b82f6; }
+.status i[data-status="active"] { background: #16a34a; }
+.status i[data-status="paused"] { background: #d97706; }
+.status i[data-status="completed"] { background: #0d9488; }
+.name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; font-weight: 650; font-size: 14px; line-height: 1.45; margin-top: 12px; }
+.cardFooter { border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 16px; height: 50px; gap: 8px; }
+.cardFooter span { color: var(--muted-foreground); font-size: 11px; }
+.cardFooter button { min-height: 44px; padding: 6px 10px; font-size: 12px; font-weight: 600; }
+.edgeLabel { position: absolute; pointer-events: all; min-height: 44px; max-width: 180px; padding: 8px 12px; border: 1px solid; border-radius: 12px; background: var(--background); color: var(--foreground); font-size: 11px; box-shadow: 0 2px 10px #0002; }
+.inspector { padding: 18px; }
+.inspector h3 { font-weight: 650; font-size: 18px; overflow-wrap: anywhere; }
+.inspector p { margin-top: 8px; color: var(--muted-foreground); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.list { padding: 16px; display: grid; gap: 12px; }
+.list h3 { font-size: 14px; font-weight: 650; }
+.row { border: 1px solid var(--border); border-radius: 12px; padding: 12px; min-width: 0; }
+.row > button { display: block; width: 100%; text-align: left; overflow-wrap: anywhere; font-size: 13px; line-height: 1.6; }
+.row p { color: var(--muted-foreground); font-size: 12px; }
+.projectList { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(220px,100%),1fr)); gap: 10px; }
+.form { display: grid; gap: 14px; min-width: 0; }
+.form label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; }
+.form input, .form select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); }
+.form fieldset { display: grid; gap: 14px; min-width: 0; }
+.form p { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.error { padding: 12px; background: color-mix(in srgb,var(--destructive) 8%,var(--background)); color: var(--foreground); border: 1px solid var(--destructive); border-radius: 10px; font-size: 13px; }
+.preview { padding: 12px; background: var(--muted); border: 1px solid var(--border); border-radius: 10px; }
+.picker { display: grid; gap: 6px; min-width: 0; }
+.dialog { max-height: min(90dvh,860px); overflow-y: auto; overflow-x: hidden; }
+.dialog button, .dialog select, .dialog input { min-height: 44px; }
+.dialog fieldset:disabled { opacity: .65; }
+.dialog p { overflow-wrap: anywhere; }
+.closeInspector { margin: 0 18px 18px; }
+.description { white-space: pre-line; max-height: 150px; overflow-y: auto; }
+.notice { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+.notice:empty { display: none; }
+.toolbar > div { display: flex; flex-wrap: wrap; }
+.node button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 1279px) { .sheet { top: auto !important; bottom: 0; left: 0 !important; transform: none !important; max-width: 100% !important; border-radius: 20px 20px 0 0; padding-bottom: max(16px,env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .workspace *, .dialog * { animation-duration: 0s !important; transition-duration: 0s !important; } }
