@@ -213,10 +213,9 @@ export function SkillChatRoom({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <OSDialogSurface
         size="4xl"
-        // Position the known-height chat without a percentage Y transform:
-        // GSAP popup motion must not consume the mobile centering offset.
-        style={{ top: "max(0.75rem, calc((100dvh - min(84dvh, 800px)) / 2))" }}
-        className="flex h-[min(84dvh,800px)] max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] translate-y-0 flex-col gap-0 overflow-hidden rounded-[1.4rem] p-0 sm:w-[min(860px,calc(100vw-2rem))]"
+        // Let DialogContent and its GSAP motion own viewport centering.
+        // A separate calculated top would apply the -50% Y offset twice.
+        className="flex h-[min(84dvh,800px)] max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-[1.4rem] p-0 sm:w-[min(860px,calc(100vw-2rem))]"
       >
         <div
           aria-hidden
