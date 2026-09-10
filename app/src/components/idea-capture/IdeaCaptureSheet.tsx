@@ -270,7 +270,7 @@ function KindChips({
       ref={rootRef}
       role="group"
       aria-label={groupLabel}
-      className="-mx-1 flex gap-1.5 overflow-x-auto px-5 pt-3 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="mx-4 flex min-w-0 shrink-0 gap-1.5 overflow-x-auto overscroll-x-contain scroll-px-1 px-1 pt-3 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {CHIP_KINDS.map((kind) => {
         const Icon = CHIP_ICONS[kind];
@@ -281,6 +281,12 @@ function KindChips({
               render={
                 <button
                   type="button"
+                  onFocus={(event) => {
+                    event.currentTarget.scrollIntoView({
+                      block: "nearest",
+                      inline: "nearest",
+                    });
+                  }}
                   onClick={(event) => {
                     if (kind === "idea") {
                       onSelect(kind);
@@ -296,7 +302,7 @@ function KindChips({
                   data-selection-glow={active ? "active" : undefined}
                   data-quick-add-chip
                   className={cn(
-                    "inline-flex min-h-[2rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
+                    "inline-flex min-h-[2rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap",
                     "transition-[background-color,color,border-color,transform] duration-150 ease-out",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     "active:scale-[0.97]",
