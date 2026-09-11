@@ -344,7 +344,6 @@ export function KnowledgeLayout({
   const openAIPanel = useKnowledgeStore((s) => s.openAIPanel);
   const closeAIPanel = useKnowledgeStore((s) => s.closeAIPanel);
   const currentView = useKnowledgeStore((s) => s.currentView);
-  const itemCount = useKnowledgeStore((s) => s.items.length);
   const profile = useProfile();
   const commandLightOpacity = knowledgeCommandLightOpacityToCssValue(
     profile.data?.knowledge_command_light_opacity,
@@ -591,11 +590,9 @@ export function KnowledgeLayout({
             }`}
           >
             <KnowledgeAddDropZone ui={ui} />
+            <KnowledgeAskCommandSection userId={userId} />
+            <KnowledgeInquiryAgent />
             <KnowledgeLibrarySearch />
-            {itemCount > 0 ? <details className="rounded-xl border border-border/50 p-3">
-              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">{language.startsWith("zh") ? "使用 AI：根據已保存來源回答或搜尋片段" : "Use AI: answer from saved sources or find relevant passages"}</summary>
-              <div className="space-y-4 pt-3"><KnowledgeAskCommandSection userId={userId} /><KnowledgeInquiryAgent /></div>
-            </details> : null}
 
             <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border/70 shadow-sm lg:h-full">
               <CardContent className="flex flex-1 flex-col gap-0 p-0">
