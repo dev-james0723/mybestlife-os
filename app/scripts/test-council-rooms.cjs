@@ -42,6 +42,7 @@ test('longest matching full name wins over a shorter overlapping name', () => {
 });
 test('Everyone removes mentions but retains the question and email', () => {
   assert.equal(c.removeMentions('@Elon Musk @Beyoncé What next? contact x@example.com', advisors), 'What next? contact x@example.com');
+  assert.equal(c.removeMentions('@Beyonce\u0301 What next?', advisors), 'What next?');
 });
 test('two rounds are bounded to eight contributions and one advisor never debates itself', () => {
   assert.equal(c.meetingOrder(['a','b','c','d'],true).length,8);

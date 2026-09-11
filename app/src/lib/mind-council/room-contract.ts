@@ -50,7 +50,7 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export function mentionedAdvisorIds(text: string, advisors: CouncilAdvisor[]): string[] {
   const hits: { id: string; at: number; length: number }[] = [];
   for (const a of advisors) {
-    const re = new RegExp(`(?:^|\\s)@${escapeRegex(a.name)}(?=$|[\\s.,!?;:，。！？；：])`, "giu");
+    const re = new RegExp(`(?:^|\\s)@${escapeRegex(a.name.normalize("NFC"))}(?=$|[\\s.,!?;:，。！？；：])`, "giu");
     const m = re.exec(text.normalize("NFC"));
     if (m) hits.push({ id: a.id, at: m.index, length: a.name.length });
   }
@@ -58,9 +58,9 @@ export function mentionedAdvisorIds(text: string, advisors: CouncilAdvisor[]): s
     .filter((h, i, all) => !all.slice(0, i).some((x) => x.at === h.at)).map((h) => h.id);
 }
 export function removeMentions(text: string, advisors: CouncilAdvisor[]): string {
-  let result = text;
+  let result = text.normalize("NFC");
   for (const a of [...advisors].sort((a, b) => b.name.length - a.name.length))
-    result = result.replace(new RegExp(`(^|\\s)@${escapeRegex(a.name)}(?=$|[\\s.,!?;:，。！？；：])`, "giu"), "$1");
+    result = result.replace(new RegExp(`(^|\\s)@${escapeRegex(a.name.normalize("NFC"))}(?=$|[\\s.,!?;:，。！？；：])`, "giu"), "$1");
   return result.replace(/ {2,}/g, " ").trimStart();
 }
 export function seatAnchors(count: number): { x: number; y: number }[] {
