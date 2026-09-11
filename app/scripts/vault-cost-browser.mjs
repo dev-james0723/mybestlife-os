@@ -76,8 +76,12 @@ try {
     }
   }
   await page.emulateMedia({reducedMotion:'reduce'});
-  const durations = await chart.locator('[style*="width"]').evaluateAll(elements => elements.map(el => getComputedStyle(el).transitionDuration));
-  assert.ok(durations.every(value => value === '0s'), 'reduced motion disables animated widths');
+  const transitions = await chart.locator('[style*="width"]').evaluateAll(elements => elements.map(el => {
+    const style = getComputedStyle(el);
+    return { property: style.transitionProperty, duration: style.transitionDuration };
+  }));
+  // transition-none disables the transition property, not the separately configured duration.
+  assert.ok(transitions.length > 0 && transitions.every(value => value.property === 'none' || value.duration.split(',').every(part => parseFloat(part) === 0)), 'reduced motion disables animated widths: ' + JSON.stringify(transitions));
   await page.getByRole('button', {name:'Show fewer',exact:true}).click();
   assert.equal(await chart.getByRole('listitem').count(),5);
   await page.getByRole('button',{name:'HKD',exact:true}).click();
