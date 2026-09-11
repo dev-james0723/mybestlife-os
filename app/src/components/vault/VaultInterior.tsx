@@ -45,8 +45,6 @@ import { VaultLibraryModePlaceholder } from "@/components/vault/VaultLibraryMode
 import { VaultRecommendedStacksPanel } from "@/components/vault/VaultRecommendedStacksPanel";
 import { VaultBuildMyStackPanel } from "@/components/vault/VaultBuildMyStackPanel";
 import { VaultComparePanel } from "@/components/vault/VaultComparePanel";
-import { VaultOverlapInsightsCard } from "@/components/vault/VaultOverlapInsightsCard";
-import { VaultIntelligenceCommandCenter } from "@/components/vault/VaultIntelligenceCommandCenter";
 import { VaultUsageDashboard } from "@/components/vault/VaultUsageDashboard";
 
 export function VaultInterior() {
@@ -107,7 +105,6 @@ export function VaultInterior() {
         description={copy.gallery.description[uiTheme]}
         actions={
           <>
-            {softwareMode === "my-vault" ? <VaultCostDashboard entries={entryList} /> : null}
             {softwareMode === "my-vault" ? (
               <OSPrimaryAction onClick={() => setAddDialogOpen(true)}>
                 <Plus className="h-4 w-4" />
@@ -126,17 +123,10 @@ export function VaultInterior() {
 
         {softwareMode === "my-vault" ? (
           <>
-            <VaultIntelligenceCommandCenter
-              entries={entryList}
-              onOpenSmartAdd={() => setAddDialogOpen(true)}
-              onSelectEntry={selectEntry}
-            />
-
-            <VaultFilterBar entries={entryList} />
-
-            {entryList.length > 0 ? (
-              <VaultOverlapInsightsCard entries={entryList} copy={copy.insights} compact />
-            ) : null}
+            <div className="min-w-0 space-y-3">
+              <VaultCostDashboard entries={entryList} onSelectEntry={selectEntry} />
+              <VaultFilterBar entries={entryList} />
+            </div>
 
             <VaultGallery
               entries={entryList}
