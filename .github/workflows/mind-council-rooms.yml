@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'app/src/**/mind-council/**'
+      - 'app/src/lib/ai/gemini-image-generate.ts'
       - 'app/scripts/*council-room*'
       - 'app/supabase/migrations/20260911010000_mind_council_rooms.sql'
       - '.github/workflows/mind-council-rooms.yml'
@@ -46,6 +47,9 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Pure contracts, context sharing and retry tests
         run: node scripts/test-council-rooms.cjs
+      - name: Gemini-only image adapter and shared helper regression
+        if: ${{ !cancelled() }}
+        run: node scripts/test-council-rooms-gemini.cjs
       - name: PostgreSQL isolation, persistence and lease tests
         if: ${{ !cancelled() }}
         env:
@@ -53,7 +57,7 @@ jobs:
         run: psql --host=127.0.0.1 --username=postgres --dbname=council_ci --file=scripts/council-rooms-db.test.sql
       - name: Lint changed feature sources
         if: ${{ !cancelled() }}
-        run: npx --no-install eslint src/lib/mind-council/room-*.ts src/components/mind-council/Council*.tsx src/components/mind-council/mind-council-experience.tsx src/app/api/mind-council/rooms
+        run: npx --no-install eslint src/lib/ai/gemini-image-generate.ts src/lib/mind-council/room-*.ts src/components/mind-council/Council*.tsx src/components/mind-council/mind-council-experience.tsx src/app/api/mind-council/rooms
       - name: Full application TypeScript check
         if: ${{ !cancelled() }}
         run: npm run typecheck

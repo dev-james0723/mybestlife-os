@@ -1,4 +1,3 @@
-import { extractInlineImageFromResponse } from "@/lib/ai/gemini-image";
 import {
   formatGeminiBillingUserMessage,
   isGeminiQuotaExhausted,
@@ -45,7 +44,8 @@ function extractInlineImageHttp(data: unknown): { mimeType: string; data: string
     const parts = content.parts;
     if (!Array.isArray(parts)) continue;
     for (const part of parts) {
-      if (!isRecord(part)) continue;
+      // Some image models include intermediate thought images before the final image.
+      if (!isRecord(part) || part.thought === true) continue;
       const inline =
         (part.inlineData as Record<string, unknown> | undefined) ??
         (part.inline_data as Record<string, unknown> | undefined);
@@ -79,16 +79,25 @@ export type GeminiImageGenerateOutcome =
     };
 
 /**
- * Try Gemini image models in order until one returns inline image bytes.
+ * Try only the supplied Gemini models. Pass a single model for no automatic fallback.
+ * Optional scene controls leave existing callers' request defaults unchanged.
  */
 export async function generateGeminiInlineImage(params: {
   apiKey: string;
   prompt: string;
   modelChain: string[];
+  signal?: AbortSignal;
+  aspectRatio?: string;
+  /** Reject oversized base64 data before allocating its decoded Buffer. */
+  maxInlineDataLength?: number;
 }): Promise<GeminiImageGenerateOutcome> {
+  params.signal?.throwIfAborted();
   const requestBody = JSON.stringify({
     contents: [{ role: "user", parts: [{ text: params.prompt }] }],
-    generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+    generationConfig: {
+      responseModalities: ["TEXT", "IMAGE"],
+      ...(params.aspectRatio ? { imageConfig: { aspectRatio: params.aspectRatio } } : {}),
+    },
   });
 
   let lastFailure: ParsedGeminiFailure = {};
@@ -96,19 +105,22 @@ export async function generateGeminiInlineImage(params: {
   const modelsTried: string[] = [];
 
   for (const model of params.modelChain) {
+    params.signal?.throwIfAborted();
     modelsTried.push(model);
     try {
       const endpoint = `${GENERATE_CONTENT_BASE}/${encodeURIComponent(model)}:generateContent`;
-      const res = await fetch(`${endpoint}?key=${encodeURIComponent(params.apiKey)}`, {
+      const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": params.apiKey },
         body: requestBody,
+        signal: params.signal,
       });
       const rawText = await res.text();
+      params.signal?.throwIfAborted();
       lastRaw = rawText;
 
       if (!res.ok) {
-        lastFailure = parseGeminiFailureBody(rawText);
+        lastFailure = { ...parseGeminiFailureBody(rawText), code: res.status };
         const retry =
           isGeminiQuotaExhausted(res.status, rawText) ||
           res.status >= 500 ||
@@ -131,16 +143,17 @@ export async function generateGeminiInlineImage(params: {
         continue;
       }
 
-      const inline =
-        extractInlineImageHttp(parsed) ??
-        (() => {
-          const fromSdk = extractInlineImageFromResponse(parsed);
-          return fromSdk ? { mimeType: fromSdk.mimeType, data: fromSdk.data } : null;
-        })();
-
+      // This parser handles both camelCase and snake_case inline data. Do not fall
+      // back to the SDK extractor, which could return an intermediate thought image.
+      const inline = extractInlineImageHttp(parsed);
       if (inline) {
+        if (params.maxInlineDataLength !== undefined && inline.data.length > params.maxInlineDataLength) {
+          lastFailure = { message: "inline_image_too_large" };
+          break;
+        }
         const imageBytes = Buffer.from(inline.data, "base64");
         if (imageBytes.length >= 64) {
+          params.signal?.throwIfAborted();
           return {
             ok: true,
             image: {
@@ -154,6 +167,9 @@ export async function generateGeminiInlineImage(params: {
       lastFailure = { message: "no_inline_image" };
       console.warn(`[gemini-image] ${model}: no_inline_image`);
     } catch (err) {
+      // Cancellation/timeout must escape, never trigger another billed request.
+      params.signal?.throwIfAborted();
+      if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) throw err;
       lastFailure = { message: err instanceof Error ? err.message : String(err) };
       console.warn(`[gemini-image] ${model} error:`, lastFailure.message);
     }

@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { getGeminiServerApiKey, getGeminiPlannerTextModel } from "@/lib/ai/gemini-text";
+import { generateGeminiInlineImage } from "@/lib/ai/gemini-image-generate";
 import { buildMindLensSystemInstruction } from "./skill-runtime";
 import { buildBundledLensSystemInstruction, readBundledSkillMarkdown } from "./load-bundled-skill";
 import { localeToGeminiLanguage } from "@/lib/i18n/gemini-locale";
@@ -11,13 +12,12 @@ import { CouncilHttpError } from "./room-server";
 export function requireMeetingProvider() {
   if (!getGeminiServerApiKey()) throw new CouncilHttpError(503, "Council replies need a configured server Gemini API key. Your room and messages are kept.");
 }
-function imageProvider() {
-  const selected = process.env.MIND_COUNCIL_IMAGE_PROVIDER?.trim() || (process.env.OPENAI_API_KEY?.trim() ? "openai" : "gemini");
-  if (selected === "openai" && process.env.OPENAI_API_KEY?.trim()) return "openai";
-  if (selected === "gemini" && getGeminiServerApiKey()) return "gemini";
-  throw new CouncilHttpError(503, "Scene generation needs a configured server image API key. Chat remains available.");
+export function requireSceneProvider(): string {
+  const apiKey = getGeminiServerApiKey();
+  if (!apiKey) throw new CouncilHttpError(503,
+    "Scene generation needs GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY on the server. Chat remains available.");
+  return apiKey;
 }
-export function requireSceneProvider() { imageProvider(); }
 async function providerJson(response: Response): Promise<Record<string, unknown>> {
   if (!response.ok) throw new CouncilHttpError(response.status === 429 ? 429 : 502,
     response.status === 429 ? "The AI provider is busy or out of quota. Please retry later." : "The AI provider could not generate this result. No substitute content was used.");
@@ -25,42 +25,27 @@ async function providerJson(response: Response): Promise<Record<string, unknown>
   if (!isRecord(result)) throw new CouncilHttpError(502, "The AI provider returned an invalid result.");
   return result;
 }
-/** No provider fallback on refusal; no silent replacement with unrelated people or SVG. */
+/** Gemini only, using the shared image helper; no provider or model fallback. */
 export async function generateCouncilScene(prompt: string, signal: AbortSignal) {
-  let base64 = "";
-  let model: string;
-  if (imageProvider() === "openai") {
-    model = process.env.MIND_COUNCIL_OPENAI_IMAGE_MODEL?.trim() || "gpt-image-2.5-sunburst";
-    const result = await providerJson(await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST", signal, headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY?.trim()}` },
-      body: JSON.stringify({ model, prompt, n: 1, size: "1536x1152", quality: "medium", output_format: "webp" }),
-    }));
-    const first = Array.isArray(result.data) ? result.data[0] : null;
-    if (isRecord(first) && typeof first.b64_json === "string") base64 = first.b64_json;
-  } else {
-    model = process.env.MIND_COUNCIL_GEMINI_IMAGE_MODEL?.trim() || "gemini-3.1-flash-image";
-    const result = await providerJson(await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST", signal,
-      headers: { "Content-Type": "application/json", "x-goog-api-key": getGeminiServerApiKey()! },
-      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: "4:3" } } }),
-    }));
-    const candidate = Array.isArray(result.candidates) ? result.candidates[0] : null;
-    const content = isRecord(candidate) && isRecord(candidate.content) ? candidate.content : null;
-    if (content && Array.isArray(content.parts)) {
-      for (const part of content.parts) {
-        if (!isRecord(part) || part.thought === true) continue;
-        const inline = part.inlineData ?? part.inline_data;
-        if (isRecord(inline) && typeof inline.data === "string") { base64 = inline.data; break; }
-      }
-    }
+  const apiKey = requireSceneProvider();
+  const model = process.env.MIND_COUNCIL_GEMINI_IMAGE_MODEL?.trim() || "gemini-3.1-flash-image";
+  const result = await generateGeminiInlineImage({
+    apiKey, prompt, modelChain: [model], signal, aspectRatio: "4:3", maxInlineDataLength: 32_000_000,
+  });
+  if (!result.ok) {
+    const quota = result.lastFailure.code === 429 || result.lastFailure.status === "RESOURCE_EXHAUSTED";
+    throw new CouncilHttpError(quota ? 429 : 502, quota
+      ? "Gemini image generation is busy or out of quota. Please retry later; chat remains available."
+      : "Gemini did not return a usable room scene. No substitute content was used. You can still use the chat.");
   }
-  if (!base64 || base64.length > 32_000_000) throw new CouncilHttpError(502, "The image provider did not return a usable room scene. You can still use the chat.");
+  if (!result.image.mimeType.startsWith("image/"))
+    throw new CouncilHttpError(502, "Gemini did not return an image. You can still use the chat.");
   signal.throwIfAborted();
   // Contain, never crop: all selected advisors and the foreground back-view stay visible.
-  const bytes = await sharp(Buffer.from(base64, "base64"), { limitInputPixels: 24_000_000 })
+  const bytes = await sharp(result.image.imageBytes, { limitInputPixels: 24_000_000 })
     .rotate().resize(1440, 1080, { fit: "contain", background: "#211d19" }).webp({ quality: 86 }).toBuffer();
-  return { bytes, model };
+  signal.throwIfAborted();
+  return { bytes, model: result.image.modelUsed };
 }
 export async function generateCouncilContribution(params: {
   skill: ResolvedMindSkill; name: string; round: number; history: CouncilMessage[]; locale: AppLocale; signal: AbortSignal;

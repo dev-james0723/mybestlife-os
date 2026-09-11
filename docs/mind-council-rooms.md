@@ -18,18 +18,25 @@ Full-name @mentions select the responding advisors, including a single participa
 
 The server streams actual preparation statuses and complete persisted contributions over NDJSON. It does not simulate token streaming or pretend the real person is speaking. Interrupted turns retain their existing messages and resume only the unfinished steps of the latest turn. Stop/close disconnects further generation. A per-room lease prevents competing tabs from interleaving turns. Leases expire after six minutes to recover from a crashed worker.
 
+## Gemini-only scene generation
+
+Mind Council room scene generation uses Gemini only. `generateCouncilScene` delegates to the existing `generateGeminiInlineImage` helper in `app/src/lib/ai/gemini-image-generate.ts`, using `getGeminiServerApiKey()` from the existing text helper. There is no provider switch, alternate image service, separate image API credential or duplicate image-generation HTTP implementation in Mind Council.
+
+The scene adapter supplies exactly one Gemini model, a 4:3 aspect ratio, the route's abort signal and a 32,000,000-character inline-data limit. It does not silently retry a different model or provider on refusal, quota exhaustion or failure. The shared helper's new controls are optional; other callers can still supply their existing explicit Gemini model chains without opting into the scene-specific settings. Intermediate thought images are skipped, and cancellation or timeout propagates instead of making another request.
+
+Images are converted to 1440×1080 WebP using contain rather than crop. The scene endpoint still handles ownership, private storage, quota/lease checks and saved-scene reuse; its API contract is unchanged. Existing saved scenes remain accessible without regeneration.
+
 ## Deployment prerequisites
 
 This branch includes source only. It does not apply production migrations, change billing, configure secret values, or deploy to production.
 
 1. Review and apply `app/supabase/migrations/20260911010000_mind_council_rooms.sql` to an isolated development/preview database first. It creates four RLS-protected tables, a claim/quota RPC, and a private `mind-council-scenes` bucket. Test account separation before production rollout.
-2. Text replies use the existing server `GEMINI_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`. An optional `MIND_COUNCIL_TEXT_MODEL` overrides the existing planner text model.
-3. Image generation uses a server API provider, not a ChatGPT connector login. Connecting OpenArt to ChatGPT does **not** configure this application's backend or transfer credits to it.
-4. Optional `MIND_COUNCIL_IMAGE_PROVIDER` is `openai` or `gemini`. Without an override, an available `OPENAI_API_KEY` selects OpenAI; otherwise the existing Gemini key is used. No provider fallback is attempted on refusal.
-5. `MIND_COUNCIL_OPENAI_IMAGE_MODEL` defaults to `gpt-image-2.5-sunburst`, medium quality, 1536×1152, WebP. `MIND_COUNCIL_GEMINI_IMAGE_MODEL` defaults to `gemini-3.1-flash-image`, 4:3. Provider/account access and generation cost must be verified in the deployment account. The API format is REST; no new SDK dependency is required.
-6. The host must support the routes' 300-second maximum duration. The image call has a 240-second timeout; a meeting has a 270-second total deadline. Lower hosting limits may interrupt requests; retries preserve completed text contributions.
+2. Text replies and room images reuse the existing server `GEMINI_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`. No additional image-service credential is required. An optional `MIND_COUNCIL_TEXT_MODEL` overrides the existing planner text model.
+3. The only room image-model override is `MIND_COUNCIL_GEMINI_IMAGE_MODEL`, defaulting to `gemini-3.1-flash-image`. The scene request uses 4:3 framing. Confirm that the existing deployment key can access this image model; an available text model does not itself verify image-model access.
+4. No ChatGPT connector connection is required for the application's scene endpoint. Image calls use the application's existing server-side Gemini integration and its provider account.
+5. The host must support the routes' 300-second maximum duration. The image call has a 240-second timeout; a meeting has a 270-second total deadline. Lower hosting limits may interrupt requests; retries preserve completed text contributions.
 
-Model IDs and request formats were checked against the official OpenAI image-generation and Google Gemini image-generation documentation during implementation. Successful production provider calls have not been established by the source-only tests.
+Gemini model and image-generation configuration references: https://ai.google.dev/gemini-api/docs/image-generation and https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/image-generation. Successful production image calls have not been established by the source-only tests.
 
 ## Privacy and bounded costs
 
@@ -44,9 +51,12 @@ Run from `app/`:
 ```sh
 npm ci --ignore-scripts
 node scripts/test-council-rooms.cjs
+node scripts/test-council-rooms-gemini.cjs
 npm run typecheck
-npx --no-install eslint src/lib/mind-council/room-*.ts src/components/mind-council/Council*.tsx src/components/mind-council/mind-council-experience.tsx src/app/api/mind-council/rooms
+npx --no-install eslint src/lib/ai/gemini-image-generate.ts src/lib/mind-council/room-*.ts src/components/mind-council/Council*.tsx src/components/mind-council/mind-council-experience.tsx src/app/api/mind-council/rooms
 ```
+
+The Gemini regression script executes the actual shared image helper and room scene adapter, with synthetic credentials and mocked HTTP/text/auth dependencies. It covers helper reuse, single-model Gemini routing, both existing key names, model override, 4:3 framing and real WebP contain conversion, old helper request defaults/fallback chains, error/quota mapping, no provider switching, final-image extraction, encoded-size limits and cancellation/timeout propagation. It never calls a live image provider.
 
 `app/scripts/council-rooms-db.test.sql` is exclusively for a **new disposable PostgreSQL database**. It creates minimal auth/storage fixtures; do not run that test script against an existing Supabase project. The feature's GitHub Actions workflow runs these fixtures on a disposable PostgreSQL 16 service.
 
