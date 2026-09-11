@@ -12,6 +12,7 @@ alter table storage.objects enable row level security;
 create function storage.foldername(text) returns text[] language sql immutable as $$ select string_to_array($1,'/') $$;
 grant usage on schema public, auth, storage to authenticated, anon;
 grant select, insert on storage.objects to authenticated;
+alter default privileges in schema public grant all on tables to authenticated;
 \ir ../supabase/migrations/20260911010000_mind_council_rooms.sql
 insert into auth.users(id) values('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222');
 insert into public.mind_council_rooms(id,user_id,name,advisor_ids,advisors,initial_question,scene_template) values
@@ -39,6 +40,10 @@ begin
   assert public.claim_mind_council_operation('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','turn',gen_random_uuid()) = 'busy', 'One conversation writer at a time';
   update public.mind_council_rooms set chat_started_at=now()-interval '7 minutes' where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
   assert public.claim_mind_council_operation('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','turn',second_token) = 'claimed', 'Crashed writer lease can be recovered';
+  begin
+    delete from public.mind_council_rooms;
+    raise exception 'Room deletion could erase quota receipts';
+  exception when insufficient_privilege then null; end;
   begin
     delete from public.mind_council_usage;
     raise exception 'Quota receipts unexpectedly deletable';

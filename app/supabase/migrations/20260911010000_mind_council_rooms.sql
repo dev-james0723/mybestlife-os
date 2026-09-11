@@ -82,6 +82,7 @@ create policy council_usage_owner_select on public.mind_council_usage for select
   using (user_id = (select auth.uid()));
 create policy council_usage_owner_insert on public.mind_council_usage for insert to authenticated
   with check (user_id = (select auth.uid()));
+revoke all on public.mind_council_rooms, public.mind_council_turns, public.mind_council_messages from anon, authenticated;
 grant select, insert, update on public.mind_council_rooms, public.mind_council_turns, public.mind_council_messages to authenticated;
 revoke all on public.mind_council_usage from anon, authenticated;
 grant select, insert on public.mind_council_usage to authenticated;

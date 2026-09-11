@@ -57,3 +57,15 @@ jobs:
       - name: Full application TypeScript check
         if: ${{ !cancelled() }}
         run: npm run typecheck
+      - name: Install Chromium for component regression
+        if: ${{ !cancelled() }}
+        run: node node_modules/playwright-core/cli.js install --with-deps chromium
+      - name: Real component browser regression with fixture APIs
+        if: ${{ !cancelled() }}
+        run: node scripts/council-rooms-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: council-component-fixture-screenshots
+          path: app/test-results/council-rooms
+          retention-days: 7

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { parseAppLocale } from "@/lib/i18n/app-locale";
 import { resolveSavedMindSkill } from "@/lib/mind-council/resolve-saved-skill";
+import { MAX_COUNCIL_ADVISORS } from "@/lib/mind-council/room-contract";
 import {
   invokeMindCouncilSynthesis,
   invokeMindSkill,
@@ -49,8 +50,8 @@ export async function POST(req: Request) {
     .filter(Boolean);
 
   const unique = [...new Set(skillIds)];
-  if (unique.length < 2 || unique.length > 5) {
-    return NextResponse.json({ error: "Select between 2 and 5 advisors" }, { status: 400 });
+  if (unique.length < 2 || unique.length > MAX_COUNCIL_ADVISORS) {
+    return NextResponse.json({ error: "Select between 2 and 4 advisors" }, { status: 400 });
   }
 
   let skills;

@@ -62,6 +62,8 @@ export async function POST(req: Request, context: Context) {
           try {
             // Read again after taking the lease; never use browser-supplied conversation history.
             const history = await roomMessages(db, user.id, room.id);
+            if (history.length + requiredSlots - history.filter((m) => m.turn_id === turnId).length > MAX_ROOM_MESSAGES)
+              throw new CouncilHttpError(409, "This room has reached its transcript limit. Start a new Council to continue.");
             const turn = existing
               ? await db.from("mind_council_turns").update({ status: "running", updated_at: new Date().toISOString() })
                 .eq("id", turnId).eq("room_id", room.id).eq("user_id", user.id)
