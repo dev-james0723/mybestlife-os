@@ -6,6 +6,7 @@ on:
       - 'app/src/components/vault/VaultInterior.tsx'
       - 'app/src/lib/vault/cost-breakdown*'
       - 'app/src/lib/vault/recorded-cost.ts'
+      - 'app/scripts/vault-cost-browser.mjs'
       - '.github/workflows/vault-cost-dashboard.yml'
 permissions:
   contents: read
@@ -42,3 +43,15 @@ jobs:
       - name: Full application TypeScript check
         if: ${{ !cancelled() }}
         run: npm run typecheck
+      - name: Install Chromium for cost component regression
+        if: ${{ !cancelled() }}
+        run: node node_modules/playwright-core/cli.js install --with-deps chromium
+      - name: Real cost component browser regression with fixture prices
+        if: ${{ !cancelled() }}
+        run: node scripts/vault-cost-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: vault-cost-component-fixture-screenshots
+          path: app/test-results/vault-cost
+          retention-days: 7
