@@ -1,0 +1,75 @@
+name: Mind Council rooms validation
+on:
+  pull_request:
+    paths:
+      - 'app/src/**/mind-council/**'
+      - 'app/src/lib/ai/gemini-image-generate.ts'
+      - 'app/scripts/*council-room*'
+      - 'app/supabase/migrations/20260911010000_mind_council_rooms.sql'
+      - '.github/workflows/mind-council-rooms.yml'
+permissions:
+  contents: read
+concurrency:
+  group: council-rooms-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_council_ci
+          POSTGRES_DB: council_ci
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            app/src
+            app/scripts
+            app/supabase
+            app/public/mind-council
+            .github/workflows
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Pure contracts, context sharing and retry tests
+        run: node scripts/test-council-rooms.cjs
+      - name: Gemini-only image adapter and shared helper regression
+        if: ${{ !cancelled() }}
+        run: node scripts/test-council-rooms-gemini.cjs
+      - name: PostgreSQL isolation, persistence and lease tests
+        if: ${{ !cancelled() }}
+        env:
+          PGPASSWORD: disposable_council_ci
+        run: psql --host=127.0.0.1 --username=postgres --dbname=council_ci --file=scripts/council-rooms-db.test.sql
+      - name: Lint changed feature sources
+        if: ${{ !cancelled() }}
+        run: npx --no-install eslint src/lib/ai/gemini-image-generate.ts src/lib/mind-council/room-*.ts src/components/mind-council/Council*.tsx src/components/mind-council/mind-council-experience.tsx src/app/api/mind-council/rooms
+      - name: Full application TypeScript check
+        if: ${{ !cancelled() }}
+        run: npm run typecheck
+      - name: Install Chromium for component regression
+        if: ${{ !cancelled() }}
+        run: node node_modules/playwright-core/cli.js install --with-deps chromium
+      - name: Real component browser regression with fixture APIs
+        if: ${{ !cancelled() }}
+        run: node scripts/council-rooms-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: council-component-fixture-screenshots
+          path: app/test-results/council-rooms
+          retention-days: 7
